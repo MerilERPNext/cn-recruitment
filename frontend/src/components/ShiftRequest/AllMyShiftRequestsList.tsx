@@ -43,9 +43,7 @@ const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee"],
-});
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const handleRefetchComplete = useCallback(() => {

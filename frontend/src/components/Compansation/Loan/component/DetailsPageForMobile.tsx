@@ -21,9 +21,7 @@ interface RepaymentItem {
 export default function LoanSummary() {
   const [selectedLoan, setSelectedLoan] = useState<any>(null);
   const { loanId } = useParams();
-  const { data: user } = useCurrentEmployeeAllDetails({
-    fields: ["employee"]
-  });
+  const { data: user } = useCurrentEmployeeAllDetails();
   const employeeId = user?.employee ?? "";
   const { data: loanData } = useLoan(employeeId || "");
   const navigate = useNavigate();

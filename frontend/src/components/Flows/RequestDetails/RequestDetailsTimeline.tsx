@@ -8,15 +8,15 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
-import { buildFormFromSchemaAndAnswer, extractRolesAndUsers, FormIOForm } from "../../../utils/flowUtils";
+import { extractRolesAndUsers, FormIOForm } from "../../../utils/flowUtils";
 import { Typography } from "../../shared/atoms/Typography";
 import { useQueryClient } from "@tanstack/react-query";
 import Button from "../../shared/atoms/Button";
 import { createPortal } from "react-dom";
 import ReviewForm from "../Separation/components/ReviewForm";
-import { Form } from "@tsed/react-formio";
 import AttachmentPreview from "./AttachmentPreview";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import FormPreview from "../../shared/molecules/FormPreview";
 
 const getIcon = (status: string) => {
   const iconProps = { size: 20, strokeWidth: 3, className: "text-white" };
@@ -144,6 +144,7 @@ export const RequestDetailCard = ({
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+  const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
 
   const handleShowForm = () => {
     const schema = stage?.form_json?.components;
@@ -154,7 +155,8 @@ export const RequestDetailCard = ({
       console.error("Invalid approval_response_data JSON:", error);
     }
     if (!schema) return;
-    setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
+    setFormSchema({ display: "form", components: schema });
+    setFormAnswer(data);
     setResponseData(data);
     setShowForm(true);
   }
@@ -295,13 +297,11 @@ export const RequestDetailCard = ({
       </div>
       {formSchema && showForm && createPortal(
         <ReviewForm onClose={() => setShowForm(false)}>
-          <Form
-            form={formSchema}
-            options={{
-              readOnly: true, // This makes the entire form read-only
-              viewAsHtml: false, // Set to true to render as plain HTML instead of form inputs
-            }}
-            submit={false}
+          <FormPreview
+            containerId={`request-detail-${stage.stage_name}-form-preview`}
+            schema={formSchema}
+            submissionData={formAnswer}
+            readOnly={true}
           />
           <AttachmentPreview attachments={responseData?.addAttachment || []} />
         </ReviewForm>,

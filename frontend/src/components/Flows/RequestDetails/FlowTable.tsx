@@ -14,14 +14,14 @@ import { Attachment, FlowRequestItem, FlowRequestStage } from "../../../types/fl
 
 import { StaticListView } from "../../ListView";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-import { buildFormFromSchemaAndAnswer, extractRolesAndUsers, FormIOForm } from "../../../utils/flowUtils";
+import { extractRolesAndUsers, FormIOForm } from "../../../utils/flowUtils";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import { useQueryClient } from "@tanstack/react-query";
-import { Form } from "@tsed/react-formio";
 import ReviewForm from "../Separation/components/ReviewForm";
 import { createPortal } from "react-dom";
 import Button from "../../shared/atoms/Button";
 import AttachmentPreview from "./AttachmentPreview";
+import FormPreview from "../../shared/molecules/FormPreview";
 
 const titles = [
   "Stage Name",
@@ -122,6 +122,7 @@ const StageCard = ({
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+  const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
 
   const handleShowForm = () => {
     if (!stage?.form_json?.components) return;
@@ -135,12 +136,11 @@ const StageCard = ({
         ? JSON.parse(stage.approval_response_data)
         : {};
     } catch (error) {
-
       console.error("Invalid approval_response_data JSON:", error);
       data = {};
     }
-    console.log({ data })
-    setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
+    setFormSchema({ display: "form", components: schema });
+    setFormAnswer(data);
     setResponseData(data);
     setShowForm(true);
   };
@@ -206,13 +206,11 @@ const StageCard = ({
       </div>
       {formSchema && showForm && createPortal(
         <ReviewForm onClose={() => setShowForm(false)}>
-          <Form
-            form={formSchema}
-            options={{
-              readOnly: true, // This makes the entire form read-only
-              viewAsHtml: false, // Set to true to render as plain HTML instead of form inputs
-            }}
-            submit={false}
+          <FormPreview
+            containerId={`flow-stage-${stage.stage_name}-form-preview`}
+            schema={formSchema}
+            submissionData={formAnswer}
+            readOnly={true}
           />
           <AttachmentPreview attachments={responseData?.addAttachment || []} />
         </ReviewForm>,

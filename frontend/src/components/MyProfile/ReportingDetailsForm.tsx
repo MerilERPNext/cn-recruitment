@@ -27,9 +27,7 @@ const ReportingDetailsForm = ({
 }: ReportingDetailsProps) => {
   const formInstance = useRef<any>(null);
   const initialSubmissionSet = useRef(false);
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee"],
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const { mutateAsync: addEmployeeReportingDetails } =
     useAddEmployeeReportingDetailsMutation();
 

@@ -5,8 +5,6 @@ from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
 from frappe.utils import formatdate
 
-
-
 @frappe.whitelist(allow_guest=True)
 def download_job_offer_pdf(appl):
     """Download Job Offer PDF for a given applicant — guest-accessible."""
@@ -44,6 +42,33 @@ def download_job_offer_pdf(appl):
         frappe.set_user(original_user)
 
 @frappe.whitelist(allow_guest=True)
+def preview_job_offer_html(appl):
+    """Return rendered print-format HTML for a given applicant — guest-accessible."""
+    if not appl:
+        frappe.throw("Missing applicant parameter")
+
+    original_user = frappe.session.user
+    frappe.set_user("Administrator")
+    try:
+        jo_id = frappe.db.get_value("Job Offer", {
+            "job_applicant": appl,
+            "docstatus": ["!=", 2],
+            "status": "Awaiting Response"
+        })
+        if not jo_id:
+            frappe.throw("No active Job Offer found")
+
+        pf = frappe.db.get_single_value(
+            "Recruitment Settings", "job_offer_print_format"
+        ) or None
+
+        # Exact same call your Jinja route makes on line 37 — just no as_pdf.
+        html = frappe.get_print("Job Offer", jo_id, print_format=pf)
+        return {"html": html, "jo_id": jo_id}
+    finally:
+        frappe.set_user(original_user)
+
+@frappe.whitelist(allow_guest=True)
 def get_job_offer_status(appl):
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
     if not jo_id:
@@ -53,51 +78,67 @@ def get_job_offer_status(appl):
 
 @frappe.whitelist(allow_guest=True)
 def job_offer_update(status, appl, reason=None, message=None):
-    frappe.set_user('Administrator')
-    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
-    if status == "Accepted":
-        offer_doc=frappe.get_doc("Job Offer",jo_id)
-        offer_doc.status="Accepted"
-        offer_doc.save()
-        appl_doc=frappe.get_doc("Job Applicant",appl)
-        appl_doc.status="Accepted"
-        appl_doc.save()
+    original_ignore = frappe.flags.ignore_permissions
+    frappe.flags.ignore_permissions = True
+    try:
+        jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+        if status == "Accepted":
+            offer_doc = frappe.get_doc("Job Offer", jo_id)
+            offer_doc.status = "Accepted"
+            offer_doc.save(ignore_permissions=True)
+            appl_doc = frappe.get_doc("Job Applicant", appl)
+            appl_doc.status = "Accepted"
+            appl_doc.save(ignore_permissions=True)
 
-    if status == "Rejected":
-        frappe.db.set_value("Job Offer",jo_id,"status","Rejected")
-        frappe.db.set_value("Job Applicant",appl,"status","Rejected")
-        # Store rejection feedback
-        if reason:
-            frappe.db.set_value("Job Offer", jo_id, "custom_rejection_reason", reason)
-        if message:
-            frappe.db.set_value("Job Offer", jo_id, "custom_rejection_message", message)
-    frappe.db.set_value("Job Offer",jo_id,"docstatus",1)
+        if status == "Rejected":
+            frappe.db.set_value("Job Offer", jo_id, "status", "Rejected")
+            frappe.db.set_value("Job Applicant", appl, "status", "Rejected")
+            # Store rejection feedback
+            if reason:
+                frappe.db.set_value("Job Offer", jo_id, "custom_rejection_reason", reason)
+            if message:
+                frappe.db.set_value("Job Offer", jo_id, "custom_rejection_message", message)
+        frappe.db.set_value("Job Offer", jo_id, "docstatus", 1)
 
-    webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
-    return {"jo_id": jo_id, "webform": webform}
+        if status in ("Accepted", "Rejected"):
+            from recruitment.api.action_center import mark_item_completed
+            mark_item_completed(
+                reference_doctype="Job Offer",
+                reference_docname=jo_id,
+                candidate_id=appl,
+                commit=True,
+            )
+
+        webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
+        return {"jo_id": jo_id, "webform": webform}
+    finally:
+        frappe.flags.ignore_permissions = original_ignore
 
 
 @frappe.whitelist(allow_guest=True)
 def get_job_offer_summary(appl):
-    frappe.set_user('Administrator')
+    original_ignore = frappe.flags.ignore_permissions
+    frappe.flags.ignore_permissions = True
+    try:
+        jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+        if not jo_id:
+            return {}
 
-    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
-    if not jo_id:
-        return {}
+        jo = frappe.get_doc("Job Offer", jo_id)
 
-    jo = frappe.get_doc("Job Offer", jo_id)
+        duration = jo.get("custom_duration")
+        expected_doj = jo.get("custom_expected_doj")
+        stipend = jo.get("custom_stipend")
 
-    duration = jo.get("custom_duration")
-    expected_doj = jo.get("custom_expected_doj")
-    stipend = jo.get("custom_stipend")
-
-    return {
-        "applicant_name": f"{jo.get('applicant_name') or ''} {jo.get('applicant_last_name') or ''}".strip(),
-        "designation": jo.designation or "Intern",
-        "duration_display": f"{duration} Month{'s' if int(duration) != 1 else ''}" if duration else None,
-        "expected_doj_display": formatdate(expected_doj) if expected_doj else None,
-        "stipend_display": f"₹ {stipend}" if stipend else None,
-    }
+        return {
+            "applicant_name": f"{jo.get('applicant_name') or ''} {jo.get('applicant_last_name') or ''}".strip(),
+            "designation": jo.designation or "Intern",
+            "duration_display": f"{duration} Month{'s' if int(duration) != 1 else ''}" if duration else None,
+            "expected_doj_display": formatdate(expected_doj) if expected_doj else None,
+            "stipend_display": f"₹ {stipend}" if stipend else None,
+        }
+    finally:
+        frappe.flags.ignore_permissions = original_ignore
 
 @frappe.whitelist(allow_guest=True)
 def get_company_logo():
@@ -119,42 +160,6 @@ def request_for_offer(jo_id):
     from nextai.funnel.custom_trigger import trigger_event
     doc_data = frappe.get_doc("Job Applicant",jo_id)
     trigger_event(doc=doc_data, event_name="send_mail_to_group_admin")
-
-
-# @frappe.whitelist(allow_guest=True)
-# def submit_docs(status, appl, url=None):
-# 	jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
-# 	onboarding_webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
-# 	job_applicant = frappe.db.get_value("Job Offer", jo_id, "job_applicant")
-# 	if status == "Accepted":
-# 		if not url:
-# 			return
-
-# 		template = frappe.db.get_value(
-# 			"Email Template", "Employee Onboarding", ["subject", "response_html"], as_dict=True
-# 		)
-# 		if not template or not template.subject or not template.response_html:
-# 			frappe.log_error(
-# 				"Email Template 'Employee Onboarding' is missing or has empty subject/body",
-# 				"submit_docs: Skipped sending empty email",
-# 			)
-# 			return
-
-# 		wf_url = url + "/" + onboarding_webform + "/new?job_offer=" + jo_id + "&job_applicant=" + appl
-# 		email_context = {
-# 			"url": wf_url,
-# 			"name": jo_id,
-# 			"applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl}, "applicant_name"),
-# 			"company": frappe.db.get_value("Job Offer", {"job_applicant": appl}, "company"),
-# 			"designation": frappe.db.get_value("Job Offer", {"job_applicant": appl}, "designation"),
-# 		}
-# 		frappe.sendmail(
-# 			recipients=[job_applicant],
-# 			subject=frappe.render_template(template.subject, email_context),
-# 			message=frappe.render_template(template.response_html, email_context),
-# 			args=email_context,
-# 		)
-
 
 @frappe.whitelist()
 def send_job_offer(job_offer_url, candidate, mail_id,company,designation):

@@ -178,142 +178,165 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
       {show &&
         createPortal(
-          <div
-            ref={cardRef}
-            className="absolute z-[999]"
-            style={{
-              top: pos.top,
-              left: pos.left,
-              opacity: isAnimating ? 1 : 0,
-              transform: isAnimating
-                ? "scale(1) translateY(0)"
-                : "scale(0.98) translateY(0)",
-              transition: isAnimating
-                ? "opacity 200ms ease-out, transform 200ms ease-out"
-                : "opacity 150ms ease-in, transform 150ms ease-in",
-            }}
-            onMouseEnter={handleEnter}
-            onMouseLeave={handleLeave}
-          >
+          <>
+            {/* Backdrop Dimming Overlay */}
             <div
-              className={`w-[320px] p-5 rounded-xl bg-white border border-[#E6F0FF] shadow-lg ${cardClassName}`}
+              className="fixed inset-0 bg-slate-900/15 z-[998] pointer-events-none transition-opacity duration-300"
+              style={{ opacity: isAnimating ? 1 : 0 }}
+            />
+
+            <div
+              ref={cardRef}
+              className="absolute z-[999]"
+              style={{
+                top: pos.top,
+                left: pos.left,
+                opacity: isAnimating ? 1 : 0,
+                transform: isAnimating
+                  ? "scale(1) translateY(-8px)"
+                  : "scale(0.95) translateY(12px)",
+                transition: isAnimating
+                  ? "opacity 300ms cubic-bezier(0.34, 1.56, 0.64, 1), transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)"
+                  : "opacity 150ms ease-in, transform 150ms ease-in",
+              }}
+              onMouseEnter={handleEnter}
+              onMouseLeave={handleLeave}
             >
-              {/* Loading */}
-              {isLoading && (
-                <div className="flex justify-center py-6">
-                  <Loader2 className="w-7 h-7 animate-spin text-gray-600" />
-                </div>
-              )}
+              <div
+                className={`w-[320px] p-5 rounded-xl bg-white shadow-sm hover:shadow-2xl  transition-all duration-300 ${cardClassName}`}
+              >
+                {/* Loading */}
+                {isLoading && (
+                  <div className="flex justify-center py-6">
+                    <Loader2 className="w-7 h-7 animate-spin text-gray-600" />
+                  </div>
+                )}
 
-              {/* Error */}
-              {!isLoading && isError && (
-                <div className="py-6 text-center">
-                  <p className="text-sm font-medium text-red-600">
-                    Failed to load employee info
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {error?.message || "Please try again"}
-                  </p>
-                </div>
-              )}
+                {/* Error */}
+                {!isLoading && isError && (
+                  <div className="py-6 text-center">
+                    <p className="text-sm font-medium text-red-600">
+                      Failed to load employee info
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {error?.message || "Please try again"}
+                    </p>
+                  </div>
+                )}
 
-              {/* Data */}
-              {!isLoading &&
-                !isError &&
-                employeeInfo?.data &&
-                (() => {
-                  const emp = mapEmployeeData(employeeInfo.data);
+                {/* Data */}
+                {!isLoading &&
+                  !isError &&
+                  employeeInfo?.data &&
+                  (() => {
+                    const emp = mapEmployeeData(employeeInfo.data);
 
-                  return (
-                    <>
-                      {/* Header */}
-                      <div className="flex items-start gap-4">
-                        {emp.Image ? (
-                          <img
-                            src={emp.Image}
-                            className="w-16 h-16 rounded-full object-cover"
-                            alt="avatar"
-                          />
-                        ) : (
-                          <div
-                            className="w-16 h-16 rounded-full flex items-center justify-center text-white font-semibold text-lg"
-                            style={{
-                              background: stringToPastelColor(
-                                emp["Full Name"] || "U",
-                              ),
-                            }}
-                          >
-                            {emp["Full Name"]?.charAt(0)?.toUpperCase()}
+                    return (
+                      <>
+                        {/* Header */}
+                        <div className="flex items-start gap-4">
+                          {emp.Image ? (
+                            <img
+                              src={emp.Image}
+                              className="w-16 h-16 rounded-full object-cover"
+                              alt="avatar"
+                            />
+                          ) : (
+                            <div
+                              className="w-16 h-16 rounded-full flex items-center justify-center text-white font-semibold text-lg"
+                              style={{
+                                background: stringToPastelColor(
+                                  emp["Full Name"] || "U",
+                                ),
+                              }}
+                            >
+                              {emp["Full Name"]?.charAt(0)?.toUpperCase()}
+                            </div>
+                          )}
+
+                          <div className="flex-1 min-w-0 group">
+                            <p className="text-sm font-semibold text-gray-900 truncate group-hover:whitespace-normal group-hover:overflow-visible">
+                              {emp["Full Name"]}
+                            </p>
+
+                            <p className="text-sm text-gray-600 mt-0.5 truncate group-hover:whitespace-normal group-hover:overflow-visible">
+                              {emp.Designation}
+                            </p>
+
+                            <p className="text-sm text-gray-500 mt-1 truncate group-hover:whitespace-normal group-hover:overflow-visible">
+                              {emp["Company Email"] || emp["Personal Email"]}
+                            </p>
                           </div>
-                        )}
-
-                        <div className="flex-1 min-w-0 group">
-                          <p className="text-sm font-semibold text-gray-900 truncate group-hover:whitespace-normal group-hover:overflow-visible">
-                            {emp["Full Name"]}
-                          </p>
-
-                          <p className="text-sm text-gray-600 mt-0.5 truncate group-hover:whitespace-normal group-hover:overflow-visible">
-                            @{emp.Designation}
-                          </p>
-
-                          <p className="text-sm text-gray-500 mt-1 truncate group-hover:whitespace-normal group-hover:overflow-visible">
-                            {emp["Company Email"] || emp["Personal Email"]}
-                          </p>
-                        </div>
-                      </div>
-
-                      <hr className="my-3 border-gray-200" />
-
-                      {/* Details */}
-                      <div className="grid grid-cols-2 gap-y-3 text-sm">
-                        <div>
-                          <p className="text-gray-500">Department</p>
-                          <p className="font-medium text-gray-900">
-                            {emp.Department || "—"}
-                          </p>
                         </div>
 
-                        <div>
-                          <p className="text-gray-500">Employee ID</p>
-                          <p className="font-medium text-gray-900">
-                            {emp["ID (name)"]}
-                          </p>
-                        </div>
+                        <hr className="my-3 border-gray-200" />
 
-                        <div>
-                          <p className="text-gray-500">Date of Joining</p>
-                          <p className="font-medium text-gray-900">
-                            {emp["Date of Joining"]
-                              ? new Date(
-                                emp["Date of Joining"],
-                              ).toLocaleDateString("en-IN", {
-                                day: "2-digit",
-                                month: "long",
-                                year: "numeric",
-                              })
-                              : "—"}
-                          </p>
-                        </div>
+                        {/* Details */}
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                          {employeeInfo.data
+                            .filter((item: any) => {
+                              const headerFields = [
+                                "Full Name",
+                                "Designation",
+                                "Company Email",
+                                "Personal Email",
+                                "Image",
+                              ];
+                              return !headerFields.includes(item.label);
+                            })
+                            .map((item: any, idx: number) => {
+                              let displayValue = item.value || "—";
 
-                        <div>
-                          <p className="text-gray-500">Company</p>
-                          <p className="font-medium text-gray-900">
-                            {emp.Company || "—"}
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  );
-                })()}
+                              // Dynamic Date Formatting
+                              if (
+                                item.label.toLowerCase().includes("date") &&
+                                item.value &&
+                                !isNaN(Date.parse(item.value))
+                              ) {
+                                const dateObj = new Date(item.value);
+                                if (!isNaN(dateObj.getTime())) {
+                                  displayValue = dateObj.toLocaleDateString(
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "long",
+                                      year: "numeric",
+                                    },
+                                  );
+                                }
+                              }
 
-              {/* Fallback when no employeeId */}
-              {!isLoading && !isError && !employeeInfo?.data && !employeeId && (
-                <p className="text-sm text-gray-500 text-center py-2">
-                  Employee information not available
-                </p>
-              )}
+                              return (
+                                <div key={idx} className="min-w-0">
+                                  <p
+                                    className="text-gray-500 truncate"
+                                    title={item.label}
+                                  >
+                                    {item.label}
+                                  </p>
+                                  <p className="font-medium text-gray-900 break-words">
+                                    {displayValue}
+                                  </p>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </>
+                    );
+                  })()}
+
+                {/* Fallback when no employeeId */}
+                {!isLoading &&
+                  !isError &&
+                  !employeeInfo?.data &&
+                  !employeeId && (
+                    <p className="text-sm text-gray-500 text-center py-2">
+                      Employee information not available
+                    </p>
+                  )}
+              </div>
             </div>
-          </div>,
+          </>,
           document.body,
         )}
     </>

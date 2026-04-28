@@ -87,9 +87,7 @@ const ONBOARDING_SORT_CONFIG: ColumnSortConfig[] = [
 
 export default function EmployeeOnboardingList() {
 
-  const { data: user } = useCurrentEmployeeAllDetails({
-    fields: ["employee", "company"],
-  });
+  const { data: user } = useCurrentEmployeeAllDetails();
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
 
@@ -177,6 +175,7 @@ export default function EmployeeOnboardingList() {
                   </div>
 
                   <div className="font-medium items-center flex justify-center">
+                    
     
                   </div>
                 </div>

@@ -758,12 +758,24 @@ const ExpensesList: React.FC = () => {
   const [isRelocationAcknowledgementChecked, setIsRelocationAcknowledgementChecked] = React.useState(false);
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["name", "employee_name", "company"]
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const navigate = useNavigate();
-  const { data: draftExpenses, isFetching: isFetchingDrafts } =
-    useGetDraftExpenseClaims(currentEmployee?.name);
+  const {
+    data: draftExpenses,
+    isFetching: isFetchingDrafts,
+    isLoading: isLoadingDrafts,
+  } = useGetDraftExpenseClaims(currentEmployee?.name, {
+    enabled: Boolean(currentEmployee?.name && activeTab === "draft"),
+  });
+
+  const sortedDraftExpenses = React.useMemo(() => {
+    if (!draftExpenses) return [];
+    return [...draftExpenses].sort((a: any, b: any) => {
+      return (
+        new Date(b.creation).getTime() - new Date(a.creation).getTime()
+      );
+    });
+  }, [draftExpenses]);
   const deleteDraftMutation = useDeleteDraftExpenseClaim();
   const { mutateAsync: submitExpenses, isPending: isSubmitting } =
     usePostExpenseClaim();
@@ -843,7 +855,7 @@ const ExpensesList: React.FC = () => {
 
     if (activeTab === "draft") {
       fileName = "Draft_Expense_Claims";
-      exportData = (draftExpenses || []).map((item: any) => {
+      exportData = (sortedDraftExpenses || []).map((item: any) => {
         const parsed = item?.json && typeof item.json === "string" ? JSON.parse(item.json) : item?.json;
         return {
           "Expense Category": parsed?.custom_expense_category_name || parsed?.expenseCategory || "-",
@@ -1231,14 +1243,21 @@ const ExpensesList: React.FC = () => {
 
         {currentEmployee?.name && activeTab === "draft" && (
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
-            {isFetchingDrafts ? (
+            {isLoadingDrafts ? (
               <div className="flex flex-col gap-3 px-4">
                 {[1, 2, 3].map((i) => (
                   <CardSkeleton key={i} />
                 ))}
               </div>
-            ) : draftExpenses && draftExpenses.length > 0 ? (
+            ) : sortedDraftExpenses && sortedDraftExpenses.length > 0 ? (
               <>
+                {isFetchingDrafts && (
+                  <div className="px-4 pt-3">
+                    <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700">
+                      Refreshing drafts...
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-col gap-3">
                   {/* Select All Header Row - Desktop only */}
                   {isDesktop && (
@@ -1252,13 +1271,13 @@ const ExpensesList: React.FC = () => {
                         <input
                           type="checkbox"
                           checked={
-                            selectedDraftIds.size === draftExpenses.length &&
-                            draftExpenses.length > 0
+                            selectedDraftIds.size === sortedDraftExpenses.length &&
+                            sortedDraftExpenses.length > 0
                           }
                           onChange={(e) => {
                             if (e.target.checked) {
                               setSelectedDraftIds(
-                                new Set(draftExpenses.map((d: any) => d.name)),
+                                new Set(sortedDraftExpenses.map((d: any) => d.name)),
                               );
                             } else {
                               setSelectedDraftIds(new Set());
@@ -1276,7 +1295,7 @@ const ExpensesList: React.FC = () => {
                   )}
 
                   {/* Draft List */}
-                  {draftExpenses.map((draft: any) => {
+                  {sortedDraftExpenses.map((draft: any) => {
                     const isSelected = selectedDraftIds.has(draft.name);
                     const handleToggleSelect = (id: string) => {
                       setSelectedDraftIds((prev) => {
@@ -1295,30 +1314,10 @@ const ExpensesList: React.FC = () => {
                           ? JSON.parse(editItem.json)
                           : editItem?.json;
                       if (parsedJson) {
-                        const attachments = parsedJson?.attachments;
-                        let attachReceipt = null;
-                        if (attachments) {
-                          const attachmentNames = attachments
-                            .split(",")
-                            .map((a: string) => a.trim())
-                            .filter(Boolean);
-                          if (attachmentNames.length > 0) {
-                            attachReceipt = attachmentNames.map(
-                              (name: string) => ({
-                                name: name,
-                                size: 4000,
-                                url: name,
-                                storage: "url",
-                                originalName: name,
-                              }),
-                            );
-                          }
-                        }
                         navigate("/webapp/expenses-app/add-expense", {
                           state: {
                             expense: {
                               ...parsedJson,
-                              attach_receipt: attachReceipt,
                               uid: parsedJson.uid,
                             },
                             expense_claim_name: editItem.name,
@@ -1580,7 +1579,7 @@ const ExpensesList: React.FC = () => {
             </div>
 
             {(() => {
-              const selectedDraftsForRelocation = draftExpenses?.filter((d: any) => {
+              const selectedDraftsForRelocation = sortedDraftExpenses?.filter((d: any) => {
                 const parsed = d?.json && typeof d.json === "string" ? JSON.parse(d.json) : d?.json;
                 return selectedDraftIds.has(d.name) && (parsed?.categoryType === "Relocation");
               }) || [];

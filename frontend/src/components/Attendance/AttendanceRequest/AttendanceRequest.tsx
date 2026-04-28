@@ -67,9 +67,7 @@ const AttendanceRequest = ({
   showAttendanceRequest?: boolean;
 }) => {
   const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee"],
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const { targetEmployeeId } = useTargetUser();
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();

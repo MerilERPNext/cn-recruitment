@@ -214,9 +214,7 @@ const TeamShiftList = () => {
 
 const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee"],
-});
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const handleRefetchComplete = useCallback(() => {

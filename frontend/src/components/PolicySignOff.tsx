@@ -17,6 +17,10 @@ import {
 } from "react-icons/io5";
 import { useScreenSize } from "../hooks/useScreenSize";
 import { Typography } from "./shared/atoms/Typography";
+import FormPreview from "./shared/molecules/FormPreview";
+import Modal from "./shared/Modal";
+import { FilePreview } from "./shared/molecules/FilePreview";
+import { getFileTypeInfo } from "../utils/fileUtils";
 
 interface PolicyDetailsDocument {
   name: string;
@@ -36,6 +40,7 @@ interface PolicyDetailsDocument {
   doctype: string;
   policy_document: string;
   form_json: string;
+  response_json?: string;
 }
 
 const PolicySignOff: React.FC = () => {
@@ -43,6 +48,8 @@ const PolicySignOff: React.FC = () => {
   const { policyId } = useParams<{ policyId: string }>();
   const [isAgreed, setIsAgreed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isFormSubmitted, setIsFormSubmitted] = useState(false);
   const { mutateAsync: updatePolicy } = useUpdateFrappeDocument();
   // Fetch policy details using the API
   const {
@@ -60,6 +67,7 @@ const PolicySignOff: React.FC = () => {
     "allow_decline",
     "policy_document",
     "form_json",
+    "response_json"
   ]) as {
     data: PolicyDetailsDocument | undefined;
     isLoading: boolean;
@@ -67,8 +75,10 @@ const PolicySignOff: React.FC = () => {
     error: any;
   };
 
+  const formSubmitted = isFormSubmitted || (!!policyData?.response_json && policyData.response_json !== "{}");
+
   const handleSignOff = () => {
-    if (policyData?.form_json) {
+    if (policyData?.form_json && !formSubmitted) {
       setIsModalOpen(true);
     } else if (isAgreed) {
       updatePolicy({
@@ -89,7 +99,10 @@ const PolicySignOff: React.FC = () => {
           queryClient.invalidateQueries({
             queryKey: ["mandatory-policies-pending"],
           });
-          navigate("/webapp/policies-enforced");
+          // Only navigate back if we haven't been auto-redirected away by the global handler
+          if (window.location.pathname.includes("/webapp/policies-enforced/view/")) {
+            navigate("/webapp/policies-enforced");
+          }
         })
         .catch((error) => {
           toast.error("Failed to acknowledge policy");
@@ -103,12 +116,11 @@ const PolicySignOff: React.FC = () => {
       doctype: "Policy Details",
       name: policyId || "",
       data: {
-        status: "Acknowledged",
         response_json: JSON.stringify(formData),
       },
     })
       .then(() => {
-        toast.success("Policy acknowledged successfully");
+        toast.success("Form Submitted successfully");
         setIsModalOpen(false);
         queryClient.invalidateQueries({
           queryKey: ["documents-infinite", "Policy Details"],
@@ -119,7 +131,8 @@ const PolicySignOff: React.FC = () => {
         queryClient.invalidateQueries({
           queryKey: ["mandatory-policies-pending"],
         });
-        navigate("/webapp/policies-enforced");
+        setIsModalOpen(false);
+        setIsFormSubmitted(true);
       })
       .catch((error) => {
         toast.error("Failed to acknowledge policy");
@@ -146,7 +159,10 @@ const PolicySignOff: React.FC = () => {
         queryClient.invalidateQueries({
           queryKey: ["mandatory-policies-pending"],
         });
-        navigate("/webapp/policies-enforced");
+        // Only navigate back if we haven't been auto-redirected away by the global handler
+        if (window.location.pathname.includes("/webapp/policies-enforced/view/")) {
+          navigate("/webapp/policies-enforced");
+        }
       })
       .catch((error) => {
         toast.error("Failed to decline policy");
@@ -155,7 +171,13 @@ const PolicySignOff: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigate("/webapp/policies-enforced");
+    // Only navigate back if we are on the view page
+    if (window.location.pathname.includes("/webapp/policies-enforced/view/")) {
+      navigate("/webapp/policies-enforced");
+    } else {
+      // Fallback in case we are somehow elsewhere
+      navigate("/webapp/policies-enforced");
+    }
   };
 
   const { isDesktop } = useScreenSize();
@@ -285,10 +307,18 @@ const PolicySignOff: React.FC = () => {
           {policyData.policy_document ? (
             <div className="flex-1 w-full h-full overflow-hidden p-4">
               <div className="bg-white rounded-lg shadow-sm w-full h-full border border-gray-200 overflow-hidden">
-                <SecurePdfViewer
-                  fetchUrl={policyData.policy_document}
-                  className="h-full"
-                />
+                {getFileTypeInfo(policyData.policy_document).category === "pdf" ? (
+                  <SecurePdfViewer
+                    fetchUrl={policyData.policy_document}
+                    className="h-full"
+                  />
+                ) : (
+                  <FilePreview
+                    fileUrl={policyData.policy_document}
+                    fileName={policyData.policy}
+                    className="h-full docx-preview-wrapper-white"
+                  />
+                )}
               </div>
             </div>
           ) : (
@@ -306,95 +336,101 @@ const PolicySignOff: React.FC = () => {
           )}
         </div>
 
-        {/* Footer Actions - Fixed at bottom */}
-        <div className="shrink-0 bg-white border-t border-gray-200 p-4 sm:px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
-          {policyData.status === "Pending" ? (
-            <div className="max-w-3xl mx-auto w-full">
-              {policyData.form_json ? (
+        {/* Footer Actions - Compact & Cleaner */}
+        <div className="shrink-0 sticky bottom-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-[0_-1px_10px_rgba(0,0,0,0.04)]">
+          <div className="max-w-3xl mx-auto w-full px-4 sm:px-5 py-2.5">
+            {policyData.status === "Pending" ? (
+              policyData.form_json && !formSubmitted ? (
                 <button
                   onClick={handleSignOff}
-                  className="w-full bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-primary-700 hover:to-primary-600 active:scale-[0.99]"
                 >
                   <span>Complete Acknowledgment Form</span>
                   <IoChevronBackOutline className="rotate-180" />
                 </button>
               ) : (
-                <div className="space-y-4">
-                  <label className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
-                    <div className="flex items-center h-5 mt-0.5">
-                      <input
-                        type="checkbox"
-                        id="agreement"
-                        checked={isAgreed}
-                        onChange={(e) => setIsAgreed(e.target.checked)}
-                        className="w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 transition duration-150 ease-in-out cursor-pointer"
-                      />
-                    </div>
-                    <div className="ms-2">
+                <div className="space-y-2">
+                  {/* Checkbox */}
+                  <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2 transition-colors hover:bg-gray-50 hover:border-gray-200">
+                    <input
+                      type="checkbox"
+                      checked={isAgreed}
+                      onChange={(e) => setIsAgreed(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <div className="min-w-0 flex flex-wrap gap-x-2">
                       <Typography
                         variant="body"
-                        className="text-gray-700 font-medium"
+                        className="text-sm font-medium text-gray-800 leading-snug"
                       >
                         I have read and understood this policy
                       </Typography>
                       <Typography
                         variant="caption"
-                        className="text-gray-500 mt-1 block"
+                        className="mt-0.5 block text-xs text-gray-500 leading-snug"
                       >
-                        By checking this box, you confirm that you have reviewed
-                        the document above.
+                        ( Confirm that you reviewed the document. )
                       </Typography>
                     </div>
                   </label>
 
-                  <div className={`flex gap-x-4`}>
-                    <button
-                      onClick={handleSignOff}
-                      disabled={!isAgreed}
-                      className={`sm:w-[250px] w-full max-sm:text-sm ml-auto font-medium sm:py-3 sm:px-6 px-2 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${
-                        isAgreed
-                          ? "bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white shadow-md hover:shadow-lg"
-                          : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                      }`}
-                    >
-                      <IoCheckmarkCircleOutline size={20} />
-                      Acknowledge Policy
-                    </button>
+                  {/* Actions */}
+                  <div className="flex  gap-2 flex-row sm:items-center sm:justify-end">
+                    {policyData.form_json && formSubmitted && (
+                      <button
+                        onClick={() => setIsPreviewModalOpen(true)}
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-lg border border-primary-100 bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-100 sm:min-w-[120px]"
+                      >
+                        <IoCheckmarkCircleOutline size={16} />
+                        Preview
+                      </button>
+                    )}
 
                     {policyData.allow_decline === 1 && (
                       <button
                         onClick={handleDecline}
-                        className="sm:w-[250px] max-sm:text-sm w-full bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 font-medium py-3 sm:px-6 px-2 rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:border-red-300 hover:bg-red-50 sm:min-w-[120px]"
                       >
-                        <IoCloseCircleOutline size={20} />
+                        <IoCloseCircleOutline size={16} />
                         Decline
                       </button>
                     )}
+
+                    <button
+                      onClick={handleSignOff}
+                      disabled={!isAgreed}
+                      className={`inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-all sm:min-w-[160px] ${isAgreed
+                        ? "bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-sm hover:from-primary-700 hover:to-primary-600 active:scale-[0.99]"
+                        : "cursor-not-allowed border border-gray-200 bg-gray-100 text-gray-400"
+                        }`}
+                    >
+                      <IoCheckmarkCircleOutline size={16} />
+                      Acknowledge
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center p-2">
-              <div
-                className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-                  policyData.status === "Acknowledged"
-                    ? "bg-success-50 text-success-700 border border-success-100"
-                    : "bg-red-50 text-red-700 border border-red-100"
-                }`}
-              >
-                {policyData.status === "Acknowledged" ? (
-                  <IoCheckmarkCircleOutline size={18} />
-                ) : (
-                  <IoCloseCircleOutline size={18} />
-                )}
-                <Typography variant="bodyMedium" className="font-semibold">
-                  Policy {policyData.status} on{" "}
-                  {new Date(policyData.modified).toLocaleDateString()}
-                </Typography>
+              )
+            ) : (
+              <div className="flex items-center justify-center py-1">
+                <div
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${policyData.status === "Acknowledged"
+                    ? "border-success-100 bg-success-50 text-success-700"
+                    : "border-red-100 bg-red-50 text-red-700"
+                    }`}
+                >
+                  {policyData.status === "Acknowledged" ? (
+                    <IoCheckmarkCircleOutline size={14} />
+                  ) : (
+                    <IoCloseCircleOutline size={14} />
+                  )}
+                  <span>
+                    {policyData.status} on{" "}
+                    {new Date(policyData.modified).toLocaleDateString()}
+                  </span>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Full Screen Modal with FormIO Form */}
@@ -425,7 +461,7 @@ const PolicySignOff: React.FC = () => {
                   </Typography>
                 </div>
 
-                {policyData.form_json ? (
+                {policyData.form_json && !formSubmitted ? (
                   (() => {
                     try {
                       const formConfig = JSON.parse(policyData.form_json);
@@ -509,6 +545,55 @@ const PolicySignOff: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Form Preview Modal */}
+        {isPreviewModalOpen && policyData && (
+          <Modal
+            isOpen={isPreviewModalOpen}
+            onClose={() => setIsPreviewModalOpen(false)}
+            size="md"
+            className="flex flex-col"
+          >
+            {/* Header */}
+            <div className="shrink-0 flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50 z-10 sticky top-0">
+              <Typography variant="h4" className="text-gray-900">
+                Submitted Acknowledgment Form
+              </Typography>
+              <button
+                onClick={() => setIsPreviewModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-200 p-2 rounded-lg transition-colors"
+              >
+                <IoCloseCircleOutline size={24} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+              <div className="mb-6 bg-green-50 border border-green-100 rounded-lg p-4">
+                <Typography variant="body" className="text-green-800">
+                  This is a read-only preview of the acknowledgment form you submitted for
+                  <span className="font-semibold ms-1 text-green-900">"{policyData.policy}"</span>.
+                </Typography>
+              </div>
+
+              {policyData.form_json && (
+                <FormPreview
+                  containerId={`policy-preview-${policyData.name}`}
+                  schema={{
+                    display: "form",
+                    components: JSON.parse(policyData.form_json).components || []
+                  }}
+                  submissionData={
+                    policyData.response_json
+                      ? JSON.parse(policyData.response_json)
+                      : {}
+                  }
+                  readOnly={true}
+                />
+              )}
+            </div>
+          </Modal>
         )}
       </div>
     </div>

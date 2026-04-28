@@ -31,6 +31,7 @@ interface RequestIssueModalProps {
 interface UploadedFile {
   file_url: string;
   file_name: string;
+  file?: File;
 }
 
 const MIN_DESCRIPTION_LENGTH = 15;
@@ -49,7 +50,6 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   const [description, setDescription] = useState("");
   const [attachments, setAttachments] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [formioFiles, setFormioFiles] = useState<File[]>([]);
 
 
@@ -90,6 +90,22 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: subcategories = [] } = useSubcategories(category);
 
+  // Cleanup object URLs on unmount
+  const attachmentsRef = useRef(attachments);
+  useEffect(() => {
+    attachmentsRef.current = attachments;
+  }, [attachments]);
+
+  useEffect(() => {
+    return () => {
+      attachmentsRef.current.forEach((file) => {
+        if (file.file_url.startsWith("blob:")) {
+          URL.revokeObjectURL(file.file_url);
+        }
+      });
+    };
+  }, []);
+
   // Mutation
   const createTicketMutation = useCreateTicket();
   const updateTicketMutation = useUpdateTicket();
@@ -118,6 +134,13 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   const { uploadFiles } = useFileUploader();
   // Reset form
   const resetForm = useCallback(() => {
+    // Revoke object URLs to avoid memory leaks
+    attachments.forEach((file) => {
+      if (file.file_url.startsWith("blob:")) {
+        URL.revokeObjectURL(file.file_url);
+      }
+    });
+
     setTitle("");
     setCategory("");
     setSubcategory("");
@@ -127,7 +150,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     setAttachments([]);
     setIsFormioValid(true);
     setFormioData({});
-  }, []);
+  }, [attachments]);
 
   // Handle close
   const handleClose = useCallback(() => {
@@ -141,30 +164,17 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     setSubcategory(""); // Reset subcategory when category changes
   };
 
-  // Handle file upload using FrappeAPI
-  const handleFileUpload = async (files: FileList | null) => {
+  // Handle file selection
+  const handleFileUpload = (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    try {
-      for (const file of Array.from(files)) {
-        const result = await FrappeAPI.uploadFile(file, file.name, undefined, undefined, undefined, "1");
-        if (result) {
-          setAttachments((prev) => [
-            ...prev,
-            {
-              file_url: result.file_url,
-              file_name: result.file_name || file.name,
-            },
-          ]);
-        }
-      }
-      toast.success("File uploaded successfully");
-    } catch (error) {
-      console.error("Upload error:", error);
-      toast.error("Failed to upload file");
-    } finally {
-      setIsUploading(false);
-    }
+    const newAttachments = Array.from(files).map((file) => ({
+      file_url: URL.createObjectURL(file),
+      file_name: file.name,
+      file: file,
+    }));
+
+    setAttachments((prev) => [...prev, ...newAttachments]);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -245,6 +255,10 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
 
   // Remove attachment
   const removeAttachment = (index: number) => {
+    const fileToRemove = attachments[index];
+    if (fileToRemove?.file_url.startsWith("blob:")) {
+      URL.revokeObjectURL(fileToRemove.file_url);
+    }
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -353,8 +367,52 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
       return;
     }
 
+    // 1. Upload local attachments first
+    let finalAttachments = [...attachments];
+    const localAttachments = attachments.filter((a) => a.file);
+
+    if (localAttachments.length > 0) {
+      loadingContext.show("Uploading attachments...");
+      try {
+        const uploadResults = await Promise.all(
+          localAttachments.map(async (a) => {
+            const res = await FrappeAPI.uploadFile(
+              a.file!,
+              a.file_name,
+              undefined,
+              undefined,
+              undefined,
+              "1"
+            );
+            return { originalUrl: a.file_url, remoteUrl: res.file_url, remoteName: res.file_name || a.file_name };
+          })
+        );
+
+        // Update finalAttachments with remote URLs
+        finalAttachments = finalAttachments.map((a) => {
+          const match = uploadResults.find((r) => r.originalUrl === a.file_url);
+          if (match) {
+            return {
+              file_url: match.remoteUrl,
+              file_name: match.remoteName,
+            };
+          }
+          return a;
+        });
+      } catch (error) {
+        console.error("Upload error:", error);
+        toast.error("Failed to upload attachments");
+        loadingContext.hide();
+        return;
+      }
+      loadingContext.hide();
+    }
+
     // Embed attachments in description as HTML
-    const descriptionWithAttachments = buildDescriptionWithAttachments(description.trim(), attachments);
+    const descriptionWithAttachments = buildDescriptionWithAttachments(
+      description.trim(),
+      finalAttachments
+    );
     const payload = {
       doc: {
         subject: title.trim(),
@@ -615,7 +673,6 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="text-primary-600 hover:text-primary-700 font-medium"
-                  disabled={isUploading}
                 >
                   Choose file
                 </button>
@@ -640,6 +697,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                     <div className="flex-1">
                       <AttachmentCard
                         fileUrl={file.file_url}
+                        fileName={file.file_name}
                         showFileNameWithEye={false}
                       />
                     </div>
@@ -655,9 +713,6 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
               </div>
             )}
 
-            {isUploading && (
-              <div className="mt-2 text-sm text-gray-500">Uploading...</div>
-            )}
           </div>
           {creationFormJsonLoading && category && subcategory ? (
             <FormioFormSkeleton />
@@ -672,7 +727,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                 `}</style>
                 <Form
                   form={formSchema}
-                  ref={formRef as any}
+                  ref={formRef}
                   options={{
                     buttonSettings: {
                       showSubmit: false

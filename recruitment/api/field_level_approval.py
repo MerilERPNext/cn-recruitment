@@ -481,6 +481,82 @@ def update_section_approval_status(onboarding_name, section_name, new_status, co
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 5.5 Update selected fields
+# ─────────────────────────────────────────────────────────────────────────────
+@frappe.whitelist()
+def update_selected_fields_approval_status(onboarding_name, fields, new_status, comment=None):
+    """Sets a specific list of fields to a new status."""
+    if isinstance(fields, str):
+        try:
+            fields = json.loads(fields)
+        except (TypeError, ValueError):
+            frappe.local.response["http_status_code"] = 400
+            return {"status": "error", "message": _("fields must be a valid JSON array.")}
+
+    if not isinstance(fields, list):
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("fields must be a list of fieldnames.")}
+
+    if new_status not in VALID_STATUSES:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Invalid status '{0}'.").format(new_status)}
+        
+    frappe.has_permission("Employee Onboarding", "write", throw=True)
+
+    doc = _get_doc(onboarding_name)
+    if not doc:
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _("Employee Onboarding not found: {0}").format(onboarding_name)}
+
+    reviewer = frappe.session.user
+    now      = frappe.utils.now()
+    updated  = 0
+    updated_fields = set()
+
+    for row in (doc.get("custom_candidate_portal_fields") or []):
+        if row.get("fieldname") not in fields:
+            continue
+
+        row.approval_status = new_status
+        if new_status == "Rejected":
+            row.hr_comment  = comment or ""
+            row.reviewed_by = reviewer
+            row.reviewed_on = now
+        elif new_status == "Approved":
+            row.hr_comment  = ""
+            row.reviewed_by = reviewer
+            row.reviewed_on = now
+        elif new_status == "Pending":
+            row.hr_comment  = ""
+            row.reviewed_by = None
+            row.reviewed_on = None
+            
+        updated += 1
+        updated_fields.add(row.fieldname)
+
+    if not updated:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("None of the specified fields were found.")}
+
+    _save_doc(doc)
+    doc.reload()
+    _sync_overall_status(doc)
+    frappe.db.commit()
+    sync_onboarding_field_rejection_action(doc)
+
+    approval_list = _load_approval_list(doc)
+    selected_data = [r for r in approval_list if r.get("fieldname") in updated_fields]
+    counts        = _compute_counts(approval_list)
+    
+    return {
+        "status":  "success",
+        "message": _("{0} field(s) set to {1}").format(updated, new_status),
+        "counts":  counts,
+        "data":    selected_data,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 6. Bulk update all Filled fields
 # ─────────────────────────────────────────────────────────────────────────────
 @frappe.whitelist()

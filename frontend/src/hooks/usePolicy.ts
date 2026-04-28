@@ -8,7 +8,7 @@ export const usePolicyCountsByCategory = (employeeId?: string) => {
       try {
         console.log("🔍 Fetching Policy Details for category counts...");
 
-        const filters: Record<string, any> = { status: ["!=", ""] };
+        const filters: Record<string, unknown> = { status: ["!=", ""] };
         if (employeeId) {
           filters.employee_id = employeeId;
         }
@@ -27,7 +27,7 @@ export const usePolicyCountsByCategory = (employeeId?: string) => {
 
         const counts: Record<string, number> = {};
         const categoriesSet = new Set<string>();
-
+        /* eslint-disable @typescript-eslint/no-explicit-any */
         result.data.forEach((item: any) => {
           const category = item.policy_category;
 
@@ -67,14 +67,20 @@ export const useMandatoryPoliciesPending = (employeeId?: string) => {
     queryKey: ["mandatory-policies-pending", employeeId],
     queryFn: async () => {
       if (!employeeId) return false;
-      
+
       try {
         const result = await frappeService.getDocumentList("Policy Details", {
           fields: ["name", "status", "policy", "sign_off_mandatory", "due_date"],
-          filters: [["status", "=", "Pending"], ["employee_id", "=", employeeId], ["sign_off_mandatory", "=", 1]],
+          filters: [
+            ["status", "=", "Pending"],
+            ["employee_id", "=", employeeId],
+            ["sign_off_mandatory", "=", 1],
+            ["custom_triggered_from_flow", "!=", 1],
+            ["due_date", ">=", new Date().toLocaleDateString('en-CA')]
+          ],
           limit_page_length: 1
         });
-        
+
         return Array.isArray(result) && result.length > 0;
       } catch (error) {
         console.warn("⚠️ Failed to check mandatory policies pending:", error);

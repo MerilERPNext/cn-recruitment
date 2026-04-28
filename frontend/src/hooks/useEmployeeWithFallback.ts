@@ -28,8 +28,7 @@ export const useEmployeeWithFallback = (): EmployeeState => {
     error: employeeError,
     refetch: refetchEmployee
   } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name || '',
-    fields: ["user_id", "name", "employee_name"]
+    user_id: currentUser?.name || ''
   });
 
   const retry = () => {

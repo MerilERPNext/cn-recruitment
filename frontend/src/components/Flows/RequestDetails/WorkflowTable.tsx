@@ -12,15 +12,15 @@ import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
 import { Check, Clock, User, X } from "lucide-react";
-import { buildFormFromSchemaAndAnswer, extractRolesAndUsers, FormIOForm } from "../../../utils/flowUtils";
+import { extractRolesAndUsers, FormIOForm } from "../../../utils/flowUtils";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import Tooltip from "../../shared/Tooltip";
 import { useQueryClient } from "@tanstack/react-query";
-import { Form } from "@tsed/react-formio";
 import { createPortal } from "react-dom";
 import ReviewForm from "../Separation/components/ReviewForm";
 import AttachmentPreview from "./AttachmentPreview";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import FormPreview from "../../shared/molecules/FormPreview";
 
 interface WorkflowTableProps {
   data: FlowRequestItem;
@@ -182,25 +182,23 @@ const WorkflowCard = ({
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+  const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
 
   const handleShowForm = () => {
     let formData: Record<string, unknown> = {};
 
-    // 1️⃣ Safely parse JSON
     try {
       formData = stage?.form_data ? JSON.parse(stage.form_data) : {};
     } catch (error) {
       console.error("Invalid form_data JSON:", error);
-      return { display: "form", components: [] };
+      return;
     }
-    // 2️⃣ Extract schema
     const schema = (formData as any)?.form?.components ?? [];
-
-    // 3️⃣ Extract submitted values
     const data = (formData as any)?.submission_data ?? {};
 
     if (!schema) return;
-    setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
+    setFormSchema({ display: "form", components: schema });
+    setFormAnswer(data);
     setResponseData(data);
     setShowForm(true);
   }
@@ -372,13 +370,11 @@ const WorkflowCard = ({
     )}
     {formSchema && showForm && createPortal(
       <ReviewForm onClose={() => setShowForm(false)}>
-        <Form
-          form={formSchema}
-          options={{
-            readOnly: true, // This makes the entire form read-only
-            viewAsHtml: false, // Set to true to render as plain HTML instead of form inputs
-          }}
-          submit={false}
+        <FormPreview
+          containerId={`workflow-stage-${idx}-form-preview`}
+          schema={formSchema}
+          submissionData={formAnswer}
+          readOnly={true}
         />
         <AttachmentPreview attachments={responseData?.addAttachment || []} />
       </ReviewForm>,

@@ -30,7 +30,7 @@ def _upsert_minimal_item(
     commit=False,
 ):
     candidate_email = _resolve_candidate_email(candidate_email=candidate_email)
-
+    print(reference_docname,reference_doctype,"\n\n\n\n\n")
     if not reference_doctype or not reference_docname:
         frappe.throw(_("reference_doctype and reference_docname are required."))
 
@@ -60,6 +60,7 @@ def _upsert_minimal_item(
                 "redirect_url": redirect_url or "",
                 "description": description or "",
                 "attachment": attachment or "",
+                "status": "Action Required",
             }
         )
         doc.insert(ignore_permissions=True)
@@ -92,20 +93,56 @@ def _delete_minimal_item(candidate_email, reference_doctype, reference_docname, 
     return names
 
 
+def mark_item_completed(
+    reference_doctype,
+    reference_docname,
+    candidate_id=None,
+    candidate_email=None,
+    commit=False,
+):
+    resolved_email = _resolve_candidate_email(candidate_id=candidate_id, candidate_email=candidate_email)
+
+    names = frappe.get_all(
+        ACTION_DOCTYPE,
+        filters={
+            "candidate_email": resolved_email,
+            "reference_doctype": reference_doctype,
+            "reference_docname": reference_docname,
+        },
+        pluck="name",
+    )
+
+    for name in names:
+        frappe.db.set_value(ACTION_DOCTYPE, name, "status", "Completed")
+
+    if commit and names:
+        frappe.db.commit()
+
+    return names
+
+
 def build_onboarding_redirect(job_applicant_id, onboarding_name=None, section_name=None):
-    params = {"job_applicant_id": job_applicant_id}
+    params = {"appl": job_applicant_id}
     if onboarding_name:
         params["onboarding_name"] = onboarding_name
     if section_name:
         params["section"] = section_name
-    return "/candidate-portal/onboarding?{0}".format(urlencode(params))
+    return "{0}/onboarding?{1}".format(
+        _candidate_portal_base_url(),
+        urlencode(params),
+    )
 
 
-def build_job_offer_redirect(job_offer_name, job_applicant_id=None):
-    params = {"job_offer_name": job_offer_name}
-    if job_applicant_id:
-        params["job_applicant_id"] = job_applicant_id
-    return "/candidate-portal/job-offer?{0}".format(urlencode(params))
+def _candidate_portal_base_url():
+    # Configurable via site_config.json key `candidate_portal_url`; defaults to local dev frontend.
+    return (frappe.conf.get("candidate_portal_url") or "http://localhost:3000").rstrip("/")
+
+
+def build_job_offer_redirect(candidate_email):
+    return "{0}/job_offer?{1}".format(
+        _candidate_portal_base_url(),
+        urlencode({"appl": candidate_email}),
+    )
 
 
 def sync_onboarding_action_item(doc, method=None):
@@ -156,15 +193,15 @@ def sync_job_offer_action_item(doc, method=None):
     is_closed = doc.docstatus == 2 or offer_status in {"accepted", "cancelled", "rejected"}
 
     if is_closed:
-        _delete_minimal_item(candidate_email, "Job Offer", doc.name, commit=False)
+        _delete_minimal_item(candidate_email, doc.doctype, doc.name, commit=False)
         return
 
     _upsert_minimal_item(
         candidate_email=candidate_email,
-        reference_doctype="Job Offer",
+        reference_doctype=doc.doctype,
         reference_docname=doc.name,
-        redirect_url=build_job_offer_redirect(doc.name, candidate_id),
-        description="Job offer released. Open details: {0}".format(build_job_offer_redirect(doc.name, candidate_id)),
+        redirect_url=build_job_offer_redirect(candidate_email),
+        description="Job offer released. Open details: {0}".format(build_job_offer_redirect(candidate_email)),
         attachment="",
         commit=False,
     )

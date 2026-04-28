@@ -9,12 +9,12 @@ import { Typography } from "../../../shared/atoms/Typography";
 import { Card } from "../../../shared/atoms/Card";
 import { createPortal } from "react-dom";
 import ReviewForm from "./ReviewForm";
-import { Form } from "@tsed/react-formio";
 import ViewFormButton from "../../ViewFormButton";
 import StatusTimelineRow from "../../Confirmation/components/StatusTimelineRow";
 import { FlowRequestItem } from "../../../../types/flows";
-import { buildFormFromSchemaAndAnswer, FormIOForm } from "../../../../utils/flowUtils";
+import { FormIOForm } from "../../../../utils/flowUtils";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import FormPreview from "../../../shared/molecules/FormPreview";
 export interface ApprovalStage {
   approval_time: string;
   approval_response_data: string;
@@ -30,14 +30,14 @@ export interface ApprovalStage {
 
 interface ApprovalTrackerProps {
   data: FlowRequestItem;
-  For: "Employee Separation";
+  For: "Employee Separation" | "Employee Termination";
 }
 
 export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
 
   const [showSelfForm, setShowSelfForm] = useState(false);
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
-
+  const [formAnswer, setFormAnswer] = useState<Record<string, any>>({});
 
   const haveInitiatorForm = data?.initiator_forms && data.initiator_forms.length > 0;
 
@@ -53,7 +53,8 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
     const answer = (formData as any)?.submission_data;
 
     if (!schema) return;
-    setFormSchema(buildFormFromSchemaAndAnswer(schema, answer));
+    setFormSchema({ display: "form", components: schema });
+    setFormAnswer(answer || {});
     setShowSelfForm(true);
   }
 
@@ -109,14 +110,14 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
       <Card>
         <div className="w-full  rounded-lg">
           <Typography className="mb-2" variant="subheading">
-            Separation Workflow Timeline
+            {For == "Employee Separation" ? "Separation Workflow Timeline" : "Termination Workflow Timeline"}
           </Typography>
           <div className="flex flex-col pt-1">
             {haveInitiatorForm && (
               <div className="grid w-full lg:hover:bg-primary/20 cursor-pointer text-sm lg:px-6">
                 <StatusTimelineRow
                   timelineData={{
-                    isLast: false,
+                    isLast: data?.approval_stages.length == 0 ? true : false,
                     status: "completed",
                   }}
                 >
@@ -171,13 +172,11 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
             onClose={() => setShowSelfForm(false)}
             title="Initiation Form"
           >
-            <Form
-              form={formSchema}
-              options={{
-                readOnly: true, // This makes the entire form read-only
-                viewAsHtml: false, // Set to true to render as plain HTML instead of form inputs
-              }}
-              submit={false}
+            <FormPreview
+              containerId="separation-initiation-form-preview"
+              schema={formSchema}
+              submissionData={formAnswer}
+              readOnly={true}
             />
           </ReviewForm>,
           document.body,

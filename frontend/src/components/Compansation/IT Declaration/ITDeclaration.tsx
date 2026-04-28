@@ -37,9 +37,7 @@ type PayrollPeriod = {
 };
 
 const ITDeclarationForm = () => {
-  const { data: user } = useCurrentEmployeeAllDetails({
-    fields: ["employee", "company"]
-  });
+  const { data: user } = useCurrentEmployeeAllDetails();
   const mutation = useSubmitITDeclaration();
   const { isDesktop } = useScreenSize();
   const { data: userUiPermission } = useGetUiPermission("Compensation");

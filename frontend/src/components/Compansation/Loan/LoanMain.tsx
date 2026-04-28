@@ -93,9 +93,7 @@ export default function LoansPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { isDesktop } = useScreenSize();
-  const { data: user, isFetching: userLoading } = useCurrentEmployeeAllDetails({
-    fields: ["employee"]
-  });
+  const { data: user, isFetching: userLoading } = useCurrentEmployeeAllDetails();
   const employeeId = user?.employee ?? "";
   const [loanId, setLoanId] = useState<string | null>(null);
   const handleEdit = (docname: string) => {

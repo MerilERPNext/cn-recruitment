@@ -33,6 +33,9 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import Button from "../../shared/atoms/Button";
 import { FilePreviewModal } from "../../shared/molecules/FilePreviewModal";
+import { getFileComponents } from "../../../utils/flowUtils";
+import { FormioPreviewItem, FormioPreviewPortal } from "../../shared/molecules/FormioPreview";
+import { FrappeAPI } from "../../../utils/frappeAPI";
 
 export interface EmployeeOption {
   name: string;
@@ -72,8 +75,20 @@ const LOCAL_KEYS = {
   EXPENSES: "add_expense_expenses",
 };
 
+const EXPENSE_ATTACHMENT_FILE_PATTERN =
+  ".pdf,.doc,.docx,.jpg,.jpeg,.png,.csv,.xls,.xlsx";
+
+const mergeFilePatterns = (...patterns: Array<string | undefined>) => {
+  const extensions = patterns
+    .flatMap((pattern) => (pattern || "").split(","))
+    .map((extension) => extension.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(extensions)).join(",");
+};
+
 const AttachmentPreviewVanilla: React.FC<{ currentAttachments: any[] }> = ({ currentAttachments }) => {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<{ url: string; name?: string } | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -103,24 +118,25 @@ const AttachmentPreviewVanilla: React.FC<{ currentAttachments: any[] }> = ({ cur
         if (actualFile && !(actualFile instanceof Blob || actualFile instanceof File)) {
           actualFile = null;
         }
-        const url = f.url;
+        const url = f?.data?.message?.file_url || f.url || f.file_url;
         if (!actualFile && !url) return;
         let parsedUrl = url;
-        if (url && typeof url === 'string' && !url.startsWith('http') && !url.startsWith('/') && !url.startsWith('blob:')) {
-          parsedUrl = `/files/${url}`;
+        if (url && typeof url === "string" && !url.startsWith("http") && !url.startsWith("/") && !url.startsWith("blob:")) {
+          parsedUrl = url.startsWith("files/") ? `/${url}` : `/files/${url}`;
         }
         const previewUrl = actualFile ? URL.createObjectURL(actualFile) : parsedUrl;
         const isImage = actualFile
           ? actualFile.type?.startsWith("image/")
-          : (f.type?.startsWith("image/") || /\.(jpeg|jpg|gif|png|webp|svg|ico)$/i.test(f.name || ""));
-        const safeName = (f.originalName || f.name || "Attachment").replace(/"/g, '&quot;');
+          : ((f.type || f?.data?.message?.file_type)?.startsWith("image/") || /\.(jpeg|jpg|gif|png|webp|svg|ico)$/i.test(f.originalName || f.name || f?.data?.message?.file_name || ""));
+        const fileName = f.originalName || f.name || f?.data?.message?.file_name || actualFile?.name || "Attachment";
+        const safeName = fileName.replace(/"/g, '&quot;');
 
-        html += '<div class="flex items-center gap-3 rounded-lg p-2 shadow-sm bg-gray-50 hover:bg-white transition-colors w-fit max-w-[300px]" style="border: 1px solid #cbd5e1 !important;">';
+        html += '<div class="flex items-center gap-3 rounded-lg p-2 shadow-sm bg-gray-50 hover:bg-white transition-colors w-fit max-w-[300px] cursor-pointer preview-image-trigger" data-preview-url="' + previewUrl + '" data-preview-name="' + safeName + '" style="border: 1px solid #cbd5e1 !important;">';
 
         if (isImage) {
-          html += `<img src="${previewUrl}" alt="${safeName}" class="w-12 h-12 object-cover rounded shadow-sm cursor-pointer shrink-0 preview-image-trigger" data-preview-url="${previewUrl}" style="border: 1px solid #cbd5e1 !important;" />`;
+          html += `<img src="${previewUrl}" alt="${safeName}" class="w-12 h-12 object-cover rounded shadow-sm shrink-0" style="border: 1px solid #cbd5e1 !important;" />`;
         } else {
-          html += `<div class="w-12 h-12 flex items-center justify-center bg-gray-200 shadow-sm rounded cursor-pointer text-[10px] font-semibold text-gray-600 uppercase shrink-0 preview-image-trigger" data-preview-url="${previewUrl}" style="border: 1px solid #cbd5e1 !important;">Open</div>`;
+          html += `<div class="w-12 h-12 flex items-center justify-center bg-gray-200 shadow-sm rounded text-[10px] font-semibold text-gray-600 uppercase shrink-0" style="border: 1px solid #cbd5e1 !important;">Open</div>`;
         }
         html += `<p class="text-sm text-gray-700 font-medium truncate max-w-[180px]" title="${safeName}">${safeName}</p>`;
         html += '</div>';
@@ -134,7 +150,8 @@ const AttachmentPreviewVanilla: React.FC<{ currentAttachments: any[] }> = ({ cur
       triggers.forEach(el => {
         el.addEventListener('click', () => {
           const uri = el.getAttribute('data-preview-url');
-          if (uri) setPreviewUrl(uri);
+          const name = el.getAttribute('data-preview-name') || undefined;
+          if (uri) setPreviewFile({ url: uri, name });
         });
       });
 
@@ -143,7 +160,13 @@ const AttachmentPreviewVanilla: React.FC<{ currentAttachments: any[] }> = ({ cur
     return () => clearInterval(interval);
   }, [currentAttachments]);
 
-  return previewUrl ? <FilePreviewModal fileUrl={previewUrl} onClose={() => setPreviewUrl(null)} /> : null;
+  return previewFile ? (
+    <FilePreviewModal
+      fileUrl={previewFile.url}
+      fileName={previewFile.name}
+      onClose={() => setPreviewFile(null)}
+    />
+  ) : null;
 };
 
 const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
@@ -196,9 +219,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const [isDeleteShareConfirmOpen, setIsDeleteShareConfirmOpen] = useState(false);
   const [filesMap, setFilesMap] = useState<Record<string, any[]>>({});
   const [currentAttachments, setCurrentAttachments] = useState<any[]>([]);
+  const [customFormPreviewFiles, setCustomFormPreviewFiles] = useState<Record<string, any[]>>({});
   const [pendingExpensesToSubmit, setPendingExpensesToSubmit] = useState<Expense[] | undefined>(undefined);
   const [isFileProcessing, setIsFileProcessing] = useState(false);
   const hydrationRef = useRef(false);
+  const customFormFileCacheRef = useRef<Record<string, File>>({});
 
   const isEditActive = Boolean(initialExpense || editingExpenseId || isEditingFromDetailsPage || draft_document_name);
 
@@ -209,9 +234,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     setVehicleType(null);
   };
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["name", "employee_name", "company"]
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const { data: employeesList, isFetching: isLoadingEmployees } = useEmployees([
     "name",
     "employee_name",
@@ -284,11 +307,26 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             const matchedFile = claimAttachments?.find((c: any) => c.file_name === p.name || c.file_url?.includes(p.name));
             if (matchedFile && matchedFile.file_url) {
               changed = true;
-              return { ...p, url: matchedFile.file_url };
+              return {
+                ...p,
+                name: matchedFile.file_name || p.name,
+                originalName: matchedFile.file_name || p.originalName || p.name,
+                url: matchedFile.file_url,
+                file_url: matchedFile.file_url,
+                storage: "url",
+              };
             }
           }
           return p;
         });
+
+        if (changed) {
+          setDynamicFormData((curr: any) => ({
+            ...curr,
+            attachments: next,
+          }));
+        }
+
         return changed ? next : prev;
       });
     }
@@ -558,10 +596,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             return {
               type: "datetime",
               key: field?.fieldname,
-              label:
-                field?.required === true
-                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
-                  : field?.label,
+              label: field?.label,
               format: "dd-MM-yyyy",
               enableTime: false,
               validate: {
@@ -588,10 +623,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             return {
               type: "datetime",
               key: field?.fieldname,
-              label:
-                field?.required === true
-                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
-                  : field?.label,
+              label: field?.label,
               format: "dd-MM-yyyy HH:mm",
               enableTime: true,
               enableDate: true,
@@ -612,10 +644,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             return {
               type: "number",
               key: field?.fieldname,
-              label:
-                field?.required === true
-                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
-                  : field?.label,
+              label: field?.label,
               validate: {
                 required: field?.required,
                 customMessage: `${field?.label} is required`,
@@ -637,10 +666,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               return {
                 type: "number",
                 key: field?.fieldname,
-                label:
-                  field?.required === true
-                    ? `${unitFieldLabel} <span style="color:red">&nbsp;*</span>`
-                    : unitFieldLabel,
+                label: unitFieldLabel,
                 validate: {
                   required: field?.required,
                   customMessage: `${field?.label} is required`,
@@ -652,10 +678,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             return {
               type: "textfield",
               key: field?.fieldname,
-              label:
-                field?.required === true
-                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
-                  : field?.label,
+              label: field?.label,
               validate: {
                 required: field?.required,
                 customMessage: `${field?.label} is required`,
@@ -667,10 +690,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             return {
               type: "textarea",
               key: field?.fieldname,
-              label:
-                field?.required === true
-                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
-                  : field?.label,
+              label: field?.label,
               validate: {
                 required: field?.required,
                 customMessage: `${field?.label} is required`,
@@ -696,10 +716,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               return {
                 type: "select",
                 key: field?.fieldname,
-                label:
-                  field?.required === true
-                    ? `${field?.label} <span style="color:red">&nbsp;*</span>`
-                    : field?.label,
+                label: field?.label,
                 dataSrc: "url",
                 data: {
                   url,
@@ -728,10 +745,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               return {
                 type: "select",
                 key: field?.fieldname,
-                label:
-                  field?.required === true
-                    ? `${field?.label} <span style="color:red">&nbsp;*</span>`
-                    : field?.label,
+                label: field?.label,
                 dataSrc: "url",
                 data: {
                   url: `/api/method/chatnext_expense_trips.expense_claim.get_applicable_vehicle_types?employee=${employeeName}&claim_type=${claimType}`,
@@ -757,10 +771,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               return {
                 type: "select",
                 key: field?.fieldname,
-                label:
-                  field?.required === true
-                    ? `${field?.label} <span style="color:red">&nbsp;*</span>`
-                    : field?.label,
+                label: field?.label,
                 dataSrc: "url",
                 data: {
                   url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?doctype=${field?.options}`,
@@ -779,10 +790,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             return {
               type: "select",
               key: field?.fieldname,
-              label:
-                field?.required === true
-                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
-                  : field?.label,
+              label: field?.label,
               dataSrc: "url",
               data: {
                 url: `/api/method/chatnext_expense_trips.expense_claim.get_link_options?doctype=${field?.options}`,
@@ -843,6 +851,259 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const isShareAllowed = Boolean(expenseTypeData?.shared_expense_allowed);
   const maxAllowedParticipants = Number(expenseTypeData?.shared_expense_limit);
+  const dynamicFormContainerId = "expense-dynamic-form-container";
+
+  const customComponents = useMemo(() => {
+    if (!expenseTypeData?.custom_form_data) return [];
+
+    try {
+      const parsed =
+        typeof expenseTypeData.custom_form_data === "string"
+          ? JSON.parse(expenseTypeData.custom_form_data)
+          : expenseTypeData.custom_form_data;
+
+      if (!parsed || !Array.isArray(parsed.components)) return [];
+
+      const processCustomComponents = (comps: any[]): any[] => {
+        return comps
+          .filter((c: any) => !(c.type === "button" && (!c.action || c.action === "submit")))
+          .map((c: any) => {
+            const next = { ...c };
+
+            if (next.type === "file") {
+              // Keep parity with RequestIssueModal behavior for custom Form.io file fields.
+              next.multiple = true;
+              // Defer upload so file linking happens against final docname.
+              next.storage = "customfiles";
+              next.filePattern = mergeFilePatterns(
+                next.filePattern,
+                EXPENSE_ATTACHMENT_FILE_PATTERN,
+              );
+            }
+
+            if (Array.isArray(next.components)) {
+              next.components = processCustomComponents(next.components);
+            }
+
+            if (Array.isArray(next.columns)) {
+              next.columns = next.columns.map((col: any) => ({
+                ...col,
+                components: processCustomComponents(col.components || []),
+              }));
+            }
+
+            return next;
+          });
+      };
+
+      return processCustomComponents(parsed.components);
+    } catch (e) {
+      console.error("Failed to parse custom_form_data", e);
+      return [];
+    }
+  }, [expenseTypeData?.custom_form_data]);
+
+  const customFileComponents = useMemo(() => {
+    if (!customComponents.length) return [];
+    return getFileComponents(customComponents as any);
+  }, [customComponents]);
+
+  const customFileKeys = useMemo(
+    () => customFileComponents.map((comp: any) => String(comp.key)),
+    [customFileComponents],
+  );
+
+  const getCustomPreviewFiles = (submissionData: Record<string, any> = {}) => {
+    const next: Record<string, any[]> = {};
+
+    customFileKeys.forEach((key) => {
+      const value = submissionData[key];
+      next[key] = Array.isArray(value) ? [...value] : value ? [value] : [];
+    });
+
+    return next;
+  };
+
+  const getCustomFileCacheKey = (fileObj: any) => {
+    const name = fileObj?.originalName || fileObj?.name || fileObj?.file?.name;
+    const size = fileObj?.size || fileObj?.file?.size;
+    const type = fileObj?.type || fileObj?.file?.type;
+    if (!name || !size || !type) return "";
+    return `${name}-${size}-${type}`;
+  };
+
+  const cacheCustomFormFiles = (submissionData: Record<string, any>) => {
+    customFileKeys.forEach((key) => {
+      const value = submissionData[key];
+      const files = Array.isArray(value) ? value : value ? [value] : [];
+
+      files.forEach((fileObj: any) => {
+        const file = fileObj?.file;
+        if (!(file instanceof File || file instanceof Blob)) return;
+
+        const cacheKey = getCustomFileCacheKey(fileObj);
+        if (cacheKey) {
+          customFormFileCacheRef.current[cacheKey] = file as File;
+        }
+      });
+    });
+  };
+
+  const resolveCustomFormFile = (fileObj: any) => {
+    const file = fileObj?.file;
+    if (file instanceof File || file instanceof Blob) return file as File;
+
+    const cacheKey = getCustomFileCacheKey(fileObj);
+    return cacheKey ? customFormFileCacheRef.current[cacheKey] : undefined;
+  };
+
+  const extractCustomFormDataAndFiles = (submissionData: Record<string, any>) => {
+    const standardKeys = new Set([
+      "attachments",
+      "shareExpenseCheckbox",
+      "saveAndSubmit",
+      "submitButton",
+      "submit",
+      "participants",
+      ...dynamicFields.map((f: any) => f.key),
+    ]);
+
+    const customFormDataObj: Record<string, any> = {};
+    const customFilesToUpload: any[] = [];
+
+    Object.keys(submissionData).forEach((key) => {
+      if (standardKeys.has(key)) return;
+
+      const value = submissionData[key];
+      if (!customFileKeys.includes(key)) {
+        customFormDataObj[key] = value;
+        return;
+      }
+
+      const files = Array.isArray(value) ? value : value ? [value] : [];
+      customFormDataObj[key] = files.map((fileObj: any) => {
+        if (fileObj && !fileObj?.url && !fileObj?.file_url) {
+          customFilesToUpload.push(fileObj);
+          return {
+            name: fileObj?.originalName || fileObj?.name || fileObj?.file?.name || "file",
+            storage: "pending-upload",
+          };
+        }
+        return fileObj;
+      });
+    });
+
+    return { customFormDataObj, customFilesToUpload };
+  };
+
+  const uploadCustomFormFiles = async (
+    customFilesToUpload: any[],
+    doctype?: string,
+    docName?: string,
+  ) => {
+    const uploadResults: any[] = [];
+
+    for (const fileObj of customFilesToUpload) {
+      const file = resolveCustomFormFile(fileObj);
+      if (!file) {
+        console.error("No file object inside custom form fileObj:", fileObj);
+        uploadResults.push(null);
+        continue;
+      }
+
+      try {
+        const result = await FrappeAPI.uploadFile(file, file.name, docName, doctype);
+        uploadResults.push({
+          file_name: result.file_name || result.name || file.name,
+          file_size: result.file_size || file.size,
+          file_type: result.file_type || file.type,
+          file_url: result.file_url,
+        });
+      } catch (err) {
+        toast.error(`File "${file.name}" upload failed.`);
+        console.error(err);
+        uploadResults.push(null);
+      }
+    }
+
+    return uploadResults;
+  };
+
+  const applyUploadedCustomFileUrls = (
+    customFormDataObj: Record<string, any>,
+    uploadResults: any[],
+  ) => {
+    let uploadIndex = 0;
+    const nextCustomFormData = { ...customFormDataObj };
+
+    customFileKeys.forEach((key) => {
+      const value = nextCustomFormData[key];
+      const files = Array.isArray(value) ? value : value ? [value] : [];
+
+      nextCustomFormData[key] = files.map((fileObj: any) => {
+        if (fileObj?.storage !== "pending-upload") return fileObj;
+
+        const uploadedFile = uploadResults[uploadIndex++];
+        if (!uploadedFile) return fileObj;
+
+        return {
+          name: uploadedFile.file_name || fileObj.name,
+          originalName: fileObj.originalName || fileObj.name || uploadedFile.file_name,
+          storage: "url",
+          url: uploadedFile.file_url,
+          file_url: uploadedFile.file_url,
+          size: uploadedFile.file_size || fileObj.size,
+          type: uploadedFile.file_type || fileObj.type,
+        };
+      });
+    });
+
+    return nextCustomFormData;
+  };
+
+  const removeFormioFile = (compKey: string, index: number) => {
+    try {
+      const rootNode = document.getElementById(dynamicFormContainerId) || document;
+      const container = rootNode.querySelector(`.formio-component-${compKey}`);
+      if (container) {
+        const removeButtons = container.querySelectorAll(
+          'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times'
+        );
+        if (removeButtons && removeButtons[index]) {
+          (removeButtons[index] as HTMLElement).click();
+        } else {
+          console.error("Form.io native remove button not found");
+        }
+      }
+
+      // Proactively update local state so the custom preview responds immediately.
+      setCustomFormPreviewFiles((prev) => {
+        const currentFiles = Array.isArray(prev[compKey]) ? prev[compKey] : [];
+        return {
+          ...prev,
+          [compKey]: currentFiles.filter((_: any, i: number) => i !== index),
+        };
+      });
+      setDynamicFormData((prevData: any) => {
+        const currentValue = prevData?.[compKey];
+        const currentFiles = Array.isArray(currentValue)
+          ? currentValue
+          : currentValue
+            ? [currentValue]
+            : [];
+        return {
+          ...prevData,
+          [compKey]: currentFiles.filter((_: any, i: number) => i !== index),
+        };
+      });
+    } catch (err) {
+      console.error("Failed to remove file from formio", err);
+    }
+  };
+
+  useEffect(() => {
+    setCustomFormPreviewFiles(getCustomPreviewFiles(dynamicFormData || {}));
+  }, [customFileKeys, dynamicFormData]);
 
   useEffect(() => {
     if (!expenseTypeData?.fields) {
@@ -1345,54 +1606,14 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               form={{
                 display: "form",
                 components: (() => {
-                  let customComponents: any[] = [];
-                  if (expenseTypeData?.custom_form_data) {
-                    try {
-                      const parsed = typeof expenseTypeData.custom_form_data === 'string'
-                        ? JSON.parse(expenseTypeData.custom_form_data)
-                        : expenseTypeData.custom_form_data;
-                        
-                      if (parsed && Array.isArray(parsed.components)) {
-                        const processCustomComponents = (comps: any[]): any[] => {
-                          return comps.filter((c: any) => {
-                            if (c.type === "button" && (!c.action || c.action === "submit")) {
-                              return false;
-                            }
-                            
-                            if (c.validate?.required && c.label && typeof c.label === 'string' && !c.label.includes('<span style="color:red">')) {
-                              c.label = `${c.label} <span style="color:red">&nbsp;*</span>`;
-                              c.html = true;
-                            }
-
-                            if (c.components) {
-                              c.components = processCustomComponents(c.components);
-                            }
-                            if (c.columns) {
-                              c.columns = c.columns.map((col: any) => ({
-                                ...col,
-                                components: processCustomComponents(col.components || [])
-                              }));
-                            }
-                            return true;
-                          });
-                        };
-                        customComponents = processCustomComponents(parsed.components);
-                      }
-                    } catch (e) {
-                      console.error("Failed to parse custom_form_data", e);
-                    }
-                  }
-
                   const attachmentsField = {
-                    label: isAttachmentMandatory
-                      ? `Attachments <span style="color:red">&nbsp;*</span>`
-                      : "Attachments",
+                    label: "Attachments",
                     key: "attachments",
                     type: "file",
                     input: true,
                     multiple: true,
                     storage: "customfiles",
-                    filePattern: ".pdf,.doc,.docx,.jpg,.jpeg,.png",
+                    filePattern: EXPENSE_ATTACHMENT_FILE_PATTERN,
                     customClass: "mb-4",
                     html: true,
                     validate: {
@@ -1593,29 +1814,20 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   ];
                 })(),
               }}
+              className="show-req-astrik"
+              id={dynamicFormContainerId}
               onSubmit={async (submission: any) => {
                 const combinedData: any = {
                   ...mainFormData,
                   ...submission.data,
                 };
+                let customFilesToUpload: any[] = [];
+                let customFormDataObj: any = {};
 
                 if (expenseTypeData?.custom_form_data) {
-                  const standardKeys = new Set([
-                    "attachments",
-                    "shareExpenseCheckbox",
-                    "saveAndSubmit",
-                    "submitButton",
-                    "submit",
-                    "participants",
-                    ...dynamicFields.map((f: any) => f.key)
-                  ]);
-
-                  const customFormDataObj: any = {};
-                  Object.keys(submission.data).forEach(key => {
-                    if (!standardKeys.has(key)) {
-                      customFormDataObj[key] = submission.data[key];
-                    }
-                  });
+                  const extracted = extractCustomFormDataAndFiles(submission.data || {});
+                  customFormDataObj = extracted.customFormDataObj;
+                  customFilesToUpload = extracted.customFilesToUpload;
 
                   if (Object.keys(customFormDataObj).length > 0) {
                     combinedData.custom_form_data = JSON.stringify(customFormDataObj);
@@ -1755,18 +1967,39 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 }
 
                 const attachments = currentAttachments;
+                const allFilesForFinalUpload = [...attachments];
 
                 if (isAttachmentMandatory && attachments.length === 0) {
                   toast.error("Please attach a receipt to proceed.");
                   return;
                 }
 
+                if (customFilesToUpload.length > 0) {
+                  const linkDoctype = draft_document_name
+                    ? "Draft Expense Claim"
+                    : isEditingFromDetailsPage && expense_claim_name
+                      ? "Expense Claim"
+                      : undefined;
+                  const linkDocName = draft_document_name || (isEditingFromDetailsPage ? expense_claim_name || undefined : undefined);
+                  const customUploadResults = await uploadCustomFormFiles(
+                    customFilesToUpload,
+                    linkDoctype,
+                    linkDocName,
+                  );
+
+                  customFormDataObj = applyUploadedCustomFileUrls(
+                    customFormDataObj,
+                    customUploadResults,
+                  );
+                  combinedData.custom_form_data = JSON.stringify(customFormDataObj);
+                }
+
                 const expenseUid = editingExpenseId ?? Date.now().toString();
 
-                if (attachments.length > 0) {
+                if (allFilesForFinalUpload.length > 0) {
                   setFilesMap((prev) => ({
                     ...prev,
-                    [expenseUid]: attachments,
+                    [expenseUid]: allFilesForFinalUpload,
                   }));
                 }
 
@@ -1802,6 +2035,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
                 const cleanCombinedData = { ...combinedData };
                 delete (cleanCombinedData as any).attach_receipt;
+                Object.keys(customFormDataObj).forEach((key) => {
+                  delete (cleanCombinedData as any)[key];
+                });
 
                 const newExpense: Expense = {
                   uid: expenseUid,
@@ -1837,8 +2073,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     { docName: draft_document_name, payload: updatePayload },
                     {
                       onSuccess: async () => {
-                        if (draft_document_name && attachments.length > 0) {
-                          await uploadFiles(attachments, "Draft Expense Claim", draft_document_name);
+                        if (draft_document_name && allFilesForFinalUpload.length > 0) {
+                          await uploadFiles(allFilesForFinalUpload, "Draft Expense Claim", draft_document_name);
                         }
                         setIsSharePanelOpen(false);
                         setEditingExpenseId(null);
@@ -1895,8 +2131,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 saveDraftExpense(draftPayload, {
                   onSuccess: async (response: any) => {
                     const draftName = response?.name || response?.data?.name;
-                    if (draftName && attachments.length > 0) {
-                      await uploadFiles(attachments, "Draft Expense Claim", draftName);
+                    if (draftName && allFilesForFinalUpload.length > 0) {
+                      await uploadFiles(allFilesForFinalUpload, "Draft Expense Claim", draftName);
                     }
                     setIsSharePanelOpen(false);
                     setEditingExpenseId(null);
@@ -1917,7 +2153,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               onChange={(change: any) => {
                 // Warning: Do not spread change.data! Form.io relies on reference equality 
                 // to prevent infinite onChange validation loops. 
+                cacheCustomFormFiles(change.data || {});
                 setDynamicFormData(change.data);
+                setCustomFormPreviewFiles(getCustomPreviewFiles(change.data || {}));
 
                 // Form.io mutates arrays directly. We must create a new array reference 
                 // to force React to re-render the Attachment Preview component below.
@@ -2021,6 +2259,37 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               }}
 
             />
+            {customFileComponents.length > 0 && (
+              <>
+                <style>{`
+                  ${customFileComponents
+                    .map((comp: any) => `.formio-component-${comp.key} .list-group { display: none !important; }`)
+                    .join("\n")}
+                `}</style>
+                {customFileComponents.map((comp: any) => {
+                  const files = customFormPreviewFiles[comp.key as string] || [];
+                  if (files.length === 0) return null;
+
+                  return (
+                    <FormioPreviewPortal
+                      key={comp.key as string}
+                      compKey={comp.key as string}
+                      formContainerId={dynamicFormContainerId}
+                    >
+                      <div className="space-y-2 mt-2 w-full">
+                        {files.map((fileObj: any, idx: number) => (
+                          <FormioPreviewItem
+                            key={`${String(comp.key)}-${idx}`}
+                            fileObj={fileObj}
+                            onRemove={() => removeFormioFile(comp.key as string, idx)}
+                          />
+                        ))}
+                      </div>
+                    </FormioPreviewPortal>
+                  );
+                })}
+              </>
+            )}
             {/* Attachment Preview rendering moved into formio dynamic schema generation above via robust decoupled vanilla hook */}
             <AttachmentPreviewVanilla currentAttachments={currentAttachments} />
 

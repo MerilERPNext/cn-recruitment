@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import { useScreenSize } from "../../../../hooks/useScreenSize"
-import { FormIOComponent, FormIOSchema } from "../../../../types/formio"
+import { FormIOComponent } from "../../../../types/formio"
 import { createPortal } from "react-dom"
-import { Form } from "@tsed/react-formio"
-import { X } from "lucide-react"
+import ReviewForm from "./ReviewForm"
+import { FormIOForm } from "../../../../utils/flowUtils"
+import FormPreview from "../../../shared/molecules/FormPreview"
 
 interface ApprovalStage {
   stage_name: string | null
@@ -107,20 +108,12 @@ export default function SeparationApprovalStages({ stages }: ApprovalStagesProps
 
 
   const { isDesktop } = useScreenSize();
-  const [formSchema, setFormSchema] = useState<FormIOSchema | null>(null);
+  const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [show, setShow] = useState(false);
 
   const handleShowForm = (schema: FormIOComponent[] | undefined) => {
-    setFormSchema((prev) => {
-      if (!schema)
-        return prev;
-      return ({
-        display: "form",
-        components: [
-          ...schema
-        ]
-      })
-    });
+    if (!schema) return;
+    setFormSchema({ display: "form", components: [...schema] });
     setShow(true);
   }
 
@@ -170,24 +163,17 @@ export default function SeparationApprovalStages({ stages }: ApprovalStagesProps
       ) : <StageCardDesktop key={index} isLast={index + 1 === stages.length} index={index} stage={stage} handleShowForm={handleShowForm} />
       )}
       {formSchema && show &&
-        createPortal(<div className="fixed inset-0 z-50 bg-black/10 flex justify-center items-center">
-          <div className="max-w-[500px] mx-2 w-full rounded-xl bg-white p-6">
-            <div className="flex border-b pb-2 mb-2">
-              <p className="text-xl font-semibold">Review Form</p>
-              <X className="ml-auto text-gray-500 hover:text-gray-800 cursor-pointer rounded-lg bg-gray-100 hover:bg-gray-200 w-8 h-8" onClick={() => setShow(false)} />
-            </div>
-            <div>
-              <Form
-                form={formSchema}
-                options={{
-                  readOnly: true, // This makes the entire form read-only
-                  viewAsHtml: false // Set to true to render as plain HTML instead of form inputs
-                }}
-                submit={false}
-              />
-            </div>
-          </div>
-        </div>, document.body)
+        createPortal(
+          <ReviewForm onClose={() => setShow(false)} title="Review Form">
+            <FormPreview
+              containerId="separation-approval-stages-form-preview"
+              schema={formSchema}
+              submissionData={{}}
+              readOnly={true}
+            />
+          </ReviewForm>,
+          document.body,
+        )
       }
 
     </div>

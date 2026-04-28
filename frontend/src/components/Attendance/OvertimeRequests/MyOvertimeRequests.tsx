@@ -51,9 +51,7 @@ const MyOvertimeRequests = () => {
   const { isDesktop } = useScreenSize();
 
   const navigate = useNavigate();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee"],
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const { targetEmployeeId } = useTargetUser();
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
 

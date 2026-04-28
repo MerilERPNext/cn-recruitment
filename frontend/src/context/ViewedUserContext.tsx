@@ -33,9 +33,7 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["name"]
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const isClearing = useRef(false);
   const navigateTimeoutRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
@@ -145,9 +143,8 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const newParams = new URLSearchParams(searchParams);
       newParams.set(TARGET_USER_PARAM, employeeId);
-      const fullPath = `${
-        targetPath || location.pathname
-      }?${newParams.toString()}`;
+      const fullPath = `${targetPath || location.pathname
+        }?${newParams.toString()}`;
 
       if (openInNewTab) {
         // Only open in new tab - don't modify current tab's state or sessionStorage
@@ -174,6 +171,9 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const clearTargetEmployee = () => {
+    // Only invalidate if we were actually viewing another user
+    const wasImpersonating = targetEmployeeId !== null;
+
     isClearing.current = true;
     setTargetEmployeeIdState(null);
     sessionStorage.removeItem(SESSION_STORAGE_KEY);
@@ -182,18 +182,21 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
     const newParams = new URLSearchParams(searchParams);
     newParams.delete(TARGET_USER_PARAM);
 
-    queryClient.invalidateQueries({
-      predicate: (query) => {
-        // queyKeys for apis which only get data for current Logged in Uer Only
-        const excludedKeys = [
-          ["currentEmployee"],
-          ["currentUser"],
-          ["currentEmployeeIdCard"],
-        ];
+    if (wasImpersonating) {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          // queyKeys for apis which only get data for current Logged in Uer Only
+          const excludedKeys = [
+            ["currentEmployee"],
+            ["currentUser"],
+            ["currentEmployeeIdCard"],
+            ["currentEmployeeAllDetails"],
+          ];
 
-        return !excludedKeys.some((key) => query.queryKey[0] === key[0]);
-      },
-    });
+          return !excludedKeys.some((key) => query.queryKey[0] === key[0]);
+        },
+      });
+    }
 
     navigate(
       {

@@ -1,74 +1,83 @@
 import frappe
-from frappe import _
 
 DOCTYPENAME = "Employee Onboarding"
 
 
-def _success_response(message, data, **meta):
+def _success_response(message, data):
     frappe.local.response["http_status_code"] = 200
-    response = {
-        "success": True,
-        "message": message,
-        "data": data,
-    }
-    if meta:
-        response["meta"] = meta
-    return response
+    return {"success": True, "message": message, "data": data}
 
 
 def _error_response(message, status_code=400):
     frappe.local.response["http_status_code"] = status_code
-    return {
-        "success": False,
-        "message": message,
-        "data": {},
-    }
-
-
-def _resolve_onboarding_name(name=None, email=None):
-    if name:
-        if not frappe.db.exists(DOCTYPENAME, name):
-            return None
-        return name
-
-    if not email:
-        session_user = frappe.session.user
-        if session_user and session_user != "Guest":
-            email = frappe.db.get_value("User", session_user, "email") or session_user
-
-    if not email:
-        return None
-
-    return frappe.db.get_value(
-        DOCTYPENAME,
-        {"job_applicant": email, "docstatus": ("<", 2)},
-        "name",
-        order_by="creation desc",
-    )
+    return {"success": False, "message": message, "data": {}}
 
 
 @frappe.whitelist()
-def get_dashboard(name=None, email=None):
+def get_dashboard(email):
     try:
-        onboarding_name = _resolve_onboarding_name(name=name, email=email)
-
-        if not onboarding_name:
-            return _error_response("No Employee Onboarding record found for this candidate.", 404)
+        if not email:
+            return _error_response("email is required.", 400)
 
         row = frappe.db.get_value(
             DOCTYPENAME,
-            onboarding_name,
-            ["name", "date_of_joining", "designation"],
+            {"job_applicant": email, "docstatus": ("<", 2)},
+            ["name", "date_of_joining", "designation", "department", "custom_work_location"],
             as_dict=True,
+            order_by="creation desc",
         )
 
         if not row:
-            return _error_response("Employee Onboarding record could not be loaded.", 404)
+            return _error_response("No Employee Onboarding record found for this candidate.", 404)
+
+        key_contacts = frappe.get_all(
+            "Employee Key Contact",
+            filters={"parent": row.name, "parenttype": DOCTYPENAME},
+            fields=["name", "employee", "role", "email", "phone_number", "idx"],
+            order_by="idx asc",
+        )
+
+        for contact in key_contacts:
+            contact["employee_name"] = (
+                frappe.db.get_value("Employee", contact["employee"], "employee_name")
+                if contact.get("employee")
+                else None
+            )
+
+        work_location_details = None
+        if row.custom_work_location:
+            work_location_details = frappe.db.get_value(
+                "Branch",
+                row.custom_work_location,
+                [
+                    "name",
+                    "branch",
+                    "custom_location_code",
+                    "custom_address",
+                    "custom_location_area",
+                    "custom_office_area",
+                    "custom_office_city",
+                    "custom_city",
+                    "custom_state",
+                    "custom_country",
+                    "custom_pin_code",
+                    "custom_office_email",
+                    "custom_mobile_no",
+                    "custom_telephone_no",
+                    "custom_google_map_link",
+                    "custom_location_url",
+                ],
+                as_dict=True,
+            )
 
         data = {
             "name": row.name,
             "date_of_joining": row.date_of_joining,
             "designation": row.designation,
+            "department": row.department,
+            "work_location": row.custom_work_location,
+            "work_location_details": work_location_details,
+            "key_contacts": key_contacts,
         }
 
         return _success_response("Onboarding dashboard fetched successfully.", data)

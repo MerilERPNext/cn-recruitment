@@ -310,7 +310,7 @@ export const expenseService = {
   getAllExpenseCategories: async (): Promise<any> => {
     return FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.get_applicable_expense_categories",
-      { category_type: "General" }
+      // { category_type: "General" }
     );
   },
 
@@ -362,6 +362,7 @@ export const expenseService = {
     const response = await FrappeAPI.getDocumentList("Draft Expense Claim", {
       fields: ["*"],
       filters,
+      orderBy: "creation desc",
     });
     return response.data || [];
   },
