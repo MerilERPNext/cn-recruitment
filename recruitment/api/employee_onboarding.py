@@ -293,38 +293,100 @@ def get_employee_onboarding_list(order_by="boarding_status asc", page_length=10,
         frappe.log_error(frappe.get_traceback(), "Employee Onboarding List API Error")
         return _error_response("Unable to fetch Employee Onboarding list right now.", 500)
 
-
 @frappe.whitelist(allow_guest=True)
 def get_applicant_status(email):
-    applicant = frappe.get_value(
+    """
+    Full journey for a candidate: every Job Applicant record under this email,
+    with per-job details and a status timeline (transition dates) for each.
+    """
+    import json as _json
+    from frappe.utils import getdate
+
+    applicants = frappe.db.get_all(
         "Job Applicant",
-        {"email_id": email},
-        ["name", "applicant_name", "status"],
-        as_dict=True,
+        filters={"email_id": email},
+        fields=[
+            "name", "applicant_name", "status",
+            "designation", "custom_company_finalized", "custom_location",
+            "custom_employment_type", "custom_experience_range",
+            "creation",
+        ],
+        order_by="creation asc",
     )
 
-    if not applicant:
+    if not applicants:
         return {"success": False, "message": "Applicant not found"}
 
-    current_status = applicant.status
     all_statuses = _get_applicant_status_options()
     lifecycle = [s for s in all_statuses if s != APPLICANT_STATUS_TERMINAL]
-    active = set()
+    candidate_name = applicants[0].applicant_name
 
-    if current_status == APPLICANT_STATUS_TERMINAL and current_status in all_statuses:
-        active.add(APPLICANT_STATUS_TERMINAL)
-    elif current_status in lifecycle:
-        current_index = lifecycle.index(current_status)
-        active.update(lifecycle[: current_index + 1])
+    def _iso_date(value):
+        return getdate(value).isoformat() if value else None
 
-    flags = [{"status": stage, "flag": stage in active} for stage in all_statuses]
+    applications = []
+    for app in applicants:
+        versions = frappe.db.get_all(
+            "Version",
+            filters={"ref_doctype": "Job Applicant", "docname": app.name},
+            fields=["data", "creation"],
+            order_by="creation asc",
+        )
+
+        status_dates = {}
+        for v in versions:
+            try:
+                payload = _json.loads(v.data or "{}")
+            except Exception:
+                continue
+            for change in payload.get("changed") or []:
+                if not isinstance(change, list) or len(change) < 3:
+                    continue
+                if change[0] != "status":
+                    continue
+                new_val = change[2]
+                if new_val and new_val not in status_dates:
+                    status_dates[new_val] = _iso_date(v.creation)
+
+        creation_date = _iso_date(app.creation)
+
+        active = set()
+        if app.status == APPLICANT_STATUS_TERMINAL and app.status in all_statuses:
+            active.add(APPLICANT_STATUS_TERMINAL)
+        elif app.status in lifecycle:
+            current_index = lifecycle.index(app.status)
+            active.update(lifecycle[: current_index + 1])
+
+        flags = []
+        for stage in all_statuses:
+            date = status_dates.get(stage)
+            if not date and stage in active and stage in lifecycle and lifecycle.index(stage) == 0:
+                date = creation_date
+            flags.append({
+                "status": stage,
+                "flag": stage in active,
+                "date": date,
+            })
+
+        applications.append({
+            "id": app.name,
+            "applied_on": creation_date,
+            "job": {
+                "designation": app.designation,
+                "company": app.custom_company_finalized,
+                "location": app.custom_location,
+                "experience_range": app.custom_experience_range,
+                "employment_type": app.custom_employment_type,
+            },
+            "status": app.status,
+            "flags": flags,
+        })
 
     return {
         "success": True,
         "data": {
-            "id": applicant.name,
-            "name": applicant.applicant_name,
-            "status": current_status,
-            "flags": flags,
+            "email": email,
+            "name": candidate_name,
+            "applications": applications,
         },
     }
