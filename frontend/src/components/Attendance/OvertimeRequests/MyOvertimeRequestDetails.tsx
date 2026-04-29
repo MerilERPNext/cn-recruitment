@@ -24,6 +24,8 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 import RejectionReasonModal from "../../shared/RejectionReasonModal";
 
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
+
 export function MyOvertimeDetails({
   documentName,
   referenceName,
@@ -204,9 +206,11 @@ export function MyOvertimeDetails({
                     : "Employee ID"}
                 </Typography>
 
-                <Typography variant="mobileCardValue">
-                  {data?.reference_document?.employee_name ||
-                    data?.reference_document?.employee}
+                <Typography variant="mobileCardValue" className="hover:text-primary cursor-pointer">
+                  <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+                    {data?.reference_document?.employee_name ||
+                      data?.reference_document?.employee}
+                  </WrapperHoverCard>
                 </Typography>
               </div>
             </div>

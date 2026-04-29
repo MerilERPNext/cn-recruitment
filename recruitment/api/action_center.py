@@ -30,7 +30,6 @@ def _upsert_minimal_item(
     commit=False,
 ):
     candidate_email = _resolve_candidate_email(candidate_email=candidate_email)
-    print(reference_docname,reference_doctype,"\n\n\n\n\n")
     if not reference_doctype or not reference_docname:
         frappe.throw(_("reference_doctype and reference_docname are required."))
 
@@ -127,22 +126,11 @@ def build_onboarding_redirect(job_applicant_id, onboarding_name=None, section_na
         params["onboarding_name"] = onboarding_name
     if section_name:
         params["section"] = section_name
-    return "{0}/onboarding?{1}".format(
-        _candidate_portal_base_url(),
-        urlencode(params),
-    )
-
-
-def _candidate_portal_base_url():
-    # Configurable via site_config.json key `candidate_portal_url`; defaults to local dev frontend.
-    return (frappe.conf.get("candidate_portal_url") or "http://localhost:3000").rstrip("/")
+    return "/onboarding?{0}".format(urlencode(params))
 
 
 def build_job_offer_redirect(candidate_email):
-    return "{0}/job_offer?{1}".format(
-        _candidate_portal_base_url(),
-        urlencode({"appl": candidate_email}),
-    )
+    return "/job_offer?{0}".format(urlencode({"appl": candidate_email}))
 
 
 def sync_onboarding_action_item(doc, method=None):
@@ -171,9 +159,7 @@ def sync_onboarding_action_item(doc, method=None):
         reference_doctype="Employee Onboarding",
         reference_docname=doc.name,
         redirect_url=build_onboarding_redirect(doc.job_applicant, doc.name),
-        description="Onboarding pending. Open portal to complete required details: {0}".format(
-            build_onboarding_redirect(doc.job_applicant, doc.name)
-        ),
+        description="Onboarding pending. Open portal to complete required details.",
         attachment="",
         commit=False,
     )
@@ -201,7 +187,7 @@ def sync_job_offer_action_item(doc, method=None):
         reference_doctype=doc.doctype,
         reference_docname=doc.name,
         redirect_url=build_job_offer_redirect(candidate_email),
-        description="Job offer released. Open details: {0}".format(build_job_offer_redirect(candidate_email)),
+        description="Job offer released. Open details from the action center.",
         attachment="",
         commit=False,
     )

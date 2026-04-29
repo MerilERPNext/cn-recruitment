@@ -5,6 +5,7 @@ import { truncateByChars } from "../../../utils/sanitizeToPlainText";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
 import Tooltip from "../../shared/Tooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 
 interface FlowRequestCardProps {
@@ -98,8 +99,8 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
             <div>  <Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.flow_name}>{truncateByChars(request.flow_name, 40)}</Tooltip></Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.category}>{truncateByChars(request.category, 40)}</Tooltip></Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center">{formatToIndianDate(request.initiated_on)}</Typography></div>
-            <div><Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.initiated_by}>{truncateByChars(request.initiated_by, 15)}</Tooltip></Typography></div>
-            <div><Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.initiated_for}>{truncateByChars(request.initiated_for, 15)}</Tooltip></Typography></div>
+            <div><Typography variant="bodySmall" className="font-medium text-center"><WrapperHoverCard employeeId={request.initiated_by_emp_id}>{truncateByChars(request.initiated_by, 15)}</WrapperHoverCard></Typography></div>
+            <div><Typography variant="bodySmall" className="font-medium text-center"><WrapperHoverCard employeeId={request.initiated_for_emp_id}>{truncateByChars(request.initiated_for, 15)}</WrapperHoverCard></Typography></div>
             <div> <StatusBadge status={request.approval_status} /></div>
             <div><StatusBadge status={request.workflow_status} /></div>
             <div><StatusBadge status={request.overall_flow_status} /></div>

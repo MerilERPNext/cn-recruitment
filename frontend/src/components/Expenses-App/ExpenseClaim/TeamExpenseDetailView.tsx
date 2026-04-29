@@ -26,6 +26,7 @@ import {
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 export function TeamExpenseDetailView({
   documentName,
@@ -418,7 +419,11 @@ export function TeamExpenseDetailView({
                 <td className="px-4 py-3 text-gray-800">
                   {p?.employee ?? "—"}
                 </td>
-                <td className="px-4 py-3 text-gray-800">{name}</td>
+                <td className="px-4 py-3 text-gray-800 hover:text-primary cursor-pointer">
+                  <WrapperHoverCard employeeId={p?.employee}>
+                    {name}
+                  </WrapperHoverCard>
+                </td>
                 <td className="px-4 py-3 text-gray-800">
                   {typeof p?.percentage === "number"
                     ? `${p?.percentage}%`
@@ -552,8 +557,10 @@ export function TeamExpenseDetailView({
                   >
                     {ref?.employee_name ? "Employee Name" : "Employee ID"}
                   </Typography>
-                  <Typography variant="mobileCardValue" className="truncate">
-                    {ref?.employee_name || ref?.employee}
+                  <Typography variant="mobileCardValue" className="truncate hover:text-primary cursor-pointer">
+                    <WrapperHoverCard employeeId={ref?.employee}>
+                      {ref?.employee_name || ref?.employee}
+                    </WrapperHoverCard>
                   </Typography>
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">
@@ -846,29 +853,29 @@ export function TeamExpenseDetailView({
           {actions?.length > 0 &&
             status?.label === "Pending" &&
             data?.todo_status !== "Closed" && !isActed ? (
-              <div className="w-full bg-white border-t shadow-md p-4 z-20">
-                <TeamApprovalActionPill
-                  variant={isDesktop ? "modal" : "buttons"}
-                  actions={actions}
-                  status={data?.status || ref?.approval_status || ""}
-                  recordId={todoId}
-                  loadingAction={
-                    currentAction
-                      ? { id: todoId, action: currentAction }
-                      : null
-                  }
-                  onAction={(action) => handleAction(action)}
-                />
-              </div>
-            ) : (
-              <div className="w-full bg-white border-t shadow-md p-4 z-20">
-                <div className="flex items-center justify-center">
-                  <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
-                    Action Taken
-                  </div>
+            <div className="w-full bg-white border-t shadow-md p-4 z-20">
+              <TeamApprovalActionPill
+                variant={isDesktop ? "modal" : "buttons"}
+                actions={actions}
+                status={data?.status || ref?.approval_status || ""}
+                recordId={todoId}
+                loadingAction={
+                  currentAction
+                    ? { id: todoId, action: currentAction }
+                    : null
+                }
+                onAction={(action) => handleAction(action)}
+              />
+            </div>
+          ) : (
+            <div className="w-full bg-white border-t shadow-md p-4 z-20">
+              <div className="flex items-center justify-center">
+                <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                  Action Taken
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
           {/* Comment modal */}
           {showCommentModal && (

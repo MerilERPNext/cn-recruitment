@@ -20,7 +20,7 @@ import { Typography } from "./shared/atoms/Typography";
 import FormPreview from "./shared/molecules/FormPreview";
 import Modal from "./shared/Modal";
 import { FilePreview } from "./shared/molecules/FilePreview";
-import { getFileTypeInfo } from "../utils/fileUtils";
+import { getFileTypeInfo, getFileName } from "../utils/fileUtils";
 
 interface PolicyDetailsDocument {
   name: string;
@@ -261,7 +261,7 @@ const PolicySignOff: React.FC = () => {
   }
 
   return (
-    <div className="h-[100dvh] w-full overflow-hidden flex flex-col items-center bg-gray-100/50">
+    <div className="h-full w-full overflow-hidden flex flex-col items-center bg-gray-100/50">
       {/* Container to limits width heavily like a document viewer */}
       <div className="w-full h-full lg:max-w-4xl flex flex-col bg-white shadow-2xl lg:h-[calc(100vh-2rem)] lg:my-4 lg:rounded-xl overflow-hidden relative">
         {/* Header - Fixed at top */}
@@ -305,8 +305,8 @@ const PolicySignOff: React.FC = () => {
         {/* Scrollable Content Area - Takes remaining space */}
         <div className="flex-1 min-h-0 bg-gray-50 flex flex-col relative overflow-hidden">
           {policyData.policy_document ? (
-            <div className="flex-1 w-full h-full overflow-hidden p-4">
-              <div className="bg-white rounded-lg shadow-sm w-full h-full border border-gray-200 overflow-hidden">
+            <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden p-4">
+              <div className="flex-1 min-h-0 bg-white rounded-lg shadow-sm w-full border border-gray-200 overflow-hidden">
                 {getFileTypeInfo(policyData.policy_document).category === "pdf" ? (
                   <SecurePdfViewer
                     fetchUrl={policyData.policy_document}
@@ -315,7 +315,7 @@ const PolicySignOff: React.FC = () => {
                 ) : (
                   <FilePreview
                     fileUrl={policyData.policy_document}
-                    fileName={policyData.policy}
+                    fileName={getFileName(policyData.policy_document)}
                     className="h-full docx-preview-wrapper-white"
                   />
                 )}
@@ -330,7 +330,7 @@ const PolicySignOff: React.FC = () => {
                 No Document Available
               </Typography>
               <Typography variant="body" className="text-gray-500">
-                There is no PDF document attached to this policy.
+                There is no document attached to this policy.
               </Typography>
             </div>
           )}

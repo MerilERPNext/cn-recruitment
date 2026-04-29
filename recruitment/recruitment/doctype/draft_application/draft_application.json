@@ -2,14 +2,13 @@
  "actions": [],
  "allow_rename": 0,
  "autoname": "format:DRAFT-APP-{YYYY}-{#####}",
- "creation": "2026-04-27 10:00:00.000000",
+ "creation": "2026-04-29 10:00:00.000000",
  "default_view": "List",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "job_applicant",
   "job_applicant_email",
-  "status",
+  "job_opening",
   "job_title",
   "company",
   "location",
@@ -19,71 +18,53 @@
  ],
  "fields": [
   {
-   "fieldname": "job_applicant",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Job Applicant",
-   "options": "Job Applicant",
-   "reqd": 1,
-   "unique": 1
-  },
-  {
    "fieldname": "job_applicant_email",
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Job Applicant Email",
-   "options": "Email",
-   "reqd": 1
+   "options": "Email"
   },
   {
-   "default": "Pending",
-   "fieldname": "status",
-   "fieldtype": "Select",
+   "fieldname": "job_opening",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Pending\nCompleted\nRejected",
-   "reqd": 1
+   "label": "Job Opening",
+   "options": "Job Opening"
   },
   {
    "fieldname": "job_title",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Job Title",
-   "read_only": 0
+   "label": "Job Title"
   },
   {
    "fieldname": "company",
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Company",
-   "read_only": 0
+   "label": "Company"
   },
   {
    "fieldname": "location",
    "fieldtype": "Data",
-   "label": "Location",
-   "read_only": 0
+   "label": "Location"
   },
   {
    "fieldname": "experience",
    "fieldtype": "Data",
-   "label": "Experience",
-   "read_only": 0
+   "label": "Experience"
   },
   {
    "fieldname": "employment_type",
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Employment Type",
-   "read_only": 0
+   "label": "Employment Type"
   },
   {
-   "description": "JSON snapshot of the linked Job Applicant document.",
+   "description": "JSON payload of the form submitted by the UI.",
    "fieldname": "form_data",
    "fieldtype": "JSON",
    "label": "Form Data"
@@ -92,7 +73,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-04-27 10:00:00.000000",
+ "modified": "2026-04-29 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Draft Application",

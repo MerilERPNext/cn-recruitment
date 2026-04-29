@@ -2,14 +2,14 @@ import { useState, useMemo } from "react";
 import { useGetAllEmployees } from "../../hooks/useEmployee";
 import { format } from "date-fns";
 import Badge from "../shared/Badge";
-import Tooltip from "../shared/Tooltip";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 const Events = () => {
   const { data = [], isLoading } = useGetAllEmployees(
-    ["date_of_birth", "employee_name", "image", "date_of_joining"],
+    ["name", "date_of_birth", "employee_name", "image", "date_of_joining"],
     19999,
     [["status", "=", "Active"]],
   );
@@ -160,15 +160,15 @@ const Events = () => {
 
                       {/* Text */}
                       <div className="flex leading-tight">
-                        <Tooltip content={employee.employee_name}>
+                        <WrapperHoverCard employeeId={employee.name} placement="center-left">
                           <Typography
                             variant="bodySmall"
-                            className="font-medium line-clamp-1"
+                            className="font-medium  cursor-pointer hover:text-primary"
                           >
                             {employee.employee_name.slice(0, 16)}
                             {employee.employee_name.length > 16 ? "..." : ""}
                           </Typography>
-                        </Tooltip>
+                        </WrapperHoverCard>
                       </div>
                     </div>
 

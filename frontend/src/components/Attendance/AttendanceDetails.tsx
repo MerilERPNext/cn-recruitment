@@ -24,6 +24,7 @@ import {
 } from "../shared/DetailViewErrorLoadingWrapper";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 import RejectionReasonModal from "../shared/RejectionReasonModal";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 export function AttendanceDetailView({
   data: propData,
@@ -259,15 +260,19 @@ export function AttendanceDetailView({
           {/* Header Info */}
           <div className="flex justify-between items-start">
             <div className="flex flex-col gap-1">
+
               <Typography variant="mobileCardLabel">
                 {data?.reference_document?.employee_name
                   ? "Employee Name"
                   : "Employee ID"}
               </Typography>
 
-              <Typography variant="mobileCardValue">
-                {data?.reference_document?.employee_name ||
-                  data?.reference_document?.employee}
+
+              <Typography variant="mobileCardValue" className="hover:text-primary cursor-pointer">
+                <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+                  {data?.reference_document?.employee_name ||
+                    data?.reference_document?.employee}
+                </WrapperHoverCard>
               </Typography>
             </div>
 
@@ -457,6 +462,6 @@ export function AttendanceDetailView({
         onCancel={handleCancelComment}
         onSave={handleSaveComment}
       />
-    </div>
+    </div >
   );
 }

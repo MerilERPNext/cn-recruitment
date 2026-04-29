@@ -18,6 +18,7 @@ import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 import ApprovalStagesProgress from "./ApprovalStagesProgress";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 import { useGetExpenseAttachments } from "../../../hooks/useExpense";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 interface ExpenseClaimModalProps {
   id: string | null;
@@ -230,10 +231,16 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                 key={p?.name}
                 className="bg-white hover:bg-gray-50 transition-colors duration-150"
               >
-                <td className="px-4 py-3 text-gray-800">
-                  {p?.employee ?? "—"}
+                <td className="px-4 py-3 text-gray-800 hover:text-primary cursor-pointer">
+                  <WrapperHoverCard employeeId={p?.employee}>
+                    {p?.employee ?? "—"}
+                  </WrapperHoverCard>
                 </td>
-                <td className="px-4 py-3 text-gray-800">{name}</td>
+                <td className="px-4 py-3 text-gray-800 cursor-pointer hover:text-primary">
+                  <WrapperHoverCard employeeId={p?.employee}>
+                    {name}
+                  </WrapperHoverCard>
+                </td>
                 <td className="px-4 py-3 text-gray-800">
                   {typeof p?.percentage === "number"
                     ? `${p?.percentage}%`
@@ -271,15 +278,19 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                 <Typography variant="mobileCardLabel" className="block">
                   Employee ID
                 </Typography>
-                <Typography variant="mobileCardValue">
-                  {p?.employee ?? "—"}
+                <Typography variant="mobileCardValue" className="hover:text-primary cursor-pointer">
+                  <WrapperHoverCard employeeId={p?.employee}>
+                    {p?.employee ?? "—"}
+                  </WrapperHoverCard>
                 </Typography>
               </div>
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel" className="block">
                   Employee Name
                 </Typography>
-                <Typography variant="mobileCardValue">{name}</Typography>
+                <Typography variant="mobileCardValue" className="hover:text-primary cursor-pointer">
+                  <WrapperHoverCard employeeId={p?.employee}>{name}</WrapperHoverCard>
+                </Typography>
               </div>
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel" className="block">
