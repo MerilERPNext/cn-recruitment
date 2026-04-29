@@ -189,9 +189,24 @@ const DataListView = <T extends BaseItem>({
   const queryParam = new URLSearchParams(search);
   const initialSearchQuery = enableUrlParams ? queryParam.get("q") || "" : "";
 
+  const filtersString = enableUrlParams ? queryParam.get("filters") : null;
+  const parsedUrlFilters = useMemo(() => {
+    if (!enableUrlParams || !filtersString) return {};
+    try {
+      return JSON.parse(decodeURIComponent(filtersString));
+    } catch (e) {
+      console.error("Invalid filters JSON", e);
+      return {};
+    }
+  }, [filtersString, enableUrlParams]);
+
+  const initialFilters = useMemo(() => {
+    return { ...(defaultFilters || {}), ...parsedUrlFilters };
+  }, [JSON.stringify(defaultFilters), parsedUrlFilters]);
+
   const [searchTerm, setSearchTerm] = useState(initialSearchQuery);
-  const [filters, setFilters] = useState(defaultFilters);
-  const [debouncedFilters, setDebouncedFilters] = useState(defaultFilters);
+  const [filters, setFilters] = useState(initialFilters);
+  const [debouncedFilters, setDebouncedFilters] = useState(initialFilters);
   const [showFilters, setShowFilters] = useState(false);
   const [pendingFilters, setPendingFilters] = useState<Record<string, any>>({});
   const [isFilterApplied, setIsFilterApplied] = useState(false);
@@ -202,10 +217,14 @@ const DataListView = <T extends BaseItem>({
   const [loadMorePage, setLoadMorePage] = useState(1);
   const queryClient = useQueryClient();
 
-  const filtersString = enableUrlParams ? queryParam.get("filters") : null;
-  const [queryParamsFilters, setQueryParamsFilters] = useState({});
   const { isDesktop } = useScreenSize();
   const maxVisiblePages = isDesktop ? 5 : 2;
+
+  // Memoize stringified filters to avoid complex dependency
+  const currentFiltersString = useMemo(
+    () => JSON.stringify(debouncedFilters),
+    [debouncedFilters],
+  );
 
   const hasActiveFilters = useMemo(() => {
     const filterKeys = Object.keys(filters);
@@ -233,7 +252,7 @@ const DataListView = <T extends BaseItem>({
     if (onFiltersChange) {
       onFiltersChange(debouncedFilters);
     }
-  }, [debouncedFilters, onFiltersChange]);
+  }, [currentFiltersString, onFiltersChange]);
 
   useEffect(() => {
     if (showFilters && !isFilterApplied) {
@@ -242,30 +261,22 @@ const DataListView = <T extends BaseItem>({
   }, [showFilters]);
 
   useEffect(() => {
-    if (!enableUrlParams || !filtersString) {
-      setQueryParamsFilters({});
-      return;
-    }
+    if (!enableUrlParams) return;
 
-    try {
-      const parsed = JSON.parse(decodeURIComponent(filtersString));
-      setQueryParamsFilters(parsed);
-    } catch (e) {
-      console.error("Invalid filters JSON", e);
-      setQueryParamsFilters({});
-    }
-  }, [filtersString, enableUrlParams]);
+    const merged = { ...(defaultFilters || {}), ...parsedUrlFilters };
+    const mergedString = JSON.stringify(merged);
 
-  // Memoize stringified defaultFilters to avoid complex dependency
-  const defaultFiltersString = useMemo(
-    () => JSON.stringify(defaultFilters),
-    [defaultFilters],
-  );
+    setFilters((prev: Record<string, any>) => {
+      if (JSON.stringify(prev) !== mergedString) return merged;
+      return prev;
+    });
 
-  useEffect(() => {
-    setFilters(defaultFilters || {});
-    setDebouncedFilters(defaultFilters || {});
-  }, [defaultFiltersString]);
+    setDebouncedFilters((prev: Record<string, any>) => {
+      if (JSON.stringify(prev) !== mergedString) return merged;
+      return prev;
+    });
+  }, [parsedUrlFilters, JSON.stringify(defaultFilters), enableUrlParams]);
+
 
   // Debounce search term
   useEffect(() => {
@@ -278,16 +289,14 @@ const DataListView = <T extends BaseItem>({
   // Debounce filters
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedFilters(filters);
+      setDebouncedFilters((prev: Record<string, any>) => {
+        if (JSON.stringify(prev) === JSON.stringify(filters)) return prev;
+        return filters;
+      });
     }, 500);
     return () => clearTimeout(timer);
   }, [filters]);
 
-  // Memoize stringified filters to avoid complex dependency
-  const currentFiltersString = useMemo(
-    () => JSON.stringify(debouncedFilters),
-    [debouncedFilters],
-  );
 
   const cardTableSort = useCardTableSort();
 
@@ -313,7 +322,7 @@ const DataListView = <T extends BaseItem>({
 
   // Common query parameters
   const queryParams = useMemo(() => {
-    let processedFilters: Record<string, any> = { ...debouncedFilters, ...queryParamsFilters };
+    let processedFilters: Record<string, any> = { ...debouncedFilters };
 
     // Process filter values based on filterFields configuration
     filterFields.forEach((field) => {
@@ -390,7 +399,6 @@ const DataListView = <T extends BaseItem>({
     pageSize,
     debouncedSearchTerm,
     debouncedFilters,
-    queryParamsFilters,
     searchFields,
     orderBy,
     filterFields,
@@ -403,7 +411,7 @@ const DataListView = <T extends BaseItem>({
 
     let additionalParams: Record<string, any> = {};
 
-    // Process filter fields to find matching customAPIParams
+    // Process filter fields to find matching customAPIParams and auto-pass values
     filterFields.forEach((field) => {
       const currentValue = debouncedFilters?.[field.fieldname];
 
@@ -413,7 +421,7 @@ const DataListView = <T extends BaseItem>({
           additionalParams = { ...additionalParams, ...field.emptyValueConfig.customAPIParams };
         }
       } else {
-        // Check if the current value matches a FilterOption with customAPIParams
+        // Check if the current value matches a FilterOption
         const matchingOption = field.options?.find((opt) => {
           if (typeof opt === "string") {
             return opt === currentValue;
@@ -423,8 +431,18 @@ const DataListView = <T extends BaseItem>({
           return matchKey === currentValue;
         });
 
-        if (matchingOption && typeof matchingOption !== "string" && matchingOption.customAPIParams) {
-          additionalParams = { ...additionalParams, ...matchingOption.customAPIParams };
+        if (matchingOption && typeof matchingOption !== "string") {
+          // Add customAPIParams from the option if they exist
+          if (matchingOption.customAPIParams) {
+            additionalParams = { ...additionalParams, ...matchingOption.customAPIParams };
+          }
+          // Also pass the filter value itself to customAPI if not excluded
+          if (!matchingOption.excludeFieldFromFilters) {
+            additionalParams[field.fieldname] = matchingOption.value;
+          }
+        } else {
+          // If no matching option or it's just a string, pass the value directly
+          additionalParams[field.fieldname] = currentValue;
         }
       }
     });
@@ -656,7 +674,7 @@ const DataListView = <T extends BaseItem>({
         // For first page, always set the data
         setAccumulatedData(newData);
       } else {
-        setAccumulatedData((prev) => {
+        setAccumulatedData((prev: T[]) => {
           // Check if this data is already included to prevent duplicates
           const existingIds = new Set(
             prev.map((item) => item.name || item.id || JSON.stringify(item)),
@@ -753,7 +771,6 @@ const DataListView = <T extends BaseItem>({
     setIsFilterApplied(false);
     setSearchTerm("");
     setDebouncedSearchTerm("");
-    setQueryParamsFilters({});
     if (loadMorePagination) {
       setLoadMorePage(1);
       setAccumulatedData([]);
@@ -793,7 +810,7 @@ const DataListView = <T extends BaseItem>({
     } else if (loadMorePagination) {
       const hasMoreData = accumulatedData.length < totalCount;
       if (hasMoreData && !loadMoreQueryResult.isFetching) {
-        setLoadMorePage((prev) => prev + 1);
+        setLoadMorePage((prev: number) => prev + 1);
       }
     }
   };

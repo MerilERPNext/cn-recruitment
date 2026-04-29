@@ -97,7 +97,9 @@ const ApprovalList = ({
   onDataLoad,
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
+  const [activeFilters, setActiveFilters] = useState<Record<string, any>>(() =>
+    normalizeFilters(defaultFilters || {}),
+  );
 
   const handleFiltersChange = useCallback((filters: Record<string, any>) => {
     const normalized = normalizeFilters(filters);
