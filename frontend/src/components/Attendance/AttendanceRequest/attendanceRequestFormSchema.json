@@ -10,7 +10,7 @@
       "label": "Attendance Request",
       "title": "Attendance Request",
       "hideLabel": true,
-      "customClass": "bg-white rounded-lg",
+      "customClass": "bg-white rounded-lg show-req-astrik  ",
       "components": [
         {
           "type": "hidden",
@@ -97,7 +97,7 @@
           "applyMaskOn": "change"
         },
         {
-          "label": "Request Type <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Request Type",
           "errorLabel": "Request Type",
           "key": "request_type",
           "type": "select",
@@ -183,7 +183,7 @@
           "redrawOn": "from_date"
         },
         {
-          "label": "Check-In Time <span style='color:red'>*</span>",
+          "label": "Check-In Time",
           "key": "checkin_time",
           "type": "time",
           "input": true,
@@ -203,7 +203,7 @@
           "customClass": "mb-4"
         },
         {
-          "label": "Check-Out Time <span style='color:red'>*</span>",
+          "label": "Check-Out Time",
           "errorLabel": "To Time",
           "key": "checkout_time",
           "type": "time",
@@ -260,7 +260,7 @@
           "lazyLoad": false
         },
         {
-          "label": "Location <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Location",
           "errorLabel": "Location",
           "key": "custom_location",
           "type": "select",

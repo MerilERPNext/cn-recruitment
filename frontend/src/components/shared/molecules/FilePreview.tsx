@@ -493,8 +493,14 @@ export function UnknownPreview({ fileUrl, fileName }: { fileUrl: string; fileNam
 }
 
 export function FilePreview({ fileUrl, fileName: customFileName, className = "", zoom }: FilePreviewProps) {
-  const fileName = customFileName || fileUrl.split(/[?#]/)[0].split("/").pop() || "File";
-  const { category } = getFileTypeInfo(fileName);
+  const urlFileName = fileUrl.split(/[?#]/)[0].split("/").pop() || "";
+  const fileName = customFileName || urlFileName || "File";
+  const { category: detectedCategory } = getFileTypeInfo(fileName);
+
+  // If customFileName didn't have an extension, fallback to detecting from the URL
+  const category = (detectedCategory === "unknown" && urlFileName)
+    ? getFileTypeInfo(urlFileName).category
+    : detectedCategory;
 
   return (
     <div className={`w-full h-full flex flex-col bg-white overflow-hidden ${className}`}>

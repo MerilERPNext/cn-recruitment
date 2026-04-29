@@ -4,6 +4,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useFrappeDocument } from "../../hooks/useFrappeQuery";
 import HeaderBar from "../HeaderBar";
 import SecurePdfViewer from "../SecurePdfViewer_CookieAuth";
+import { FilePreview } from "../shared/molecules/FilePreview";
+import { getFileTypeInfo } from "../../utils/fileUtils";
 
 const ViewPolicy: React.FC = () => {
   const navigate = useNavigate();
@@ -16,11 +18,11 @@ const ViewPolicy: React.FC = () => {
   );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfUrl = (data as any)?.policy_document;
+  const documentUrl = (data as any)?.policy_document;
 
-  const DownloadPdf: React.FC = () => (
+  const DownloadDocument: React.FC = () => (
     <a
-      href={pdfUrl}
+      href={documentUrl}
       download
       className="flex items-center gap-1.5 text-primary hover:text-primary-700 transition-colors font-brand text-sm font-medium"
     >
@@ -43,7 +45,7 @@ const ViewPolicy: React.FC = () => {
       </div>
     );
 
-  if (error || !pdfUrl)
+  if (error || !documentUrl)
     return (
       <div className="min-h-screen bg-surface flex flex-col">
         <HeaderBar title="View Policy" onBack={() => navigate(-1)} />
@@ -65,7 +67,7 @@ const ViewPolicy: React.FC = () => {
               </svg>
             </div>
             <p className="font-brand text-error text-sm">
-              No PDF document found for "{policyName}".
+              No document found for "{policyName}".
             </p>
           </div>
         </div>
@@ -73,15 +75,19 @@ const ViewPolicy: React.FC = () => {
     );
 
   return (
-    <div className="h-screen bg-surface flex flex-col">
+    <div className="h-full bg-surface flex flex-col overflow-hidden">
       <HeaderBar
         title="View Policy"
         onBack={() => navigate(-1)}
-        rightSlot={<DownloadPdf />}
+        rightSlot={<DownloadDocument />}
       />
-      <main className="flex-1 overflow-hidden px-1 md:px-2 pb-1">
-        <div className="h-full border border-primary-100 rounded-xl bg-white overflow-hidden shadow-sm">
-          <SecurePdfViewer fetchUrl={pdfUrl} className="w-full h-full" />
+      <main className="flex-1 min-h-0 flex flex-col px-1 md:px-2 pb-2 overflow-hidden">
+        <div className="flex-1 min-h-0 border border-primary-100 rounded-xl bg-white overflow-hidden shadow-sm">
+          {getFileTypeInfo(documentUrl).category === "pdf" ? (
+            <SecurePdfViewer fetchUrl={documentUrl} className="w-full h-full" />
+          ) : (
+            <FilePreview fileUrl={documentUrl} className="w-full h-full" />
+          )}
         </div>
       </main>
     </div>
