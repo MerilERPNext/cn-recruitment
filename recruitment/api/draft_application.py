@@ -22,9 +22,8 @@ def _serialize(doc):
         form_data = {}
     return {
         "name": doc.name,
-        "job_applicant": doc.job_applicant,
         "job_applicant_email": doc.job_applicant_email,
-        "status": doc.status,
+        "job_opening": doc.job_opening,
         "job_title": doc.job_title,
         "company": doc.company,
         "location": doc.location,
@@ -36,46 +35,65 @@ def _serialize(doc):
     }
 
 
-def _fetch_applicant_context(job_applicant_doc):
+def _coerce_form_data(form_data):
+    if form_data is None or form_data == "":
+        return "{}"
+    if isinstance(form_data, str):
+        try:
+            json.loads(form_data)
+        except (TypeError, ValueError):
+            raise ValueError("form_data must be valid JSON.")
+        return form_data
+    if isinstance(form_data, (dict, list)):
+        return json.dumps(form_data, default=str)
+    raise ValueError("form_data must be a JSON object/array or JSON string.")
+
+
+def _fetch_opening_context(opening_name):
+    """Read the 5 display fields directly from the Job Opening doc."""
+    opening = frappe.db.get_value(
+        "Job Opening",
+        opening_name,
+        ["designation", "company", "custom_location", "custom_experience_range", "custom_employee_type"],
+        as_dict=True,
+    ) or {}
     return {
-        "job_title": job_applicant_doc.get("designation"),
-        "company": job_applicant_doc.get("custom_company_finalized"),
-        "location": job_applicant_doc.get("custom_location"),
-        "employment_type": job_applicant_doc.get("custom_employment_type"),
-        "experience": job_applicant_doc.get("custom_experience_range"),
+        "job_title": opening.get("designation"),
+        "company": opening.get("company"),
+        "location": opening.get("custom_location"),
+        "experience": opening.get("custom_experience_range"),
+        "employment_type": opening.get("custom_employee_type"),
     }
 
 
-@frappe.whitelist(allow_guest=True)
-def save_draft(job_applicant, job_applicant_email):
-    if not job_applicant:
-        return _err("job_applicant is required.", 400)
-    if not job_applicant_email:
-        return _err("job_applicant_email is required.", 400)
-
-    applicant_name = job_applicant.strip()
-    email = job_applicant_email.strip()
-
-    if not frappe.db.exists("Job Applicant", applicant_name):
-        return _err(f"No Job Applicant found with name '{applicant_name}'.", 404)
-
-    job_applicant_doc = frappe.get_doc("Job Applicant", applicant_name)
-
-    if job_applicant_doc.email_id != email:
-        return _err(
-            f"Email '{email}' does not match Job Applicant '{applicant_name}'.", 400
-        )
-
-    snapshot = json.dumps(
-        job_applicant_doc.as_dict(convert_dates_to_str=True), default=str
+def _find_draft(email, opening):
+    return frappe.db.get_value(
+        DOCTYPENAME,
+        {"job_applicant_email": email, "job_opening": opening},
+        "name",
     )
 
-    docstatus = int(job_applicant_doc.docstatus or 0)
-    derived_status = "Pending" if docstatus == 0 else "Completed" if docstatus == 1 else None
 
-    applicant_context = _fetch_applicant_context(job_applicant_doc)
+@frappe.whitelist(allow_guest=True)
+def save_draft(job_applicant_email, job_opening, form_data=None):
+    if not job_applicant_email:
+        return _err("job_applicant_email is required.", 400)
+    if not job_opening:
+        return _err("job_opening is required.", 400)
 
-    existing = frappe.db.get_value(DOCTYPENAME, {"job_applicant": applicant_name}, "name")
+    email = job_applicant_email.strip()
+    opening = job_opening.strip()
+
+    if not frappe.db.exists("Job Opening", opening):
+        return _err(f"No Job Opening found with name '{opening}'.", 404)
+
+    try:
+        snapshot = _coerce_form_data(form_data)
+    except ValueError as e:
+        return _err(str(e), 400)
+
+    display = _fetch_opening_context(opening)
+    existing = _find_draft(email, opening)
 
     try:
         if existing:
@@ -83,23 +101,20 @@ def save_draft(job_applicant, job_applicant_email):
             created = False
         else:
             doc = frappe.new_doc(DOCTYPENAME)
-            doc.job_applicant = applicant_name
+            doc.job_applicant_email = email
+            doc.job_opening = opening
             created = True
 
-        doc.job_applicant_email = email
         doc.form_data = snapshot
-        doc.job_title = applicant_context["job_title"]
-        doc.company = applicant_context["company"]
-        doc.location = applicant_context["location"]
-        doc.experience = applicant_context["experience"]
-        doc.employment_type = applicant_context["employment_type"]
+        doc.job_title = display["job_title"]
+        doc.company = display["company"]
+        doc.location = display["location"]
+        doc.experience = display["experience"]
+        doc.employment_type = display["employment_type"]
 
         if created:
-            doc.status = derived_status or "Pending"
             doc.insert(ignore_permissions=True)
         else:
-            if derived_status and doc.status != "Rejected":
-                doc.status = derived_status
             doc.save(ignore_permissions=True)
 
         frappe.db.commit()
@@ -116,73 +131,120 @@ def save_draft(job_applicant, job_applicant_email):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_draft(job_applicant, job_applicant_email):
-    if not job_applicant:
-        return _err("job_applicant is required.", 400)
+def get_draft(job_applicant_email, job_opening):
     if not job_applicant_email:
         return _err("job_applicant_email is required.", 400)
+    if not job_opening:
+        return _err("job_opening is required.", 400)
 
-    applicant_name = job_applicant.strip()
     email = job_applicant_email.strip()
+    opening = job_opening.strip()
 
-    name = frappe.db.get_value(
-        DOCTYPENAME,
-        {"job_applicant": applicant_name, "job_applicant_email": email},
-        "name",
-    )
+    name = _find_draft(email, opening)
     if not name:
         return _err(
-            f"No Draft Application exists for Job Applicant '{applicant_name}' with email '{email}'.",
-            404,
+            f"No Draft Application exists for '{email}' and Job Opening '{opening}'.", 404
         )
 
-    doc = frappe.get_doc(DOCTYPENAME, name)
-    return _ok("Draft Application fetched.", _serialize(doc))
+    return _ok("Draft Application fetched.", _serialize(frappe.get_doc(DOCTYPENAME, name)))
 
 
-@frappe.whitelist()
-def delete_applicant(job_applicant, job_applicant_email):
-    if not job_applicant:
-        return _err("job_applicant is required.", 400)
+@frappe.whitelist(allow_guest=True)
+def submit_draft(job_applicant_email, job_opening):
     if not job_applicant_email:
         return _err("job_applicant_email is required.", 400)
+    if not job_opening:
+        return _err("job_opening is required.", 400)
 
-    applicant_name = job_applicant.strip()
     email = job_applicant_email.strip()
+    opening = job_opening.strip()
 
-    applicant_data = frappe.db.get_value(
-        "Job Applicant", applicant_name, ["name", "email_id"], as_dict=True
-    )
-    if not applicant_data:
-        return _err(f"No Job Applicant found with name '{applicant_name}'.", 404)
-
-    if applicant_data.email_id != email:
+    name = _find_draft(email, opening)
+    if not name:
         return _err(
-            f"Email '{email}' does not match Job Applicant '{applicant_name}'.", 400
+            f"No Draft Application exists for '{email}' and Job Opening '{opening}'.", 404
+        )
+
+    draft = frappe.get_doc(DOCTYPENAME, name)
+    try:
+        payload = json.loads(draft.form_data) if draft.form_data else {}
+    except (TypeError, ValueError):
+        return _err("Stored form_data is not valid JSON.", 500)
+    if not isinstance(payload, dict):
+        return _err("Stored form_data must be a JSON object.", 400)
+
+    duplicate = frappe.db.get_value(
+        "Job Applicant",
+        {"email_id": email, "job_title": opening},
+        "name",
+    )
+    if duplicate:
+        return _err(
+            f"A Job Applicant already exists for '{email}' and Job Opening '{opening}': {duplicate}.",
+            409,
         )
 
     try:
-        frappe.has_permission("Job Applicant", "delete", doc=applicant_name, throw=True)
-
-        draft = frappe.db.get_value(DOCTYPENAME, {"job_applicant": applicant_name}, "name")
-        if draft:
-            frappe.delete_doc(DOCTYPENAME, draft, ignore_permissions=True, force=True)
-
-        frappe.delete_doc("Job Applicant", applicant_name, ignore_permissions=True, force=True)
+        applicant = frappe.new_doc("Job Applicant")
+        for key, value in payload.items():
+            applicant.set(key, value)
+        applicant.email_id = email
+        applicant.job_title = opening
+        applicant.flags.ignore_validate = True
+        applicant.flags.ignore_mandatory = True
+        applicant.flags.ignore_links = True
+        applicant.insert(
+            ignore_permissions=True,
+            ignore_mandatory=True,
+            ignore_links=True,
+        )
         frappe.db.commit()
-    except frappe.PermissionError:
-        return _err("You are not permitted to delete this Job Applicant.", 403)
     except Exception as e:
         frappe.db.rollback()
-        frappe.log_error(frappe.get_traceback(), "Draft Application delete_applicant failed")
-        return _err(f"Unable to delete Job Applicant: {type(e).__name__}: {e}", 500)
+        frappe.log_error(frappe.get_traceback(), "Draft Application submit_draft failed")
+        return _err(f"Unable to submit Draft Application: {type(e).__name__}: {e}", 500)
 
     return _ok(
-        "Job Applicant deleted.",
+        "Job Applicant created from Draft Application.",
         {
-            "job_applicant": applicant_name,
+            "job_applicant": applicant.name,
             "job_applicant_email": email,
-            "deleted_applicant": applicant_name,
-            "deleted_draft": draft,
+            "job_opening": opening,
+            "draft_name": name,
+        },
+        http=201,
+    )
+
+
+@frappe.whitelist(allow_guest=True)
+def delete_draft(job_applicant_email, job_opening):
+    if not job_applicant_email:
+        return _err("job_applicant_email is required.", 400)
+    if not job_opening:
+        return _err("job_opening is required.", 400)
+
+    email = job_applicant_email.strip()
+    opening = job_opening.strip()
+
+    name = _find_draft(email, opening)
+    if not name:
+        return _err(
+            f"No Draft Application exists for '{email}' and Job Opening '{opening}'.", 404
+        )
+
+    try:
+        frappe.delete_doc(DOCTYPENAME, name, ignore_permissions=True, force=True)
+        frappe.db.commit()
+    except Exception as e:
+        frappe.db.rollback()
+        frappe.log_error(frappe.get_traceback(), "Draft Application delete_draft failed")
+        return _err(f"Unable to delete Draft Application: {type(e).__name__}: {e}", 500)
+
+    return _ok(
+        "Draft Application deleted.",
+        {
+            "job_applicant_email": email,
+            "job_opening": opening,
+            "deleted_draft": name,
         },
     )
