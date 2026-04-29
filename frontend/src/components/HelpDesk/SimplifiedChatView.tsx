@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Typography } from "../shared/atoms/Typography";
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { X, Loader2, MessageSquare, Paperclip, CheckCircle, Edit3, Reply, XCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Loader2, MessageSquare, CheckCircle, Edit3, Reply, XCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import {
   TicketDetail,
   useSendEmailReply,
