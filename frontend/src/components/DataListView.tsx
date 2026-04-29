@@ -189,6 +189,11 @@ const DataListView = <T extends BaseItem>({
   const queryParam = new URLSearchParams(search);
   const initialSearchQuery = enableUrlParams ? queryParam.get("q") || "" : "";
 
+  const defaultFiltersString = useMemo(
+    () => JSON.stringify(defaultFilters || {}),
+    [defaultFilters],
+  );
+
   const filtersString = enableUrlParams ? queryParam.get("filters") : null;
   const parsedUrlFilters = useMemo(() => {
     if (!enableUrlParams || !filtersString) return {};
@@ -202,7 +207,7 @@ const DataListView = <T extends BaseItem>({
 
   const initialFilters = useMemo(() => {
     return { ...(defaultFilters || {}), ...parsedUrlFilters };
-  }, [JSON.stringify(defaultFilters), parsedUrlFilters]);
+  }, [defaultFiltersString, parsedUrlFilters]);
 
   const [searchTerm, setSearchTerm] = useState(initialSearchQuery);
   const [filters, setFilters] = useState(initialFilters);
@@ -275,7 +280,7 @@ const DataListView = <T extends BaseItem>({
       if (JSON.stringify(prev) !== mergedString) return merged;
       return prev;
     });
-  }, [parsedUrlFilters, JSON.stringify(defaultFilters), enableUrlParams]);
+  }, [parsedUrlFilters, defaultFiltersString, enableUrlParams]);
 
 
   // Debounce search term
