@@ -142,9 +142,7 @@ def get_draft(job_applicant_email, job_opening):
 
     name = _find_draft(email, opening)
     if not name:
-        return _err(
-            f"No Draft Application exists for '{email}' and Job Opening '{opening}'.", 404
-        )
+        return _ok("No Draft Application exists yet.", None)
 
     return _ok("Draft Application fetched.", _serialize(frappe.get_doc(DOCTYPENAME, name)))
 
