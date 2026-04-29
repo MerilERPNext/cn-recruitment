@@ -154,6 +154,8 @@ export type FlowRequestItem = {
   initiated_for: string;
   initiated_by_emp_id: string;
   initiated_for_emp_id: string;
+  initiated_by_employee_id: string; // for details page api
+  initiated_for_employee_id: string; // for details page api
   approval_status: string;
   workflow_status: string;
   overall_flow_status: string;

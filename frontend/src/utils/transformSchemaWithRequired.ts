@@ -61,14 +61,12 @@ export const transformSchemaWithRequired = <T extends GenericFormSchema>(
                 // mark required
                 comp.validate.required = true;
 
-                // append red asterisk to label (avoid duplication)
-                if (typeof comp.label === "string") {
-                    const asteriskHtml =
-                        "<span style='color:red;margin-left:3px;'>*</span>";
-
-                    if (!comp.label.includes(asteriskHtml)) {
-                        comp.label = `${comp.label} ${asteriskHtml}`;
-                    }
+                // Add custom class for required asterisk styling
+                const requiredClass = "show-req-astrik";
+                if (!comp.customClass) {
+                    comp.customClass = requiredClass;
+                } else if (!comp.customClass.includes(requiredClass)) {
+                    comp.customClass = `${comp.customClass} ${requiredClass}`;
                 }
             }
 

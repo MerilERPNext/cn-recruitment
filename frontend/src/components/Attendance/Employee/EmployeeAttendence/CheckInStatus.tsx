@@ -11,6 +11,7 @@ import { Select } from "../../../shared/atoms/Select";
 import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 import { useSearchParams } from "react-router-dom";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
+import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 
 const getMonthDateRange = (monthValue: string) => {
     const parsedMonth = parse(monthValue, "yyyy-MM", new Date());
@@ -118,12 +119,16 @@ const CheckInStatus = () => {
                             {checkins.map((item: EmployeeAllCheckin) => (
                                 <tr key={item.name} className="hover:bg-gray-50">
                                     <td className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm text-gray-700">
-                                        <div className="font-medium">
-                                            {item.employee_name}
-                                        </div>
-                                        <div className="text-xs text-gray-400">
-                                            {item.employee}
-                                        </div>
+                                        <WrapperHoverCard employeeId={item.employee}>
+                                            <div className="cursor-pointer hover:text-primary transition-colors">
+                                                <div className="font-medium">
+                                                    {item.employee_name}
+                                                </div>
+                                                <div className="text-xs text-gray-400">
+                                                    {item.employee}
+                                                </div>
+                                            </div>
+                                        </WrapperHoverCard>
                                     </td>
 
                                     <td className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm">

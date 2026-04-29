@@ -22,6 +22,8 @@ import { Typography } from "../shared/atoms/Typography";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 
+import WrapperHoverCard from "../shared/WrapperHoverCard";
+
 export function LeaveDetailView({
   documentName,
   referenceName,
@@ -218,9 +220,11 @@ export function LeaveDetailView({
                     : "Employee ID"}
                 </Typography>
 
-                <Typography variant="mobileCardValue">
-                  {data?.reference_document?.employee_name ||
-                    data?.reference_document?.employee}
+                <Typography variant="mobileCardValue" className="hover:text-primary cursor-pointer">
+                  <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+                    {data?.reference_document?.employee_name ||
+                      data?.reference_document?.employee}
+                  </WrapperHoverCard>
                 </Typography>
               </div>
             </div>
