@@ -187,7 +187,7 @@ export const useCurrentEmployeeDetails = ({
   employeeId?: string;
   logged_in_employee_details?: boolean;
 }) => {
-  return useQuery<EmployeeDetilsType, Error>({
+  return useQuery<EmployeeDetilsType | null, Error>({
     queryKey: ["currentEmployeeDetails", employeeId, logged_in_employee_details],
     queryFn: async () => EmployeeService.getCurrnetEmployeeDetails({
       employeeId,

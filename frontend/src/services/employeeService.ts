@@ -348,13 +348,16 @@ export class EmployeeService {
   }: {
     employeeId?: string;
     logged_in_employee_details?: boolean;
-  }) {
+  }): Promise<EmployeeDetilsType | null> {
     try {
       const result = await FrappeAPI.callMethod(
         "cn_leave_shift_managment.attendance.get_employee_details",
         { employeeId, logged_in_employee_details }
       );
-      return (result as { data: EmployeeDetilsType })?.data;
+      
+      if (!result) return null;
+      const payload = result as { data?: EmployeeDetilsType } | EmployeeDetilsType;
+      return ("data" in payload && payload.data ? payload.data : payload) as EmployeeDetilsType ?? null;
     } catch (error) {
       console.error("Error fetching current employee:", error);
       console.error(
