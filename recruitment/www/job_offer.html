@@ -876,8 +876,19 @@
             <!-- Email updates info box -->
             <div class="jo-next-steps">
                 <div style="font-size:0.95rem; color:var(--jo-text); line-height:1.6;">
-                          Keep checking your email for further updates on your onboarding and LMS journey.    
+                          Keep checking your email for further updates on your onboarding and LMS journey.
                 </div>
+                <div style="font-size:0.95rem; color:var(--jo-text); line-height:1.6; margin-top:8px;">
+                          Click the button below to download your offer letter
+                </div>
+            </div>
+
+            <!-- Download / Preview Offer Letter (post-accept) -->
+            <div style="max-width:320px; margin:20px auto 0;">
+                <a href="/api/method/recruitment.job_offer_utils.download_job_offer_pdf?appl={{ frappe.request.args.get('appl', '') }}" target="_blank" class="jo-btn-download-mobile" style="display:flex;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download / Preview Offer Letter
+                </a>
             </div>
 
             <!-- Stay Tuned -->
@@ -901,6 +912,28 @@
             </div>
             <h2 style="font-size:1.5rem; font-weight:700; color:var(--jo-navy); margin-bottom:16px;">Offer Rejected</h2>
             <p style="font-size:0.9rem; color:var(--jo-text-light); margin-bottom:32px; line-height:1.7;">Thank you for letting us know. We appreciate the time and effort you invested in our interview process. We wish you the very best in your future endeavors.</p>
+        </div>
+    </div>
+
+    <!-- ═══════════════ POPUP: CONFIRM ACCEPT (DOWNLOAD REMINDER) ═══════════════ -->
+    <div id="popup-confirm-accept" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center;">
+        <div style="position:relative; background:#fff; border-radius:20px; padding:48px 36px 36px; max-width:460px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.10);">
+            <button id="btn-close-confirm-accept" style="position:absolute; top:16px; right:16px; background:transparent; border:none; cursor:pointer; color:#64748b;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div style="width:56px; height:56px; border-radius:50%; background:#e8f2ff; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <h2 style="font-size:1.4rem; font-weight:700; color:var(--jo-navy); margin-bottom:12px;">Download Your Offer Letter</h2>
+            <p style="font-size:0.9rem; color:var(--jo-text-light); margin-bottom:24px; line-height:1.6;">Click the button below to download your offer letter</p>
+            <a href="/api/method/recruitment.job_offer_utils.download_job_offer_pdf?appl={{ frappe.request.args.get('appl', '') }}" target="_blank" class="jo-btn-download-mobile" style="display:flex; margin-bottom:12px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download Offer Letter
+            </a>
+            <button id="btn-popup-accept-confirm" class="jo-btn-accept" style="margin-bottom:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Continue & Accept Offer
+            </button>
         </div>
     </div>
 
@@ -1115,9 +1148,26 @@
         }
     });
 
-    // ── Accept Offer ──
-    document.addEventListener('click', async function(e) {
+    // ── Accept Offer (step 1: open download-reminder popup) ──
+    document.addEventListener('click', function(e) {
         var btn = e.target && (e.target.id === 'btn-accept' ? e.target : e.target.closest('#btn-accept'));
+        if (!btn || btn.disabled) return;
+
+        var popup = document.getElementById('popup-confirm-accept');
+        if (popup) popup.style.display = 'flex';
+    });
+
+    // ── Close Confirm-Accept Popup ──
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.id === 'btn-close-confirm-accept' || e.target.closest('#btn-close-confirm-accept'))) {
+            var popup = document.getElementById('popup-confirm-accept');
+            if (popup) popup.style.display = 'none';
+        }
+    });
+
+    // ── Accept Offer (step 2: confirm inside popup → run accept flow) ──
+    document.addEventListener('click', async function(e) {
+        var btn = e.target && (e.target.id === 'btn-popup-accept-confirm' ? e.target : e.target.closest('#btn-popup-accept-confirm'));
         if (!btn || btn.disabled) return;
 
         // Disable immediately to prevent double-click race
@@ -1126,6 +1176,8 @@
         // Prevent double-submit
         var status = await getJobOfferStatus();
         if (status === 'Accepted' || status === 'Rejected') {
+            var popup = document.getElementById('popup-confirm-accept');
+            if (popup) popup.style.display = 'none';
             showState('processed');
             return;
         }
@@ -1155,6 +1207,10 @@
                     'X-Frappe-CSRF-Token': (window.frappe && frappe.csrf_token) || ''
                 }
             });
+
+            // Hide popup and show accepted state
+            var popup = document.getElementById('popup-confirm-accept');
+            if (popup) popup.style.display = 'none';
 
             showState('accepted');
             window.scrollTo({ top: 0, behavior: 'smooth' });
