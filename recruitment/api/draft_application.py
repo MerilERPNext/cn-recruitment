@@ -131,20 +131,21 @@ def save_draft(job_applicant_email, job_opening, form_data=None):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_draft(job_applicant_email, job_opening):
+def get_draft(job_applicant_email):
     if not job_applicant_email:
         return _err("job_applicant_email is required.", 400)
-    if not job_opening:
-        return _err("job_opening is required.", 400)
 
     email = job_applicant_email.strip()
-    opening = job_opening.strip()
 
-    name = _find_draft(email, opening)
-    if not name:
-        return _ok("No Draft Application exists yet.", None)
+    names = frappe.get_all(
+        DOCTYPENAME,
+        filters={"job_applicant_email": email},
+        pluck="name",
+        order_by="modified desc",
+    )
+    drafts = [_serialize(frappe.get_doc(DOCTYPENAME, name)) for name in names]
 
-    return _ok("Draft Application fetched.", _serialize(frappe.get_doc(DOCTYPENAME, name)))
+    return _ok(f"Fetched {len(drafts)} Draft Application(s).", drafts)
 
 
 @frappe.whitelist(allow_guest=True)
