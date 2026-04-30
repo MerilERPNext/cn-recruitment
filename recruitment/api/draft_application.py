@@ -149,6 +149,20 @@ def get_draft(job_applicant_email):
 
 
 @frappe.whitelist(allow_guest=True)
+def get_job_applicant(job_applicant):
+    if not job_applicant:
+        return _err("job_applicant is required.", 400)
+
+    applicant_name = job_applicant.strip()
+
+    if not frappe.db.exists("Job Applicant", applicant_name):
+        return _ok("No Job Applicant found.", {})
+
+    doc = frappe.get_doc("Job Applicant", applicant_name)
+    return _ok("Job Applicant fetched.", doc.as_dict(convert_dates_to_str=True))
+
+
+@frappe.whitelist(allow_guest=True)
 def submit_draft(job_applicant_email, job_opening):
     if not job_applicant_email:
         return _err("job_applicant_email is required.", 400)
