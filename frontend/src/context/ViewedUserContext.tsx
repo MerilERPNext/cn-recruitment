@@ -191,6 +191,7 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
             ["currentUser"],
             ["currentEmployeeIdCard"],
             ["currentEmployeeAllDetails"],
+            ["currentEmployeeDetails"]
           ];
 
           return !excludedKeys.some((key) => query.queryKey[0] === key[0]);
