@@ -183,7 +183,7 @@
           "redrawOn": "from_date"
         },
         {
-          "label": "Check-In Time",
+          "label": "Check-In Time <span class='show-req-astrik field-required'></span>",
           "key": "checkin_time",
           "type": "time",
           "input": true,
@@ -203,7 +203,7 @@
           "customClass": "mb-4"
         },
         {
-          "label": "Check-Out Time",
+          "label": "Check-Out Time <span class='show-req-astrik field-required'></span>",
           "errorLabel": "To Time",
           "key": "checkout_time",
           "type": "time",
@@ -260,7 +260,7 @@
           "lazyLoad": false
         },
         {
-          "label": "Location",
+          "label": "Location <span class='show-req-astrik field-required'></span>",
           "errorLabel": "Location",
           "key": "custom_location",
           "type": "select",
