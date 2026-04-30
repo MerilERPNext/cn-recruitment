@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MoreVertical } from "lucide-react";
 import type React from "react";
-import { useEffect,  useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaRegEye } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useTargetUser } from "../../context/ViewedUserContext";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import {
   useBenefitClaimPDF,
   useDownloadSalarySlipPDF,
@@ -49,46 +49,46 @@ type SalarySlipRecord = {
 };
 
 const SALARY_SLIP_SEARCH_FIELDS = ["employee", "status", "posting_date"];
- const SALARY_SORT_CONFIG: ColumnSortConfig[] = [
+const SALARY_SORT_CONFIG: ColumnSortConfig[] = [
   {
     sortable: false,
   },
-    {
-      sortable: true,
-      type: "date",
-      field: "start_date",
-      getValue: (item: any) => item.start_date ?? "",
-    },
- 
-    {
-      sortable: true,
-      type: "date",
-      field: "end_date",
-      getValue: (item: any) => item.end_date ?? "",
-    },
-    {
-      sortable: true,
-      type: "number",
-      field: "gross_pay",
-      getValue: (item: any) => item.gross_pay ?? 0,
-    },
-    {
-      sortable: true,
-      type: "number",
-      field: "net_pay",
-      getValue: (item: any) => item.net_pay ?? 0,
-    },
-    {
-      sortable: false,
-    },
-  ];
+  {
+    sortable: true,
+    type: "date",
+    field: "start_date",
+    getValue: (item: any) => item.start_date ?? "",
+  },
+
+  {
+    sortable: true,
+    type: "date",
+    field: "end_date",
+    getValue: (item: any) => item.end_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "number",
+    field: "gross_pay",
+    getValue: (item: any) => item.gross_pay ?? 0,
+  },
+  {
+    sortable: true,
+    type: "number",
+    field: "net_pay",
+    getValue: (item: any) => item.net_pay ?? 0,
+  },
+  {
+    sortable: false,
+  },
+];
 
 // ---- Main Component ----
 const SalarySlipsList = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
   const { targetEmployeeId } = useTargetUser();
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [filtersKey, setFiltersKey] = useState(0);
@@ -217,7 +217,7 @@ const SalarySlipsList = () => {
   const handleDownloadType1 = (e: React.MouseEvent, salary_slip_id
     : string) => {
     e.stopPropagation();
-    handleViewPDF("regular", salary_slip_id );
+    handleViewPDF("regular", salary_slip_id);
   };
   const handleDownloadType2 = (e: React.MouseEvent, salary_slip_id: string) => {
     e.stopPropagation();
@@ -273,7 +273,7 @@ const SalarySlipsList = () => {
           columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
           columnSortConfig={SALARY_SORT_CONFIG}
         >
-      
+
           <DataListView<SalarySlipRecord>
             key={filtersKey}
             queryKey={["salary-slips", String(filtersKey)]}
@@ -289,7 +289,7 @@ const SalarySlipsList = () => {
             defaultFilters={{
               status: "Submitted",
             }}
-            
+
             ItemComponent={({ item }) => (
               <SalarySlipItem
                 item={item}

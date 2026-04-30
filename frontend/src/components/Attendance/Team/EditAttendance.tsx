@@ -11,7 +11,7 @@ import {
   useEditAttendance,
   useGetEmployeeShift,
 } from "../../../hooks/useAttendance";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
 import CircularLoader from "../../shared/atoms/CircularLoader";
@@ -35,9 +35,7 @@ export const EditAttendance = ({
 }: EditAttendanceProps) => {
   const formInstance = useRef<any>(null);
   const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["user_id"],
-  });
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data, isLoading: isDataLoading } = useAttendanceById(open, [
     ["name", "=", requestId],
     // ["employee", "=", effectiveEmployeeId],

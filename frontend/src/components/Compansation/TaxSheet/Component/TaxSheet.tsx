@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, } from "react";
-import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import {
   useTaxSheetData,
   useTaxSheetPayrollPriodsData,
@@ -27,8 +27,8 @@ type PayrollPeriod = {
   name: string;
 };
 
-export default function TaxSheet({selectedPeriod, setSelectedPeriod}: any ) {
-  const { data: user } = useCurrentEmployeeAllDetails();
+export default function TaxSheet({ selectedPeriod, setSelectedPeriod }: any) {
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const {
     data: payrollPeriods,

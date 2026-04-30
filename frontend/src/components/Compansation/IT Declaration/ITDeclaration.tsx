@@ -12,7 +12,7 @@ import {
   useSubmitITDeclaration,
 } from "../../../hooks/payroll/useITDeclaration";
 import { normalizeITCategories } from "./Component/DataHandling";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import HRAForm, { type HRAData } from "./Component/HraExemptio";
 import CompareTaxSheetHandler from "./Component/TaxCompare";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
@@ -37,7 +37,7 @@ type PayrollPeriod = {
 };
 
 const ITDeclarationForm = () => {
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const mutation = useSubmitITDeclaration();
   const { isDesktop } = useScreenSize();
   const { data: userUiPermission } = useGetUiPermission("Compensation");
@@ -289,11 +289,10 @@ const ITDeclarationForm = () => {
     <div className="bg-white min-h-screen">
       <header className=" md:p-4  rounded-lg">
         <div
-          className={`p-2 mb-2 rounded ${
-            PrrofOfITDeclaration?.status === "failed"
-              ? "bg-error-50 text-error"
-              : "bg-success-50 text-success"
-          }`}
+          className={`p-2 mb-2 rounded ${PrrofOfITDeclaration?.status === "failed"
+            ? "bg-error-50 text-error"
+            : "bg-success-50 text-success"
+            }`}
         >
           <Typography variant="bodySmall">
             {parts.map((part: string, index: number) =>
@@ -355,7 +354,7 @@ const ITDeclarationForm = () => {
               )}
               {actionsEnabled.preview &&
                 declarationDoctype ===
-                  "Employee Tax Exemption Proof Submission" && (
+                "Employee Tax Exemption Proof Submission" && (
                   <PreviewOfITDeclaration
                     declarationId={declarationIdFromITDeclaration}
                     disabled={false}
@@ -404,22 +403,20 @@ const ITDeclarationForm = () => {
             <button
               disabled={PrrofOfITDeclaration?.status === "failed"}
               onClick={() => setGoHeadWithNewRegime(1)}
-              className={`px-6 py-1 whitespace-nowrap w-full rounded-md ${
-                goHeadWithNewRegime === 1
-                  ? "bg-primary text-white"
-                  : "text-gray-600"
-              }`}
+              className={`px-6 py-1 whitespace-nowrap w-full rounded-md ${goHeadWithNewRegime === 1
+                ? "bg-primary text-white"
+                : "text-gray-600"
+                }`}
             >
               New Regime
             </button>
             <button
               disabled={PrrofOfITDeclaration?.status === "failed"}
               onClick={() => setGoHeadWithNewRegime(0)}
-              className={`px-6  whitespace-nowrap py-1 w-full rounded-md ${
-                goHeadWithNewRegime === 0
-                  ? "bg-primary text-white"
-                  : "text-gray-600"
-              }`}
+              className={`px-6  whitespace-nowrap py-1 w-full rounded-md ${goHeadWithNewRegime === 0
+                ? "bg-primary text-white"
+                : "text-gray-600"
+                }`}
             >
               Old Regime
             </button>
@@ -452,11 +449,10 @@ const ITDeclarationForm = () => {
               }}
               onClick={() => setActiveMainTab("category")}
               className={`relative whitespace-nowrap pb-3 text-sm font-semibold transition-all duration-200
-    ${
-      activeMainTab === "category"
-        ? "text-primary"
-        : "text-gray-500 hover:text-gray-800"
-    }`}
+    ${activeMainTab === "category"
+                  ? "text-primary"
+                  : "text-gray-500 hover:text-gray-800"
+                }`}
             >
               Other Investment Declaration
               {activeMainTab === "category" && (
@@ -471,11 +467,10 @@ const ITDeclarationForm = () => {
                 }}
                 onClick={() => setActiveMainTab("hra")}
                 className={`relative whitespace-nowrap pb-3 text-sm font-semibold transition-all duration-200
-      ${
-        activeMainTab === "hra"
-          ? "text-primary"
-          : "text-gray-500 hover:text-gray-800"
-      }`}
+      ${activeMainTab === "hra"
+                    ? "text-primary"
+                    : "text-gray-500 hover:text-gray-800"
+                  }`}
               >
                 HRA & Other (U/S 10)
                 {activeMainTab === "hra" && (
@@ -503,10 +498,10 @@ const ITDeclarationForm = () => {
                       <button
                         onClick={() => setActiveSection(sec.section)}
                         className={`px-5 py-2 text-xs font-semibold rounded-lg transition-all duration-200
-                        ${ active ? "bg-white text-primary shadow-sm"
-                         : "text-gray-600 hover:text-gray-900 hover:bg-white/70"
+                        ${active ? "bg-white text-primary shadow-sm"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-white/70"
                           }`}
-                       >
+                      >
                         {sec.section}
                       </button>
 

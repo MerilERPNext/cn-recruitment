@@ -7,7 +7,7 @@ import { EmployeeSearchList } from "./EmployeeSearchList";
 import { BadgeCard } from "./BadgeCard";
 import { useGetBadgeTypes, useAppreciateEmployee } from "../../services/recognitionService";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import toast from "react-hot-toast";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { X, ChevronLeft } from "lucide-react";
@@ -37,7 +37,7 @@ export const AppreciateEmployeeModal: React.FC<
   const [reason, setReason] = useState<string>("");
 
   const queryClient = useQueryClient();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: badgesData, isLoading: badgesLoading } = useGetBadgeTypes();
   const { data: selectedEmployeeData } = useGetAllEmployees(
     ["name", "employee_name", "designation", "image"],
@@ -258,7 +258,7 @@ export const AppreciateEmployeeModal: React.FC<
               {selectedBadgeData.icon && (
                 <div className="text-2xl">
                   {selectedBadgeData.icon.startsWith("http") ||
-                  selectedBadgeData.icon.startsWith("/") ? (
+                    selectedBadgeData.icon.startsWith("/") ? (
                     <img
                       src={selectedBadgeData.icon}
                       alt={selectedBadgeData.recognition_type_name}

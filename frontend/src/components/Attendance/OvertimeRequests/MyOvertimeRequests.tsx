@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { usePlannedOvertimeAllowed } from "../../../hooks/useAttendance";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -51,7 +51,7 @@ const MyOvertimeRequests = () => {
   const { isDesktop } = useScreenSize();
 
   const navigate = useNavigate();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { targetEmployeeId } = useTargetUser();
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
 

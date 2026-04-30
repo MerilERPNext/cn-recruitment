@@ -3,7 +3,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
@@ -73,7 +73,7 @@ const AdvancesList: React.FC = () => {
   const [refetchTrigger, setRefetchTrigger] = useState<number>(0);
 
   const { isDesktop } = useScreenSize();
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const employeeId = user?.employee ?? "";
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();

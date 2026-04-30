@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import {
   useCreateNewLoanApplication,
   useGetLoanApplicationDoc,
@@ -34,7 +34,7 @@ export default function CreateLoanDialog({
   onClose,
 }: CreateLoanDialogProps) {
   const { setRefetchAttendance } = useGlobalStore();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { isDesktop } = useScreenSize();
   const mutation = useCreateNewLoanApplication();
   const formRef = useRef<any>(null);

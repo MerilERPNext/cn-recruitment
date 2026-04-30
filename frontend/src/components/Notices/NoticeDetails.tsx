@@ -11,7 +11,7 @@ import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import CircularLoader from "../shared/atoms/CircularLoader";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 
 
 
@@ -19,7 +19,7 @@ const NoticeDetails = () => {
     const { isDesktop } = useScreenSize();
     const params = useParams()
     const noticeId = params?.id as string
-    const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+    const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
     const {
         data: notice,

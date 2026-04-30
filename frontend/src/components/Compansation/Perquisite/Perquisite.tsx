@@ -2,7 +2,7 @@
 "use client";
 import { X } from "lucide-react";
 import { useState } from "react";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
@@ -68,7 +68,7 @@ const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
 export default function PerquisiteList() {
   const [selectedPerquisite, setSelectedPerquisite] = useState<UiPerquisite | null>(null);
 
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { isDesktop } = useScreenSize();
 
   const employeeId = user?.employee ?? "";

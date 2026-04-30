@@ -8,7 +8,7 @@ import {
   usePlannedOvertimeRequestAttachments,
   useUpdatePlannedOvertimeRequest,
 } from "../../../hooks/useAttendance";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { format, isValid, parseISO } from "date-fns";
 import toast from "react-hot-toast";
 import { CustomError } from "../../../types/attendance";
@@ -140,7 +140,7 @@ const CreateOvertimeRequest = ({ onCancel, editData, isEditMode }: RequestOverti
   const { setRefetchAttendance } = useGlobalStore();
   const { isDesktop } = useScreenSize();
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { targetEmployeeId } = useTargetUser();
   const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 

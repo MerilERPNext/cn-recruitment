@@ -6,7 +6,7 @@ import SalarySlipPDFModal from "../../SalarySlipPDFModal";
 import {
   useTDSPRintViewPDF,
 } from "../../../../hooks/useTaxSheet";
-import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import Button from "../../../shared/atoms/Button";
 
 type Props = {
@@ -17,7 +17,7 @@ type Props = {
 const TDSSlipHandler = ({ disabled, selectedPeriod }: Props) => {
   const [open, setOpen] = useState(false);
   const [html, setHtml] = useState("");
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const { mutate, isPending } = useTDSPRintViewPDF(
     selectedPeriod,

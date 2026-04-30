@@ -2,7 +2,10 @@
 import React, { useRef, useState, useMemo, useEffect } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.form.css";
-import { useCurrentEmployeeAllDetails, useEmployees } from "../../../hooks/useEmployee";
+import {
+  useCurrentEmployeeDetails,
+  useEmployees,
+} from "../../../hooks/useEmployee";
 import {
   useGetExpenseTypeFields,
   usePostExpenseClaim,
@@ -234,7 +237,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     setVehicleType(null);
   };
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: employeesList, isFetching: isLoadingEmployees } = useEmployees([
     "name",
     "employee_name",

@@ -37,7 +37,7 @@ import {
   usePlannedOvertimeAllowed,
 } from "../hooks/useAttendance";
 import useCurrentUser from "../hooks/useCurrentUser";
-import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../hooks/useEmployee";
 import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
 import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
 import useLogout from "../hooks/useLogout";
@@ -99,7 +99,7 @@ export default function DesktopDashboard() {
   };
 
   const { data: currentEmployee, isLoading: currentEmpIsLoading } =
-    useCurrentEmployeeAllDetails();
+    useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || "",

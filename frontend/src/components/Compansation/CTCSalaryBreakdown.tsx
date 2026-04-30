@@ -1,7 +1,7 @@
 import { PieChart, TrendingUp, Wallet } from "lucide-react";
 import { useState } from "react";
 import { useGenerateSalarySlip } from "../../hooks/useCTC";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { Typography } from "../shared/atoms/Typography";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
@@ -9,7 +9,7 @@ import { NoDataFound } from "../shared/atoms/NoDataFound";
 import ShowHideButton from "./ui/ShowHideButton";
 
 const CTCSalaryUI = () => {
-  const { data: employee, isLoading: isEmpLoading } = useCurrentEmployeeAllDetails();
+  const { data: employee, isLoading: isEmpLoading } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const employeeId = employee?.name;
   const { isDesktop } = useScreenSize();
@@ -269,10 +269,10 @@ const CTCSalaryUI = () => {
                             <td className="py-4 px-4 border-none">
                               <span
                                 className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${component.type === "Deduction"
-                                    ? "bg-red-50 text-red-700 border border-red-200"
-                                    : component.type === "Reimbursement"
-                                      ? "bg-orange-50 text-orange-700 border border-orange-200"
-                                      : "bg-blue-50 text-blue-700 border border-blue-200"
+                                  ? "bg-red-50 text-red-700 border border-red-200"
+                                  : component.type === "Reimbursement"
+                                    ? "bg-orange-50 text-orange-700 border border-orange-200"
+                                    : "bg-blue-50 text-blue-700 border border-blue-200"
                                   }`}
                               >
                                 {component.type}
@@ -307,10 +307,10 @@ const CTCSalaryUI = () => {
                           </div>
                           <span
                             className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${component.type === "Deduction"
-                                ? "bg-red-50 text-red-700 border border-red-200"
-                                : component.type === "Reimbursement"
-                                  ? "bg-orange-50 text-orange-700 border border-orange-200"
-                                  : "bg-blue-50 text-blue-700 border border-blue-200"
+                              ? "bg-red-50 text-red-700 border border-red-200"
+                              : component.type === "Reimbursement"
+                                ? "bg-orange-50 text-orange-700 border border-orange-200"
+                                : "bg-blue-50 text-blue-700 border border-blue-200"
                               }`}
                           >
                             {component.type}

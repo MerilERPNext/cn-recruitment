@@ -1,5 +1,5 @@
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useCurrentEmployeeAllDetails, useGetEmployeeProfileOverview } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails, useGetEmployeeProfileOverview } from "../../../hooks/useEmployee";
 
 import { formatDateToDDMMYYYY } from "../../../utils/helperUtils";
 import { Typography } from "../../shared/atoms/Typography";
@@ -9,7 +9,7 @@ const ProfileSummary = () => {
     const { targetEmployeeId } = useTargetUser();
 
     const { data: currentUser, isLoading } =
-        useCurrentEmployeeAllDetails();
+        useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
     const employeeId =
         targetEmployeeId || (isLoading ? null : currentUser?.employee) || "";

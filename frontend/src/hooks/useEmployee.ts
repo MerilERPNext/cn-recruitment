@@ -125,12 +125,80 @@ export const DEFAULT_EMPLOYEE_FIELDS = [
   "custom_dotted_line_manager",
 ] as const;
 
-/**
- * Note: Highly sensitive Finance fields (ctc, pan_number, bank_ac_no, etc.)
- * remain excluded from defaults. Callers requiring these must explicitly 
- * pass them via the 'fields' parameter in useCurrentEmployeeAllDetails.
- */
+export interface EmployeeDetilsType {
+  name: string;
+  employee_name: string;
+  first_name: string;
+  middle_name: string | null;
+  last_name: string;
+  image: string | null;
 
+  user_id: string;
+  employee_number: string | null;
+
+  company: string;
+  department: string;
+  designation: string;
+  custom_designation_title: string;
+
+  reports_to: string;
+  employment_type: string;
+  branch: string;
+  grade: string;
+
+  status: string;
+  date_of_joining: string;
+
+  default_shift: string | null;
+
+  company_email: string;
+  personal_email: string;
+
+  custom_weekly_off: string | null;
+
+  custom_enable_web_clockin: number;
+  custom_allow_mobile_checkin: number;
+
+  custom_employment_status: string;
+  final_confirmation_date: string;
+
+  custom_dotted_line_manager: string | null;
+
+  employee: string;
+
+  reports_to_name: string;
+  user_id_name: string;
+
+  company_name: string;
+  department_name: string;
+  designation_name: string;
+
+  employment_type_name: string;
+  branch_name: string;
+
+  grade_name: string;
+}
+
+
+export const useCurrentEmployeeDetails = ({
+  employeeId,
+  logged_in_employee_details
+}: {
+  employeeId?: string;
+  logged_in_employee_details?: boolean;
+}) => {
+  return useQuery<EmployeeDetilsType | null, Error>({
+    queryKey: ["currentEmployeeDetails", employeeId, logged_in_employee_details],
+    queryFn: async () => EmployeeService.getCurrnetEmployeeDetails({
+      employeeId,
+      logged_in_employee_details,
+    }),
+
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
+    retry: 1,
+  });
+};
 
 /**
  * add fields you want in DEFAULT_EMPLOYEE_FIELDS Array inside useEmployee.ts.

@@ -15,7 +15,7 @@ import "@xyflow/react/dist/style.css";
 import PersonNode from "./PersonNode";
 import { CollapsedState, NodeData } from "./type/type";
 import {
-  useCurrentEmployeeAllDetails,
+  useCurrentEmployeeDetails,
   useGetEmployeeHierarchy,
   useGetEmployeeSubordinateHierarchy,
 } from "../../hooks/useEmployee";
@@ -173,7 +173,7 @@ export default function OrganizationChart() {
   const { search } = useLocation();
   const query = new URLSearchParams(search);
   const employeeIdFromQuery = query.get("employee");
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const employeeId = employeeIdFromQuery || user?.employee || "";
 

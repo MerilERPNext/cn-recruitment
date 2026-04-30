@@ -7,7 +7,7 @@ import defaultProfile from "../assets/face-rec.png";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import NotificationBell from "./Notification/NotificationBell";
 
-import { useCurrentEmployee, useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+import { useCurrentEmployee, useCurrentEmployeeDetails } from "../hooks/useEmployee";
 import { ROUTES } from "../constants/routes";
 import useCurrentUser from "../hooks/useCurrentUser";
 import useLogout from "../hooks/useLogout";
@@ -40,7 +40,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const { data: currentEmployeeByList, isLoading: currentEmpListIsLoading } =
-    useCurrentEmployeeAllDetails();
+    useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: currentEmployeeByMethod, isLoading: currentEmpMethodIsLoading } =
     useCurrentEmployee();
   const currentEmployee = currentEmployeeByList ?? currentEmployeeByMethod;

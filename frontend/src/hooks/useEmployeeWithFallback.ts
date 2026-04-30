@@ -1,5 +1,4 @@
-import { useCurrentUser } from './useCurrentUser';
-import { useCurrentEmployeeAllDetails } from './useEmployee';
+import { useCurrentEmployeeDetails } from './useEmployee';
 
 export interface EmployeeState {
   isLoading: boolean;
@@ -15,33 +14,22 @@ export interface EmployeeState {
  * for employee data fetching
  */
 export const useEmployeeWithFallback = (): EmployeeState => {
-  const { 
-    data: currentUser, 
-    isLoading: userLoading, 
-    error: userError,
-    refetch: refetchUser
-  } = useCurrentUser();
   
   const { 
     data: currentEmployee, 
     isLoading: employeeLoading, 
     error: employeeError,
     refetch: refetchEmployee
-  } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name || ''
-  });
+  } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const retry = () => {
-    if (userError) {
-      refetchUser();
-    }
     if (employeeError || !currentEmployee) {
       refetchEmployee();
     }
   };
 
-  const isLoading = userLoading || employeeLoading;
-  const error = userError || employeeError;
+  const isLoading = employeeLoading;
+  const error = employeeError;
   const hasEmployeeRecord = !!currentEmployee;
   const hasValidData = !!(currentEmployee?.name && currentEmployee?.employee_name);
   const canRetry = !!error || (!currentEmployee && !isLoading);

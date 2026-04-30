@@ -2,7 +2,10 @@ import React, { useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import { Award } from "../../types/employee";
 import ContextualPopup from "../shared/molecules/ContextualPopup";
-import { useCurrentEmployeeAllDetails, useGetEmployeeEarnedAppreciations } from "../../hooks/useEmployee";
+import {
+    useCurrentEmployeeDetails,
+    useGetEmployeeEarnedAppreciations,
+} from "../../hooks/useEmployee";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import Modal from "../shared/Modal";
 import { Typography } from "../shared/atoms/Typography";
@@ -117,7 +120,7 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileC
     const { targetEmployeeId } = useTargetUser();
     const [showAllModal, setShowAllModal] = useState(false);
 
-    const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+    const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
     const employee = targetEmployeeId || currentEmployee?.name;
     const { data: employeeAppreciations } =

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState, useMemo, useEffect } from "react";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
@@ -176,7 +176,7 @@ const MobileRow = ({ item, showAmount, onView, onVersions }: RowProps) => (
 // ---- Main Component ----
 
 export default function SalaryAssignmentList() {
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const [selected, setSelected] = useState<SalaryItem | null>(null);
   const [selectedVersionItem, setSelectedVersionItem] =
@@ -331,7 +331,7 @@ export default function SalaryAssignmentList() {
             columnWidths={columnWidths}
             columnSortConfig={SALARY_SORT_CONFIG}
           >
- 
+
             {customAPI && (
               <DataListView<SalaryItem>
                 key={filtersKey}
@@ -341,7 +341,7 @@ export default function SalaryAssignmentList() {
                 isSearch={true}
                 showPagination={true}
                 isFilter={true}
-                filterFields={[  ]}
+                filterFields={[]}
                 infiniteScroll={false}
                 SkeletonComponent={CardSkeleton}
                 noRecordsScreen={
@@ -388,9 +388,8 @@ export default function SalaryAssignmentList() {
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40">
           <div
-            className={`bg-white flex flex-col w-full ${
-              isDesktop ? "max-w-[600px]" : ""
-            } shadow-lg relative h-screen`}
+            className={`bg-white flex flex-col w-full ${isDesktop ? "max-w-[600px]" : ""
+              } shadow-lg relative h-screen`}
           >
             <div className="flex justify-between items-center p-4 border-b">
               <Typography variant="subheading" color="body1">

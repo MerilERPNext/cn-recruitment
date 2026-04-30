@@ -6,7 +6,7 @@ import {
   useGetAllEventsAndAttendance,
   usePlannedOvertimeAllowed,
 } from "../../../hooks/useAttendance";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { AttendanceRecord, MyAttendanceRequest } from "../../../types/attendance";
 
 import LeaveRequest from "../LeaveRequest";
@@ -105,7 +105,7 @@ const EmployeeAttendance = () => {
     setSidebarOpen(!!showDetailsFor && isDesktop);
   }, [showDetailsFor, isDesktop, setSidebarOpen]);
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const start = format(startOfMonth(selectedDate as Date), "yyyy-MM-dd");
   const end = format(endOfMonth(selectedDate as Date), "yyyy-MM-dd");
 

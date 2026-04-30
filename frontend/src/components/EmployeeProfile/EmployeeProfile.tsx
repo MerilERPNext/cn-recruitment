@@ -2,7 +2,7 @@
 import HeaderBar from "../HeaderBar";
 import { useNavigate } from "react-router-dom";
 import {
-  useCurrentEmployeeAllDetails,
+  useCurrentEmployeeDetails,
   useFileUpload,
   useGetEmployeeDetailsByEmpIdForProfile,
 } from "../../hooks/useEmployee";
@@ -72,7 +72,7 @@ const EmployeeProfile: React.FC = () => {
     "Employee Profile",
   );
   const { data: currentUser, isLoading: isCurrentUserLoading } =
-    useCurrentEmployeeAllDetails();
+    useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   // const queryClient = useQueryClient();
 

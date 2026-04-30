@@ -5,7 +5,7 @@ import {
   useEmployeeDocument,
   useSubmitAcknowledgement,
 } from "../../hooks/useEmployeeDocuments";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import Button from "../shared/atoms/Button";
@@ -18,7 +18,7 @@ const DocumentLibrary = () => {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const { targetEmployeeId } = useTargetUser();
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const employeeId = useMemo(() => {
     if (targetEmployeeId && targetEmployeeId.trim() !== "") {
       return targetEmployeeId;
