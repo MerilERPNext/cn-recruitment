@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  useCurrentEmployeeAllDetails,
+  useCurrentEmployeeDetails,
   useEmployee,
 } from "../../../hooks/useEmployee";
 import {
@@ -42,7 +42,7 @@ const ConfirmationWorkflow = () => {
     data: currentEmployee,
     isLoading: loadingCurrentEmployee,
     refetch: refetchCurrentEmployee,
-  } = useCurrentEmployeeAllDetails();
+  } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee, refetch: refetchTargetEmployee } =
     useEmployee(targetEmployeeId);

@@ -1,3 +1,4 @@
+import { EmployeeDetilsType } from "../hooks/useEmployee";
 import {
   AttendanceFieldPermissions,
   Employee,
@@ -48,7 +49,7 @@ function isEmployee(obj: unknown): obj is Employee {
     if (typeof employee[field] !== "string") {
       console.warn(
         `isEmployee validation failed: field '${field}' is not a string, got ${typeof employee[
-          field
+        field
         ]}`,
       );
       return false;
@@ -340,6 +341,30 @@ export class EmployeeService {
       throw error;
     }
   }
+
+  static async getCurrnetEmployeeDetails({
+    employeeId,
+    logged_in_employee_details
+  }: {
+    employeeId?: string;
+    logged_in_employee_details?: boolean;
+  }) {
+    try {
+      const result = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.attendance.get_employee_details",
+        { employeeId, logged_in_employee_details }
+      );
+      return (result as { data: EmployeeDetilsType })?.data;
+    } catch (error) {
+      console.error("Error fetching current employee:", error);
+      console.error(
+        "Error details:",
+        error instanceof Error ? error.message : error,
+      );
+      throw error;
+    }
+  }
+
   /** Loads the Employee row; default `fields` is `["*"]` — see `CurrentEmployeeAllDetails` in types. */
   static async getCurrentEmployeeAllDetails(
     user_id: string,

@@ -1,7 +1,7 @@
 import { differenceInCalendarDays } from "date-fns";
 import { useCallback, useState } from "react";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { MyAttendanceRequest } from "../../../types/attendance";
@@ -67,7 +67,7 @@ const AttendanceRequest = ({
   showAttendanceRequest?: boolean;
 }) => {
   const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { targetEmployeeId } = useTargetUser();
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();

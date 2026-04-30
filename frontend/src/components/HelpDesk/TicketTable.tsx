@@ -660,7 +660,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col max-h-full">
       <div className="overflow-x-auto" ref={scrollRef}>
         <table className="helpdesk-table w-full min-w-[900px] border-collapse relative">
-          <thead className="bg-gray-50/80 text-center border-b border-gray-100 sticky top-0 z-20">
+          <thead className="bg-gray-50/80 text-center border-b border-gray-100 sticky top-0 z-10">
             <tr>
               {columns.map((col) => (
                 <th

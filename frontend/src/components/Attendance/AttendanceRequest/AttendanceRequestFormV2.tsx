@@ -13,7 +13,7 @@ import {
 } from "../../../hooks/useAttendance";
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
 import { endOfDay, format, isValid, startOfDay } from "date-fns";
-import { useAttendanceFieldReasonAndMessagePermissions, useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useAttendanceFieldReasonAndMessagePermissions, useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { X } from "lucide-react";
@@ -188,9 +188,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const [isSchemaLoading, setIsSchemaLoading] = useState(false);
   const [isFormReady, setIsFormReady] = useState(false);
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name as string,
-  });
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: attendanceFieldReasonAndMessagePermissions } = useAttendanceFieldReasonAndMessagePermissions();
   const { data: userRoles } = useGetUserRoles();
 

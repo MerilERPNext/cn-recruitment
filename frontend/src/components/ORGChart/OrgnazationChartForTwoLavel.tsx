@@ -15,7 +15,7 @@ import "@xyflow/react/dist/style.css";
 import PersonNode from "./PersonNode";
 import DottedLineChipNode from "./DottedLineChipNode";
 import { EmployeeHierarchy, NodeData } from "./type/type";
-import { useGetEmployeeSubordinateHierarchy, useCurrentEmployeeAllDetails, useGetEmployeeDetailsByEmpId } from "../../hooks/useEmployee";
+import { useGetEmployeeSubordinateHierarchy, useCurrentEmployeeDetails, useGetEmployeeDetailsByEmpId } from "../../hooks/useEmployee";
 import { useNavigate } from "react-router";
 import { IoChevronForwardOutline } from "react-icons/io5";
 import { useTargetUser } from "../../context/ViewedUserContext";
@@ -286,7 +286,7 @@ export default function ThreeLevelOrgChart() {
   const [showDottedManager, setShowDottedManager] = useState(false);
   const navigate = useNavigate();
   const { targetEmployeeId } = useTargetUser();
-  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails();
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: targetEmployeeDetails } = useGetEmployeeDetailsByEmpId(targetEmployeeId || "", ["employee", "custom_dotted_line_manager"]);
   const dottedManagerId = targetEmployeeId ? targetEmployeeDetails?.custom_dotted_line_manager : currentUser?.custom_dotted_line_manager;
   const { data: dottedLineManagerDetails } = useGetEmployeeDetailsByEmpId(dottedManagerId || "", ["employee", "employee_name"]);

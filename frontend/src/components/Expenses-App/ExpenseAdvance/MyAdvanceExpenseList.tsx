@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
@@ -35,7 +35,7 @@ const MyAdvanceExpenseList = () => {
   const [isActed, setIsActed] = useState(false);
 
   const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: currentUser } = useCurrentUser();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const navigate = useNavigate();

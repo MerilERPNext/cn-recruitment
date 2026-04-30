@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -88,7 +88,7 @@ export const SharedExpensesRow: React.FC<{ item: any }> = ({ item }) => {
   const postingDate = item?.posting_date
     ? formatToIndianDate(item?.posting_date)
     : "—";
-    
+
   return (
     <div
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
@@ -150,7 +150,7 @@ const SharedExpenses: React.FC = () => {
   const navigate = useNavigate();
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   return (
     <div className="flex flex-col min-h-screen">

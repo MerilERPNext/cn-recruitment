@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import NoDataFound from "../../../shared/atoms/NoDataFound";
 import { useGetAuditReport } from "../../../../hooks/useAttendance";
-import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import {
     AttendancePolicyAudit,
     ShiftAndPolicyAudit,
@@ -12,7 +12,7 @@ import { Typography } from "../../../shared/atoms/Typography";
 
 const AuditReport = () => {
 
-    const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+    const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
     const { data: auditReports, isLoading, isError, error } = useGetAuditReport({
         employee: currentEmployee?.employee,

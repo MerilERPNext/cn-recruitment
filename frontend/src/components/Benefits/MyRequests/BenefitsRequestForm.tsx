@@ -9,7 +9,7 @@ import {
   useUpdateBenefitDoc,
 } from "../../../hooks/useBenefit";
 import { useNewBenifitRequest } from "../../../hooks/useBenifits";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { useRequiredFields } from "../../../hooks/useRequiredFields";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -38,7 +38,7 @@ export default function BenefitRequestForm({
   docname,
 }: BenefitRequestFormProps) {
   const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: benefitClaim, isLoading: benefitClaimLoading } =
     useGetBenefitDoc(docname || "");
 

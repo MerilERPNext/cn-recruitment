@@ -10,7 +10,7 @@ import {
   getMonthDateRange,
 } from "../../../../utils/helperUtils";
 import { MonthOption } from "../../AllEmpAttendance/SelectByMonth";
-import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 import { EmployeeRegularize } from "../../../../types/attendance";
 import toast from "react-hot-toast";
@@ -33,7 +33,7 @@ const RegularizeDrawer = () => {
   const [open, setOpen] = useState(false);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { targetEmployeeId } = useTargetUser();
 
   const monthOptions: MonthOption[] = generateMonthOptions(1);

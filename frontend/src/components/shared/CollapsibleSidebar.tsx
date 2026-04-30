@@ -42,7 +42,7 @@ import { Link, useLocation } from "react-router-dom";
 import { ROUTES } from "../../constants/routes";
 import { useAppNotificationCounts } from "../../hooks/useAppNotificationCounts";
 import { useSingleCompanyLogo } from "../../hooks/useCompanyLogo";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { Typography } from "./atoms/Typography";
 import SidebarSkeleton from "./molecules/Skeletons/SidebarSkeleton";
@@ -83,7 +83,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const [openSubDropdown, setOpenSubDropdown] = useState<string | null>(null);
 
   // const { data: companyLogo } = useCompanyLogo();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: uiPermissions, isLoading: isUiPermissionsLoading } =
     useGetUiPermission();
 

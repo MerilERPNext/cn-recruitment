@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -15,40 +15,40 @@ const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
   {
     sortable: false, // Actions
   },
-    {
-      sortable: true,
-      type: "string",
-      field: "name",
-      getValue: (payment: any) =>
-        payment.invoiceId ?? "",
-    },
+  {
+    sortable: true,
+    type: "string",
+    field: "name",
+    getValue: (payment: any) =>
+      payment.invoiceId ?? "",
+  },
 
-    {
-      sortable: true,
-      type: "string",
-      field: "salary_component",
-      getValue: (payment: any) =>
-        payment.salary_component ?? "",
-    },
-    {
-      sortable: true,
-      type: "date",
-      field: "payroll_date",
-      getValue: (payment: any) =>
-        payment.date ?? "",
-    },
-    {
-      sortable: true,
-      type: "number",
-      field: "amount",
-      getValue: (payment: any) =>
-        payment.amount ?? "",
-    },
-  
-    {
-      sortable: false, // Actions
-    },
-  ];
+  {
+    sortable: true,
+    type: "string",
+    field: "salary_component",
+    getValue: (payment: any) =>
+      payment.salary_component ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "payroll_date",
+    getValue: (payment: any) =>
+      payment.date ?? "",
+  },
+  {
+    sortable: true,
+    type: "number",
+    field: "amount",
+    getValue: (payment: any) =>
+      payment.amount ?? "",
+  },
+
+  {
+    sortable: false, // Actions
+  },
+];
 
 const titles = [
   "Recipient",
@@ -63,7 +63,7 @@ const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
 export default function ExtraPayment() {
   const { isDesktop } = useScreenSize();
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   // Don't render until we have employee + company info
   if (!user?.employee || !user?.company) {
     return (
@@ -103,7 +103,7 @@ export default function ExtraPayment() {
   });
 
   const renderDesktopRow = (raw: any) => {
-  const payment = mapItem(raw, raw.employee_name || raw.employee);
+    const payment = mapItem(raw, raw.employee_name || raw.employee);
     return (
       <div
         className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"

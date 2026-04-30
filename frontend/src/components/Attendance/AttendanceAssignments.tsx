@@ -13,7 +13,7 @@ import {
   usePoliciesForEmployees,
   useShiftsForEmployees,
 } from "../../hooks/useAttendance";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import Button from "../shared/atoms/Button";
 import { useTargetUser } from "../../context/ViewedUserContext";
@@ -36,7 +36,7 @@ const AttendanceAssignments = ({
   const formInstance = useRef<any>(null);
   const { targetEmployeeId } = useTargetUser();
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   // Use either the passed list or single employee from context
   const targetEmployees = employees.length > 0

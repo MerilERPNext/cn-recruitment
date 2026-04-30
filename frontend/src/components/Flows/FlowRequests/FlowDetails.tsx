@@ -4,7 +4,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import Button, { ButtonColor } from "../../shared/atoms/Button";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { useMemo } from "react";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import StatusBadge from "../../shared/atoms/statusBadge";
@@ -93,7 +93,7 @@ const FlowDetailsCard = ({ idx, stage, data }: FlowDetailsCardProps) => {
     : [];
 
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const canPerformAction = useMemo(() => {
     if (

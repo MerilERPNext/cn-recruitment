@@ -14,7 +14,7 @@ import {
   EmployeeCheckInLog,
 } from "../../../types/attendance";
 import { LeaveApplication } from "../../../types/leaves";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { Plus, X } from "lucide-react";
 import {
   useGetButtonsStatus,
@@ -97,7 +97,7 @@ const EmployeeAttendanceDetails = ({
       ? data?.leave_application
       : data?.leave_application_name || leaveEvent?.name;
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   // Only fetch leave details if it's a leave record
   const { data: leaveDetails } = useFrappeDocument(

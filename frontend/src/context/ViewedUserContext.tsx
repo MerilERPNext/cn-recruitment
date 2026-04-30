@@ -6,7 +6,7 @@ import React, {
   useRef,
 } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../hooks/useEmployee";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface ViewedUserContextType {
@@ -33,7 +33,7 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const isClearing = useRef(false);
   const navigateTimeoutRef = useRef<number | null>(null);
   const queryClient = useQueryClient();

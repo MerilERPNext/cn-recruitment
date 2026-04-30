@@ -28,7 +28,7 @@ import {
   useReqValidationsForOvertimeRequest,
   useWeeklyOff,
 } from "../../hooks/useAttendance";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import SummaryCard from "./SummaryCard";
 import QuickActionCard, { QuickActionCardData } from "./QuickActionCard";
@@ -68,9 +68,7 @@ const AttendanceSummary = () => {
     useState<PolicyDrawerConfig | null>(null);
 
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    name: targetEmployeeId || "",
-  });
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ employeeId: targetEmployeeId ?? "" });
 
   const { data: userUiPermission } = useGetUiPermission("Attendance");
   const canCreateOvertimeRequest = isActionEnabled(

@@ -9,7 +9,7 @@ import NavigationTabs, { Tab } from "../NavigationTab";
 import Button from "../shared/atoms/Button";
 import ExpenseAdvanceForm from "./ExpenseAdvance/ExpenseAdvanceForm";
 import ExpenseFormModal from "./ExpenseFormModal";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useCheckAdvancePolicy } from "../../hooks/useEmployeeAdvances";
 
 type TabName = "Expenses" | "Team" | "My Advances" | "Team Advances";
@@ -30,7 +30,7 @@ const ExpensesApp: React.FC = () => {
   );
 
   const { data: userUiPermission } = useGetUiPermission("Expenses");
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: hasAdvancePolicy } = useCheckAdvancePolicy(
     currentEmployee?.name || null,
   );

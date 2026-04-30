@@ -10,14 +10,14 @@ import {
   useDataOfAttendance,
   useDataOfAttendanceDetails,
 } from "../../../hooks/useAttendance";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import CustomFilter from "./SeletedFilter";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 
 const TeamAttendance = () => {
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const [selectedReporties, setSelectedReporties] = useState("");
   const [searchTerm, setSearchTerm] = useState("");

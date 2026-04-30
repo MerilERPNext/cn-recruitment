@@ -2,7 +2,7 @@
 import { AlertCircle, ArrowLeft, CheckCircle2, Clock } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
 import {
-  useCurrentEmployeeAllDetails,
+  useCurrentEmployeeDetails,
   useEmployee,
 } from "../../../hooks/useEmployee";
 import {
@@ -46,7 +46,7 @@ const SeparationCard = ({ data }: { data: cardDataType }) => {
 };
 
 const Separation = () => {
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const doctype_name = "Employee";
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);

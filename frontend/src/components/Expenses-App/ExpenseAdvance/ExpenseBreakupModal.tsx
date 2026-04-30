@@ -2,7 +2,7 @@ import { Form } from "@tsed/react-formio";
 import { X } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useCalculateExpenseAmount } from "../../../hooks/useExpense";
 import { CalculateExpenseParams } from "../../../types/expenseAdvance";
 import { formatMySQLDatetime } from "../../../utils/dateTimeFormatUtils";
@@ -30,7 +30,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
 
   const lastExpenseType = useRef<string | null>(null);
   const lastCalculatedUnits = useRef<CalculateExpenseParams | null>(null);
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const employeeId = currentEmployee?.name;
 
   const mapStoredDataToForm = (storedData: any) => {
@@ -53,19 +53,19 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
       location: storedData.custom_location,
       attach_receipt: storedData.custom_attach_receipt
         ? [
-            {
-              name:
-                storedData.custom_attach_receipt.substring(
-                  storedData.custom_attach_receipt.lastIndexOf("/") + 1,
-                ) || "Attached File",
-              originalName: "Attached File",
-              size: 1,
-              type: "application/octet-stream",
-              url: storedData.custom_attach_receipt,
-              data: storedData.custom_attach_receipt,
-              storage: "customBase64",
-            },
-          ]
+          {
+            name:
+              storedData.custom_attach_receipt.substring(
+                storedData.custom_attach_receipt.lastIndexOf("/") + 1,
+              ) || "Attached File",
+            originalName: "Attached File",
+            size: 1,
+            type: "application/octet-stream",
+            url: storedData.custom_attach_receipt,
+            data: storedData.custom_attach_receipt,
+            storage: "customBase64",
+          },
+        ]
         : [],
     };
 
@@ -274,9 +274,8 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 label: labelWithAsterisk,
                 dataSrc: "url",
                 data: {
-                  url: `/api/method/chatnext_expense_trips.expense_claim.get_applicable_vehicle_types?employee=${employeeId}&claim_type=${
-                    formData?.expense_type || ""
-                  }`,
+                  url: `/api/method/chatnext_expense_trips.expense_claim.get_applicable_vehicle_types?employee=${employeeId}&claim_type=${formData?.expense_type || ""
+                    }`,
                 },
                 selectValues: "message",
                 valueProperty: "vehicle_category",

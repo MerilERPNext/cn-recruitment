@@ -13,7 +13,7 @@ import { AppRoute, routesConfig } from "./routesConfig";
 import { findRouteConfig } from "./utils/routeUtils";
 import ResponsiveDashboard from "./components/ResponsiveDashboard";
 import { useFrappeDocumentCount } from "./hooks/useFrappeQuery";
-import { useCurrentEmployeeAllDetails } from "./hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "./hooks/useEmployee";
 
 import toast, { ToastBar, Toaster } from "react-hot-toast";
 import ModalWrapper from "./components/ModalWrapper";
@@ -224,7 +224,7 @@ const SESSION_POLICY_REDIRECT_TO_KEY = "policy_redirect_to";
 const SESSION_POLICY_AUTO_OPENED_KEY = "policy_is_auto_opened";
 
 const MandatoryPoliciesHandler = () => {
-  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const navigate = useNavigate();
   const location = useLocation();
