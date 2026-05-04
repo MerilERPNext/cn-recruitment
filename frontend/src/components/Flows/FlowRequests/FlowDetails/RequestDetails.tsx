@@ -1,25 +1,25 @@
 import { useState } from "react";
-import HeaderBar from "../../HeaderBar";
-import { Attachment } from "../../../types/flows";
+import HeaderBar from "../../../HeaderBar";
+import { Attachment } from "../../../../types/flows";
 
-import formatToIndianDate from "../../../utils/formatToIndianDate";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import FlowTable from "./FlowTable";
 import WorkflowTable from "./WorkflowTable";
-import Button from "../../shared/atoms/Button";
-import { FormIOForm } from "../../../utils/flowUtils";
+import Button from "../../../shared/atoms/Button";
+import { FormIOForm } from "../../../../utils/flowUtils";
 import { createPortal } from "react-dom";
-import ReviewForm from "../Separation/components/ReviewForm";
+import ReviewForm from "../../Separation/components/ReviewForm";
 import { Eye } from "lucide-react";
-import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useScreenSize } from "../../../../hooks/useScreenSize";
 import AttachmentPreview from "./AttachmentPreview";
-import { useGetFlowRequestById } from "../../../hooks/useFlows";
+import { useGetFlowRequestById } from "../../../../hooks/useFlows";
 import { useNavigate, useParams } from "react-router-dom";
-import TableSkeleton, { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-import NoDataFound from "../../shared/atoms/NoDataFound";
-import FormPreview from "../../shared/molecules/FormPreview";
-import { FormIOComponent } from "../../../types/formio";
+import TableSkeleton, { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
+import NoDataFound from "../../../shared/atoms/NoDataFound";
+import FormPreview from "../../../shared/molecules/FormPreview";
+import { FormIOComponent } from "../../../../types/formio";
 
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 
 type FlowStatusType = "Approval Flow Status" | "Workflow Status";
 type JsonToFormData = { form?: { components?: FormIOComponent[] }, submission_data?: Record<string, unknown> };

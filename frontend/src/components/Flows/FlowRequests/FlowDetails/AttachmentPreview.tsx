@@ -1,8 +1,8 @@
 import { Paperclip } from "lucide-react";
-import { Typography } from "../../shared/atoms/Typography";
-import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
+import { Typography } from "../../../shared/atoms/Typography";
+import { AttachmentCard } from "../../../shared/molecules/AttachmentCard";
 
-import { Attachment } from "../../../types/flows";
+import { Attachment } from "../../../../types/flows";
 
 interface AttachmentPreviewProps {
   attachments: Attachment[];
