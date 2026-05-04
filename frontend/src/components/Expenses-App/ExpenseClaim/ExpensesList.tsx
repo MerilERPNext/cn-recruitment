@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash2, Download } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -11,9 +11,11 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import {
   useDeleteDraftExpenseClaim,
+  useDeleteExpenseClaim,
   useGetAllExpenseCategories,
   useGetDraftExpenseClaims,
   usePostExpenseClaim,
+  useUpdateExpenseApprovalStatus,
   useUpdateFileAttachment,
 } from "../../../hooks/useExpense";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
@@ -436,273 +438,6 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
   );
 };
 
-// --- Draft Expense Mobile Card ---
-const DraftExpenseItem: React.FC<{
-  item: any;
-  isSelected: boolean;
-  onToggleSelect: (id: string) => void;
-  onEdit: (item: any) => void;
-  onDelete: (item: any) => void;
-}> = ({ item, isSelected, onToggleSelect, onEdit, onDelete }) => {
-  const parsedJson = React.useMemo(() => {
-    if (item?.json && typeof item.json === "string") {
-      try {
-        return JSON.parse(item.json);
-      } catch {
-        return null;
-      }
-    }
-    return item?.json || null;
-  }, [item]);
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-    }).format(value ?? 0);
-
-  const claimedAmount = formatCurrency(parsedJson?.amount);
-  const itemId = item?.name;
-
-  const attachmentNames = React.useMemo(() => {
-    if (!parsedJson?.attachments) return [];
-    return parsedJson.attachments
-      .split(",")
-      .map((a: string) => a.trim())
-      .filter(Boolean);
-  }, [parsedJson]);
-
-  return (
-    <div
-      className="cursor-pointer border-t-4 border-x border-b
-      border-x-primary/20 border-b-primary/20
-      shadow-sm border-primary bg-white rounded-xl"
-    >
-      <div className="p-4 flex flex-col gap-4">
-        {/* Checkbox + Actions header */}
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={(e) => {
-                e.stopPropagation();
-                onToggleSelect(itemId);
-              }}
-              className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
-            />
-            <Typography variant="mobileCardLabel">Select</Typography>
-          </label>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(item);
-              }}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
-            >
-              <Pencil size={14} />
-              Edit
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(item);
-              }}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-            >
-              <Trash2 size={14} />
-              Delete
-            </button>
-          </div>
-        </div>
-
-        {/* Categories / Types */}
-        <div className="flex justify-between">
-          <div className="flex flex-col gap-1">
-            <Typography variant="mobileCardLabel">Expense Category</Typography>
-            <Typography variant="mobileCardValue">
-              {parsedJson?.custom_expense_category_name ||
-                parsedJson?.expenseCategory ||
-                "-"}
-            </Typography>
-          </div>
-          <div className="flex flex-col gap-1 text-right">
-            <Typography variant="mobileCardLabel">Expense Type</Typography>
-            <Typography variant="mobileCardValue">
-              {parsedJson?.custom_expense_type ||
-                parsedJson?.expenseType ||
-                "-"}
-            </Typography>
-          </div>
-        </div>
-
-        {/* Date & Amount */}
-        <div className="flex justify-between">
-          <div className="flex flex-col gap-1">
-            <Typography variant="mobileCardLabel">Expense Date</Typography>
-            <Typography variant="mobileCardValue">
-              {parsedJson?.expense_date
-                ? formatToIndianDate(parsedJson.expense_date)
-                : "-"}
-            </Typography>
-          </div>
-          <div className="flex flex-col gap-1 text-right">
-            <Typography variant="mobileCardLabel">Claimed Amount</Typography>
-            <Typography variant="mobileCardValue">{claimedAmount}</Typography>
-          </div>
-        </div>
-
-        {/* Created Date & Attachemnt*/}
-        <div className="flex justify-between">
-          <div className="flex flex-col gap-1">
-            <Typography variant="mobileCardLabel">Created Date</Typography>
-            <Typography variant="mobileCardValue">
-              {item?.creation
-                ? formatToIndianDate(item.creation)
-                : "-"}
-            </Typography>
-          </div>
-          {attachmentNames.length > 0 && (
-            <div className="flex text-right flex-col gap-1">
-              <Typography variant="mobileCardLabel">Attachments</Typography>
-              <Typography variant="mobileCardValue">
-                {attachmentNames.length} file(s): {attachmentNames.join(", ")}
-              </Typography>
-            </div>
-          )}
-        </div>
-
-        {/* Attachments */}
-
-      </div>
-    </div>
-  );
-};
-
-// --- Draft Expense Desktop Row ---
-const DraftExpenseTableRow: React.FC<{
-  item: any;
-  isSelected: boolean;
-  onToggleSelect: (id: string) => void;
-  onEdit: (item: any) => void;
-  onDelete: (item: any) => void;
-}> = ({ item, isSelected, onToggleSelect, onEdit, onDelete }) => {
-  const itemId = item?.name;
-
-  const parsedJson = React.useMemo(() => {
-    if (item?.json && typeof item.json === "string") {
-      try {
-        return JSON.parse(item.json);
-      } catch {
-        return null;
-      }
-    }
-    return item?.json || null;
-  }, [item]);
-
-  const formattedAmount = new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-  }).format(parsedJson?.amount ?? 0);
-
-  const attachmentNames = React.useMemo(() => {
-    if (!parsedJson?.attachments) return null;
-    return parsedJson.attachments
-      .split(",")
-      .map((a: string) => a.trim())
-      .filter(Boolean);
-  }, [parsedJson]);
-
-  return (
-    <div
-      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-      style={{ gridTemplateColumns: "48px 1fr 1fr 1fr 1fr 1fr 1fr 120px" }}
-    >
-      <div className="flex items-center justify-center">
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={(e) => {
-            e.stopPropagation();
-            onToggleSelect(itemId);
-          }}
-          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-        />
-      </div>
-      <Tooltip
-        content={`${parsedJson?.custom_expense_category_name || parsedJson?.expenseCategory || ""}`}
-        triggerClassName="w-full truncate min-w-0 block"
-      >
-        <Typography
-          variant="bodySmall"
-          className="font-medium text-center truncate block w-full"
-        >
-          {parsedJson?.custom_expense_category_name ||
-            parsedJson?.expenseCategory ||
-            "-"}
-        </Typography>
-      </Tooltip>
-      <Tooltip
-        content={
-          parsedJson?.custom_expense_type || parsedJson?.expenseType || ""
-        }
-        triggerClassName="w-full truncate min-w-0 block"
-      >
-        <Typography
-          variant="bodySmall"
-          className="font-medium text-center truncate block w-full"
-        >
-          {parsedJson?.custom_expense_type || parsedJson?.expenseType || "-"}
-        </Typography>
-      </Tooltip>
-      <Typography variant="bodySmall" className="font-medium text-center">
-        {item?.creation
-          ? formatToIndianDate(item.creation)
-          : "-"}
-      </Typography>
-      <Typography variant="bodySmall" className="font-medium text-center">
-        {parsedJson?.expense_date
-          ? formatToIndianDate(parsedJson.expense_date)
-          : "-"}
-      </Typography>
-      <Typography variant="bodySmall" className="font-medium text-center">
-        {formattedAmount}
-      </Typography>
-      <Tooltip content={attachmentNames?.join(", ") || "No attachments"}>
-        <Typography
-          variant="bodySmall"
-          className="font-medium text-center truncate px-2"
-        >
-          {attachmentNames ? `${attachmentNames.length} file(s)` : "-"}
-        </Typography>
-      </Tooltip>
-      <div className="flex items-center justify-center gap-2">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(item);
-          }}
-          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-          title="Edit"
-        >
-          <Pencil size={16} />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(item);
-          }}
-          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-          title="Delete"
-        >
-          <Trash2 size={16} />
-        </button>
-      </div>
-    </div>
-  );
-};
-
 const ExpensesList: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const location = useLocation();
@@ -718,14 +453,17 @@ const ExpensesList: React.FC = () => {
 
   const { data: expenseCategories } = useGetAllExpenseCategories();
 
-  const [activeTab, setActiveTab] = React.useState<"expenses" | "draft" | "shared">(() => {
+  const [activeTab, setActiveTab] = React.useState<"expenses" | "shared">(() => {
     const stored = localStorage.getItem("expenseActiveTab");
-    if (stored === "expenses" || stored === "draft" || stored === "shared") return stored;
-    return "draft";
+    if (stored === "expenses" || stored === "shared") return stored;
+    return "expenses";
   });
+  // Selected IDs for local draft tab (Draft Expense Claim doctype)
   const [selectedDraftIds, setSelectedDraftIds] = React.useState<Set<string>>(
     new Set(),
   );
+  // Selected IDs for backend-draft items shown in My Expenses tab when Draft filter is active
+  const [selectedMyExpensesDraftIds, setSelectedMyExpensesDraftIds] = React.useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
     [],
@@ -763,10 +501,8 @@ const ExpensesList: React.FC = () => {
   const navigate = useNavigate();
   const {
     data: draftExpenses,
-    isFetching: isFetchingDrafts,
-    isLoading: isLoadingDrafts,
   } = useGetDraftExpenseClaims(currentEmployee?.name, {
-    enabled: Boolean(currentEmployee?.name && activeTab === "draft"),
+    enabled: Boolean(currentEmployee?.name),
   });
 
   const sortedDraftExpenses = React.useMemo(() => {
@@ -781,10 +517,26 @@ const ExpensesList: React.FC = () => {
   const { mutateAsync: submitExpenses, isPending: isSubmitting } =
     usePostExpenseClaim();
   const updateFileMutation = useUpdateFileAttachment();
+  const updateApprovalStatusMutation = useUpdateExpenseApprovalStatus();
+  const deleteExpenseClaimMutation = useDeleteExpenseClaim();
 
   const [currentFilters, setCurrentFilters] = React.useState<
     Record<string, any>
   >({});
+
+  // Stable callbacks to avoid infinite re-render loops in DataListView useEffects
+  const handleFiltersChange = useCallback((filters: Record<string, any>) => {
+    setCurrentFilters(filters);
+    setSelectedMyExpensesDraftIds(new Set());
+  }, []);
+
+  const handleDataLoad = useCallback((data: any[]) => {
+    setCurrentListData(data);
+  }, []);
+
+  const handleRefetchComplete = useCallback(() => {
+    setRefetchAttendance(false);
+  }, [setRefetchAttendance]);
 
   const expenseCategoryOptions = React.useMemo(() => {
     if (!expenseCategories || !Array.isArray(expenseCategories)) {
@@ -854,19 +606,7 @@ const ExpensesList: React.FC = () => {
     let exportData: any[] = [];
     let fileName = "Expense_Claims";
 
-    if (activeTab === "draft") {
-      fileName = "Draft_Expense_Claims";
-      exportData = (sortedDraftExpenses || []).map((item: any) => {
-        const parsed = item?.json && typeof item.json === "string" ? JSON.parse(item.json) : item?.json;
-        return {
-          "Expense Category": parsed?.custom_expense_category_name || parsed?.expenseCategory || "-",
-          "Expense Type": parsed?.custom_expense_type || parsed?.expenseType || "-",
-          "Created Date": formatToIndianDate(item?.creation),
-          "Expense Date": formatToIndianDate(parsed?.expense_date),
-          "Claimed Amount": parsed?.amount || 0,
-        };
-      });
-    } else if (activeTab === "expenses") {
+    if (activeTab === "expenses") {
       fileName = "My_Expense_Claims";
       const isPaidFilter = currentFilters.status === "Paid";
       exportData = (currentListData || []).map((item: any) => {
@@ -1036,46 +776,49 @@ const ExpensesList: React.FC = () => {
     return <NoDataFound title={message.title} subtitle={message.description} />;
   };
 
-  const tableTitles =
-    activeTab === "draft"
-      ? [
-        "",
-        "Expense Category",
-        "Expense Type",
-        "Created Date",
-        "Expense Date",
-        "Claimed Amount",
-        "Attachments",
-        "Actions",
-      ]
-      : [
-        "Expense Id",
-        "Expense Category",
-        "Expense Type",
-        "Claimed Amount",
-        "Sanctioned Amount",
-        ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
-        "Expense Date",
-        "Claimed Date",
-        "Status",
-        "Actions",
-      ];
+  // When My Expenses tab has Draft filter selected, show the draft-style columns
+  const isDraftFilter = activeTab === "expenses" && currentFilters.approval_status === "Draft";
 
-  const tableColumnWidths =
-    activeTab === "draft"
-      ? ["48px", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "120px"]
-      : [
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        ...(currentFilters.status === "Paid" ? ["1fr"] : []),
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-      ];
+  const tableTitles = isDraftFilter
+    ? [
+      "",
+      "Expense Id",
+      "Expense Category",
+      "Expense Type",
+      "Claimed Amount",
+      "Sanctioned Amount",
+      "Expense Date",
+      "Claimed Date",
+      "Status",
+      "Actions",
+    ]
+    : [
+      "Expense Id",
+      "Expense Category",
+      "Expense Type",
+      "Claimed Amount",
+      "Sanctioned Amount",
+      ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
+      "Expense Date",
+      "Claimed Date",
+      "Status",
+      "Actions",
+    ];
+
+  const tableColumnWidths = isDraftFilter
+    ? ["48px", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "120px"]
+    : [
+      "1fr",
+      "1fr",
+      "1fr",
+      "1fr",
+      "1fr",
+      ...(currentFilters.status === "Paid" ? ["1fr"] : []),
+      "1fr",
+      "1fr",
+      "1fr",
+      "1fr",
+    ];
 
   return (
     <div className="flex flex-col h-full">
@@ -1085,18 +828,14 @@ const ExpensesList: React.FC = () => {
             {isDesktop ? (
               <div>
                 <Typography variant="h4">
-                  {activeTab === "draft"
-                    ? "Draft Expense Claims"
-                    : activeTab === "shared"
-                      ? "Shared Expense Claims"
-                      : "My Expense Claims"}
+                  {activeTab === "shared"
+                    ? "Shared Expense Claims"
+                    : "My Expense Claims"}
                 </Typography>
                 <Typography variant="bodySmall" color="body2">
-                  {activeTab === "draft"
-                    ? "View your draft expense claims"
-                    : activeTab === "shared"
-                      ? "Track and manage your shared expense claims"
-                      : "Track and manage your expense claim requests"}
+                  {activeTab === "shared"
+                    ? "Track and manage your shared expense claims"
+                    : "Track and manage your expense claim requests"}
                 </Typography>
               </div>
             ) : (
@@ -1107,22 +846,11 @@ const ExpensesList: React.FC = () => {
           {/* Toggle Tabs */}
           <div className="flex items-center justify-between mt-3 gap-4">
             <div className="flex bg-gray-100 rounded-xl p-1 w-fit">
-              {/* <button
-                onClick={() => {
-                  setActiveTab("draft");
-                  setCurrentListData([]);
-                }}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "draft"
-                  ? "bg-white text-primary shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-                  }`}
-              >
-                Draft Expenses
-              </button> */}
               <button
                 onClick={() => {
                   setActiveTab("expenses");
                   setCurrentListData([]);
+                  setSelectedMyExpensesDraftIds(new Set());
                 }}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "expenses"
                   ? "bg-white text-primary shadow-sm"
@@ -1135,6 +863,7 @@ const ExpensesList: React.FC = () => {
                 onClick={() => {
                   setActiveTab("shared");
                   setCurrentListData([]);
+                  setSelectedMyExpensesDraftIds(new Set());
                 }}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "shared"
                   ? "bg-white text-primary shadow-sm"
@@ -1161,8 +890,35 @@ const ExpensesList: React.FC = () => {
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         {currentEmployee?.name && activeTab === "expenses" && (
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}
-            columnSortConfig={COLUMN_SORT_CONFIG_EXPENSE_CLAIM}
+            columnSortConfig={isDraftFilter ? undefined : COLUMN_SORT_CONFIG_EXPENSE_CLAIM}
           >
+            {/* Select All header for backend-draft filter mode (desktop only) */}
+            {isDraftFilter && isDesktop && currentListData.length > 0 && (
+              <div
+                className="grid max-w-screen items-center gap-4 px-6 h-12 border-b border-gray-200 bg-gray-50"
+                style={{ gridTemplateColumns: "48px 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 120px" }}
+              >
+                <div className="flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedMyExpensesDraftIds.size === currentListData.length && currentListData.length > 0}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedMyExpensesDraftIds(new Set(currentListData.map((d: any) => d?.reference_document?.name).filter(Boolean)));
+                      } else {
+                        setSelectedMyExpensesDraftIds(new Set());
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                  />
+                </div>
+                <div className="col-span-8 flex items-center">
+                  <span className="text-sm font-medium text-gray-700">
+                    Select All ({selectedMyExpensesDraftIds.size} selected)
+                  </span>
+                </div>
+              </div>
+            )}
             <DataListView
               queryKey={["expense-claims-all"]}
               customAPI={{
@@ -1172,13 +928,182 @@ const ExpensesList: React.FC = () => {
                   employee: currentEmployee?.name,
                 },
               }}
-              ItemComponent={(props: { item: any }) =>
-                isDesktop ? (
-                  <RowWrapper item={props.item} />
+              ItemComponent={(props: { item: any }) => {
+                const item = props.item;
+                const expenseClaim = item?.reference_document;
+
+                if (isDraftFilter && isDesktop) {
+                  const itemId = expenseClaim?.name;
+                  const isSelected = selectedMyExpensesDraftIds.has(itemId);
+                  const formattedAmount = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(expenseClaim?.total_claimed_amount ?? 0);
+                  const formattedSanctioned = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(expenseClaim?.total_sanctioned_amount ?? 0);
+                  const stages = item?.approval_stages_status || [];
+                  const sendBackUser = item?.send_back_user || null;
+                  const canEdit = item?.can_edit || false;
+                  const todoStatus = item?.todo_status || item?.status || null;
+                  const approvalStatus = expenseClaim?.approval_status;
+                  return (
+                    <div
+                      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+                      style={{ gridTemplateColumns: "48px 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 120px" }}
+                      onClick={() => itemId && openModal(itemId, stages, sendBackUser, canEdit, todoStatus, approvalStatus)}
+                    >
+                      <div
+                        className="flex items-center justify-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {
+                            setSelectedMyExpensesDraftIds((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(itemId)) next.delete(itemId); else next.add(itemId);
+                              return next;
+                            });
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                        />
+                      </div>
+                      <Tooltip content={expenseClaim?.name || ""} triggerClassName="w-full truncate min-w-0 block">
+                        <Typography variant="bodySmall" className="font-medium text-center truncate block w-full">{expenseClaim?.name}</Typography>
+                      </Tooltip>
+                      <Tooltip content={expenseClaim?.custom_expense_category_name || ""} triggerClassName="w-full truncate min-w-0 block">
+                        <Typography variant="bodySmall" className="font-medium text-center truncate block w-full">{expenseClaim?.custom_expense_category_name || "--"}</Typography>
+                      </Tooltip>
+                      <Tooltip content={expenseClaim?.expenses?.[0]?.custom_claim_type_name || ""} triggerClassName="w-full truncate min-w-0 block">
+                        <Typography variant="bodySmall" className="font-medium text-center truncate block w-full">{expenseClaim?.expenses?.[0]?.custom_claim_type_name || "--"}</Typography>
+                      </Tooltip>
+                      <Typography variant="bodySmall" className="font-medium text-center">{formattedAmount}</Typography>
+                      <Typography variant="bodySmall" className="font-medium text-center">{formattedSanctioned || "--"}</Typography>
+                      <Typography variant="bodySmall" className="font-medium text-center">{formatToIndianDate(expenseClaim?.expenses?.[0]?.expense_date)}</Typography>
+                      <Typography variant="bodySmall" className="font-medium text-center">{formatToIndianDate(expenseClaim?.creation)}</Typography>
+                      <div className="flex items-center justify-center">
+                        <StatusBadge status={expenseClaim?.approval_status} />
+                      </div>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const navigationState = buildExpenseNavigationState(expenseClaim, expenseClaim?.expenses?.[0], false);
+                            navigate("/webapp/expenses-app/add-expense", { state: navigationState });
+                          }}
+                          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmModal({
+                              isOpen: true,
+                              message: "Are you sure you want to delete this expense?",
+                              onConfirm: () => {
+                                deleteExpenseClaimMutation.mutate(expenseClaim?.name);
+                                setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} });
+                              },
+                            });
+                          }}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (isDraftFilter && !isDesktop) {
+                  const itemId = expenseClaim?.name;
+                  const isSelected = selectedMyExpensesDraftIds.has(itemId);
+                  const formattedAmount = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(expenseClaim?.total_claimed_amount ?? 0);
+                  const stages = item?.approval_stages_status || [];
+                  const sendBackUser = item?.send_back_user || null;
+                  const canEdit = item?.can_edit || false;
+                  const todoStatus = item?.todo_status || item?.status || null;
+                  const approvalStatus = expenseClaim?.approval_status;
+                  return (
+                    <div
+                      className="cursor-pointer border-t-4 border-x border-b border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl"
+                      onClick={() => itemId && openModal(itemId, stages, sendBackUser, canEdit, todoStatus, approvalStatus)}
+                    >
+                      <div className="p-4 flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                          <label
+                            className="flex items-center gap-2 cursor-pointer"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                setSelectedMyExpensesDraftIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(itemId)) next.delete(itemId); else next.add(itemId);
+                                  return next;
+                                });
+                              }}
+                              className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                            />
+                            <Typography variant="mobileCardLabel">Select</Typography>
+                          </label>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); const navigationState = buildExpenseNavigationState(expenseClaim, expenseClaim?.expenses?.[0], false); navigate("/webapp/expenses-app/add-expense", { state: navigationState }); }}
+                              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+                            >
+                              <Pencil size={14} />Edit
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <Typography variant="mobileCardLabel">Expense ID</Typography>
+                          <Typography variant="mobileCardValue">{expenseClaim?.name}</Typography>
+                        </div>
+                        <div className="flex justify-between">
+                          <div className="flex flex-col gap-1">
+                            <Typography variant="mobileCardLabel">Expense Category</Typography>
+                            <Typography variant="mobileCardValue">{expenseClaim?.custom_expense_category_name || "--"}</Typography>
+                          </div>
+                          <div className="flex flex-col gap-1 text-right">
+                            <Typography variant="mobileCardLabel">Expense Type</Typography>
+                            <Typography variant="mobileCardValue">{expenseClaim?.expenses?.[0]?.custom_claim_type_name || "--"}</Typography>
+                          </div>
+                        </div>
+                        <div className="flex justify-between">
+                          <div className="flex flex-col gap-1">
+                            <Typography variant="mobileCardLabel">Claimed Amount</Typography>
+                            <Typography variant="mobileCardValue">{formattedAmount}</Typography>
+                          </div>
+                          <div className="flex flex-col gap-1 text-right">
+                            <Typography variant="mobileCardLabel">Expense Date</Typography>
+                            <Typography variant="mobileCardValue">{formatToIndianDate(expenseClaim?.expenses?.[0]?.expense_date)}</Typography>
+                          </div>
+                        </div>
+                        <div className="flex justify-between">
+                          <div className="flex flex-col gap-1">
+                            <Typography variant="mobileCardLabel">Status</Typography>
+                            <StatusBadge status={expenseClaim?.approval_status} />
+                          </div>
+                          <div className="flex flex-col gap-1 text-right">
+                            <Typography variant="mobileCardLabel">Claimed Date</Typography>
+                            <Typography variant="mobileCardValue">{formatToIndianDate(expenseClaim?.creation)}</Typography>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Normal (non-draft-filter) rendering
+                return isDesktop ? (
+                  <RowWrapper item={item} />
                 ) : (
-                  <ItemWrapper item={props.item} />
-                )
-              }
+                  <ItemWrapper item={item} />
+                );
+              }}
               isSearch={true}
               isFilter={true}
               filterFields={[
@@ -1188,20 +1113,15 @@ const ExpensesList: React.FC = () => {
                   fieldtype: "Select",
                   options: [
                     { label: "Pending", value: "Pending", customAPIParams: { todo_status: "Open" } },
-                    { label: "Draft", value: "Draft"},
+                    { label: "Draft", value: "Draft" },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
                     {
                       label: "Revoked",
                       value: "Revoked",
                       excludeFieldFromFilters: true,
-                      customAPIParams: {
-                        todo_status: "Cancelled",
-                      },
-                      additionalFilters: {
-                        docstatus: 2,
-                        custom_allow_revoke: 1,
-                      },
+                      customAPIParams: { todo_status: "Cancelled" },
+                      additionalFilters: { docstatus: 2, custom_allow_revoke: 1 },
                     },
                   ],
                 },
@@ -1223,10 +1143,10 @@ const ExpensesList: React.FC = () => {
                 },
               ]}
               defaultFilters={{ approval_status: "Pending" }}
-              onFiltersChange={setCurrentFilters}
-              onDataLoad={setCurrentListData}
+              onFiltersChange={handleFiltersChange}
+              onDataLoad={handleDataLoad}
               SkeletonComponent={CardSkeleton}
-              onRefetchComplete={() => setRefetchAttendance(false)}
+              onRefetchComplete={handleRefetchComplete}
               refetchTrigger={refetchAttendance}
               showRefreshButton={false}
               pageSize={10}
@@ -1235,197 +1155,62 @@ const ExpensesList: React.FC = () => {
               showPagination={true}
               noRecordsScreen={noRecordsScreen}
             />
-          </CardTable>
-        )}
-
-        {currentEmployee?.name && activeTab === "draft" && (
-          <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
-            {isLoadingDrafts ? (
-              <div className="flex flex-col gap-3 px-4">
-                {[1, 2, 3].map((i) => (
-                  <CardSkeleton key={i} />
-                ))}
-              </div>
-            ) : sortedDraftExpenses && sortedDraftExpenses.length > 0 ? (
-              <>
-                {isFetchingDrafts && (
-                  <div className="px-4 pt-3">
-                    <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700">
-                      Refreshing drafts...
-                    </div>
-                  </div>
-                )}
-                <div className="flex flex-col gap-3">
-                  {/* Select All Header Row - Desktop only */}
-                  {isDesktop && (
-                    <div
-                      className="grid max-w-screen items-center gap-4 px-6 h-12 border-b border-gray-200 bg-gray-50"
-                      style={{
-                        gridTemplateColumns: "48px 1fr 1fr 1fr 1fr 1fr 120px",
-                      }}
-                    >
-                      <div className="flex items-center justify-center">
-                        <input
-                          type="checkbox"
-                          checked={
-                            selectedDraftIds.size === sortedDraftExpenses.length &&
-                            sortedDraftExpenses.length > 0
-                          }
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedDraftIds(
-                                new Set(sortedDraftExpenses.map((d: any) => d.name)),
-                              );
-                            } else {
-                              setSelectedDraftIds(new Set());
-                            }
-                          }}
-                          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                        />
-                      </div>
-                      <div className="col-span-5 flex items-center">
-                        <span className="text-sm font-medium text-gray-700">
-                          Select All ({selectedDraftIds.size} selected)
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Draft List */}
-                  {sortedDraftExpenses.map((draft: any) => {
-                    const isSelected = selectedDraftIds.has(draft.name);
-                    const handleToggleSelect = (id: string) => {
-                      setSelectedDraftIds((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(id)) {
-                          next.delete(id);
-                        } else {
-                          next.add(id);
-                        }
-                        return next;
-                      });
-                    };
-                    const handleEdit = (editItem: any) => {
-                      const parsedJson =
-                        editItem?.json && typeof editItem.json === "string"
-                          ? JSON.parse(editItem.json)
-                          : editItem?.json;
-                      if (parsedJson) {
-                        navigate("/webapp/expenses-app/add-expense", {
-                          state: {
-                            expense: {
-                              ...parsedJson,
-                              uid: parsedJson.uid,
-                            },
-                            expense_claim_name: editItem.name,
-                            draft_document_name: editItem.name,
-                            isEditingFromDetailsPage: false,
-                          },
-                        });
+            {/* Bulk action footer for backend-draft filter mode */}
+            {isDraftFilter && selectedMyExpensesDraftIds.size > 0 && (
+              <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t border-gray-200 mt-2">
+                <Button variant="outline" size="md" onClick={() => setSelectedMyExpensesDraftIds(new Set())}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="contain"
+                  size="md"
+                  bgColor="primary"
+                  disabled={updateApprovalStatusMutation.isPending}
+                  onClick={async () => {
+                    const ids = Array.from(selectedMyExpensesDraftIds);
+                    let successCount = 0;
+                    for (const expenseClaimName of ids) {
+                      try {
+                        await updateApprovalStatusMutation.mutateAsync({ expenseClaimName, approvalStatus: "Pending" });
+                        successCount++;
+                      } catch {
+                        // error handled in hook
                       }
-                    };
-                    const handleDelete = (deleteItem: any) => {
-                      setDeleteConfirmModal({
-                        isOpen: true,
-                        message:
-                          "Are you sure you want to delete this draft expense?",
-                        onConfirm: () => {
-                          deleteDraftMutation.mutate(deleteItem.name);
-                          setDeleteConfirmModal({
-                            isOpen: false,
-                            message: "",
-                            onConfirm: () => { },
-                          });
-                        },
-                      });
-                    };
-                    return isDesktop ? (
-                      <DraftExpenseTableRow
-                        key={draft.name}
-                        item={draft}
-                        isSelected={isSelected}
-                        onToggleSelect={handleToggleSelect}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                      />
-                    ) : (
-                      <DraftExpenseItem
-                        key={draft.name}
-                        item={draft}
-                        isSelected={isSelected}
-                        onToggleSelect={handleToggleSelect}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                      />
-                    );
-                  })}
-                </div>
-
-                {/* Action Buttons for Selected */}
-                {selectedDraftIds.size > 0 && (
-                  <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t border-gray-200 mt-2">
-                    <Button
-                      variant="outline"
-                      size="md"
-                      onClick={() => setSelectedDraftIds(new Set())}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="contain"
-                      size="md"
-                      bgColor="primary"
-                      onClick={() => {
-                        setIsAcknowledgementChecked(false);
-                        setIsRelocationAcknowledgementChecked(false);
-                        setSubmitConfirmModal({
-                          isOpen: true,
-                          count: selectedDraftIds.size,
+                    }
+                    if (successCount > 0) {
+                      toast.success(`${successCount} expense(s) submitted for approval.`);
+                    }
+                    setSelectedMyExpensesDraftIds(new Set());
+                  }}
+                >
+                  {updateApprovalStatusMutation.isPending ? "Submitting..." : `Submit Selected (${selectedMyExpensesDraftIds.size})`}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="md"
+                  bgColor="error"
+                  disabled={deleteExpenseClaimMutation.isPending}
+                  onClick={() => {
+                    setDeleteConfirmModal({
+                      isOpen: true,
+                      message: `Are you sure you want to delete ${selectedMyExpensesDraftIds.size} selected draft expense(s)? This cannot be undone.`,
+                      onConfirm: () => {
+                        Array.from(selectedMyExpensesDraftIds).forEach((name) => {
+                          deleteExpenseClaimMutation.mutate(name);
                         });
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting
-                        ? "Submitting..."
-                        : `Submit Selected (${selectedDraftIds.size})`}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="md"
-                      bgColor="error"
-                      onClick={() => {
-                        setDeleteConfirmModal({
-                          isOpen: true,
-                          message: `Are you sure you want to delete ${selectedDraftIds.size} selected draft(s)?`,
-                          onConfirm: () => {
-                            selectedDraftIds.forEach((id) => {
-                              deleteDraftMutation.mutate(id);
-                            });
-                            setSelectedDraftIds(new Set());
-                            setDeleteConfirmModal({
-                              isOpen: false,
-                              message: "",
-                              onConfirm: () => { },
-                            });
-                          },
-                        });
-                      }}
-                    >
-                      Delete Selected ({selectedDraftIds.size})
-                    </Button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="p-4">
-                <NoDataFound
-                  title="No Draft Expenses"
-                  subtitle="Your saved draft expense claims will appear here."
-                />
+                        setSelectedMyExpensesDraftIds(new Set());
+                        setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} });
+                      },
+                    });
+                  }}
+                >
+                  {deleteExpenseClaimMutation.isPending ? "Deleting..." : `Delete Selected (${selectedMyExpensesDraftIds.size})`}
+                </Button>
               </div>
             )}
           </CardTable>
         )}
+
 
         {currentEmployee?.name && activeTab === "shared" && (
           <CardTable

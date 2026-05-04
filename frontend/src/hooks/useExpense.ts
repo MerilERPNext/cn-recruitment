@@ -490,3 +490,59 @@ export function useUpdateFileAttachment() {
       expenseService.updateFile(fileName, data),
   });
 }
+
+/**
+ * Hook to update the approval_status field of an Expense Claim.
+ * Used to transition backend "Draft" expenses to "Pending" on bulk submit.
+ */
+export function useUpdateExpenseApprovalStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      expenseClaimName,
+      approvalStatus,
+    }: {
+      expenseClaimName: string;
+      approvalStatus: string;
+    }) =>
+      expenseService.updateExpenseClaimApprovalStatus(
+        expenseClaimName,
+        approvalStatus
+      ),
+    onSuccess: () => {
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["custom-api"] });
+        queryClient.invalidateQueries({ queryKey: ["custom-api-infinite"] });
+        queryClient.invalidateQueries({ queryKey: ["expense-claims-all"] });
+      }, 500);
+    },
+    onError: (err: any) => {
+      toast.error(errorResponseFormater(err, "Failed to update expense status."));
+    },
+  });
+}
+
+/**
+ * Hook to delete an Expense Claim document (not Draft Expense Claim).
+ * Used for backend "Draft" expense claims shown in My Expenses tab.
+ */
+export function useDeleteExpenseClaim() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (expenseClaimName: string) =>
+      expenseService.deleteExpenseClaim(expenseClaimName),
+    onSuccess: () => {
+      toast.success("Expense claim deleted successfully.");
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["custom-api"] });
+        queryClient.invalidateQueries({ queryKey: ["custom-api-infinite"] });
+        queryClient.invalidateQueries({ queryKey: ["expense-claims-all"] });
+      }, 500);
+    },
+    onError: (err: any) => {
+      toast.error(errorResponseFormater(err, "Failed to delete expense claim."));
+    },
+  });
+}

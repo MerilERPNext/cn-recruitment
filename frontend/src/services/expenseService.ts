@@ -401,6 +401,27 @@ export const expenseService = {
     );
   },
 
+  /**
+   * Updates the approval_status of an Expense Claim document.
+   * Used to transition a backend "Draft" expense to "Pending".
+   */
+  updateExpenseClaimApprovalStatus: async (
+    expenseClaimName: string,
+    approvalStatus: string
+  ): Promise<any> => {
+    return FrappeAPI.updateDocument("Expense Claim", expenseClaimName, {
+      approval_status: approvalStatus,
+    });
+  },
+
+  /**
+   * Deletes an Expense Claim document.
+   * Used for backend "Draft" expense claims (approval_status=Draft).
+   */
+  deleteExpenseClaim: async (expenseClaimName: string): Promise<any> => {
+    return FrappeAPI.deleteDocument("Expense Claim", expenseClaimName);
+  },
+
 };
 
 
