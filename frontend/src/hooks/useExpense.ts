@@ -1,31 +1,31 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  useQuery,
-  UseQueryResult,
   useMutation,
+  useQuery,
   useQueryClient,
+  UseQueryResult,
 } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import {
   ExpenseApprovalPayload,
   expenseService,
   PerMileageUnitRateResponse,
 } from "../services/expenseService";
-import { FilterCondition } from "../types/frappe";
-import toast from "react-hot-toast";
-import {
-  ExpenseTypeFieldsResponse,
-  CalculateExpenseParams,
-  CalculateExpenseResponse,
-} from "../types/expenseAdvance";
-import { errorResponseFormater } from "../utils/errorResponseFormater";
 import {
   ExpenseCategoryType,
   ExpensePolicyQuestionsResponse,
 } from "../types/expense";
-import { useNavigate } from "react-router-dom";
+import {
+  CalculateExpenseParams,
+  CalculateExpenseResponse,
+  ExpenseTypeFieldsResponse,
+} from "../types/expenseAdvance";
+import { FilterCondition } from "../types/frappe";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
 
 export const useExpenseTypes = (
-  filters?: FilterCondition[]
+  filters?: FilterCondition[],
 ): UseQueryResult<any, Error> => {
   return useQuery<any, Error>({
     queryKey: ["expense", filters],
@@ -57,7 +57,7 @@ export const useDailyAllowancesVehicleCategories = (): UseQueryResult<
 };
 
 export const useExpensePolicies = (
-  employee_id: string
+  employee_id: string,
 ): UseQueryResult<any, Error> => {
   return useQuery<any, Error>({
     queryKey: ["expensePolicies", employee_id],
@@ -81,7 +81,7 @@ export function usePostExpenseClaim() {
 
   const handleError = (err: any) => {
     toast.error(
-      errorResponseFormater(err, "Submission failed. Please try again.")
+      errorResponseFormater(err, "Submission failed. Please try again."),
     );
   };
 
@@ -90,7 +90,7 @@ export function usePostExpenseClaim() {
       expenseService.postExpenseClaim(expenses_data),
     onSuccess: () => {
       toast.success("Expense claim submitted successfully!");
-      
+
       setTimeout(() => {
         queryClient.invalidateQueries({
           queryKey: ["custom-api"],
@@ -99,11 +99,9 @@ export function usePostExpenseClaim() {
           queryKey: ["custom-api-infinite"],
         });
       }, 1500);
-
     },
     onError: handleError,
   });
-
 }
 
 export function useValidateExpense() {
@@ -156,7 +154,7 @@ export const useCalculateExpenseAmount = (params?: CalculateExpenseParams) => {
 
 export const useGetUnitPrice = (
   claimTypeDoc?: string,
-  vehicleType?: string
+  vehicleType?: string,
 ) => {
   return useQuery<PerMileageUnitRateResponse>({
     queryKey: ["unit-price", claimTypeDoc, vehicleType],
@@ -190,8 +188,8 @@ export function useExpenseApproval() {
       toast.error(
         errorResponseFormater(
           error,
-          "Failed to update expense claim. Please try again."
-        )
+          "Failed to update expense claim. Please try again.",
+        ),
       );
 
       console.error("Expense approval/rejection failed:", error);
@@ -222,7 +220,7 @@ export function useExpenseSingleItemApproval() {
         itemName,
         sanctionedAmount,
         comments,
-        status
+        status,
       ),
     onSuccess: () => {
       toast.success("Expense claim updated successfully!");
@@ -235,8 +233,8 @@ export function useExpenseSingleItemApproval() {
       toast.error(
         errorResponseFormater(
           error,
-          "Failed to update expense claim. Please try again."
-        )
+          "Failed to update expense claim. Please try again.",
+        ),
       );
 
       console.error("Expense approval/rejection failed:", error);
@@ -262,7 +260,7 @@ export function useUpdateExpense() {
       return expenseService.updateExpense(
         params.expense_claim_name,
         params.expenses,
-        params.isResubmit
+        params.isResubmit,
       );
     },
     onSuccess: () => {
@@ -277,7 +275,6 @@ export function useUpdateExpense() {
           queryKey: ["custom-api-infinite"],
         });
       }, 1500);
-
     },
     onError: (err: any) => {
       toast.error(errorResponseFormater(err));
@@ -308,8 +305,8 @@ export function useExpenseLineItemUpdate() {
       toast.error(
         errorResponseFormater(
           error,
-          "Line item update failed, Please try again."
-        )
+          "Line item update failed, Please try again.",
+        ),
       );
       console.error("Line item update failed:", error);
     },
@@ -336,7 +333,7 @@ export function useExpenseCommentUpdate() {
         referenceDoctype,
         referenceName,
         content,
-        comment_email
+        comment_email,
       ),
 
     onSuccess: () => {
@@ -348,7 +345,10 @@ export function useExpenseCommentUpdate() {
 
     onError: (error) => {
       toast.error(
-        errorResponseFormater(error, "Comment update failed. Please try again.")
+        errorResponseFormater(
+          error,
+          "Comment update failed. Please try again.",
+        ),
       );
       console.error("Comment update failed:", error);
     },
@@ -397,11 +397,15 @@ export function useGetExpenseTypesByCategoryMutation() {
     }: {
       employee: string;
       reimbursementCategory: string;
-    }) => expenseService.getExpenseTypesByCategory(employee, reimbursementCategory),
+    }) =>
+      expenseService.getExpenseTypesByCategory(employee, reimbursementCategory),
   });
 }
 
-export const useGetExpenseAttachments = (documentName?: string, doctype?: string) => {
+export const useGetExpenseAttachments = (
+  documentName?: string,
+  doctype?: string,
+) => {
   return useQuery({
     queryKey: ["expense-attachments", documentName, doctype],
     queryFn: () => {
@@ -418,7 +422,8 @@ export function useCreateDraftExpenseClaim() {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: (payload: any) => expenseService.createDraftExpenseClaim(payload),
+    mutationFn: (payload: any) =>
+      expenseService.createDraftExpenseClaim(payload),
     onSuccess: () => {
       toast.success("Draft expense claim saved!");
       queryClient.removeQueries({ queryKey: ["expense-claims-draft"] });
@@ -450,7 +455,8 @@ export function useDeleteDraftExpenseClaim() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (docName: string) => expenseService.deleteDraftExpenseClaim(docName),
+    mutationFn: (docName: string) =>
+      expenseService.deleteDraftExpenseClaim(docName),
     onSuccess: (_, docName) => {
       queryClient.setQueriesData(
         { queryKey: ["expense-claims-draft"] },
@@ -486,8 +492,13 @@ export function useUpdateDraftExpenseClaim() {
 
 export function useUpdateFileAttachment() {
   return useMutation({
-    mutationFn: ({ fileName, data }: { fileName: string; data: { attached_to_doctype: string; attached_to_name: string } }) =>
-      expenseService.updateFile(fileName, data),
+    mutationFn: ({
+      fileName,
+      data,
+    }: {
+      fileName: string;
+      data: { attached_to_doctype: string; attached_to_name: string };
+    }) => expenseService.updateFile(fileName, data),
   });
 }
 
@@ -508,7 +519,7 @@ export function useUpdateExpenseApprovalStatus() {
     }) =>
       expenseService.updateExpenseClaimApprovalStatus(
         expenseClaimName,
-        approvalStatus
+        approvalStatus,
       ),
     onSuccess: () => {
       setTimeout(() => {
@@ -518,7 +529,9 @@ export function useUpdateExpenseApprovalStatus() {
       }, 500);
     },
     onError: (err: any) => {
-      toast.error(errorResponseFormater(err, "Failed to update expense status."));
+      toast.error(
+        errorResponseFormater(err, "Failed to update expense status."),
+      );
     },
   });
 }
@@ -542,7 +555,9 @@ export function useDeleteExpenseClaim() {
       }, 500);
     },
     onError: (err: any) => {
-      toast.error(errorResponseFormater(err, "Failed to delete expense claim."));
+      toast.error(
+        errorResponseFormater(err, "Failed to delete expense claim."),
+      );
     },
   });
 }

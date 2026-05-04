@@ -53,7 +53,7 @@ export const expenseService = {
       "Daily Allowance Vehicle Category",
       {
         fields: ["name"],
-      }
+      },
     );
     return response.data;
   },
@@ -62,7 +62,7 @@ export const expenseService = {
       "chatnext_expense_trips.expense_claim.get_list_of_policys",
       {
         employee: employeeId,
-      }
+      },
     );
 
     return response;
@@ -86,23 +86,23 @@ export const expenseService = {
   postExpenseClaim: async (expenses_data: string) => {
     return FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.create_expense_claims_by_category",
-      { expenses_data }
+      { expenses_data },
     );
   },
 
   getExpenseTypeFields: async (
-    expenseType: string
+    expenseType: string,
   ): Promise<ExpenseTypeFieldsResponse> => {
     if (!expenseType) throw new Error("expenseType is required");
     const response = await FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.get_expense_type_fields",
-      { expense_type: expenseType }
+      { expense_type: expenseType },
     );
     return response as ExpenseTypeFieldsResponse;
   },
 
   calculateExpenseAmount: async (
-    params: CalculateExpenseParams
+    params: CalculateExpenseParams,
   ): Promise<CalculateExpenseResponse> => {
     if (!params) throw new Error("params are required");
     const { expense_type, units, vehicle_type } = params;
@@ -124,7 +124,7 @@ export const expenseService = {
     }
     const response = await FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.calculate_expense_amount",
-      payload
+      payload,
     );
 
     return response as CalculateExpenseResponse;
@@ -132,7 +132,7 @@ export const expenseService = {
 
   getUnitPrice: async (
     claimTypeDoc: string,
-    vehicleType: string
+    vehicleType: string,
   ): Promise<PerMileageUnitRateResponse> => {
     if (!claimTypeDoc) throw new Error("claimTypeDoc is required");
     if (!vehicleType) throw new Error("vehicleType is required");
@@ -142,7 +142,7 @@ export const expenseService = {
       {
         claim_type_doc: claimTypeDoc,
         vehicle_type: vehicleType,
-      }
+      },
     );
 
     return response as PerMileageUnitRateResponse;
@@ -150,12 +150,12 @@ export const expenseService = {
 
   //Approve or reject line expense
   approveRejectLineItems: async (
-    payload: ExpenseApprovalPayload
+    payload: ExpenseApprovalPayload,
   ): Promise<any> => {
     try {
       const response = await FrappeAPI.callMethod(
         "chatnext_expense_trips.expense_claim.approve_reject_line_items",
-        payload
+        payload,
       );
       return response;
     } catch (error) {
@@ -170,7 +170,7 @@ export const expenseService = {
     itemName: string,
     sanctionedAmount: number,
     comments: string,
-    status: "Approve" | "Reject"
+    status: "Approve" | "Reject",
   ): Promise<any> => {
     try {
       const payload: ExpenseApprovalPayload = {
@@ -188,13 +188,13 @@ export const expenseService = {
 
       const response = await FrappeAPI.callMethod(
         "chatnext_expense_trips.expense_claim.approve_reject_line_items",
-        payload
+        payload,
       );
       return response;
     } catch (error) {
       console.error(
         "📡 Error while approving/rejecting single expense item:",
-        error
+        error,
       );
       throw error;
     }
@@ -204,7 +204,7 @@ export const expenseService = {
   updateExpense: async (
     expense_claim_name: string,
     expenses: Array<Record<string, any>>,
-    isResubmit?: boolean
+    isResubmit?: boolean,
   ) => {
     if (!expense_claim_name) {
       throw new Error("expense_claim_name is required");
@@ -220,7 +220,7 @@ export const expenseService = {
 
     const response = await FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.edit_expense_claim",
-      payload
+      payload,
     );
 
     if (isResubmit) {
@@ -229,7 +229,7 @@ export const expenseService = {
         {
           doctype: "Expense Claim",
           docname: expense_claim_name,
-        }
+        },
       );
     }
 
@@ -240,7 +240,7 @@ export const expenseService = {
   updateLineItem: async (
     claimId: string,
     itemName: string,
-    sanctionedAmount: number
+    sanctionedAmount: number,
   ): Promise<any> => {
     try {
       const payload = {
@@ -255,7 +255,7 @@ export const expenseService = {
 
       const response = await FrappeAPI.callMethod(
         "chatnext_expense_trips.expense_claim.update_sanctioned_amount",
-        payload
+        payload,
       );
       return response;
     } catch (error) {
@@ -269,7 +269,7 @@ export const expenseService = {
     referenceDoctype: string,
     referenceName: string,
     content: string,
-    comment_email: string
+    comment_email: string,
   ): Promise<any> => {
     try {
       const payload = {
@@ -282,7 +282,7 @@ export const expenseService = {
 
       const response = await FrappeAPI.callMethod(
         "frappe.desk.form.utils.add_comment",
-        payload
+        payload,
       );
 
       return response;
@@ -294,16 +294,18 @@ export const expenseService = {
 
   getExpenseCategoryTypes: async (): Promise<ExpenseCategoryType[]> => {
     const response = await FrappeAPI.callMethod(
-      "chatnext_expense_trips.expense_claim.fiter_category_types"
+      "chatnext_expense_trips.expense_claim.fiter_category_types",
     );
 
     return Array.isArray(response) ? response : [];
   },
 
-  getApplicableExpenseCategories: async (categoryType: string): Promise<any> => {
+  getApplicableExpenseCategories: async (
+    categoryType: string,
+  ): Promise<any> => {
     return FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.get_applicable_expense_categories",
-      { category_type: categoryType }
+      { category_type: categoryType },
     );
   },
 
@@ -314,19 +316,22 @@ export const expenseService = {
     );
   },
 
-  getExpenseTypesByCategory: async (employee: string, reimbursementCategory: string): Promise<any> => {
+  getExpenseTypesByCategory: async (
+    employee: string,
+    reimbursementCategory: string,
+  ): Promise<any> => {
     return FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.get_expense_types_by_category",
-      { employee, reimbursement_category: reimbursementCategory }
+      { employee, reimbursement_category: reimbursementCategory },
     );
   },
 
   getExpensePolicyQuestions: async (
-    categoryName?: string
+    categoryName?: string,
   ): Promise<ExpensePolicyQuestionsResponse> => {
     const response = await FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_category_questions.get_expense_category_questions",
-      categoryName ? { category_name: categoryName } : {}
+      categoryName ? { category_name: categoryName } : {},
     );
 
     return response as ExpensePolicyQuestionsResponse;
@@ -335,11 +340,14 @@ export const expenseService = {
   validateExpenseClaim: async (expenses_data: string) => {
     return FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.validate_expense_claims_by_category",
-      { expenses_data }
+      { expenses_data },
     );
   },
 
-  getExpenseAttachments: async (documentName: string, doctype: string = "Expense Claim"): Promise<any[]> => {
+  getExpenseAttachments: async (
+    documentName: string,
+    doctype: string = "Expense Claim",
+  ): Promise<any[]> => {
     const filters: FilterCondition[] = [
       ["attached_to_doctype", "=", doctype],
       ["attached_to_name", "=", documentName],
@@ -356,9 +364,7 @@ export const expenseService = {
   },
 
   getDraftExpenseClaims: async (employeeId: string): Promise<any[]> => {
-    const filters: FilterCondition[] = [
-      ["employee", "=", employeeId],
-    ];
+    const filters: FilterCondition[] = [["employee", "=", employeeId]];
     const response = await FrappeAPI.getDocumentList("Draft Expense Claim", {
       fields: ["*"],
       filters,
@@ -375,19 +381,31 @@ export const expenseService = {
     return FrappeAPI.updateDocument("Draft Expense Claim", docName, payload);
   },
 
-  getFilesByAttachment: async (attachedToDoctype: string, attachedToName: string): Promise<any[]> => {
+  getFilesByAttachment: async (
+    attachedToDoctype: string,
+    attachedToName: string,
+  ): Promise<any[]> => {
     const filters: FilterCondition[] = [
       ["attached_to_doctype", "=", attachedToDoctype],
       ["attached_to_name", "=", attachedToName],
     ];
     const response = await FrappeAPI.getDocumentList("File", {
-      fields: ["name", "file_name", "file_url", "attached_to_doctype", "attached_to_name"],
+      fields: [
+        "name",
+        "file_name",
+        "file_url",
+        "attached_to_doctype",
+        "attached_to_name",
+      ],
       filters,
     });
     return response.data || [];
   },
 
-  updateFile: async (fileName: string, data: { attached_to_doctype: string; attached_to_name: string }) => {
+  updateFile: async (
+    fileName: string,
+    data: { attached_to_doctype: string; attached_to_name: string },
+  ) => {
     return FrappeAPI.updateDocument("File", fileName, data);
   },
 
@@ -397,7 +415,7 @@ export const expenseService = {
       {
         doctype,
         docname,
-      }
+      },
     );
   },
 
@@ -407,7 +425,7 @@ export const expenseService = {
    */
   updateExpenseClaimApprovalStatus: async (
     expenseClaimName: string,
-    approvalStatus: string
+    approvalStatus: string,
   ): Promise<any> => {
     return FrappeAPI.updateDocument("Expense Claim", expenseClaimName, {
       approval_status: approvalStatus,
@@ -421,7 +439,4 @@ export const expenseService = {
   deleteExpenseClaim: async (expenseClaimName: string): Promise<any> => {
     return FrappeAPI.deleteDocument("Expense Claim", expenseClaimName);
   },
-
 };
-
-
