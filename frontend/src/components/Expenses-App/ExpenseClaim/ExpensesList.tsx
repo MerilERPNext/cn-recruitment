@@ -1107,7 +1107,7 @@ const ExpensesList: React.FC = () => {
           {/* Toggle Tabs */}
           <div className="flex items-center justify-between mt-3 gap-4">
             <div className="flex bg-gray-100 rounded-xl p-1 w-fit">
-              <button
+              {/* <button
                 onClick={() => {
                   setActiveTab("draft");
                   setCurrentListData([]);
@@ -1118,7 +1118,7 @@ const ExpensesList: React.FC = () => {
                   }`}
               >
                 Draft Expenses
-              </button>
+              </button> */}
               <button
                 onClick={() => {
                   setActiveTab("expenses");
