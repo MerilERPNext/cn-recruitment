@@ -26,6 +26,14 @@ function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
   const status = rawStatus?.toLowerCase().trim();
 
   switch (status) {
+    case "draft":
+      return {
+        label: "Draft",
+        bgClass: "bg-yellow-100",
+        textClass: "text-yellow-800",
+        icon: <Clock className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+
     case "open":
     case "pending":
     case "draft":
