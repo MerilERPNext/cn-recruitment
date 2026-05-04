@@ -1,80 +1,35 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { RequestDetailCard } from "./RequestDetailsTimeline";
-import CardTable from "../../shared/CardTable";
-import { useScreenSize } from "../../../hooks/useScreenSize";
 
-import StatusBadge from "../../shared/atoms/statusBadge";
-import { Typography } from "../../shared/atoms/Typography";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
-import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
-import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useCallback, useMemo, useState } from "react";
-import { useApprovalAction } from "../../../hooks/userApprovalList";
-import { Attachment, FlowRequestItem, FlowRequestStage } from "../../../types/flows";
+import { FlowRequestItem, FlowRequestStage, Attachment } from "../../../../types/flows";
+import StatusBadge from "../../../shared/atoms/statusBadge";
+import { Typography } from "../../../shared/atoms/Typography";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import useCurrentUser from "../../../../hooks/useCurrentUser";
+import { useMemo, useState } from "react";
 
-import { StaticListView } from "../../ListView";
-import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-import { extractRolesAndUsers, FormIOForm } from "../../../utils/flowUtils";
-import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
-import { useQueryClient } from "@tanstack/react-query";
-import ReviewForm from "../Separation/components/ReviewForm";
+import { extractAllocatedToUserArray, extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
+import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
+import ReviewForm from "../../Separation/components/ReviewForm";
 import { createPortal } from "react-dom";
-import Button from "../../shared/atoms/Button";
+import Button from "../../../shared/atoms/Button";
 import AttachmentPreview from "./AttachmentPreview";
-import FormPreview from "../../shared/molecules/FormPreview";
+import FormPreview from "../../../shared/molecules/FormPreview";
+import ActModal from "./ActModal";
+import { handleActionType } from "../../../../hooks/userApprovalList";
 
-const titles = [
-  "Stage Name",
-  "Status",
-  "Due Date",
-  "Completed Date",
-  "Actions",
-];
-
-interface FlowTableProps {
-  data: FlowRequestItem;
-}
-
-const FlowTable: React.FC<FlowTableProps> = ({ data }) => {
-  const { isDesktop } = useScreenSize();
-  const activeStageIndex =
-    data.approval_status === "Pending"
-      ? data.approval_stages.findIndex((stage) => stage.status === "Pending")
-      : -1;
-
-  return (
-    <div className="sm:px-7 px-4 max-sm:pb-8">
-      <CardTable titles={titles}>
-        <StaticListView
-          data={data.approval_stages}
-          ItemComponent={(index, item) =>
-            isDesktop ? (
-              <StageCard stage={item} isActive={index === activeStageIndex} />
-            ) : (
-              <RequestDetailCard
-                stage={item}
-                index={index}
-                stages={data?.approval_stages}
-                isActive={index === activeStageIndex}
-              />
-            )
-          }
-          getItemKey={(stage, index) => stage?.stage_name + index}
-          pageSize={20}
-          SkeletonComponent={CardSkeleton}
-          loadMorePagination={true}
-        />
-      </CardTable>
-    </div>
-  );
-};
-
-const StageCard = ({
+const FlowTableRow = ({
   stage,
   isActive,
+  stages,
+  stageIndex,
+  initiatorForms,
+  handleAction,
 }: {
   stage: FlowRequestStage;
   isActive: boolean;
+  stages: FlowRequestStage[];
+  stageIndex: number;
+  initiatorForms?: FlowRequestItem["initiator_forms"];
+  handleAction: handleActionType;
 }) => {
   const actions = stage?.todo?.custom_doctype_actions
     ? JSON.parse(stage?.todo?.custom_doctype_actions)
@@ -85,17 +40,10 @@ const StageCard = ({
     )
     : [];
 
-  const queryClient = useQueryClient();
-  const triggerRefetch = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
-  }, [queryClient]);
-
-  const { handleAction } = useApprovalAction(triggerRefetch);
-
-  const onAction = (action: string, data: any) => {
+  const onAction = (action: string, data: FlowRequestStage["todo"]) => {
     handleAction(action, {
       todo_id: data.name,
-      custom_approval_type: data.custom_approval_type,
+      custom_approval_type: data?.custom_approval_type ?? "Approval Matrix",
       custom_open_chatnext_assistant_on_action:
         actionsWithForm.includes(action),
     });
@@ -103,12 +51,13 @@ const StageCard = ({
   const { data: currentUser } = useCurrentUser();
 
   const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
+  const allocatedToUserArray = extractAllocatedToUserArray(allocatedTo.users);
   const canPerformActions = useMemo(() => {
     if (!isActive || !stage.can_act) return false;
     let actionPermission = false;
 
-    if (allocatedTo?.users && currentUser?.name)
-      actionPermission = allocatedTo.users.includes(currentUser?.name);
+    if (allocatedToUserArray && currentUser?.name)
+      actionPermission = allocatedToUserArray.includes(currentUser?.name);
 
     if (currentUser?.roles && allocatedTo?.roles)
       actionPermission ||= currentUser.roles.some((role) =>
@@ -116,11 +65,12 @@ const StageCard = ({
       );
 
     return actionPermission;
-  }, [currentUser, isActive, allocatedTo, stage.can_act]);
+  }, [currentUser, isActive, allocatedTo, stage.can_act, allocatedToUserArray]);
 
 
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [showActModal, setShowActModal] = useState(false);
   const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
   const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
 
@@ -194,13 +144,18 @@ const StageCard = ({
             </Button>
           )}
           {canPerformActions && (
-            <TeamApprovalActionPill
-              actions={actions}
-              status={stage?.status}
-              recordId={stage?.todo?.name}
-              // loadingAction={loadingAction}
-              onAction={(action) => onAction(action, stage?.todo)}
-            />
+            <Button
+              variant="contain"
+              bgColor="primary"
+              size="md"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowActModal(true);
+              }}
+            >
+              Act
+            </Button>
           )}
         </>
       </div>
@@ -216,8 +171,21 @@ const StageCard = ({
         </ReviewForm>,
         document.body,
       )}
+      {showActModal && (
+        <ActModal
+          stage={stage}
+          stageIndex={stageIndex}
+          stages={stages}
+          initiatorForms={initiatorForms}
+          actions={actions}
+          onAction={(action) => onAction(action, stage?.todo)}
+          recordId={stage?.todo?.name}
+          onClose={() => setShowActModal(false)}
+        />
+      )}
     </div>
   );
 };
 
-export default FlowTable;
+
+export default FlowTableRow;

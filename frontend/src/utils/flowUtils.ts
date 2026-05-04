@@ -24,6 +24,20 @@ export const extractRolesAndUsers = (stage: FlowRequestStage | WorkflowStage) =>
   };
 };
 
+type mixUserStructure = string | { user: string };
+
+export const extractAllocatedToUserArray = (users: mixUserStructure[]) => {
+  return users
+    .map((user) => {
+      if (typeof user === "string") {
+        return user;
+      }
+      return user?.user ?? "";
+    })
+    .filter((user) => Boolean(user));
+
+}
+
 export interface FormIOForm {
   display: string;
   components: FormIOComponent[];

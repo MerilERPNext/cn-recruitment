@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useGetSeparationFunnelDetails } from "../../../hooks/useSeparation";
 import { useNavigate } from "react-router-dom";
 import HeaderBar from "../../HeaderBar";
-import WorkflowTable from "../RequestDetails/WorkflowTable";
+import WorkflowTable from "../FlowRequests/FlowDetails/WorkflowTable";
 import NoDataFound from "../../shared/atoms/NoDataFound";
 import SeparationWorkflowSkeleton from "./components/SeparationWorkflowSkeleton";
 

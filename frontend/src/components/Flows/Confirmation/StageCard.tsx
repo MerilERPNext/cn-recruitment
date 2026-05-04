@@ -12,7 +12,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import ViewFormButton from "../ViewFormButton";
 import { FormIOForm } from "../../../utils/flowUtils";
-import AttachmentPreview from "../RequestDetails/AttachmentPreview";
+import AttachmentPreview from "../FlowRequests/FlowDetails/AttachmentPreview";
 import FormPreview from "../../shared/molecules/FormPreview";
 
 type handleActPropsType = {
