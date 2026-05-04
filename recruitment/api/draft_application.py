@@ -131,15 +131,19 @@ def save_draft(job_applicant_email, job_opening, form_data=None):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_draft(job_applicant_email):
+def get_draft(job_applicant_email, job_opening=None):
     if not job_applicant_email:
         return _err("job_applicant_email is required.", 400)
 
     email = job_applicant_email.strip()
+    filters = {"job_applicant_email": email}
+
+    if job_opening:
+        filters["job_opening"] = job_opening.strip()
 
     names = frappe.get_all(
         DOCTYPENAME,
-        filters={"job_applicant_email": email},
+        filters=filters,
         pluck="name",
         order_by="modified desc",
     )
