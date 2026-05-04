@@ -14,7 +14,6 @@ import Button from "../../../shared/atoms/Button";
 import AttachmentPreview from "./AttachmentPreview";
 import FormPreview from "../../../shared/molecules/FormPreview";
 import ActModal from "./ActModal";
-import { Zap } from "lucide-react";
 import { handleActionType } from "../../../../hooks/userApprovalList";
 
 const FlowTableRow = ({
@@ -146,15 +145,14 @@ const FlowTableRow = ({
           )}
           {canPerformActions && (
             <Button
-              variant="soft"
+              variant="contain"
               bgColor="primary"
-              size="sm"
+              size="md"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setShowActModal(true);
               }}
-              icon={<Zap size={14} strokeWidth={2.5} />}
             >
               Act
             </Button>

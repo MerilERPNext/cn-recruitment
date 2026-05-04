@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { X, Eye, FileText, ChevronRight } from "lucide-react";
 import { createPortal } from "react-dom";
 import { FlowRequestItem, FlowRequestStage, Attachment } from "../../../../types/flows";
@@ -8,6 +8,7 @@ import FormPreview from "../../../shared/molecules/FormPreview";
 import AttachmentPreview from "./AttachmentPreview";
 import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../../shared/atoms/Typography";
+import { useQueryClient } from "@tanstack/react-query";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -160,6 +161,18 @@ const ActModal: React.FC<ActModalProps> = ({
   }, [stages, stageIndex]);
 
   const hasContent = initForm.schema !== null || previousStagesWithForms.length > 0;
+
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    document.addEventListener("chatnext:modal:chat:close", onClose);
+
+    return () => {
+      document.removeEventListener(
+        "chatnext:modal:chat:close",
+        onClose,
+      );
+    };
+  }, [queryClient, onClose]);
 
   return createPortal(
     <div

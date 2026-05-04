@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo, useState } from "react";
-import { Check, Clock, X, User, Zap } from "lucide-react";
+import { Check, Clock, X, User } from "lucide-react";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import { Attachment, FlowRequestItem, FlowRequestStage } from "../../../../types/flows";
 
@@ -262,7 +262,7 @@ const FlowTableRow = ({
                 {canPerformActions && (
                     <div className="flex flex-wrap gap-2 mt-3 w-full">
                         <Button
-                            variant="soft"
+                            variant="contain"
                             bgColor="primary"
                             size="md"
                             fullWidth
@@ -271,7 +271,6 @@ const FlowTableRow = ({
                                 e.stopPropagation();
                                 setShowActModal(true);
                             }}
-                            icon={<Zap size={16} strokeWidth={2.5} />}
                         >
                             Act
                         </Button>
