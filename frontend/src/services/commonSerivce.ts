@@ -2,7 +2,7 @@ import FrappeAPI from "../utils/frappeAPI";
 
 export interface MessageDataItem {
     label: string;
-    value: string | null;
+    value: string | number | boolean | null;
 }
 
 export interface DataResponse {
