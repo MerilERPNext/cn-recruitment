@@ -193,6 +193,16 @@ export const useCurrentEmployeeDetails = ({
       employeeId,
       logged_in_employee_details,
     }),
+    select: (data: EmployeeDetilsType | null) => {
+      if (data) {
+        if (data && data.employee && data.employee === data.name) return data;
+        return {
+          ...data,
+          employee: data.name,
+        };
+      }
+      return data;
+    },
 
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
