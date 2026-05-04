@@ -151,7 +151,9 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
       setPos({ top: Math.max(top, 0), left: Math.max(left, 0) });
     };
 
-    if (show) updatePosition();
+    if (!show) return;
+
+    updatePosition();
     window.addEventListener("scroll", updatePosition, true);
     window.addEventListener("resize", updatePosition);
 
@@ -159,7 +161,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
       window.removeEventListener("scroll", updatePosition, true);
       window.removeEventListener("resize", updatePosition);
     };
-  }, [show, placement]);
+  }, [show, placement, isLoading, employeeInfo]);
 
   useEffect(() => {
     return () => {
@@ -298,9 +300,9 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                               if (
                                 item.label.toLowerCase().includes("date") &&
                                 item.value &&
-                                !isNaN(Date.parse(item.value))
+                                !isNaN(Date.parse(item.value.toString()))
                               ) {
-                                displayValue = formatToIndianDate(item.value);
+                                displayValue = formatToIndianDate(item.value.toString());
                               }
 
                               return (
