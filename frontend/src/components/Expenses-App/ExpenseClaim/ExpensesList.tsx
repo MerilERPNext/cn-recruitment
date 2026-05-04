@@ -1187,13 +1187,8 @@ const ExpensesList: React.FC = () => {
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", value: "Pending" },
-                    {
-                      label: "Draft",
-                      key: "Draft",
-                      value: "Draft",
-                      customAPIParams: { todo_status: "Open" },
-                    },
+                    { label: "Pending", value: "Pending", customAPIParams: { todo_status: "Open" } },
+                    { label: "Draft", value: "Draft"},
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
                     {
