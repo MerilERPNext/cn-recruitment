@@ -245,7 +245,7 @@ const MandatoryPoliciesHandler = () => {
         ["status", "=", "Pending"],
         ["employee_id", "=", currentEmployee?.name || ""],
         ["sign_off_mandatory", "=", 1],
-        ["custom_triggered_from_flow", "!=", 1],
+        ["triggered_from_flow", "!=", 1],
         ["due_date", ">=", new Date().toLocaleDateString('en-CA')],
       ],
     },
