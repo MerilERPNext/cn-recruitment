@@ -1187,6 +1187,7 @@ const ExpensesList: React.FC = () => {
                   label: "Status",
                   fieldtype: "Select",
                   options: [
+                    { label: "Pending", value: "Pending" },
                     {
                       label: "Draft",
                       key: "Draft",
@@ -1226,7 +1227,7 @@ const ExpensesList: React.FC = () => {
                   fieldtype: "Date",
                 },
               ]}
-              defaultFilters={{ approval_status: "Draft" }}
+              defaultFilters={{ approval_status: "Pending" }}
               onFiltersChange={setCurrentFilters}
               onDataLoad={setCurrentListData}
               SkeletonComponent={CardSkeleton}
