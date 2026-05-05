@@ -185,7 +185,7 @@ export default function EmployeeProfileSections() {
                                     return (
                                         <div key={section.key}>
                                             {section.label && (
-                                                <Typography variant="label" className="font-semibold text-gray-500 uppercase tracking-widest text-[10px] mb-3 block px-4 py-2 border-b">
+                                                <Typography variant="bodySmall" className="font-semibold text-gray-500 uppercase tracking-widest text-[10px] mb-3 block px-4 py-2 border-b">
                                                     {section.label}
                                                 </Typography>
                                             )}
