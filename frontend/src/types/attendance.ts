@@ -1,4 +1,5 @@
 import { BaseItem } from "../components/Notices/types/noticeItem";
+import { RoleAssignedUsersType } from "./flows";
 
 // types/attendance.ts
 export type Attendance = {
@@ -71,6 +72,7 @@ export interface MyAttendanceRequest {
   reference_type: string;
   allocated_to: string[];
   allocated_roles?: string[];
+  role_assigned_users?: RoleAssignedUsersType[];
   allocated_to_emp_id: string;
   custom_allow_revoke: boolean;
   todo_id: string;
@@ -150,6 +152,7 @@ export interface MyPlannedAttendanceRequest {
   custom_approval_type: string;
   reference_type: string;
   allocated_to: string[] | string;
+  role_assigned_users: RoleAssignedUsersType[];
   allocated_roles?: string[];
   allocated_to_emp_id: string;
   custom_allow_revoke: boolean;

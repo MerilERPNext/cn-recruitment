@@ -109,6 +109,7 @@ const ApprovalRejectionQueue = ({
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
               users={data?.allocated_to}
+              RoleAssignedUsers={data?.role_assigned_users}
               roles={data?.allocated_roles}
               allocated_to_user={data?.allocated_to_user}
               role={data?.role}
@@ -239,7 +240,8 @@ const ApprovalRejectionQueue = ({
                     username={data?.username}
                     role={data?.role}
                     align="left"
-                  />
+                  RoleAssignedUsers={data?.role_assigned_users}
+                />
                 </div>
               </div>
 

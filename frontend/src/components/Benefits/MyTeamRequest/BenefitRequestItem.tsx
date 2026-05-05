@@ -151,6 +151,7 @@ const BenefitRequestItem = ({
               users={data?.allocated_to}
               roles={data?.allocated_roles}
               allocated_to_user={data?.username}
+              RoleAssignedUsers={data?.role_assigned_users || []}
               role={data?.role || ""}
               position="left"
             >

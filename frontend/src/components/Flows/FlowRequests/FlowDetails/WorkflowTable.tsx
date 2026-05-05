@@ -233,6 +233,7 @@ const WorkflowCard = ({
             position="right"
             users={stage.allocated_to}
             roles={allocatedTo.roles}
+            RoleAssignedUsers={stage?.role_assigned_users || []}
           >
             <StatusBadge status={stage.status || "-"} />
           </AllocatedToTooltip>
@@ -333,7 +334,8 @@ const WorkflowCard = ({
                     users={stage.allocated_to}
                     roles={allocatedTo.roles}
                     showLabel={false}
-                  />
+                  RoleAssignedUsers={stage?.role_assigned_users}
+                />
                 </div>
               </div>
 

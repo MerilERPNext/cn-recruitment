@@ -242,6 +242,7 @@ export const LoanRow = ({
         <div className="flex items-center justify-center">
           <AllocatedToTooltip
             users={todo?.allocated_to}
+            RoleAssignedUsers={todo?.role_assigned_users}
             roles={todo?.allocated_roles}
             role={todo?.role ?? ""}
             position="left"

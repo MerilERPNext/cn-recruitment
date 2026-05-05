@@ -12,6 +12,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import Tooltip from "../../shared/Tooltip";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import { RoleAssignedUsersType } from "../../../types/flows";
 export type CompensatoryRequestItem = {
   name: string;
   leave_type: string;
@@ -24,6 +25,7 @@ export type CompensatoryRequestItem = {
   allocated_to?: string[];
   allocated_roles?: string[];
   allocated_to_user: string;
+  role_assigned_users?: RoleAssignedUsersType[];
 };
 
 type CompensatoryRequestCardProps = {
@@ -113,6 +115,7 @@ const CompensatoryRequestCard = ({
       <div className="flex items-center justify-center">
         <AllocatedToTooltip
           users={item?.allocated_to}
+          RoleAssignedUsers={item?.role_assigned_users}
           roles={item?.allocated_roles}
           position="left"
         >
@@ -186,7 +189,8 @@ const CompensatoryRequestCard = ({
             users={item?.allocated_to}
             roles={item?.allocated_roles}
             align="right"
-          />
+          RoleAssignedUsers={item?.role_assigned_users}
+        />
         </div>
         {/* Pay Button */}
 

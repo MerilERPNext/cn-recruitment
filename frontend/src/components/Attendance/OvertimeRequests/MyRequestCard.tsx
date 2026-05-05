@@ -115,6 +115,7 @@ export function MyRequestCard({
               users={request?.allocated_to}
               roles={request?.allocated_roles}
               allocated_to_user={request?.username}
+              RoleAssignedUsers={request?.role_assigned_users || []}
               position="left"
             >
               <StatusBadge status={request?.status} />
@@ -161,7 +162,8 @@ export function MyRequestCard({
                   users={request?.allocated_to}
                   roles={request?.allocated_roles}
                   username={request?.username}
-                />
+                RoleAssignedUsers={request?.role_assigned_users}
+              />
 
                 <StatusBadge status={request?.status} />
               </div>

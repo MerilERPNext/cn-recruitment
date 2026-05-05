@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef, useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { useGetEmployeeHoverData } from "../../hooks/useEmployee";
 import { createPortal } from "react-dom";
 import formatToIndianDate from "../../utils/formatToIndianDate";
@@ -53,6 +53,11 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
   const [employeeInfo, setEmployeeInfo] = useState<DataResponse | null>(null);
 
   const hasFetchedRef = useRef(false);
+  const mountedAt = useRef(Date.now());
+
+  useEffect(() => {
+    mountedAt.current = Date.now();
+  }, []);
 
   useEffect(() => {
     hasFetchedRef.current = false;
@@ -88,6 +93,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const animationTimer = useRef<number | null>(null);
+  const closedAtRef = useRef(0);
 
   const handleEnter = () => {
     clearTimeout(hideTimer?.current ?? undefined);
@@ -97,14 +103,44 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
     animationTimer.current = setTimeout(() => setIsAnimating(true), 10);
   };
 
-  const handleLeave = () => {
-    // Start exit animation
-    setIsAnimating(false);
-    // Hide card after animation completes (faster exit)
-    hideTimer.current = setTimeout(() => setShow(false), 150);
+  const handleLeave = (immediate = false) => {
+    clearTimeout(hideTimer?.current ?? undefined);
+    clearTimeout(animationTimer?.current ?? undefined);
+    closedAtRef.current = Date.now();
+    if (immediate) {
+      // Skip animation — close instantly (for touch dismissals)
+      setIsAnimating(false);
+      setShow(false);
+    } else {
+      // Start exit animation
+      setIsAnimating(false);
+      // Hide card after animation completes (faster exit)
+      hideTimer.current = setTimeout(() => setShow(false), 150);
+    }
   };
 
+  useEffect(() => {
+    if (!show) return;
 
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      if (
+        targetRef.current && !targetRef.current.contains(e.target as Node) &&
+        cardRef.current && !cardRef.current.contains(e.target as Node)
+      ) {
+        // Use immediate close for touch to prevent synthetic click from re-opening
+        const isTouch = e.type === "touchstart";
+        handleLeave(isTouch);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
+  }, [show]);
 
   useLayoutEffect(() => {
     const updatePosition = () => {
@@ -118,37 +154,46 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
       switch (placement) {
         case "bottom-right":
-          top = rect.bottom + window.scrollY + 8;
-          left = rect.left + window.scrollX;
+          top = rect.bottom + 8;
+          left = rect.left;
           break;
 
         case "bottom-left":
-          top = rect.bottom + window.scrollY + 8;
-          left = rect.right + window.scrollX - cardRect.width;
+          top = rect.bottom + 8;
+          left = rect.right - cardRect.width;
           break;
 
         case "top-right":
-          top = rect.top + window.scrollY - cardRect.height - 8;
-          left = rect.left + window.scrollX;
+          top = rect.top - cardRect.height - 8;
+          left = rect.left;
           break;
 
         case "top-left":
-          top = rect.top + window.scrollY - cardRect.height - 8;
-          left = rect.right + window.scrollX - cardRect.width;
+          top = rect.top - cardRect.height - 8;
+          left = rect.right - cardRect.width;
           break;
 
         case "center-left":
-          top = rect.top + window.scrollY + rect.height / 2 - cardRect.height / 2;
-          left = rect.left + window.scrollX - cardRect.width - 12;
+          top = rect.top + rect.height / 2 - cardRect.height / 2;
+          left = rect.left - cardRect.width - 12;
           break;
 
         case "center-right":
         default:
-          top = rect.top + window.scrollY + rect.height / 2 - cardRect.height / 2;
-          left = rect.right + window.scrollX + 12;
+          top = rect.top + rect.height / 2 - cardRect.height / 2;
+          left = rect.right + 12;
       }
 
-      setPos({ top: Math.max(top, 0), left: Math.max(left, 0) });
+      const padding = 12;
+      const minTop = padding;
+      const maxTop = window.innerHeight - cardRect.height - padding;
+      const minLeft = padding;
+      const maxLeft = window.innerWidth - cardRect.width - padding;
+
+      setPos({
+        top: Math.max(minTop, Math.min(top, maxTop)),
+        left: Math.max(minLeft, Math.min(left, maxLeft)),
+      });
     };
 
     if (!show) return;
@@ -175,12 +220,28 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
       <div
         ref={targetRef}
         className={`inline-block ${className}`}
-        onMouseEnter={(e) => {
+        onPointerEnter={(e) => {
+          if (e.pointerType !== "mouse") return;
+          if (Date.now() - mountedAt.current < 500) return;
           e.stopPropagation();
           handleEnter();
           handleFetchProfile();
         }}
-        onMouseLeave={handleLeave}
+        onClick={() => {
+          // If card was just closed (within 400ms), ignore — prevents touch re-open
+          if (Date.now() - closedAtRef.current < 400) return;
+          // Toggle: if already showing, close instead of re-opening
+          if (show) {
+            handleLeave(true);
+            return;
+          }
+          handleEnter();
+          handleFetchProfile();
+        }}
+        onPointerLeave={(e) => {
+          if (e.pointerType !== "mouse") return;
+          handleLeave();
+        }}
       >
         {children}
       </div>
@@ -196,7 +257,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
             <div
               ref={cardRef}
-              className="absolute z-[999]"
+              className="fixed z-[999]"
               style={{
                 top: pos.top,
                 left: pos.left,
@@ -208,12 +269,29 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                   ? "opacity 300ms cubic-bezier(0.34, 1.56, 0.64, 1), transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)"
                   : "opacity 150ms ease-in, transform 150ms ease-in",
               }}
-              onMouseEnter={handleEnter}
-              onMouseLeave={handleLeave}
+              onPointerEnter={(e) => {
+                if (e.pointerType === "mouse") handleEnter();
+              }}
+              onPointerLeave={(e) => {
+                if (e.pointerType === "mouse") handleLeave();
+              }}
             >
               <div
-                className={`w-[320px] p-5 rounded-xl bg-white shadow-sm hover:shadow-2xl  transition-all duration-300 ${cardClassName}`}
+                className={`relative w-[320px] p-5 rounded-xl bg-white shadow-sm hover:shadow-2xl  transition-all duration-300 ${cardClassName}`}
               >
+                {/* Close Button for Mobile */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleLeave(true);
+                  }}
+                  type="button"
+                  className="md:hidden absolute top-3 right-3 p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 rounded-full transition-colors z-10"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+
                 {/* Loading */}
                 {isLoading && (
                   <div className="flex justify-center py-6">
@@ -263,7 +341,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                             </div>
                           )}
 
-                          <div className="flex-1 min-w-0 group">
+                          <div className="flex-1 min-w-0 group pr-6">
                             <p className="text-sm font-semibold text-gray-900 truncate group-hover:whitespace-normal group-hover:overflow-visible">
                               {emp["Full Name"]}
                             </p>

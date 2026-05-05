@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { RoleAssignedUsersType } from "./flows";
 
 export interface ShiftRequest {
   name: string;
@@ -88,6 +89,7 @@ export interface MyShiftRequest {
   reference_document: ShiftRequest;
   reference_type: string;
   allocated_to: string[];
+  role_assigned_users?: RoleAssignedUsersType[];
   allocated_roles?: string[];
   custom_allow_revoke: boolean;
   todo_id: string;

@@ -1,3 +1,4 @@
+import { RoleAssignedUsersType } from "./flows";
 import { TodoType } from "./todos";
 
 
@@ -12,6 +13,7 @@ export interface ApiRepayment {
 
 export type ApiAdvance = {
   allocated_to: string[];
+  role_assigned_users: RoleAssignedUsersType[];
   allocated_to_roles: string[];
   allocated_to_user: string | string[] | null;
   name: string;
@@ -29,7 +31,7 @@ export type ApiAdvance = {
   balance_amount: number;
   todo_list: TodoType[] | null;
   repayments: ApiRepayment[];
- // For any additional fields that might be needed in the UI
+  // For any additional fields that might be needed in the UI
 }
 export interface ApiAdvanceResponse {
   status: string;
@@ -39,6 +41,7 @@ export interface ApiAdvanceResponse {
 // UI shape (your old Advance type)
 export interface UiAdvance {
   allocated_to: string[];
+  role_assigned_users: RoleAssignedUsersType[];
   allocated_to_roles: string[];
   allocated_to_user: string | string[] | null;
   docname: string;

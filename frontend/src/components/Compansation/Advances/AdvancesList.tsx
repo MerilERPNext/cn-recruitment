@@ -39,6 +39,7 @@ const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
     docname: a.name,
     can_edit: a.can_edit,
     allocated_to: a.allocated_to,
+    role_assigned_users: a.role_assigned_users,
     allocated_to_roles: a.allocated_to_roles,
     allocated_to_user: a.allocated_to_user,
     amount: a.total_advance_amount,
@@ -410,6 +411,7 @@ const AdvanceDesktopRow = ({
       <div className="flex items-center justify-center">
         <AllocatedToTooltip
           users={todo?.allocated_to}
+          RoleAssignedUsers={todo?.role_assigned_users}
           roles={todo?.allocated_roles}
           role={todo?.role ?? ""}
           position="left"
@@ -518,6 +520,7 @@ const AdvanceMobileRow = ({
         <MobileAllocatedTo
           users={advance.allocated_to}
           roles={advance.allocated_to_roles}
+          RoleAssignedUsers={advance?.role_assigned_users}
         />
 
         <div className={isActed ? "pointer-events-none opacity-50" : ""}>

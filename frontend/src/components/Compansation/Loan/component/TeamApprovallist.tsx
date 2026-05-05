@@ -186,7 +186,8 @@ const ApprovalRejectionLoanList = ({
                 roles={data?.allocated_roles}
                 role={data?.role}
                 username={data?.username}
-              />
+              RoleAssignedUsers={data?.role_assigned_users}
+            />
 
               {data?.todo_status === "Open" && !isActed ? (
                 <TeamApprovalActionPill
@@ -323,6 +324,7 @@ const ApprovalRejectionLoanList = ({
         <div className="flex items-center justify-center">
           <AllocatedToTooltip
             users={data?.allocated_to}
+            RoleAssignedUsers={data?.role_assigned_users}
             roles={data?.allocated_roles}
             allocated_to_user={data?.username}
             role={data?.role}

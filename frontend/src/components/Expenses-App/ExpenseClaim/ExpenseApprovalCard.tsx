@@ -210,6 +210,7 @@ const ExpenseApprovalCard = ({
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
               users={data?.allocated_to}
+              RoleAssignedUsers={data?.role_assigned_users}
               roles={data?.allocated_roles}
               allocated_to_user={data?.username}
               role={data?.role}
@@ -352,7 +353,8 @@ const ExpenseApprovalCard = ({
                 roles={data?.allocated_roles}
                 username={data?.username}
                 role={data?.role}
-              />
+              RoleAssignedUsers={data?.role_assigned_users}
+            />
               {activeStatus === "Approved" && (
                 <div className="flex justify-between w-full">
                   <div className="flex flex-col gap-1">

@@ -95,17 +95,17 @@ const AdvanceApprovalCard = ({
             </div>
           )}
           <Tooltip
-        content={data?.reference_document?.name || ""}
-        triggerClassName="w-full truncate min-w-0 block"
-      >
-        <Typography
-          variant="bodySmall"
-          className="font-medium text-center truncate block w-full"
-        >
-          {data?.reference_document?.name}
-        </Typography>
-      </Tooltip>
-          
+            content={data?.reference_document?.name || ""}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full"
+            >
+              {data?.reference_document?.name}
+            </Typography>
+          </Tooltip>
+
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
@@ -138,6 +138,9 @@ const AdvanceApprovalCard = ({
                   ? data?.allocated_to
                   : undefined
               }
+              RoleAssignedUsers={data?.reference_document?.custom_final_status === "Pending"
+                ? data?.role_assigned_users
+                : undefined}
               roles={
                 data?.reference_document?.custom_final_status === "Pending"
                   ? data?.allocated_roles
@@ -148,7 +151,7 @@ const AdvanceApprovalCard = ({
               <StatusBadge
                 status={
                   data.todo_status === "Closed" &&
-                  data.reference_document.custom_final_status !== "Rejected"
+                    data.reference_document.custom_final_status !== "Rejected"
                     ? "Approved"
                     : data.reference_document.custom_final_status
                 }
@@ -237,7 +240,7 @@ const AdvanceApprovalCard = ({
                 <StatusBadge
                   status={
                     data.todo_status === "Closed" &&
-                    data.reference_document.custom_final_status !== "Rejected"
+                      data.reference_document.custom_final_status !== "Rejected"
                       ? "Approved"
                       : data.reference_document.custom_final_status
                   }
@@ -267,7 +270,8 @@ const AdvanceApprovalCard = ({
                 users={data?.allocated_to}
                 roles={data?.allocated_roles}
                 username={data?.username}
-              />
+              RoleAssignedUsers={data?.role_assigned_users}
+            />
 
               {activeStatus === "Approved" && (
                 <div className="flex justify-between w-full">

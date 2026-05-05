@@ -493,6 +493,7 @@ const BenefitSlipItem = ({
         <AllocatedToTooltip
           position="left"
           users={item?.todo_list[0]?.allocated_to}
+          RoleAssignedUsers={item?.todo_list[0]?.role_assigned_users}
           roles={item?.todo_list[0]?.allocated_roles}
           role={item?.todo_list[0]?.role ?? ""}
         >
