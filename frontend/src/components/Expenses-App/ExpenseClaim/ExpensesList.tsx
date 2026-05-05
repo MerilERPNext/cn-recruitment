@@ -26,7 +26,11 @@ import { expenseService } from "../../../services/expenseService";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { COLUMN_SORT_CONFIG_EXPENSE_CLAIM, COLUMN_SORT_CONFIG_EXPENSE_CLAIM_DRAFT, COLUMN_SORT_CONFIG_SHARED_EXPENSE } from "../../../utils/tableSortConfig";
+import {
+  COLUMN_SORT_CONFIG_EXPENSE_CLAIM,
+  COLUMN_SORT_CONFIG_EXPENSE_CLAIM_DRAFT,
+  COLUMN_SORT_CONFIG_SHARED_EXPENSE,
+} from "../../../utils/tableSortConfig";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
@@ -558,30 +562,14 @@ const ExpensesList: React.FC = () => {
     }));
   }, [expenseCategories]);
 
-  // Capture the initial filter from navigation state once via ref so it survives
-  // the history.replaceState cleanup below (which nullifies location.state).
-  const initialFilterRef = React.useRef<string | null>(
-    (location.state as any)?.initialFilter ?? null,
-  );
-
-  // Update ref on each new navigation (location.key changes on navigate())
-  React.useEffect(() => {
-    const navFilter = (location.state as any)?.initialFilter;
-    if (navFilter) {
-      initialFilterRef.current = navFilter;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.key]);
-
   // Compute the default filter for DataListView based on navigation state
   const computedDefaultFilters = React.useMemo(() => {
-    const filter = initialFilterRef.current;
-    if (filter === "Pending" || filter === "Draft") {
-      return { approval_status: filter };
+    const navFilter = (location.state as any)?.initialFilter;
+    if (navFilter === "Pending" || navFilter === "Draft") {
+      return { approval_status: navFilter };
     }
     return { approval_status: "Draft" };
     // location.key is the dependency so this recomputes on each new navigation
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
 
   React.useEffect(() => {
@@ -594,7 +582,10 @@ const ExpensesList: React.FC = () => {
       });
     }
     // Clear navigation state after consuming it to prevent stale filter on refresh
-    if ((location.state as any)?.refresh || (location.state as any)?.initialFilter) {
+    if (
+      (location.state as any)?.refresh ||
+      (location.state as any)?.initialFilter
+    ) {
       window.history.replaceState({}, "", window.location.pathname);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1062,7 +1053,9 @@ const ExpensesList: React.FC = () => {
             titles={tableTitles}
             columnWidths={tableColumnWidths}
             columnSortConfig={
-              isDraftFilter ? COLUMN_SORT_CONFIG_EXPENSE_CLAIM_DRAFT : COLUMN_SORT_CONFIG_EXPENSE_CLAIM
+              isDraftFilter
+                ? COLUMN_SORT_CONFIG_EXPENSE_CLAIM_DRAFT
+                : COLUMN_SORT_CONFIG_EXPENSE_CLAIM
             }
           >
             {/* Select All header for backend-draft filter mode (desktop only) */}
@@ -1929,7 +1922,8 @@ const ExpensesList: React.FC = () => {
                                         updateFileMutation.mutateAsync({
                                           fileName: file.name,
                                           data: {
-                                            attached_to_doctype: "Expense Claim",
+                                            attached_to_doctype:
+                                              "Expense Claim",
                                             attached_to_name: expenseClaimName,
                                           },
                                         }),
