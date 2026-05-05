@@ -532,7 +532,7 @@ const ExpensesList: React.FC = () => {
 
   const [currentFilters, setCurrentFilters] = React.useState<
     Record<string, any>
-  >({});
+  >({ approval_status: "Draft" });
 
   // Stable callbacks to avoid infinite re-render loops in DataListView useEffects
   const handleFiltersChange = useCallback((filters: Record<string, any>) => {
