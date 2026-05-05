@@ -174,61 +174,35 @@ export default function EmployeeProfileSections() {
                             {/* Sections */}
                             <div className="space-y-6 px-0 md:px-6">
                                 {tab.sections.map((section: SimpleSection) => {
-                                    const multiCol = section.columns.length > 1;
+                                    const allVisibleFields = section.columns.flatMap((col: SimpleColumn) => col.fields.filter(f => !f.hidden));
+                                    if (!allVisibleFields.length) return null;
+
                                     const colCount = Math.min(section.columns.length, 4);
-                                    const gridClass = multiCol
-                                        ? `grid grid-cols-1 sm:grid-cols-2 ${colCount === 2 ? "" : colCount === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-x-6 gap-y-6`
+                                    const gridClass = colCount > 1
+                                        ? `grid grid-cols-1 sm:grid-cols-2 ${colCount === 3 ? "lg:grid-cols-3" : colCount >= 4 ? "lg:grid-cols-4" : ""} gap-x-6 gap-y-4`
                                         : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 md:gap-y-8 gap-x-6";
 
                                     return (
                                         <div key={section.key}>
                                             {section.label && (
-                                                <Typography variant="label" className="font-semibold text-gray-500 uppercase tracking-widest text-[10px] mb-3 block px-4">
+                                                <Typography variant="label" className="font-semibold text-gray-500 uppercase tracking-widest text-[10px] mb-3 block px-4 py-2 border-b">
                                                     {section.label}
                                                 </Typography>
                                             )}
                                             <div className={gridClass}>
-                                                {section.columns.map((col: SimpleColumn) => {
-                                                    const visibleFields = col.fields.filter(f => !f.hidden);
-                                                    if (!visibleFields.length) return null;
-
-                                                    // Multi-column: each col is a vertical stack inside its grid cell
-                                                    if (multiCol) {
-                                                        return (
-                                                            <div key={col.key} className="space-y-4">
-                                                                {visibleFields.map(field => {
-                                                                    const isTable = Array.isArray(field.value);
-                                                                    return (
-                                                                        <FieldCell
-                                                                            key={field.key}
-                                                                            field={field}
-                                                                            tabKey={tab.key}
-                                                                            tabLabel={tab.label}
-                                                                            canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" })}
-                                                                            isTable={isTable}
-                                                                            onEdit={setEdit}
-                                                                        />
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        );
-                                                    }
-
-                                                    // Single-column: fields flow directly into the 3-col grid
-                                                    return visibleFields.map(field => {
-                                                        const isTable = Array.isArray(field.value);
-                                                        return (
-                                                            <FieldCell
-                                                                key={field.key}
-                                                                field={field}
-                                                                tabKey={tab.key}
-                                                                tabLabel={tab.label}
-                                                                canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" })}
-                                                                isTable={isTable}
-                                                                onEdit={setEdit}
-                                                            />
-                                                        );
-                                                    });
+                                                {allVisibleFields.map(field => {
+                                                    const isTable = Array.isArray(field.value);
+                                                    return (
+                                                        <FieldCell
+                                                            key={field.key}
+                                                            field={field}
+                                                            tabKey={tab.key}
+                                                            tabLabel={tab.label}
+                                                            canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" })}
+                                                            isTable={isTable}
+                                                            onEdit={setEdit}
+                                                        />
+                                                    );
                                                 })}
                                             </div>
                                         </div>
@@ -278,10 +252,10 @@ const FieldCell = ({ field, tabKey, tabLabel, canEdit, isTable, onEdit }: FieldC
             )}
         </div>
         {field.type === "file" ? (
-            <Link to={field.value} target="_blank" className="flex items-center gap-2 text-primary-600 hover:text-primary-700 transition-colors font-medium text-sm">
+            field.value ? (<Link to={field.value} target="_blank" className="flex items-center gap-2 text-primary-600 hover:text-primary-700 transition-colors font-medium text-sm">
                 <FileText size={14} />
                 <span className="truncate max-w-[200px] inline-block">{field.value}</span>
-            </Link>
+            </Link>) : "—"
         ) : isTable ? (
             <CardsRenderer
                 items={field.value}
@@ -381,7 +355,7 @@ const GenericCard = ({ data, onEdit, canEdit }: { data: Record<string, any>, onE
                             className="flex items-center justify-between gap-6 border-b border-gray-100/50 pb-2 last:border-0 last:pb-0"
                         >
                             {/* Label */}
-                            <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest trim line-clamp-1">
+                            <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest trim line-clamp-1 border-b">
                                 {label}
                             </Typography>
 
