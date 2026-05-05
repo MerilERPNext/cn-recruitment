@@ -4,6 +4,7 @@ import { useFileUpload } from "./useFrappeQuery";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type UploadResponse = {
+  name: string;
   file_name: string;
   file_size: string;
   file_type: string;
@@ -12,9 +13,10 @@ type UploadResponse = {
 
 export const useFileUploader = (): {
   uploadFiles: (
-    fileObjs: File[],
-    doctype: string,
-    docName: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    fileObjs: any[],
+    doctype?: string,
+    docName?: string,
     onComplete?: () => void
   ) => Promise<UploadResponse[]>;
   loading: boolean;
@@ -25,11 +27,11 @@ export const useFileUploader = (): {
   const uploadFiles = async (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     fileObjs: any[],
-    doctype: string,
-    docName: string,
+    doctype?: string,
+    docName?: string,
     onComplete?: () => void
   ): Promise<UploadResponse[]> => {
-    if (!fileObjs || fileObjs.length === 0 || !doctype || !docName) {
+    if (!fileObjs || fileObjs.length === 0) {
       onComplete?.();
       return [];
     }

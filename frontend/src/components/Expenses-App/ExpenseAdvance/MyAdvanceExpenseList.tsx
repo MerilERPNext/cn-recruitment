@@ -161,6 +161,7 @@ const MyAdvanceExpenseList = () => {
           <AllocatedToTooltip
             users={item?.allocated_to}
             roles={item?.allocated_roles}
+            RoleAssignedUsers={item?.role_assigned_users}
             allocated_to_user={item?.allocated_to_user}
             position="left"
           >
@@ -209,6 +210,7 @@ const MyAdvanceExpenseList = () => {
             {isDesktop ? (
               <AllocatedToTooltip
                 users={item?.allocated_to}
+                RoleAssignedUsers={item?.role_assigned_users}
                 roles={item?.allocated_roles}
                 allocated_to_user={item?.username}
                 role={item?.role}
@@ -232,7 +234,8 @@ const MyAdvanceExpenseList = () => {
                   username={item?.username}
                   role={item?.role}
                   align="left"
-                />
+                RoleAssignedUsers={item?.role_assigned_users}
+              />
                 <StatusBadge
                   status={
                     item?.custom_allow_revoke === 1 &&

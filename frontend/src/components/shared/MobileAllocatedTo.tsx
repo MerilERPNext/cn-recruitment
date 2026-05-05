@@ -3,6 +3,7 @@ import { User, Shield } from "lucide-react";
 import AllocatedToTooltip from "./AllocatedToTooltip";
 import { Typography } from "./atoms/Typography";
 import { allocatedToType } from "../../types/allocatedToTooltip";
+import { RoleAssignedUsersType } from "../../types/flows";
 
 interface MobileAllocatedToProps {
     /** User names — string or string[] */
@@ -20,6 +21,7 @@ interface MobileAllocatedToProps {
     /** Text alignment — matches the card column position. Default: "left" */
     align?: "left" | "right";
     showLabel?: boolean;
+    RoleAssignedUsers?: RoleAssignedUsersType[];
 }
 
 const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
@@ -30,7 +32,8 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
     roles,
     role,
     align = "left",
-    showLabel = true
+    showLabel = true,
+    RoleAssignedUsers
 }) => {
     /** Merge all user sources → deduped array (same logic as AllocatedToTooltip) */
     const allUsers: string[] = React.useMemo(() => {
@@ -92,6 +95,14 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
 
     const isRight = align === "right";
 
+    let displayFirstLabel = firstLabel;
+    if (!firstIsUser && firstLabel) {
+        const assigned = RoleAssignedUsers?.find(r => r.role === firstLabel);
+        if (assigned && assigned.users.length > 0) {
+            displayFirstLabel = `${firstLabel} (${assigned.users.length})`;
+        }
+    }
+
     const labelEl = (
         <div className={`flex flex-col gap-0.5 ${isRight ? "items-end" : "items-start"}`}>
             {showLabel && <Typography variant="mobileCardLabel">Allocated To</Typography>}
@@ -118,9 +129,9 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
                     <Typography
                         variant="mobileCardValue"
                         className="truncate max-w-[120px]"
-                        title={firstLabel}
+                        title={displayFirstLabel}
                     >
-                        {firstLabel}
+                        {displayFirstLabel}
                     </Typography>
 
                     {/* (+N) overflow badge */}
@@ -138,7 +149,15 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
 
     return (
         <div className={wrapperClass}>
-            <AllocatedToTooltip users={users} allocated_to_user={allocated_to_user} username={username} allocated_to={allocated_to} roles={allRoles} position="top">
+            <AllocatedToTooltip
+                users={users}
+                allocated_to_user={allocated_to_user}
+                username={username}
+                allocated_to={allocated_to}
+                roles={allRoles}
+                position="top"
+                RoleAssignedUsers={RoleAssignedUsers}
+            >
                 {labelEl}
             </AllocatedToTooltip>
         </div>

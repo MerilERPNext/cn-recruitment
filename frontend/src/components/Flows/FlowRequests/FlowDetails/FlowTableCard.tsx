@@ -213,6 +213,7 @@ const FlowTableRow = ({
                                     roles={allocatedTo.roles}
                                     role={stage.role || ""}
                                     showLabel={false}
+                                    RoleAssignedUsers={stage?.role_assigned_users}
                                 />
                             </div>
                         </div>

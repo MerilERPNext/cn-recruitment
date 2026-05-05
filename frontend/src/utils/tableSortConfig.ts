@@ -172,6 +172,50 @@ export const COLUMN_SORT_CONFIG_EXPENSE_CLAIM: ColumnSortConfig[] = [
   { sortable: false },
 ];
 
+// Draft filter variant: same as above but with an extra non-sortable checkbox column at position 0
+export const COLUMN_SORT_CONFIG_EXPENSE_CLAIM_DRAFT: ColumnSortConfig[] = [
+  { sortable: false }, // Checkbox column
+  ...COLUMN_SORT_CONFIG_EXPENSE_CLAIM,
+];
+
+// Shared Expenses sort config
+// Columns: Employee Id | Shared By | Posting Date | Expense Date | Status | Sanctioned Amount | % Share | Allocated Amount
+export const COLUMN_SORT_CONFIG_SHARED_EXPENSE: ColumnSortConfig[] = [
+  { sortable: false }, // Employee Id
+  { sortable: false }, // Shared By
+  {
+    sortable: true,
+    type: "date",
+    field: "posting_date",
+    getValue: (item: any) => item.posting_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "expense_date",
+    getValue: (item: any) => item.expenses?.[0]?.expense_date ?? "",
+  },
+  { sortable: false }, // Status
+  {
+    sortable: true,
+    type: "number",
+    field: "total_sanctioned_amount",
+    getValue: (item: any) => item.total_sanctioned_amount ?? 0,
+  },
+  {
+    sortable: true,
+    type: "number",
+    field: "percentage",
+    getValue: (item: any) => item.participant_info?.percentage ?? 0,
+  },
+  {
+    sortable: true,
+    type: "number",
+    field: "allocated_amount",
+    getValue: (item: any) => item.participant_info?.allocated_amount ?? 0,
+  },
+];
+
 export const getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_CLAIM = (
   isBulkSelect: boolean,
   isApproved: boolean

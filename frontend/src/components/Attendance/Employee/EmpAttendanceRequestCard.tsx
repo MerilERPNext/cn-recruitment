@@ -122,6 +122,7 @@ const EmpAttendanceRequestCard = ({
               users={data?.allocated_to}
               roles={data?.allocated_roles}
               allocated_to_user={data?.username}
+              RoleAssignedUsers={data?.role_assigned_users || []}
               position="left"
             >
               <StatusBadge status={data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.custom_status} />
@@ -152,7 +153,8 @@ const EmpAttendanceRequestCard = ({
                 users={data?.allocated_to}
                 roles={data?.allocated_roles}
                 username={data?.username}
-              />
+              RoleAssignedUsers={data?.role_assigned_users}
+            />
 
               <StatusBadge status={data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.custom_status} />
             </div>

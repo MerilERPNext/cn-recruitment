@@ -345,7 +345,8 @@ export default function TeamAdvanceDetailView({
                   users={data?.allocated_to}
                   roles={data?.allocated_roles}
                   username={data?.username}
-                />
+                RoleAssignedUsers={data?.role_assigned_users}
+              />
               </div>
             </div>
             {ref.purpose && (
