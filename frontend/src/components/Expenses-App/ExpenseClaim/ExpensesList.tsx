@@ -227,7 +227,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         <div className={isActed ? "pointer-events-none opacity-50" : ""}>
           <MyApprovalActionPill
             variant="buttons"
-            isPending={item?.status === "Draft"}
+            isPending={item?.status === "Pending"}
             canEdit={canEdit && !isActed}
             onEdit={handleEditClick}
             canRevoke={
@@ -416,7 +416,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}
       >
         <MyApprovalActionPill
-          isPending={item?.status === "Draft"}
+          isPending={item?.status === "Pending"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
               item?.send_back_user?.toLowerCase() &&
@@ -464,11 +464,9 @@ const ExpensesList: React.FC = () => {
       return "expenses";
     },
   );
-  // Selected IDs for local draft tab (Draft Expense Claim doctype)
   const [selectedDraftIds, setSelectedDraftIds] = React.useState<Set<string>>(
     new Set(),
   );
-  // Selected IDs for backend-draft items shown in My Expenses tab when Draft filter is active
   const [selectedMyExpensesDraftIds, setSelectedMyExpensesDraftIds] =
     React.useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
@@ -757,7 +755,7 @@ const ExpensesList: React.FC = () => {
     const getEmptyStateMessage = () => {
       const status = filters.status;
       const messages: Record<string, { title: string; description: string }> = {
-        Draft: {
+        Pending: {
           title: "No Pending Claims",
           description: "You have no pending expense claim requests.",
         },
@@ -788,7 +786,6 @@ const ExpensesList: React.FC = () => {
     return <NoDataFound title={message.title} subtitle={message.description} />;
   };
 
-  // When My Expenses tab has Draft filter selected, show the draft-style columns
   const isDraftFilter =
     activeTab === "expenses" && currentFilters.approval_status === "Draft";
 
