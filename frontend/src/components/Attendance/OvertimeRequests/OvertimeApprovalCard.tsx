@@ -149,6 +149,7 @@ const OvertimeApprovalCard = ({
               users={data?.allocated_to}
               roles={data?.allocated_roles}
               allocated_to_user={data?.username}
+              RoleAssignedUsers={data?.role_assigned_users}
               position="left"
             >
               <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.status !== "Rejected" ? "Approved" : data?.reference_document?.status} />
@@ -223,7 +224,8 @@ const OvertimeApprovalCard = ({
                     users={data?.allocated_to}
                     roles={data?.allocated_roles}
                     username={data?.username}
-                  />
+                  RoleAssignedUsers={data?.role_assigned_users}
+                />
                   <div className="flex flex-col gap-2 text-right">
                     <Typography variant="mobileCardLabel" className="block">
                       Due Date

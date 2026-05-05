@@ -114,6 +114,7 @@ const FlowTableRow = ({
           users={stage.allocated_to}
           roles={allocatedTo.roles}
           role={stage.role || ""}
+          RoleAssignedUsers={stage?.role_assigned_users || []}
         >
           <StatusBadge status={stage.status || "-"} />
         </AllocatedToTooltip>

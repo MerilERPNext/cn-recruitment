@@ -114,6 +114,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
               users={data?.allocated_to}
+              RoleAssignedUsers={data?.role_assigned_users}
               roles={data?.allocated_roles}
               allocated_to_user={data?.username}
               position="left"
@@ -145,7 +146,8 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
                 users={data?.allocated_to}
                 roles={data?.allocated_roles}
                 username={data?.username}
-              />
+              RoleAssignedUsers={data?.role_assigned_users}
+            />
 
               <StatusBadge status={badgeStatus} />
             </div>

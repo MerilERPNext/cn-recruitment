@@ -1,3 +1,5 @@
+import { RoleAssignedUsersType } from "./flows";
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export interface FileType {
     label: string;
@@ -100,6 +102,7 @@ export interface ReferenceDocument {
 export interface TodoType {
     allocated_roles: string[];
     allocated_to: string[];
+    role_assigned_users: RoleAssignedUsersType[];
     todo_id: string;
     custom_approval_type: "Approval Matrix" | "Multi Actions";
     allocated_to_emp_id: string;

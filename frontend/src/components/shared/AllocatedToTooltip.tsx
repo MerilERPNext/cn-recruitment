@@ -2,6 +2,8 @@ import React, { ReactNode, useState, useRef, useEffect, useCallback } from "reac
 import { createPortal } from "react-dom";
 import { User, Shield } from "lucide-react";
 import { allocatedToType } from "../../types/allocatedToTooltip";
+import { RoleAssignedUsersType } from "../../types/flows";
+import RoleUsersModal from "./RoleUsersModal";
 
 interface AllocatedToTooltipProps {
     users?: string | string[] | allocatedToType[];
@@ -13,6 +15,7 @@ interface AllocatedToTooltipProps {
     children: ReactNode;
     position?: "top" | "bottom" | "left" | "right";
     showUserRoleLables?: boolean;
+    RoleAssignedUsers?: RoleAssignedUsersType[];
 }
 
 type NormalizedUser = {
@@ -31,7 +34,11 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
     children,
     position = "top",
     showUserRoleLables = false,
+    RoleAssignedUsers,
 }) => {
+    const [selectedRoleData, setSelectedRoleData] = useState<RoleAssignedUsersType | null>(null);
+    const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+
     /** Merge all user sources → deduped array */
     const usersArray: NormalizedUser[] = React.useMemo(() => {
         const normalize = (
@@ -90,12 +97,18 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
         return deduped;
     }, [users, allocated_to_user, username, allocated_to]);
 
-    /** Merge roles + role → deduped array */
+    /** Merge roles + role + RoleAssignedUsers.role → deduped array */
     const rolesArray: string[] = React.useMemo(() => {
-        const base = (roles ?? []).filter(Boolean);
-        if (typeof role === "string" && role) base.push(role);
-        return [...new Set(base)];
-    }, [roles, role]);
+        const explicitRoles = [
+            ...(roles ?? []).filter(Boolean),
+            ...(role ? [role] : []),
+        ];
+
+        const derivedRoles =
+            RoleAssignedUsers?.map((r) => r.role).filter(Boolean) ?? [];
+
+        return [...new Set([...explicitRoles, ...derivedRoles])];
+    }, [roles, role, RoleAssignedUsers]);
 
     const hasUsers = usersArray.length > 0;
     const hasRoles = rolesArray.length > 0;
@@ -184,6 +197,11 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
         setIsVisible(false);
     };
 
+    const hideDelayed = () => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => setIsVisible(false), 300);
+    };
+
     const toggle = (e: React.MouseEvent | React.TouchEvent) => {
         e.stopPropagation();
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -251,6 +269,8 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
             role="tooltip"
             className="fixed z-[9999]"
             style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
+            onMouseEnter={() => { if (!isTouchRef.current) show(); }}
+            onMouseLeave={() => { if (!isTouchRef.current) hideDelayed(); }}
         >
             <div className="
                 bg-white rounded-xl shadow-xl
@@ -277,20 +297,33 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                         <div className="flex flex-wrap gap-1 mt-1">
                             {usersArray.map((u, idx) => renderUserItem(u, idx, "val-u"))}
 
-                            {rolesArray.map((r, idx) => (
-                                <span
-                                    key={`val-r-${idx}-${r}`}
-                                    className="
-                                        inline-flex items-center
-                                        text-[11px] font-brand font-medium
-                                        text-secondary-700 bg-secondary-50
-                                        border border-secondary-200
-                                        px-2 py-0.5 rounded-md
-                                    "
-                                >
-                                    {r}
-                                </span>
-                            ))}
+                            {rolesArray.map((r, idx) => {
+                                const assigned = RoleAssignedUsers?.find((data) => data.role === r);
+                                const hasUsers = assigned && assigned.users.length > 0;
+                                return (
+                                    <span
+                                        key={`val-r-${idx}-${r}`}
+                                        onClick={(e) => {
+                                            if (hasUsers) {
+                                                e.stopPropagation();
+                                                setSelectedRoleData(assigned);
+                                                setIsRoleModalOpen(true);
+                                                hide();
+                                            }
+                                        }}
+                                        className={`
+                                            inline-flex items-center
+                                            text-[11px] font-brand font-medium
+                                            text-secondary-700 bg-secondary-50
+                                            border border-secondary-200
+                                            px-2 py-0.5 rounded-md
+                                            ${hasUsers ? "cursor-pointer hover:bg-secondary-100 transition-colors" : ""}
+                                        `}
+                                    >
+                                        {r} {hasUsers && `(${assigned.users.length})`}
+                                    </span>
+                                );
+                            })}
                         </div>
                     )}
 
@@ -326,20 +359,33 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                                 </span>
 
                                 <div className="flex flex-wrap gap-1">
-                                    {rolesArray.map((r, idx) => (
-                                        <span
-                                            key={`role-${idx}-${r}`}
-                                            className="
-                                                inline-flex items-center
-                                                text-[11px] font-brand font-medium
-                                                text-secondary-700 bg-secondary-50
-                                                border border-secondary-200
-                                                px-2 py-0.5 rounded-md
-                                            "
-                                        >
-                                            {r}
-                                        </span>
-                                    ))}
+                                    {rolesArray.map((r, idx) => {
+                                        const assigned = RoleAssignedUsers?.find((data) => data.role === r);
+                                        const hasUsers = assigned && assigned.users.length > 0;
+                                        return (
+                                            <span
+                                                key={`role-${idx}-${r}`}
+                                                onClick={(e) => {
+                                                    if (hasUsers) {
+                                                        e.stopPropagation();
+                                                        setSelectedRoleData(assigned);
+                                                        setIsRoleModalOpen(true);
+                                                        hide();
+                                                    }
+                                                }}
+                                                className={`
+                                                    inline-flex items-center
+                                                    text-[11px] font-brand font-medium
+                                                    text-secondary-700 bg-secondary-50
+                                                    border border-secondary-200
+                                                    px-2 py-0.5 rounded-md
+                                                    ${hasUsers ? "cursor-pointer hover:bg-secondary-100 transition-colors" : ""}
+                                                `}
+                                            >
+                                                {r} {hasUsers && `(${assigned.users.length})`}
+                                            </span>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -360,7 +406,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                 ref={triggerRef}
                 className="inline-block"
                 onMouseEnter={() => { if (!isTouchRef.current) show(); }}
-                onMouseLeave={() => { if (!isTouchRef.current) hide(); }}
+                onMouseLeave={() => { if (!isTouchRef.current) hideDelayed(); }}
                 onFocus={show}
                 onBlur={hide}
                 onTouchStart={() => { isTouchRef.current = true; }}
@@ -369,6 +415,12 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                 {children}
             </div>
             {isVisible && createPortal(tooltipEl, document.body)}
+
+            <RoleUsersModal
+                isOpen={isRoleModalOpen}
+                onClose={() => setIsRoleModalOpen(false)}
+                roleData={selectedRoleData}
+            />
         </>
     );
 };

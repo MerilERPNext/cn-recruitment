@@ -165,6 +165,7 @@ const ApprovalCard = ({
               roles={data?.allocated_roles}
               allocated_to_user={data?.username}
               role={data?.role}
+              RoleAssignedUsers={data?.role_assigned_users}
               position="left"
             >
               <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
@@ -239,7 +240,8 @@ const ApprovalCard = ({
                     roles={data?.allocated_roles}
                     username={data?.username}
                     role={data?.role}
-                  />
+                  RoleAssignedUsers={data?.role_assigned_users}
+                />
                   <div className="flex flex-col gap-1 text-right">
                     <Typography variant="mobileCardLabel">Due Date</Typography>
                     <Typography variant="mobileCardValue">

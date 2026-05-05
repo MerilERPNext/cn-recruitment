@@ -1,3 +1,5 @@
+import { RoleAssignedUsersType } from "./flows";
+
 export interface LeaveRequest {
   name: string;
   leave_type: string;
@@ -196,6 +198,7 @@ export interface LeaveReason {
 export interface MyLeaveRequestType {
   reference_document: LeaveRequest;
   allocated_to: string[];
+  role_assigned_users?: RoleAssignedUsersType[];
   allocated_roles?: string[];
   role: string;
   reference_type: string;

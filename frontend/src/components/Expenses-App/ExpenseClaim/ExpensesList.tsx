@@ -219,7 +219,8 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           roles={item?.allocated_roles}
           role={item?.role}
           username={item?.username}
-        />
+        RoleAssignedUsers={item?.role_assigned_users}
+      />
 
         <div className={isActed ? "pointer-events-none opacity-50" : ""}>
           <MyApprovalActionPill
@@ -391,6 +392,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       <div className="flex items-center justify-center">
         <AllocatedToTooltip
           users={item?.allocated_to}
+          RoleAssignedUsers={item?.role_assigned_users}
           roles={item?.allocated_roles}
           allocated_to_user={item?.username}
           role={item?.role}

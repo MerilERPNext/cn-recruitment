@@ -127,7 +127,8 @@ export const LoantItem: React.FC<{
           roles={todo?.allocated_roles}
           role={todo?.role ?? ""}
           allocated_to={todo?.username}
-        />
+        RoleAssignedUsers={todo?.role_assigned_users}
+      />
 
         <MyApprovalActionPill
           variant="buttons"
