@@ -212,7 +212,6 @@ const TeamExpense = () => {
               <button
                 onClick={handleExport}
                 className="flex items-center justify-center p-2.5 text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-all duration-200 border border-primary/20 shadow-sm"
-                title="Export to Excel"
               >
                 <Download size={20} />
               </button>
