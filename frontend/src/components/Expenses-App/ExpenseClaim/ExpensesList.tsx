@@ -160,8 +160,8 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           <StatusBadge
             status={
               item?.custom_allow_revoke === 1 &&
-              item?.todo_status?.toLowerCase() === "cancelled" &&
-              item?.reference_document?.docstatus === 2
+                item?.todo_status?.toLowerCase() === "cancelled" &&
+                item?.reference_document?.docstatus === 2
                 ? "Revoked"
                 : item?.reference_document?.approval_status
             }
@@ -196,7 +196,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             <Typography variant="mobileCardLabel">Sanctioned Amount</Typography>
             <Typography variant="mobileCardValue">
               {item?.todo_status?.toLowerCase() === "closed" &&
-              item?.reference_document?.approval_status !== "Rejected"
+                item?.reference_document?.approval_status !== "Rejected"
                 ? sanctionedAmount
                 : " - "}
             </Typography>
@@ -379,7 +379,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {item?.todo_status?.toLowerCase() === "closed" &&
-        item?.reference_document?.approval_status !== "Rejected"
+          item?.reference_document?.approval_status !== "Rejected"
           ? formattedSanctionedAmount
           : " -- "}
       </Typography>
@@ -407,8 +407,8 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           <StatusBadge
             status={
               item?.custom_allow_revoke === 1 &&
-              item?.todo_status?.toLowerCase() === "cancelled" &&
-              item?.reference_document?.docstatus === 2
+                item?.todo_status?.toLowerCase() === "cancelled" &&
+                item?.reference_document?.docstatus === 2
                 ? "Revoked"
                 : item?.reference_document?.approval_status
             }
@@ -423,7 +423,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           isPending={item?.status === "Pending"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-              item?.send_back_user?.toLowerCase() &&
+            item?.send_back_user?.toLowerCase() &&
             canEditExpense &&
             item?.can_edit &&
             !isActed
@@ -435,7 +435,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
               item?.todo_status?.toLowerCase() === "cancelled" &&
               item?.reference_document?.docstatus === 2
             ) &&
-            item?.todo_status?.toLowerCase() === "open" &&
+            // item?.todo_status?.toLowerCase() === "open" &&
             !isActed
           }
           revokeLoading={revokeEventMutation.isPending}
@@ -493,7 +493,7 @@ const ExpensesList: React.FC = () => {
     isOpen: boolean;
     message: string;
     onConfirm: () => void;
-  }>({ isOpen: false, message: "", onConfirm: () => {} });
+  }>({ isOpen: false, message: "", onConfirm: () => { } });
 
   const [submitConfirmModal, setSubmitConfirmModal] = React.useState<{
     isOpen: boolean;
@@ -643,8 +643,8 @@ const ExpensesList: React.FC = () => {
         const doc = item?.reference_document;
         const rawStatus =
           item?.custom_allow_revoke === 1 &&
-          item?.todo_status?.toLowerCase() === "cancelled" &&
-          doc?.docstatus === 2
+            item?.todo_status?.toLowerCase() === "cancelled" &&
+            doc?.docstatus === 2
             ? "Revoked"
             : doc?.approval_status;
 
@@ -659,7 +659,7 @@ const ExpensesList: React.FC = () => {
 
         const sanctioned =
           item?.todo_status?.toLowerCase() === "closed" &&
-          doc?.approval_status !== "Rejected"
+            doc?.approval_status !== "Rejected"
             ? doc?.total_sanctioned_amount
             : "--";
 
@@ -726,8 +726,8 @@ const ExpensesList: React.FC = () => {
     const isPaidFilter = currentFilters.status === "Paid";
     const status =
       item?.custom_allow_revoke === 1 &&
-      item?.todo_status?.toLowerCase() === "cancelled" &&
-      item?.reference_document?.docstatus === 2
+        item?.todo_status?.toLowerCase() === "cancelled" &&
+        item?.reference_document?.docstatus === 2
         ? "Revoked"
         : item?.reference_document?.approval_status;
 
@@ -752,8 +752,8 @@ const ExpensesList: React.FC = () => {
 
     const status =
       item?.custom_allow_revoke === 1 &&
-      item?.todo_status?.toLowerCase() === "cancelled" &&
-      item?.reference_document?.docstatus === 2
+        item?.todo_status?.toLowerCase() === "cancelled" &&
+        item?.reference_document?.docstatus === 2
         ? "Revoked"
         : item?.reference_document?.approval_status;
 
@@ -815,44 +815,44 @@ const ExpensesList: React.FC = () => {
 
   const tableTitles = isDraftFilter
     ? [
-        "",
-        "Expense Id",
-        "Expense Category",
-        "Expense Type",
-        "Claimed Amount",
-        "Sanctioned Amount",
-        "Expense Date",
-        "Claimed Date",
-        "Status",
-        "Actions",
-      ]
+      "",
+      "Expense Id",
+      "Expense Category",
+      "Expense Type",
+      "Claimed Amount",
+      "Sanctioned Amount",
+      "Expense Date",
+      "Claimed Date",
+      "Status",
+      "Actions",
+    ]
     : [
-        "Expense Id",
-        "Expense Category",
-        "Expense Type",
-        "Claimed Amount",
-        "Sanctioned Amount",
-        ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
-        "Expense Date",
-        "Claimed Date",
-        "Status",
-        "Actions",
-      ];
+      "Expense Id",
+      "Expense Category",
+      "Expense Type",
+      "Claimed Amount",
+      "Sanctioned Amount",
+      ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
+      "Expense Date",
+      "Claimed Date",
+      "Status",
+      "Actions",
+    ];
 
   const tableColumnWidths = isDraftFilter
     ? ["48px", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "120px"]
     : [
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        ...(currentFilters.status === "Paid" ? ["1fr"] : []),
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-      ];
+      "1fr",
+      "1fr",
+      "1fr",
+      "1fr",
+      "1fr",
+      ...(currentFilters.status === "Paid" ? ["1fr"] : []),
+      "1fr",
+      "1fr",
+      "1fr",
+      "1fr",
+    ];
 
   return (
     <div className="flex flex-col h-full">
@@ -886,11 +886,10 @@ const ExpensesList: React.FC = () => {
                   setCurrentListData([]);
                   setSelectedMyExpensesDraftIds(new Set());
                 }}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  activeTab === "expenses"
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "expenses"
                     ? "bg-white text-primary shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
-                }`}
+                  }`}
               >
                 My Expenses
               </button>
@@ -900,11 +899,10 @@ const ExpensesList: React.FC = () => {
                   setCurrentListData([]);
                   setSelectedMyExpensesDraftIds(new Set());
                 }}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  activeTab === "shared"
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "shared"
                     ? "bg-white text-primary shadow-sm"
                     : "text-gray-500 hover:text-gray-700"
-                }`}
+                  }`}
               >
                 Shared Expenses
               </button>
@@ -925,11 +923,10 @@ const ExpensesList: React.FC = () => {
       {/* ── Mobile Bulk Action Bar (fixed bottom, draft filter mode) ────── */}
       {isDraftFilter && (
         <div
-          className={`md:hidden fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
-            selectedMyExpensesDraftIds.size > 0
+          className={`md:hidden fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${selectedMyExpensesDraftIds.size > 0
               ? "translate-y-0 opacity-100 pointer-events-auto"
               : "translate-y-full opacity-0 pointer-events-none"
-          }`}
+            }`}
         >
           <div className="bg-white border-t border-gray-200 shadow-[0_-4px_24px_rgba(0,0,0,0.12)] px-4 py-3">
             <div className="flex items-center justify-between mb-2">
@@ -993,7 +990,7 @@ const ExpensesList: React.FC = () => {
                       setDeleteConfirmModal({
                         isOpen: false,
                         message: "",
-                        onConfirm: () => {},
+                        onConfirm: () => { },
                       });
                     },
                   });
@@ -1072,7 +1069,7 @@ const ExpensesList: React.FC = () => {
                     type="checkbox"
                     checked={
                       selectedMyExpensesDraftIds.size ===
-                        currentListData.length && currentListData.length > 0
+                      currentListData.length && currentListData.length > 0
                     }
                     onChange={(e) => {
                       if (e.target.checked) {
@@ -1144,7 +1141,7 @@ const ExpensesList: React.FC = () => {
                               setDeleteConfirmModal({
                                 isOpen: false,
                                 message: "",
-                                onConfirm: () => {},
+                                onConfirm: () => { },
                               });
                             },
                           });
@@ -1325,7 +1322,7 @@ const ExpensesList: React.FC = () => {
                                 setDeleteConfirmModal({
                                   isOpen: false,
                                   message: "",
-                                  onConfirm: () => {},
+                                  onConfirm: () => { },
                                 });
                               },
                             });
@@ -1423,7 +1420,7 @@ const ExpensesList: React.FC = () => {
                                     setDeleteConfirmModal({
                                       isOpen: false,
                                       message: "",
-                                      onConfirm: () => {},
+                                      onConfirm: () => { },
                                     });
                                   },
                                 });
@@ -1525,7 +1522,6 @@ const ExpensesList: React.FC = () => {
                     {
                       label: "Pending",
                       value: "Pending",
-                      customAPIParams: { todo_status: "Open" },
                     },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
@@ -1656,7 +1652,7 @@ const ExpensesList: React.FC = () => {
           setDeleteConfirmModal({
             isOpen: false,
             message: "",
-            onConfirm: () => {},
+            onConfirm: () => { },
           })
         }
         size="sm"
@@ -1674,7 +1670,7 @@ const ExpensesList: React.FC = () => {
                 setDeleteConfirmModal({
                   isOpen: false,
                   message: "",
-                  onConfirm: () => {},
+                  onConfirm: () => { },
                 })
               }
             >

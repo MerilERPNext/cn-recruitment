@@ -933,6 +933,19 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     return raw ? [raw] : [];
   }, [dynamicFormData]);
 
+  const customFormFileUrls = useMemo(() => {
+    const urls: string[] = [];
+    customFileKeys.forEach((key) => {
+      const val = dynamicFormData[key];
+      const files = Array.isArray(val) ? val : val ? [val] : [];
+      files.forEach((f: any) => {
+        const url = f?.url || f?.file_url;
+        if (url) urls.push(url);
+      });
+    });
+    return new Set(urls);
+  }, [dynamicFormData, customFileKeys]);
+
   const visibleAttachments = useMemo(
     () =>
       dedupeAttachments(
@@ -945,10 +958,12 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
           ) {
             return false;
           }
+          const itemUrl = item?.url || item?.file_url;
+          if (itemUrl && customFormFileUrls.has(itemUrl)) return false;
           return true;
         }),
       ),
-    [currentAttachments],
+    [currentAttachments, customFormFileUrls],
   );
 
   const buildCombinedData = () => {
