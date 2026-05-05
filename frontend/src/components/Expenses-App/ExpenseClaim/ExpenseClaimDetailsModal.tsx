@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { SquarePen, X } from "lucide-react";
 import React from "react";
 import { useNavigate } from "react-router-dom";
@@ -54,8 +55,44 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   const isSendedBack =
     currentUser?.name === selectedSendBackUser && canEditProp && todoStatus !== "Closed";
 
-  const getAttachmentsForItem = () => {
-    return claimAttachments || [];
+  const getAttachmentsForItem = (item?: Expense) => {
+    if (!claimAttachments) return [];
+
+    const customUrls = new Set<string>();
+    data?.expenses?.forEach((item: Expense) => {
+      if (item.custom_form_data) {
+        try {
+          const parsed =
+            typeof item.custom_form_data === "string"
+              ? JSON.parse(item.custom_form_data)
+              : item.custom_form_data;
+
+          Object.values(parsed).forEach((value: any) => {
+            const files = Array.isArray(value) ? value : [value];
+            files.forEach((file) => {
+              if (file && typeof file === "object") {
+                const url = getCustomFileUrl(file);
+                if (url) customUrls.add(url);
+              }
+            });
+          });
+        } catch (e) {
+          console.error("Error parsing custom_form_data for filtering", e);
+        }
+      }
+    });
+
+    const standardFileNames = new Set(
+      ((item as any)?.attachments || item?.custom_attach_receipt || "")
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter(Boolean)
+    );
+
+    return claimAttachments.filter((file: any) => {
+      if (standardFileNames.has(file.file_name)) return true;
+      return !customUrls.has(file.file_url);
+    });
   };
 
   const formatINR = (value?: number | null) =>
@@ -74,7 +111,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
     let parsed: Record<string, any> = {};
     try {
       parsed = typeof customFormData === 'string' ? JSON.parse(customFormData) : customFormData;
-    } catch (e) {
+    } catch {
       return null;
     }
 
@@ -141,7 +178,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
     let parsed: Record<string, any> = {};
     try {
       parsed = typeof customFormData === 'string' ? JSON.parse(customFormData) : customFormData;
-    } catch (e) {
+    } catch {
       return null;
     }
 
@@ -360,10 +397,10 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-2 items-center justify-center">
-                      {getAttachmentsForItem().map((file: { file_url: string }, i: number) => (
+                      {getAttachmentsForItem(item).map((file: { file_url: string }, i: number) => (
                         <AttachmentCard key={i} fileUrl={file.file_url} compact />
                       ))}
-                      {getAttachmentsForItem().length === 0 && (
+                      {getAttachmentsForItem(item).length === 0 && (
                         <span className="text-xs text-gray-400 italic">No file</span>
                       )}
                     </div>
@@ -479,10 +516,10 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   Attachments
                 </Typography>
                 <div className="flex flex-col gap-2 mt-2">
-                  {getAttachmentsForItem().map((file: { file_url: string }, i: number) => (
+                  {getAttachmentsForItem(item).map((file: { file_url: string }, i: number) => (
                     <AttachmentCard key={i} fileUrl={file.file_url} />
                   ))}
-                  {getAttachmentsForItem().length === 0 && (
+                  {getAttachmentsForItem(item).length === 0 && (
                     <span className="text-gray-400 text-sm">No File</span>
                   )}
                 </div>

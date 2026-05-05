@@ -16,6 +16,8 @@ export interface PerMileageUnitRateResponse {
   // other keys if any
 }
 
+export type UnitPriceResponse = PerMileageUnitRateResponse | string;
+
 export interface ExpenseLineItem {
   name: string;
   sanctioned_amount?: number;
@@ -93,10 +95,11 @@ export const expenseService = {
   getExpenseTypeFields: async (
     expenseType: string
   ): Promise<ExpenseTypeFieldsResponse> => {
-    if (!expenseType) throw new Error("expenseType is required");
+    const normalizedExpenseType = expenseType?.trim();
+    if (!normalizedExpenseType) throw new Error("expenseType is required");
     const response = await FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.get_expense_type_fields",
-      { expense_type: expenseType }
+      { expense_type: normalizedExpenseType }
     );
     return response as ExpenseTypeFieldsResponse;
   },
@@ -133,7 +136,7 @@ export const expenseService = {
   getUnitPrice: async (
     claimTypeDoc: string,
     vehicleType: string
-  ): Promise<PerMileageUnitRateResponse> => {
+  ): Promise<UnitPriceResponse> => {
     if (!claimTypeDoc) throw new Error("claimTypeDoc is required");
     if (!vehicleType) throw new Error("vehicleType is required");
 
@@ -145,7 +148,7 @@ export const expenseService = {
       }
     );
 
-    return response as PerMileageUnitRateResponse;
+    return response as UnitPriceResponse;
   },
 
   //Approve or reject line expense
@@ -402,5 +405,3 @@ export const expenseService = {
   },
 
 };
-
-

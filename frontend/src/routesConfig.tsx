@@ -16,7 +16,8 @@ import TeamLoanRequest from "./components/Compansation/Loan/TeamLoan/TeamLoanReq
 import Perquisite from "./components/Compansation/Perquisite/Perquisite";
 import IncomeTaxSheet from "./components/Compansation/TaxSheet/TaxSheet";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
-import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
+//import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
+import AddExpenseFormV2 from "./components/Expenses-App/ExpenseClaim/AddExpenseFormV2";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
 import Requests from "./components/Requests";
@@ -465,7 +466,7 @@ const AddExpensePage = () => {
   const isResubmit = (location.state as any)?.isResubmit || false;
   const isEditingFromDraft = Boolean(draft_document_name);
   return (
-    <AddExpenseForm
+    <AddExpenseFormV2
       initialExpense={initialExpense}
       expense_claim_name={expense_claim_name}
       draft_document_name={draft_document_name}
