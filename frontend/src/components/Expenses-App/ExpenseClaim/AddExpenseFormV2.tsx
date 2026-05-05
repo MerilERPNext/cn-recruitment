@@ -714,7 +714,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
 
       onSuccess?.();
       navigate("/webapp/expenses-app/expenses-list", {
-        state: { refresh: true },
+        state: { refresh: true, initialFilter: approvalStatus ? "Pending" : "Draft" },
       });
     } catch (error) {
       console.error("Expense submission flow failed:", error);

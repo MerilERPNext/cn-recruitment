@@ -26,7 +26,11 @@ import { expenseService } from "../../../services/expenseService";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { COLUMN_SORT_CONFIG_EXPENSE_CLAIM } from "../../../utils/tableSortConfig";
+import {
+  COLUMN_SORT_CONFIG_EXPENSE_CLAIM,
+  COLUMN_SORT_CONFIG_EXPENSE_CLAIM_DRAFT,
+  COLUMN_SORT_CONFIG_SHARED_EXPENSE,
+} from "../../../utils/tableSortConfig";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
@@ -558,6 +562,16 @@ const ExpensesList: React.FC = () => {
     }));
   }, [expenseCategories]);
 
+  // Compute the default filter for DataListView based on navigation state
+  const computedDefaultFilters = React.useMemo(() => {
+    const navFilter = (location.state as any)?.initialFilter;
+    if (navFilter === "Pending" || navFilter === "Draft") {
+      return { approval_status: navFilter };
+    }
+    return { approval_status: "Draft" };
+    // location.key is the dependency so this recomputes on each new navigation
+  }, [location.key]);
+
   React.useEffect(() => {
     if ((location.state as any)?.refresh) {
       queryClient.invalidateQueries({
@@ -566,6 +580,12 @@ const ExpensesList: React.FC = () => {
       queryClient.invalidateQueries({
         queryKey: ["expense-claims-all"],
       });
+    }
+    // Clear navigation state after consuming it to prevent stale filter on refresh
+    if (
+      (location.state as any)?.refresh ||
+      (location.state as any)?.initialFilter
+    ) {
       window.history.replaceState({}, "", window.location.pathname);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1033,7 +1053,9 @@ const ExpensesList: React.FC = () => {
             titles={tableTitles}
             columnWidths={tableColumnWidths}
             columnSortConfig={
-              isDraftFilter ? undefined : COLUMN_SORT_CONFIG_EXPENSE_CLAIM
+              isDraftFilter
+                ? COLUMN_SORT_CONFIG_EXPENSE_CLAIM_DRAFT
+                : COLUMN_SORT_CONFIG_EXPENSE_CLAIM
             }
           >
             {/* Select All header for backend-draft filter mode (desktop only) */}
@@ -1536,7 +1558,7 @@ const ExpensesList: React.FC = () => {
                   fieldtype: "Date",
                 },
               ]}
-              defaultFilters={{ approval_status: "Draft" }}
+              defaultFilters={computedDefaultFilters}
               onFiltersChange={handleFiltersChange}
               onDataLoad={handleDataLoad}
               SkeletonComponent={CardSkeleton}
@@ -1574,6 +1596,7 @@ const ExpensesList: React.FC = () => {
               "1fr",
               "1fr",
             ]}
+            columnSortConfig={COLUMN_SORT_CONFIG_SHARED_EXPENSE}
           >
             <DataListView
               queryKey={["shared-expenses", currentEmployee?.name ?? ""]}
@@ -1899,7 +1922,8 @@ const ExpensesList: React.FC = () => {
                                         updateFileMutation.mutateAsync({
                                           fileName: file.name,
                                           data: {
-                                            attached_to_doctype: "Expense Claim",
+                                            attached_to_doctype:
+                                              "Expense Claim",
                                             attached_to_name: expenseClaimName,
                                           },
                                         }),
