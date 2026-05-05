@@ -1499,12 +1499,12 @@ const ExpensesList: React.FC = () => {
                   label: "Status",
                   fieldtype: "Select",
                   options: [
+                    { label: "Draft", value: "Draft" },
                     {
                       label: "Pending",
                       value: "Pending",
                       customAPIParams: { todo_status: "Open" },
                     },
-                    { label: "Draft", value: "Draft" },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
                     {
@@ -1536,7 +1536,7 @@ const ExpensesList: React.FC = () => {
                   fieldtype: "Date",
                 },
               ]}
-              defaultFilters={{ approval_status: "Pending" }}
+              defaultFilters={{ approval_status: "Draft" }}
               onFiltersChange={handleFiltersChange}
               onDataLoad={handleDataLoad}
               SkeletonComponent={CardSkeleton}
