@@ -111,13 +111,13 @@ const FlowRequests: React.FC = () => {
                   fieldname: "approval_status",
                   label: "Approval Status",
                   fieldtype: "Select",
-                  options: ["Pending", "Approved", "Rejected", "N/A"],
+                  options: ["Pending", "Approved", "Rejected"],
                 },
                 {
                   fieldname: "workflow_status",
                   label: "Workflow Status",
                   fieldtype: "Select",
-                  options: ["Pending", "Completed", "N/A"],
+                  options: ["Pending", "Completed"],
                 },
                 {
                   fieldname: "overall_flow_status",
