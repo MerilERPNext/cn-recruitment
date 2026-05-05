@@ -172,6 +172,12 @@ export const COLUMN_SORT_CONFIG_EXPENSE_CLAIM: ColumnSortConfig[] = [
   { sortable: false },
 ];
 
+// Draft filter variant: same as above but with an extra non-sortable checkbox column at position 0
+export const COLUMN_SORT_CONFIG_EXPENSE_CLAIM_DRAFT: ColumnSortConfig[] = [
+  { sortable: false }, // Checkbox column
+  ...COLUMN_SORT_CONFIG_EXPENSE_CLAIM,
+];
+
 export const getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_CLAIM = (
   isBulkSelect: boolean,
   isApproved: boolean

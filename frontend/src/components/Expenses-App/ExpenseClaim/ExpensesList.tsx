@@ -26,7 +26,7 @@ import { expenseService } from "../../../services/expenseService";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { COLUMN_SORT_CONFIG_EXPENSE_CLAIM } from "../../../utils/tableSortConfig";
+import { COLUMN_SORT_CONFIG_EXPENSE_CLAIM, COLUMN_SORT_CONFIG_EXPENSE_CLAIM_DRAFT } from "../../../utils/tableSortConfig";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
@@ -1062,7 +1062,7 @@ const ExpensesList: React.FC = () => {
             titles={tableTitles}
             columnWidths={tableColumnWidths}
             columnSortConfig={
-              isDraftFilter ? undefined : COLUMN_SORT_CONFIG_EXPENSE_CLAIM
+              isDraftFilter ? COLUMN_SORT_CONFIG_EXPENSE_CLAIM_DRAFT : COLUMN_SORT_CONFIG_EXPENSE_CLAIM
             }
           >
             {/* Select All header for backend-draft filter mode (desktop only) */}
