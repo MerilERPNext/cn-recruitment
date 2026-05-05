@@ -8,7 +8,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import {
   useDeleteDraftExpenseClaim,
   useGetAllExpenseCategories,
@@ -758,7 +758,7 @@ const ExpensesList: React.FC = () => {
   const [isRelocationAcknowledgementChecked, setIsRelocationAcknowledgementChecked] = React.useState(false);
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const navigate = useNavigate();
   const {
     data: draftExpenses,

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
@@ -77,32 +77,32 @@ const mapOnboardingData = (rawData: ApiOnboardingItem[]): UiOnboarding[] => {
 
 const ONBOARDING_SORT_CONFIG: ColumnSortConfig[] = [
   { sortable: true, type: "string", field: "employee_name", getValue: (item: any) => item.employeeName ?? "" },
-  { sortable: true, type: "string", field: "department",    getValue: (item: any) => item.department ?? "" },
-  { sortable: true, type: "string", field: "designation",   getValue: (item: any) => item.designation ?? "" },
-  { sortable: true, type: "date",   field: "date_of_joining", getValue: (item: any) => item.dateOfJoining ?? "" },
-  { sortable: true, type: "date",   field: "boarding_begins_on", getValue: (item: any) => item.boardingBeginsOn ?? "" },
+  { sortable: true, type: "string", field: "department", getValue: (item: any) => item.department ?? "" },
+  { sortable: true, type: "string", field: "designation", getValue: (item: any) => item.designation ?? "" },
+  { sortable: true, type: "date", field: "date_of_joining", getValue: (item: any) => item.dateOfJoining ?? "" },
+  { sortable: true, type: "date", field: "boarding_begins_on", getValue: (item: any) => item.boardingBeginsOn ?? "" },
   { sortable: false },
   { sortable: false },
 ];
 
 export default function EmployeeOnboardingList() {
 
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
 
   const employeeId = user?.employee ?? "";
-  const company    = user?.company   ?? "";
+  const company = user?.company ?? "";
 
-  const titles       = ["Employee Name", "Department", "Designation", "Date of Joining", "Boarding Begins On", "Status", "Action"];
+  const titles = ["Employee Name", "Department", "Designation", "Date of Joining", "Boarding Begins On", "Status", "Action"];
   const columnWidths = ["1.2fr", "1fr", "1fr", "1fr", "1fr", "0.8fr", "0.8fr"];
 
   const customAPI =
     employeeId && company
       ? {
-          method: "recruitment.api.employee_onboarding.get_employee_onboarding_list",
-          params: {},
-        }
+        method: "recruitment.api.employee_onboarding.get_employee_onboarding_list",
+        params: {},
+      }
       : null;
 
   return (
@@ -175,8 +175,8 @@ export default function EmployeeOnboardingList() {
                   </div>
 
                   <div className="font-medium items-center flex justify-center">
-                    
-    
+
+
                   </div>
                 </div>
               )}
@@ -252,7 +252,7 @@ export default function EmployeeOnboardingList() {
                     </div>
 
                     <div className="w-full flex justify-end">
- 
+
                     </div>
                   </div>
                 </div>
@@ -263,7 +263,7 @@ export default function EmployeeOnboardingList() {
       )}
 
       {/* ================= DETAILS MODAL ================= */}
-  
+
     </div>
   );
 }

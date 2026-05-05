@@ -1,5 +1,5 @@
 import Button from "../shared/atoms/Button";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetAttendanceStatus } from "../../hooks/useLeaves";
 import Badge from "../shared/Badge";
 
@@ -9,7 +9,7 @@ const AttendanceStatusModal: React.FC<{
   fromDate: string;
   toDate: string;
 }> = ({ isOpen, onClose, fromDate, toDate }) => {
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const {
     data: attendanceStatus,
     isLoading,

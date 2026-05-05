@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import InvoicePDFview from "./Component/InvoicePDFview";
 import Button from "../../shared/atoms/Button";
 import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
@@ -58,32 +58,32 @@ export default function Invoice() {
   const [hideAmount, setHideAmount] = useState(true);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const { isDesktop } = useScreenSize();
-const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const uploadMutation = useFileUpload();
   const updateSalarySlipMutation = useUpdateSalarySlip();
 
-  const { data: user } = useCurrentEmployeeAllDetails();
- const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     user?.company || null,
   ) as {
     data: PayrollPeriod[] | undefined;
   };
 
-    useEffect(() => {
-      if (!payrollPeriods?.length || selectedPeriod) return;
-  
-      const today = new Date();
-  
-      const matchedPeriod = payrollPeriods.find((p) => {
-        const start = new Date(p.start_date);
-        const end = new Date(p.end_date);
-        return today >= start && today <= end;
-      });
-  
-      setSelectedPeriod(matchedPeriod?.name || payrollPeriods[0].name);
-    }, [payrollPeriods, selectedPeriod]);
-  
-    // ✅ Refresh list on filter change
+  useEffect(() => {
+    if (!payrollPeriods?.length || selectedPeriod) return;
+
+    const today = new Date();
+
+    const matchedPeriod = payrollPeriods.find((p) => {
+      const start = new Date(p.start_date);
+      const end = new Date(p.end_date);
+      return today >= start && today <= end;
+    });
+
+    setSelectedPeriod(matchedPeriod?.name || payrollPeriods[0].name);
+  }, [payrollPeriods, selectedPeriod]);
+
+  // ✅ Refresh list on filter change
 
 
   const amountClass = hideAmount
@@ -415,11 +415,11 @@ const [selectedPeriod, setSelectedPeriod] = useState<string>("");
               <Typography variant="h4">My Invoices</Typography>
             )}
             <div className="flex  items-center gap-4">
-            <ShowHideButton
-              showAmount={hideAmount}
-              onToggleAmount={() => setHideAmount((prev) => !prev)}
-            />
-            <CustomDropdown
+              <ShowHideButton
+                showAmount={hideAmount}
+                onToggleAmount={() => setHideAmount((prev) => !prev)}
+              />
+              <CustomDropdown
                 value={selectedPeriod}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setSelectedPeriod(e.target.value)
@@ -450,10 +450,10 @@ const [selectedPeriod, setSelectedPeriod] = useState<string>("");
               SkeletonComponent={CardSkeleton}
               renderItem={(inv: any) => renderInvoiceRow(inv)}
               noRecordsScreen={
-               <NoDataFound
-                    title="No Records Found"
-                    subtitle="No pay package records available for this period."
-                  />
+                <NoDataFound
+                  title="No Records Found"
+                  subtitle="No pay package records available for this period."
+                />
               }
             />
           </CardTable>
@@ -469,9 +469,9 @@ const [selectedPeriod, setSelectedPeriod] = useState<string>("");
               renderItem={(inv: any) => renderInvoiceRow(inv)}
               noRecordsScreen={
                 <NoDataFound
-                     title="No Records Found"
-                     subtitle="No pay package records available for this period."
-                   />
+                  title="No Records Found"
+                  subtitle="No pay package records available for this period."
+                />
               }
             />
           </div>

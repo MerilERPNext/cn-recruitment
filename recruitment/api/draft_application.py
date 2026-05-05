@@ -131,20 +131,39 @@ def save_draft(job_applicant_email, job_opening, form_data=None):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_draft(job_applicant_email, job_opening):
+def get_draft(job_applicant_email, job_opening=None):
     if not job_applicant_email:
         return _err("job_applicant_email is required.", 400)
-    if not job_opening:
-        return _err("job_opening is required.", 400)
 
     email = job_applicant_email.strip()
-    opening = job_opening.strip()
+    filters = {"job_applicant_email": email}
 
-    name = _find_draft(email, opening)
-    if not name:
-        return _ok("No Draft Application exists yet.", None)
+    if job_opening:
+        filters["job_opening"] = job_opening.strip()
 
-    return _ok("Draft Application fetched.", _serialize(frappe.get_doc(DOCTYPENAME, name)))
+    names = frappe.get_all(
+        DOCTYPENAME,
+        filters=filters,
+        pluck="name",
+        order_by="modified desc",
+    )
+    drafts = [_serialize(frappe.get_doc(DOCTYPENAME, name)) for name in names]
+
+    return _ok(f"Fetched {len(drafts)} Draft Application(s).", drafts)
+
+
+@frappe.whitelist(allow_guest=True)
+def get_job_applicant(job_applicant):
+    if not job_applicant:
+        return _err("job_applicant is required.", 400)
+
+    applicant_name = job_applicant.strip()
+
+    if not frappe.db.exists("Job Applicant", applicant_name):
+        return _ok("No Job Applicant found.", {})
+
+    doc = frappe.get_doc("Job Applicant", applicant_name)
+    return _ok("Job Applicant fetched.", doc.as_dict(convert_dates_to_str=True))
 
 
 @frappe.whitelist(allow_guest=True)

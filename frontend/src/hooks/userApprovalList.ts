@@ -46,6 +46,12 @@ export function useRevokeEvent() {
   });
 }
 
+export type handleActionType = (action: string, data: {
+  todo_id: string;
+  custom_open_chatnext_assistant_on_action: boolean;
+  custom_approval_type: "Approval Matrix" | "Multi Actions";
+}, custom_action_message?: string | undefined) => Promise<void>;
+
 export function useApprovalAction(triggerRefetch?: () => void) {
 
   const loading = useLoadingOverlay();

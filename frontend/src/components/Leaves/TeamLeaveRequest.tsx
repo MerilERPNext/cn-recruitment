@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useGetLeaveBalance } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -19,7 +19,7 @@ const TeamLeaveRequest = () => {
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const [activeStatus, setActiveStatus] = useState("Open");
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const today = new Date().toISOString().split("T")[0];
   const { data: leaveBalanceData } = useGetLeaveBalance(
     currentEmployee?.name,

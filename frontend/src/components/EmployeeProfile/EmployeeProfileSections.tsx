@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import {
-    useCurrentEmployeeAllDetails,
+    useCurrentEmployeeDetails,
     useGetEmployeeDetailsByEmpIdForProfile,
     useGetEmployeeFieldPermissions,
 } from "../../hooks/useEmployee";
@@ -34,7 +34,7 @@ export default function EmployeeProfileSections() {
     const { targetEmployeeId } = useTargetUser();
 
     const { data: currentUser, isLoading } =
-        useCurrentEmployeeAllDetails();
+        useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
     const employeeId =
         targetEmployeeId || (isLoading ? null : currentUser?.employee) || "";

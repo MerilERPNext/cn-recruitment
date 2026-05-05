@@ -355,7 +355,7 @@ const InitiateFlow2 = lazyWithRetry(
 );
 
 const RequestDetails = lazyWithRetry(
-  () => import("./components/Flows/RequestDetails/RequestDetails"),
+  () => import("./components/Flows/FlowRequests/FlowDetails/RequestDetails"),
   "RequestDetails",
 );
 
@@ -1121,10 +1121,10 @@ export const routesConfig: AppRoute[] = [
   },
   {
     path: "/work-connect",
-    element:<Navigate to="/work-connect" replace />,
+    element: <Navigate to="/work-connect" replace />,
     permissionKey: "Work Connect",
   },
-  
+
   {
     path: "/webapp/helpdesk/my-tickets",
     element: <HelpDeskApp />,
@@ -1147,7 +1147,7 @@ export const routesConfig: AppRoute[] = [
   },
   {
     path: "/webapp/employee-onboarding",
-    element: <Onboarding/>,
+    element: <Onboarding />,
     permissionKey: "Employee Onboarding",
     children: [
       { path: "onboarding-field-approval/:onboardingId", element: <OnboardingFieldApproval />, permissionKey: "Employee Onboarding" },

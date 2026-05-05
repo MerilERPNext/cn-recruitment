@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
 import { MyShiftRequest } from "../../types/shift";
@@ -18,6 +18,7 @@ import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import EmpShiftRequestCard from "./EmpShiftRequestCard";
 import { ShiftDetailView } from "./ShiftDetailView";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
+import NoDataFound from "../shared/atoms/NoDataFound";
 
 const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
   {
@@ -200,6 +201,11 @@ const TeamShiftList = () => {
       <div className="max-h-96 overflow-y-auto team-shift-dashboard">
         {isLoading ? (
           <CardSkeleton rows={3} />
+        ) : teamShifts.length === 0 ? (
+          <NoDataFound
+            title="No Shift Request"
+            subtitle="No Team Shift Assignments Found"
+          />
         ) : (
           <ul>
             {teamShifts.map((shift, idx) => (
@@ -214,7 +220,7 @@ const TeamShiftList = () => {
 
 const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const handleRefetchComplete = useCallback(() => {

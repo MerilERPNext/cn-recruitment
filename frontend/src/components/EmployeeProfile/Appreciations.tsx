@@ -7,7 +7,7 @@ import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import { useTargetUser } from "../../context/ViewedUserContext";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { CustomError } from "../../types/attendance";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,7 +21,7 @@ const Appreciations = () => {
 
     // Get effective target employee
     const { targetEmployeeId } = useTargetUser();
-    const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+    const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
     const queryClient = useQueryClient();
     const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
     const { data: employeeAppreciations } = useGetEmployeeAppreciations();

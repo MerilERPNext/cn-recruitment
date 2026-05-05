@@ -16,7 +16,13 @@
 
 <body>
   <div id="root"></div>
-  <chatnext-app />
+  <chatnext-app id="chatnext-app-id" />
+  <script>
+    //  disblaed shoftcut ctrl +g for chatnext assistant
+    const chatnextApp = document.getElementById('chatnext-app-id');
+    chatnextApp.disableCtrlG = true;
+  </script>
+
   <script type="module" src="/src/main.tsx"></script>
 
   <script>

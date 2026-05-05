@@ -4,10 +4,31 @@ import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import {
   useExpenseCommentUpdate,
   useExpenseLineItemUpdate,
+  useGetExpenseAttachments,
 } from "../../../hooks/useExpense";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useApprovalListActions } from "../../../hooks/userApprovalList";
-import { Participant } from "../../../types/expenseAdvance";
+import { Participant, Expense } from "../../../types/expenseAdvance";
+
+interface CustomFile {
+  data?: {
+    message?: {
+      file_url?: string;
+    };
+  };
+  file_url?: string;
+  url?: string;
+  originalName?: string;
+  name?: string;
+  file_name?: string;
+}
+
+interface ExtendedExpense extends Expense {
+  id: string | number;
+  sanctionedAmount: number;
+  sanctionedAmountInput: string;
+  comment: string;
+}
 
 import DOMPurify from "dompurify";
 import toast from "react-hot-toast";
@@ -69,9 +90,8 @@ export function TeamExpenseDetailView({
 
   const claimId = ref?.name || data?.reference_name || "";
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [expenseItems, setExpenseItems] = useState<any[]>([]);
-  const [savingItem, setSavingItem] = useState<string | null>(null);
+  const [expenseItems, setExpenseItems] = useState<ExtendedExpense[]>([]);
+  const [savingItem, setSavingItem] = useState<string | number | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
@@ -82,6 +102,79 @@ export function TeamExpenseDetailView({
   const [showCommentModal, setShowCommentModal] = useState(false);
 
   const loading = useLoadingOverlay();
+  const { data: claimAttachments } = useGetExpenseAttachments(claimId || undefined);
+
+  const getCustomFileUrl = (file: CustomFile) => file.data?.message?.file_url || file.file_url || file.url || "";
+  const getCustomFileName = (file: CustomFile) => file.originalName || file.name || file.file_name || undefined;
+
+  const renderAdditionalDetails = (customFormData: string | null | undefined) => {
+    if (!customFormData) return null;
+    let parsed: Record<string, unknown> = {};
+    try {
+      parsed = typeof customFormData === 'string' ? JSON.parse(customFormData) : customFormData as Record<string, unknown>;
+    } catch {
+      return null;
+    }
+
+    const keysToSkip = [
+      "uid", "name", "expenseCategory", "categoryType", "expenseType",
+      "custom_attach_receipt", "start_datetime", "end_datetime", "location"
+    ];
+
+    const isFileObject = (obj: unknown): obj is CustomFile => {
+      if (typeof obj !== 'object' || obj === null) return false;
+      const o = obj as Record<string, unknown>;
+      return 'url' in o || 'originalName' in o || ('data' in o && typeof o.data === 'object');
+    };
+
+    const isFileArray = (arr: unknown): arr is CustomFile[] => 
+      Array.isArray(arr) && arr.length > 0 && isFileObject(arr[0]);
+
+    const entries = Object.entries(parsed).filter(
+      ([key, value]) => !keysToSkip.includes(key) && value !== null && value !== "" && value !== undefined && !(Array.isArray(value) && value.length === 0)
+    );
+
+    if (entries.length === 0) return null;
+
+    const formatKey = (key: string) => {
+      let formatted = key.replace(/_/g, " ");
+      formatted = formatted.replace(/([A-Z])/g, " $1").trim();
+      return formatted.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+    };
+
+    return (
+      <div className="mt-4 pt-4 border-t border-gray-100">
+        <Typography variant="mobileCardLabel" className="block mb-3 font-semibold text-gray-700 uppercase">
+          Additional Details
+        </Typography>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+          {entries.map(([key, value]) => {
+            if (isFileArray(value)) {
+              return (
+                <div key={key} className="flex flex-col gap-2 col-span-2 mt-1">
+                  <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
+                  <div className="flex flex-col gap-2">
+                    {(value as CustomFile[]).map((file, idx) => {
+                      const fileUrl = getCustomFileUrl(file);
+                      const fileName = getCustomFileName(file);
+                      return fileUrl ? <AttachmentCard key={idx} fileUrl={fileUrl} fileName={fileName} /> : null;
+                    })}
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div key={key} className="flex flex-col gap-1">
+                <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
+                <span className="text-sm text-gray-800 break-words font-medium">{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   const handleClose = () => {
     if (hasUnsavedChanges) {
@@ -101,7 +194,7 @@ export function TeamExpenseDetailView({
     setShowUnsavedWarning(false);
   };
 
-  const handleSaveItem = async (itemId: string) => {
+  const handleSaveItem = async (itemId: string | number) => {
     if (!isClaimEditable) {
       toast.error("This claim cannot be modified in its current status");
       return;
@@ -146,8 +239,7 @@ export function TeamExpenseDetailView({
   useEffect(() => {
     if (ref?.expenses && Array.isArray(ref.expenses)) {
       setExpenseItems(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ref.expenses.map((item: any, index: number) => {
+        ref.expenses.map((item: Expense, index: number): ExtendedExpense => {
           const initialAmount = item.sanctioned_amount || item.amount || 0;
           return {
             ...item,
@@ -197,8 +289,7 @@ export function TeamExpenseDetailView({
         name: todoId,
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const responseWithSession = response as unknown as { session?: any };
+      const responseWithSession = response as unknown as { session?: unknown };
 
       if (
         (data?.custom_approval_type === "Approval Matrix" &&
@@ -206,8 +297,9 @@ export function TeamExpenseDetailView({
         (data?.custom_approval_type === "Multi Actions" &&
           data?.custom_open_chatnext_assistant_on_action)
       ) {
-        if ((window as any).trigger_chatnext_assistant) {
-          (window as any).trigger_chatnext_assistant(
+        const triggerAssistant = (window as unknown as { trigger_chatnext_assistant?: (show: boolean, session: unknown) => void }).trigger_chatnext_assistant;
+        if (triggerAssistant) {
+          triggerAssistant(
             true,
             responseWithSession?.session,
           );
@@ -322,7 +414,7 @@ export function TeamExpenseDetailView({
     ["Open", "Pending", "Draft"].includes(statusSource) &&
     !["Closed", "Cancelled"].includes(data?.todo_status);
 
-  const updateSanctionedAmount = (itemId: string, value: string) => {
+  const updateSanctionedAmount = (itemId: string | number, value: string) => {
     const numValue = parseInt(value, 10) || 0;
     setExpenseItems((prev) =>
       prev.map((item) => {
@@ -752,22 +844,34 @@ export function TeamExpenseDetailView({
                           </div>
                         </div>
 
-                        {item.custom_attach_receipt && (
-                          <div className="mb-3">
-                            <Typography
-                              variant="mobileCardLabel"
-                              className="mb-1"
-                            >
-                              DOCUMENTS
-                            </Typography>
-                            <AttachmentCard
-                              fileUrl={item.custom_attach_receipt}
-                              compact={false}
-                            />
+                        {/* Attachments */}
+                        <div className="mb-4">
+                          <Typography
+                            variant="mobileCardLabel"
+                            className="mb-2 uppercase"
+                          >
+                            Attachments
+                          </Typography>
+                          <div className="flex flex-col gap-2">
+                            {claimAttachments?.map((file: { file_url: string }, i: number) => (
+                              <AttachmentCard key={i} fileUrl={file.file_url} />
+                            ))}
+                            {item.custom_attach_receipt && (
+                              <AttachmentCard
+                                fileUrl={item.custom_attach_receipt}
+                                compact={false}
+                              />
+                            )}
+                            {(!claimAttachments || claimAttachments.length === 0) && !item.custom_attach_receipt && (
+                              <span className="text-gray-400 text-xs italic">No attachments found</span>
+                            )}
                           </div>
-                        )}
+                        </div>
 
-                        <div className="mb-3">
+                        {/* Additional Details (Dynamic) */}
+                        {renderAdditionalDetails(item.custom_form_data)}
+
+                        <div className="mb-3 mt-4">
                           <label className="text-xs text-gray-500 uppercase mb-1 block font-medium">
                             SANCTIONED AMOUNT ({CURRENCY_SYMBOL}) *
                           </label>

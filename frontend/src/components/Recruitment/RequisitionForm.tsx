@@ -6,7 +6,7 @@ import {
   FormSchemaKeys,
 } from "./requisitionFormSchemas";
 import Button from "../shared/atoms/Button";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useCreateJobRequisition } from "../../hooks/useRecruitment";
 import {
   JobRequisitionFormData,
@@ -19,9 +19,7 @@ import { useNavigate } from "react-router-dom";
 
 const RequisitionForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["name", "company"]
-  });
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const createJobRequisition = useCreateJobRequisition();
   const navigate = useNavigate();
 
@@ -106,8 +104,8 @@ const RequisitionForm = () => {
       custom_salary_range_max: finalData.salary_max,
       custom_salary_timeframe: finalData.salary_timeframe,
       posting_date: finalData.recruitment_start_date,
-        // ? new Date(finalData.recruitment_start_date).toISOString().split("T")[0]
-        // : new Date().toISOString().split("T")[0],
+      // ? new Date(finalData.recruitment_start_date).toISOString().split("T")[0]
+      // : new Date().toISOString().split("T")[0],
       requested_by_dept: finalData.department,
       custom_type_of_position:
         finalData.position_type === "new" ? "New" : "Replacement",
@@ -126,17 +124,17 @@ const RequisitionForm = () => {
       custom_position_details:
         finalData.position_type === "new"
           ? (finalData.positions || []).map((pos: PositionDetail) => ({
-              location: pos.location,
-              reporting_manager: pos.reporting_manager,
-              employee_type: pos.employee_type,
-              functional_area: pos.functional_area,
-            }))
+            location: pos.location,
+            reporting_manager: pos.reporting_manager,
+            employee_type: pos.employee_type,
+            functional_area: pos.functional_area,
+          }))
           : (finalData.replacement_positions || []).map((pos: ReplacementPositionDetail) => ({
-              location: pos.location,
-              replacement_for: pos.replacement_for,
-              reporting_manager: pos.reporting_manager,
-              employee_type: pos.employee_type,
-            })),
+            location: pos.location,
+            replacement_for: pos.replacement_for,
+            reporting_manager: pos.reporting_manager,
+            employee_type: pos.employee_type,
+          })),
     };
 
     try {
@@ -160,11 +158,10 @@ const RequisitionForm = () => {
           {requisitionSteps.map((step, index) => (
             <div
               key={step.key}
-              className={`flex-1 min-w-[140px] md:min-w-0 text-center pb-4 px-2 cursor-pointer whitespace-nowrap ${
-                index === currentStep
+              className={`flex-1 min-w-[140px] md:min-w-0 text-center pb-4 px-2 cursor-pointer whitespace-nowrap ${index === currentStep
                   ? "text-primary-500 border-b-2 border-primary-500 font-semibold"
                   : "text-gray-500"
-              }`}
+                }`}
               onClick={() => setCurrentStep(index)}
             >
               {step.label}

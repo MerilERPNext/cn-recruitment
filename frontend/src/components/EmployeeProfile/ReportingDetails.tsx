@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  useCurrentEmployeeAllDetails,
+  useCurrentEmployeeDetails,
   useGetEmployeeHierarchyHistory,
 } from "../../hooks/useEmployee";
 import CircularLoader from "../shared/atoms/CircularLoader";
@@ -17,7 +17,7 @@ import { Typography } from "../shared/atoms/Typography";
 import { Link } from "react-router-dom";
 
 const ReportingDetails = () => {
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const { data: hierarchyData, isLoading: employeeHierarchyHistoryPending } =
     useGetEmployeeHierarchyHistory(currentEmployee?.employee || "");

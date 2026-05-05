@@ -10,7 +10,7 @@ import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2
 import Button from "../shared/atoms/Button";
 
 import { usePlannedOvertimeAllowed } from "../../hooks/useAttendance";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
@@ -19,7 +19,7 @@ const AttendanceLayoutContent: React.FC = () => {
   const { targetEmployeeId } = useTargetUser();
   const { isSidebarOpen } = useSidebar();
 
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const effectiveEmployeeId = targetEmployeeId || user?.employee;
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(

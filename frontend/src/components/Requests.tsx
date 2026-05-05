@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../hooks/useEmployee";
 import { useScreenSize } from "../hooks/useScreenSize";
 import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
@@ -35,7 +35,7 @@ interface RequestsProps {
 const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const { targetEmployeeId } = useTargetUser();
 
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: userUiPermission } = useGetUiPermission();
 
   const effectiveEmployeeId = targetEmployeeId || user?.employee;
@@ -104,12 +104,12 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const handleShiftForm = () => setShowShiftRequestModal(true);
   const handleCloseShiftModal = () => setShowShiftRequestModal(false);
   const handleCloseAdvanceModal = () => setShowAdvanceForm(false);
-    const { data: shiftRequestConfig } = useShiftRequestConfig(
-      effectiveEmployeeId || "");
-  
-    const isShiftConfigEnabled =
-      shiftRequestConfig?.shift_change_requests ||
-      shiftRequestConfig?.shift_change_and_attendance_requests;
+  const { data: shiftRequestConfig } = useShiftRequestConfig(
+    effectiveEmployeeId || "");
+
+  const isShiftConfigEnabled =
+    shiftRequestConfig?.shift_change_requests ||
+    shiftRequestConfig?.shift_change_and_attendance_requests;
 
   /* ---------- Cards Config ---------- */
 
@@ -188,19 +188,18 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
             >
               <div
                 className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110
-                ${
-                  action.bg
+                ${action.bg
                     ? `${action.bg} text-gray-700`
                     : action.color === "primary"
-                    ? "bg-primary-100 text-primary-600"
-                    : action.color === "secondary"
-                    ? "bg-secondary-100 text-secondary-600"
-                    : action.color === "purple"
-                    ? "bg-purple-100 text-purple-600"
-                    : action.color === "success"
-                    ? "bg-success-100 text-success-600"
-                    : "bg-gray-100 text-gray-600"
-                }`}
+                      ? "bg-primary-100 text-primary-600"
+                      : action.color === "secondary"
+                        ? "bg-secondary-100 text-secondary-600"
+                        : action.color === "purple"
+                          ? "bg-purple-100 text-purple-600"
+                          : action.color === "success"
+                            ? "bg-success-100 text-success-600"
+                            : "bg-gray-100 text-gray-600"
+                  }`}
               >
                 <action.icon className="w-5 h-5 shadow-sm" />
               </div>

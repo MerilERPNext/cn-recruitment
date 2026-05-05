@@ -2,12 +2,12 @@ import { format } from "date-fns"; // Import the format function
 import { useEmployeeHolidays } from "../../hooks/useEmployeeHolidays";
 import { useTargetUser } from "../../context/ViewedUserContext";
 
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { Typography } from "../shared/atoms/Typography";
 
 const ShowHolidays = () => {
   const { targetEmployeeId } = useTargetUser();
-  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails();
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   // Use targetEmployeeId if viewing another user, otherwise use current user's employee ID
   const employeeId = targetEmployeeId || (isCurrentUserLoading ? null : currentUser?.employee) || "";

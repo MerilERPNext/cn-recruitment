@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { FlowRequestItem } from "../../../types/flows";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -6,6 +7,8 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 
 
 interface FlowRequestCardProps {
@@ -18,11 +21,27 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
 }) => {
     const { isDesktop } = useScreenSize();
 
+    const pendingApprovalAllocatedTo = useMemo(() => {
+        if (request.approval_status.toLowerCase() !== "pending") return null;
+        const stage = request.approval_stages?.find(stage => stage.status.toLocaleLowerCase() === "pending");
+        if (!stage) return null;
+        return stage.allocated_to;
+    }, [request.approval_status, request.approval_stages]);
+
+    const pendingWorkflowAllocatedTo = useMemo(() => {
+        if (request.workflow_status.toLowerCase() !== "pending") return null;
+        const stage = request.workflow_stages?.find(stage => stage.status.toLocaleLowerCase() === "pending");
+        if (!stage) return null;
+        return stage.allocated_to;
+    }, [request.workflow_status, request.workflow_stages]);
+
+
+
     if (!isDesktop) {
         return (
-            <div className="rounded-2xl my-2 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary p-6 transition-shadow duration-200 flex flex-col gap-5 bg-white cursor-pointer" onClick={() => handleShowDetails(request)}>
-                <div className="flex justify-between items-start mb-1">
-                    <div className="flex flex-col gap-2">
+            <div className="rounded-2xl my-2 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary p-6 transition-shadow duration-200 flex flex-col gap-3 bg-white cursor-pointer" onClick={() => handleShowDetails(request)}>
+                <div className="flex justify-between items-start">
+                    <div className="flex flex-col gap-1">
                         <Typography variant="mobileCardLabel" className="block">
                             Flow Name
                         </Typography>
@@ -30,11 +49,23 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
                             {request.flow_name}
                         </Typography>
                     </div>
-                    <StatusBadge status={request.approval_status} />
+                    <div className="flex flex-col items-end gap-1">
+                        <Typography variant="mobileCardLabel">
+                            Approval Status
+                        </Typography>
+                        <StatusBadge status={request.approval_status} />
+                        {pendingApprovalAllocatedTo && (
+                            <MobileAllocatedTo
+                                users={pendingApprovalAllocatedTo}
+                                align="right"
+                                showLabel={false}
+                            />
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex justify-between">
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1">
                         <Typography variant="mobileCardLabel" className="block">
                             Category
                         </Typography>
@@ -43,7 +74,7 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
                         </Typography>
                     </div>
 
-                    <div className="flex flex-col gap-2 text-right">
+                    <div className="flex flex-col gap-1 text-right">
                         <Typography variant="mobileCardLabel" className="block">
                             Initiated On
                         </Typography>
@@ -54,7 +85,7 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
                 </div>
 
                 <div className="flex justify-between">
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1">
                         <Typography variant="mobileCardLabel" className="block">
                             Initiated By
                         </Typography>
@@ -63,7 +94,7 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
                         </Typography>
                     </div>
 
-                    <div className="flex flex-col gap-2 text-right">
+                    <div className="flex flex-col gap-1 text-right">
                         <Typography variant="mobileCardLabel" className="block">
                             Initiated For
                         </Typography>
@@ -73,6 +104,7 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
                     </div>
                 </div>
 
+
                 <div>
                     <div className="h-[1px] w-full bg-gray-100 mb-4" />
                     <div className="flex justify-between items-center">
@@ -81,6 +113,13 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
                                 Workflow Status
                             </Typography>
                             <StatusBadge status={request.workflow_status} />
+                            {pendingWorkflowAllocatedTo && (
+                                <MobileAllocatedTo
+                                    users={pendingWorkflowAllocatedTo}
+                                    align="left"
+                                    showLabel={false}
+                                />
+                            )}
                         </div>
                         <div className="flex flex-col gap-1 items-end">
                             <Typography variant="caption" className="text-gray-500">
@@ -101,8 +140,8 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
             <div><Typography variant="bodySmall" className="font-medium text-center">{formatToIndianDate(request.initiated_on)}</Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center"><WrapperHoverCard employeeId={request.initiated_by_emp_id}>{truncateByChars(request.initiated_by, 15)}</WrapperHoverCard></Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center"><WrapperHoverCard employeeId={request.initiated_for_emp_id}>{truncateByChars(request.initiated_for, 15)}</WrapperHoverCard></Typography></div>
-            <div> <StatusBadge status={request.approval_status} /></div>
-            <div><StatusBadge status={request.workflow_status} /></div>
+            <div><AllocatedToTooltip users={pendingApprovalAllocatedTo || []} position="left"><StatusBadge status={request.approval_status} /></AllocatedToTooltip></div>
+            <div><AllocatedToTooltip users={pendingWorkflowAllocatedTo || []} position="left"><StatusBadge status={request.workflow_status} /></AllocatedToTooltip></div>
             <div><StatusBadge status={request.overall_flow_status} /></div>
         </div>
     );

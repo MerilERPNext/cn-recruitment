@@ -7,7 +7,7 @@ import Button from "../shared/atoms/Button";
 import reportingDetailsFomSchema from "./reportingDetailsFomSchema.json";
 import {
   useAddEmployeeReportingDetailsMutation,
-  useCurrentEmployeeAllDetails,
+  useCurrentEmployeeDetails,
   useGetEmployeeReportingDetails,
 } from "../../hooks/useEmployee";
 import CircularLoader from "../shared/atoms/CircularLoader";
@@ -27,7 +27,7 @@ const ReportingDetailsForm = ({
 }: ReportingDetailsProps) => {
   const formInstance = useRef<any>(null);
   const initialSubmissionSet = useRef(false);
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { mutateAsync: addEmployeeReportingDetails } =
     useAddEmployeeReportingDetailsMutation();
 

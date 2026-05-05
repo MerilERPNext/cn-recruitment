@@ -2,7 +2,7 @@ import { Download } from "lucide-react";
 import React, { useState } from "react";
 import { FaRegEye } from "react-icons/fa";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import HeaderBar from "../HeaderBar";
 import FrappeListView from "../ListView";
@@ -80,7 +80,7 @@ const PoliciesList: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const employeeId = user?.employee ?? "";
   const categoryName = (location.state as PolicyState | undefined)?.name;
   const [selectedStatus, setSelectedStatus] = useState("Acknowledged");

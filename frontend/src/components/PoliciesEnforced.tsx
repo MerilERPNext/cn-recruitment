@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FrappeListView from "./ListView";
-import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../hooks/useEmployee";
 import { Typography } from "./shared/atoms/Typography";
 import {
   IoWarningOutline,
@@ -144,9 +144,7 @@ const PoliciesEnforced: React.FC = () => {
   const [mandatoryPoliciesExpanded, setMandatoryPoliciesExpanded] =
     useState(true);
   const { data: currentEmployee, isLoading: isCurrentEmployeeLoading } =
-    useCurrentEmployeeAllDetails({
-      fields: ["name"]
-    });
+    useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: hasMandatoryPolicies = false, isLoading: isMandatoryCheckLoading } =
     useMandatoryPoliciesPending(currentEmployee?.name);
   const { isMobile } = useScreenSize();
@@ -263,7 +261,7 @@ const PoliciesEnforced: React.FC = () => {
                 defaultFilters={{
                   status: "Pending",
                   employee_id: currentEmployee?.name || "",
-                  custom_triggered_from_flow: 0,
+                  triggered_from_flow: 0,
                   due_date: [">=", new Date().toLocaleDateString('en-CA')],
                 }}
                 defaultFields={[

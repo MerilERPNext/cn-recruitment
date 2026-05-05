@@ -2,7 +2,7 @@
 import { Download, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import { useLoan } from "../../../../hooks/useLoan";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { formatCurrency } from "../../../../utils/currencyFormatter";
@@ -21,7 +21,7 @@ interface RepaymentItem {
 export default function LoanSummary() {
   const [selectedLoan, setSelectedLoan] = useState<any>(null);
   const { loanId } = useParams();
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const employeeId = user?.employee ?? "";
   const { data: loanData } = useLoan(employeeId || "");
   const navigate = useNavigate();

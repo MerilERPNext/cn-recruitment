@@ -1,6 +1,6 @@
 import { useTargetUser } from "../../context/ViewedUserContext";
 import {
-    useCurrentEmployeeAllDetails,
+    useCurrentEmployeeDetails,
     useGetEmployeeDetailsByEmpIdForProfile,
 } from "../../hooks/useEmployee";
 
@@ -47,7 +47,7 @@ const quickActions: QuickAction[] = [
 const MobileProfileDrawer = () => {
     const { targetEmployeeId } = useTargetUser();
     const { data: currentUser, isLoading: isCurrentUserLoading } =
-        useCurrentEmployeeAllDetails();
+        useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
     const employeeId =
         targetEmployeeId ||

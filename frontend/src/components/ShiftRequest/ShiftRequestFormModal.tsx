@@ -9,7 +9,7 @@ import {
 } from "../../hooks/useShift";
 import { useAttendanceRequestAttachments } from "../../hooks/useAttendance";
 import {
-  useCurrentEmployeeAllDetails,
+  useCurrentEmployeeDetails,
   useGetEmployeeDetailsByEmpId,
 } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
@@ -65,7 +65,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     data: employeeDetails,
     isLoading: employeeLoading,
     error: employeeError,
-  } = useCurrentEmployeeAllDetails();
+  } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const loading = useLoadingOverlay(); // ✅ overlay hook
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();

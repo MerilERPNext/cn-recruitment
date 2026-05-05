@@ -25,7 +25,7 @@ import {
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import defaultProfile from "../../assets/face-rec.png";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useEmployeeWithFallback } from "../../hooks/useEmployeeWithFallback";
 import {
   Coordinates,
@@ -103,7 +103,7 @@ const MobileDashboard: React.FC = () => {
   }, []);
 
   const { data: currentEmployee } =
-    useCurrentEmployeeAllDetails();
+    useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const employeeState = useEmployeeWithFallback();
   const { data: canShowClockIn } = useCanShowClockIn(

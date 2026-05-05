@@ -46,7 +46,7 @@ const CardTable = ({
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const updateWidth = () => setScrollContainerWidth(el.clientWidth);
+    const updateWidth = () => setScrollContainerWidth(el.offsetWidth);
     updateWidth();
     const ro = new ResizeObserver(() => updateWidth());
     ro.observe(el);

@@ -7,7 +7,7 @@ import Button from "../shared/atoms/Button";
 import employmentHistoryFormSchema from "./employmentHistoryFormSchema.json";
 import {
   useAddEmployeeHistoryMutation,
-  useCurrentEmployeeAllDetails,
+  useCurrentEmployeeDetails,
   useGetDesignationHierarchy,
   useGetEmpDesignationHierarchyCurrentDetails,
 } from "../../hooks/useEmployee";
@@ -27,7 +27,7 @@ const EmploymentHistoryForm = ({
 }: EmploymentHistoryProps) => {
   const [instance, setInstance] = useState<any>(null);
   const initialDataApplied = useRef(false);
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const [formValues, setFormValues] = useState({
     company: "",
     department: "",
@@ -66,13 +66,13 @@ const EmploymentHistoryForm = ({
       const hierarchyData = designationHierarchy.data;
       if (
         JSON.stringify(hierarchyData.companies) !==
-          JSON.stringify(currentData.companies) ||
+        JSON.stringify(currentData.companies) ||
         JSON.stringify(hierarchyData.departments) !==
-          JSON.stringify(currentData.departments) ||
+        JSON.stringify(currentData.departments) ||
         JSON.stringify(hierarchyData.designations) !==
-          JSON.stringify(currentData.designations) ||
+        JSON.stringify(currentData.designations) ||
         JSON.stringify(hierarchyData.functional_areas) !==
-          JSON.stringify(currentData.functional_areas)
+        JSON.stringify(currentData.functional_areas)
       ) {
         newData.companies = hierarchyData.companies || currentData.companies;
         newData.departments =

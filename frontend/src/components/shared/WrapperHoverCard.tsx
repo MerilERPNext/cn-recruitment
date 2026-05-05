@@ -2,6 +2,8 @@ import React, { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useGetEmployeeHoverData } from "../../hooks/useEmployee";
 import { createPortal } from "react-dom";
+import formatToIndianDate from "../../utils/formatToIndianDate";
+import { DataResponse, MessageDataItem } from "../../services/commonSerivce";
 
 type WrapperHoverCardProps = {
   children: React.ReactNode;
@@ -17,8 +19,11 @@ type WrapperHoverCardProps = {
   | "center-right";
 };
 
-const mapEmployeeData = (data: any[]) => {
-  const map: Record<string, any> = {};
+
+type valueType = string | number | boolean | null;
+
+const mapEmployeeData = (data: MessageDataItem[]) => {
+  const map: Record<string, valueType> = {};
   data.forEach((item) => {
     map[item.label] = item.value;
   });
@@ -44,8 +49,8 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
-  const [error, setError] = useState<any>(null);
-  const [employeeInfo, setEmployeeInfo] = useState<any>(null);
+  const [error, setError] = useState<unknown>(null);
+  const [employeeInfo, setEmployeeInfo] = useState<DataResponse | null>(null);
 
   const hasFetchedRef = useRef(false);
 
@@ -68,7 +73,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
       const data = await fetchEmployee(employeeId);
       setEmployeeInfo(data);
       hasFetchedRef.current = true;
-    } catch (err: any) {
+    } catch (err: unknown) {
       setIsError(true);
       setError(err);
     } finally {
@@ -81,11 +86,11 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const [show, setShow] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const hideTimer = useRef<any>(null);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const animationTimer = useRef<number | null>(null);
 
   const handleEnter = () => {
-    clearTimeout(hideTimer.current);
+    clearTimeout(hideTimer?.current ?? undefined);
     clearTimeout(animationTimer?.current ?? undefined);
     setShow(true);
     // Start animation after render
@@ -99,52 +104,56 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
     hideTimer.current = setTimeout(() => setShow(false), 150);
   };
 
-  const updatePosition = () => {
-    if (!targetRef.current || !cardRef.current) return;
 
-    const rect = targetRef.current.getBoundingClientRect();
-    const cardRect = cardRef.current.getBoundingClientRect();
-
-    let top = 0;
-    let left = 0;
-
-    switch (placement) {
-      case "bottom-right":
-        top = rect.bottom + window.scrollY + 8;
-        left = rect.left + window.scrollX;
-        break;
-
-      case "bottom-left":
-        top = rect.bottom + window.scrollY + 8;
-        left = rect.right + window.scrollX - cardRect.width;
-        break;
-
-      case "top-right":
-        top = rect.top + window.scrollY - cardRect.height - 8;
-        left = rect.left + window.scrollX;
-        break;
-
-      case "top-left":
-        top = rect.top + window.scrollY - cardRect.height - 8;
-        left = rect.right + window.scrollX - cardRect.width;
-        break;
-
-      case "center-left":
-        top = rect.top + window.scrollY + rect.height / 2 - cardRect.height / 2;
-        left = rect.left + window.scrollX - cardRect.width - 12;
-        break;
-
-      case "center-right":
-      default:
-        top = rect.top + window.scrollY + rect.height / 2 - cardRect.height / 2;
-        left = rect.right + window.scrollX + 12;
-    }
-
-    setPos({ top: Math.max(top, 0), left: Math.max(left, 0) });
-  };
 
   useLayoutEffect(() => {
-    if (show) updatePosition();
+    const updatePosition = () => {
+      if (!targetRef.current || !cardRef.current) return;
+
+      const rect = targetRef.current.getBoundingClientRect();
+      const cardRect = cardRef.current.getBoundingClientRect();
+
+      let top = 0;
+      let left = 0;
+
+      switch (placement) {
+        case "bottom-right":
+          top = rect.bottom + window.scrollY + 8;
+          left = rect.left + window.scrollX;
+          break;
+
+        case "bottom-left":
+          top = rect.bottom + window.scrollY + 8;
+          left = rect.right + window.scrollX - cardRect.width;
+          break;
+
+        case "top-right":
+          top = rect.top + window.scrollY - cardRect.height - 8;
+          left = rect.left + window.scrollX;
+          break;
+
+        case "top-left":
+          top = rect.top + window.scrollY - cardRect.height - 8;
+          left = rect.right + window.scrollX - cardRect.width;
+          break;
+
+        case "center-left":
+          top = rect.top + window.scrollY + rect.height / 2 - cardRect.height / 2;
+          left = rect.left + window.scrollX - cardRect.width - 12;
+          break;
+
+        case "center-right":
+        default:
+          top = rect.top + window.scrollY + rect.height / 2 - cardRect.height / 2;
+          left = rect.right + window.scrollX + 12;
+      }
+
+      setPos({ top: Math.max(top, 0), left: Math.max(left, 0) });
+    };
+
+    if (!show) return;
+
+    updatePosition();
     window.addEventListener("scroll", updatePosition, true);
     window.addEventListener("resize", updatePosition);
 
@@ -152,7 +161,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
       window.removeEventListener("scroll", updatePosition, true);
       window.removeEventListener("resize", updatePosition);
     };
-  }, [show, placement]);
+  }, [show, placement, isLoading, employeeInfo]);
 
   useEffect(() => {
     return () => {
@@ -219,7 +228,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                       Failed to load employee info
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
-                      {error?.message || "Please try again"}
+                      {(error as { message?: string })?.message || "Please try again"}
                     </p>
                   </div>
                 )}
@@ -235,7 +244,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                       <>
                         {/* Header */}
                         <div className="flex items-start gap-4">
-                          {emp.Image ? (
+                          {emp?.Image && typeof emp.Image === "string" ? (
                             <img
                               src={emp.Image}
                               className="w-16 h-16 rounded-full object-cover"
@@ -246,11 +255,11 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                               className="w-16 h-16 rounded-full flex items-center justify-center text-white font-semibold text-lg"
                               style={{
                                 background: stringToPastelColor(
-                                  emp["Full Name"] || "U",
+                                  (emp["Full Name"] || "U") as string,
                                 ),
                               }}
                             >
-                              {emp["Full Name"]?.charAt(0)?.toUpperCase()}
+                              {(emp["Full Name"] as string)?.charAt(0)?.toUpperCase()}
                             </div>
                           )}
 
@@ -274,7 +283,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                         {/* Details */}
                         <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                           {employeeInfo.data
-                            .filter((item: any) => {
+                            .filter((item: MessageDataItem) => {
                               const headerFields = [
                                 "Full Name",
                                 "Designation",
@@ -284,26 +293,16 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                               ];
                               return !headerFields.includes(item.label);
                             })
-                            .map((item: any, idx: number) => {
+                            .map((item: MessageDataItem, idx: number) => {
                               let displayValue = item.value || "—";
 
                               // Dynamic Date Formatting
                               if (
                                 item.label.toLowerCase().includes("date") &&
                                 item.value &&
-                                !isNaN(Date.parse(item.value))
+                                !isNaN(Date.parse(item.value.toString()))
                               ) {
-                                const dateObj = new Date(item.value);
-                                if (!isNaN(dateObj.getTime())) {
-                                  displayValue = dateObj.toLocaleDateString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "long",
-                                      year: "numeric",
-                                    },
-                                  );
-                                }
+                                displayValue = formatToIndianDate(item.value.toString());
                               }
 
                               return (
