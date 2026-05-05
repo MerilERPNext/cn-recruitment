@@ -22,7 +22,7 @@ const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
   const { data: expenseCategories } = useGetAllExpenseCategories();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
-  const [activeStatus, setActiveStatus] = useState("Draft");
+  const [activeStatus, setActiveStatus] = useState("Pending");
   const navigate = useNavigate();
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const [currentListData, setCurrentListData] = useState<any[]>([]);
@@ -168,7 +168,7 @@ const TeamExpense = () => {
     const getEmptyStateMessage = () => {
       const status = filters.status;
       const messages: Record<string, { title: string; description: string }> = {
-        Draft: {
+        Pending: {
           title: "No Pending Requests",
           description:
             "You have no pending team expense claim requests to review.",
@@ -242,7 +242,7 @@ const TeamExpense = () => {
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", key: "Draft", value: "Draft", customAPIParams: { todo_status: "Open" } },
+                    { label: "Pending", value: "Pending", customAPIParams: { todo_status: "Open" } },
                     {
                       label: "Approved",
                       key: "Approved",
@@ -270,10 +270,10 @@ const TeamExpense = () => {
                 },
               ]}
               noRecordsScreen={noRecordsScreen}
-              defaultFilters={{ approval_status: "Draft" }}
+              defaultFilters={{ approval_status: "Pending" }}
               SkeletonComponent={CardSkeleton}
               onActiveFiltersChange={(filters) => {
-                setActiveStatus(filters?.approval_status || "Draft");
+                setActiveStatus(filters?.approval_status || "Pending");
               }}
               renderCardContent={(item) => {
                 if (item?.data?.custom_selected_doctype_action === "Send Back") {

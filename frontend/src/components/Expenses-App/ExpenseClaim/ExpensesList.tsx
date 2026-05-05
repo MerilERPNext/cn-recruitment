@@ -227,7 +227,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         <div className={isActed ? "pointer-events-none opacity-50" : ""}>
           <MyApprovalActionPill
             variant="buttons"
-            isPending={item?.status === "Draft"}
+            isPending={item?.status === "Pending"}
             canEdit={canEdit && !isActed}
             onEdit={handleEditClick}
             canRevoke={
@@ -416,7 +416,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}
       >
         <MyApprovalActionPill
-          isPending={item?.status === "Draft"}
+          isPending={item?.status === "Pending"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
               item?.send_back_user?.toLowerCase() &&
@@ -464,11 +464,9 @@ const ExpensesList: React.FC = () => {
       return "expenses";
     },
   );
-  // Selected IDs for local draft tab (Draft Expense Claim doctype)
   const [selectedDraftIds, setSelectedDraftIds] = React.useState<Set<string>>(
     new Set(),
   );
-  // Selected IDs for backend-draft items shown in My Expenses tab when Draft filter is active
   const [selectedMyExpensesDraftIds, setSelectedMyExpensesDraftIds] =
     React.useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
@@ -758,6 +756,10 @@ const ExpensesList: React.FC = () => {
       const status = filters.status;
       const messages: Record<string, { title: string; description: string }> = {
         Draft: {
+          title: "No Draft Claims",
+          description: "You have no Draft expense claim requests.",
+        },
+        Pending: {
           title: "No Pending Claims",
           description: "You have no pending expense claim requests.",
         },
@@ -788,7 +790,6 @@ const ExpensesList: React.FC = () => {
     return <NoDataFound title={message.title} subtitle={message.description} />;
   };
 
-  // When My Expenses tab has Draft filter selected, show the draft-style columns
   const isDraftFilter =
     activeTab === "expenses" && currentFilters.approval_status === "Draft";
 
@@ -1038,7 +1039,7 @@ const ExpensesList: React.FC = () => {
             {/* Select All header for backend-draft filter mode (desktop only) */}
             {isDraftFilter && isDesktop && currentListData.length > 0 && (
               <div
-                className="grid max-w-screen items-center gap-4 px-6 h-12 border-b border-gray-200 bg-gray-50"
+                className="grid items-center gap-4 px-6 h-12 border-b border-gray-200 bg-gray-50"
                 style={{
                   gridTemplateColumns:
                     "48px 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 120px",
@@ -1167,7 +1168,7 @@ const ExpensesList: React.FC = () => {
                   const approvalStatus = expenseClaim?.approval_status;
                   return (
                     <div
-                      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+                      className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
                       style={{
                         gridTemplateColumns:
                           "48px 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 120px",
