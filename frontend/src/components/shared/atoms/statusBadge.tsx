@@ -36,7 +36,6 @@ function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
 
     case "open":
     case "pending":
-    case "draft":
       return {
         label: "Pending",
         bgClass: "bg-yellow-100",

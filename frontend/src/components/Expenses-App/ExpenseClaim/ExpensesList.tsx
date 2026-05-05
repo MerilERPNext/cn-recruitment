@@ -935,15 +935,25 @@ const ExpensesList: React.FC = () => {
                   let successCount = 0;
                   for (const expenseClaimName of ids) {
                     try {
-                      await updateApprovalStatusMutation.mutateAsync({ expenseClaimName, approvalStatus: "Pending" });
+                      await updateApprovalStatusMutation.mutateAsync({
+                        expenseClaimName,
+                        approvalStatus: "Pending",
+                      });
                       successCount++;
-                    } catch { /* handled in hook */ }
+                    } catch {
+                      /* handled in hook */
+                    }
                   }
-                  if (successCount > 0) toast.success(`${successCount} expense(s) submitted for approval.`);
+                  if (successCount > 0)
+                    toast.success(
+                      `${successCount} expense(s) submitted for approval.`,
+                    );
                   setSelectedMyExpensesDraftIds(new Set());
                 }}
               >
-                {updateApprovalStatusMutation.isPending ? "Submitting..." : `Submit (${selectedMyExpensesDraftIds.size})`}
+                {updateApprovalStatusMutation.isPending
+                  ? "Submitting..."
+                  : `Submit (${selectedMyExpensesDraftIds.size})`}
               </Button>
               <Button
                 variant="outline"
@@ -956,14 +966,22 @@ const ExpensesList: React.FC = () => {
                     isOpen: true,
                     message: `Delete ${selectedMyExpensesDraftIds.size} selected draft expense(s)? This cannot be undone.`,
                     onConfirm: () => {
-                      Array.from(selectedMyExpensesDraftIds).forEach((name) => deleteExpenseClaimMutation.mutate(name));
+                      Array.from(selectedMyExpensesDraftIds).forEach((name) =>
+                        deleteExpenseClaimMutation.mutate(name),
+                      );
                       setSelectedMyExpensesDraftIds(new Set());
-                      setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} });
+                      setDeleteConfirmModal({
+                        isOpen: false,
+                        message: "",
+                        onConfirm: () => {},
+                      });
                     },
                   });
                 }}
               >
-                {deleteExpenseClaimMutation.isPending ? "Deleting..." : `Delete (${selectedMyExpensesDraftIds.size})`}
+                {deleteExpenseClaimMutation.isPending
+                  ? "Deleting..."
+                  : `Delete (${selectedMyExpensesDraftIds.size})`}
               </Button>
             </div>
           </div>
@@ -973,22 +991,31 @@ const ExpensesList: React.FC = () => {
       {/* Mobile: Select All bar — shown at top of list in draft filter mode */}
       {isDraftFilter && !isDesktop && currentListData.length > 0 && (
         <div className="flex-shrink-0 flex items-center justify-between bg-white border-b border-gray-200 px-4 py-2.5 shadow-sm md:hidden">
-          <label
-            className="flex items-center gap-2 cursor-pointer"
-          >
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={selectedMyExpensesDraftIds.size === currentListData.length && currentListData.length > 0}
+              checked={
+                selectedMyExpensesDraftIds.size === currentListData.length &&
+                currentListData.length > 0
+              }
               onChange={(e) => {
                 if (e.target.checked) {
-                  setSelectedMyExpensesDraftIds(new Set(currentListData.map((d: any) => d?.reference_document?.name).filter(Boolean)));
+                  setSelectedMyExpensesDraftIds(
+                    new Set(
+                      currentListData
+                        .map((d: any) => d?.reference_document?.name)
+                        .filter(Boolean),
+                    ),
+                  );
                 } else {
                   setSelectedMyExpensesDraftIds(new Set());
                 }
               }}
               className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
             />
-            <span className="text-sm font-medium text-gray-700">Select All</span>
+            <span className="text-sm font-medium text-gray-700">
+              Select All
+            </span>
           </label>
           <span className="text-sm text-gray-500">
             {selectedMyExpensesDraftIds.size > 0
@@ -998,7 +1025,9 @@ const ExpensesList: React.FC = () => {
         </div>
       )}
 
-      <div className={`flex-1 overflow-y-auto md:px-4 pb-5 ${isDraftFilter && selectedMyExpensesDraftIds.size > 0 ? "pb-28 md:pb-24" : "md:pb-20"}`}>
+      <div
+        className={`flex-1 overflow-y-auto md:px-4 pb-5 ${isDraftFilter && selectedMyExpensesDraftIds.size > 0 ? "pb-28 md:pb-24" : "md:pb-20"}`}
+      >
         {currentEmployee?.name && activeTab === "expenses" && (
           <CardTable
             titles={tableTitles}
@@ -1055,15 +1084,25 @@ const ExpensesList: React.FC = () => {
                           let successCount = 0;
                           for (const expenseClaimName of ids) {
                             try {
-                              await updateApprovalStatusMutation.mutateAsync({ expenseClaimName, approvalStatus: "Pending" });
+                              await updateApprovalStatusMutation.mutateAsync({
+                                expenseClaimName,
+                                approvalStatus: "Pending",
+                              });
                               successCount++;
-                            } catch { /* handled in hook */ }
+                            } catch {
+                              /* handled in hook */
+                            }
                           }
-                          if (successCount > 0) toast.success(`${successCount} expense(s) submitted for approval.`);
+                          if (successCount > 0)
+                            toast.success(
+                              `${successCount} expense(s) submitted for approval.`,
+                            );
                           setSelectedMyExpensesDraftIds(new Set());
                         }}
                       >
-                        {updateApprovalStatusMutation.isPending ? "Submitting..." : `Submit Selected (${selectedMyExpensesDraftIds.size})`}
+                        {updateApprovalStatusMutation.isPending
+                          ? "Submitting..."
+                          : `Submit Selected (${selectedMyExpensesDraftIds.size})`}
                       </Button>
                       <Button
                         variant="outline"
@@ -1075,14 +1114,23 @@ const ExpensesList: React.FC = () => {
                             isOpen: true,
                             message: `Are you sure you want to delete ${selectedMyExpensesDraftIds.size} selected draft expense(s)? This cannot be undone.`,
                             onConfirm: () => {
-                              Array.from(selectedMyExpensesDraftIds).forEach((name) => deleteExpenseClaimMutation.mutate(name));
+                              Array.from(selectedMyExpensesDraftIds).forEach(
+                                (name) =>
+                                  deleteExpenseClaimMutation.mutate(name),
+                              );
                               setSelectedMyExpensesDraftIds(new Set());
-                              setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} });
+                              setDeleteConfirmModal({
+                                isOpen: false,
+                                message: "",
+                                onConfirm: () => {},
+                              });
                             },
                           });
                         }}
                       >
-                        {deleteExpenseClaimMutation.isPending ? "Deleting..." : `Delete Selected (${selectedMyExpensesDraftIds.size})`}
+                        {deleteExpenseClaimMutation.isPending
+                          ? "Deleting..."
+                          : `Delete Selected (${selectedMyExpensesDraftIds.size})`}
                       </Button>
                     </div>
                   )}
@@ -1344,10 +1392,17 @@ const ExpensesList: React.FC = () => {
                                 e.stopPropagation();
                                 setDeleteConfirmModal({
                                   isOpen: true,
-                                  message: "Are you sure you want to delete this expense claim?",
+                                  message:
+                                    "Are you sure you want to delete this expense claim?",
                                   onConfirm: () => {
-                                    deleteExpenseClaimMutation.mutate(expenseClaim?.name);
-                                    setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} });
+                                    deleteExpenseClaimMutation.mutate(
+                                      expenseClaim?.name,
+                                    );
+                                    setDeleteConfirmModal({
+                                      isOpen: false,
+                                      message: "",
+                                      onConfirm: () => {},
+                                    });
                                   },
                                 });
                               }}
@@ -1751,12 +1806,7 @@ const ExpensesList: React.FC = () => {
                           ...rest
                         } = exp;
                         const formattedExpense: any = { ...rest };
-                        console.log(
-                          uid,
-                          submitButton,
-                          saveAndSubmit,
-                          categoryTypeOptions,
-                        );
+
                         if (expense_date) {
                           formattedExpense.expense_date =
                             formatExpenseDate(expense_date);
@@ -1843,16 +1893,18 @@ const ExpensesList: React.FC = () => {
                                     "Draft Expense Claim",
                                     draft.name,
                                   )
-                                  .then((files: any[]) => {
-                                    files.forEach((file: any) => {
-                                      updateFileMutation.mutate({
-                                        fileName: file.name,
-                                        data: {
-                                          attached_to_doctype: "Expense Claim",
-                                          attached_to_name: expenseClaimName,
-                                        },
-                                      });
-                                    });
+                                  .then(async (files: any[]) => {
+                                    await Promise.all(
+                                      files.map((file: any) =>
+                                        updateFileMutation.mutateAsync({
+                                          fileName: file.name,
+                                          data: {
+                                            attached_to_doctype: "Expense Claim",
+                                            attached_to_name: expenseClaimName,
+                                          },
+                                        }),
+                                      ),
+                                    );
                                   }),
                               );
                             },
