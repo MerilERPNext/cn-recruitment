@@ -103,12 +103,34 @@ const Tooltip: React.FC<TooltipProps> = ({
       calculatePosition();
     });
 
-    window.addEventListener("scroll", calculatePosition, true);
+    const handleScroll = () => {
+      // On mobile, hide tooltip on scroll to prevent persistence
+      if (window.matchMedia("(pointer: coarse)").matches) {
+        hide();
+      } else {
+        calculatePosition();
+      }
+    };
+
+    const handleGlobalClick = (e: MouseEvent) => {
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node) &&
+        tooltipRef.current &&
+        !tooltipRef.current.contains(e.target as Node)
+      ) {
+        hide();
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, true);
     window.addEventListener("resize", calculatePosition);
+    document.addEventListener("mousedown", handleGlobalClick);
 
     return () => {
-      window.removeEventListener("scroll", calculatePosition, true);
+      window.removeEventListener("scroll", handleScroll, true);
       window.removeEventListener("resize", calculatePosition);
+      document.removeEventListener("mousedown", handleGlobalClick);
     };
   }, [isVisible, calculatePosition]);
 
@@ -120,6 +142,8 @@ const Tooltip: React.FC<TooltipProps> = ({
   }, []);
 
   const show = () => {
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
     timeoutRef.current = setTimeout(() => {
@@ -187,6 +211,7 @@ const Tooltip: React.FC<TooltipProps> = ({
         onMouseLeave={hide}
         onFocus={show}
         onBlur={hide}
+        onClick={hide}
       >
         {children}
       </div>

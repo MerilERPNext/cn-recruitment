@@ -60,7 +60,7 @@ const ReportingDetails = () => {
     const isCurrent = !endDate;
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border p-6 relative min-w-[450px] hover-lift">
+      <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift  max-w-[90vw] min-w-[90vw]  md:min-w-[400px] md:max-w-[400px]">
         <div className="flex items-center gap-3 mb-3 md:mb-6">
           <div className="p-2 bg-blue-50 rounded-lg">
             <Building2 className="w-5 h-5 text-blue-600" />

@@ -389,7 +389,7 @@ export default function ThreeLevelOrgChart() {
   }, [employeeHierarchy, employeeId, currentUser, dottedManagerId, dottedManagerName, showDottedManager, handleShowDottedManager, calculateLayout]);
 
   return (
-    <div className="w-full rounded-md bg-white">
+    <div className="w-full rounded-md bg-white h-[60vh]">
       <div className="py-2 mx-0 md:mx-6 rounded-md flex items-center justify-between rounded-xl justify-between mb-6 py-2 max-sm:px-4 px-6 bg-gray-50/50 border border-gray-100/50">
 
         <div className="flex items-center ">
@@ -428,7 +428,7 @@ export default function ThreeLevelOrgChart() {
         // draggable={false} // Allow panning
         // panOnDrag={false} // Allow panning
         >
-          <Controls position="top-right" showZoom showFitView />
+          {/* <Controls position="top-right" showZoom showFitView /> */}
         </ReactFlow>
       </div>
     </div>
