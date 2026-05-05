@@ -26,8 +26,8 @@ export interface ParticipantsDrawerProps {
   onClose: () => void;
   expenseAmount: number;
   editingExpenseId?: string | null;
-  expenses: any[];
-  setExpenses: (updater: (prev: any[]) => any[]) => void;
+  expenses?: any[];
+  setExpenses?: (updater: (prev: any[]) => any[]) => void;
   currentEmployee?: Employee;
   maxParticipants?: number;
   employeeOptions?: EmployeeOption[];
@@ -41,7 +41,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
   onClose,
   expenseAmount,
   editingExpenseId = null,
-  expenses,
+  expenses = [],
   setExpenses,
   currentEmployee,
   maxParticipants = 5,
@@ -52,6 +52,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
 }) => {
   const [mode, setMode] = useState<"percentage" | "amount">("percentage");
   const [participants, setParticipants] = useState<ParticipantRow[]>([]);
+  const initializedRef = React.useRef(false);
   const [activeEdit, setActiveEdit] = useState<{
     index: number;
     field: "percentage" | "amount";
@@ -135,10 +136,14 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
   useEffect(() => {
     if (!isOpen) {
       setActiveEdit(null);
+      initializedRef.current = false;
       return;
     }
 
-    if (editingExpenseId) {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    if (editingExpenseId && Array.isArray(expenses)) {
       const e = expenses.find((x) => x.id === editingExpenseId || x.uid === editingExpenseId);
       if (e && Array.isArray(e.participants) && e.participants.length > 0) {
         const comp = computeAllocations(
@@ -194,8 +199,9 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
   );
 
   const addRow = () => {
-    if (participants.length >= maxParticipants) {
-      toast.error(`Max. Allowed Participant - ${maxParticipants}`);
+    const limit = maxParticipants || 5;
+    if (participants.length >= limit) {
+      toast.error(`Max. Allowed Participant - ${limit}`);
       return;
     }
     const newRow: ParticipantRow = {
@@ -418,7 +424,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
       }
     }
 
-    if (editingExpenseId) {
+    if (editingExpenseId && typeof setExpenses === "function") {
       setExpenses((prev) =>
         prev.map((e) =>
           e.id === editingExpenseId ? { ...e, participants } : e
@@ -752,9 +758,9 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
           <button
             onClick={addRow}
             type="button"
-            disabled={participants.length >= maxParticipants || maxParticipants === 0}
+            disabled={participants.length >= (maxParticipants || 5)}
             className={`flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${
-              participants.length >= maxParticipants || maxParticipants === 0
+              participants.length >= (maxParticipants || 5)
                 ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-100"
                 : "text-gray-700 hover:bg-gray-50"
             }`}
@@ -767,9 +773,9 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
             <button
               onClick={resetParticipants}
               type="button"
-              disabled={participants.length <= 1 || maxParticipants === 0}
+              disabled={participants.length <= 1}
               className={`px-6 py-2.5 text-sm font-bold border rounded-xl transition-colors ${
-                participants.length <= 1 || maxParticipants === 0
+                participants.length <= 1
                   ? "border-gray-100 text-gray-300 cursor-not-allowed"
                   : "border-gray-200 text-[#64748b] hover:text-gray-900"
               }`}
@@ -779,9 +785,9 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
             <button
               onClick={saveParticipants}
               type="button"
-              disabled={participants.length <= 1 || maxParticipants === 0}
+              disabled={participants.length <= 1}
               className={`px-8 py-3 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 ${
-                participants.length <= 1 || maxParticipants === 0
+                participants.length <= 1
                   ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
                   : "bg-primary text-white hover:bg-primary-600 shadow-blue-500/20"
               }`}

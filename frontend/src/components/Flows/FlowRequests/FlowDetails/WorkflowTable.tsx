@@ -1,26 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useMemo, useState } from "react";
-import { Attachment, FlowRequestItem, WorkflowStage } from "../../../types/flows";
+import { Attachment, FlowRequestItem, WorkflowStage } from "../../../../types/flows";
 
-import CardTable from "../../shared/CardTable";
-import { Typography } from "../../shared/atoms/Typography";
-import { NoDataFound } from "../../shared/atoms/NoDataFound";
-import StatusBadge from "../../shared/atoms/statusBadge";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
-import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useApprovalAction } from "../../../hooks/userApprovalList";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import Button from "../../shared/atoms/Button";
+import CardTable from "../../../shared/CardTable";
+import { Typography } from "../../../shared/atoms/Typography";
+import { NoDataFound } from "../../../shared/atoms/NoDataFound";
+import StatusBadge from "../../../shared/atoms/statusBadge";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import useCurrentUser from "../../../../hooks/useCurrentUser";
+import { handleActionType, useApprovalAction } from "../../../../hooks/userApprovalList";
+import { useScreenSize } from "../../../../hooks/useScreenSize";
+import Button from "../../../shared/atoms/Button";
 import { Check, Clock, User, X } from "lucide-react";
-import { extractRolesAndUsers, FormIOForm } from "../../../utils/flowUtils";
-import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
-import Tooltip from "../../shared/Tooltip";
+import { extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
+import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
+import Tooltip from "../../../shared/Tooltip";
 import { useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
-import ReviewForm from "../Separation/components/ReviewForm";
+import ReviewForm from "../../Separation/components/ReviewForm";
 import AttachmentPreview from "./AttachmentPreview";
-import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
-import FormPreview from "../../shared/molecules/FormPreview";
+import MobileAllocatedTo from "../../../shared/MobileAllocatedTo";
+import FormPreview from "../../../shared/molecules/FormPreview";
 
 interface WorkflowTableProps {
   data: FlowRequestItem;
@@ -30,6 +30,17 @@ const titles = ["Stage Name", "Status", "Due Date", "Actions"];
 
 const WorkflowTable: React.FC<WorkflowTableProps> = ({ data }) => {
   const { isDesktop } = useScreenSize();
+
+  const queryClient = useQueryClient();
+
+  const triggerRefetch = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
+    queryClient.invalidateQueries({ queryKey: ["employee-flow-request-details"] });
+    queryClient.invalidateQueries({ queryKey: ["separation-employee"] });
+  }, [queryClient]);
+
+  const { handleAction } = useApprovalAction(triggerRefetch);
+
   const EmptyState = () => {
     return (
       <NoDataFound
@@ -55,6 +66,7 @@ const WorkflowTable: React.FC<WorkflowTableProps> = ({ data }) => {
                     idx={idx}
                     isActive={workflowPending && stage.status === "Pending"}
                     isLast={idx === data.workflow_stages.length - 1}
+                    handleAction={handleAction}
                   />
                 ))
               ) : (
@@ -72,6 +84,7 @@ const WorkflowTable: React.FC<WorkflowTableProps> = ({ data }) => {
                   idx={idx}
                   isActive={workflowPending && stage.status === "Pending"}
                   isLast={idx === data.workflow_stages.length - 1}
+                  handleAction={handleAction}
                 />
               ))
             ) : (
@@ -89,11 +102,13 @@ const WorkflowCard = ({
   idx,
   isActive,
   isLast,
+  handleAction,
 }: {
   stage: WorkflowStage;
   idx: number;
   isActive: boolean;
   isLast: boolean;
+  handleAction: handleActionType;
 }) => {
   const actions = stage?.todo?.custom_doctype_actions
     ? JSON.parse(stage?.todo?.custom_doctype_actions)
@@ -105,14 +120,6 @@ const WorkflowCard = ({
     : [];
 
   const { isDesktop } = useScreenSize();
-
-  const queryClient = useQueryClient();
-  const triggerRefetch = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
-    queryClient.invalidateQueries({ queryKey: ["separation-employee"] });
-  }, [queryClient]);
-
-  const { handleAction } = useApprovalAction(triggerRefetch);
 
   const onAction = (action: string, data: any) => {
     handleAction(

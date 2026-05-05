@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import {
   ExpenseApprovalPayload,
   expenseService,
-  PerMileageUnitRateResponse,
+  UnitPriceResponse,
 } from "../services/expenseService";
 import {
   ExpenseCategoryType,
@@ -115,13 +115,12 @@ export function useValidateExpense() {
 }
 
 export const useGetExpenseTypeFields = (expenseType?: string) => {
+  const normalizedExpenseType = expenseType?.trim();
+
   return useQuery<ExpenseTypeFieldsResponse>({
-    queryKey: ["expense-type-fields", expenseType],
-    queryFn: () => {
-      if (!expenseType) throw new Error("Expense type is required");
-      return expenseService.getExpenseTypeFields(expenseType);
-    },
-    enabled: !!expenseType,
+    queryKey: ["expense-type-fields", normalizedExpenseType],
+    queryFn: () => expenseService.getExpenseTypeFields(normalizedExpenseType!),
+    enabled: !!normalizedExpenseType,
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
@@ -156,7 +155,7 @@ export const useGetUnitPrice = (
   claimTypeDoc?: string,
   vehicleType?: string,
 ) => {
-  return useQuery<PerMileageUnitRateResponse>({
+  return useQuery<UnitPriceResponse>({
     queryKey: ["unit-price", claimTypeDoc, vehicleType],
     queryFn: () => {
       if (!claimTypeDoc) throw new Error("claimTypeDoc is required");

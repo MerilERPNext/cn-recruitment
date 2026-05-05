@@ -8,7 +8,7 @@ import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
 import ReviewForm from "./ReviewForm";
 import StatusTimelineRow from "../../Confirmation/components/StatusTimelineRow";
-import AttachmentPreview from "../../RequestDetails/AttachmentPreview";
+import AttachmentPreview from "../../FlowRequests/FlowDetails/AttachmentPreview";
 import { queryClient } from "../../../../providers/QueryProvider";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import ViewFormButton from "../../ViewFormButton";

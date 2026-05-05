@@ -54,6 +54,8 @@ export interface Attachment {
 
 
 export type TodoItem = {
+  name: string;
+  custom_approval_type?: "Approval Matrix" | "Multi Actions";
   reference_document: any;
   todo_id: string;
   allocated_to: string;
@@ -70,7 +72,6 @@ export type TodoItem = {
   description: string;
   custom_doctype_actions_with_form: string;
   is_allocated_todo: boolean;
-  custom_approval_type: string;
   send_back_user: string | null;
   can_edit: boolean;
   todo_status: string;
@@ -105,10 +106,10 @@ export type FlowRequestStage = {
   };
   approval_response_data: string;
   todo: {
+    custom_approval_type: "Approval Matrix" | "Multi Actions";
     name: string;
     custom_doctype_actions: string;
     custom_doctype_actions_with_form: string;
-    custom_approval_type: string;
     role: string;
     allocated_to: string;
     custom_allocated_to_users: Array<{

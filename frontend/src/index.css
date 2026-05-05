@@ -434,8 +434,8 @@ code {
   color: #111;
 }
 
-/* Hide the 'Size' column in header and rows */
-.formio-component-attachments .col-md-2 {
+/* Hide the 'Size' column in header and rows for all file components */
+.formio-component-file .col-md-2 {
   display: none !important;
 }
 
@@ -578,10 +578,9 @@ code {
   color: #374151 !important;
 }
 
-/* File size text */
+/* File size text - Hidden to match V1 behavior */
 .formio-component-file .file .fileSize {
-  font-size: 12px !important;
-  color: #6b7280 !important;
+  display: none !important;
 }
 
 /* Remove icon in upload status */

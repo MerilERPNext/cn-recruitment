@@ -8,6 +8,7 @@ import { useGetFlowRequests } from "../../../hooks/useFlows";
 import { StaticListView } from "../../ListView";
 import FlowRequestCard from "./FlowRequestCard";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 const titles = [
   "Flow Name",
@@ -51,9 +52,11 @@ const FlowRequests: React.FC = () => {
     }
   }, [flowRequestsLoading, flowRequests, flowDetails]);
 
+  const queryClient = useQueryClient();
   useEffect(() => {
     const handleChatClose = () => {
-      refetchFlowRequests();
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-request-details"] });
     };
 
     document.addEventListener("chatnext:modal:chat:close", handleChatClose);
@@ -64,7 +67,7 @@ const FlowRequests: React.FC = () => {
         handleChatClose,
       );
     };
-  }, [refetchFlowRequests]);
+  }, [refetchFlowRequests, queryClient]);
 
   return (
     <>
