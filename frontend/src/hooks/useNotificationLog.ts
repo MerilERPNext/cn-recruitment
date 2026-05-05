@@ -19,7 +19,6 @@ export const useMarkAsRead = () => {
     mutationFn: (id: string) => NotificationService.markAsRead(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      toast.success("Marked as read");
     },
     onError: () => {
       toast.error("Failed to update notification");
@@ -34,7 +33,6 @@ export const useMarkAllAsRead = () => {
     mutationFn: (ids: string[]) => NotificationService.markAllAsRead(ids),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      toast.success("All marked as read");
     },
     onError: () => {
       toast.error("Failed to mark all as read");
