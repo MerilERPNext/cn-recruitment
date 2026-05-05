@@ -46,9 +46,6 @@ const TeamExpense = () => {
   const requestId = searchParams.get("requestId");
   const referenceName = searchParams.get("reference_name");
 
-  console.log("referenceName111111111111111111", referenceName);
-  console.log("requestId222222222222222222222", requestId);
-
   const handleRequestClick = useCallback(
     (request: any) => {
       if (request?.todo_id) {
