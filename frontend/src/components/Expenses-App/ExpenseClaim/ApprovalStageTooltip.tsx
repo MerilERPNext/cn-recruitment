@@ -217,32 +217,47 @@ const ApprovalStageTooltip: React.FC<ApprovalStageTooltipProps> = ({
             </span>
           </div>
 
-          {!stage.role && (
+          {stage.user ? (
             <div className="flex flex-col mt-0.5">
               <span className="text-[9px] uppercase font-semibold text-gray-500 tracking-wider leading-tight">
-                User
+                Assigned To
               </span>
-              <span className="font-medium text-xs text-gray-900 leading-tight">
-                {stage.user || "—"}
-                {stage.employee_id ? (
-                  <span className="text-gray-500 text-[10px] ml-1">
-                    ({stage.employee_id})
-                  </span>
-                ) : (
-                  ""
-                )}
+              <span className="font-medium text-xs text-gray-900 leading-tight flex flex-col">
+                <span>
+                  {stage.user} ({stage.employee_id})
+                </span>
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col mt-0.5">
+              <span className="text-[9px] uppercase font-semibold text-gray-500 tracking-wider leading-tight">
+                Assigned To
+              </span>
+              <span className="font-medium text-xs text-gray-900 leading-tight flex flex-col">
+                Not Yet Assigned
               </span>
             </div>
           )}
 
-          <div className="flex flex-col mt-0.5">
-            <span className="text-[9px] uppercase font-semibold text-gray-500 tracking-wider leading-tight">
-              Role
-            </span>
-            <span className="font-medium text-xs text-gray-900 leading-tight">
-              {stage?.role || stage?.designation_name || "—"}
-            </span>
-          </div>
+          {stage.role ? (
+            <div className="flex flex-col mt-0.5">
+              <span className="text-[9px] uppercase font-semibold text-gray-500 tracking-wider leading-tight">
+                Assigned Role
+              </span>
+              <span className="font-medium text-xs text-gray-900 leading-tight">
+                {stage.role}
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col mt-0.5">
+              <span className="text-[9px] uppercase font-semibold text-gray-500 tracking-wider leading-tight">
+                Assigned Role
+              </span>
+              <span className="font-medium text-xs text-gray-900 leading-tight flex flex-col">
+                Not Yet Assigned
+              </span>
+            </div>
+          )}
 
           {stage.status !== "Pending" && (
             <div className="flex flex-col mt-0.5">
@@ -261,9 +276,11 @@ const ApprovalStageTooltip: React.FC<ApprovalStageTooltipProps> = ({
                 >
                   {stage.status}
                 </span>
-                <span className="text-gray-500 text-[10px] block mt-0.5">
-                  on {formatToIndianDate(stage.approval_time || "—")}
-                </span>
+                {stage.approval_time && (
+                  <span className="text-gray-500 text-[10px] block mt-0.5">
+                    on {formatToIndianDate(stage.approval_time)}
+                  </span>
+                )}
               </span>
             </div>
           )}
