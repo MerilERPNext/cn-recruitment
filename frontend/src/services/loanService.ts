@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { LoanApplicationUpdatePayload } from "../hooks/useLoan";
 import FrappeAPI from "../utils/frappeAPI";
 

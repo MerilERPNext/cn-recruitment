@@ -1,17 +1,22 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
-import { NotificationService } from "../services/notificationLogService";
-import { useQuery } from "@tanstack/react-query";
-import { NotificationAlertService } from "../services/notificationLogService";
+import { NotificationService, NotificationAlertService } from "../services/notificationLogService";
 import { NotificationLog } from "../types/notificationLog";
 
+export const useNotifications = (limit = 100, offset = 0, readFilter?: 0 | 1) => {
+  return useQuery<NotificationLog[]>({
+    queryKey: ["notifications", limit, offset, readFilter],
+    queryFn: () => NotificationAlertService.getNotifications(limit, offset, readFilter),
+    refetchInterval: 30000,
+    staleTime: Infinity,
+  });
+};
 
 export const useMarkAsRead = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => NotificationService.markAsRead(id),
-
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       toast.success("Marked as read");
@@ -22,15 +27,17 @@ export const useMarkAsRead = () => {
   });
 };
 
+export const useMarkAllAsRead = () => {
+  const queryClient = useQueryClient();
 
-
-
-export const useNotifications = (limit = 100, offset = 0) => {
-  return useQuery<NotificationLog[]>({
-    queryKey: ["notifications", limit, offset],
-    queryFn: () =>
-      NotificationAlertService.getNotifications(limit, offset),
-    refetchInterval: 30000,
-    staleTime: Infinity,
+  return useMutation({
+    mutationFn: (ids: string[]) => NotificationService.markAllAsRead(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      toast.success("All marked as read");
+    },
+    onError: () => {
+      toast.error("Failed to mark all as read");
+    },
   });
 };

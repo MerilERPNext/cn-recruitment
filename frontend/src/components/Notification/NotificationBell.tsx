@@ -3,10 +3,11 @@ import { useNotifications } from "../../hooks/useNotificationLog";
 import { IMPERSONATION_TEXT } from "../../constants/Notification";
 
 export default function NotificationBell() {
-  const { data: notifications = [] } = useNotifications();
+  // Fetch only unread for badge count — no limit needed here, small count
+  const { data: notifications = [] } = useNotifications(100, 0, 0);
 
   const unreadCount = notifications.filter(
-    (n) => n.read === 0 && !n.subject?.includes(IMPERSONATION_TEXT)
+    (n) => !n.subject?.includes(IMPERSONATION_TEXT)
   ).length;
 
   return (

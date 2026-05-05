@@ -22,13 +22,23 @@
           "input": true,
           "dataSrc": "url",
           "data": {
-            "url": "/api/resource/Loan Product?fields=[\"name\",\"product_name\"]&company={{ data.company }}"
+            "url": "/api/resource/Loan Product?fields=[\"name\",\"product_name\",\"rate_of_interest\"]&company={{ data.company }}"
           },
           "valueProperty": "name",
           "template": "<span>{{item.product_name}}</span>",
           "selectValues": "data",
           "lazyLoad": false,
           "customClass": "w-full"
+        },
+        {
+          "type": "number",
+          "key": "rate_of_interest",
+          "label": "Rate of Interest (%)",
+          "errorLabel": "Rate of Interest",
+          "input": true,
+          "disabled": true,
+          "customClass": "w-full",
+          "validate": {}
         },
         {
           "type": "number",
