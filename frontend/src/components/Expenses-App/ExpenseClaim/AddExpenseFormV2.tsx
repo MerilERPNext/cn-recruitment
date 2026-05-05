@@ -981,6 +981,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
       categoryType: combinedData.category_type || "General",
       custom_expense_category_name: combinedData.expenseCategory,
       custom_expense_type: combinedData.expenseType,
+      amount: combinedData.amount,
     };
 
     // Format attachments as a comma-separated string of filenames
@@ -1118,15 +1119,16 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
         toast.error("Please select Expense Category and Expense Type!");
         return;
       }
-      if (isAttachmentMandatory && currentAttachments.length === 0) {
+      if (isAttachmentMandatory && currentAttachments.length === 0 && forSubmit) {
         toast.error("Please attach a receipt to proceed.");
         return;
       }
 
       loading.show("Saving Expense...");
 
-      // 1. Validate first before submitting or uploading linked data.
-      await submitValidation(combinedDataBeforeUpload);
+      if (forSubmit) {
+        await submitValidation(combinedDataBeforeUpload);
+      }
 
       const { filesToUpload, fileKeyMap } = extractCustomFiles();
       let finalDynamicData = dynamicFormData;
@@ -1158,17 +1160,17 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
       });
       const expenseRecord = buildExpenseRecord(finalCombinedData, forSubmit);
 
-      if (isEditingExistingExpense && (expense_claim_name || draft_document_name)) {
-        const documentName = draft_document_name || expense_claim_name;
+if (isEditingExistingExpense && (expense_claim_name || draft_document_name)) {
+        const documentName = (draft_document_name || expense_claim_name) as string;
         const updatePayload = isDraftExpenseEdit
           ? {
               expense_claim_name: documentName,
               expenses: [expenseRecord],
               isResubmit: false,
-              approval_status: "Pending",
+              ...(forSubmit ? { approval_status: "Pending" } : {}),
             }
           : {
-              expense_claim_name,
+              expense_claim_name: documentName,
               expenses: [expenseRecord],
               isResubmit: true,
             };
@@ -1507,14 +1509,37 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
         {selectedExpenseType && !isFetchingExpenseFields && (
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
             {isEditingExistingExpense ? (
-              <Button
-                bgColor="primary"
-                size="md"
-                onClick={handleUpdate}
-                className="w-full font-semibold shadow-sm sm:w-fit"
-              >
-                {isDraftExpenseEdit ? "Save & Submit" : "Resubmit"}
-              </Button>
+              <>
+                {isDraftExpenseEdit ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="md"
+                      onClick={handleSave}
+                      className="w-full font-semibold sm:w-fit"
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      bgColor="primary"
+                      size="md"
+                      onClick={handleSaveAndSubmitClick}
+                      className="w-full font-semibold shadow-sm sm:w-fit"
+                    >
+                      Save & Submit
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    bgColor="primary"
+                    size="md"
+                    onClick={handleUpdate}
+                    className="w-full font-semibold shadow-sm sm:w-fit"
+                  >
+                    Resubmit
+                  </Button>
+                )}
+              </>
             ) : (
               <>
                 <Button

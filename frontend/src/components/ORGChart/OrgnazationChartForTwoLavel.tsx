@@ -8,7 +8,6 @@ import {
   Edge,
   useNodesState,
   useEdgesState,
-  Controls,
   Position,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
