@@ -902,7 +902,103 @@ const ExpensesList: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+      {/* ── Mobile Bulk Action Bar (fixed bottom, draft filter mode) ────── */}
+      {isDraftFilter && (
+        <div
+          className={`md:hidden fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
+            selectedMyExpensesDraftIds.size > 0
+              ? "translate-y-0 opacity-100 pointer-events-auto"
+              : "translate-y-full opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="bg-white border-t border-gray-200 shadow-[0_-4px_24px_rgba(0,0,0,0.12)] px-4 py-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-gray-700">
+                {selectedMyExpensesDraftIds.size} selected
+              </span>
+              <button
+                onClick={() => setSelectedMyExpensesDraftIds(new Set())}
+                className="text-sm text-gray-500 underline"
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="contain"
+                size="md"
+                bgColor="primary"
+                disabled={updateApprovalStatusMutation.isPending}
+                className="flex-1"
+                onClick={async () => {
+                  const ids = Array.from(selectedMyExpensesDraftIds);
+                  let successCount = 0;
+                  for (const expenseClaimName of ids) {
+                    try {
+                      await updateApprovalStatusMutation.mutateAsync({ expenseClaimName, approvalStatus: "Pending" });
+                      successCount++;
+                    } catch { /* handled in hook */ }
+                  }
+                  if (successCount > 0) toast.success(`${successCount} expense(s) submitted for approval.`);
+                  setSelectedMyExpensesDraftIds(new Set());
+                }}
+              >
+                {updateApprovalStatusMutation.isPending ? "Submitting..." : `Submit (${selectedMyExpensesDraftIds.size})`}
+              </Button>
+              <Button
+                variant="outline"
+                size="md"
+                bgColor="error"
+                disabled={deleteExpenseClaimMutation.isPending}
+                className="flex-1"
+                onClick={() => {
+                  setDeleteConfirmModal({
+                    isOpen: true,
+                    message: `Delete ${selectedMyExpensesDraftIds.size} selected draft expense(s)? This cannot be undone.`,
+                    onConfirm: () => {
+                      Array.from(selectedMyExpensesDraftIds).forEach((name) => deleteExpenseClaimMutation.mutate(name));
+                      setSelectedMyExpensesDraftIds(new Set());
+                      setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} });
+                    },
+                  });
+                }}
+              >
+                {deleteExpenseClaimMutation.isPending ? "Deleting..." : `Delete (${selectedMyExpensesDraftIds.size})`}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile: Select All bar — shown at top of list in draft filter mode */}
+      {isDraftFilter && !isDesktop && currentListData.length > 0 && (
+        <div className="flex-shrink-0 flex items-center justify-between bg-white border-b border-gray-200 px-4 py-2.5 shadow-sm md:hidden">
+          <label
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              checked={selectedMyExpensesDraftIds.size === currentListData.length && currentListData.length > 0}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  setSelectedMyExpensesDraftIds(new Set(currentListData.map((d: any) => d?.reference_document?.name).filter(Boolean)));
+                } else {
+                  setSelectedMyExpensesDraftIds(new Set());
+                }
+              }}
+              className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+            />
+            <span className="text-sm font-medium text-gray-700">Select All</span>
+          </label>
+          <span className="text-sm text-gray-500">
+            {selectedMyExpensesDraftIds.size > 0
+              ? `${selectedMyExpensesDraftIds.size} selected`
+              : `${currentListData.length} items`}
+          </span>
+        </div>
+      )}
+
+      <div className={`flex-1 overflow-y-auto md:px-4 pb-5 ${isDraftFilter && selectedMyExpensesDraftIds.size > 0 ? "pb-28 md:pb-24" : "md:pb-20"}`}>
         {currentEmployee?.name && activeTab === "expenses" && (
           <CardTable
             titles={tableTitles}
@@ -943,10 +1039,53 @@ const ExpensesList: React.FC = () => {
                     className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                   />
                 </div>
-                <div className="col-span-8 flex items-center">
+                <div className="col-span-9 flex items-center justify-between pr-4">
                   <span className="text-sm font-medium text-gray-700">
                     Select All ({selectedMyExpensesDraftIds.size} selected)
                   </span>
+                  {selectedMyExpensesDraftIds.size > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="contain"
+                        size="sm"
+                        bgColor="primary"
+                        disabled={updateApprovalStatusMutation.isPending}
+                        onClick={async () => {
+                          const ids = Array.from(selectedMyExpensesDraftIds);
+                          let successCount = 0;
+                          for (const expenseClaimName of ids) {
+                            try {
+                              await updateApprovalStatusMutation.mutateAsync({ expenseClaimName, approvalStatus: "Pending" });
+                              successCount++;
+                            } catch { /* handled in hook */ }
+                          }
+                          if (successCount > 0) toast.success(`${successCount} expense(s) submitted for approval.`);
+                          setSelectedMyExpensesDraftIds(new Set());
+                        }}
+                      >
+                        {updateApprovalStatusMutation.isPending ? "Submitting..." : `Submit Selected (${selectedMyExpensesDraftIds.size})`}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        bgColor="error"
+                        disabled={deleteExpenseClaimMutation.isPending}
+                        onClick={() => {
+                          setDeleteConfirmModal({
+                            isOpen: true,
+                            message: `Are you sure you want to delete ${selectedMyExpensesDraftIds.size} selected draft expense(s)? This cannot be undone.`,
+                            onConfirm: () => {
+                              Array.from(selectedMyExpensesDraftIds).forEach((name) => deleteExpenseClaimMutation.mutate(name));
+                              setSelectedMyExpensesDraftIds(new Set());
+                              setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} });
+                            },
+                          });
+                        }}
+                      >
+                        {deleteExpenseClaimMutation.isPending ? "Deleting..." : `Delete Selected (${selectedMyExpensesDraftIds.size})`}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1200,6 +1339,23 @@ const ExpensesList: React.FC = () => {
                               <Pencil size={14} />
                               Edit
                             </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteConfirmModal({
+                                  isOpen: true,
+                                  message: "Are you sure you want to delete this expense claim?",
+                                  onConfirm: () => {
+                                    deleteExpenseClaimMutation.mutate(expenseClaim?.name);
+                                    setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} });
+                                  },
+                                });
+                              }}
+                              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                            >
+                              <Trash2 size={14} />
+                              Delete
+                            </button>
                           </div>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -1338,78 +1494,6 @@ const ExpensesList: React.FC = () => {
               showPagination={true}
               noRecordsScreen={noRecordsScreen}
             />
-            {/* Bulk action footer for backend-draft filter mode */}
-            {isDraftFilter && selectedMyExpensesDraftIds.size > 0 && (
-              <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t border-gray-200 mt-2">
-                <Button
-                  variant="outline"
-                  size="md"
-                  onClick={() => setSelectedMyExpensesDraftIds(new Set())}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="contain"
-                  size="md"
-                  bgColor="primary"
-                  disabled={updateApprovalStatusMutation.isPending}
-                  onClick={async () => {
-                    const ids = Array.from(selectedMyExpensesDraftIds);
-                    let successCount = 0;
-                    for (const expenseClaimName of ids) {
-                      try {
-                        await updateApprovalStatusMutation.mutateAsync({
-                          expenseClaimName,
-                          approvalStatus: "Pending",
-                        });
-                        successCount++;
-                      } catch {
-                        // error handled in hook
-                      }
-                    }
-                    if (successCount > 0) {
-                      toast.success(
-                        `${successCount} expense(s) submitted for approval.`,
-                      );
-                    }
-                    setSelectedMyExpensesDraftIds(new Set());
-                  }}
-                >
-                  {updateApprovalStatusMutation.isPending
-                    ? "Submitting..."
-                    : `Submit Selected (${selectedMyExpensesDraftIds.size})`}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="md"
-                  bgColor="error"
-                  disabled={deleteExpenseClaimMutation.isPending}
-                  onClick={() => {
-                    setDeleteConfirmModal({
-                      isOpen: true,
-                      message: `Are you sure you want to delete ${selectedMyExpensesDraftIds.size} selected draft expense(s)? This cannot be undone.`,
-                      onConfirm: () => {
-                        Array.from(selectedMyExpensesDraftIds).forEach(
-                          (name) => {
-                            deleteExpenseClaimMutation.mutate(name);
-                          },
-                        );
-                        setSelectedMyExpensesDraftIds(new Set());
-                        setDeleteConfirmModal({
-                          isOpen: false,
-                          message: "",
-                          onConfirm: () => {},
-                        });
-                      },
-                    });
-                  }}
-                >
-                  {deleteExpenseClaimMutation.isPending
-                    ? "Deleting..."
-                    : `Delete Selected (${selectedMyExpensesDraftIds.size})`}
-                </Button>
-              </div>
-            )}
           </CardTable>
         )}
 
