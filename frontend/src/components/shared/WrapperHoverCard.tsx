@@ -154,41 +154,41 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
       switch (placement) {
         case "bottom-right":
-          top = rect.bottom + window.scrollY + 8;
-          left = rect.left + window.scrollX;
+          top = rect.bottom + 8;
+          left = rect.left;
           break;
 
         case "bottom-left":
-          top = rect.bottom + window.scrollY + 8;
-          left = rect.right + window.scrollX - cardRect.width;
+          top = rect.bottom + 8;
+          left = rect.right - cardRect.width;
           break;
 
         case "top-right":
-          top = rect.top + window.scrollY - cardRect.height - 8;
-          left = rect.left + window.scrollX;
+          top = rect.top - cardRect.height - 8;
+          left = rect.left;
           break;
 
         case "top-left":
-          top = rect.top + window.scrollY - cardRect.height - 8;
-          left = rect.right + window.scrollX - cardRect.width;
+          top = rect.top - cardRect.height - 8;
+          left = rect.right - cardRect.width;
           break;
 
         case "center-left":
-          top = rect.top + window.scrollY + rect.height / 2 - cardRect.height / 2;
-          left = rect.left + window.scrollX - cardRect.width - 12;
+          top = rect.top + rect.height / 2 - cardRect.height / 2;
+          left = rect.left - cardRect.width - 12;
           break;
 
         case "center-right":
         default:
-          top = rect.top + window.scrollY + rect.height / 2 - cardRect.height / 2;
-          left = rect.right + window.scrollX + 12;
+          top = rect.top + rect.height / 2 - cardRect.height / 2;
+          left = rect.right + 12;
       }
 
       const padding = 12;
-      const minTop = window.scrollY + padding;
-      const maxTop = window.scrollY + window.innerHeight - cardRect.height - padding;
-      const minLeft = window.scrollX + padding;
-      const maxLeft = window.scrollX + window.innerWidth - cardRect.width - padding;
+      const minTop = padding;
+      const maxTop = window.innerHeight - cardRect.height - padding;
+      const minLeft = padding;
+      const maxLeft = window.innerWidth - cardRect.width - padding;
 
       setPos({
         top: Math.max(minTop, Math.min(top, maxTop)),
@@ -257,7 +257,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
             <div
               ref={cardRef}
-              className="absolute z-[999]"
+              className="fixed z-[999]"
               style={{
                 top: pos.top,
                 left: pos.left,
