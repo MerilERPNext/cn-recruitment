@@ -755,6 +755,10 @@ const ExpensesList: React.FC = () => {
     const getEmptyStateMessage = () => {
       const status = filters.status;
       const messages: Record<string, { title: string; description: string }> = {
+        Draft: {
+          title: "No Draft Claims",
+          description: "You have no Draft expense claim requests.",
+        },
         Pending: {
           title: "No Pending Claims",
           description: "You have no pending expense claim requests.",

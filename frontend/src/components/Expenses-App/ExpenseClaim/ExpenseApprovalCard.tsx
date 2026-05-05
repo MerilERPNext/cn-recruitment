@@ -38,7 +38,7 @@ const ExpenseApprovalCard = ({
   onClick,
   loadingAction,
   isBulkSelectEnabled = true,
-  activeStatus = "Draft",
+  activeStatus = "Pending",
   isActed = false,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
@@ -60,12 +60,12 @@ const ExpenseApprovalCard = ({
     : [];
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? (activeStatus === "Approved"
+    ? activeStatus === "Approved"
       ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr")
-    : (activeStatus === "Approved"
+      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+    : activeStatus === "Approved"
       ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr");
+      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
   const totalClaimedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -173,7 +173,9 @@ const ExpenseApprovalCard = ({
           </Link>
 
           <Tooltip
-            content={data?.reference_document?.custom_expense_category_name || ""}
+            content={
+              data?.reference_document?.custom_expense_category_name || ""
+            }
             triggerClassName="w-full truncate min-w-0 block"
           >
             <Typography
@@ -184,18 +186,27 @@ const ExpenseApprovalCard = ({
             </Typography>
           </Tooltip>
           <Tooltip
-            content={data?.reference_document?.expenses[0]?.custom_claim_type_name || ""}
+            content={
+              data?.reference_document?.expenses[0]?.custom_claim_type_name ||
+              ""
+            }
             triggerClassName="w-full truncate min-w-0 block"
           >
             <Typography
               variant="bodySmall"
               className="font-medium text-center truncate block w-full"
             >
-              {data?.reference_document?.expenses[0]?.custom_claim_type_name || "--"}
+              {data?.reference_document?.expenses[0]?.custom_claim_type_name ||
+                "--"}
             </Typography>
           </Tooltip>
-          <Typography variant="bodySmall" className="font-medium text-center truncate">
-            {formatToIndianDate(data?.reference_document?.expenses[0]?.expense_date) || "--"}
+          <Typography
+            variant="bodySmall"
+            className="font-medium text-center truncate"
+          >
+            {formatToIndianDate(
+              data?.reference_document?.expenses[0]?.expense_date,
+            ) || "--"}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {totalClaimedAmount}
@@ -215,19 +226,29 @@ const ExpenseApprovalCard = ({
               role={data?.role}
               position="left"
             >
-              <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.approval_status !== "Rejected" ? "Approved" : data?.reference_document?.approval_status} />
+              <StatusBadge
+                status={
+                  data?.todo_status === "Closed" &&
+                  data?.reference_document?.approval_status !== "Rejected"
+                    ? "Approved"
+                    : data?.reference_document?.approval_status
+                }
+              />
             </AllocatedToTooltip>
           </div>
           {activeStatus === "Approved" && (
             <div className="flex items-center justify-center">
-              <Typography variant="bodySmall" className={`font-medium text-center min-w-[70px] ${data?.status === "Paid" ? "text-green-600" : "text-amber-600"}`}>
+              <Typography
+                variant="bodySmall"
+                className={`font-medium text-center min-w-[70px] ${data?.status === "Paid" ? "text-green-600" : "text-amber-600"}`}
+              >
                 {data?.status === "Paid" ? "Paid" : "Unpaid"}
               </Typography>
             </div>
           )}
 
           <div className="flex items-center justify-center">
-            {activeStatus === "Draft" && !isActed ? (
+            {activeStatus === "Pending" && !isActed ? (
               <TeamApprovalActionPill
                 actions={actions}
                 status={data?.status}
@@ -237,7 +258,10 @@ const ExpenseApprovalCard = ({
               />
             ) : (
               <div className="flex items-center justify-center">
-                <Typography variant="bodySmall" className="font-medium text-center text-gray-500">
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center text-gray-500"
+                >
                   Action taken
                 </Typography>
               </div>
@@ -278,7 +302,14 @@ const ExpenseApprovalCard = ({
                     {data?.reference_document?.name || "-"}
                   </Typography>
                 </div>
-                <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.approval_status !== "Rejected" ? "Approved" : data?.reference_document?.approval_status} />
+                <StatusBadge
+                  status={
+                    data?.todo_status === "Closed" &&
+                    data?.reference_document?.approval_status !== "Rejected"
+                      ? "Approved"
+                      : data?.reference_document?.approval_status
+                  }
+                />
               </div>
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-1">
@@ -300,27 +331,37 @@ const ExpenseApprovalCard = ({
               </div>
               <div className="flex justify-between w-full">
                 <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel">Expense Category</Typography>
+                  <Typography variant="mobileCardLabel">
+                    Expense Category
+                  </Typography>
                   <Typography variant="mobileCardValue">
-                    {data?.reference_document?.custom_expense_category_name || "-"}
+                    {data?.reference_document?.custom_expense_category_name ||
+                      "-"}
                   </Typography>
                 </div>
                 <div className="flex flex-col gap-1 text-right">
-                  <Typography variant="mobileCardLabel">Expense Type</Typography>
+                  <Typography variant="mobileCardLabel">
+                    Expense Type
+                  </Typography>
                   <Typography variant="mobileCardValue">
-                    {data?.reference_document?.expenses?.[0]?.custom_claim_type_name || "-"}
+                    {data?.reference_document?.expenses?.[0]
+                      ?.custom_claim_type_name || "-"}
                   </Typography>
                 </div>
               </div>
               <div className="flex justify-between w-full mt-2">
                 <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel">Claimed Amount</Typography>
+                  <Typography variant="mobileCardLabel">
+                    Claimed Amount
+                  </Typography>
                   <Typography variant="mobileCardValue">
                     {totalClaimedAmount}
                   </Typography>
                 </div>
                 <div className="flex flex-col gap-1 text-right">
-                  <Typography variant="mobileCardLabel">Claimed Date</Typography>
+                  <Typography variant="mobileCardLabel">
+                    Claimed Date
+                  </Typography>
                   <Typography variant="mobileCardValue">
                     {formatToIndianDate(data?.reference_document?.creation)}
                   </Typography>
@@ -329,7 +370,9 @@ const ExpenseApprovalCard = ({
 
               <div className="flex justify-between w-full">
                 <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel">Expense Date</Typography>
+                  <Typography variant="mobileCardLabel">
+                    Expense Date
+                  </Typography>
                   <Typography variant="mobileCardValue">
                     {formatToIndianDate(
                       data?.reference_document?.expenses[0]?.expense_date,
@@ -344,8 +387,6 @@ const ExpenseApprovalCard = ({
                 </div>
               </div>
 
-
-
               {/* Allocated To */}
               <MobileAllocatedTo
                 users={data?.allocated_to}
@@ -356,15 +397,20 @@ const ExpenseApprovalCard = ({
               {activeStatus === "Approved" && (
                 <div className="flex justify-between w-full">
                   <div className="flex flex-col gap-1">
-                    <Typography variant="mobileCardLabel">Paid Status</Typography>
-                    <Typography variant="bodySmall" className={`font-medium w-fit ${data?.status === "Paid" ? "text-green-600" : "text-amber-600"}`}>
+                    <Typography variant="mobileCardLabel">
+                      Paid Status
+                    </Typography>
+                    <Typography
+                      variant="bodySmall"
+                      className={`font-medium w-fit ${data?.status === "Paid" ? "text-green-600" : "text-amber-600"}`}
+                    >
                       {data?.status === "Paid" ? "Paid" : "Unpaid"}
                     </Typography>
                   </div>
                 </div>
               )}
 
-              {activeStatus === "Draft" && !isActed ? (
+              {activeStatus === "Pending" && !isActed ? (
                 <TeamApprovalActionPill
                   variant="buttons"
                   actions={actions}
@@ -375,7 +421,10 @@ const ExpenseApprovalCard = ({
                 />
               ) : (
                 <div className="bg-gray-50 px-3 py-1 rounded-md mt-2 w-fit mx-auto">
-                  <Typography variant="bodySmall" className="text-center text-gray-100">
+                  <Typography
+                    variant="bodySmall"
+                    className="text-center text-gray-100"
+                  >
                     Action taken
                   </Typography>
                 </div>
@@ -433,7 +482,10 @@ const ExpenseApprovalCard = ({
                 onClick={handleSaveComment}
                 size="sm"
                 bgColor="primary"
-                disabled={rejectionComment.trim().length < 15 || commentMutation.isPending}
+                disabled={
+                  rejectionComment.trim().length < 15 ||
+                  commentMutation.isPending
+                }
               >
                 {commentMutation.isPending ? (
                   <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
