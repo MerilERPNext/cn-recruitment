@@ -1,8 +1,7 @@
+import { Check, Clock, X } from "lucide-react";
 import React from "react";
 import { ApprovalStage } from "../../../types/expenseAdvance";
-import Tooltip from "../../shared/Tooltip";
-import { Check, X, Clock } from "lucide-react";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
+import ApprovalStageTooltip from "./ApprovalStageTooltip";
 
 interface ApprovalStagesProgressProps {
   stages: ApprovalStage[];
@@ -37,7 +36,6 @@ const getStatusIcon = (status: ApprovalStage["status"]) => {
 const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
   stages,
 }) => {
-
   if (!stages || stages.length === 0) {
     return (
       <p className="text-sm text-gray-500 italic">
@@ -46,12 +44,14 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
     );
   }
 
-  const rejectedStageIndex = stages.findIndex(stage => stage.status === "Rejected");
+  const rejectedStageIndex = stages.findIndex(
+    (stage) => stage.status === "Rejected",
+  );
 
   const totalStages = stages.length;
 
   let activeIndex = stages.findIndex(
-    (stage) => stage.status === "Pending" || stage.status === "Rejected"
+    (stage) => stage.status === "Pending" || stage.status === "Rejected",
   );
 
   if (activeIndex === -1) {
@@ -112,8 +112,9 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
                 <div
                   className={`absolute top-1/2 h-1 transform -translate-y-1/2 transition-colors duration-300 z-0 ${segmentColor}`}
                   style={{
-                    left: `calc(${((index - 1) / (totalStages - 1)) * 100
-                      }% + 16px)`,
+                    left: `calc(${
+                      ((index - 1) / (totalStages - 1)) * 100
+                    }% + 16px)`,
                     width: `calc(${(1 / (totalStages - 1)) * 100}% - 4px)`,
                   }}
                 />
@@ -123,38 +124,19 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
                 className="absolute top-1/2 transform -translate-x-1/2 -translate-y-1/2"
                 style={{ left: `calc(${leftPosition}% + 4px)` }}
               >
-                <Tooltip
+                <ApprovalStageTooltip
                   {...(tooltipPosition
                     ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    { position: tooltipPosition as any }
+                      { position: tooltipPosition as any }
                     : {})}
-                  content={
-                    <div className="flex flex-col text-left text-xs space-y-1 p-1">
-                      <p>
-                        <strong>Stage:</strong> {stage.stage_name || "—"}
-                      </p>
-                      {!stage.role &&
-                        <p>
-                          <strong>User:</strong> {stage.user || "—"}{stage.employee_id ? " (" + stage.employee_id + ")" : ""}
-                        </p>
-                      }
-                      <p>
-                        <strong>Role:</strong> {stage?.role || stage?.designation_name || "—"}
-                      </p>
-                      {stage.status !== "Pending" && (
-                        <p>
-                          <strong>{stage.status} on: </strong> {formatToIndianDate(stage.approval_time || "—")}
-                        </p>
-                      )}
-                    </div>
-                  }
+                  stage={stage}
                 >
                   <div
                     className={`w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-full border-4 border-white shadow-md transition-colors duration-300 z-20 box-border ${circleBgClass}`}
                   >
                     {circleIconContent}
                   </div>
-                </Tooltip>
+                </ApprovalStageTooltip>
               </div>
             </React.Fragment>
           );
