@@ -26,7 +26,7 @@ import { expenseService } from "../../../services/expenseService";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { COLUMN_SORT_CONFIG_EXPENSE_CLAIM, COLUMN_SORT_CONFIG_EXPENSE_CLAIM_DRAFT } from "../../../utils/tableSortConfig";
+import { COLUMN_SORT_CONFIG_EXPENSE_CLAIM, COLUMN_SORT_CONFIG_EXPENSE_CLAIM_DRAFT, COLUMN_SORT_CONFIG_SHARED_EXPENSE } from "../../../utils/tableSortConfig";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
@@ -1603,6 +1603,7 @@ const ExpensesList: React.FC = () => {
               "1fr",
               "1fr",
             ]}
+            columnSortConfig={COLUMN_SORT_CONFIG_SHARED_EXPENSE}
           >
             <DataListView
               queryKey={["shared-expenses", currentEmployee?.name ?? ""]}
