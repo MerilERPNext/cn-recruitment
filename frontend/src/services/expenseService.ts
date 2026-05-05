@@ -208,6 +208,7 @@ export const expenseService = {
     expense_claim_name: string,
     expenses: Array<Record<string, any>>,
     isResubmit?: boolean,
+    approval_status?: string,
   ) => {
     if (!expense_claim_name) {
       throw new Error("expense_claim_name is required");
@@ -217,8 +218,17 @@ export const expenseService = {
       throw new Error("expenses must be an array");
     }
 
+    const expenseClaimData: Record<string, unknown> = {
+      expense_claim_name,
+      expenses,
+    };
+
+    if (approval_status) {
+      expenseClaimData.approval_status = approval_status;
+    }
+
     const payload = {
-      expense_claim_data: { expense_claim_name, expenses },
+      expense_claim_data: expenseClaimData,
     };
 
     const response = await FrappeAPI.callMethod(

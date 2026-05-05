@@ -162,7 +162,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
             employee_type: "Guest",
             name: p.guest_name || p.name || "",
             percentage: p.percentage,
-            amount: p.amount
+            amount: p.amount ?? p.allocated_amount
           };
         }
         return {
@@ -170,7 +170,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
           name: p.employee || p.name || "",
           employee_name: p.employee_name || "",
           percentage: p.percentage,
-          amount: p.amount
+          amount: p.amount ?? p.allocated_amount
         };
       });
       const comp = computeAllocations(ensureFirstRowSelf(mapped), "percentage");

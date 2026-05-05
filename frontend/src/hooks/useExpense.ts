@@ -249,6 +249,7 @@ export type UpdateExpensePayload = {
   expense_claim_name: string;
   expenses: ExpenseItem[];
   isResubmit?: boolean;
+  approval_status?: string;
 };
 
 export function useUpdateExpense() {
@@ -260,6 +261,7 @@ export function useUpdateExpense() {
         params.expense_claim_name,
         params.expenses,
         params.isResubmit,
+        params.approval_status,
       );
     },
     onSuccess: () => {

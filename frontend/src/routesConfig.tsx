@@ -26,6 +26,7 @@ import SearchMembers from "./components/SearchMembers";
 import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
 import Onboarding from "./components/Onboarding/Onboarding";
 import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
+import { ExpenseNavigationState } from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -458,12 +459,11 @@ const LeaderboardPage = lazyWithRetry(
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
-  const initialExpense = (location.state as any)?.expense || null;
-  const expense_claim_name =
-    (location.state as any)?.expense_claim_name || null;
-  const draft_document_name =
-    (location.state as any)?.draft_document_name || null;
-  const isResubmit = (location.state as any)?.isResubmit || false;
+  const navigationState = location.state as ExpenseNavigationState | null;
+  const initialExpense = navigationState?.expense || null;
+  const expense_claim_name = navigationState?.expense_claim_name || null;
+  const draft_document_name = navigationState?.draft_document_name || null;
+  const isResubmit = navigationState?.isResubmit || false;
   const isEditingFromDraft = Boolean(draft_document_name);
   return (
     <AddExpenseFormV2
