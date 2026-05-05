@@ -126,11 +126,19 @@ const ApprovalStageTooltip: React.FC<ApprovalStageTooltipProps> = ({
         calculatePosition();
       });
 
-      window.addEventListener("scroll", calculatePosition, true);
+      const handleScroll = () => {
+        if (window.matchMedia("(pointer: coarse)").matches) {
+          setIsVisible(false);
+        } else {
+          calculatePosition();
+        }
+      };
+
+      window.addEventListener("scroll", handleScroll, true);
       window.addEventListener("resize", calculatePosition);
 
       return () => {
-        window.removeEventListener("scroll", calculatePosition, true);
+        window.removeEventListener("scroll", handleScroll, true);
         window.removeEventListener("resize", calculatePosition);
       };
     }
@@ -224,7 +232,7 @@ const ApprovalStageTooltip: React.FC<ApprovalStageTooltipProps> = ({
               </span>
               <span className="font-medium text-xs text-gray-900 leading-tight flex flex-col">
                 <span>
-                  {stage.user} ({stage.employee_id})
+                  {stage.user}{stage.employee_id ? ` (${stage.employee_id})` : ""}
                 </span>
               </span>
             </div>

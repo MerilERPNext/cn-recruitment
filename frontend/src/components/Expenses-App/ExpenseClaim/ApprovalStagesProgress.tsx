@@ -125,10 +125,7 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
                 style={{ left: `calc(${leftPosition}% + 4px)` }}
               >
                 <ApprovalStageTooltip
-                  {...(tooltipPosition
-                    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      { position: tooltipPosition as any }
-                    : {})}
+                  position={tooltipPosition}
                   stage={stage}
                 >
                   <div
