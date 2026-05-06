@@ -174,7 +174,6 @@ const TeamLoanRequest = () => {
                     label: "Pending",
                     key: "Open",
                     value: "Open",
-                    customAPIParams: { todo_status: "Open" },
                   },
                   {
                     label: "Approved",
@@ -184,7 +183,6 @@ const TeamLoanRequest = () => {
                   },
                   {
                     label: "Rejected",
-                    key: "Rejected",
                     value: "Rejected",
                   },
                 ],

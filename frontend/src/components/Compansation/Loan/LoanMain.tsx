@@ -216,9 +216,8 @@ export default function LoansPage() {
                     options: [
                       {
                         label: "Pending",
-                        key: "Draft",
+                        key: "Open",
                         value: "Open",
-                        customAPIParams: { todo_status: "Open" },
                       },
                       { label: "Approved", value: "Approved" },
                       { label: "Rejected", value: "Rejected" },
@@ -233,6 +232,9 @@ export default function LoansPage() {
                         },
                       },
                     ],
+                    emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  },
                   },
                 ]}
                 pageSize={10}
