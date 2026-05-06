@@ -697,7 +697,7 @@ const ExpensesList: React.FC = () => {
             if (["open", "pending", "draft"].includes(st)) return "Pending";
             if (["approved", "submitted"].includes(st)) return "Approved";
             return s || "--";
-          })(doc?.status),
+          })(doc?.approval_status),
           "Sanctioned Amount": doc?.total_sanctioned_amount || 0,
           "% Share": doc?.participant_info?.percentage || 0,
           "Allocated Amount": doc?.participant_info?.allocated_amount || 0,
@@ -1617,9 +1617,36 @@ const ExpensesList: React.FC = () => {
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}
               refetchTrigger={refetchAttendance}
-              isSearch={false}
-              isFilter={false}
+              isSearch={true}
+              isFilter={true}
+              onFiltersChange={handleFiltersChange}
+              filterFields={[
+                {
+                  fieldname: "approval_status",
+                  label: "Status",
+                  fieldtype: "Select",
+                  options: [
+                    { label: "Draft", value: "Draft" },
+                    { label: "Pending", value: "Pending" },
+                    { label: "Approved", value: "Approved" },
+                    { label: "Rejected", value: "Rejected" },
+                  ],
+                },
+                {
+                  fieldname: "creation_start",
+                  label: "Start Date",
+                  fieldtype: "Date",
+                },
+                {
+                  fieldname: "creation_end",
+                  label: "End Date",
+                  fieldtype: "Date",
+                },
+              ]}
               showRefreshButton={false}
+              defaultFilters={{
+                approval_status: "Draft",
+              }}
               pageSize={10}
               infiniteScroll={false}
               loadMorePagination={false}
