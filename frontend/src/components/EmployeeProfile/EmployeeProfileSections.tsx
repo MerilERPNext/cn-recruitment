@@ -190,20 +190,46 @@ export default function EmployeeProfileSections() {
                                                 </Typography>
                                             )}
                                             <div className={gridClass}>
-                                                {allVisibleFields.map(field => {
-                                                    const isTable = Array.isArray(field.value);
-                                                    return (
-                                                        <FieldCell
-                                                            key={field.key}
-                                                            field={field}
-                                                            tabKey={tab.key}
-                                                            tabLabel={tab.label}
-                                                            canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" })}
-                                                            isTable={isTable}
-                                                            onEdit={setEdit}
-                                                        />
-                                                    );
-                                                })}
+                                                {colCount > 1 ? (
+                                                    section.columns.map((column: SimpleColumn) => {
+                                                        const visibleFields = column.fields.filter(f => !f.hidden);
+                                                        if (!visibleFields.length) return null;
+
+                                                        return (
+                                                            <div key={column.key} className="space-y-4">
+                                                                {visibleFields.map(field => {
+                                                                    const isTable = Array.isArray(field.value);
+                                                                    return (
+                                                                        <FieldCell
+                                                                            key={field.key}
+                                                                            field={field}
+                                                                            tabKey={tab.key}
+                                                                            tabLabel={tab.label}
+                                                                            canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" })}
+                                                                            isTable={isTable}
+                                                                            onEdit={setEdit}
+                                                                        />
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    allVisibleFields.map(field => {
+                                                        const isTable = Array.isArray(field.value);
+                                                        return (
+                                                            <FieldCell
+                                                                key={field.key}
+                                                                field={field}
+                                                                tabKey={tab.key}
+                                                                tabLabel={tab.label}
+                                                                canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" })}
+                                                                isTable={isTable}
+                                                                onEdit={setEdit}
+                                                            />
+                                                        );
+                                                    })
+                                                )}
                                             </div>
                                         </div>
                                     );
