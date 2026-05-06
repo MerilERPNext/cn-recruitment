@@ -28,24 +28,64 @@ interface CreateLoanDialogProps {
   loanId?: string | null;
 }
 
+interface LoanProduct {
+  name: string;
+  product_name: string;
+  rate_of_interest: number;
+}
+
 export default function CreateLoanDialog({
   loanId,
   isOpen,
   onClose,
 }: CreateLoanDialogProps) {
   const { setRefetchAttendance } = useGlobalStore();
-  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: currentEmployee } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
   const { isDesktop } = useScreenSize();
   const mutation = useCreateNewLoanApplication();
   const formRef = useRef<any>(null);
   const { data: requiredFields } = useRequiredFields("Loan Application");
   const mutateLoan = useLoanApplicationUpdate();
   const { data: loan, isLoading: loanLoading } = useGetLoanApplicationDoc(
-    loanId || "",
+    loanId || ""
   );
+
+  // Our own cache: name -> rate_of_interest
+  const loanProductMapRef = useRef<Record<string, number>>({});
 
   // Track if we've already set the initial submission
   const hasSetInitialData = useRef(false);
+
+  // Fetch loan products and build our own map as soon as company is known
+  useEffect(() => {
+    if (!currentEmployee?.company) return;
+
+    const fetchLoanProducts = async () => {
+      try {
+        const res = await fetch(
+          `/api/resource/Loan Product?fields=["name","product_name","rate_of_interest"]&company=${encodeURIComponent(
+            currentEmployee.company
+          )}`
+        );
+        if (!res.ok) return;
+        const json = await res.json();
+        // API returns { data: [...] } in frappe/ERPNext style
+        const items: LoanProduct[] = json?.data || json || [];
+        const map: Record<string, number> = {};
+        items.forEach((item) => {
+          map[item.name] = item.rate_of_interest;
+        });
+        loanProductMapRef.current = map;
+        console.debug("Loan product map built:", map);
+      } catch (e) {
+        console.warn("Failed to fetch loan products for rate map:", e);
+      }
+    };
+
+    fetchLoanProducts();
+  }, [currentEmployee?.company]);
 
   // Map loan doc -> form submission data
   const mapLoanToFormData = (loanDoc: any) => {
@@ -58,7 +98,7 @@ export default function CreateLoanDialog({
       repayment_amount: loanDoc.repayment_amount,
       repayment_periods: loanDoc.repayment_periods,
       description: loanDoc.description,
-      // include any additional fields you expect the form to have:
+      rate_of_interest: loanDoc.rate_of_interest ?? null,
     };
 
     const rawStart =
@@ -93,11 +133,10 @@ export default function CreateLoanDialog({
 
   const transformSchemaWithRequired = (
     baseSchema: FormSchema,
-    requiredMap: Record<string, boolean>,
+    requiredMap: Record<string, boolean>
   ): FormSchema => {
     if (!baseSchema) return baseSchema;
 
-    // deep clone
     const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
 
     const applyToComponents = (components?: SchemaComponent[]) => {
@@ -108,7 +147,6 @@ export default function CreateLoanDialog({
           if (!comp.validate) comp.validate = {};
           comp.validate.required = true;
 
-          // Append red asterisk to label (avoid duplicating)
           if (typeof comp.label === "string") {
             const asteriskHtml = " *";
             if (!comp.label.includes(asteriskHtml)) {
@@ -117,16 +155,17 @@ export default function CreateLoanDialog({
           }
         }
 
-        // recurse into nested components (panels, columns, containers)
         if (comp.components && Array.isArray(comp.components)) {
           applyToComponents(comp.components);
         }
         if (comp.columns && Array.isArray(comp.columns)) {
-          comp.columns.forEach((col: any) => applyToComponents(col.components));
+          comp.columns.forEach((col: any) =>
+            applyToComponents(col.components)
+          );
         }
         if (comp.rows && Array.isArray(comp.rows)) {
           comp.rows.forEach((row: any[]) =>
-            row.forEach((cell: any) => applyToComponents(cell.components)),
+            row.forEach((cell: any) => applyToComponents(cell.components))
           );
         }
       });
@@ -139,7 +178,7 @@ export default function CreateLoanDialog({
   const transformedSchema = useMemo(() => {
     return transformSchemaWithRequired(
       createLoanFormSchema as FormSchema,
-      requiredFieldMap,
+      requiredFieldMap
     );
   }, [requiredFieldMap]);
 
@@ -165,24 +204,24 @@ export default function CreateLoanDialog({
               {
                 onSuccess: async () => {
                   toast.success("Loan Request updated successfully!");
-                  onClose?.();
                   setTimeout(() => setRefetchAttendance(true), 2000);
+                  onClose?.();
+                  
                   resolve();
                 },
                 onError: (error: any) => {
                   const formatedError = errorResponseFormater(
                     error,
-                    "Update failed. Please try again.",
+                    "Update failed. Please try again."
                   );
                   toast.error(formatedError);
                   console.error(error);
                   reject(error);
                 },
-              },
+              }
             );
           });
         }, "Updating loan request…");
-
         return;
       }
 
@@ -191,14 +230,15 @@ export default function CreateLoanDialog({
           mutation.mutate(submissionData as Record<string, any>, {
             onSuccess: () => {
               onClose();
-              setTimeout(() => setRefetchAttendance(true), 2000);
               toast.success("Added Loan Request successfully!");
+              setTimeout(() => setRefetchAttendance(true), 2000);
+              console.debug("Loan creation successful, refetchAttendance triggered");
               resolve();
             },
             onError: (error: CustomError) => {
               const formatedError = errorResponseFormater(
                 error,
-                "Submission failed. Please try again.",
+                "Submission failed. Please try again."
               );
               toast.error(formatedError);
               console.error(error);
@@ -213,11 +253,59 @@ export default function CreateLoanDialog({
   };
 
   /**
-   * attemptSetSubmission:
-   * - tries until both form instance is available and (if applicable) component options are loaded.
-   * - coerces mapped value types to match the first option where necessary.
-   * - marks hasSetInitialData.current so it runs only once.
+   * handleFormChange:
+   * When loan_product changes, look up rate_of_interest from our own
+   * pre-fetched map (100% reliable, no formio internals needed).
    */
+  const handleFormChange = (changed: any) => {
+    const instance = formRef.current;
+    if (!instance) return;
+
+    const changedKey = changed?.changed?.component?.key;
+    if (changedKey !== "loan_product") return;
+
+    const selectedProductName = changed?.data?.loan_product;
+
+    if (!selectedProductName) {
+      try {
+        instance.setSubmission({
+          data: { ...changed.data, rate_of_interest: null },
+        });
+      } catch (e) {
+        console.warn("Could not clear rate_of_interest", e);
+      }
+      return;
+    }
+
+    // Look up from our pre-fetched map
+    const rateOfInterest = loanProductMapRef.current[selectedProductName];
+
+    if (rateOfInterest === undefined || rateOfInterest === null) {
+      console.warn(
+        "rate_of_interest not found in map for product:",
+        selectedProductName,
+        "Map:",
+        loanProductMapRef.current
+      );
+      return;
+    }
+
+    console.debug(
+      "Setting rate_of_interest:",
+      rateOfInterest,
+      "for product:",
+      selectedProductName
+    );
+
+    try {
+      instance.setSubmission({
+        data: { ...changed.data, rate_of_interest: rateOfInterest },
+      });
+    } catch (e) {
+      console.warn("setSubmission for rate_of_interest failed", e);
+    }
+  };
+
   const attemptSetSubmission = (instanceParam?: any) => {
     if (hasSetInitialData.current) return;
     const instance = instanceParam ?? formRef.current;
@@ -242,11 +330,9 @@ export default function CreateLoanDialog({
 
       const mappedData = mapLoanToFormData(loan) || {};
 
-      // Inspect loan_product component to see if options are present
       let comp: any = null;
       try {
         comp = inst.getComponent ? inst.getComponent("loan_product") : null;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (e: any) {
         console.log("error auto filling form", e);
         comp = null;
@@ -266,7 +352,6 @@ export default function CreateLoanDialog({
       const hasOptions = !!staticValues || !isUrlSource;
 
       if (hasOptions) {
-        // Coerce mapped loan_product to match option type if needed
         if (
           staticValues &&
           staticValues.length > 0 &&
@@ -285,7 +370,6 @@ export default function CreateLoanDialog({
           }
         }
 
-        // finally set submission
         try {
           inst.setSubmission({
             data: {
@@ -299,7 +383,6 @@ export default function CreateLoanDialog({
           console.warn("setSubmission failed, retrying...", err);
           if (attempts < maxAttempts) setTimeout(trySet, intervalMs);
           else {
-            // fallback
             try {
               inst.setSubmission({
                 data: {
@@ -316,12 +399,11 @@ export default function CreateLoanDialog({
         return;
       }
 
-      // if not ready, retry until maxAttempts then fallback
       if (attempts < maxAttempts) {
         setTimeout(trySet, intervalMs);
       } else {
         console.warn(
-          "Options did not load in time — setting submission anyway (fallback).",
+          "Options did not load in time — setting submission anyway (fallback)."
         );
         try {
           inst.setSubmission({
@@ -340,14 +422,11 @@ export default function CreateLoanDialog({
     trySet();
   };
 
-  // When the form instance becomes ready
   const onFormReady = (instance: any) => {
     formRef.current = instance;
-    // Try to set submission immediately (covers case when loan already arrived)
     attemptSetSubmission(instance);
   };
 
-  // When loan data arrives or updates, try to apply it (covers case when form already ready)
   useEffect(() => {
     if (!loan || loanLoading) return;
     attemptSetSubmission();
@@ -372,8 +451,7 @@ export default function CreateLoanDialog({
         {/* Dialog Header */}
         {isDesktop ? (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-            <h2 className=" base-title text-gray-900">Request Loan</h2>
-
+            <h2 className="base-title text-gray-900">Request Loan</h2>
             <button
               onClick={onClose}
               className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
@@ -393,11 +471,16 @@ export default function CreateLoanDialog({
         {/* Dialog Content */}
         <div className="flex-1 min-h-0 bg-white overflow-y-auto pb-20">
           {currentEmployee?.company && (
-            <Form form={transformedSchema} onFormReady={onFormReady} />
+            <Form
+              form={transformedSchema}
+              onFormReady={onFormReady}
+              onChange={handleFormChange}
+            />
           )}
         </div>
+
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-          <div className=" mx-auto flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
+          <div className="mx-auto flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
             {!isDesktop && (
               <Button onClick={onClose} fullWidth size="md" variant="outline">
                 Cancel

@@ -151,7 +151,7 @@
           "storage": "customfiles",
           "fileReader": false,
           "privateDownload": false,
-          "filePattern": ".pdf,.doc,.docx,.jpg,.jpeg,.png",
+          "filePattern": ".jpg,.jpeg,.png,.xls,.xlsx,.csv,.doc,.docx,.pdf",
           "tooltip": "Upload supporting documents.",
           "validate": { "required": false },
           "customClass": "mb-4"
