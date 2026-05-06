@@ -923,8 +923,8 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   );
 
   const dynamicSubmission = useMemo(
-    () => ({ data: dynamicFormData }),
-    [dynamicFormData],
+    () => ({ data: buildInitialDynamicFormData(initialExpense) }),
+    [initialExpense],
   );
 
   const currentAttachments = useMemo(() => {
@@ -1392,8 +1392,12 @@ if (isEditingExistingExpense && (expense_claim_name || draft_document_name)) {
                   submission={dynamicSubmission}
                   className="show-req-astrik"
                   onChange={(change: any) => {
-                    const nextData = change?.data || {};
                     const changedKey = change?.changed?.component?.key;
+                    if (!changedKey) {
+                      return;
+                    }
+
+                    const nextData = change?.data || {};
 
                     if (
                       changedKey === "shareExpenseCheckbox" &&
