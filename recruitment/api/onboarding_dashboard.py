@@ -13,6 +13,8 @@ def _error_response(message, status_code=400):
     return {"success": False, "message": message, "data": {}}
 
 
+
+
 @frappe.whitelist()
 def get_dashboard(email):
     try:
@@ -28,8 +30,84 @@ def get_dashboard(email):
         )
 
         if not row:
-            return _error_response("No Employee Onboarding record found for this candidate.", 404)
+            # No Employee Onboarding record – fall back to Job Applicant status
+            ja_status = frappe.db.get_value("Job Applicant", email, "status") or ""
+            if ja_status == "Accepted":
+                return _success_response(
+                    "Onboarding dashboard fetched successfully.",
+                    {
+                        "name": None,
+                        "date_of_joining": None,
+                        "designation": None,
+                        "department": None,
+                        "work_location": None,
+                        "work_location_details": None,
+                        "key_contacts": [],
+                        "onboarding_status": True,
+                        "form_completion": {
+                            "total_fields": 0,
+                            "filled_fields": 0,
+                            "percentage": 0.0,
+                        },
+                        "onboarding_stage": "Onboarding Pending",
+                    },
+                )
+            # Neither condition satisfied
+            return _success_response(
+                "Onboarding dashboard fetched successfully.",
+                {
+                    "name": None,
+                    "date_of_joining": None,
+                    "designation": None,
+                    "department": None,
+                    "work_location": None,
+                    "work_location_details": None,
+                    "key_contacts": [],
+                    "onboarding_status": False,
+                    "form_completion": {
+                        "total_fields": 0,
+                        "filled_fields": 0,
+                        "percentage": 0.0,
+                        "fields": [],
+                    },
+                    "onboarding_stage": "Onboarding Pending",
+                },
+            )
 
+        # ── Onboarding Status ──────────────────────────────────────────────────
+        # true  : Employee Onboarding record exists
+        # true  : No record yet but Job Applicant status is "Accepted"
+        # false : Neither condition is met
+        onboarding_status = True  # we already have a record at this point
+
+        # ── Form Completion (from custom_candidate_portal_fields) ──────────────
+        # A field is "filled" when the candidate has submitted data (current_value is non-empty).
+        total_fields, filled_fields = frappe.db.sql(
+            """
+            SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN current_value IS NOT NULL AND current_value != '' THEN 1 ELSE 0 END) AS filled
+            FROM `tabEmployee Onboarding Portal Field`
+            WHERE parent = %s AND parenttype = %s
+            """,
+            (row.name, DOCTYPENAME),
+        )[0]
+        total_fields = int(total_fields or 0)
+        filled_fields = int(filled_fields or 0)
+        percentage = round((filled_fields / total_fields) * 100, 2) if total_fields else 0.0
+        form_completion = {
+            "total_fields": total_fields,
+            "filled_fields": filled_fields,
+            "percentage": percentage,
+        }
+
+        # ── Onboarding Stage ──────────────────────────────────────────────────
+        if form_completion["percentage"] == 100.0 and form_completion["total_fields"] > 0:
+            onboarding_stage = "Onboarding Complete"
+        else:
+            onboarding_stage = "Onboarding Pending"
+
+        # ── Key Contacts ──────────────────────────────────────────────────────
         key_contacts = frappe.get_all(
             "Employee Key Contact",
             filters={"parent": row.name, "parenttype": DOCTYPENAME},
@@ -44,6 +122,7 @@ def get_dashboard(email):
                 else None
             )
 
+        # ── Work Location ─────────────────────────────────────────────────────
         work_location_details = None
         if row.custom_work_location:
             work_location_details = frappe.db.get_value(
@@ -78,6 +157,10 @@ def get_dashboard(email):
             "work_location": row.custom_work_location,
             "work_location_details": work_location_details,
             "key_contacts": key_contacts,
+            # ── New fields ──────────────────────────────────────────────────
+            "onboarding_status": onboarding_status,
+            "form_completion": form_completion,
+            "onboarding_stage": onboarding_stage,
         }
 
         return _success_response("Onboarding dashboard fetched successfully.", data)
