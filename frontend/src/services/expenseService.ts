@@ -209,6 +209,7 @@ export const expenseService = {
     expenses: Array<Record<string, any>>,
     isResubmit?: boolean,
     approval_status?: string,
+    participants?: Array<Record<string, any>>,
   ) => {
     if (!expense_claim_name) {
       throw new Error("expense_claim_name is required");
@@ -225,6 +226,10 @@ export const expenseService = {
 
     if (approval_status) {
       expenseClaimData.approval_status = approval_status;
+    }
+
+    if (participants) {
+      expenseClaimData.participants = participants;
     }
 
     const payload = {

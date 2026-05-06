@@ -1162,17 +1162,50 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
 
 if (isEditingExistingExpense && (expense_claim_name || draft_document_name)) {
         const documentName = (draft_document_name || expense_claim_name) as string;
+        
+        const originalParticipants = (initialExpense?.participants as any[]) || [];
+
+        const activeParticipants = Array.isArray(dynamicFormData?.participants)
+          ? dynamicFormData.participants.filter((p: any) => !!p.employee || !!p.guest_name)
+          : [];
+
+        const activeMapped = activeParticipants.map((p: any) => {
+          const match = originalParticipants.find((orig: any) => {
+            if (p.employee_type === "Guest") {
+              return orig.employee_type === "Guest" && orig.guest_name === p.guest_name;
+            }
+            return orig.employee_type !== "Guest" && orig.employee === p.employee;
+          });
+
+          const dbName = match?.name || p.name;
+
+          return {
+            name: dbName,
+            employee_type: p.employee_type,
+            employee: p.employee,
+            employee_name: p.employee_name,
+            guest_name: p.guest_name,
+            percentage: p.percentage !== undefined && p.percentage !== null ? Number(p.percentage) : undefined,
+          };
+        });
+
+        const participantsData = dynamicFormData?.shareExpenseCheckbox
+          ? activeMapped
+          : [];
+
         const updatePayload = isDraftExpenseEdit
           ? {
               expense_claim_name: documentName,
               expenses: [expenseRecord],
               isResubmit: false,
               ...(forSubmit ? { approval_status: "Pending" } : {}),
+              participants: participantsData,
             }
           : {
               expense_claim_name: documentName,
               expenses: [expenseRecord],
               isResubmit: true,
+              participants: participantsData,
             };
 
         await updateExpenseClaim({

@@ -20,6 +20,7 @@ import {
   CalculateExpenseParams,
   CalculateExpenseResponse,
   ExpenseTypeFieldsResponse,
+  ParticipantUpdateItem,
 } from "../types/expenseAdvance";
 import { FilterCondition } from "../types/frappe";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
@@ -250,6 +251,7 @@ export type UpdateExpensePayload = {
   expenses: ExpenseItem[];
   isResubmit?: boolean;
   approval_status?: string;
+  participants?: ParticipantUpdateItem[];
 };
 
 export function useUpdateExpense() {
@@ -262,6 +264,7 @@ export function useUpdateExpense() {
         params.expenses,
         params.isResubmit,
         params.approval_status,
+        params.participants,
       );
     },
     onSuccess: () => {

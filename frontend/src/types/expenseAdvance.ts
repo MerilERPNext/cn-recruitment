@@ -100,6 +100,15 @@ export interface Participant {
   doctype: string;
 }
 
+export type ParticipantUpdateItem = {
+  name: string; // The database name/ID of the child row in custom_participants
+  employee_type?: string;
+  employee?: string;
+  employee_name?: string;
+  guest_name?: string;
+  percentage?: number;
+};
+
 export interface ApprovalStage {
   stage_name: string | null;
   user: string | null;
