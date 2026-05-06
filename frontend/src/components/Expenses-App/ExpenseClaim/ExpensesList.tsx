@@ -1619,6 +1619,7 @@ const ExpensesList: React.FC = () => {
               refetchTrigger={refetchAttendance}
               isSearch={true}
               isFilter={true}
+              onFiltersChange={handleFiltersChange}
               filterFields={[
                 {
                   fieldname: "approval_status",
