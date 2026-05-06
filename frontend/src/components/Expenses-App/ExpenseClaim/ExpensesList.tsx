@@ -1617,8 +1617,31 @@ const ExpensesList: React.FC = () => {
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}
               refetchTrigger={refetchAttendance}
-              isSearch={false}
-              isFilter={false}
+              isSearch={true}
+              isFilter={true}
+              filterFields={[
+                {
+                  fieldname: "approval_status",
+                  label: "Status",
+                  fieldtype: "Select",
+                  options: [
+                    { label: "Draft", value: "Draft" },
+                    { label: "Pending", value: "Pending" },
+                    { label: "Approved", value: "Approved" },
+                    { label: "Rejected", value: "Rejected" },
+                  ],
+                },
+                {
+                  fieldname: "creation_start",
+                  label: "Start Date",
+                  fieldtype: "Date",
+                },
+                {
+                  fieldname: "creation_end",
+                  label: "End Date",
+                  fieldtype: "Date",
+                },
+              ]}
               showRefreshButton={false}
               pageSize={10}
               infiniteScroll={false}
