@@ -153,7 +153,6 @@ const AttendanceRequest = ({
                       options: [
                         {
                           label: "Pending",
-                          key: "Pending",
                           value: "Pending",
                         },
                         { label: "Approved", value: "Approved" },
@@ -171,6 +170,9 @@ const AttendanceRequest = ({
                           },
                         },
                       ],
+                      emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  },
                     },
                     {
                       fieldname: "custom_request_type",
@@ -184,7 +186,6 @@ const AttendanceRequest = ({
                       ],
                     },
                   ]}
-                // defaultFilters={{ status: ["!=", "Cancelled"] }}
                 />
               ) : (
                 <></>

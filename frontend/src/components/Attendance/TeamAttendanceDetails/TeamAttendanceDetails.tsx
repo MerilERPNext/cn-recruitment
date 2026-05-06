@@ -159,7 +159,6 @@ const TeamAttendanceDetails = () => {
                   options: [
                     {
                       label: "Pending",
-                      key: "Pending",
                       value: "Pending",
                     },
                     {
