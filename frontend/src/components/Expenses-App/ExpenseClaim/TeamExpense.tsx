@@ -242,15 +242,18 @@ const TeamExpense = () => {
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", value: "Pending", customAPIParams: { todo_status: "Open" } },
+                    { label: "Pending", value: "Pending", },
                     {
                       label: "Approved",
                       key: "Approved",
                       value: ["in", ["Draft", "Approved", "Open", "Pending"]],
                       customAPIParams: { todo_status: "Closed" }
                     },
-                    { label: "Rejected", key: "Rejected", value: "Rejected" },
+                    { label: "Rejected", value: "Rejected" },
                   ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  },
                 },
                 {
                   fieldname: "custom_expense_category_name",

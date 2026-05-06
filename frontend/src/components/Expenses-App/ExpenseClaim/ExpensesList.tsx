@@ -1538,6 +1538,9 @@ const ExpensesList: React.FC = () => {
                       },
                     },
                   ],
+                   emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  },
                 },
                 {
                   fieldname: "custom_expense_category_name",
@@ -1631,6 +1634,9 @@ const ExpensesList: React.FC = () => {
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
                   ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  },
                 },
                 {
                   fieldname: "creation_start",
@@ -1644,9 +1650,6 @@ const ExpensesList: React.FC = () => {
                 },
               ]}
               showRefreshButton={false}
-              defaultFilters={{
-                approval_status: "Draft",
-              }}
               pageSize={10}
               infiniteScroll={false}
               loadMorePagination={false}
