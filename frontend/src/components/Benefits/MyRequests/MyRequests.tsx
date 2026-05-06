@@ -314,7 +314,6 @@ const MyRequests: React.FC = () => {
                     label: "Pending",
                     key: "Open",
                     value: "Open",
-                    customAPIParams: { todo_status: "Open" },
                   },
                   { label: "Approved", value: "Approved" },
                   { label: "Rejected", value: "Rejected" },
@@ -329,6 +328,9 @@ const MyRequests: React.FC = () => {
                     },
                   },
                 ],
+                emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  },
               },
             ]}
             onFiltersChange={(filter) => setCustomStatus(filterStatusMap[filter.custom_status as "Open" | "Approved" | "Rejected" | "Cancelled"])}
