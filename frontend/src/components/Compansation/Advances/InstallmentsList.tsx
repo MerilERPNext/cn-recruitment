@@ -30,7 +30,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
   const { isDesktop } = useScreenSize();
 
   const DesktopLayout = () => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col z-100 h-full">
       <div className="flex-shrink-0">
         <div className="px-4 py-1 md:py-2">
           <div className="border-b mb-1 border-gray-10">

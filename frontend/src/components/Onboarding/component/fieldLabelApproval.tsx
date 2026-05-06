@@ -550,7 +550,7 @@ export default function OnboardingFieldApproval() {
 
         {/* Content */}
         {!pageLoading && !pageError && activeSection && (
-          <div className="max-w-3xl space-y-4">
+          <div className="w-full space-y-4">
 
             {/* Breadcrumb */}
             <div className="text-xs text-gray-400">
@@ -681,9 +681,9 @@ export default function OnboardingFieldApproval() {
 
               {/* Card header */}
               <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
-                <h3 className="text-sm font-medium text-gray-800">{activeSection}</h3>
-                <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1.5 cursor-pointer text-xs text-gray-500">
+<div className="flex flex-col items-start gap-3">
+<h3 className="text-sm font-medium text-gray-800">{activeSection}</h3>
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-gray-500">
                     <input
                       type="checkbox"
                       checked={allCurSelected}
@@ -692,6 +692,9 @@ export default function OnboardingFieldApproval() {
                     />
                     Select all
                   </label>
+</div>
+                <div className="flex items-center gap-2">
+
                   <span className="text-xs text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-">
                     {activeIdx + 1} / {secKeys.length}
                   </span>

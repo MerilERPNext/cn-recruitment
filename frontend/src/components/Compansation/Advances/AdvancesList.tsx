@@ -19,7 +19,6 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceForm from "./AdvanceForm";
 import InstallmentsList from "./InstallmentsList";
-import Modal from "./commonModal";
 import ShowHideButton from "../ui/ShowHideButton";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
@@ -30,6 +29,7 @@ import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 import { queryClient } from "../../../providers/QueryProvider";
 import DataListView from "../../DataListView"; // ← adjust path as needed
+import { createPortal } from "react-dom";
 
 // ─── mapAdvanceData helper ────────────────────────────────────────────────────
 const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
@@ -239,7 +239,33 @@ const AdvancesList: React.FC = () => {
                   queryKey={["advances", employeeId]}
                   customAPI={customAPI}
                   isSearch={true}
-                  isFilter={false}
+                  isFilter={true}
+                  filterFields={[
+                    {
+                      fieldname: "custom_final_status",
+                      label: "Status",
+                      fieldtype: "Select",
+                      options: [
+                        {
+                          label: "Pending",
+                          key: "Pending",
+                          value: "Pending",
+                        },
+                        { label: "Approved", value: "Approved" },
+                        { label: "Rejected", value: "Rejected" },
+                        {
+                          label: "Revoked",
+                          value: "Revoked",
+                          excludeFieldFromFilters: true,
+                          customAPIParams: { todo_status: "Cancelled" },
+                          additionalFilters: {
+                            docstatus: 2,
+                            custom_allow_revoke: 1,
+                          },
+                        },
+                      ],
+                    },
+                  ]}
                   showPagination={true}
                   pageSize={10}
                   SkeletonComponent={CardSkeleton}
@@ -281,15 +307,17 @@ const AdvancesList: React.FC = () => {
           </CardTable>
         </div>
 
-        {showAdvanceForm && (
-          <Modal onClose={handleCloseModal}>
-            <AdvanceForm
-              docname={editAdvanceId}
-              user={user}
-              onClose={handleCloseModal}
-            />
-          </Modal>
-        )}
+        {showAdvanceForm &&
+  createPortal(
+    <AdvanceForm
+      docname={editAdvanceId}
+      user={user}
+      onClose={() => {
+        handleCloseModal();
+      }}
+    />,
+    document.body
+  )}
       </div>
     </div>
   );
