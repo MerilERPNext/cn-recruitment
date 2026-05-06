@@ -33,7 +33,7 @@ export const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
             </Typography>
           </div>
           <StatusBadge
-            status={item.status === "Draft" ? "Pending" : item.status}
+            status={item.approval_status || item.status}
           />
         </div>
 
@@ -112,7 +112,7 @@ export const SharedExpensesRow: React.FC<{ item: any }> = ({ item }) => {
       </Typography>
 
       <div className="flex items-center justify-center">
-        <StatusBadge status={item.status} />
+        <StatusBadge status={item.approval_status} />
       </div>
 
       <Typography variant="bodySmall" className="font-medium text-center">
