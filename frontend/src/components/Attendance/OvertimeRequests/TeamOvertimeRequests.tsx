@@ -131,6 +131,7 @@ const TeamOvertimeRequests = () => {
                   options: [
                     {
                       label: "Pending",
+                      key: "Open",
                       value: "Open",
                     },
                     {

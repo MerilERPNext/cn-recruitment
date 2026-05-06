@@ -161,7 +161,7 @@ const MyOvertimeRequests = () => {
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", value: "Open" },
+                    { label: "Pending", key: "Open", value: "Open" },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
                   ],
