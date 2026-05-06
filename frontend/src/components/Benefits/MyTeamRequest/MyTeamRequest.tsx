@@ -154,9 +154,7 @@ const MyTeamRequest: React.FC = () => {
                 options: [
                   {
                     label: "Pending",
-                    key: "Pending",
                     value: "Pending",
-                    customAPIParams: { todo_status: "Open" },
                   },
                   {
                     label: "Approved",
@@ -166,7 +164,6 @@ const MyTeamRequest: React.FC = () => {
                   },
                   {
                     label: "Rejected",
-                    key: "Rejected",
                     value: "Rejected",
                   },
                 ],

@@ -133,7 +133,6 @@ const TeamOvertimeRequests = () => {
                       label: "Pending",
                       key: "Open",
                       value: "Open",
-                      customAPIParams: { todo_status: "Open" },
                     },
                     {
                       label: "Approved",

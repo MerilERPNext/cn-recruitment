@@ -153,9 +153,7 @@ const AttendanceRequest = ({
                       options: [
                         {
                           label: "Pending",
-                          key: "Draft",
-                          value: "Draft",
-                          customAPIParams: { todo_status: "Open" },
+                          value: "Pending",
                         },
                         { label: "Approved", value: "Approved" },
                         { label: "Rejected", value: "Rejected" },
@@ -172,6 +170,9 @@ const AttendanceRequest = ({
                           },
                         },
                       ],
+                      emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  },
                     },
                     {
                       fieldname: "custom_request_type",
@@ -185,7 +186,6 @@ const AttendanceRequest = ({
                       ],
                     },
                   ]}
-                // defaultFilters={{ status: ["!=", "Cancelled"] }}
                 />
               ) : (
                 <></>

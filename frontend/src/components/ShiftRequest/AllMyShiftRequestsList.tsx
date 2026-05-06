@@ -104,13 +104,15 @@ const AllMyShiftRequestsList = () => {
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", value: "Draft" },
+                    { label: "Pending", key: "Draft", value: "Draft" },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
                   ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  },
                 },
               ]}
-              defaultFilters={{ status: ["!=", "Cancelled"] }}
               pageSize={10}
               infiniteScroll={false}
               loadMorePagination={false}
