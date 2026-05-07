@@ -116,9 +116,13 @@ def update_onboarding_details(email, data):
             frappe.local.response["http_status_code"] = 400
             return {"status": "error", "code": 400, "message": "No editable portal fields available. All fields are under review or already approved."}
 
+        # Only validate mandatory constraint for fields actually being submitted.
+        # A candidate may update one rejected field at a time without needing to
+        # supply all other editable/mandatory fields in the same request.
+        submitted_keys = set(data.keys()) & set(allowed_map.keys())
         missing = [
-            row.label or fn for fn, row in allowed_map.items()
-            if row.get("is_mandatory") and (fn not in data or data[fn] in (None, "", []))
+            allowed_map[fn].label or fn for fn in submitted_keys
+            if allowed_map[fn].get("is_mandatory") and data[fn] in (None, "", [])
         ]
         if missing:
             frappe.local.response["http_status_code"] = 422
@@ -128,6 +132,10 @@ def update_onboarding_details(email, data):
                 "message": "The following mandatory fields are missing: " + ", ".join(missing),
                 "missing_fields": missing,
             }
+
+        if not submitted_keys:
+            frappe.local.response["http_status_code"] = 400
+            return {"status": "error", "code": 400, "message": "None of the submitted fields are editable. They may be approved, read-only, or hidden."}
 
         meta_lookup = {f["fieldname"]: f for f in _read_onboarding_meta()}
         updated = []
