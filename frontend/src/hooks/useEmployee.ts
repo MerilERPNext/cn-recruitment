@@ -514,6 +514,13 @@ export const useGetEmployeeProfileOverview = (employee_id: string) => {
     enabled: !!employee_id,
   });
 };
+export const useGetEmployeeFieldsToTrack = () => {
+  return useQuery({
+    queryKey: ["all-emp-fields-to-track"],
+    queryFn: () => profileService.getEmployeeFieldsToTrack(),
+    staleTime: 1000 * 60 * 5,
+  });
+};
 export const useGetEmploymentHistoryData = (employee_id: string) => {
   return useQuery({
     queryKey: ["employment-history-data", employee_id],

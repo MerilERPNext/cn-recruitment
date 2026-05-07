@@ -4,7 +4,7 @@ import { Form } from "@tsed/react-formio";
 import SideDrawer from "../shared/SideDrawer";
 import toast from "react-hot-toast";
 import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
-import { useGetEmployeeDetailsByEmpIdForProfile } from "../../hooks/useEmployee";
+import { useGetEmployeeDetailsByEmpIdForProfile, useGetEmployeeFieldsToTrack } from "../../hooks/useEmployee";
 import Button from "../shared/atoms/Button";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
@@ -43,7 +43,11 @@ const EmployeeSidebarForm = ({
     const mutation = useUpdateFrappeDocument();
     const [isDirty, setIsDirty] = useState(false);
     const isInitializing = useRef(true);
+    const { data: employeeFieldsToTrack } = useGetEmployeeFieldsToTrack();
 
+    const isApprovable = employeeFieldsToTrack?.some((field: any) => {
+        return field.field_name == edit?.key
+    })
     useEffect(() => {
         setIsDirty(false);
         isInitializing.current = true;
@@ -305,7 +309,7 @@ const EmployeeSidebarForm = ({
                                 {mutation?.isPending || employeeIsLoading ? (
                                     <CircularLoader size="sm" color="white" />
                                 ) : (
-                                    `Submit ${edit?.fieldname ? "Field" : "Section"} For Approval`
+                                    `Submit ${edit?.fieldname ? "Field" : "Section"} ${isApprovable ? "For Approval" : ""}`
                                 )}{" "}
                             </Button>
                         </div>
