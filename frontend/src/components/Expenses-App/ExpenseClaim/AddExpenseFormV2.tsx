@@ -21,6 +21,7 @@ import {
   useGetUnitPrice,
   useUpdateExpense,
   useValidateExpense,
+  useDeleteExpenseAttachment,
   useUpdateFileAttachment,
 } from "../../../hooks/useExpense";
 import { buildExpenseTypeDynamicSchema } from "./expenseTypeFieldsMapper";
@@ -287,12 +288,14 @@ type ExistingAttachment = {
   size: number;
   url: string;
   file_url?: string;
+  fileDocName?: string;
   storage: "url";
   originalName?: string;
   type?: string;
 };
 
 type AttachmentDocument = {
+  name?: string;
   file_name?: string;
   file_url?: string;
 };
@@ -305,6 +308,7 @@ type ParticipantLike = {
 
 const getAttachmentIdentity = (attachment: any) => {
   const fileName =
+    attachment?.fileDocName ||
     attachment?.originalName ||
     attachment?.name ||
     attachment?.data?.message?.file_name ||
@@ -314,6 +318,84 @@ const getAttachmentIdentity = (attachment: any) => {
     attachment?.url || attachment?.file_url || attachment?.data?.message?.file_url || "";
 
   return `${fileName}::${fileUrl}`;
+};
+
+const toAttachmentArray = (value: unknown): any[] =>
+  Array.isArray(value) ? value : value ? [value] : [];
+
+const normalizeAttachmentUrl = (value: unknown): string => {
+  if (typeof value !== "string" || !value.trim()) return "";
+
+  const url = value.trim();
+
+  if (url.startsWith("blob:")) {
+    return url;
+  }
+
+  if (url.startsWith("http")) {
+    try {
+      const parsed = new URL(url);
+      return parsed.pathname || url;
+    } catch {
+      return url;
+    }
+  }
+
+  if (url.startsWith("/")) {
+    return url;
+  }
+
+  return url.startsWith("files/") ? `/${url}` : `/files/${url}`;
+};
+
+const isPendingLocalAttachment = (attachment: any) => {
+  const actualFile = attachment?.file;
+  const hasLocalFile =
+    actualFile instanceof Blob || actualFile instanceof File;
+
+  return hasLocalFile && !attachment?.url && !attachment?.file_url;
+};
+
+const findMatchingAttachmentDocument = (
+  attachments: AttachmentDocument[],
+  attachment: any,
+) => {
+  const attachmentUrl = normalizeAttachmentUrl(
+    attachment?.url || attachment?.file_url || attachment?.data?.message?.file_url,
+  );
+  const candidateNames = new Set(
+    [
+      attachment?.fileDocName,
+      attachment?.name,
+      attachment?.originalName,
+      attachment?.data?.message?.file_name,
+      attachment?.file?.name,
+    ].filter(
+      (value): value is string => typeof value === "string" && value.length > 0,
+    ),
+  );
+
+  return attachments.find((doc) => {
+    const docUrl = normalizeAttachmentUrl(doc.file_url);
+
+    if (attachmentUrl && docUrl && attachmentUrl === docUrl) {
+      return true;
+    }
+
+    return Boolean(
+      (doc.name && candidateNames.has(doc.name)) ||
+        (doc.file_name && candidateNames.has(doc.file_name)),
+    );
+  });
+};
+
+const areAttachmentListsEqual = (left: any[], right: any[]) => {
+  if (left.length !== right.length) return false;
+
+  const leftIds = left.map(getAttachmentIdentity).sort();
+  const rightIds = right.map(getAttachmentIdentity).sort();
+
+  return leftIds.every((value, index) => value === rightIds[index]);
 };
 
 const dedupeAttachments = <T,>(attachments: T[]): T[] => {
@@ -372,6 +454,8 @@ const normalizeExistingAttachment = (value: unknown): ExistingAttachment | null 
     originalName?: unknown;
     url?: unknown;
     file_url?: unknown;
+    fileDocName?: unknown;
+    file_docname?: unknown;
     size?: unknown;
     type?: unknown;
   };
@@ -401,6 +485,12 @@ const normalizeExistingAttachment = (value: unknown): ExistingAttachment | null 
     size: resolvedSize,
     url: rawUrl,
     file_url: rawUrl,
+    fileDocName:
+      typeof attachment.fileDocName === "string" && attachment.fileDocName
+        ? attachment.fileDocName
+        : typeof attachment.file_docname === "string" && attachment.file_docname
+          ? attachment.file_docname
+          : undefined,
     storage: "url",
     originalName:
       typeof attachment.originalName === "string" && attachment.originalName
@@ -419,6 +509,7 @@ const mapClaimAttachments = (
       originalName: attachment.file_name,
       url: attachment.file_url,
       file_url: attachment.file_url,
+      fileDocName: attachment.name,
       storage: "url",
     });
 
@@ -475,6 +566,10 @@ const buildInitialDynamicFormData = (
     ? nextData.attach_receipt
     : nextData.attach_receipt
       ? [nextData.attach_receipt]
+      : Array.isArray(nextData.attachments)
+        ? nextData.attachments
+        : nextData.attachments
+          ? [nextData.attachments]
       : nextData.custom_attach_receipt
         ? [nextData.custom_attach_receipt]
         : [];
@@ -571,15 +666,24 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
 
   const { data: expenseTypeFieldsData, isFetching: isFetchingExpenseFields } =
     useGetExpenseTypeFields(selectedExpenseType);
-  const { data: claimAttachments } = useGetExpenseAttachments(
-    linkedDocumentName,
-    linkedDocumentType,
-  );
+  const {
+    data: claimAttachments,
+    isFetched: hasFetchedClaimAttachments,
+    refetch: refetchClaimAttachments,
+  } = useGetExpenseAttachments(linkedDocumentName, linkedDocumentType);
   const { mutateAsync: validateExpense } = useValidateExpense();
   const { mutateAsync: submitExpenseClaim } = usePostExpenseClaim();
   const { mutateAsync: updateExpenseClaim } = useUpdateExpense();
+  const { mutateAsync: deleteExpenseAttachment } = useDeleteExpenseAttachment();
   const { mutateAsync: updateFileLink } = useUpdateFileAttachment();
   const { uploadFiles } = useFileUploader();
+  const claimAttachmentDocuments = useMemo(
+    () =>
+      Array.isArray(claimAttachments)
+        ? (claimAttachments as AttachmentDocument[])
+        : [],
+    [claimAttachments],
+  );
 
   const expenseTypePayload = useMemo(
     () =>
@@ -710,14 +814,63 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     return nextData;
   };
 
-  const removeFormioFile = (compKey: string, index: number) => {
-    setDynamicFormData((prev) => {
-      const next = { ...prev };
-      const files = Array.isArray(next[compKey]) ? [...next[compKey]] : [];
-      files.splice(index, 1);
-      next[compKey] = files;
-      return next;
-    });
+  const removeFormioFile = async (compKey: string, index: number) => {
+    const currentValue = dynamicFormData?.[compKey];
+    const currentFiles = toAttachmentArray(currentValue);
+    const targetAttachment = currentFiles[index];
+    const isArrayField = Array.isArray(currentValue);
+    const nextFiles = currentFiles.filter((_: any, i: number) => i !== index);
+
+    const nextFieldValue =
+      isArrayField || currentValue === undefined
+        ? nextFiles
+        : (nextFiles[0] ?? []);
+
+    try {
+      const container = document.querySelector(`.formio-component-${compKey}`);
+      if (container) {
+        const removeButtons = container.querySelectorAll(
+          'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times'
+        );
+        if (removeButtons && removeButtons[index]) {
+          (removeButtons[index] as HTMLElement).click();
+        } else {
+          console.error("Form.io native remove button not found");
+        }
+      }
+
+      setDynamicFormData((prev) => ({
+        ...prev,
+        [compKey]: nextFieldValue,
+      }));
+
+      if (
+        !targetAttachment ||
+        !linkedDocumentName ||
+        isPendingLocalAttachment(targetAttachment)
+      ) {
+        return;
+      }
+
+      const matchingDocument = findMatchingAttachmentDocument(
+        claimAttachmentDocuments,
+        targetAttachment,
+      );
+
+      if (!matchingDocument?.name) {
+        return;
+      }
+
+      await deleteExpenseAttachment(matchingDocument.name);
+      attachmentHydrationRef.current = false;
+      await refetchClaimAttachments();
+    } catch (err) {
+      console.error("Failed to remove file from formio", err);
+      setDynamicFormData((prev) => ({
+        ...prev,
+        [compKey]: isArrayField ? currentFiles : (currentFiles[0] ?? []),
+      }));
+    }
   };
 
   const { data: employeesList, isFetching: isLoadingEmployees } = useEmployees([
@@ -829,32 +982,61 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   }, [currentEmployee?.name, initialExpense]);
 
   useEffect(() => {
-    if (!claimAttachments || attachmentHydrationRef.current) return;
+    if (!linkedDocumentName || !hasFetchedClaimAttachments) return;
 
-    const nextAttachments = mapClaimAttachments(
-      claimAttachments as AttachmentDocument[],
-    );
+    const nextAttachments = mapClaimAttachments(claimAttachmentDocuments);
 
-    if (nextAttachments.length === 0) return;
-
-    attachmentHydrationRef.current = true;
     setDynamicFormData((prev) => {
-      const existingAttachments = Array.isArray(prev.attach_receipt)
-        ? prev.attach_receipt
-        : prev.attach_receipt
-          ? [prev.attach_receipt]
-          : [];
+      let changed = !attachmentHydrationRef.current;
+      const nextData = { ...prev };
 
-      if (existingAttachments.length > 0) {
-        return prev;
+      const existingAttachments = toAttachmentArray(prev.attach_receipt);
+      const pendingReceiptAttachments = existingAttachments.filter(
+        isPendingLocalAttachment,
+      );
+      const mergedReceiptAttachments = dedupeAttachments([
+        ...nextAttachments,
+        ...pendingReceiptAttachments,
+      ]);
+
+      if (
+        !areAttachmentListsEqual(existingAttachments, mergedReceiptAttachments)
+      ) {
+        nextData.attach_receipt = mergedReceiptAttachments;
+        changed = true;
       }
 
-      return {
-        ...prev,
-        attach_receipt: dedupeAttachments(nextAttachments),
-      };
+      customFileKeys.forEach((key) => {
+        const currentFiles = toAttachmentArray(prev[key]);
+        if (currentFiles.length === 0) return;
+
+        const filteredFiles = currentFiles.filter((file) => {
+          if (isPendingLocalAttachment(file)) {
+            return true;
+          }
+
+          return Boolean(
+            findMatchingAttachmentDocument(claimAttachmentDocuments, file),
+          );
+        });
+
+        if (!areAttachmentListsEqual(currentFiles, filteredFiles)) {
+          nextData[key] = Array.isArray(prev[key])
+            ? filteredFiles
+            : (filteredFiles[0] ?? []);
+          changed = true;
+        }
+      });
+
+      attachmentHydrationRef.current = true;
+      return changed ? nextData : prev;
     });
-  }, [claimAttachments]);
+  }, [
+    claimAttachmentDocuments,
+    customFileKeys,
+    hasFetchedClaimAttachments,
+    linkedDocumentName,
+  ]);
 
   useEffect(() => {
     if (hydrationRef.current || isEditingExistingExpense) return;
@@ -923,8 +1105,13 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   );
 
   const dynamicSubmission = useMemo(
-    () => ({ data: buildInitialDynamicFormData(initialExpense) }),
-    [initialExpense],
+    () => ({
+      data: {
+        ...buildInitialDynamicFormData(initialExpense),
+        ...dynamicFormData,
+      },
+    }),
+    [initialExpense, dynamicFormData],
   );
 
   const currentAttachments = useMemo(() => {
@@ -964,6 +1151,26 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
         }),
       ),
     [currentAttachments, customFormFileUrls],
+  );
+
+  const hasFileFieldDelta = useCallback(
+    (nextData: Record<string, any>) => {
+      const watchedKeys = new Set<string>(["attach_receipt", ...customFileKeys]);
+
+      for (const key of watchedKeys) {
+        if (
+          !areAttachmentListsEqual(
+            toAttachmentArray(dynamicFormData?.[key]),
+            toAttachmentArray(nextData?.[key]),
+          )
+        ) {
+          return true;
+        }
+      }
+
+      return false;
+    },
+    [customFileKeys, dynamicFormData],
   );
 
   const buildCombinedData = () => {
@@ -1393,17 +1600,33 @@ if (isEditingExistingExpense && (expense_claim_name || draft_document_name)) {
                   className="show-req-astrik"
                   onChange={(change: any) => {
                     const changedKey = change?.changed?.component?.key;
+                    const nextData = change?.data || {};
+
                     if (!changedKey) {
+                      if (hasFileFieldDelta(nextData)) {
+                        setDynamicFormData({ ...nextData });
+                      }
                       return;
                     }
-
-                    const nextData = change?.data || {};
 
                     if (
                       changedKey === "shareExpenseCheckbox" &&
                       isShareAllowed
                     ) {
                       const isChecked = Boolean(nextData?.shareExpenseCheckbox);
+                      const hasExistingParticipants =
+                        Array.isArray(nextData?.participants) &&
+                        nextData.participants.length > 0;
+
+                      if (
+                        isEditingExistingExpense &&
+                        isChecked &&
+                        hasExistingParticipants
+                      ) {
+                        setDynamicFormData({ ...nextData });
+                        return;
+                      }
+
                       const currentAmount = Number(nextData?.amount ?? 0);
 
                       if (isChecked && !(currentAmount > 0)) {
@@ -1524,9 +1747,7 @@ if (isEditingExistingExpense && (expense_claim_name || draft_document_name)) {
         />
 
         {customFileComponents.map((comp: any) => {
-          const files = Array.isArray(dynamicFormData[comp.key])
-            ? dynamicFormData[comp.key]
-            : [];
+          const files = toAttachmentArray(dynamicFormData[comp.key]);
 
           if (files.length === 0) return null;
 

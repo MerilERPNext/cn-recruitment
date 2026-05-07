@@ -85,6 +85,16 @@ export const expenseService = {
     return result.data as any;
   },
 
+  getExpenseReferenceDoc: async (
+    referenceName: string,
+    doctype: string = "Expense Claim",
+  ): Promise<any> => {
+    return FrappeAPI.callMethod("cn_hrms_core.api.get_reference_doc", {
+      reference_name: referenceName,
+      doctype,
+    });
+  },
+
   postExpenseClaim: async (expenses_data: string) => {
     return FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.create_expense_claims_by_category",
@@ -425,6 +435,10 @@ export const expenseService = {
     data: { attached_to_doctype: string; attached_to_name: string },
   ) => {
     return FrappeAPI.updateDocument("File", fileName, data);
+  },
+
+  deleteFile: async (fileName: string) => {
+    return FrappeAPI.deleteDocument("File", fileName);
   },
 
   resubmitApprovalEvent: async (doctype: string, docname: string) => {

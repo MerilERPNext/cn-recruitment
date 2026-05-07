@@ -417,7 +417,24 @@ export const useGetExpenseAttachments = (
       return expenseService.getExpenseAttachments(documentName, doctype);
     },
     enabled: !!documentName,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+};
+
+export const useGetExpenseReferenceDoc = (
+  referenceName?: string,
+  doctype: string = "Expense Claim",
+) => {
+  return useQuery({
+    queryKey: ["expense-reference-doc", doctype, referenceName],
+    queryFn: () => {
+      if (!referenceName) throw new Error("referenceName is required");
+      return expenseService.getExpenseReferenceDoc(referenceName, doctype);
+    },
+    enabled: !!referenceName,
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 };
 
@@ -503,6 +520,24 @@ export function useUpdateFileAttachment() {
       fileName: string;
       data: { attached_to_doctype: string; attached_to_name: string };
     }) => expenseService.updateFile(fileName, data),
+  });
+}
+
+export function useDeleteExpenseAttachment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (fileName: string) => expenseService.deleteFile(fileName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["expense-attachments"] });
+      queryClient.invalidateQueries({ queryKey: ["custom-api"] });
+      queryClient.invalidateQueries({ queryKey: ["custom-api-infinite"] });
+    },
+    onError: (err: any) => {
+      toast.error(
+        errorResponseFormater(err, "Failed to delete attachment."),
+      );
+    },
   });
 }
 
