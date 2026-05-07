@@ -242,7 +242,7 @@ const AdvancesList: React.FC = () => {
                   isFilter={true}
                   filterFields={[
                     {
-                      fieldname: "custom_final_status",
+                      fieldname: "status",
                       label: "Status",
                       fieldtype: "Select",
                       options: [
