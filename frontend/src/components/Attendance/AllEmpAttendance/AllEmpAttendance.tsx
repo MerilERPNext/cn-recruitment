@@ -514,12 +514,15 @@ const AllEmpAttendance = () => {
                               ? event.request_type
                               : event.doctype;
                             return (
-                              <span
-                                key={i}
-                                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getEventColor(eventType)}`}
-                              >
-                                {event?.custom_status}
-                              </span>
+                              <Tooltip content={eventType}>
+
+                                <span
+                                  key={i}
+                                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getEventColor(eventType)}`}
+                                >
+                                  {event?.custom_status || event?.status}
+                                </span>
+                              </Tooltip>
                             );
                           })}
                         </div>

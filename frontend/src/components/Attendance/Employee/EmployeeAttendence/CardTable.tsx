@@ -37,9 +37,6 @@ const Cardtable: React.FC<prop> = ({
               employee: effectiveEmployeeId,
             },
           }}
-          // defaultFilters={{
-          //   custom_status: "Pending",
-          // }}
           ItemComponent={(props: { item: MyAttendanceRequest }) => {
             return (
               <EmpAttendanceRequestCard
@@ -50,6 +47,7 @@ const Cardtable: React.FC<prop> = ({
               />
             );
           }}
+
           SkeletonComponent={CardSkeleton}
           onItemClick={(data) => {
             console.log(data);

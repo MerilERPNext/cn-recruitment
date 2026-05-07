@@ -54,7 +54,11 @@ const MyLeaveRequests = ({
         label: "Status",
         fieldtype: "Select" as const,
         options: [
-          { label: "Pending", key: "Open", value: "Open" },
+          {
+            label: "Pending", key: "Open", value: "Open",
+            customAPIParams: { todo_status: ["in", ["Open", "Closed"]] },
+
+          },
           { label: "Approved", value: "Approved" },
           { label: "Rejected", value: "Rejected" },
           {
@@ -71,8 +75,8 @@ const MyLeaveRequests = ({
           },
         ],
         emptyValueConfig: {
-                  filterValue: ["!=", "Cancelled"],
-                },
+          filterValue: ["!=", "Cancelled"],
+        },
       },
       {
         fieldname: "leave_type",

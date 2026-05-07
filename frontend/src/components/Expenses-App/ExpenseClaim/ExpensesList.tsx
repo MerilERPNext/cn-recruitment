@@ -226,8 +226,8 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           roles={item?.allocated_roles}
           role={item?.role}
           username={item?.username}
-        RoleAssignedUsers={item?.role_assigned_users}
-      />
+          RoleAssignedUsers={item?.role_assigned_users}
+        />
 
         <div className={isActed ? "pointer-events-none opacity-50" : ""}>
           <MyApprovalActionPill
@@ -914,8 +914,8 @@ const ExpensesList: React.FC = () => {
                   setSelectedMyExpensesDraftIds(new Set());
                 }}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "expenses"
-                    ? "bg-white text-primary shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
                   }`}
               >
                 My Expenses
@@ -927,8 +927,8 @@ const ExpensesList: React.FC = () => {
                   setSelectedMyExpensesDraftIds(new Set());
                 }}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "shared"
-                    ? "bg-white text-primary shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
                   }`}
               >
                 Shared Expenses
@@ -951,8 +951,8 @@ const ExpensesList: React.FC = () => {
       {isDraftFilter && (
         <div
           className={`md:hidden fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${selectedMyExpensesDraftIds.size > 0
-              ? "translate-y-0 opacity-100 pointer-events-auto"
-              : "translate-y-full opacity-0 pointer-events-none"
+            ? "translate-y-0 opacity-100 pointer-events-auto"
+            : "translate-y-full opacity-0 pointer-events-none"
             }`}
         >
           <div className="bg-white border-t border-gray-200 shadow-[0_-4px_24px_rgba(0,0,0,0.12)] px-4 py-3">
@@ -1553,6 +1553,7 @@ const ExpensesList: React.FC = () => {
                     {
                       label: "Pending",
                       value: "Pending",
+                      customAPIParams: { todo_status: ["in", ["Open", "Closed"]] },
                     },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
@@ -1567,7 +1568,7 @@ const ExpensesList: React.FC = () => {
                       },
                     },
                   ],
-                   emptyValueConfig: {
+                  emptyValueConfig: {
                     filterValue: ["!=", "Cancelled"],
                   },
                 },

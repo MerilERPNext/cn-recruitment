@@ -14,6 +14,7 @@ interface TooltipProps {
   className?: string;
   triggerClassName?: string;
   delay?: number;
+  type?: "default" | "custom"
 }
 
 const Tooltip: React.FC<TooltipProps> = ({
@@ -23,6 +24,7 @@ const Tooltip: React.FC<TooltipProps> = ({
   className = "",
   triggerClassName = "",
   delay = 200,
+  type = "default"
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
@@ -191,14 +193,21 @@ const Tooltip: React.FC<TooltipProps> = ({
         left: coords.left,
       }}
     >
-      <div
-        className={`relative px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg whitespace-normal break-words text-center max-w-xs ${className}`}
-      >
-        {content}
+      {type === "custom" ? (
+        <div className={`relative ${className}`}
+        >
+          {content}
+        </div>
+      ) : (
+        <div
+          className={`relative px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg whitespace-normal break-words text-center max-w-xs ${className}`}
+        >
+          {content}
 
-        {/* ✅ Arrow */}
-        <div className={`absolute w-0 h-0 border-4 ${getArrowClasses()}`} />
-      </div>
+          {/* ✅ Arrow */}
+          <div className={`absolute w-0 h-0 border-4 ${getArrowClasses()}`} />
+        </div>
+      )}
     </div>
   );
 

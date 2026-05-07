@@ -299,7 +299,8 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
                             {rolesArray.map((r, idx) => {
                                 const assigned = RoleAssignedUsers?.find((data) => data.role === r);
-                                const hasUsers = assigned && assigned.users.length > 0;
+                                console.log(assigned, "--------------------------------")
+                                const hasUsers = assigned && assigned?.user?.length > 0;
                                 return (
                                     <span
                                         key={`val-r-${idx}-${r}`}
@@ -320,7 +321,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                                             ${hasUsers ? "cursor-pointer hover:bg-secondary-100 transition-colors" : ""}
                                         `}
                                     >
-                                        {r} {hasUsers && `(${assigned.users.length})`}
+                                        {r} {hasUsers && `(${assigned?.user?.length})`}
                                     </span>
                                 );
                             })}
@@ -335,7 +336,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
                             <div className="flex flex-col gap-0.5 min-w-0">
                                 <span className="text-[10px] font-brand font-semibold uppercase tracking-wider text-gray-500">
-                                    {usersArray.length > 1 ? "Users" : "User"}
+                                    {usersArray?.length > 1 ? "Users" : "User"}
                                 </span>
 
                                 <div className="flex flex-wrap gap-1 mt-1">
@@ -355,13 +356,13 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
                             <div className="flex flex-col gap-1 min-w-0">
                                 <span className="text-[10px] font-brand font-semibold uppercase tracking-wider text-gray-500">
-                                    {rolesArray.length > 1 ? "Roles" : "Role"}
+                                    {rolesArray?.length > 1 ? "Roles" : "Role"}
                                 </span>
 
                                 <div className="flex flex-wrap gap-1">
                                     {rolesArray.map((r, idx) => {
                                         const assigned = RoleAssignedUsers?.find((data) => data.role === r);
-                                        const hasUsers = assigned && assigned.users.length > 0;
+                                        const hasUsers = assigned && assigned.user?.length > 0;
                                         return (
                                             <span
                                                 key={`role-${idx}-${r}`}
@@ -382,7 +383,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                                                     ${hasUsers ? "cursor-pointer hover:bg-secondary-100 transition-colors" : ""}
                                                 `}
                                             >
-                                                {r} {hasUsers && `(${assigned.users.length})`}
+                                                {r} {hasUsers && `(${assigned.user?.length})`}
                                             </span>
                                         );
                                     })}

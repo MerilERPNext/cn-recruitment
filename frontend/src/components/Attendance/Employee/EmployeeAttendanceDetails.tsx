@@ -34,7 +34,7 @@ import { getBadgePropsByStatus } from "../../../utils/helperUtils";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
+import formatToIndianDate, { formatToIndianDateWithTime } from "../../../utils/formatToIndianDate";
 import OvertimeJournal from "./OvertimeJournal";
 
 interface EmployeeAttendanceDetailsProps {
@@ -294,8 +294,13 @@ const EmployeeAttendanceDetails = ({
             date={validDate ? format(validDate, "dd-MM-yyyy") : ""}
           />
           {onClose && (
-            <Button variant="soft" size="sm" onClick={onClose}>
-              <X className="w-5 h-5 text-gray-500" />
+            <Button
+              variant="subtle"
+              onClick={onClose}
+              className="rounded-md hover:bg-gray-100"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
             </Button>
           )}
         </div>
@@ -644,7 +649,8 @@ export const AttendanceRequestInfo = ({
       // Validate date
       if (isNaN(date.getTime())) return timeString;
 
-      return format(date, "hh:mm a");
+      // 24-hour format
+      return format(date, "HH:mm");
     } catch {
       return timeString;
     }
@@ -817,7 +823,7 @@ export const AttendanceRequestInfo = ({
               Created On
             </Typography>
             <Typography variant="bodySmall" className="text-gray-900">
-              {formatToIndianDate(data.creation)}
+              {formatToIndianDateWithTime(data.creation)}
             </Typography>
           </div>
         )}

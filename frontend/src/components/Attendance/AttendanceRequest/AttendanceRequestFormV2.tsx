@@ -1160,13 +1160,14 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
             {forActionType === "edit" ? "Edit" : ""} Attendance Request
           </h2>
           {isDesktop && (
-            <button
+            <Button
+              variant="subtle"
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              className="rounded-md hover:bg-gray-100"
               aria-label="Close"
             >
               <X className="h-5 w-5 text-gray-600" />
-            </button>
+            </Button>
           )}
         </div>
 
