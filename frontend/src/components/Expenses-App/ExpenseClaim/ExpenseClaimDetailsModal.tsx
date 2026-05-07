@@ -6,6 +6,10 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import {
+  useGetExpenseAttachments,
+  useGetExpenseReferenceDoc,
+} from "../../../hooks/useExpense";
+import {
   ApprovalStage,
   Expense,
   ExpenseClaim,
@@ -18,7 +22,6 @@ import { Typography } from "../../shared/atoms/Typography";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 import ApprovalStagesProgress from "./ApprovalStagesProgress";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
-import { useGetExpenseAttachments } from "../../../hooks/useExpense";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 interface ExpenseClaimModalProps {
@@ -30,6 +33,7 @@ interface ExpenseClaimModalProps {
   canEdit?: boolean;
   todoStatus?: string | null;
   status?: string;
+  isDraft?: boolean;
 }
 
 const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
@@ -40,12 +44,21 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   canEdit: canEditProp = false,
   todoStatus = null,
   status,
+  isDraft = false,
 }) => {
-  const raw = useFrappeDocument("Expense Claim", id as string);
+  const raw = useFrappeDocument("Expense Claim", isDraft ? "" : (id as string));
+  const draftRaw = useGetExpenseReferenceDoc(
+    isDraft ? (id || undefined) : undefined,
+    "Expense Claim",
+  );
   const navigate = useNavigate();
-  const data = raw.data as ExpenseClaim | undefined;
-  const isLoading = raw.isLoading;
-  const error = raw.error;
+  const data = (
+    isDraft
+      ? ((draftRaw.data as any)?.reference_document ?? draftRaw.data)
+      : raw.data
+  ) as ExpenseClaim | undefined;
+  const isLoading = isDraft ? draftRaw.isLoading : raw.isLoading;
+  const error = isDraft ? draftRaw.error : raw.error;
   const { data: currentUser } = useCurrentUser();
   const { isDesktop } = useScreenSize();
   const { data: claimAttachments } = useGetExpenseAttachments(id || undefined);

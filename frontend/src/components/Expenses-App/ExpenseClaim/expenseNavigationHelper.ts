@@ -15,6 +15,8 @@ export interface ExpenseNavigationExpense extends UnknownRecord {
   merchant?: string;
   invoice_number?: string;
   vehicle_type?: string;
+  attachments?: unknown;
+  attach_receipt?: unknown;
   custom_attach_receipt?: unknown;
   participants?: unknown[];
   from_location?: string;
@@ -71,6 +73,10 @@ export const buildExpenseNavigationState = (
       : itemData.custom_units !== undefined
         ? Number(itemData.custom_units)
         : undefined;
+  const mappedAttachments =
+    itemData.attachments ??
+    claimData.attachments ??
+    itemData.custom_attach_receipt;
 
   return {
     expense_claim_name: claimName,
@@ -132,6 +138,8 @@ export const buildExpenseNavigationState = (
           : typeof itemData.vehicle_type === "string"
             ? itemData.vehicle_type
             : undefined,
+      attachments: mappedAttachments,
+      attach_receipt: mappedAttachments,
       custom_attach_receipt: itemData.custom_attach_receipt,
       participants: Array.isArray(claimData.custom_participants)
         ? (claimData.custom_participants as unknown[])

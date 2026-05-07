@@ -238,11 +238,17 @@ export const useGetOvertimeJournal = (
 };
 export const useGetToDoWithReferenceDoc = (
   todo_id?: string,
-  reference_name?: string
+  reference_name?: string,
+  doctype?: string,
 ): UseQueryResult<any, Error> => {
   return useQuery<any, Error>({
-    queryKey: ["todo-refdocs", todo_id, reference_name],
-    queryFn: () => attendanceService.getToDoWithReferenceDoc(todo_id, reference_name),
+    queryKey: ["todo-refdocs", todo_id, reference_name, doctype],
+    queryFn: () =>
+      attendanceService.getToDoWithReferenceDoc(
+        todo_id,
+        reference_name,
+        doctype,
+      ),
     enabled: !!todo_id || !!reference_name,
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
