@@ -53,6 +53,7 @@ const renderAmount = (value: number | string | undefined, showAmount: boolean) =
 };
 
 const DesktopRow = ({ item, showAmount, onView, onVersions }: RowProps) => {
+  console.log("Rendering DesktopRow for item:", item);
   const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
   return (
     <div
@@ -513,7 +514,7 @@ export default function SalaryAssignmentList() {
                               variant="bodySmall"
                               className="font-medium whitespace-nowrap"
                             >
-                              Annual: {renderAmount(item.amount, showAmount)}
+                              Annual: {renderAmount(item.annual_amount, showAmount)}
                             </Typography>
                             <Typography
                               variant="caption"
@@ -522,7 +523,7 @@ export default function SalaryAssignmentList() {
                             >
                               Monthly:{" "}
                               {renderAmount(
-                                item.amount ? item.amount / 12 : undefined,
+                                item.amount ? item.amount : undefined,
                                 showAmount,
                               )}
                             </Typography>
