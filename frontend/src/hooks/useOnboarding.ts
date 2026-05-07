@@ -56,7 +56,7 @@ export function useToast(): UseToastReturn {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback(
-    (msg: string, type: ToastType = "success") => {
+    (msg: string, type: ToastType = "success",) => {
       setToast({ msg, type });
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => setToast(null), 2800);

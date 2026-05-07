@@ -13,6 +13,7 @@ import DataListView from "../../DataListView";
 import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
 import { Loan } from "./Type/loan";
 import { createPortal } from "react-dom";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
 const titles = [
   "",
@@ -51,32 +52,33 @@ const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
   {
     sortable: true,
     field: "name",
-    getValue: (item: Loan) =>
-      item.loan_name ?? "",
+    getValue: (item: Loan) => item.loan_name ?? "",
   },
   {
     sortable: true,
     field: "loan_product",
-    getValue: (item: Loan) =>
-      item?.loan_type ?? "",
-  }, {
+    getValue: (item: Loan) => item?.loan_type ?? "",
+  },
+  {
     sortable: true,
     field: "loan_amount",
-    getValue: (item: Loan) =>
-      item?.loan_requested_amount ?? "",
+    getValue: (item: Loan) => item?.loan_requested_amount ?? "",
   },
   {
     sortable: false,
   },
   {
     sortable: false,
-  }, {
+  },
+  {
     sortable: false,
-  }, {
+  },
+  {
     sortable: true,
     field: "repayment_periods",
     getValue: (item: Loan) => item.loan_tenure ?? 0,
-  }, {
+  },
+  {
     sortable: true,
     field: "custom_repayment_start_date",
     getValue: (item: Loan) => item.loan_start_date ?? 0,
@@ -91,16 +93,17 @@ const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
 
 export default function LoansPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
+ const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { isDesktop } = useScreenSize();
-  const { data: user, isFetching: userLoading } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: user, isFetching: userLoading } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
   const employeeId = user?.employee ?? "";
   const [loanId, setLoanId] = useState<string | null>(null);
   const handleEdit = (docname: string) => {
     setLoanId(docname);
     setIsDialogOpen(true);
   };
-
 
   // UI Permission check
   const { data: uiPermission } = useGetUiPermission("Compensation");
@@ -122,6 +125,7 @@ export default function LoansPage() {
   const handleGoToLoanDetails = (loan_application: string) => {
     navigate(`/webapp/salary-slip-app/loan/${loan_application}`);
   };
+
   useEffect(() => {
     if (canCreateLoan) {
       setActionButtonConfig({
@@ -143,23 +147,19 @@ export default function LoansPage() {
         <div className="flex-shrink-0">
           <div className="px-1 md:px-6 py-1 md:py-4">
             <div className="flex items-center justify-between">
-              {isDesktop ? (
+              {isDesktop && (
                 <div>
                   <Typography variant="h4">My Loan Requests</Typography>
                   <Typography variant="bodySmall" color="body2">
                     Track and manage your loan requests
                   </Typography>
                 </div>
-              ) : (
-                <div>
-                  <Typography variant="h4">My Loan Requests</Typography>
-                </div>
               )}
             </div>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        <div className="flex-1 overflow-y-auto md:px-4 pb-10 md:pb-20">
           <div className="max-w-screen">
             <CardTable
               titles={titles}
@@ -167,45 +167,44 @@ export default function LoansPage() {
               columnSortConfig={COLUMN_SORT_CONFIG}
             >
               <DataListView
-                queryKey={[
-                  "loan-requests",
-                  employeeId,
-                ]}
+                queryKey={["loan-requests", employeeId]}
                 customAPI={{
-                  method: "cn_indian_payroll.cn_indian_payroll.overrides.loan_dashboard.print_loan_dashboard",
+                  method:
+                    "cn_indian_payroll.cn_indian_payroll.overrides.loan_dashboard.print_loan_dashboard",
                   params: {
                     employee: employeeId,
                   },
                 }}
                 ItemComponent={(props: { item: Loan }) => {
-                  if (!props?.item?.todo_list || props?.item?.todo_list?.length === 0) {
+                  if (
+                    !props?.item?.todo_list ||
+                    props?.item?.todo_list?.length === 0
+                  ) {
                     return null;
                   }
-                  return (
-                    isDesktop
-                      ? <LoanRow
-                        loan={props?.item}
-                        handleEdit={handleEdit}
-                        employeeId={employeeId}
-                        columnWidths={columnWidths}
-                      />
-                      :
-                      <LoantItem
-                        item={props?.item}
-                        handleEdit={handleEdit}
-                        onClick={() => handleGoToLoanDetails(props?.item.loan_name)}
-                      />
-
+                  return isDesktop ? (
+                    <LoanRow
+                      loan={props?.item}
+                      handleEdit={handleEdit}
+                      employeeId={employeeId}
+                      columnWidths={columnWidths}
+                    />
+                  ) : (
+                    <LoantItem
+                      item={props?.item}
+                      handleEdit={handleEdit}
+                      onClick={() =>
+                        handleGoToLoanDetails(props?.item.loan_name)
+                      }
+                    />
                   );
                 }}
                 SkeletonComponent={CardSkeleton}
+                refetchTrigger={refetchAttendance}
+                onRefetchComplete={() => setRefetchAttendance(false)}
                 onItemClick={(data) => {
                   console.log(data);
                 }}
-                // onRefetchComplete={() => {
-                //   setRefetchAttendance(false);
-                // }}
-                // refetchTrigger={refetchAttendance}
                 isSearch={true}
                 isFilter={true}
                 filterFields={[
@@ -249,7 +248,7 @@ export default function LoansPage() {
         </div>
       </div>
 
-      {isDialogOpen && (
+      {isDialogOpen &&
         createPortal(
           <CreateLoanDialog
             loanId={loanId}
@@ -260,9 +259,8 @@ export default function LoansPage() {
               setIsModalOpen(false);
             }}
           />,
-          document.body
-        )
-      )}
+          document.body,
+        )}
     </>
   );
 }

@@ -1,5 +1,4 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -8,6 +7,7 @@ import { PiListChecksBold } from "react-icons/pi";
 import { useNavigate } from "react-router";
 import {
   useMarkAsRead,
+  useMarkAllAsRead,
   useNotifications,
 } from "../../hooks/useNotificationLog";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -30,20 +30,29 @@ interface NotificationLog {
   creation: string;
 }
 
+// Map tab → readFilter param
+const TAB_FILTER: Record<"all" | "read" | "unread", 0 | 1 | undefined> = {
+  all: undefined,
+  read: 1,
+  unread: 0,
+};
+
 const NotificationList = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] =
-    useState<"all" | "read" | "unread">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "read" | "unread">("all");
 
   const LIMIT = 10;
   const [currentPage, setCurrentPage] = useState(1);
   const [pageCache, setPageCache] = useState<Record<number, NotificationLog[]>>({});
 
+  // ✅ Pass readFilter to API — server-side filtering
+  const readFilter = TAB_FILTER[activeTab];
   const { data, isLoading } = useNotifications(
     LIMIT,
-    (currentPage - 1) * LIMIT
+    (currentPage - 1) * LIMIT,
+    readFilter
   );
 
   const apiNotifications: NotificationLog[] = data ?? [];
@@ -52,33 +61,36 @@ const NotificationList = () => {
     useState<NotificationLog | null>(null);
 
   const markAsRead = useMarkAsRead();
+  const markAllAsRead = useMarkAllAsRead();
+
+  // ✅ Reset page + cache when tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setPageCache({});
+  }, [activeTab]);
 
   useEffect(() => {
     if (!apiNotifications.length) return;
-
-    setPageCache((prev: Record<number, NotificationLog[]>) => ({
+    setPageCache((prev) => ({
       ...prev,
       [currentPage]: apiNotifications,
     }));
   }, [apiNotifications, currentPage]);
 
-  const currentNotifications: NotificationLog[] =
-    pageCache[currentPage] ?? [];
+  const currentNotifications: NotificationLog[] = pageCache[currentPage] ?? [];
 
-  // ✅ Filter
-  const filteredNotifications = useMemo(() => {
-    if (activeTab === "read") {
-      return currentNotifications.filter((n) => n.read === 1);
-    }
-    if (activeTab === "unread") {
-      return currentNotifications.filter((n) => n.read === 0);
-    }
-    return currentNotifications;
-  }, [currentNotifications, activeTab]);
+  // ✅ No client-side filter needed — API already filtered
+  const filteredNotifications = currentNotifications;
 
   // ✅ Pagination logic
   const hasNextPage = apiNotifications.length === LIMIT;
   const totalPages = hasNextPage ? currentPage + 1 : currentPage;
+
+  // ✅ Unread IDs in current page (for Mark All as Read scope)
+  const unreadIds = useMemo(
+    () => currentNotifications.filter((n) => n.read === 0).map((n) => n.name),
+    [currentNotifications]
+  );
 
   // ✅ Handlers
   const handleItemClick = async (item: NotificationLog) => {
@@ -94,16 +106,28 @@ const NotificationList = () => {
 
   const handleDrawerClose = () => {
     if (selectedNotification && selectedNotification.read === 0) {
-      setPageCache((prev: Record<number, NotificationLog[]>) => ({
+      setPageCache((prev) => ({
         ...prev,
         [currentPage]: (prev[currentPage] ?? []).map((n) =>
-          n.name === selectedNotification.name
-            ? { ...n, read: 1 }
-            : n
+          n.name === selectedNotification.name ? { ...n, read: 1 } : n
         ),
       }));
     }
     setSelectedNotification(null);
+  };
+
+  const handleMarkAllAsRead = async () => {
+    if (!unreadIds.length) return;
+    try {
+      await markAllAsRead.mutateAsync(unreadIds);
+      // Optimistically update cache
+      setPageCache((prev) => ({
+        ...prev,
+        [currentPage]: (prev[currentPage] ?? []).map((n) => ({ ...n, read: 1 })),
+      }));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handlePageChange = (page: number) => {
@@ -111,14 +135,10 @@ const NotificationList = () => {
     setCurrentPage(page);
   };
 
-  const startItem =
-    filteredNotifications.length === 0
-      ? 0
-      : (currentPage - 1) * LIMIT + 1;
-  const endItem =
-    (currentPage - 1) * LIMIT + filteredNotifications.length;
+  const startItem = filteredNotifications.length === 0 ? 0 : (currentPage - 1) * LIMIT + 1;
+  const endItem = (currentPage - 1) * LIMIT + filteredNotifications.length;
 
-  // ✅ Pagination Bar — sticky bottom
+  // ✅ Pagination Bar
   const PaginationBar = () => {
     const pageNumbers: number[] = [];
     for (let i = 1; i <= totalPages; i++) {
@@ -126,7 +146,7 @@ const NotificationList = () => {
     }
 
     return (
-      <div className="flex-shrink-0 flex gap-4 items-center justify-between  overflow-x-scroll px-4 py-3 border-t bg-white">
+      <div className="flex-shrink-0 flex gap-4 items-center justify-between overflow-x-scroll px-4 py-3 border-t bg-white">
         <p className="text-sm text-gray-500 whitespace-nowrap">
           {filteredNotifications.length === 0
             ? "No results"
@@ -134,45 +154,39 @@ const NotificationList = () => {
         </p>
 
         <div className="flex items-center gap-1">
-          {/* Prev */}
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
             className={`w-8 h-8 flex items-center justify-center rounded border text-sm
-              ${
-                currentPage === 1
-                  ? "text-gray-300 border-gray-200 cursor-not-allowed"
-                  : "text-gray-600 border-gray-300 hover:bg-gray-100"
+              ${currentPage === 1
+                ? "text-gray-300 border-gray-200 cursor-not-allowed"
+                : "text-gray-600 border-gray-300 hover:bg-gray-100"
               }`}
           >
             <ChevronLeft size={16} />
           </button>
 
-          {/* Page Numbers */}
           {pageNumbers.map((page) => (
             <button
               key={page}
               onClick={() => handlePageChange(page)}
               className={`w-8 h-8 flex items-center justify-center rounded border text-sm font-medium
-                ${
-                  currentPage === page
-                    ? "bg-primary text-white border-primary"
-                    : "text-gray-600 border-gray-300 hover:bg-gray-100"
+                ${currentPage === page
+                  ? "bg-primary text-white border-primary"
+                  : "text-gray-600 border-gray-300 hover:bg-gray-100"
                 }`}
             >
               {page}
             </button>
           ))}
 
-          {/* Next */}
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={!hasNextPage}
             className={`w-8 h-8 flex items-center justify-center rounded border text-sm
-              ${
-                !hasNextPage
-                  ? "text-gray-300 border-gray-200 cursor-not-allowed"
-                  : "text-gray-600 border-gray-300 hover:bg-gray-100"
+              ${!hasNextPage
+                ? "text-gray-300 border-gray-200 cursor-not-allowed"
+                : "text-gray-600 border-gray-300 hover:bg-gray-100"
               }`}
           >
             <ChevronRight size={16} />
@@ -182,36 +196,47 @@ const NotificationList = () => {
     );
   };
 
-  // ✅ Layout — h-screen overflow-hidden for sticky header/footer + scrollable list
   const layout = (
     <div className="flex flex-col h-screen overflow-hidden">
-      {/* ✅ Sticky Header */}
+      {/* Sticky Header */}
       <div className="flex-shrink-0">
-        <HeaderBar
-          title="Notification Log"
-          onBack={() => navigate(-1)}
-        />
+        <HeaderBar title="Notification Log" onBack={() => navigate(-1)} />
       </div>
 
-      {/* ✅ Sticky Tabs */}
-      <div className="flex-shrink-0 flex border-b bg-white">
-        {["all", "read", "unread"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab as any)}
-            className={`px-4 py-2 text-sm font-medium capitalize
-              ${
-                activeTab === tab
+      {/* ✅ Sticky Tabs + Mark All as Read */}
+      <div className="flex-shrink-0 flex items-center justify-between border-b bg-white pr-3">
+        {/* Tab buttons on left */}
+        <div className="flex">
+          {(["all", "read", "unread"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm font-medium capitalize
+                ${activeTab === tab
                   ? "border-b-2 border-primary text-primary"
                   : "text-gray-500 hover:text-gray-700"
-              }`}
-          >
-            {tab}
-          </button>
-        ))}
+                }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* ✅ Mark All as Read — right side */}
+        <button
+          onClick={handleMarkAllAsRead}
+          disabled={unreadIds.length === 0 || markAllAsRead.isPending}
+          className={`text-xs  font-medium whitespace-nowrap transition-colors
+            ${unreadIds.length === 0 || markAllAsRead.isPending
+              ? "text-gray-300 border border-gray-400 py-1 px-2 rounded hover:bg-gray-100 cursor-not-allowed"
+              : "text-primary border border-primary-400 py-1 px-2 rounded hover:bg-primary-100 cursor-pointer"
+            }`}
+        >
+          {markAllAsRead.isPending ? "Marking..." : "Mark all "}
+        </button>
       </div>
 
-      {/* ✅ Scrollable List — min-h-0 is key for flex scroll */}
+      {/* Scrollable List */}
       <div className="flex-1 min-h-0 overflow-y-auto p-2">
         {isLoading && currentNotifications.length === 0 ? (
           <CardSkeleton />
@@ -233,16 +258,13 @@ const NotificationList = () => {
         )}
       </div>
 
-      {/* ✅ Sticky Pagination Footer */}
+      {/* Sticky Pagination Footer */}
       <PaginationBar />
 
       {/* Drawer */}
       {selectedNotification && (
         <div className="fixed inset-0 z-50 flex">
-          <div
-            className="flex-1 bg-black/40"
-            onClick={handleDrawerClose}
-          />
+          <div className="flex-1 bg-black/40" onClick={handleDrawerClose} />
 
           <div className="w-full md:w-2/3 lg:w-1/2 bg-white shadow-xl flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b">
@@ -251,31 +273,22 @@ const NotificationList = () => {
                   .replace(/\s+/g, " ")
                   .trim()}
               </h3>
-
-              <button
-                onClick={handleDrawerClose}
-                className="text-gray-500 hover:text-gray-700"
-              >
+              <button onClick={handleDrawerClose} className="text-gray-500 hover:text-gray-700">
                 <FaTimes className="w-5 h-5" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-2">
               <p className="text-sm">
-                <strong>From:</strong>{" "}
-                {selectedNotification.from_user}
+                <strong>From:</strong> {selectedNotification.from_user}
               </p>
               <p className="text-sm">
-                <strong>To:</strong>{" "}
-                {selectedNotification.for_user}
+                <strong>To:</strong> {selectedNotification.for_user}
               </p>
               <p className="text-sm">
                 <strong>Date:</strong>{" "}
-                {new Date(
-                  selectedNotification.creation
-                ).toLocaleString()}
+                {new Date(selectedNotification.creation).toLocaleString()}
               </p>
-
               <div className="pt-4 text-gray-800">
                 {sanitizeToPlainText(selectedNotification.subject)
                   .replace(/\s+/g, " ")
@@ -295,9 +308,7 @@ const NotificationList = () => {
   );
 
   return isDesktop ? (
-    <DesktopLayoutWrapper title="Notifications">
-      {layout}
-    </DesktopLayoutWrapper>
+    <DesktopLayoutWrapper title="Notifications">{layout}</DesktopLayoutWrapper>
   ) : (
     layout
   );
@@ -347,34 +358,20 @@ const NotificationItem: React.FC<{
 
         <div className="flex-1 min-w-0">
           <p className="text-sm line-clamp-3">
-            <span
-              className={
-                isRead
-                  ? "font-normal text-gray-600"
-                  : "font-semibold text-gray-900"
-              }
-            >
+            <span className={isRead ? "font-normal text-gray-600" : "font-semibold text-gray-900"}>
               {item.type}
             </span>
             :{" "}
-            <span
-              className={
-                isRead ? "text-gray-400" : "text-gray-600"
-              }
-            >
+            <span className={isRead ? "text-gray-400" : "text-gray-600"}>
               {cleanSubject}
             </span>
           </p>
 
-          <p className="text-xs text-gray-500 mt-1.5">
-            {formatTimeAgo(item.creation)}
-          </p>
+          <p className="text-xs text-gray-500 mt-1.5">{formatTimeAgo(item.creation)}</p>
         </div>
       </div>
 
-      {!isRead && (
-        <span className="w-2 h-2 rounded-full bg-[#AD2D6C]" />
-      )}
+      {!isRead && <span className="w-2 h-2 rounded-full bg-[#AD2D6C]" />}
     </div>
   );
 };

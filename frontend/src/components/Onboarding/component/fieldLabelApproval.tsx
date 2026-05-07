@@ -8,6 +8,7 @@ import {
 } from "../../../hooks/useOnboarding";
 import type { ApprovalField, FieldLocalState } from "../../../types/onboarding";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { Check, X } from "lucide-react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -188,39 +189,56 @@ function FieldRow({
       {/* Action buttons */}
       <div className="flex items-center gap-2 mt-5 flex-shrink-0 flex-wrap justify-end">
         <StatusBadge status={state.status}/>
-        <button
-          onClick={handleApproveClick}
-          disabled={state.loading}
-          title="Approve"
-          className={`h-7 w-7 flex items-center justify-center rounded-lg border text-xs font-bold transition-all disabled:opacity-40 ${
-            state.status === "Approved"
-              ? "bg-success-50 text-success-600 border-success-200"
-              : "bg-success-50 text-success-600 border-success-200 hover:bg-success-100 hover:border-success-600"
-          }`}
-        >
-          ✓
-        </button>
+        <div className="h-8 flex items-center px-2  rounded-3xl bg-gray-10 w-fit">
+        <div className="relative group w-fit ">
+  <button
+    onClick={handleApproveClick}
+    disabled={state.loading}
+    className={`h-8 flex items-center gap-1 px-1 py-1 rounded-3xl font-bold bg-gray-10 ${
+      state.status === "Approved"
+        ? "text-green-500 "
+        : "text-green-500 "
+    }`}
+  >
+    <Check className="w-3.5 h-3.5" strokeWidth={2} />
+  </button>
 
+  {/* Tooltip */}
+  <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 
+    whitespace-nowrap rounded bg-black text-white text-xs px-2 py-1 
+    opacity-0 group-hover:opacity-100 transition pointer-events-none">
+    Approve
+  </span>
+</div>
+<span className="w-[1px] h-4 bg-gray-300" />
+<div className="relative group w-fit">
         <button
           onClick={handleRejectClick}
           disabled={state.loading}
           title="Reject"
-          className={`h-7 w-7 flex items-center justify-center rounded-lg border text-xs font-bold transition-all disabled:opacity-40 ${
+          className={`h-8 w-5 flex items-center justify-center rounded-lg text-xs font-bold transition-all disabled:opacity-40 ${
             state.status === "Rejected"
-              ? "bg-error-50 text-error-600 border-error-600"
+              ? " text-red-500 "
               : pendingReject
-              ? "bg-error-200 text-error-600 border-error-200"
-              : "bg-error-50 text-error-600 border-error-200 hover:bg-error-100 hover:border-error-600"
+              ? " text-red-500 "
+              : " text-red-500 "
           }`}
         >
-          ✗
+          <X  className="w-3.5 h-3.5" strokeWidth={2} />
         </button>
+        <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 
+    whitespace-nowrap rounded bg-black text-white text-xs px-2 py-1 
+    opacity-0 group-hover:opacity-100 transition pointer-events-none">
+    Reject
+  </span>
+  </div>
+        </div>
 
         {state.loading && (
           <div className="h-4 w-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
         )}
       </div>
-    </div>
+      </div>
   );
 }
 
@@ -534,7 +552,7 @@ export default function OnboardingFieldApproval() {
         {pageLoading && (
           <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
             <div className="text-center space-y-3">
-              <div className="h-8 w-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="h-10 w-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
               <p>Fetching onboarding data...</p>
             </div>
           </div>
@@ -550,7 +568,7 @@ export default function OnboardingFieldApproval() {
 
         {/* Content */}
         {!pageLoading && !pageError && activeSection && (
-          <div className="max-w-3xl space-y-4">
+          <div className="w-full space-y-4">
 
             {/* Breadcrumb */}
             <div className="text-xs text-gray-400">
@@ -681,9 +699,9 @@ export default function OnboardingFieldApproval() {
 
               {/* Card header */}
               <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
-                <h3 className="text-sm font-medium text-gray-800">{activeSection}</h3>
-                <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1.5 cursor-pointer text-xs text-gray-500">
+<div className="flex flex-col items-start gap-1">
+<h3 className="text-sm font-bold text-gray-800">{activeSection}</h3>
+<label className="flex items-center gap-1.5 cursor-pointer text-xs text-gray-500">
                     <input
                       type="checkbox"
                       checked={allCurSelected}
@@ -692,6 +710,10 @@ export default function OnboardingFieldApproval() {
                     />
                     Select all
                   </label>
+            
+</div>
+                <div className="flex items-center gap-2">
+
                   <span className="text-xs text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-">
                     {activeIdx + 1} / {secKeys.length}
                   </span>
@@ -744,7 +766,7 @@ export default function OnboardingFieldApproval() {
       {toast && (
         <div
           className={`fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl text-xs font-medium border transition-all ${
-            toast.type === "error"
+            toast.type === "error" || toast.msg === "reject"
               ? "bg-error-50 text-error-600 border-error-200"
               : toast.type === "info"
               ? "bg-primary-50 text-primary-700 border-primary-200"

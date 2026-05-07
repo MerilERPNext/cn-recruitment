@@ -19,7 +19,6 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceForm from "./AdvanceForm";
 import InstallmentsList from "./InstallmentsList";
-import Modal from "./commonModal";
 import ShowHideButton from "../ui/ShowHideButton";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
@@ -30,6 +29,7 @@ import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 import { queryClient } from "../../../providers/QueryProvider";
 import DataListView from "../../DataListView"; // ← adjust path as needed
+import { createPortal } from "react-dom";
 
 // ─── mapAdvanceData helper ────────────────────────────────────────────────────
 const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
@@ -139,17 +139,6 @@ const AdvancesList: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ["advances"] });
   };
 
-  // ── Show InstallmentsList view ──────────────────────────────────────────────
-  if (showInstallments && selectedAdvance) {
-    return (
-      <InstallmentsList
-        advance={selectedAdvance}
-        onBack={handleBackToAdvances}
-        maskAmounts={maskAmounts}
-        onToggleMask={() => setMaskAmounts(!maskAmounts)}
-      />
-    );
-  }
   const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
     {
       sortable: true,
@@ -209,89 +198,133 @@ const AdvancesList: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* ===== Header ===== */}
-      <div className="flex-shrink-0">
-        <div className="px-1 md:px-6 py-1 md:py-4">
-          <div className="flex items-center justify-between max-sm:mb-2">
-            {isDesktop ? (
-              <div>
-                <Typography variant="h4">My Advance Request</Typography>
-                <Typography variant="bodySmall" color="body2">
-                  Track and manage your advance requests
-                </Typography>
-              </div>
-            ) : (
-              <span></span>
-            )}
-            <ShowHideButton
-              showAmount={maskAmounts}
-              onToggleAmount={() => setMaskAmounts((prev) => !prev)}
-            />
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto md:px-4 pb-4">
-          <CardTable titles={titles} columnWidths={columnWidths} columnSortConfig={PERQUISITE_SORT_CONFIG}>
-            <>
-              {!customAPI ? (
-                <CardSkeleton />
-              ) : (
-                <DataListView<UiAdvance>
-                  queryKey={["advances", employeeId]}
-                  customAPI={customAPI}
-                  isSearch={true}
-                  isFilter={false}
-                  showPagination={true}
-                  pageSize={10}
-                  SkeletonComponent={CardSkeleton}
-                  refetchTrigger={refetchTrigger}
-                  onRefetchComplete={() => setRefetchTrigger(0)}
-                  clientFilterFn={(rawData) => {
-                    return mapAdvanceData(rawData as unknown as ApiAdvance[]);
-                  }}
-                  noRecordsScreen={
-                    <NoDataFound
-                      title="No Advance Records"
-                      subtitle="You have not requested any advance yet."
-                    />
-                  }
-                  renderItem={(item: UiAdvance, index: number) =>
-                    isDesktop ? (
-                      <AdvanceDesktopRow
-                        key={`${item.name}-${index}`}
-                        advance={item}
-                        maskAmounts={maskAmounts}
-                        handleEdit={handleEdit}
-                        handleViewInstallments={handleViewInstallments}
-                        handleRefetch={handleRefetch}
-                      />
-                    ) : (
-                      <AdvanceMobileRow
-                        key={`${item.name}-${index}`}
-                        advance={item}
-                        maskAmounts={maskAmounts}
-                        handleEdit={handleEdit}
-                        handleViewInstallments={handleViewInstallments}
-                        handleRefetch={handleRefetch}
-                      />
-                    )
-                  }
+      {showInstallments && selectedAdvance ? (
+        <InstallmentsList
+          advance={selectedAdvance}
+          onBack={handleBackToAdvances}
+          maskAmounts={maskAmounts}
+          onToggleMask={() => setMaskAmounts(!maskAmounts)}
+          canCreateAdvance={canCreateAdvance}
+          onOpenAdvanceForm={() => {
+            setShowAdvanceForm(true);
+            setIsModalOpen(true);
+          }}
+        />
+      ) : (
+        <>
+          {/* ===== Header ===== */}
+          <div className="flex-shrink-0">
+            <div className="px-1 md:px-6 py-1 md:py-4">
+              <div className="flex items-center justify-between max-sm:mb-2">
+                {isDesktop ? (
+                  <div>
+                    <Typography variant="h4">My Advance Request</Typography>
+                    <Typography variant="bodySmall" color="body2">
+                      Track and manage your advance requests
+                    </Typography>
+                  </div>
+                ) : (
+                  <span></span>
+                )}
+                <ShowHideButton
+                  showAmount={maskAmounts}
+                  onToggleAmount={() => setMaskAmounts((prev) => !prev)}
                 />
-              )}
-            </>
-          </CardTable>
-        </div>
+              </div>
+            </div>
 
-        {showAdvanceForm && (
-          <Modal onClose={handleCloseModal}>
-            <AdvanceForm
-              docname={editAdvanceId}
-              user={user}
-              onClose={handleCloseModal}
-            />
-          </Modal>
+            <div className="flex-1 overflow-y-auto md:px-4 pb-4">
+              <CardTable titles={titles} columnWidths={columnWidths} columnSortConfig={PERQUISITE_SORT_CONFIG}>
+                <>
+                  {!customAPI ? (
+                    <CardSkeleton />
+                  ) : (
+                    <DataListView<UiAdvance>
+                      queryKey={["advances", employeeId]}
+                      customAPI={customAPI}
+                      isSearch={true}
+                      isFilter={true}
+                      filterFields={[
+                        {
+                          fieldname: "status",
+                          label: "Status",
+                          fieldtype: "Select",
+                          options: [
+                            {
+                              label: "Pending",
+                              key: "Pending",
+                              value: "Pending",
+                            },
+                            { label: "Approved", value: "Approved" },
+                            { label: "Rejected", value: "Rejected" },
+                            {
+                              label: "Revoked",
+                              value: "Revoked",
+                              excludeFieldFromFilters: true,
+                              customAPIParams: { todo_status: "Cancelled" },
+                              additionalFilters: {
+                                docstatus: 2,
+                                custom_allow_revoke: 1,
+                              },
+                            },
+                          ],
+                        },
+                      ]}
+                      showPagination={true}
+                      pageSize={10}
+                      SkeletonComponent={CardSkeleton}
+                      refetchTrigger={refetchTrigger}
+                      onRefetchComplete={() => setRefetchTrigger(0)}
+                      clientFilterFn={(rawData) => {
+                        return mapAdvanceData(rawData as unknown as ApiAdvance[]);
+                      }}
+                      noRecordsScreen={
+                        <NoDataFound
+                          title="No Advance Records"
+                          subtitle="You have not requested any advance yet."
+                        />
+                      }
+                      renderItem={(item: UiAdvance, index: number) =>
+                        isDesktop ? (
+                          <AdvanceDesktopRow
+                            key={`${item.name}-${index}`}
+                            advance={item}
+                            maskAmounts={maskAmounts}
+                            handleEdit={handleEdit}
+                            handleViewInstallments={handleViewInstallments}
+                            handleRefetch={handleRefetch}
+                          />
+                        ) : (
+                          <AdvanceMobileRow
+                            key={`${item.name}-${index}`}
+                            advance={item}
+                            maskAmounts={maskAmounts}
+                            handleEdit={handleEdit}
+                            handleViewInstallments={handleViewInstallments}
+                            handleRefetch={handleRefetch}
+                          />
+                        )
+                      }
+                    />
+                  )}
+                </>
+              </CardTable>
+            </div>
+          </div>
+        </>
+      )}
+
+      {showAdvanceForm &&
+        createPortal(
+          <AdvanceForm
+            docname={editAdvanceId}
+            user={user}
+            onClose={() => {
+              handleCloseModal();
+            }}
+          />,
+          document.body
         )}
-      </div>
     </div>
   );
 };

@@ -178,7 +178,7 @@ const ApprovalRejectionAdvanceList = ({
                 status={data?.status}
                 recordId={data?.todo_id}
                 loadingAction={loadingAction}
-                onAction={(action) => onAction(action, data)}
+                onAction={(action) => handleActionClick(action)}
               />
             ) : (
               <div className="flex items-center justify-center">
