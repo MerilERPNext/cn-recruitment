@@ -157,7 +157,6 @@ const AllShiftChangeRequestsList: React.FC = () => {
                     label: "Pending",
                     key: "Draft",
                     value: "Draft",
-                    customAPIParams: { todo_status: "Open" },
                   },
                   {
                     label: "Approved",

@@ -498,6 +498,14 @@ def save_candidate_portal_data(job_applicant_id, data):
             # Update overall submission status
             doc.save(ignore_permissions=True)
 
+        # ── Sync Candidate Action Center Item ─────────────────────────────────
+        try:
+            from recruitment.api.action_center import sync_onboarding_field_rejection_action
+            doc.reload()
+            sync_onboarding_field_rejection_action(doc)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "Action Center Sync Failed (Candidate Refill)")
+
         frappe.db.commit()
 
         return {

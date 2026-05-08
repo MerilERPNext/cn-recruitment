@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import HeaderBar from "../HeaderBar";
+import { X } from "lucide-react";
+import Button from "./atoms/Button";
 
 export type DrawerSize = "sm" | "md" | "lg" | "xl" | "xxl" | "full";
 
@@ -94,12 +96,16 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
                         <div className="flex items-center justify-center gap-2">
                             <h2 className="text-sm font-semibold">{title}</h2>
                         </div>
-                        {!showBackButton && <button
-                            onClick={onClose}
-                            className="rounded-md p-1 hover:bg-gray-100"
-                        >
-                            ✕
-                        </button>}
+                        {!showBackButton &&
+                            <Button
+                                variant="subtle"
+                                onClick={onClose}
+                                className="rounded-md hover:bg-gray-100"
+                                aria-label="Close"
+                            >
+                                <X className="h-5 w-5 text-gray-600" />
+
+                            </Button>}
                     </div>
                 }
 

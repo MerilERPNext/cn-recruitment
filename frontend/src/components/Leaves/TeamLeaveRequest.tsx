@@ -46,7 +46,6 @@ const TeamLeaveRequest = () => {
             label: "Pending",
             key: "Open",
             value: "Open",
-            customAPIParams: { todo_status: "Open" },
           },
           {
             label: "Approved",
@@ -54,8 +53,11 @@ const TeamLeaveRequest = () => {
             value: ["in", ["Draft", "Approved", "Open", "Pending"]],
             customAPIParams: { todo_status: "Closed" },
           },
-          { label: "Rejected", key: "Rejected", value: "Rejected" },
+          { label: "Rejected", value: "Rejected" },
         ],
+        emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  },
       },
       {
         fieldname: "leave_type",

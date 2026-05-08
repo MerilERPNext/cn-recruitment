@@ -208,7 +208,13 @@ def sync_onboarding_field_rejection_action(onboarding_doc, approval_list=None):
             rejected_count += 1
 
     if rejected_count <= 0:
-        _delete_minimal_item(candidate_email, "Employee Onboarding", onboarding_doc.name, commit=False)
+        from recruitment.api.action_center import mark_item_completed
+        mark_item_completed(
+            reference_doctype="Employee Onboarding",
+            reference_docname=onboarding_doc.name,
+            candidate_email=candidate_email,
+            commit=False
+        )
         return
 
     _upsert_minimal_item(

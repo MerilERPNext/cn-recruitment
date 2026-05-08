@@ -226,8 +226,8 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           roles={item?.allocated_roles}
           role={item?.role}
           username={item?.username}
-        RoleAssignedUsers={item?.role_assigned_users}
-      />
+          RoleAssignedUsers={item?.role_assigned_users}
+        />
 
         <div className={isActed ? "pointer-events-none opacity-50" : ""}>
           <MyApprovalActionPill
@@ -456,11 +456,6 @@ const ExpensesList: React.FC = () => {
   const urlRequestId = searchParams.get("requestId");
   const urlReferenceName = searchParams.get("reference_name");
 
-  const { data: todoData } = useGetToDoWithReferenceDoc(
-    urlRequestId || undefined,
-    urlReferenceName || undefined,
-  );
-
   const { data: expenseCategories } = useGetAllExpenseCategories();
 
   const [activeTab, setActiveTab] = React.useState<"expenses" | "shared">(
@@ -489,6 +484,7 @@ const ExpensesList: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = React.useState<
     string | undefined
   >(undefined);
+  const [selectedIsDraft, setSelectedIsDraft] = React.useState(false);
 
   const [isPolicyDrawerOpen, setIsPolicyDrawerOpen] = React.useState(false);
   const [deleteConfirmModal, setDeleteConfirmModal] = React.useState<{
@@ -554,6 +550,28 @@ const ExpensesList: React.FC = () => {
     setRefetchAttendance(false);
   }, [setRefetchAttendance]);
 
+  const matchedOpenItem = React.useMemo(() => {
+    const openId = selectedId || urlReferenceName;
+    if (!openId) return null;
+
+    return (
+      currentListData.find(
+        (item: any) => item?.reference_document?.name === openId,
+      ) || null
+    );
+  }, [currentListData, selectedId, urlReferenceName]);
+
+  const shouldUseDraftReferenceApi =
+    selectedIsDraft ||
+    selectedStatus === "Draft" ||
+    matchedOpenItem?.reference_document?.approval_status === "Draft";
+
+  const { data: todoData } = useGetToDoWithReferenceDoc(
+    shouldUseDraftReferenceApi ? (urlRequestId || undefined) : undefined,
+    shouldUseDraftReferenceApi ? (urlReferenceName || undefined) : undefined,
+    shouldUseDraftReferenceApi ? "Expense Claim" : undefined,
+  );
+
   const expenseCategoryOptions = React.useMemo(() => {
     if (!expenseCategories || !Array.isArray(expenseCategories)) {
       return [];
@@ -604,6 +622,7 @@ const ExpensesList: React.FC = () => {
     canEdit: boolean,
     todoStatus: string | null,
     status?: string,
+    isDraft: boolean = false,
   ) => {
     setSelectedStages(stages);
     setTimeout(() => {
@@ -614,6 +633,7 @@ const ExpensesList: React.FC = () => {
     setSelectedCanEdit(canEdit);
     setSelectedTodoStatus(todoStatus);
     setSelectedStatus(status);
+    setSelectedIsDraft(isDraft);
   };
 
   const closeModal = () => {
@@ -623,6 +643,7 @@ const ExpensesList: React.FC = () => {
     setSelectedCanEdit(false);
     setSelectedTodoStatus(null);
     setSelectedStatus(undefined);
+    setSelectedIsDraft(false);
     if (urlRequestId || urlReferenceName) {
       setSearchParams({});
     }
@@ -697,7 +718,7 @@ const ExpensesList: React.FC = () => {
             if (["open", "pending", "draft"].includes(st)) return "Pending";
             if (["approved", "submitted"].includes(st)) return "Approved";
             return s || "--";
-          })(doc?.status),
+          })(doc?.approval_status),
           "Sanctioned Amount": doc?.total_sanctioned_amount || 0,
           "% Share": doc?.participant_info?.percentage || 0,
           "Allocated Amount": doc?.participant_info?.allocated_amount || 0,
@@ -732,11 +753,13 @@ const ExpensesList: React.FC = () => {
         item?.reference_document?.docstatus === 2
         ? "Revoked"
         : item?.reference_document?.approval_status;
+    const isDraft = status === "Draft";
 
     return (
       <div
         onClick={() =>
-          id && openModal(id, stages, sendBackUser, canEdit, todoStatus, status)
+          id &&
+          openModal(id, stages, sendBackUser, canEdit, todoStatus, status, isDraft)
         }
         className="cursor-pointer"
       >
@@ -758,11 +781,13 @@ const ExpensesList: React.FC = () => {
         item?.reference_document?.docstatus === 2
         ? "Revoked"
         : item?.reference_document?.approval_status;
+    const isDraft = status === "Draft";
 
     return (
       <div
         onClick={() =>
-          id && openModal(id, stages, sendBackUser, canEdit, todoStatus, status)
+          id &&
+          openModal(id, stages, sendBackUser, canEdit, todoStatus, status, isDraft)
         }
         className="cursor-pointer"
       >
@@ -889,8 +914,8 @@ const ExpensesList: React.FC = () => {
                   setSelectedMyExpensesDraftIds(new Set());
                 }}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "expenses"
-                    ? "bg-white text-primary shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
                   }`}
               >
                 My Expenses
@@ -902,8 +927,8 @@ const ExpensesList: React.FC = () => {
                   setSelectedMyExpensesDraftIds(new Set());
                 }}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "shared"
-                    ? "bg-white text-primary shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
                   }`}
               >
                 Shared Expenses
@@ -926,8 +951,8 @@ const ExpensesList: React.FC = () => {
       {isDraftFilter && (
         <div
           className={`md:hidden fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${selectedMyExpensesDraftIds.size > 0
-              ? "translate-y-0 opacity-100 pointer-events-auto"
-              : "translate-y-full opacity-0 pointer-events-none"
+            ? "translate-y-0 opacity-100 pointer-events-auto"
+            : "translate-y-full opacity-0 pointer-events-none"
             }`}
         >
           <div className="bg-white border-t border-gray-200 shadow-[0_-4px_24px_rgba(0,0,0,0.12)] px-4 py-3">
@@ -1187,6 +1212,7 @@ const ExpensesList: React.FC = () => {
                   const canEdit = item?.can_edit || false;
                   const todoStatus = item?.todo_status || item?.status || null;
                   const approvalStatus = expenseClaim?.approval_status;
+                  const isDraft = approvalStatus === "Draft";
                   return (
                     <div
                       className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
@@ -1203,6 +1229,7 @@ const ExpensesList: React.FC = () => {
                           canEdit,
                           todoStatus,
                           approvalStatus,
+                          isDraft,
                         )
                       }
                     >
@@ -1351,6 +1378,7 @@ const ExpensesList: React.FC = () => {
                   const canEdit = item?.can_edit || false;
                   const todoStatus = item?.todo_status || item?.status || null;
                   const approvalStatus = expenseClaim?.approval_status;
+                  const isDraft = approvalStatus === "Draft";
                   return (
                     <div
                       className="cursor-pointer border-t-4 border-x border-b border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl"
@@ -1363,6 +1391,7 @@ const ExpensesList: React.FC = () => {
                           canEdit,
                           todoStatus,
                           approvalStatus,
+                          isDraft,
                         )
                       }
                     >
@@ -1524,6 +1553,7 @@ const ExpensesList: React.FC = () => {
                     {
                       label: "Pending",
                       value: "Pending",
+                      customAPIParams: { todo_status: ["in", ["Open", "Closed"]] },
                     },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
@@ -1538,6 +1568,9 @@ const ExpensesList: React.FC = () => {
                       },
                     },
                   ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  },
                 },
                 {
                   fieldname: "custom_expense_category_name",
@@ -1617,8 +1650,35 @@ const ExpensesList: React.FC = () => {
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}
               refetchTrigger={refetchAttendance}
-              isSearch={false}
-              isFilter={false}
+              isSearch={true}
+              isFilter={true}
+              onFiltersChange={handleFiltersChange}
+              filterFields={[
+                {
+                  fieldname: "approval_status",
+                  label: "Status",
+                  fieldtype: "Select",
+                  options: [
+                    { label: "Draft", value: "Draft" },
+                    { label: "Pending", value: "Pending" },
+                    { label: "Approved", value: "Approved" },
+                    { label: "Rejected", value: "Rejected" },
+                  ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  },
+                },
+                {
+                  fieldname: "creation_start",
+                  label: "Start Date",
+                  fieldtype: "Date",
+                },
+                {
+                  fieldname: "creation_end",
+                  label: "End Date",
+                  fieldtype: "Date",
+                },
+              ]}
               showRefreshButton={false}
               pageSize={10}
               infiniteScroll={false}
@@ -1641,6 +1701,7 @@ const ExpensesList: React.FC = () => {
             selectedTodoStatus || todoData?.todo_status || todoData?.status
           }
           status={selectedStatus}
+          isDraft={shouldUseDraftReferenceApi}
         />
       )}
       <ExpensePolicyDrawer

@@ -22,6 +22,8 @@ const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
     getValue: (item: MyAttendanceRequest) =>
       item.reference_document?.custom_request_type ?? "",
   },
+  // { sortable: false },
+
   {
     sortable: true,
     type: "date",
@@ -41,6 +43,12 @@ const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
     type: "date",
     field: "due_date",
     getValue: (item: MyAttendanceRequest) => item.due_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "creation",
+    getValue: (item: MyAttendanceRequest) => item.reference_document?.creation ?? "",
   },
   {
     sortable: true,
@@ -108,12 +116,14 @@ const AttendanceRequest = ({
 
           <div className="flex-1 overflow-y-auto md:px-4 pb-20">
             <CardTable
-              columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+              columnWidths={["1.5fr", "1fr", "1fr", "1fr", "0.8fr", "1fr", "1fr", "1fr"]}
               titles={[
                 "Request Type",
+                // "Assigned To",
                 "From Date",
                 "To Date",
                 "Due Date",
+                "Created On",
                 "Duration",
                 "Status",
                 "Actions",
@@ -153,9 +163,8 @@ const AttendanceRequest = ({
                       options: [
                         {
                           label: "Pending",
-                          key: "Draft",
-                          value: "Draft",
-                          customAPIParams: { todo_status: "Open" },
+                          value: "Pending",
+                          customAPIParams: { todo_status: ["in", ["Open", "Closed"]] },
                         },
                         { label: "Approved", value: "Approved" },
                         { label: "Rejected", value: "Rejected" },
@@ -172,6 +181,9 @@ const AttendanceRequest = ({
                           },
                         },
                       ],
+                      emptyValueConfig: {
+                        filterValue: ["!=", "Cancelled"],
+                      },
                     },
                     {
                       fieldname: "custom_request_type",
@@ -185,7 +197,6 @@ const AttendanceRequest = ({
                       ],
                     },
                   ]}
-                // defaultFilters={{ status: ["!=", "Cancelled"] }}
                 />
               ) : (
                 <></>

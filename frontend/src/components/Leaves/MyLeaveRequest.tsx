@@ -54,7 +54,11 @@ const MyLeaveRequests = ({
         label: "Status",
         fieldtype: "Select" as const,
         options: [
-          { label: "Pending", value: "Open" },
+          {
+            label: "Pending", key: "Open", value: "Open",
+            customAPIParams: { todo_status: ["in", ["Open", "Closed"]] },
+
+          },
           { label: "Approved", value: "Approved" },
           { label: "Rejected", value: "Rejected" },
           {
@@ -70,6 +74,9 @@ const MyLeaveRequests = ({
             },
           },
         ],
+        emptyValueConfig: {
+          filterValue: ["!=", "Cancelled"],
+        },
       },
       {
         fieldname: "leave_type",
@@ -233,7 +240,6 @@ const MyLeaveRequests = ({
                     typeof filters.status === "string" ? filters.status : "All",
                   );
                 }}
-                defaultFilters={{ status: ["!=", "Cancelled"] }}
                 isSearch={true}
                 isFilter={true}
                 filterFields={dynamicFilterFields}

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Employee, IDesignationHierarchy, IGetEmpDesignationHierarchyCurrentDetails, Award, EmployeeProfileOverview } from "../types/employee";
+import { Employee, IDesignationHierarchy, IGetEmpDesignationHierarchyCurrentDetails, Award, EmployeeProfileOverview, EmployeeFieldsToTrack } from "../types/employee";
 import { GenderResponse, IField } from "../types/profile";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -72,6 +72,19 @@ export const profileService = {
       // Handle different response structures
 
       return result as EmployeeProfileOverview[];
+    } catch (e) {
+      throw new Error(
+        `Some error occured while fetching employee details.- ${e}`
+      );
+    }
+  },
+  getEmployeeFieldsToTrack: async (
+  ): Promise<EmployeeFieldsToTrack[] | null> => {
+    try {
+      const result = await FrappeAPI.callMethod("cn_hrms_core.api.get_employee_fields_to_track");
+      // Handle different response structures
+
+      return result as EmployeeFieldsToTrack[];
     } catch (e) {
       throw new Error(
         `Some error occured while fetching employee details.- ${e}`

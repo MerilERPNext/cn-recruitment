@@ -103,6 +103,7 @@
           "type": "select",
           "input": true,
           "placeholder": "Select a Request Type",
+          "defaultValue": "Attendance Adjustment",
           "customClass": "mb-4",
           "validate": {
             "required": true

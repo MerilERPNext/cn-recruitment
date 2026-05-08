@@ -159,9 +159,7 @@ const TeamAttendanceDetails = () => {
                   options: [
                     {
                       label: "Pending",
-                      key: "Pending",
                       value: "Pending",
-                      customAPIParams: { todo_status: "Open" },
                     },
                     {
                       label: "Approved",

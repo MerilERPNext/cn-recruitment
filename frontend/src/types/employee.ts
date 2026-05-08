@@ -312,6 +312,14 @@ export interface EmployeeProfileOverview {
   value: string;
 
 }
+export interface EmployeeFieldsToTrack {
+  field_name: string;
+  field_label: string;
+  field_type: string;
+  options: string;
+  value: string;
+  display: string;
+}
 
 export interface Award {
   name: string;

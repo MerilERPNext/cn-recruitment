@@ -161,9 +161,7 @@ const TeamAdvanceExpenseList = () => {
                   options: [
                     {
                       label: "Pending",
-                      key: "Pending",
                       value: "Pending",
-                      customAPIParams: { todo_status: "Open" },
                     },
                     {
                       label: "Approved",
@@ -173,7 +171,6 @@ const TeamAdvanceExpenseList = () => {
                     },
                     {
                       label: "Rejected",
-                      key: "Rejected",
                       value: "Rejected",
                     },
                   ],

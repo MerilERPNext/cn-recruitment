@@ -290,7 +290,14 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({
   }, [onClose]);
 
   return (
-    <div className="flex w-full flex-col h-full bg-white">
+    <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+    onMouseDown={() => onClose?.()}
+  >
+        <div
+      className="w-full h-full md:h-auto md:max-w-3xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       {/* Header */}
       <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-3xl mx-auto px-4">
@@ -374,6 +381,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({
           </Button>
         </div>
       </div>
+    </div>
     </div>
   );
 };

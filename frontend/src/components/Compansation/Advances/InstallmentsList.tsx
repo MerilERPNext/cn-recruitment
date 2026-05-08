@@ -19,6 +19,8 @@ interface InstallmentsListProps {
   onBack: () => void;
   maskAmounts: boolean;
   onToggleMask: () => void;
+  canCreateAdvance?: boolean;
+  onOpenAdvanceForm?: () => void;
 }
 
 const InstallmentsList: React.FC<InstallmentsListProps> = ({
@@ -26,11 +28,13 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
   onBack,
   maskAmounts,
   onToggleMask,
+  canCreateAdvance,
+  onOpenAdvanceForm,
 }) => {
   const { isDesktop } = useScreenSize();
 
   const DesktopLayout = () => (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col z-100 h-full">
       <div className="flex-shrink-0">
         <div className="px-4 py-1 md:py-2">
           <div className="border-b mb-1 border-gray-10">
@@ -39,8 +43,18 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               showBackButton={true}
               onBack={onBack}
               rightSlot={
-                // CHANGED: Using .btn-secondary for consistent button styling.
-                <ShowHideButton showAmount={maskAmounts} onToggleAmount={onToggleMask} />
+                <div className="flex items-center gap-4">
+                  {canCreateAdvance && (
+                    <Button
+                      variant="contain"
+                      size="sm"
+                      onClick={onOpenAdvanceForm}
+                    >
+                      + Request Advance
+                    </Button>
+                  )}
+                  <ShowHideButton showAmount={maskAmounts} onToggleAmount={onToggleMask} />
+                </div>
               }
             />
           </div>
@@ -173,6 +187,16 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
           </Typography>
 
           <div className="flex items-center gap-2">
+            {canCreateAdvance && (
+              <Button
+                variant="contain"
+                size="sm"
+                onClick={onOpenAdvanceForm}
+                className="px-3 py-1 text-xs"
+              >
+                + Request
+              </Button>
+            )}
             <button
               onClick={onToggleMask}
               className="p-2"

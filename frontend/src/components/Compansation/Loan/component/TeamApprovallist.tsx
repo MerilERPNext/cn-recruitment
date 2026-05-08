@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { useCurrentUser } from "../../../../hooks/useCurrentUser";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
+import { useLoanApplicationUpdate } from "../../../../hooks/useLoan";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { getActionStyles } from "../../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
@@ -14,6 +15,7 @@ import StatusBadge from "../../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../../shared/atoms/Typography";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
+import FrappeAPI from "../../../../utils/frappeAPI";
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -41,10 +43,12 @@ const ApprovalRejectionLoanList = ({
   const { isMobile } = useScreenSize();
   const { data: user } = useCurrentUser();
   const commentMutation = useExpenseCommentUpdate();
+  const loanFormUpdate = useLoanApplicationUpdate();
 
   const [commentOpen, setCommentOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [comment, setComment] = useState("");
+  const [customRepaymentStartDate, setCustomRepaymentStartDate] = useState("");
 
   if (!data) return null;
 
@@ -59,6 +63,7 @@ const ApprovalRejectionLoanList = ({
   const handleActionClick = (action: string) => {
     setSelectedAction(action);
     setComment("");
+    setCustomRepaymentStartDate(data?.reference_document?.custom_repayment_start_date || "");
     setCommentOpen(true);
   };
 
@@ -76,12 +81,23 @@ const ApprovalRejectionLoanList = ({
       data?.reference_document?.name || data?.reference_name;
 
     try {
-      // Save comment
-      await commentMutation.mutateAsync({
-        referenceDoctype,
-        referenceName,
+      // 1. Update the document via Resource API (matching detail view behavior)
+      if (selectedAction === "Approve" && customRepaymentStartDate) {
+        await loanFormUpdate.mutateAsync({
+          docname: referenceName,
+          data: {
+            custom_repayment_start_date: customRepaymentStartDate,
+          },
+        });
+      }
+
+      // 2. Save comment
+      await FrappeAPI.callMethod("frappe.desk.form.utils.add_comment", {
+        reference_doctype: referenceDoctype,
+        reference_name: referenceName,
         content: comment,
         comment_email: user?.name || "",
+        comment_by: "",
       });
 
       // Trigger the parent action callback
@@ -227,6 +243,20 @@ const ApprovalRejectionLoanList = ({
                 placeholder="Enter comment..."
               />
 
+              {selectedAction === "Approve" && (
+                <div className="mt-3">
+                  <Typography variant="bodySmall" className="mb-1 block font-medium">
+                    Repayment Start Date
+                  </Typography>
+                  <input
+                    type="date"
+                    value={customRepaymentStartDate}
+                    onChange={(e) => setCustomRepaymentStartDate(e.target.value)}
+                    className="w-full border rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              )}
+
               <div className="flex justify-end gap-3 mt-4">
                 <Button
                   bgColor="gray-200"
@@ -342,7 +372,7 @@ const ApprovalRejectionLoanList = ({
               status={data?.reference_document?.status}
               recordId={data?.todo_id}
               loadingAction={loadingAction}
-              onAction={(action) => onAction(action, data)}
+              onAction={(action) => handleActionClick(action)}
             />
           ) : (
             <div className="flex items-center justify-center">
@@ -371,6 +401,20 @@ const ApprovalRejectionLoanList = ({
               className="w-full border rounded-md p-2 text-sm"
               placeholder="Enter comment..."
             />
+
+            {selectedAction === "Approve" && (
+              <div className="mt-3">
+                <Typography variant="bodySmall" className="mb-1 block font-medium">
+                  Repayment Start Date
+                </Typography>
+                <input
+                  type="date"
+                  value={customRepaymentStartDate}
+                  onChange={(e) => setCustomRepaymentStartDate(e.target.value)}
+                  className="w-full border rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 mt-4">
               <Button bgColor="gray-200" onClick={() => setCommentOpen(false)}>
