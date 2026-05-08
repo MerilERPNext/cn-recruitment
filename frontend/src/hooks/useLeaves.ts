@@ -19,6 +19,7 @@ import type {
   AccrualJournalEntriesResponse,
   PolicyQuestionsResponse,
   AttendanceStatusResponse,
+  LeaveDateRangeResponse,
 } from "../types/leaves";
 import toast from "react-hot-toast";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
@@ -526,5 +527,22 @@ export const useGetNumberOfLeaveDays = (
     enabled:
       !!employee && !!leaveType && !!fromDate && !!toDate && !!individualDates,
     staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useGetLeaveDateRange = (
+  employee: string | undefined,
+  leaveType: string | undefined
+) => {
+  return useQuery<LeaveDateRangeResponse>({
+    queryKey: ["leave-date-range", employee, leaveType],
+    queryFn: () => {
+      if (!employee || !leaveType) {
+        throw new Error("Employee and Leave Type are required");
+      }
+      return leaveService.getLeaveDateRange(employee, leaveType);
+    },
+    enabled: !!employee && !!leaveType,
+    staleTime: 0,
   });
 };

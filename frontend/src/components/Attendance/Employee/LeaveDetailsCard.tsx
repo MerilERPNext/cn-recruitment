@@ -4,6 +4,7 @@ import Badge from "../../shared/Badge";
 import { getBadgePropsByStatus } from "../../../utils/helperUtils";
 import { Typography } from "../../shared/atoms/Typography";
 import Tooltip from "../../shared/Tooltip";
+import { formatToIndianDateWithTime } from "../../../utils/formatToIndianDate";
 
 export const LeaveDetailsCard = ({ data }: { data: LeaveApplication }) => {
   const formatDate = (dateString: string) => {
@@ -132,7 +133,7 @@ export const LeaveDetailsCard = ({ data }: { data: LeaveApplication }) => {
         {data.posting_date && (
           <Row
             label="Posted On"
-            value={formatDate(data.posting_date)}
+            value={formatToIndianDateWithTime(data.posting_date)}
           />
         )}
 

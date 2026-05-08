@@ -48,6 +48,7 @@ import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { SharedExpenseCard, SharedExpensesRow } from "./SharedExpenses";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -220,6 +221,14 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           </div>
         </div>
 
+        {/* Assigned To */}
+        <div className="flex flex-col gap-1">
+          <Typography variant="mobileCardLabel">Assigned To</Typography>
+          <Typography variant="mobileCardValue">
+            {getAssignedUsersCell(item)}
+          </Typography>
+        </div>
+
         {/* Allocated To */}
         <MobileAllocatedTo
           users={item?.allocated_to}
@@ -238,8 +247,9 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             canRevoke={
               item?.custom_allow_revoke === 1 &&
               !(
-                item?.todo_status?.toLowerCase() === "cancelled" &&
-                item?.reference_document?.docstatus === 2
+                (item?.todo_status?.toLowerCase() === "cancelled" &&
+                  item?.reference_document?.docstatus === 2) ||
+                item?.reference_document?.docstatus === 1
               ) &&
               !isActed
             }
@@ -338,8 +348,8 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
       style={{
         gridTemplateColumns: isPaidFilter
-          ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-          : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr",
+          ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+          : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr",
       }}
     >
       <Tooltip
@@ -398,6 +408,9 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         {formatToIndianDate(item?.reference_document?.creation)}
       </Typography>
       <div className="flex items-center justify-center">
+        {getAssignedUsersCell(item)}
+      </div>
+      <div className="flex items-center justify-center">
         <AllocatedToTooltip
           users={item?.allocated_to}
           RoleAssignedUsers={item?.role_assigned_users}
@@ -434,8 +447,8 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           canRevoke={
             item?.custom_allow_revoke === 1 &&
             !(
-              item?.todo_status?.toLowerCase() === "cancelled" &&
-              item?.reference_document?.docstatus === 2
+              (item?.todo_status?.toLowerCase() === "cancelled" &&
+                item?.reference_document?.docstatus === 2) || item?.reference_document?.docstatus === 1
             ) &&
             // item?.todo_status?.toLowerCase() === "open" &&
             !isActed
@@ -862,6 +875,7 @@ const ExpensesList: React.FC = () => {
       ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
       "Expense Date",
       "Claimed Date",
+      "Assigned To",
       "Status",
       "Actions",
     ];
@@ -875,6 +889,7 @@ const ExpensesList: React.FC = () => {
       "1fr",
       "1fr",
       ...(currentFilters.status === "Paid" ? ["1fr"] : []),
+      "1fr",
       "1fr",
       "1fr",
       "1fr",

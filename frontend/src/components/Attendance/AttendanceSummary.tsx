@@ -25,6 +25,7 @@ import {
   useGetPolicyForDate,
   useGetQuickAttendanceSummary,
   useGetTeamCheckinSummary,
+  usePolicyVisibilityFlags,
   useReqValidationsForOvertimeRequest,
   useWeeklyOff,
 } from "../../hooks/useAttendance";
@@ -111,6 +112,7 @@ const AttendanceSummary = () => {
     },
     !!currentEmployee?.employee,
   );
+  const { data: policyVisibilityFlags } = usePolicyVisibilityFlags();
   const { data: weeklyOff } = useWeeklyOff(
     [["name", "=", currentEmployee?.custom_weekly_off]]
   );
@@ -205,7 +207,7 @@ const AttendanceSummary = () => {
             },
           ],
         },
-        {
+        ...(teamCheckInSummary?.data?.have_team ? [{
           id: "team_requests",
           title: "Team Attendance",
           subtitle: "Pending Requests",
@@ -220,7 +222,7 @@ const AttendanceSummary = () => {
               href: "/webapp/attendance/team-attendance-requests",
             },
           ],
-        },
+        }] as QuickActionCardData[] : []),
         {
           id: "my_overtime",
           title: "Planned Overtime",
@@ -243,7 +245,7 @@ const AttendanceSummary = () => {
             },
           ],
         },
-        {
+        ...(teamCheckInSummary?.data?.have_team ? [{
           id: "team_overtime",
           title: "Team Overtime",
           subtitle: "Pending Requests",
@@ -258,7 +260,7 @@ const AttendanceSummary = () => {
               href: "/webapp/attendance/team-overtime-requests",
             },
           ],
-        },
+        }] as QuickActionCardData[] : []),
         {
           id: "shifts",
           title: "Shifts",
@@ -277,7 +279,7 @@ const AttendanceSummary = () => {
         },
       ],
     }),
-    [employeeAttendanceSummary],
+    [employeeAttendanceSummary, teamCheckInSummary?.data?.have_team, canCreateAttendanceRequest, canCreateOvertimeRequest],
   );
 
   const getAttendanceMethod = () => {
@@ -342,6 +344,18 @@ const AttendanceSummary = () => {
 
     const settingConfig = DRAWER_SETTINGS[settingType];
     if (settingConfig) {
+      const isHidden =
+        (settingType === "Attendance Policy" && policyVisibilityFlags?.hide_attendance_policy) ||
+        (settingType === "Overtime Policy" && policyVisibilityFlags?.hide_overtime_policy);
+
+      if (isHidden) {
+        return (
+          <Typography variant="bodySmall" className="font-medium text-gray-600 block">
+            {displayLabel}
+          </Typography>
+        );
+      }
+
       const { doctypeName, useEmployeeAsTarget } = settingConfig;
       return (
         <Typography

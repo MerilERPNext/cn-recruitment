@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { allocatedToType } from "./allocatedToTooltip";
 
 export type ChatAssistantItem = {
@@ -91,7 +92,7 @@ export type TodoResponse = {
 
 export type RoleAssignedUsersType = {
   role: string;
-  users: {
+  user: {
     user_id: string;
     name: string;
     employee: string;

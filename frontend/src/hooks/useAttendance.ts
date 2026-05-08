@@ -96,6 +96,14 @@ export const useHomeSummaryDetails = (
     ...defaultQueryOptions,
   });
 };
+export const usePolicyVisibilityFlags = (): UseQueryResult<any, Error> => {
+  return useQuery<any, Error>({
+    queryKey: ["policy-visibility-flags"],
+    queryFn: () => attendanceService.getPolicyVisibilityFlags(),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
 
 export const useUserMicroApps = (
   filters?: string
