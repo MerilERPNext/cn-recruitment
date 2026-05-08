@@ -23,6 +23,7 @@ import {
   useGetLeaveReason,
   useGetLeaveRequestFields,
   useGetNumberOfLeaveDays,
+  useGetLeaveDateRange,
 } from "../../hooks/useLeaves";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useRequiredFields } from "../../hooks/useRequiredFields";
@@ -61,8 +62,8 @@ interface RequestLeaveProps {
   onCancel?: () => void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const AttachmentPreviewVanilla: React.FC<{ 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   currentAttachments: any[]; 
   onPreview: (file: { url: string; name: string }) => void 
 }> = ({ currentAttachments, onPreview }) => {
@@ -185,17 +186,12 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     try {
       const submission = await formInstance.current.submit();
 
-      const isMultipleDays =
-        submission.data.fromDate &&
-        submission.data.toDate &&
-        submission.data.fromDate.split("T")[0] !==
-        submission.data.toDate.split("T")[0];
 
       const payload = buildLeavePayload({
         employee: currentEmployee.name,
         submission: submission.data,
         dailyConfig:
-          submission.data.halfDay && isMultipleDays ? dailyConfig : undefined,
+          dailyConfig,
       });
 
       if (defaults?.isResubmit) {
@@ -231,12 +227,11 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             leave_type: submission.data.leaveType,
             from_date: submission.data.fromDate?.split("T")[0],
             to_date: submission.data.toDate?.split("T")[0],
-            half_day: submission.data.halfDay ? 1 : 0,
+            half_day: Object.values(dailyConfig).some((v) => v !== "Full Day") ? 1 : 0,
             description: submission.data.description,
             custom_reason: submission.data.custom_reason,
             custom_attachment: attachmentUrls.length > 0 ? attachmentUrls : undefined,
-            daily_half_day_config:
-              submission.data.halfDay && isMultipleDays ? dailyConfig : undefined,
+            daily_half_day_config: dailyConfig,
           },
         });
         if (currentAttachments.some((a) => a.file)) {
@@ -283,10 +278,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
 
   const showDailyConfig = Boolean(
-    formData.halfDay &&
     formData.fromDate &&
     formData.toDate &&
-    formData.fromDate !== formData.toDate &&
     Object.keys(dailyConfig).length > 0,
   );
 
@@ -335,25 +328,13 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     if (!formData.fromDate || !formData.toDate) return undefined;
     const dates = getDatesBetween(formData.fromDate, formData.toDate);
 
-    const fromDateOnly = formData.fromDate.split("T")[0];
-    const toDateOnly = formData.toDate.split("T")[0];
-
     const individualDates = dates.map((d) => {
-      let isHalfDay = 0;
-      if (formData.halfDay) {
-        if (fromDateOnly === toDateOnly) {
-          isHalfDay = 1;
-        } else {
-          const config = dailyConfig[d];
-          if (config === "First Half" || config === "Second Half") {
-            isHalfDay = 1;
-          }
-        }
-      }
+      const config = dailyConfig[d] || "Full Day";
+      const isHalfDay = config === "First Half" || config === "Second Half" ? 1 : 0;
       return { date: d, half_day: isHalfDay };
     });
     return JSON.stringify(individualDates);
-  }, [formData.fromDate, formData.toDate, formData.halfDay, dailyConfig]);
+  }, [formData.fromDate, formData.toDate, dailyConfig]);
 
   const { data: leaveDaysResponse } = useGetNumberOfLeaveDays(
     currentEmployee?.name,
@@ -373,6 +354,11 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     formData.leaveType,
     formData.fromDate || undefined,
     formData.toDate || undefined,
+  );
+  
+  const { data: dateRangeData } = useGetLeaveDateRange(
+    currentEmployee?.name,
+    formData.leaveType
   );
 
   const { data: requiredFields } = useRequiredFields("Leave Application");
@@ -435,6 +421,42 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   }, [defaults, today]);
 
   useEffect(() => {
+    if (dateRangeData?.min_date || dateRangeData?.max_date) {
+      setFormData((prev) => {
+        let updated = false;
+        const newFormData = { ...prev };
+
+        if (dateRangeData.min_date) {
+          const minDate = new Date(dateRangeData.min_date).setHours(0, 0, 0, 0);
+          if (prev.fromDate) {
+            const currentFrom = new Date(prev.fromDate).setHours(0, 0, 0, 0);
+            if (currentFrom < minDate) {
+              newFormData.fromDate = `${dateRangeData.min_date}T00:00:00`;
+              updated = true;
+            }
+          } else {
+            newFormData.fromDate = `${dateRangeData.min_date}T00:00:00`;
+            updated = true;
+          }
+        }
+
+        if (dateRangeData.max_date) {
+          const maxDate = new Date(dateRangeData.max_date).setHours(0, 0, 0, 0);
+          if (prev.toDate) {
+            const currentTo = new Date(prev.toDate).setHours(0, 0, 0, 0);
+            if (currentTo > maxDate) {
+              newFormData.toDate = `${dateRangeData.max_date}T00:00:00`;
+              updated = true;
+            }
+          }
+        }
+
+        return updated ? newFormData : prev;
+      });
+    }
+  }, [dateRangeData]);
+
+  useEffect(() => {
     setShowAttendanceButton(Boolean(formData.fromDate && formData.toDate));
   }, [formData.fromDate, formData.toDate]);
 
@@ -454,11 +476,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       console.log("Custom attachment from submission:", submission?.data?.custom_attachment);
       console.log("formInstance submission:", formInstance.current?.submission);
 
-      const isMultipleDays =
-        submission.data.fromDate &&
-        submission.data.toDate &&
-        submission.data.fromDate.split("T")[0] !==
-        submission.data.toDate.split("T")[0];
 
       // Get files from form instance directly as primary source
       const fileComponent = formInstance.current?.getComponent("custom_attachment");
@@ -479,7 +496,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         employee: currentEmployee.name,
         submission: submission.data,
         dailyConfig:
-          submission.data.halfDay && isMultipleDays ? dailyConfig : undefined,
+          dailyConfig,
       });
 
       await loading?.wrap(async () => {
@@ -542,61 +559,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       show_individual_continuous: 0,
     };
 
-    const show: LeaveFieldFlags = fields?.show ?? defaultFieldFlags;
     const mandatory: LeaveFieldFlags = fields?.mandatory ?? defaultFieldFlags;
 
-    const halfDayComponents = show.half_day
-      ? [
-        {
-          type: "columns",
-          key: "halfDayColumns",
-          customClass: "bg-gray-100 mx-2 p-3 rounded-md mt-4",
-          columns: [
-            {
-              width: 6,
-              components: [
-                {
-                  type: "checkbox",
-                  key: "halfDay",
-                  label: mandatory.half_day
-                    ? "Half-Day Leave <span style='color:red;margin-left:3px;'> *</span>"
-                    : "Half-Day Leave",
-                  input: true,
-                  labelPosition: "bottom",
-                  defaultValue: defaults?.halfDay,
-                  validate: { required: !!mandatory.half_day },
-                  customClass:
-                    "custom-halfday-toggle border rounded-lg shadow-sm p-2",
-                },
-              ],
-            },
-            {
-              width: 6,
-              components: [],
-            },
-          ],
-        },
-        ...(show.show_half_day_options
-          ? [
-            {
-              type: "radio",
-              key: "halfDayOption",
-              label: "Select Half-Day Option",
-              input: true,
-              validate: { required: !!mandatory.show_half_day_options },
-              values: [
-                { label: "First Half", value: "First Half" },
-                { label: "Second Half", value: "Second Half" },
-              ],
-
-              customConditional: `
-  show = data.halfDay === true && data.fromDate === data.toDate;`,
-              customClass: "px-2 mb-4 ml-4 mt-2",
-            },
-          ]
-          : []),
-      ]
-      : [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const halfDayComponents: any[] = [];
 
     const panelComponents = [
       {
@@ -740,6 +706,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 input: true,
                 customClass: "mb-4",
                 format: "dd-MM-yyyy",
+                datePicker: {
+                  minDate: dateRangeData?.min_date || undefined,
+                  maxDate: dateRangeData?.max_date || undefined,
+                },
                 // disabled: defaults?.isEdit
                 //   ? false
                 //   : Boolean(defaults?.fromDate),
@@ -774,7 +744,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 customClass: "mb-4",
                 format: "dd-MM-yyyy",
                 datePicker: {
-                  minDate: formData.fromDate || today,
+                  minDate: formData.fromDate || dateRangeData?.min_date || today,
+                  maxDate: dateRangeData?.max_date || undefined,
                 },
                 // disabled: defaults?.isEdit ? false : Boolean(defaults?.toDate),
                 disabled:
@@ -814,6 +785,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     today,
     currentAttachments,
     formData.fromDate,
+    dateRangeData,
   ]);
 
   const handleAttendanceClick = useCallback(() => {
@@ -904,12 +876,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             const changed = change.changed;
             console.log("custom_attachment from onChange:", data?.custom_attachment);
             setFormData(data);
-            if (
-              data.halfDay &&
-              data.fromDate &&
-              data.toDate &&
-              data.fromDate !== data.toDate
-            ) {
+            if (data.fromDate && data.toDate) {
               const dates = getDatesBetween(data.fromDate, data.toDate);
 
               setDailyConfig((prev) => {
@@ -922,7 +889,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 });
                 return next;
               });
-            } else if (data.fromDate === data.toDate || !data.halfDay) {
+            } else {
               setDailyConfig({});
             }
 

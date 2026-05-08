@@ -426,3 +426,9 @@ export interface AttendanceStatusItem {
 }
 
 export type AttendanceStatusResponse = AttendanceStatusItem[];
+
+export interface LeaveDateRangeResponse {
+  min_date: string;
+  max_date: string;
+  can_apply: boolean;
+}

@@ -89,6 +89,10 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
       chart: {
         type: "bar",
         toolbar: { show: false },
+   
+      },
+      dataLabels: {
+        enabled: false,
       },
       colors, // ✅ colors mapped to series order
       plotOptions: {

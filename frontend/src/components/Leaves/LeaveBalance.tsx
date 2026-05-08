@@ -56,7 +56,7 @@ const LeaveTransactionCard: React.FC<{
 
   const toggle = useCallback(
     (index: number) => setOpenIndex((prev) => (prev === index ? null : index)),
-    [],
+    []
   );
 
   return (
@@ -70,8 +70,9 @@ const LeaveTransactionCard: React.FC<{
             type="button"
             aria-expanded={openIndex === idx}
             onClick={() => toggle(idx)}
-            className={`w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 transition-all text-left hover:bg-gray-50 ${openIndex === idx ? "rounded-t-lg border-b-0" : "rounded-lg"
-              }`}
+            className={`w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 transition-all text-left hover:bg-gray-50 ${
+              openIndex === idx ? "rounded-t-lg border-b-0" : "rounded-lg"
+            }`}
           >
             <Typography
               variant="bodyMedium"
@@ -91,8 +92,9 @@ const LeaveTransactionCard: React.FC<{
               </Typography>
 
               <ChevronDown
-                className={`h-4 w-4 transition-transform ${openIndex === idx ? "rotate-180" : ""
-                  }`}
+                className={`h-4 w-4 transition-transform ${
+                  openIndex === idx ? "rotate-180" : ""
+                }`}
               />
             </div>
           </button>
@@ -138,7 +140,7 @@ const LeaveBalance: React.FC = () => {
   const canRequestLeave = isActionEnabled(
     userUiPermission,
     "lb_request_leave",
-    "Leave Summary",
+    "Leave Summary"
   );
 
   const today = new Date().toISOString().split("T")[0];
@@ -189,7 +191,7 @@ const LeaveBalance: React.FC = () => {
   }
 
   const leaveBalance = (data?.leave_balance ?? []).filter(
-    (leave) => leave.dont_show_in_frontend !== 1,
+    (leave) => leave.dont_show_in_frontend !== 1
   );
 
   const visibleTypes = leaveBalance.map((l) => l.leave_id);
@@ -264,7 +266,7 @@ const LeaveBalance: React.FC = () => {
                   >
                     {leaveBalance.reduce(
                       (sum, leave) => sum + (leave.entitled || 0),
-                      0,
+                      0
                     )}
                   </Typography>
 
@@ -288,7 +290,7 @@ const LeaveBalance: React.FC = () => {
                   >
                     {leaveBalance.reduce(
                       (sum, leave) => sum + (leave.availed || 0),
-                      0,
+                      0
                     )}
                   </Typography>
 
@@ -312,7 +314,7 @@ const LeaveBalance: React.FC = () => {
                   >
                     {leaveBalance.reduce(
                       (sum, leave) => sum + (leave.balance || 0),
-                      0,
+                      0
                     )}
                   </Typography>
 
@@ -330,7 +332,12 @@ const LeaveBalance: React.FC = () => {
                 </h3>
                 <p className="text-sm text-gray-500">Balances as of today</p>
               </div>
-              {leaveBalance.length < 1 ? <NoDataFound title="No Leave Balance Available" subtitle="There's no leave balance to show here right now." /> :
+              {leaveBalance.length < 1 ? (
+                <NoDataFound
+                  title="No Leave Balance Available"
+                  subtitle="There's no leave balance to show here right now."
+                />
+              ) : (
                 <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(20rem,1fr))] ">
                   {leaveBalance.map((leave) => (
                     <div
@@ -343,18 +350,50 @@ const LeaveBalance: React.FC = () => {
                       </div>
 
                       <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <Typography variant="subheading">
-                              {leave.entitled}
-                            </Typography>
+                        <div className="flex flex-col justify-between items-start">
+                          <div className="flex items-center gap-1 justify-between w-full">
+                            <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+                              <div className="text-base font-semibold text-gray-900">
+                                {leave.entitled}
+                              </div>
+                              <p
+                                className="text-sm text-gray-600 truncate whitespace-nowrap max-w-[120px] overflow-hidden text-ellipsis cursor-pointer flex-shrink-0"
+                                title={leave.type}
+                              >
+                                {leave.type}
+                              </p>
+                            </div>
 
-                            <p className="text-sm text-gray-600">{`${leave.type}`}</p>
+                            {canRequestLeave && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openModal({
+                                    source: "balances",
+                                    leaveType: leave?.leave_id,
+                                  });
+                                }}
+                                className="text-[#98A9CD] hover:text-[#98b1e6] ml-auto  mr-2.5"
+                              >
+                                <Plus size={18} />
+                              </button>
+                            )}
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenDrawer(leave);
+                              }}
+                              className="text-[#98A9CD] hover:text-[#98b1e6]"
+                            >
+                              <ScrollText size={18} />
+                            </button>
                           </div>
+
                           {leave?.visibility_flags?.show_carry_over && (
                             <Typography
                               variant="bodySmall"
-                              className="ml-auto mr-2.5 text-primary"
+                              className=" mr-2.5 text-primary whitespace-nowrap items-start"
                             >
                               <span className="font-semibold">
                                 {leave.carry_over}
@@ -362,30 +401,6 @@ const LeaveBalance: React.FC = () => {
                               Carry Forwarded
                             </Typography>
                           )}
-                          {canRequestLeave && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openModal({
-                                  source: "balances",
-                                  leaveType: leave?.leave_id,
-                                });
-                              }}
-                              className="text-[#98A9CD] hover:text-[#98b1e6] ml-auto  mr-2.5"
-                            >
-                              <Plus size={18} />
-                            </button>
-                          )}
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenDrawer(leave);
-                            }}
-                            className="text-[#98A9CD] hover:text-[#98b1e6]"
-                          >
-                            <ScrollText size={18} />
-                          </button>
                         </div>
 
                         <div className="my-3 h-px bg-primary/20" />
@@ -395,7 +410,9 @@ const LeaveBalance: React.FC = () => {
                             <p className="text-sm font-semibold text-gray-900">
                               {leave.availed}
                             </p>
-                            <p className="text-xs text-gray-600">Already taken</p>
+                            <p className="text-xs text-gray-600">
+                              Already taken
+                            </p>
                           </div>
 
                           <div>
@@ -410,7 +427,8 @@ const LeaveBalance: React.FC = () => {
                       </div>
                     </div>
                   ))}
-                </div>}
+                </div>
+              )}
             </div>
           </div>
         </>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { allocatedToType } from "./allocatedToTooltip";
 
 export type ChatAssistantItem = {
