@@ -25,6 +25,7 @@ import {
   useGetPolicyForDate,
   useGetQuickAttendanceSummary,
   useGetTeamCheckinSummary,
+  usePolicyVisibilityFlags,
   useReqValidationsForOvertimeRequest,
   useWeeklyOff,
 } from "../../hooks/useAttendance";
@@ -111,6 +112,7 @@ const AttendanceSummary = () => {
     },
     !!currentEmployee?.employee,
   );
+  const { data: policyVisibilityFlags } = usePolicyVisibilityFlags();
   const { data: weeklyOff } = useWeeklyOff(
     [["name", "=", currentEmployee?.custom_weekly_off]]
   );
@@ -342,6 +344,18 @@ const AttendanceSummary = () => {
 
     const settingConfig = DRAWER_SETTINGS[settingType];
     if (settingConfig) {
+      const isHidden =
+        (settingType === "Attendance Policy" && policyVisibilityFlags?.hide_attendance_policy) ||
+        (settingType === "Overtime Policy" && policyVisibilityFlags?.hide_overtime_policy);
+
+      if (isHidden) {
+        return (
+          <Typography variant="bodySmall" className="font-medium text-gray-600 block">
+            {displayLabel}
+          </Typography>
+        );
+      }
+
       const { doctypeName, useEmployeeAsTarget } = settingConfig;
       return (
         <Typography

@@ -1,6 +1,6 @@
 import { Calendar, Clock, Shield, Timer, Users } from "lucide-react";
 import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
-import { useGetEmployeeShift, useGetPolicyForDate, useReqValidationsForOvertimeRequest, useWeeklyOff } from "../../../../hooks/useAttendance";
+import { useGetEmployeeShift, useGetPolicyForDate, usePolicyVisibilityFlags, useReqValidationsForOvertimeRequest, useWeeklyOff } from "../../../../hooks/useAttendance";
 import { format } from "date-fns";
 
 import { Typography } from "../../../shared/atoms/Typography";
@@ -34,6 +34,7 @@ const ViewPolicies = () => {
         employee: currentEmployee?.employee,
         as_of: format(new Date(), "yyyy-MM-dd"),
     }, !!currentEmployee?.employee);
+    const { data: policyVisibilityFlags } = usePolicyVisibilityFlags();
     const getAttendanceMethod = () => {
         const methods = [];
         if (currentEmployee?.custom_enable_web_clockin) {
@@ -96,6 +97,18 @@ const ViewPolicies = () => {
 
         const settingConfig = DRAWER_SETTINGS[settingType];
         if (settingConfig) {
+            const isHidden =
+                (settingType === "Attendance Policy" && policyVisibilityFlags?.hide_attendance_policy) ||
+                (settingType === "Overtime Policy" && policyVisibilityFlags?.hide_overtime_policy);
+
+            if (isHidden) {
+                return (
+                    <Typography variant="bodySmall" className="font-medium text-gray-600 block">
+                        {displayLabel}
+                    </Typography>
+                );
+            }
+
             const { doctypeName, useEmployeeAsTarget } = settingConfig;
             return (
                 <Typography

@@ -176,7 +176,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const [attachments, setAttachments] = useState<File[]>([]);
   const [fromDateChanged, setFromDateChanged] = useState<string>("");
   const [toDateChanged, setToDateChanged] = useState<string>("");
-  const [requestTypeChanged, setRequestTypeChanged] = useState<string>("");
+  const [requestTypeChanged, setRequestTypeChanged] = useState<string>("Attendance Adjustment");
   const [currentlySelectedEmployee, setCurrentlySelectedEmployee] =
     useState<any>(null);
   const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
@@ -624,14 +624,38 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       updateDateConstraints(toDateComp);
 
       // Refresh form to apply visibility changes and date limits
-      // We save the current submission to ensure values aren't lost during redraw
+      // Capture submission before redraw, patch in new date values so they survive the restore
       const currentSubmission = formAddressInstance.current.submission;
+      const patchedSubmission = currentSubmission
+        ? JSON.parse(JSON.stringify(currentSubmission))
+        : null;
+
+      if (patchedSubmission?.data) {
+        // Always patch the hidden fields so flatpickr resolves the string references
+        // ("allowed_from_date" / "allowed_to_date") to the correct dates after the restore
+        if (attendanceRequestAttachmentsMandatory.allowed_from_date) {
+          patchedSubmission.data.allowed_from_date = attendanceRequestAttachmentsMandatory.allowed_from_date;
+        }
+        if (attendanceRequestAttachmentsMandatory.allowed_to_date) {
+          patchedSubmission.data.allowed_to_date = attendanceRequestAttachmentsMandatory.allowed_to_date;
+        }
+
+        if (forActionType !== "edit") {
+          if (attendanceRequestAttachmentsMandatory.allowed_from_date) {
+            patchedSubmission.data.from_date = attendanceRequestAttachmentsMandatory.allowed_from_date;
+          }
+          if (attendanceRequestAttachmentsMandatory.allowed_to_date) {
+            patchedSubmission.data.to_date = attendanceRequestAttachmentsMandatory.allowed_to_date;
+          }
+        }
+      }
+
       formAddressInstance.current.redraw();
-      if (currentSubmission) {
-        formAddressInstance.current.submission = currentSubmission;
+      if (patchedSubmission) {
+        formAddressInstance.current.submission = patchedSubmission;
       }
     }
-  }, [attendanceRequestAttachmentsMandatory]);
+  }, [attendanceRequestAttachmentsMandatory, isFormReady, forActionType]);
 
   // const formatTime = (date: Date | string | undefined): string | undefined => {
   //   if (!date) return undefined;
