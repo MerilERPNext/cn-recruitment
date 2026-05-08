@@ -16,8 +16,6 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
   const [selectedDate, setSelectedDate] = useState(today);
   const [isMoreDetailsOpen, setIsMoreDetailsOpen] = useState(false);
 
-
-
   const {
     data: currentEmployee,
     isLoading: isEmployeeLoading,
@@ -266,8 +264,9 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
                 >
                   <span>More Details</span>
                   <svg
-                    className={`w-5 h-5 transition-transform duration-300 ${isMoreDetailsOpen ? "rotate-180" : ""
-                      }`}
+                    className={`w-5 h-5 transition-transform duration-300 ${
+                      isMoreDetailsOpen ? "rotate-180" : ""
+                    }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -282,26 +281,33 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
                 </button>
 
                 <div
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${isMoreDetailsOpen
-                    ? "max-h-96 opacity-100 mt-4"
-                    : "max-h-0 opacity-0"
-                    }`}
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    isMoreDetailsOpen
+                      ? "max-h-96 opacity-100 mt-4"
+                      : "max-h-0 opacity-0"
+                  }`}
                 >
-                  {displayData?.balance_excluding_future_transactions && (
-                    <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                      <div className="flex flex-col">
-                        <span className="text-sm text-gray-600">
-                          Balance Excluding Future Transactions
-                        </span>
-                        <span className="text-sm font-semibold text-gray-900">
-                          {displayData.balance_excluding_future_transactions}
-                        </span>
+                  {displayData.leave_id && (
+                      <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {displayData.leave_id}
+                            <div className="flex flex-col mt-2">
+                              {displayData?.balance_excluding_future_transactions && (
+                                <span className="text-sm text-gray-600">
+                                  Balance Excluding Future Transactions
+                                </span>
+                              )}
+                              {
+                                displayData.balance_excluding_future_transactions
+                              }
+                            </div>
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               </div>
-
               <div className="mt-4 text-xs text-gray-500 italic">
                 *There could be a mismatch in the totals on this page, as a few
                 data points have been disabled due to admin configurations.

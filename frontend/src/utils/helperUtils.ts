@@ -447,8 +447,12 @@ export const buildLeavePayload = ({
     custom_attachment: submission?.custom_attachment?.[0]?.url,
   };
 
-  // No half-day selected
-  if (!submission.halfDay) {
+  const hasHalfDay = Object.values(dailyConfig || {}).some(
+    (type) => type === "First Half" || type === "Second Half"
+  );
+
+  // If no half-day in config, return full day payload
+  if (!hasHalfDay) {
     return {
       ...basePayload,
       half_day: 0,
@@ -457,14 +461,15 @@ export const buildLeavePayload = ({
 
   // Single day with half-day
   if (isSingleDay) {
+    const dayType = Object.values(dailyConfig || {})[0];
     return {
       ...basePayload,
       half_day: 1,
-      custom_half_day_type: submission.halfDayOption, // "First Half" or "Second Half"
+      custom_half_day_type: dayType, // "First Half" or "Second Half"
     };
   }
 
-  // Multiple days with half-day - always use individual mode
+  // Multiple days with half-day
   return {
     ...basePayload,
     individual: 1,

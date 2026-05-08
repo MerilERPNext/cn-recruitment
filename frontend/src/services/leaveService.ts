@@ -11,6 +11,7 @@ import type {
   LeaveRequest,
   PolicyQuestionsResponse,
   TeamRequest,
+  LeaveDateRangeResponse,
 } from "../types/leaves";
 import { HolidayApiResponse } from "../types/leaves";
 import type { LeaveBalanceResponse, HolidayGroup } from "../types/leaves";
@@ -423,5 +424,19 @@ export const leaveService = {
     return typeof response === "object" && response !== null && "message" in response
       ? (response as { message: number }).message
       : (response as number);
+  },
+
+  getLeaveDateRange: async (
+    employee: string,
+    leaveType: string
+  ): Promise<LeaveDateRangeResponse> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_leave_shift_managment.api.get_leave_application_date_range",
+      {
+        employee,
+        leave_type: leaveType,
+      }
+    );
+    return response as LeaveDateRangeResponse;
   },
 };

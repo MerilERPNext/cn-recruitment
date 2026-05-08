@@ -74,9 +74,6 @@ const MyLeaveRequests = ({
             },
           },
         ],
-        emptyValueConfig: {
-          filterValue: ["!=", "Cancelled"],
-        },
       },
       {
         fieldname: "leave_type",

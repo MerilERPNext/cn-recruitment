@@ -44,7 +44,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
   expenses = [],
   setExpenses,
   currentEmployee,
-  maxParticipants = 5,
+  maxParticipants = 0,
   employeeOptions = [],
   employeeOptionsLoading = false,
   onSave,
