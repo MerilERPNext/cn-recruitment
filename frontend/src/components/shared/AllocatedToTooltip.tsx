@@ -300,7 +300,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                             {rolesArray.map((r, idx) => {
                                 const assigned = RoleAssignedUsers?.find((data) => data.role === r);
                                 console.log(assigned, "--------------------------------")
-                                const hasUsers = assigned && assigned?.user?.length > 0;
+                                const hasUsers = assigned && assigned?.users?.length > 0;
                                 return (
                                     <span
                                         key={`val-r-${idx}-${r}`}
@@ -321,7 +321,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                                             ${hasUsers ? "cursor-pointer hover:bg-secondary-100 transition-colors" : ""}
                                         `}
                                     >
-                                        {r} {hasUsers && `(${assigned?.user?.length})`}
+                                        {r} {hasUsers && `(${assigned?.users?.length})`}
                                     </span>
                                 );
                             })}
@@ -362,7 +362,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                                 <div className="flex flex-wrap gap-1">
                                     {rolesArray.map((r, idx) => {
                                         const assigned = RoleAssignedUsers?.find((data) => data.role === r);
-                                        const hasUsers = assigned && assigned.user?.length > 0;
+                                        const hasUsers = assigned && assigned.users?.length > 0;
                                         return (
                                             <span
                                                 key={`role-${idx}-${r}`}
@@ -383,7 +383,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                                                     ${hasUsers ? "cursor-pointer hover:bg-secondary-100 transition-colors" : ""}
                                                 `}
                                             >
-                                                {r} {hasUsers && `(${assigned.user?.length})`}
+                                                {r} {hasUsers && `(${assigned.users?.length})`}
                                             </span>
                                         );
                                     })}
