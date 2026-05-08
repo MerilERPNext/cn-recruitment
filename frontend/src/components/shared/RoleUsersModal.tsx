@@ -66,9 +66,9 @@ const RoleUsersModal: React.FC<RoleUsersModalProps> = ({ isOpen, onClose, roleDa
                                 </Tooltip>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                     <span className="inline-flex items-center gap-1 text-xs font-semibold font-brand text-primary-600 bg-primary-50 border border-primary-200/60 rounded-md px-1.5 py-0.5 tracking-wide">
-                                        {roleData.user?.length}
+                                        {roleData.users?.length}
                                         <span className="font-medium text-primary-500">
-                                            {roleData.user?.length === 1 ? 'member' : 'members'}
+                                            {roleData.users?.length === 1 ? 'member' : 'members'}
                                         </span>
                                     </span>
                                 </div>
@@ -86,7 +86,7 @@ const RoleUsersModal: React.FC<RoleUsersModalProps> = ({ isOpen, onClose, roleDa
 
                 {/* ============ Content ============ */}
                 <div className="flex-1 overflow-y-auto p-4 bg-gray-50/30">
-                    {roleData.user?.length === 0 ? (
+                    {roleData.users?.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                             <div className="flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 mb-4">
                                 <UserX size={28} strokeWidth={1.5} className="text-gray-300" />
@@ -100,7 +100,7 @@ const RoleUsersModal: React.FC<RoleUsersModalProps> = ({ isOpen, onClose, roleDa
                         </div>
                     ) : (
                         <div className="flex flex-col gap-2">
-                            {roleData.user?.map((u, index) => (
+                            {roleData.users?.map((u, index) => (
                                 <WrapperHoverCard
                                     key={u.user_id}
                                     employeeId={u.employee}
