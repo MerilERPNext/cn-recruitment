@@ -49,7 +49,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         }
         setActualMode(effectiveMode);
 
-        const response = await fetch(pdfUrl);
+        const response = await fetch(pdfUrl, { credentials: "include" });
         if (!response.ok) throw new Error(`Failed to fetch PDF: ${response.statusText}`);
 
         const blob = await response.blob();
