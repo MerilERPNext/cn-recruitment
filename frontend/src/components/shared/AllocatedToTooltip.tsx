@@ -301,7 +301,6 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
                             {rolesArray.map((r, idx) => {
                                 const assigned = RoleAssignedUsers?.find((data) => data.role === r);
-                                console.log(assigned, "--------------------------------")
                                 const hasUsers = assigned && assigned?.user?.length > 0;
                                 return (
                                     <span

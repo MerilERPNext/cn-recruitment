@@ -169,7 +169,16 @@ const MyOvertimeRequests = () => {
                     },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
-                  ],
+                    {
+                      label: "Revoked",
+                      value: "Revoked",
+                      excludeFieldFromFilters: true,
+                      customAPIParams: { todo_status: "Cancelled" },
+                      additionalFilters: {
+                        docstatus: 2,
+                        custom_allow_revoke: 1,
+                      },
+                    },],
                   emptyValueConfig: {
                     filterValue: ["!=", "Cancelled"],
                   },

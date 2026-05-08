@@ -12,7 +12,7 @@ import {
 } from "../../../utils/sanitizeToPlainText";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import Button from "../../shared/atoms/Button";
-import { Edit, RotateCcw } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
@@ -122,7 +122,7 @@ export function MyRequestCard({
               RoleAssignedUsers={request?.role_assigned_users || []}
               position="left"
             >
-              <StatusBadge status={request?.status} />
+              <StatusBadge status={request?.status === "Cancelled" ? "Revoked" : request?.status} />
             </AllocatedToTooltip>
           </div>
           <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
@@ -140,14 +140,14 @@ export function MyRequestCard({
             >
               <Edit className="w-4 h-4" />
             </Button>}
-            {canRevokeOvertimeRequest && <Button size="sm" variant="subtle"
+            {request?.status !== "Cancelled" && canRevoke && <Button size="sm" variant="subtle"
               disabled={!canRevoke || isActed}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 handleRevokeClick();
               }}>
-              <RotateCcw className="w-4 h-4" />
+              <Trash2 className="w-4 h-4  text-white md:text-red-400" />
             </Button>}
           </div>
         </div>
@@ -221,14 +221,14 @@ export function MyRequestCard({
                   >
                     <Edit className="w-4 h-4" /> Edit
                   </Button>}
-                  {canRevokeOvertimeRequest && <Button size="sm" variant="soft"
+                  {request?.status !== "Cancelled" && canRevoke && <Button size="sm" variant="subtle"
                     disabled={!canRevoke || isActed}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       handleRevokeClick();
                     }}>
-                    <RotateCcw className="w-4 h-4" /> Revoke
+                    <Trash2 className="w-4 h-4  text-white md:text-red-400" />
                   </Button>}
                   {
                     !canRevokeOvertimeRequest && !canEditOvertimeRequest && <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">

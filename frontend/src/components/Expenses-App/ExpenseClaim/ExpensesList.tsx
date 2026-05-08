@@ -247,8 +247,9 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             canRevoke={
               item?.custom_allow_revoke === 1 &&
               !(
-                item?.todo_status?.toLowerCase() === "cancelled" &&
-                item?.reference_document?.docstatus === 2
+                (item?.todo_status?.toLowerCase() === "cancelled" &&
+                  item?.reference_document?.docstatus === 2) ||
+                item?.reference_document?.docstatus === 1
               ) &&
               !isActed
             }
@@ -446,8 +447,8 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           canRevoke={
             item?.custom_allow_revoke === 1 &&
             !(
-              item?.todo_status?.toLowerCase() === "cancelled" &&
-              item?.reference_document?.docstatus === 2
+              (item?.todo_status?.toLowerCase() === "cancelled" &&
+                item?.reference_document?.docstatus === 2) || item?.reference_document?.docstatus === 1
             ) &&
             // item?.todo_status?.toLowerCase() === "open" &&
             !isActed
