@@ -68,6 +68,14 @@ export interface AttendanceRequest {
 
 export interface MyAttendanceRequest {
   due_date: string;
+  approval_stages_status: {
+    stage_name: string;
+    user: string;
+    employee_id: string;
+    role: string;
+    status: string;
+
+  }[]
   reference_document: AttendanceRequest;
   reference_type: string;
   allocated_to: string[];

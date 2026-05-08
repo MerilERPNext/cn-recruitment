@@ -19,6 +19,7 @@ import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import toast from "react-hot-toast";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 export function MyRequestCard({
   request,
@@ -52,7 +53,7 @@ export function MyRequestCard({
   // Only allow editing if status is "Open"
   const canEdit = request?.status === "Open" && request?.can_edit;
   const canRevoke = request?.status === "Open" && request?.custom_allow_revoke;
-  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 0.5fr";
+  const gridTemplateColumns = "1.5fr  1fr 1fr 1fr 1fr 0.5fr";
   const revokeEventMutation = useRevokeEvent();
   const loading = useLoadingOverlay();
 
@@ -103,6 +104,9 @@ export function MyRequestCard({
               {truncatedDescription}
             </Typography>
           </Tooltip>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {getAssignedUsersCell(request)}
+          </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(request?.reference_document?.creation)}
           </Typography>
@@ -162,8 +166,8 @@ export function MyRequestCard({
                   users={request?.allocated_to}
                   roles={request?.allocated_roles}
                   username={request?.username}
-                RoleAssignedUsers={request?.role_assigned_users}
-              />
+                  RoleAssignedUsers={request?.role_assigned_users}
+                />
 
                 <StatusBadge status={request?.status} />
               </div>
@@ -194,6 +198,12 @@ export function MyRequestCard({
                   <Typography variant="mobileCardLabel">Description</Typography>
                   <Typography variant="mobileCardValue">
                     {truncateByChars(cleanDescription, 40)}
+                  </Typography>
+                </div>
+                <div >
+                  <Typography variant="mobileCardLabel">Assigned To</Typography>
+                  <Typography variant="mobileCardValue">
+                    {getAssignedUsersCell(request)}
                   </Typography>
                 </div>
                 <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>

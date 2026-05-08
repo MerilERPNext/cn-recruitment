@@ -22,7 +22,7 @@ const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
     getValue: (item: MyAttendanceRequest) =>
       item.reference_document?.custom_request_type ?? "",
   },
-  // { sortable: false },
+  { sortable: false },
 
   {
     sortable: true,
@@ -116,14 +116,14 @@ const AttendanceRequest = ({
 
           <div className="flex-1 overflow-y-auto md:px-4 pb-20">
             <CardTable
-              columnWidths={["1.5fr", "1fr", "1fr", "1fr", "0.8fr", "1fr", "1fr", "1fr"]}
+              columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "0.8fr", "1fr", "1fr", "1fr"]}
               titles={[
                 "Request Type",
-                // "Assigned To",
+                "Assigned To",
                 "From Date",
                 "To Date",
                 "Due Date",
-                "Created On",
+                "Created At",
                 "Duration",
                 "Status",
                 "Actions",

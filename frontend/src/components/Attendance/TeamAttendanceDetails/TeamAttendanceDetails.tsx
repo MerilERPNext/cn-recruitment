@@ -54,6 +54,7 @@ const TeamAttendanceDetails = () => {
       "Select",
       "Employee",
       "Explanation",
+      "Assigned To",
       "From Date",
       "To Date",
       "Due Date",
@@ -63,6 +64,7 @@ const TeamAttendanceDetails = () => {
     : [
       "Employee",
       "Explanation",
+      "Assigned To",
       "From Date",
       "To Date",
       "Due Date",
@@ -71,8 +73,8 @@ const TeamAttendanceDetails = () => {
     ];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-    : ["1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+    ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   const sortableColumns: ColumnSortConfig[] = [
     {
@@ -90,6 +92,7 @@ const TeamAttendanceDetails = () => {
       field: "explanation",
       getValue: (item) => item.reference_document?.explanation ?? "",
     },
+    { sortable: false },
     {
       sortable: true,
       type: "date",

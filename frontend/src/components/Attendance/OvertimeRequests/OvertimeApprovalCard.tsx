@@ -16,6 +16,7 @@ import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import RejectionReasonModal from "../../shared/RejectionReasonModal";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -89,8 +90,8 @@ const OvertimeApprovalCard = ({
   const truncatedDescription = truncateByChars(cleanDescription);
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1.5fr 1fr 1fr 1fr"
-    : "1fr 1.5fr 1fr 1fr 1fr";
+    ? "0.5fr 1fr 1fr 1.5fr 1fr 1fr 1fr"
+    : "1fr 1fr 1fr 1.5fr 1fr 1fr";
 
   return (
     <>
@@ -139,7 +140,9 @@ const OvertimeApprovalCard = ({
               {truncatedDescription}
             </Typography>
           </Tooltip>
-
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {getAssignedUsersCell(data)}
+          </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.due_date)}
           </Typography>
@@ -224,8 +227,8 @@ const OvertimeApprovalCard = ({
                     users={data?.allocated_to}
                     roles={data?.allocated_roles}
                     username={data?.username}
-                  RoleAssignedUsers={data?.role_assigned_users}
-                />
+                    RoleAssignedUsers={data?.role_assigned_users}
+                  />
                   <div className="flex flex-col gap-2 text-right">
                     <Typography variant="mobileCardLabel" className="block">
                       Due Date
@@ -243,6 +246,12 @@ const OvertimeApprovalCard = ({
                     {truncateByChars(cleanDescription, 40)}
                   </Typography>
                 </div>
+              </div>
+              <div >
+                <Typography variant="mobileCardLabel">Assigned To</Typography>
+                <Typography variant="mobileCardValue">
+                  {getAssignedUsersCell(data)}
+                </Typography>
               </div>
               {data?.reference_document?.status === "Open" && !isActed ? <TeamApprovalActionPill
                 variant="buttons"

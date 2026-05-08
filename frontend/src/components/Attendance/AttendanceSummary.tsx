@@ -205,7 +205,7 @@ const AttendanceSummary = () => {
             },
           ],
         },
-        {
+        ...(teamCheckInSummary?.data?.have_team ? [{
           id: "team_requests",
           title: "Team Attendance",
           subtitle: "Pending Requests",
@@ -220,7 +220,7 @@ const AttendanceSummary = () => {
               href: "/webapp/attendance/team-attendance-requests",
             },
           ],
-        },
+        }] as QuickActionCardData[] : []),
         {
           id: "my_overtime",
           title: "Planned Overtime",
@@ -243,7 +243,7 @@ const AttendanceSummary = () => {
             },
           ],
         },
-        {
+        ...(teamCheckInSummary?.data?.have_team ? [{
           id: "team_overtime",
           title: "Team Overtime",
           subtitle: "Pending Requests",
@@ -258,7 +258,7 @@ const AttendanceSummary = () => {
               href: "/webapp/attendance/team-overtime-requests",
             },
           ],
-        },
+        }] as QuickActionCardData[] : []),
         {
           id: "shifts",
           title: "Shifts",
@@ -277,7 +277,7 @@ const AttendanceSummary = () => {
         },
       ],
     }),
-    [employeeAttendanceSummary],
+    [employeeAttendanceSummary, teamCheckInSummary?.data?.have_team, canCreateAttendanceRequest, canCreateOvertimeRequest],
   );
 
   const getAttendanceMethod = () => {

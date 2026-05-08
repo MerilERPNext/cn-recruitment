@@ -50,12 +50,12 @@ const TeamOvertimeRequests = () => {
   }, [setSearchParams]);
 
   const tableTitles = isBulkSelectEnabled
-    ? ["Select", "Employee", "Description", "Due Date", "Status", "Actions"]
-    : ["Employee", "Description", "Due Date", "Status", "Actions"];
+    ? ["Select", "Employee", "Description", "Assigned To", "Due Date", "Status", "Actions"]
+    : ["Employee", "Description", "Assigned To", "Due Date", "Status", "Actions"];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr"]
-    : ["1fr", "1.5fr", "1fr", "1fr", "1fr"];
+    ? ["0.5fr", "1fr", "1fr", "1.5fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1.5fr", '1fr', "1fr", "1fr", "1fr"];
 
   const sortableColumns: ColumnSortConfig[] = [
     {
@@ -82,6 +82,7 @@ const TeamOvertimeRequests = () => {
     {
       sortable: false,
     },
+    { sortable: false },
     { sortable: false }, // Actions
   ];
 
