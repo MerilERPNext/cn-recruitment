@@ -62,8 +62,8 @@ interface RequestLeaveProps {
   onCancel?: () => void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const AttachmentPreviewVanilla: React.FC<{ 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   currentAttachments: any[]; 
   onPreview: (file: { url: string; name: string }) => void 
 }> = ({ currentAttachments, onPreview }) => {
@@ -186,11 +186,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     try {
       const submission = await formInstance.current.submit();
 
-      const isMultipleDays =
-        submission.data.fromDate &&
-        submission.data.toDate &&
-        submission.data.fromDate.split("T")[0] !==
-        submission.data.toDate.split("T")[0];
 
       const payload = buildLeavePayload({
         employee: currentEmployee.name,
@@ -481,11 +476,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       console.log("Custom attachment from submission:", submission?.data?.custom_attachment);
       console.log("formInstance submission:", formInstance.current?.submission);
 
-      const isMultipleDays =
-        submission.data.fromDate &&
-        submission.data.toDate &&
-        submission.data.fromDate.split("T")[0] !==
-        submission.data.toDate.split("T")[0];
 
       // Get files from form instance directly as primary source
       const fileComponent = formInstance.current?.getComponent("custom_attachment");
@@ -569,9 +559,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       show_individual_continuous: 0,
     };
 
-    const show: LeaveFieldFlags = fields?.show ?? defaultFieldFlags;
     const mandatory: LeaveFieldFlags = fields?.mandatory ?? defaultFieldFlags;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const halfDayComponents: any[] = [];
 
     const panelComponents = [
