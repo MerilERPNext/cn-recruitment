@@ -38,11 +38,11 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({
         </div>
         <div className="flex flex-col gap-1">
           {doctype_name === 'Employee' ? <Link to={`/webapp/employee-profile?target_user=${id}`} target="_blank">
-            <h3 className="font-medium text-gray-900 truncate flex gap-1 items-center hover:text-primary">
+            <h3 className="font-medium text-gray-900 truncate flex gap-1 items-center hover:text-primary break-all">
               <span>{title}</span><ExternalLink className="h-4 w-4" />
             </h3>
-          </Link> : <h3 className="font-medium text-gray-900 truncate">
-            <span>{title}</span>
+          </Link> : <h3 className="font-medium text-gray-900 truncate ">
+            <span className="break-all text-wrap">{title}</span>
           </h3>}
           <div className="flex flex-wrap gap-4">
             {id && (
