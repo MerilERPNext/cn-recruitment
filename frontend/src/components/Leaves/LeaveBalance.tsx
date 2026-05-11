@@ -56,7 +56,7 @@ const LeaveTransactionCard: React.FC<{
 
   const toggle = useCallback(
     (index: number) => setOpenIndex((prev) => (prev === index ? null : index)),
-    []
+    [],
   );
 
   return (
@@ -140,7 +140,7 @@ const LeaveBalance: React.FC = () => {
   const canRequestLeave = isActionEnabled(
     userUiPermission,
     "lb_request_leave",
-    "Leave Summary"
+    "Leave Summary",
   );
 
   const today = new Date().toISOString().split("T")[0];
@@ -191,7 +191,7 @@ const LeaveBalance: React.FC = () => {
   }
 
   const leaveBalance = (data?.leave_balance ?? []).filter(
-    (leave) => leave.dont_show_in_frontend !== 1
+    (leave) => leave.dont_show_in_frontend !== 1,
   );
 
   const visibleTypes = leaveBalance.map((l) => l.leave_id);
@@ -266,7 +266,7 @@ const LeaveBalance: React.FC = () => {
                   >
                     {leaveBalance.reduce(
                       (sum, leave) => sum + (leave.entitled || 0),
-                      0
+                      0,
                     )}
                   </Typography>
 
@@ -290,7 +290,7 @@ const LeaveBalance: React.FC = () => {
                   >
                     {leaveBalance.reduce(
                       (sum, leave) => sum + (leave.availed || 0),
-                      0
+                      0,
                     )}
                   </Typography>
 
@@ -314,7 +314,7 @@ const LeaveBalance: React.FC = () => {
                   >
                     {leaveBalance.reduce(
                       (sum, leave) => sum + (leave.balance || 0),
-                      0
+                      0,
                     )}
                   </Typography>
 
@@ -354,7 +354,8 @@ const LeaveBalance: React.FC = () => {
                           <div className="flex items-center gap-1 justify-between w-full">
                             <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
                               <div className="text-base font-semibold text-gray-900">
-                                {leave.entitled}
+                                {/* {leave.entitled} */}
+                                {leave.balance}
                               </div>
                               <p
                                 className="text-sm text-gray-600 truncate whitespace-nowrap max-w-[120px] overflow-hidden text-ellipsis cursor-pointer flex-shrink-0"
@@ -417,10 +418,10 @@ const LeaveBalance: React.FC = () => {
 
                           <div>
                             <p className="text-sm font-semibold text-gray-900">
-                              {leave.balance}
+                              {leave.entitled}
                             </p>
                             <p className="text-xs text-gray-600">
-                              Remaining balance
+                              Total balance
                             </p>
                           </div>
                         </div>
