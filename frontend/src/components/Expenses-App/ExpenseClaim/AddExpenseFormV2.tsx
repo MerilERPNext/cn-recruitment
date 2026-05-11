@@ -39,6 +39,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { FilePreviewModal } from "../../shared/molecules/FilePreviewModal";
 import { ExpenseNavigationExpense } from "./expenseNavigationHelper";
+import { FrappeAPI } from "../../../utils/frappeAPI";
 
 const normalizeDateOnly = (value: unknown) => {
   if (!value) return value;
@@ -100,6 +101,31 @@ const normalizeExpensePayloadData = (data: Record<string, any>) => {
   }
 
   return normalizedData;
+};
+
+const fileToBase64Content = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      resolve(result.includes(",") ? result.split(",").pop() || "" : result);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+
+const getLocalReceiptFile = (attachment: any): File | null => {
+  const file = attachment?.file || attachment;
+  return file instanceof File ? file : null;
+};
+
+const getReceiptFileFingerprint = (file: File) =>
+  [file.name, file.size, file.lastModified].join(":");
+
+const isBlankExpenseValue = (value: unknown) => {
+  if (value === undefined || value === null) return true;
+  if (typeof value === "string") return value.trim() === "";
+  return false;
 };
 
 const AttachmentPreviewVanillaV2: React.FC<{
@@ -613,6 +639,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   });
   const hydrationRef = useRef(Boolean(initialExpense));
   const attachmentHydrationRef = useRef(false);
+  const processedReceiptFilesRef = useRef<Set<string>>(new Set());
   const isEditingExistingExpense = Boolean(
     initialExpense &&
     (expense_claim_name || draft_document_name || isEditingFromDetailsPage),
@@ -630,6 +657,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   const [dynamicFormData, setDynamicFormData] = useState<Record<string, any>>(
     {},
   );
+  const [dynamicFormRevision, setDynamicFormRevision] = useState(0);
   const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
   const [isDeleteShareConfirmOpen, setIsDeleteShareConfirmOpen] =
     useState(false);
@@ -873,6 +901,112 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     }
   };
 
+  const applyReceiptExtraction = useCallback(
+    (fields: Record<string, any>) => {
+      if (!fields || typeof fields !== "object") return false;
+
+      const hasUsableFields = [
+        "expense_date",
+        "amount",
+        "description",
+        "invoice_number",
+        "merchant",
+        "currency",
+      ].some((key) => !isBlankExpenseValue(fields[key]));
+
+      setDynamicFormData((prev) => {
+        const nextData = { ...prev };
+        let didApply = false;
+        const fillIfBlank = (key: string, value: unknown) => {
+          if (isBlankExpenseValue(value)) return;
+          if (!isBlankExpenseValue(nextData[key])) return;
+          nextData[key] = value;
+          didApply = true;
+        };
+
+        fillIfBlank("expense_date", fields.expense_date);
+        fillIfBlank("amount", fields.amount);
+        fillIfBlank("description", fields.description);
+        fillIfBlank("invoice_number", fields.invoice_number);
+        fillIfBlank("merchant", fields.merchant);
+
+        if (
+          !isBlankExpenseValue(fields.currency) &&
+          (isBlankExpenseValue(nextData.currency) ||
+            (String(nextData.currency).toUpperCase() === "INR" &&
+              String(fields.currency).toUpperCase() !== "INR"))
+        ) {
+          nextData.currency = fields.currency;
+          didApply = true;
+        }
+
+        return didApply ? normalizeExpensePayloadData(nextData) : prev;
+      });
+
+      if (hasUsableFields) {
+        setDynamicFormRevision((revision) => revision + 1);
+      }
+
+      return hasUsableFields;
+    },
+    [],
+  );
+
+  const extractReceiptFromAttachments = useCallback(
+    async (attachments: any[], latestDynamicData: Record<string, any>) => {
+      const targetFile = toAttachmentArray(attachments)
+        .map(getLocalReceiptFile)
+        .find((file): file is File => Boolean(file));
+
+      if (!targetFile) return;
+
+      const fingerprint = getReceiptFileFingerprint(targetFile);
+      if (processedReceiptFilesRef.current.has(fingerprint)) return;
+      processedReceiptFilesRef.current.add(fingerprint);
+
+      const toastId = toast.loading("Reading receipt...");
+
+      try {
+        const content = await fileToBase64Content(targetFile);
+        const response = (await FrappeAPI.callMethod(
+          "chatnext_expense_trips.document_extraction.api.extract_receipt_fields_from_base64",
+          {
+            file_name: targetFile.name,
+            content,
+            expense_category:
+              mainFormData?.expenseCategory ||
+              latestDynamicData?.expenseCategory ||
+              "",
+            expense_type:
+              mainFormData?.expenseType || latestDynamicData?.expenseType || "",
+          },
+        )) as Record<string, any>;
+
+        const fields =
+          response && typeof response === "object" && "fields" in response
+            ? (response.fields as Record<string, any>)
+            : {};
+
+        if (applyReceiptExtraction(fields)) {
+          toast.success("Receipt details filled. Please review before saving.", {
+            id: toastId,
+          });
+        } else {
+          toast("Receipt uploaded. I could not find new fields to fill.", {
+            id: toastId,
+          });
+        }
+      } catch (error) {
+        processedReceiptFilesRef.current.delete(fingerprint);
+        console.error("Receipt extraction failed", error);
+        toast.error("Could not read this receipt. You can still enter it manually.", {
+          id: toastId,
+        });
+      }
+    },
+    [applyReceiptExtraction, mainFormData?.expenseCategory, mainFormData?.expenseType],
+  );
+
   const { data: employeesList, isFetching: isLoadingEmployees } = useEmployees([
     "name",
     "employee_name",
@@ -1100,8 +1234,8 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   );
 
   const dynamicFormRenderKey = useMemo(
-    () => selectedExpenseType || "no-expense-type",
-    [selectedExpenseType],
+    () => `${selectedExpenseType || "no-expense-type"}-${dynamicFormRevision}`,
+    [selectedExpenseType, dynamicFormRevision],
   );
 
   const dynamicSubmission = useMemo(
@@ -1601,12 +1735,33 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
                   onChange={(change: any) => {
                     const changedKey = change?.changed?.component?.key;
                     const nextData = change?.data || {};
+                    const receiptAttachments = toAttachmentArray(
+                      nextData?.attach_receipt,
+                    );
 
                     if (!changedKey) {
                       if (hasFileFieldDelta(nextData)) {
                         setDynamicFormData({ ...nextData });
+                        if (
+                          !areAttachmentListsEqual(
+                            toAttachmentArray(dynamicFormData?.attach_receipt),
+                            receiptAttachments,
+                          )
+                        ) {
+                          void extractReceiptFromAttachments(
+                            receiptAttachments,
+                            nextData,
+                          );
+                        }
                       }
                       return;
+                    }
+
+                    if (changedKey === "attach_receipt") {
+                      void extractReceiptFromAttachments(
+                        receiptAttachments,
+                        nextData,
+                      );
                     }
 
                     if (
