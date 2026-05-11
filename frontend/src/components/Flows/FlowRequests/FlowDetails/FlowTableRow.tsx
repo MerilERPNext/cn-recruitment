@@ -83,9 +83,7 @@ const FlowTableRow = ({
     let data: Record<string, unknown> = {};
 
     try {
-      data = stage?.approval_response_data
-        ? JSON.parse(stage.approval_response_data)
-        : {};
+      data = JSON.parse(stage?.approval_response_data_display || stage?.approval_response_data || "{}");
     } catch (error) {
       console.error("Invalid approval_response_data JSON:", error);
       data = {};
@@ -154,7 +152,7 @@ const FlowTableRow = ({
 
       <div className="flex flex-wrap items-center justify-center gap-2">
         <>
-          {stage?.approval_response_data && (
+          {(stage?.approval_response_data_display || stage?.approval_response_data) && (
             <Button
               variant="outline"
               onClick={handleShowForm}

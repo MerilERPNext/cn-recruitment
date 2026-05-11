@@ -125,7 +125,7 @@ const FlowTableRow = ({
         const schema = stage?.form_json?.components;
         let data: Record<string, unknown> = {};
         try {
-            data = JSON.parse(stage?.approval_response_data);
+            data = JSON.parse(stage?.approval_response_data_display || stage?.approval_response_data || "{}");
         } catch (error) {
             console.error("Invalid approval_response_data JSON:", error);
         }
@@ -277,7 +277,7 @@ const FlowTableRow = ({
                         </div>
                     </div>
                 </div>
-                {stage?.approval_response_data && (
+                {(stage?.approval_response_data_display || stage?.approval_response_data) && (
                     <Button
                         onClick={handleShowForm}
                         className="mt-2 w-full"

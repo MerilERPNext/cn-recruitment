@@ -44,7 +44,7 @@ const RequestDetails: React.FC = () => {
   const handleShowSelfForm = () => {
     let formData: JsonToFormData;
     try {
-      formData = JSON.parse(data?.initiator_forms?.[0]?.form_data || "{}");
+      formData = JSON.parse(data?.initiator_forms?.[0]?.form_data_display || "{}");
     } catch (error) {
       console.error("Invalid initiator_forms form_data JSON:", error);
       return;
