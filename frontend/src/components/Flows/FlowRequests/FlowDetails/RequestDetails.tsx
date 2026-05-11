@@ -44,7 +44,7 @@ const RequestDetails: React.FC = () => {
   const handleShowSelfForm = () => {
     let formData: JsonToFormData;
     try {
-      formData = JSON.parse(data?.initiator_forms?.[0]?.form_data || "{}");
+      formData = JSON.parse(data?.initiator_forms?.[0]?.form_data_display || "{}");
     } catch (error) {
       console.error("Invalid initiator_forms form_data JSON:", error);
       return;
@@ -183,12 +183,12 @@ const RequestDetails: React.FC = () => {
             })}
           </div>
 
-          <div className="flex flex-row sm:items-center justify-between w-full gap-4 sm:gap-6 text-sm py-1">
+          <div className="flex flex-row sm:items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6 text-sm py-1">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 min-w-0">
               <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px] whitespace-nowrap">Initiated By</span>
               <span className="text-gray-900 font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-100 truncate max-w-[140px] sm:max-w-none hover:text-primary cursor-pointer transition-colors duration-200">
                 <WrapperHoverCard employeeId={data?.initiated_by_employee_id}>
-                  {data?.initiated_by}
+                  {data?.initiated_by} {data?.initiated_by_employee_id ? `(${data?.initiated_by_employee_id})` : ""}
                 </WrapperHoverCard>
               </span>
             </div>
