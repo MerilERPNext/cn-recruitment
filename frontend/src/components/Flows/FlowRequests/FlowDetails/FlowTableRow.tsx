@@ -95,18 +95,22 @@ const FlowTableRow = ({
     setShowForm(true);
   };
 
-  const assigneeCount = useMemo(() => {
-    let count = 0;
-    if (stage.allocated_to?.length) count += stage.allocated_to.length;
-    if (stage.role_assigned_users?.length) {
-      stage.role_assigned_users.forEach(r => count += (r.user?.length || 0));
+  const assigneeText = useMemo(() => {
+    if (stage.role) {
+      let totalUsers = 0;
+      if (stage.role_assigned_users?.length) {
+        stage.role_assigned_users.forEach(r => totalUsers += (r.users?.length || r.user?.length || 0));
+      }
+      return `Assign(${totalUsers})`;
     }
-    return count;
-  }, [stage]);
 
-  const assigneeText = assigneeCount > 0 
-    ? (assigneeCount === 1 && stage.allocated_to?.[0]?.name ? stage.allocated_to[0].name : `Assignees (${assigneeCount})`)
-    : (stage.role || "-");
+    const hasDirectUser = stage.user || stage.allocated_to?.length;
+    if (hasDirectUser) {
+      return `${stage.stage_name}(1)`;
+    }
+
+    return "—";
+  }, [stage]);
 
   return (
     <div
@@ -121,10 +125,10 @@ const FlowTableRow = ({
 
       <div className="flex justify-center items-center">
         <AllocatedToTooltip
+          title="Assigned To"
           position="right"
-          users={stage.allocated_to}
-          roles={allocatedTo.roles}
-          role={stage.role || ""}
+          users={stage.role ? undefined : (stage.user ? [stage.user] : stage.allocated_to)}
+          roles={stage.role ? stage.role.split(',').map(r => r.trim()) : undefined}
           RoleAssignedUsers={stage?.role_assigned_users || []}
         >
           <Typography variant="bodySmall" className="font-medium text-center text-primary-600 cursor-pointer">

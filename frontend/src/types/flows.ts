@@ -92,8 +92,13 @@ export type TodoResponse = {
 
 export type RoleAssignedUsersType = {
   role: string;
-  user: {
-    user_id: string;
+  user?: {
+    user_id?: string;
+    name: string;
+    employee: string;
+  }[];
+  users?: {
+    user_id?: string;
     name: string;
     employee: string;
   }[];

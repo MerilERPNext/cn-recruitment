@@ -11,7 +11,7 @@ export const getAssignedUsersCell = (item: any) => {
   if (pendingWithRole) {
     const totalUsers =
       item?.role_assigned_users?.reduce(
-        (acc: number, r: any) => acc + (r.user?.length ?? 0),
+        (acc: number, r: any) => acc + (r.users?.length || r.user?.length || 0),
         0,
       ) ?? 0;
     return (
