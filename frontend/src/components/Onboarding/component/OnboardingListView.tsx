@@ -9,7 +9,7 @@ import DataListView from "../../DataListView";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 
 // ─── Raw API shape ────────────────────────────────────────────────────────────
@@ -108,13 +108,23 @@ export default function EmployeeOnboardingList() {
 
   return (
     <div className="w-full lg:p-4 p-2">
-      <div className="sm:mb-4 px-2 mb-2">
-        <Typography variant="h4">Employee Onboarding</Typography>
-        {isDesktop && (
-          <Typography variant="bodySmall" color="body2">
-            Track Employee Onboarding History
-          </Typography>
+      <div className="sm:mb-4 px-2 mb-2 flex items-center gap-3">
+        {!isDesktop && (
+          <button
+            onClick={() => navigate("/webapp")}
+            className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6 text-gray-700" />
+          </button>
         )}
+        <div>
+          <Typography variant="h4">Employee Onboarding</Typography>
+          {isDesktop && (
+            <Typography variant="bodySmall" color="body2">
+              Track Employee Onboarding History
+            </Typography>
+          )}
+        </div>
       </div>
 
       {isDesktop ? (

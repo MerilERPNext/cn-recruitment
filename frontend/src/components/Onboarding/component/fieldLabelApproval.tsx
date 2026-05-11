@@ -651,7 +651,7 @@ export default function OnboardingFieldApproval() {
                 )}
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex justify-end items-center gap-2 flex-wrap">
                 {/* Section approve — immediate, no comment */}
                 <button
                   onClick={() => handleSectionApprove(activeSection)}
