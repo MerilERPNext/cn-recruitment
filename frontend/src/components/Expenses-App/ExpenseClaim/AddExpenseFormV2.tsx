@@ -6,13 +6,7 @@ import {
   useCurrentEmployeeAllDetails,
   useEmployees,
 } from "../../../hooks/useEmployee";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   useCalculateExpenseAmount,
   useGetExpenseTypeFields,
@@ -32,13 +26,15 @@ import toast from "react-hot-toast";
 import { format, isValid, parseISO } from "date-fns";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { useNavigate } from "react-router-dom";
-import { SquarePen, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
 import HeaderBar from "../../HeaderBar";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { FilePreviewModal } from "../../shared/molecules/FilePreviewModal";
 import { ExpenseNavigationExpense } from "./expenseNavigationHelper";
+import { FrappeAPI } from "../../../utils/frappeAPI";
+import ParticipantsList from "./ParticipantsList";
 
 const normalizeDateOnly = (value: unknown) => {
   if (!value) return value;
@@ -102,6 +98,31 @@ const normalizeExpensePayloadData = (data: Record<string, any>) => {
   return normalizedData;
 };
 
+const fileToBase64Content = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      resolve(result.includes(",") ? result.split(",").pop() || "" : result);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+
+const getLocalReceiptFile = (attachment: any): File | null => {
+  const file = attachment?.file || attachment;
+  return file instanceof File ? file : null;
+};
+
+const getReceiptFileFingerprint = (file: File) =>
+  [file.name, file.size, file.lastModified].join(":");
+
+const isBlankExpenseValue = (value: unknown) => {
+  if (value === undefined || value === null) return true;
+  if (typeof value === "string") return value.trim() === "";
+  return false;
+};
+
 const AttachmentPreviewVanillaV2: React.FC<{
   currentAttachments: any[];
   onRemove: (index: number) => void;
@@ -115,165 +136,171 @@ const AttachmentPreviewVanillaV2: React.FC<{
   compKey,
   heading = "Attachments Preview",
 }) => {
-    const [previewFile, setPreviewFile] = useState<{
-      url: string;
-      name?: string;
-    } | null>(null);
+  const [previewFile, setPreviewFile] = useState<{
+    url: string;
+    name?: string;
+  } | null>(null);
 
-    useEffect(() => {
-      const interval = window.setInterval(() => {
-        let portal: Element | null = null;
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      let portal: Element | null = null;
 
-        if (portalId) {
-          portal = document.getElementById(portalId);
-        } else if (compKey) {
-          const wrapper = document.querySelector(`.formio-component-${compKey}`);
-          if (wrapper) {
-            let slot = wrapper.querySelector(`.custom-preview-${compKey}`);
-            if (!slot) {
-              slot = document.createElement("div");
-              slot.className = `custom-preview-${compKey} mt-3 w-full`;
-              wrapper.appendChild(slot);
-            }
-            portal = slot;
+      if (portalId) {
+        portal = document.getElementById(portalId);
+      } else if (compKey) {
+        const wrapper = document.querySelector(`.formio-component-${compKey}`);
+        if (wrapper) {
+          let slot = wrapper.querySelector(`.custom-preview-${compKey}`);
+          if (!slot) {
+            slot = document.createElement("div");
+            slot.className = `custom-preview-${compKey} mt-3 w-full`;
+            wrapper.appendChild(slot);
           }
+          portal = slot;
         }
+      }
 
-        if (!portal) return;
+      if (!portal) return;
 
-        const hash = currentAttachments
-          .map((attachment) => {
-            return (
-              attachment?.url ||
-              attachment?.file_url ||
-              attachment?.originalName ||
-              attachment?.name ||
-              "file"
-            );
-          })
-          .join("|");
-
-        if (portal.getAttribute("data-hash") === hash && portal.children.length > 0) {
-          return;
-        }
-
-        portal.setAttribute("data-hash", hash);
-
-        if (currentAttachments.length === 0) {
-          portal.innerHTML = "";
-          return;
-        }
-
-        let html = '<div class="h-full px-2 lg:px-6">';
-        html += `<h3 class="text-md font-medium mb-2 text-gray-800">${heading.replace(/"/g, "&quot;")}</h3>`;
-        html += '<div class="space-y-2">';
-
-        currentAttachments.forEach((attachment: any, index: number) => {
-          let actualFile = attachment.file;
-          if (
-            actualFile &&
-            !(actualFile instanceof Blob || actualFile instanceof File)
-          ) {
-            actualFile = null;
-          }
-
-          const url =
-            attachment?.data?.message?.file_url ||
+      const hash = currentAttachments
+        .map((attachment) => {
+          return (
             attachment?.url ||
-            attachment?.file_url;
-          if (!actualFile && !url) return;
-
-          let parsedUrl = url;
-          if (
-            url &&
-            typeof url === "string" &&
-            !url.startsWith("http") &&
-            !url.startsWith("/") &&
-            !url.startsWith("blob:")
-          ) {
-            parsedUrl = url.startsWith("files/") ? `/${url}` : `/files/${url}`;
-          }
-
-          const previewUrl = actualFile ? URL.createObjectURL(actualFile) : parsedUrl;
-          const fileName =
+            attachment?.file_url ||
             attachment?.originalName ||
             attachment?.name ||
-            attachment?.data?.message?.file_name ||
-            actualFile?.name ||
-            "Attachment";
-          const safeName = fileName.replace(/"/g, "&quot;");
-          const isImage = actualFile
-            ? actualFile.type?.startsWith("image/")
-            : (
-              (attachment?.type || attachment?.data?.message?.file_type)?.startsWith(
-                "image/",
-              ) ||
-              /\.(jpeg|jpg|gif|png|webp|svg|ico)$/i.test(fileName)
-            );
+            "file"
+          );
+        })
+        .join("|");
 
-          html += '<div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg gap-3">';
-          html += '<div class="flex items-center gap-3 min-w-0 flex-1">';
+      if (
+        portal.getAttribute("data-hash") === hash &&
+        portal.children.length > 0
+      ) {
+        return;
+      }
 
-          if (isImage) {
-            html += `<img src="${previewUrl}" alt="${safeName}" class="w-12 h-12 object-cover rounded-md border shrink-0" style="border-color: #d1d5db !important;" />`;
-          } else {
-            html += '<div class="w-12 h-12 flex items-center justify-center bg-white border rounded-md text-[10px] font-semibold text-gray-600 uppercase shrink-0" style="border-color: #d1d5db !important;">File</div>';
+      portal.setAttribute("data-hash", hash);
+
+      if (currentAttachments.length === 0) {
+        portal.innerHTML = "";
+        return;
+      }
+
+      let html = '<div class="h-full px-2 lg:px-6">';
+      html += `<h3 class="text-md font-medium mb-2 text-gray-800">${heading.replace(/"/g, "&quot;")}</h3>`;
+      html += '<div class="space-y-2">';
+
+      currentAttachments.forEach((attachment: any, index: number) => {
+        let actualFile = attachment.file;
+        if (
+          actualFile &&
+          !(actualFile instanceof Blob || actualFile instanceof File)
+        ) {
+          actualFile = null;
+        }
+
+        const url =
+          attachment?.data?.message?.file_url ||
+          attachment?.url ||
+          attachment?.file_url;
+        if (!actualFile && !url) return;
+
+        let parsedUrl = url;
+        if (
+          url &&
+          typeof url === "string" &&
+          !url.startsWith("http") &&
+          !url.startsWith("/") &&
+          !url.startsWith("blob:")
+        ) {
+          parsedUrl = url.startsWith("files/") ? `/${url}` : `/files/${url}`;
+        }
+
+        const previewUrl = actualFile
+          ? URL.createObjectURL(actualFile)
+          : parsedUrl;
+        const fileName =
+          attachment?.originalName ||
+          attachment?.name ||
+          attachment?.data?.message?.file_name ||
+          actualFile?.name ||
+          "Attachment";
+        const safeName = fileName.replace(/"/g, "&quot;");
+        const isImage = actualFile
+          ? actualFile.type?.startsWith("image/")
+          : (
+              attachment?.type || attachment?.data?.message?.file_type
+            )?.startsWith("image/") ||
+            /\.(jpeg|jpg|gif|png|webp|svg|ico)$/i.test(fileName);
+
+        html +=
+          '<div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg gap-3">';
+        html += '<div class="flex items-center gap-3 min-w-0 flex-1">';
+
+        if (isImage) {
+          html += `<img src="${previewUrl}" alt="${safeName}" class="w-12 h-12 object-cover rounded-md border shrink-0" style="border-color: #d1d5db !important;" />`;
+        } else {
+          html +=
+            '<div class="w-12 h-12 flex items-center justify-center bg-white border rounded-md text-[10px] font-semibold text-gray-600 uppercase shrink-0" style="border-color: #d1d5db !important;">File</div>';
+        }
+
+        html += '<div class="min-w-0 flex-1">';
+        html += `<p class="text-sm font-medium text-gray-900 truncate" title="${safeName}">${safeName}</p>`;
+        html += '<p class="text-xs text-gray-500">Attachment</p>';
+        html += "</div>";
+        html += "</div>";
+
+        html += '<div class="flex items-center gap-2 shrink-0">';
+        html += `<button type="button" title="Preview" class="preview-file-btn-v2 inline-flex items-center justify-center rounded-md border shadow-sm border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 transition-colors" data-preview-url="${previewUrl}" data-preview-name="${safeName}">${EYE_ICON_SVG}</button>`;
+        html += `<a href="${previewUrl}" download="${safeName}" title="Download" class="inline-flex items-center justify-center rounded-md border shadow-sm border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 transition-colors">${DOWNLOAD_ICON_SVG}</a>`;
+        html += `<button type="button" title="Delete" class="remove-file-btn-v2 inline-flex items-center justify-center rounded-md border shadow-sm border-red-300 bg-white p-2 text-red-600 hover:bg-red-50 transition-colors" data-index="${index}">${TRASH_ICON_SVG}</button>`;
+        html += "</div>";
+        html += "</div>";
+      });
+
+      html += "</div></div>";
+      portal.innerHTML = html;
+
+      const triggers = portal.querySelectorAll(".preview-file-btn-v2");
+      triggers.forEach((element) => {
+        element.addEventListener("click", () => {
+          const fileUrl = element.getAttribute("data-preview-url");
+          const fileName =
+            element.getAttribute("data-preview-name") || undefined;
+
+          if (fileUrl) {
+            setPreviewFile({ url: fileUrl, name: fileName });
           }
-
-          html += '<div class="min-w-0 flex-1">';
-          html += `<p class="text-sm font-medium text-gray-900 truncate" title="${safeName}">${safeName}</p>`;
-          html += '<p class="text-xs text-gray-500">Attachment</p>';
-          html += "</div>";
-          html += "</div>";
-
-          html += '<div class="flex items-center gap-2 shrink-0">';
-          html += `<button type="button" title="Preview" class="preview-file-btn-v2 inline-flex items-center justify-center rounded-md border shadow-sm border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 transition-colors" data-preview-url="${previewUrl}" data-preview-name="${safeName}">${EYE_ICON_SVG}</button>`;
-          html += `<a href="${previewUrl}" download="${safeName}" title="Download" class="inline-flex items-center justify-center rounded-md border shadow-sm border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 transition-colors">${DOWNLOAD_ICON_SVG}</a>`;
-          html += `<button type="button" title="Delete" class="remove-file-btn-v2 inline-flex items-center justify-center rounded-md border shadow-sm border-red-300 bg-white p-2 text-red-600 hover:bg-red-50 transition-colors" data-index="${index}">${TRASH_ICON_SVG}</button>`;
-          html += "</div>";
-          html += "</div>";
         });
+      });
 
-        html += "</div></div>";
-        portal.innerHTML = html;
-
-        const triggers = portal.querySelectorAll(".preview-file-btn-v2");
-        triggers.forEach((element) => {
-          element.addEventListener("click", () => {
-            const fileUrl = element.getAttribute("data-preview-url");
-            const fileName = element.getAttribute("data-preview-name") || undefined;
-
-            if (fileUrl) {
-              setPreviewFile({ url: fileUrl, name: fileName });
-            }
-          });
+      const removeButtons = portal.querySelectorAll(".remove-file-btn-v2");
+      removeButtons.forEach((element) => {
+        element.addEventListener("click", () => {
+          const rawIndex = element.getAttribute("data-index");
+          const index = rawIndex ? Number(rawIndex) : NaN;
+          if (!Number.isNaN(index)) {
+            onRemove(index);
+          }
         });
+      });
+    }, 300);
 
-        const removeButtons = portal.querySelectorAll(".remove-file-btn-v2");
-        removeButtons.forEach((element) => {
-          element.addEventListener("click", () => {
-            const rawIndex = element.getAttribute("data-index");
-            const index = rawIndex ? Number(rawIndex) : NaN;
-            if (!Number.isNaN(index)) {
-              onRemove(index);
-            }
-          });
-        });
-      }, 300);
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [compKey, currentAttachments, heading, onRemove, portalId]);
 
-      return () => {
-        window.clearInterval(interval);
-      };
-    }, [compKey, currentAttachments, heading, onRemove, portalId]);
-
-    return previewFile ? (
-      <FilePreviewModal
-        fileUrl={previewFile.url}
-        fileName={previewFile.name}
-        onClose={() => setPreviewFile(null)}
-      />
-    ) : null;
-  };
+  return previewFile ? (
+    <FilePreviewModal
+      fileUrl={previewFile.url}
+      fileName={previewFile.name}
+      onClose={() => setPreviewFile(null)}
+    />
+  ) : null;
+};
 
 const DEFAULT_CATEGORY_TYPE = "General";
 const EYE_ICON_SVG =
@@ -315,7 +342,10 @@ const getAttachmentIdentity = (attachment: any) => {
     attachment?.file?.name ||
     "";
   const fileUrl =
-    attachment?.url || attachment?.file_url || attachment?.data?.message?.file_url || "";
+    attachment?.url ||
+    attachment?.file_url ||
+    attachment?.data?.message?.file_url ||
+    "";
 
   return `${fileName}::${fileUrl}`;
 };
@@ -350,8 +380,7 @@ const normalizeAttachmentUrl = (value: unknown): string => {
 
 const isPendingLocalAttachment = (attachment: any) => {
   const actualFile = attachment?.file;
-  const hasLocalFile =
-    actualFile instanceof Blob || actualFile instanceof File;
+  const hasLocalFile = actualFile instanceof Blob || actualFile instanceof File;
 
   return hasLocalFile && !attachment?.url && !attachment?.file_url;
 };
@@ -361,7 +390,9 @@ const findMatchingAttachmentDocument = (
   attachment: any,
 ) => {
   const attachmentUrl = normalizeAttachmentUrl(
-    attachment?.url || attachment?.file_url || attachment?.data?.message?.file_url,
+    attachment?.url ||
+      attachment?.file_url ||
+      attachment?.data?.message?.file_url,
   );
   const candidateNames = new Set(
     [
@@ -432,7 +463,9 @@ const parseCustomFormData = (value: unknown): Record<string, unknown> => {
     : {};
 };
 
-const normalizeExistingAttachment = (value: unknown): ExistingAttachment | null => {
+const normalizeExistingAttachment = (
+  value: unknown,
+): ExistingAttachment | null => {
   if (typeof value === "string" && value.trim()) {
     const name = value.split("/").pop() || "attachment";
     return {
@@ -582,7 +615,10 @@ const buildInitialDynamicFormData = (
     nextData.attach_receipt = dedupeAttachments(normalizedAttachments);
   }
 
-  if (Array.isArray(nextData.participants) && nextData.participants.length > 0) {
+  if (
+    Array.isArray(nextData.participants) &&
+    nextData.participants.length > 0
+  ) {
     nextData.participants = nextData.participants.map((participant: unknown) =>
       participant && typeof participant === "object"
         ? normalizeParticipantAmount(participant as ParticipantLike)
@@ -613,6 +649,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   });
   const hydrationRef = useRef(Boolean(initialExpense));
   const attachmentHydrationRef = useRef(false);
+  const processedReceiptFilesRef = useRef<Set<string>>(new Set());
   const isEditingExistingExpense = Boolean(
     initialExpense &&
     (expense_claim_name || draft_document_name || isEditingFromDetailsPage),
@@ -620,7 +657,8 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   const isDraftExpenseEdit = Boolean(
     draft_document_name || initialExpense?.approval_status === "Draft",
   );
-  const linkedDocumentName = draft_document_name || expense_claim_name || undefined;
+  const linkedDocumentName =
+    draft_document_name || expense_claim_name || undefined;
   const linkedDocumentType = draft_document_name
     ? "Draft Expense Claim"
     : "Expense Claim";
@@ -630,6 +668,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   const [dynamicFormData, setDynamicFormData] = useState<Record<string, any>>(
     {},
   );
+  const [dynamicFormRevision, setDynamicFormRevision] = useState(0);
   const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
   const [isDeleteShareConfirmOpen, setIsDeleteShareConfirmOpen] =
     useState(false);
@@ -647,22 +686,19 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   const { isDesktop } = useScreenSize();
   const loading = useLoadingOverlay();
 
-  const mainSubmission = useMemo(
-    () => {
-      const nextData = { ...mainFormData };
+  const mainSubmission = useMemo(() => {
+    const nextData = { ...mainFormData };
 
-      if (!nextData.employee) {
-        nextData.employee = currentEmployee?.name || "";
-      }
+    if (!nextData.employee) {
+      nextData.employee = currentEmployee?.name || "";
+    }
 
-      if (!nextData.category_type) {
-        nextData.category_type = DEFAULT_CATEGORY_TYPE;
-      }
+    if (!nextData.category_type) {
+      nextData.category_type = DEFAULT_CATEGORY_TYPE;
+    }
 
-      return { data: nextData };
-    },
-    [currentEmployee?.name, mainFormData],
-  );
+    return { data: nextData };
+  }, [currentEmployee?.name, mainFormData]);
 
   const { data: expenseTypeFieldsData, isFetching: isFetchingExpenseFields } =
     useGetExpenseTypeFields(selectedExpenseType);
@@ -688,7 +724,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   const expenseTypePayload = useMemo(
     () =>
       expenseTypeFieldsData?.message &&
-        typeof expenseTypeFieldsData.message === "object"
+      typeof expenseTypeFieldsData.message === "object"
         ? expenseTypeFieldsData.message
         : expenseTypeFieldsData || {},
     [expenseTypeFieldsData],
@@ -830,7 +866,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
       const container = document.querySelector(`.formio-component-${compKey}`);
       if (container) {
         const removeButtons = container.querySelectorAll(
-          'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times'
+          'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times',
         );
         if (removeButtons && removeButtons[index]) {
           (removeButtons[index] as HTMLElement).click();
@@ -873,6 +909,119 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     }
   };
 
+  const applyReceiptExtraction = useCallback((fields: Record<string, any>) => {
+    if (!fields || typeof fields !== "object") return false;
+
+    const hasUsableFields = [
+      "expense_date",
+      "amount",
+      "description",
+      "invoice_number",
+      "merchant",
+      "currency",
+    ].some((key) => !isBlankExpenseValue(fields[key]));
+
+    setDynamicFormData((prev) => {
+      const nextData = { ...prev };
+      let didApply = false;
+      const fillIfBlank = (key: string, value: unknown) => {
+        if (isBlankExpenseValue(value)) return;
+        if (!isBlankExpenseValue(nextData[key])) return;
+        nextData[key] = value;
+        didApply = true;
+      };
+
+      fillIfBlank("expense_date", fields.expense_date);
+      fillIfBlank("amount", fields.amount);
+      fillIfBlank("description", fields.description);
+      fillIfBlank("invoice_number", fields.invoice_number);
+      fillIfBlank("merchant", fields.merchant);
+
+      if (
+        !isBlankExpenseValue(fields.currency) &&
+        (isBlankExpenseValue(nextData.currency) ||
+          (String(nextData.currency).toUpperCase() === "INR" &&
+            String(fields.currency).toUpperCase() !== "INR"))
+      ) {
+        nextData.currency = fields.currency;
+        didApply = true;
+      }
+
+      return didApply ? normalizeExpensePayloadData(nextData) : prev;
+    });
+
+    if (hasUsableFields) {
+      setDynamicFormRevision((revision) => revision + 1);
+    }
+
+    return hasUsableFields;
+  }, []);
+
+  const extractReceiptFromAttachments = useCallback(
+    async (attachments: any[], latestDynamicData: Record<string, any>) => {
+      const targetFile = toAttachmentArray(attachments)
+        .map(getLocalReceiptFile)
+        .find((file): file is File => Boolean(file));
+
+      if (!targetFile) return;
+
+      const fingerprint = getReceiptFileFingerprint(targetFile);
+      if (processedReceiptFilesRef.current.has(fingerprint)) return;
+      processedReceiptFilesRef.current.add(fingerprint);
+
+      const toastId = toast.loading("Reading receipt...");
+
+      try {
+        const content = await fileToBase64Content(targetFile);
+        const response = (await FrappeAPI.callMethod(
+          "chatnext_expense_trips.document_extraction.api.extract_receipt_fields_from_base64",
+          {
+            file_name: targetFile.name,
+            content,
+            expense_category:
+              mainFormData?.expenseCategory ||
+              latestDynamicData?.expenseCategory ||
+              "",
+            expense_type:
+              mainFormData?.expenseType || latestDynamicData?.expenseType || "",
+          },
+        )) as Record<string, any>;
+
+        const fields =
+          response && typeof response === "object" && "fields" in response
+            ? (response.fields as Record<string, any>)
+            : {};
+
+        if (applyReceiptExtraction(fields)) {
+          toast.success(
+            "Receipt details filled. Please review before saving.",
+            {
+              id: toastId,
+            },
+          );
+        } else {
+          toast("Receipt uploaded. I could not find new fields to fill.", {
+            id: toastId,
+          });
+        }
+      } catch (error) {
+        processedReceiptFilesRef.current.delete(fingerprint);
+        console.error("Receipt extraction failed", error);
+        toast.error(
+          "Could not read this receipt. You can still enter it manually.",
+          {
+            id: toastId,
+          },
+        );
+      }
+    },
+    [
+      applyReceiptExtraction,
+      mainFormData?.expenseCategory,
+      mainFormData?.expenseType,
+    ],
+  );
+
   const { data: employeesList, isFetching: isLoadingEmployees } = useEmployees([
     "name",
     "employee_name",
@@ -900,10 +1049,10 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     () =>
       shouldCalculateAmount
         ? {
-          expense_type: selectedExpenseType,
-          units: Number(unitsValue),
-          vehicle_type: vehicleType || undefined,
-        }
+            expense_type: selectedExpenseType,
+            units: Number(unitsValue),
+            vehicle_type: vehicleType || undefined,
+          }
         : undefined,
     [shouldCalculateAmount, selectedExpenseType, unitsValue, vehicleType],
   );
@@ -943,9 +1092,9 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     // Fallback: API field label from get_expense_type_fields payload
     const unitsField = Array.isArray(expenseTypePayload?.fields)
       ? expenseTypePayload.fields.find(
-        (field: any) =>
-          field?.fieldname === "units" || field?.fieldname === "no_of_units",
-      )
+          (field: any) =>
+            field?.fieldname === "units" || field?.fieldname === "no_of_units",
+        )
       : null;
 
     // Final fallback
@@ -1062,8 +1211,8 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   const calculatedAmount = useMemo(() => {
     const rawAmount =
       calculatedAmountData &&
-        typeof calculatedAmountData === "object" &&
-        "amount" in calculatedAmountData
+      typeof calculatedAmountData === "object" &&
+      "amount" in calculatedAmountData
         ? (calculatedAmountData as any).amount
         : (calculatedAmountData as any)?.message?.amount;
     const numeric = Number(rawAmount);
@@ -1100,8 +1249,8 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   );
 
   const dynamicFormRenderKey = useMemo(
-    () => selectedExpenseType || "no-expense-type",
-    [selectedExpenseType],
+    () => `${selectedExpenseType || "no-expense-type"}-${dynamicFormRevision}`,
+    [selectedExpenseType, dynamicFormRevision],
   );
 
   const dynamicSubmission = useMemo(
@@ -1155,7 +1304,10 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
 
   const hasFileFieldDelta = useCallback(
     (nextData: Record<string, any>) => {
-      const watchedKeys = new Set<string>(["attach_receipt", ...customFileKeys]);
+      const watchedKeys = new Set<string>([
+        "attach_receipt",
+        ...customFileKeys,
+      ]);
 
       for (const key of watchedKeys) {
         if (
@@ -1252,7 +1404,9 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
           return keys;
         };
 
-        const customFormFieldKeys = extractFieldKeys(parsedCustomForm?.components || []);
+        const customFormFieldKeys = extractFieldKeys(
+          parsedCustomForm?.components || [],
+        );
 
         customFormFieldKeys.forEach((key) => {
           if (combinedData[key] !== undefined) {
@@ -1317,7 +1471,9 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
       const combinedDataBeforeUpload = buildCombinedData();
       const pendingReceiptUploads = currentAttachments.filter(
         (attachment: any) =>
-          Boolean(attachment?.file) && !attachment?.url && !attachment?.file_url,
+          Boolean(attachment?.file) &&
+          !attachment?.url &&
+          !attachment?.file_url,
       );
       if (
         !combinedDataBeforeUpload.expenseCategory ||
@@ -1326,7 +1482,11 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
         toast.error("Please select Expense Category and Expense Type!");
         return;
       }
-      if (isAttachmentMandatory && currentAttachments.length === 0 && forSubmit) {
+      if (
+        isAttachmentMandatory &&
+        currentAttachments.length === 0 &&
+        forSubmit
+      ) {
         toast.error("Please attach a receipt to proceed.");
         return;
       }
@@ -1367,21 +1527,33 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
       });
       const expenseRecord = buildExpenseRecord(finalCombinedData, forSubmit);
 
-      if (isEditingExistingExpense && (expense_claim_name || draft_document_name)) {
-        const documentName = (draft_document_name || expense_claim_name) as string;
+      if (
+        isEditingExistingExpense &&
+        (expense_claim_name || draft_document_name)
+      ) {
+        const documentName = (draft_document_name ||
+          expense_claim_name) as string;
 
-        const originalParticipants = (initialExpense?.participants as any[]) || [];
+        const originalParticipants =
+          (initialExpense?.participants as any[]) || [];
 
         const activeParticipants = Array.isArray(dynamicFormData?.participants)
-          ? dynamicFormData.participants.filter((p: any) => !!p.employee || !!p.guest_name)
+          ? dynamicFormData.participants.filter(
+              (p: any) => !!p.employee || !!p.guest_name,
+            )
           : [];
 
         const activeMapped = activeParticipants.map((p: any) => {
           const match = originalParticipants.find((orig: any) => {
             if (p.employee_type === "Guest") {
-              return orig.employee_type === "Guest" && orig.guest_name === p.guest_name;
+              return (
+                orig.employee_type === "Guest" &&
+                orig.guest_name === p.guest_name
+              );
             }
-            return orig.employee_type !== "Guest" && orig.employee === p.employee;
+            return (
+              orig.employee_type !== "Guest" && orig.employee === p.employee
+            );
           });
 
           const dbName = match?.name || p.name;
@@ -1392,7 +1564,10 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
             employee: p.employee,
             employee_name: p.employee_name,
             guest_name: p.guest_name,
-            percentage: p.percentage !== undefined && p.percentage !== null ? Number(p.percentage) : undefined,
+            percentage:
+              p.percentage !== undefined && p.percentage !== null
+                ? Number(p.percentage)
+                : undefined,
           };
         });
 
@@ -1402,18 +1577,18 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
 
         const updatePayload = isDraftExpenseEdit
           ? {
-            expense_claim_name: documentName,
-            expenses: [expenseRecord],
-            isResubmit: false,
-            ...(forSubmit ? { approval_status: "Pending" } : {}),
-            participants: participantsData,
-          }
+              expense_claim_name: documentName,
+              expenses: [expenseRecord],
+              isResubmit: false,
+              ...(forSubmit ? { approval_status: "Pending" } : {}),
+              participants: participantsData,
+            }
           : {
-            expense_claim_name: documentName,
-            expenses: [expenseRecord],
-            isResubmit: true,
-            participants: participantsData,
-          };
+              expense_claim_name: documentName,
+              expenses: [expenseRecord],
+              isResubmit: true,
+              participants: participantsData,
+            };
 
         await updateExpenseClaim({
           ...updatePayload,
@@ -1478,7 +1653,10 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
 
       onSuccess?.();
       navigate("/webapp/expenses-app/expenses-list", {
-        state: { refresh: true, initialFilter: approvalStatus ? "Pending" : "Draft" },
+        state: {
+          refresh: true,
+          initialFilter: approvalStatus ? "Pending" : "Draft",
+        },
       });
     } catch (error) {
       console.error("Expense submission flow failed:", error);
@@ -1545,8 +1723,8 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
               typeof nextData.expenseCategory === "string"
                 ? nextData.expenseCategory
                 : nextData.expenseCategory?.name ||
-                nextData.expenseCategory?.value ||
-                "";
+                  nextData.expenseCategory?.value ||
+                  "";
 
             const isTransientHydrationEvent =
               isEditingExistingExpense &&
@@ -1561,7 +1739,8 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
 
             if (
               changedKey &&
-              (changedKey === "category_type" || changedKey === "expenseCategory")
+              (changedKey === "category_type" ||
+                changedKey === "expenseCategory")
             ) {
               setDynamicFormData({});
               setIsSharePanelOpen(false);
@@ -1586,11 +1765,11 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
                 {hiddenFileListKeys.length > 0 && (
                   <style>{`
                   ${hiddenFileListKeys
-                      .map(
-                        (key) =>
-                          `.formio-component-${key} .list-group { display: none !important; }`,
-                      )
-                      .join("\n")}
+                    .map(
+                      (key) =>
+                        `.formio-component-${key} .list-group { display: none !important; }`,
+                    )
+                    .join("\n")}
                 `}</style>
                 )}
                 <Form
@@ -1601,12 +1780,33 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
                   onChange={(change: any) => {
                     const changedKey = change?.changed?.component?.key;
                     const nextData = change?.data || {};
+                    const receiptAttachments = toAttachmentArray(
+                      nextData?.attach_receipt,
+                    );
 
                     if (!changedKey) {
                       if (hasFileFieldDelta(nextData)) {
                         setDynamicFormData({ ...nextData });
+                        if (
+                          !areAttachmentListsEqual(
+                            toAttachmentArray(dynamicFormData?.attach_receipt),
+                            receiptAttachments,
+                          )
+                        ) {
+                          void extractReceiptFromAttachments(
+                            receiptAttachments,
+                            nextData,
+                          );
+                        }
                       }
                       return;
+                    }
+
+                    if (changedKey === "attach_receipt") {
+                      void extractReceiptFromAttachments(
+                        receiptAttachments,
+                        nextData,
+                      );
                     }
 
                     if (
@@ -1660,85 +1860,17 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
                     setDynamicFormData({ ...nextData });
                   }}
                 />
-
               </>
             )}
-
           </div>
         )}
 
-        {displayParticipants.length > 0 && (
-          <div className="mt-4 rounded-lg border bg-white p-3 shadow-sm">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="text-md font-medium">Participants</div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsSharePanelOpen(true)}
-                  className="text-md flex items-center font-bold text-primary hover:underline"
-                >
-                  <SquarePen className="mr-1 h-4 w-4" />
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsDeleteShareConfirmOpen(true)}
-                  className="text-md flex items-center font-bold text-red-600 hover:underline"
-                >
-                  <Trash2 className="mr-1 h-4 w-4" />
-                  Remove share %
-                </button>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-left text-md text-gray-600">
-                    <th className="px-2 py-1">#</th>
-                    <th className="px-2 py-1">Type</th>
-                    <th className="px-2 py-1">Employee Name</th>
-                    <th className="px-2 py-1">Percentage</th>
-                    <th className="px-2 py-1">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayParticipants.map((p: any, idx: number) => (
-                    <tr key={idx} className="border-t">
-                      <td className="px-2 py-2 align-top">{idx + 1}</td>
-                      <td className="px-2 py-2 align-top">
-                        {p.employee_type ?? "-"}
-                      </td>
-                      <td className="px-2 py-2 align-top">
-                        {p.guest_name ||
-                          p.employee_name ||
-                          p.employee ||
-                          p.name ||
-                          "-"}
-                      </td>
-                      <td className="px-2 py-2 align-top">
-                        {p.percentage !== undefined && p.percentage !== null
-                          ? `${p.percentage}%`
-                          : "-"}
-                      </td>
-                      <td className="px-2 py-2 align-top">
-                        {(
-                          p.amount ??
-                          p.allocated_amount
-                        ) !== undefined &&
-                          (
-                            p.amount ??
-                            p.allocated_amount
-                          ) !== null
-                          ? `INR ${Number(p.amount ?? p.allocated_amount).toFixed(2)}`
-                          : "-"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        <ParticipantsList
+          participants={displayParticipants}
+          isDesktop={isDesktop}
+          onEdit={() => setIsSharePanelOpen(true)}
+          onRemove={() => setIsDeleteShareConfirmOpen(true)}
+        />
 
         <AttachmentPreviewVanillaV2
           currentAttachments={visibleAttachments}
@@ -1755,9 +1887,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
             <AttachmentPreviewVanillaV2
               key={String(comp.key)}
               currentAttachments={files}
-              onRemove={(index) =>
-                removeFormioFile(String(comp.key), index)
-              }
+              onRemove={(index) => removeFormioFile(String(comp.key), index)}
               compKey={String(comp.key)}
               heading={comp.label || "Attachments Preview"}
             />

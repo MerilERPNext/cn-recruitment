@@ -29,13 +29,12 @@ export const getAssignedUsersCell = (item: any) => {
   const activeStage = pendingAny ?? fallback;
   if (!activeStage) return <span>—</span>;
 
-  const label = `${activeStage.stage_name}(1)`;
-  const stageUser: string | undefined = activeStage.user;
-
+  const label = `${activeStage?.stage_name}(1)`;
+  const stageUser: string | undefined = activeStage?.user;
   return (
     <AllocatedToTooltip
       title="Assigned To"
-      users={stageUser ? [stageUser] : []}
+      users={stageUser ? [{ name: stageUser, employee: activeStage?.employee_id, designation_name: activeStage?.designation_name }] : []}
       position="left"
     >
       <span>{label}</span>

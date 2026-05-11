@@ -74,9 +74,9 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
     setSearchParams(newParams, { replace: true });
   }, [selectedDate, setSearchParams, searchParams]);
   const getAttendanceEvents = (attendance: AttendanceStatusInfo) => {
-    if (attendance.events?.some((event) => event.status === "Revoked")) {
-      return
-    }
+    // if (attendance.events?.some((event) => event.status === "Revoked")) {
+    //   return
+    // }
     return (attendance?.events ?? []).length > 0 && (
       <div className="flex gap-1">
         {Array.from(
@@ -174,6 +174,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
         )}
         renderDayContents={(day, date) => {
           const attendance = getAttendanceStatus(date);
+
           const isSelected =
             selectedDate?.toDateString() === date.toDateString();
           const baseClasses = "transition-all duration-200";
@@ -211,6 +212,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
             const secondColor =
               gradientClassMap[attendance?.secondHalf?.toLowerCase() || ""];
             const gradient = `linear-gradient(to bottom right, ${firstColor} 50%, ${secondColor} 50%)`;
+
             return (
               <div
                 className={dayBoxStyles}
