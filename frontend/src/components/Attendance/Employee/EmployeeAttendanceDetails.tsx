@@ -398,7 +398,7 @@ const EmployeeAttendanceDetails = ({
     if (!leaveDetails) return null;
     return (
       <div>
-        <LeaveDetailsCard data={leaveDetails} />
+        <LeaveDetailsCard data={leaveDetails} propStatus={propStatus} />
         {data?.custom_auto_created === 1 ||
           (leaveEvent && status === "on leave")
           ? renderLeaveDetailsActions()
@@ -665,17 +665,20 @@ export const AttendanceRequestInfo = ({
     <div className="mt-2 p-2 pt-4 border-t border-gray-100">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
-        <Typography variant="subheading" className="font-semibold">
-          Attendance Request Info
-        </Typography>
+        <div className="flex gap-2">
 
-        {propStatus === "week-off" && (
-          <Badge
-            label={"Week Off"}
-            backgroundColor={status.backgroundColor}
-            textColor={status.textColor}
-          />
-        )}
+          <Typography variant="subheading" className="font-semibold">
+            Attendance Request Info
+          </Typography>
+
+          {propStatus === "week-off" && (
+            <Badge
+              label={"Week Off"}
+              backgroundColor={"bg-blue-50"}
+              textColor={"text-blue-800"}
+            />
+          )}
+        </div>
         {data.custom_status && (
           <Badge
             label={data.custom_status === "Cancelled" ? "Revoked" : data.custom_status}
