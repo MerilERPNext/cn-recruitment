@@ -1,0 +1,23 @@
+[    4570ms] [ERROR] Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) @ http://site1.local:8005/files/download.jpeg:0
+[   13293ms] [ERROR] Failed to load resource: the server responded with a status of 403 (FORBIDDEN) @ http://site1.local:8005/api/method/frappe.desk.form.load.getdoc?doctype=Recognition%20Type&name=TEAMWORK_BADGE&_=1772728951736:0
+[   13296ms] [ERROR] Traceback (most recent call last):
+  File "apps/frappe/frappe/app.py", line 120, in application
+    response = frappe.api.handle(request)
+  File "apps/frappe/frappe/api/__init__.py", line 52, in handle
+    data = endpoint(**arguments)
+  File "apps/frappe/frappe/api/v1.py", line 40, in handle_rpc_call
+    return frappe.handler.handle()
+           ~~~~~~~~~~~~~~~~~~~~~^^
+  File "apps/frappe/frappe/handler.py", line 53, in handle
+    data = execute_cmd(cmd)
+  File "apps/frappe/frappe/handler.py", line 86, in execute_cmd
+    return frappe.call(method, **frappe.form_dict)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "apps/frappe/frappe/__init__.py", line 1754, in call
+    return fn(*args, **newargs)
+  File "apps/frappe/frappe/utils/typing_validations.py", line 32, in wrapper
+    return func(*args, **kwargs)
+  File "apps/frappe/frappe/desk/form/load.py", line 45, in getdoc
+    raise frappe.PermissionError(("read", doctype, name))
+frappe.exceptions.PermissionError: ('read', 'Recognition Type', 'TEAMWORK_BADGE')
+ @ http://site1.local:8005/assets/cn_todo_manager/todoapp/ui-vendor-D7sU5XO5.js:0
