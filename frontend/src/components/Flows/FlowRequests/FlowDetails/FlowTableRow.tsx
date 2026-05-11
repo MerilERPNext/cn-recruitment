@@ -95,20 +95,31 @@ const FlowTableRow = ({
     setShowForm(true);
   };
 
+  const assigneeCount = useMemo(() => {
+    let count = 0;
+    if (stage.allocated_to?.length) count += stage.allocated_to.length;
+    if (stage.role_assigned_users?.length) {
+      stage.role_assigned_users.forEach(r => count += (r.user?.length || 0));
+    }
+    return count;
+  }, [stage]);
+
+  const assigneeText = assigneeCount > 0 
+    ? (assigneeCount === 1 && stage.allocated_to?.[0]?.name ? stage.allocated_to[0].name : `Assignees (${assigneeCount})`)
+    : (stage.role || "-");
+
   return (
     <div
       key={stage.stage_name}
-      className="hover:bg-primary-100 px-6 py-4 text-center grid grid-cols-5 cursor-pointer text-xs w-full border-b"
+      className="hover:bg-primary-100 px-6 py-4 grid grid-cols-8 items-center text-center cursor-pointer text-xs w-full border-b gap-4"
     >
-      <div>
-        {" "}
+      <div className="flex justify-center items-center">
         <Typography variant="bodySmall" className="font-medium text-center">
           {stage.stage_name || "-"}
         </Typography>
       </div>
-      <div>
-        {" "}
 
+      <div className="flex justify-center items-center">
         <AllocatedToTooltip
           position="right"
           users={stage.allocated_to}
@@ -116,25 +127,41 @@ const FlowTableRow = ({
           role={stage.role || ""}
           RoleAssignedUsers={stage?.role_assigned_users || []}
         >
-          <StatusBadge status={stage.status || "-"} />
+          <Typography variant="bodySmall" className="font-medium text-center text-primary-600 cursor-pointer">
+            {assigneeText}
+          </Typography>
         </AllocatedToTooltip>
-
       </div>
-      <div>
-        {" "}
+
+      <div className="flex justify-center items-center overflow-hidden">
+        <Typography variant="bodySmall" className="font-medium truncate text-center">
+          {stage.user || "-"}
+        </Typography>
+      </div>
+
+      <div className="flex justify-center items-center">
+        <StatusBadge status={stage.status || "-"} />
+      </div>
+
+      <div className="flex justify-center items-center">
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {formatToIndianDate(stage?.todo?.creation) || "-"}
+        </Typography>
+      </div>
+
+      <div className="flex justify-center items-center">
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatToIndianDate(stage?.todo?.date) || "-"}
         </Typography>
       </div>
-      <div>
-        {" "}
+
+      <div className="flex justify-center items-center">
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatToIndianDate(stage.completion_date || "") || "-"}
         </Typography>
       </div>
-      <div className="flex items-center justify-center pr-2">
-        {" "}
 
+      <div className="flex flex-wrap items-center justify-center gap-2">
         <>
           {stage?.approval_response_data && (
             <Button
