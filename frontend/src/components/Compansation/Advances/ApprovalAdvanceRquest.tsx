@@ -6,6 +6,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
+import { BulkSelectProvider } from "../../shared/BulkSelectContext";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
 import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";

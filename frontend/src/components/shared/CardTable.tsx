@@ -7,6 +7,7 @@ import {
   ColumnSortConfig,
   SortDirection,
 } from "./CardTableContext";
+import { useBulkSelectContext } from "./BulkSelectContext";
 
 export type { ColumnSortConfig, SortDirection } from "./CardTableContext";
 
@@ -33,6 +34,7 @@ const CardTable = ({
   onSortChange?: (field: string, direction: SortDirection) => void;
 }) => {
   const { isDesktop } = useScreenSize();
+  const bulkSelect = useBulkSelectContext();
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
 
@@ -110,6 +112,25 @@ const CardTable = ({
                 ref={stickyRef}
               >
                 {titles.map((title, index) => {
+                  // When BulkSelectContext is active, replace the first column header
+                  // with the select-all checkbox instead of the "Select" label.
+                  if (index === 0 && bulkSelect?.state?.isEnabled) {
+                    const { state, callbacksRef } = bulkSelect;
+                    const allSelected =
+                      state.allRequests.length > 0 &&
+                      state.selectedIds.length === state.allRequests.length;
+                    return (
+                      <div key={index} className="flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={() => callbacksRef.current?.onSelectAll()}
+                          className="cursor-pointer w-4 h-4"
+                        />
+                      </div>
+                    );
+                  }
+
                   const colConfig = columnSortConfig[index];
                   const isSortable = colConfig?.sortable === true;
                   const field = isSortable
