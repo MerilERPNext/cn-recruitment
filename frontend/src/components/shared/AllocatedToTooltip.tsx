@@ -301,7 +301,8 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
                             {rolesArray.map((r, idx) => {
                                 const assigned = RoleAssignedUsers?.find((data) => data.role === r);
-                                const hasUsers = assigned && assigned?.user?.length > 0;
+                                const userCount = assigned?.users?.length || assigned?.user?.length || 0;
+                                const hasUsers = assigned && userCount > 0;
                                 return (
                                     <span
                                         key={`val-r-${idx}-${r}`}
@@ -322,7 +323,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                                             ${hasUsers ? "cursor-pointer hover:bg-secondary-100 transition-colors" : ""}
                                         `}
                                     >
-                                        {r} {hasUsers && `(${assigned?.user?.length})`}
+                                        {r} {hasUsers && `(${userCount})`}
                                     </span>
                                 );
                             })}
@@ -363,7 +364,8 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                                 <div className="flex flex-wrap gap-1">
                                     {rolesArray.map((r, idx) => {
                                         const assigned = RoleAssignedUsers?.find((data) => data.role === r);
-                                        const hasUsers = assigned && assigned.user?.length > 0;
+                                        const userCount = assigned?.users?.length || assigned?.user?.length || 0;
+                                        const hasUsers = assigned && userCount > 0;
                                         return (
                                             <span
                                                 key={`role-${idx}-${r}`}
@@ -384,7 +386,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                                                     ${hasUsers ? "cursor-pointer hover:bg-secondary-100 transition-colors" : ""}
                                                 `}
                                             >
-                                                {r} {hasUsers && `(${assigned?.user?.length})`}
+                                                {r} {hasUsers && `(${userCount})`}
                                             </span>
                                         );
                                     })}

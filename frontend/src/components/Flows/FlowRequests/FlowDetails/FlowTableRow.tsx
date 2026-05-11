@@ -7,6 +7,7 @@ import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useMemo, useState } from "react";
 
 import { extractAllocatedToUserArray, extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
+import { getStageAssignedUsersCell } from "../../../../utils/getAssignedUsersCell";
 import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
 import ReviewForm from "../../Separation/components/ReviewForm";
 import { createPortal } from "react-dom";
@@ -82,9 +83,7 @@ const FlowTableRow = ({
     let data: Record<string, unknown> = {};
 
     try {
-      data = stage?.approval_response_data
-        ? JSON.parse(stage.approval_response_data)
-        : {};
+      data = JSON.parse(stage?.approval_response_data_display || stage?.approval_response_data || "{}");
     } catch (error) {
       console.error("Invalid approval_response_data JSON:", error);
       data = {};
@@ -98,17 +97,30 @@ const FlowTableRow = ({
   return (
     <div
       key={stage.stage_name}
-      className="hover:bg-primary-100 px-6 py-4 text-center grid grid-cols-5 cursor-pointer text-xs w-full border-b"
+      className="hover:bg-primary-100 px-6 py-4 grid grid-cols-8 items-center text-center cursor-pointer text-xs w-full border-b gap-4"
     >
-      <div>
-        {" "}
+      <div className="flex justify-center items-center">
         <Typography variant="bodySmall" className="font-medium text-center">
           {stage.stage_name || "-"}
         </Typography>
       </div>
-      <div>
-        {" "}
 
+      <div className="flex justify-center items-center">
+        {getStageAssignedUsersCell(
+          stage, 
+          stage?.role_assigned_users, 
+          "right", 
+          (text) => <Typography variant="bodySmall" className="font-medium text-center text-primary-600 cursor-pointer">{text}</Typography>
+        )}
+      </div>
+
+      <div className="flex justify-center items-center overflow-hidden">
+        <Typography variant="bodySmall" className="font-medium truncate text-center">
+          {stage.approval_time ? stage.user || "-" : "-"}
+        </Typography>
+      </div>
+
+      <div className="flex justify-center items-center">
         <AllocatedToTooltip
           position="right"
           users={stage.allocated_to}
@@ -118,25 +130,29 @@ const FlowTableRow = ({
         >
           <StatusBadge status={stage.status || "-"} />
         </AllocatedToTooltip>
-
       </div>
-      <div>
-        {" "}
+
+      <div className="flex justify-center items-center">
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {formatToIndianDate(stage?.todo?.creation) || "-"}
+        </Typography>
+      </div>
+
+      <div className="flex justify-center items-center">
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatToIndianDate(stage?.todo?.date) || "-"}
         </Typography>
       </div>
-      <div>
-        {" "}
+
+      <div className="flex justify-center items-center">
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatToIndianDate(stage.completion_date || "") || "-"}
         </Typography>
       </div>
-      <div className="flex items-center justify-center pr-2">
-        {" "}
 
+      <div className="flex flex-wrap items-center justify-center gap-2">
         <>
-          {stage?.approval_response_data && (
+          {(stage?.approval_response_data_display || stage?.approval_response_data) && (
             <Button
               variant="outline"
               onClick={handleShowForm}

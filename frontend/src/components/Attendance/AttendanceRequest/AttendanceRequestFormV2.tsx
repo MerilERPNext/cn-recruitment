@@ -631,22 +631,14 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         : null;
 
       if (patchedSubmission?.data) {
-        // Always patch the hidden fields so flatpickr resolves the string references
-        // ("allowed_from_date" / "allowed_to_date") to the correct dates after the restore
+        // Patch hidden constraint fields so flatpickr resolves the string references
+        // ("allowed_from_date" / "allowed_to_date") to the correct dates after the restore.
+        // Do NOT overwrite from_date / to_date — the caller's selectedDate should be preserved.
         if (attendanceRequestAttachmentsMandatory.allowed_from_date) {
           patchedSubmission.data.allowed_from_date = attendanceRequestAttachmentsMandatory.allowed_from_date;
         }
         if (attendanceRequestAttachmentsMandatory.allowed_to_date) {
           patchedSubmission.data.allowed_to_date = attendanceRequestAttachmentsMandatory.allowed_to_date;
-        }
-
-        if (forActionType !== "edit") {
-          if (attendanceRequestAttachmentsMandatory.allowed_from_date) {
-            patchedSubmission.data.from_date = attendanceRequestAttachmentsMandatory.allowed_from_date;
-          }
-          if (attendanceRequestAttachmentsMandatory.allowed_to_date) {
-            patchedSubmission.data.to_date = attendanceRequestAttachmentsMandatory.allowed_to_date;
-          }
         }
       }
 

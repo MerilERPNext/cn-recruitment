@@ -1,0 +1,66 @@
+[    2061ms] [ERROR] Failed to load resource: the server responded with a status of 417 (EXPECTATION FAILED) @ http://site1.local:8005/api/method/nextai.api.permission.moduler_ui_perm.get_list:0
+[    2061ms] [WARNING] 🚨 API returned 417 Expectation Failed - this is typically due to device ID setting issues @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[    2061ms] [ERROR] 🚨 API method nextai.api.permission.moduler_ui_perm.get_list failed: AxiosError: Request failed with status code 417
+    at Tr (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:1082)
+    at XMLHttpRequest.M (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:5836)
+    at ve.<anonymous> (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:5:2104)
+    at Generator.throw (<anonymous>)
+    at i (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:1:627) @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[    2061ms] [WARNING] ⚠️ Method nextai.api.permission.moduler_ui_perm.get_list returned 417 Expectation Failed - likely device ID or attendance API issue @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[    2725ms] [ERROR] Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) @ http://site1.local:8005/api/resource/Employee?fields=%5B%22*%22%5D&filters=%5B%5B%22user_id%22%2C%22%3D%22%2C%22ambreen17%40yopmail.com%22%5D%5D:0
+[    2892ms] [ERROR] Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) @ http://site1.local:8005/api/resource/Employee?fields=%5B%22*%22%5D&filters=%5B%5B%22user_id%22%2C%22%3D%22%2C%22ambreen17%40yopmail.com%22%5D%5D:0
+[    2892ms] [ERROR] Employee data error in getCurrentEmployeeAllDetails for user_id: ambreen17@yopmail.com {error: AxiosError: Request failed with status code 500
+    at Tr (http://site1.local:8005/assets/recruitme…, userId: ambreen17@yopmail.com, context: getCurrentEmployeeAllDetails, timestamp: 2026-03-05T16:37:22.259Z} @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4685
+[    3100ms] [ERROR] Failed to load resource: the server responded with a status of 417 (EXPECTATION FAILED) @ http://site1.local:8005/api/method/nextai.api.permission.moduler_ui_perm.get_list:0
+[    3100ms] [WARNING] 🚨 API returned 417 Expectation Failed - this is typically due to device ID setting issues @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[    3100ms] [ERROR] 🚨 API method nextai.api.permission.moduler_ui_perm.get_list failed: AxiosError: Request failed with status code 417
+    at Tr (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:1082)
+    at XMLHttpRequest.M (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:5836)
+    at ve.<anonymous> (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:5:2104)
+    at Generator.throw (<anonymous>)
+    at i (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:1:627) @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[    3100ms] [WARNING] ⚠️ Method nextai.api.permission.moduler_ui_perm.get_list returned 417 Expectation Failed - likely device ID or attendance API issue @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[    3366ms] [ERROR] Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) @ http://site1.local:8005/api/method/cn_hrms_core.cn_hrms_core.apis.notification_count.get_unread_notification_count:0
+[    3402ms] [ERROR] Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) @ http://site1.local:8005/api/method/cn_hrms_core.cn_hrms_core.apis.notification_count.get_unread_notification_count:0
+[    3403ms] [ERROR] 🚨 API method cn_hrms_core.cn_hrms_core.apis.notification_count.get_unread_notification_count failed: AxiosError: Request failed with status code 500
+    at Tr (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:1082)
+    at XMLHttpRequest.M (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:5836)
+    at ve.<anonymous> (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:5:2104)
+    at Generator.throw (<anonymous>)
+    at i (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:1:627) @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[    4419ms] [ERROR] Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) @ http://site1.local:8005/api/method/cn_hrms_core.cn_hrms_core.apis.notification_count.get_unread_notification_count:0
+[    4442ms] [ERROR] Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) @ http://site1.local:8005/api/method/cn_hrms_core.cn_hrms_core.apis.notification_count.get_unread_notification_count:0
+[    4443ms] [ERROR] 🚨 API method cn_hrms_core.cn_hrms_core.apis.notification_count.get_unread_notification_count failed: AxiosError: Request failed with status code 500
+    at Tr (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:1082)
+    at XMLHttpRequest.M (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:5836)
+    at ve.<anonymous> (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:5:2104)
+    at Generator.throw (<anonymous>)
+    at i (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:1:627) @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[    5111ms] [ERROR] Failed to load resource: the server responded with a status of 417 (EXPECTATION FAILED) @ http://site1.local:8005/api/method/nextai.api.permission.moduler_ui_perm.get_list:0
+[    5111ms] [WARNING] 🚨 API returned 417 Expectation Failed - this is typically due to device ID setting issues @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[    5111ms] [ERROR] 🚨 API method nextai.api.permission.moduler_ui_perm.get_list failed: AxiosError: Request failed with status code 417
+    at Tr (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:1082)
+    at XMLHttpRequest.M (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:5836)
+    at ve.<anonymous> (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:5:2104)
+    at Generator.throw (<anonymous>)
+    at i (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:1:627) @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[    5111ms] [WARNING] ⚠️ Method nextai.api.permission.moduler_ui_perm.get_list returned 417 Expectation Failed - likely device ID or attendance API issue @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[    5195ms] [ERROR] Failed to load resource: the server responded with a status of 404 (NOT FOUND) @ http://site1.local:8005/private/files/black_logo%20(3).svg:0
+[    6460ms] [ERROR] Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) @ http://site1.local:8005/api/method/cn_hrms_core.cn_hrms_core.apis.notification_count.get_unread_notification_count:0
+[    6484ms] [ERROR] Failed to load resource: the server responded with a status of 500 (INTERNAL SERVER ERROR) @ http://site1.local:8005/api/method/cn_hrms_core.cn_hrms_core.apis.notification_count.get_unread_notification_count:0
+[    6484ms] [ERROR] 🚨 API method cn_hrms_core.cn_hrms_core.apis.notification_count.get_unread_notification_count failed: AxiosError: Request failed with status code 500
+    at Tr (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:1082)
+    at XMLHttpRequest.M (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:5836)
+    at ve.<anonymous> (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:5:2104)
+    at Generator.throw (<anonymous>)
+    at i (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:1:627) @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[  130705ms] [ERROR] Failed to load resource: the server responded with a status of 404 (NOT FOUND) @ http://site1.local:8005/private/files/download.jpeg:0
+[  172508ms] [ERROR] Failed to load resource: the server responded with a status of 417 (EXPECTATION FAILED) @ http://site1.local:8005/api/method/chatnext_work_connect.chatnext_work_connect.api.recognition.award_recognition:0
+[  172508ms] [WARNING] 🚨 API returned 417 Expectation Failed - this is typically due to device ID setting issues @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[  172508ms] [ERROR] 🚨 API method chatnext_work_connect.chatnext_work_connect.api.recognition.award_recognition failed: AxiosError: Request failed with status code 417
+    at Tr (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:1082)
+    at XMLHttpRequest.M (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:3:5836)
+    at ve.<anonymous> (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:5:2104)
+    at Generator.throw (<anonymous>)
+    at i (http://site1.local:8005/assets/recruitment/webapp/vendor-utils.Dy_Rxfm9.js:1:627) @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480
+[  172508ms] [WARNING] ⚠️ Method chatnext_work_connect.chatnext_work_connect.api.recognition.award_recognition returned 417 Expectation Failed - likely device ID or attendance API issue @ http://site1.local:8005/assets/recruitment/webapp/index.g0A7UGw9.js:4480

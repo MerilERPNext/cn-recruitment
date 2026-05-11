@@ -125,7 +125,7 @@ const FlowTableRow = ({
         const schema = stage?.form_json?.components;
         let data: Record<string, unknown> = {};
         try {
-            data = JSON.parse(stage?.approval_response_data);
+            data = JSON.parse(stage?.approval_response_data_display || stage?.approval_response_data || "{}");
         } catch (error) {
             console.error("Invalid approval_response_data JSON:", error);
         }
@@ -233,25 +233,51 @@ const FlowTableRow = ({
                             </Typography>
                         </div>
 
-                        {stage.approval_time && (
-                            <div className="flex justify-between items-start text-sm gap-4">
-                                <Typography
-                                    variant="mobileCardLabel"
-                                    className="block text-gray-500 shrink-0 mt-0.5"
-                                >
-                                    Date
-                                </Typography>
-                                <Typography
-                                    variant="mobileCardValue"
-                                    className="text-right flex-1 min-w-0 mt-0.5"
-                                >
-                                    {formatToIndianDate(stage.approval_time)}
-                                </Typography>
-                            </div>
-                        )}
+                        <div className="flex justify-between items-start text-sm gap-4">
+                            <Typography
+                                variant="mobileCardLabel"
+                                className="block text-gray-500 shrink-0 mt-0.5"
+                            >
+                                Trigger Date
+                            </Typography>
+                            <Typography
+                                variant="mobileCardValue"
+                                className="text-right flex-1 min-w-0 truncate mt-0.5"
+                            >
+                                {formatToIndianDate(stage?.todo?.creation) || "-"}
+                            </Typography>
+                        </div>
+                        <div className="flex justify-between items-start text-sm gap-4">
+                            <Typography
+                                variant="mobileCardLabel"
+                                className="block text-gray-500 shrink-0 mt-0.5"
+                            >
+                                Due Date
+                            </Typography>
+                            <Typography
+                                variant="mobileCardValue"
+                                className="text-right flex-1 min-w-0 truncate mt-0.5"
+                            >
+                                {formatToIndianDate(stage?.todo?.date) || "-"}
+                            </Typography>
+                        </div>
+                        <div className="flex justify-between items-start text-sm gap-4">
+                            <Typography
+                                variant="mobileCardLabel"
+                                className="block text-gray-500 shrink-0 mt-0.5"
+                            >
+                                Completed Date
+                            </Typography>
+                            <Typography
+                                variant="mobileCardValue"
+                                className="text-right flex-1 min-w-0 mt-0.5"
+                            >
+                                {formatToIndianDate(stage.completion_date || "") || "-"}
+                            </Typography>
+                        </div>
                     </div>
                 </div>
-                {stage?.approval_response_data && (
+                {(stage?.approval_response_data_display || stage?.approval_response_data) && (
                     <Button
                         onClick={handleShowForm}
                         className="mt-2 w-full"

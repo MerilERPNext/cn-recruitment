@@ -6,7 +6,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import Tooltip from "../../shared/Tooltip";
 import { formatToIndianDateWithTime } from "../../../utils/formatToIndianDate";
 
-export const LeaveDetailsCard = ({ data }: { data: LeaveApplication }) => {
+export const LeaveDetailsCard = ({ data, propStatus }: { data: LeaveApplication, propStatus?: string }) => {
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), "dd MMM yyyy");
@@ -39,9 +39,19 @@ export const LeaveDetailsCard = ({ data }: { data: LeaveApplication }) => {
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex  gap-2 items-center">
-          <Typography variant="subheading" className="font-semibold">
-            Leave Details
-          </Typography>
+          <div className="flex gap-2">
+
+            <Typography variant="subheading" className="font-semibold">
+              Leave Details
+            </Typography>
+            {propStatus === "week-off" && (
+              <Badge
+                label={"Week Off"}
+                backgroundColor={"bg-blue-50"}
+                textColor={"text-blue-800"}
+              />
+            )}
+          </div>
           {/* if custom_auto_created is 1 that means its a Unpaid Leave and we show it like a leave on UI in yellow color */}
           {data?.custom_auto_created === 1 && (
             <Badge

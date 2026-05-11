@@ -1,5 +1,52 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { ReactNode } from "react";
 import AllocatedToTooltip from "../components/shared/AllocatedToTooltip";
+
+export const getStageAssignedUsersCell = (
+  stage: any,
+  roleAssignedUsers: any[] = [],
+  position: "left" | "right" | "top" | "bottom" = "left",
+  textWrapper?: (text: string) => ReactNode
+) => {
+  if (!stage) return textWrapper ? textWrapper("—") : <span>—</span>;
+
+  if (stage.role) {
+    const totalUsers =
+      roleAssignedUsers?.reduce(
+        (acc: number, r: any) => acc + (r.users?.length || r.user?.length || 0),
+        0,
+      ) ?? 0;
+    
+    const text = `Assign(${totalUsers})`;
+    return (
+      <AllocatedToTooltip
+        title="Assigned To"
+        RoleAssignedUsers={roleAssignedUsers}
+        roles={stage.role.split(',').map((r: string) => r.trim())}
+        position={position}
+      >
+        {textWrapper ? textWrapper(text) : <span>{text}</span>}
+      </AllocatedToTooltip>
+    );
+  }
+
+  const label = `${stage.stage_name || "-"}(1)`;
+  const users = stage.allocated_to?.length 
+    ? stage.allocated_to 
+    : stage.user 
+      ? [{ name: stage.user, employee: stage.employee_id, designation_name: stage.designation_name }] 
+      : [];
+
+  return (
+    <AllocatedToTooltip
+      title="Assigned To"
+      users={users}
+      position={position}
+    >
+      {textWrapper ? textWrapper(label) : <span>{label}</span>}
+    </AllocatedToTooltip>
+  );
+};
 
 export const getAssignedUsersCell = (item: any) => {
   const stages: any[] = item?.approval_stages_status ?? [];
@@ -8,37 +55,7 @@ export const getAssignedUsersCell = (item: any) => {
   const pendingAny = pendingStages[0];
   const fallback = stages[stages.length - 1];
 
-  if (pendingWithRole) {
-    const totalUsers =
-      item?.role_assigned_users?.reduce(
-        (acc: number, r: any) => acc + (r.user?.length ?? 0),
-        0,
-      ) ?? 0;
-    return (
-      <AllocatedToTooltip
-        title="Assigned To"
-        RoleAssignedUsers={item?.role_assigned_users}
-        roles={[pendingWithRole.role]}
-        position="left"
-      >
-        <span>{`Assign(${totalUsers})`}</span>
-      </AllocatedToTooltip>
-    );
-  }
+  const activeStage = pendingWithRole ?? pendingAny ?? fallback;
 
-  const activeStage = pendingAny ?? fallback;
-  if (!activeStage) return <span>—</span>;
-
-  const label = `${activeStage.stage_name}(1)`;
-  const stageUser: string | undefined = activeStage.user;
-
-  return (
-    <AllocatedToTooltip
-      title="Assigned To"
-      users={stageUser ? [stageUser] : []}
-      position="left"
-    >
-      <span>{label}</span>
-    </AllocatedToTooltip>
-  );
+  return getStageAssignedUsersCell(activeStage, item?.role_assigned_users, "left");
 };
