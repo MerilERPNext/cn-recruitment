@@ -48,6 +48,7 @@ import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { SharedExpenseCard, SharedExpensesRow } from "./SharedExpenses";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -220,6 +221,14 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           </div>
         </div>
 
+        {/* Assigned To */}
+        <div className="flex flex-col gap-1">
+          <Typography variant="mobileCardLabel">Assigned To</Typography>
+          <Typography variant="mobileCardValue">
+            {getAssignedUsersCell(item)}
+          </Typography>
+        </div>
+
         {/* Allocated To */}
         <MobileAllocatedTo
           users={item?.allocated_to}
@@ -238,8 +247,9 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             canRevoke={
               item?.custom_allow_revoke === 1 &&
               !(
-                item?.todo_status?.toLowerCase() === "cancelled" &&
-                item?.reference_document?.docstatus === 2
+                (item?.todo_status?.toLowerCase() === "cancelled" &&
+                  item?.reference_document?.docstatus === 2) ||
+                item?.reference_document?.docstatus === 1
               ) &&
               !isActed
             }
@@ -338,8 +348,8 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
       style={{
         gridTemplateColumns: isPaidFilter
-          ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-          : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr",
+          ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+          : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr",
       }}
     >
       <Tooltip
@@ -398,6 +408,9 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         {formatToIndianDate(item?.reference_document?.creation)}
       </Typography>
       <div className="flex items-center justify-center">
+        {getAssignedUsersCell(item)}
+      </div>
+      <div className="flex items-center justify-center">
         <AllocatedToTooltip
           users={item?.allocated_to}
           RoleAssignedUsers={item?.role_assigned_users}
@@ -434,8 +447,8 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           canRevoke={
             item?.custom_allow_revoke === 1 &&
             !(
-              item?.todo_status?.toLowerCase() === "cancelled" &&
-              item?.reference_document?.docstatus === 2
+              (item?.todo_status?.toLowerCase() === "cancelled" &&
+                item?.reference_document?.docstatus === 2) || item?.reference_document?.docstatus === 1
             ) &&
             // item?.todo_status?.toLowerCase() === "open" &&
             !isActed
@@ -499,6 +512,7 @@ const ExpensesList: React.FC = () => {
   }>({ isOpen: false, count: 0 });
 
   const [currentListData, setCurrentListData] = React.useState<any[]>([]);
+  const [isExporting, setIsExporting] = React.useState(false);
 
   const [isAcknowledgementChecked, setIsAcknowledgementChecked] =
     React.useState(false);
@@ -655,7 +669,9 @@ const ExpensesList: React.FC = () => {
     todoData?.reference_name ||
     todoData?.reference_document?.name;
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
     let exportData: any[] = [];
     let fileName = "Expense_Claims";
 
@@ -728,6 +744,7 @@ const ExpensesList: React.FC = () => {
 
     if (exportData.length === 0) {
       toast.error("No data available to export");
+      setIsExporting(false);
       return;
     }
 
@@ -735,9 +752,68 @@ const ExpensesList: React.FC = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
 
-    // Generate buffer and trigger download
-    XLSX.writeFile(workbook, `${fileName}_${new Date().getTime()}.xlsx`);
-    toast.success("Exporting data...");
+    const fileNameWithTimestamp = `${fileName}_${new Date().getTime()}.xlsx`;
+    const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([wbout], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    // Frappe WebView blocks blob URL downloads. Upload to Frappe server so we
+    // get a real HTTP URL, then trigger download via a hidden anchor — this
+    // lets the WebView/browser handle it as a file download without opening
+    // any modal or in-app browser.
+    try {
+      toast.success("Preparing export...", { id: "export-toast" });
+
+      const formData = new FormData();
+      formData.append("file", blob, fileNameWithTimestamp);
+      formData.append("is_private", "0");
+      formData.append("folder", "Home/Attachments");
+
+      const csrfToken = (window as any)?.frappe?.csrf_token;
+      const res = await fetch("/api/method/upload_file", {
+        method: "POST",
+        headers: csrfToken ? { "X-Frappe-CSRF-Token": csrfToken } : {},
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("upload_failed");
+
+      const data = await res.json();
+      const fileUrl: string | undefined = data?.message?.file_url;
+      if (!fileUrl) throw new Error("no_url");
+
+      const fullUrl = fileUrl.startsWith("http")
+        ? fileUrl
+        : `${window.location.origin}${fileUrl}`;
+
+      // Hidden anchor with real server URL — no modal, no new tab
+      const a = document.createElement("a");
+      a.href = fullUrl;
+      a.download = fileNameWithTimestamp;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 500);
+
+      toast.success("Export downloaded!", { id: "export-toast" });
+    } catch {
+      // Desktop browser fallback (blob URL + anchor)
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileNameWithTimestamp;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1000);
+      toast.success("Exporting data...", { id: "export-toast" });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const RowWrapper = ({ item }: any) => {
@@ -862,6 +938,7 @@ const ExpensesList: React.FC = () => {
       ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
       "Expense Date",
       "Claimed Date",
+      "Assigned To",
       "Status",
       "Actions",
     ];
@@ -875,6 +952,7 @@ const ExpensesList: React.FC = () => {
       "1fr",
       "1fr",
       ...(currentFilters.status === "Paid" ? ["1fr"] : []),
+      "1fr",
       "1fr",
       "1fr",
       "1fr",
@@ -938,9 +1016,24 @@ const ExpensesList: React.FC = () => {
             <Tooltip content="Export to Excel">
               <button
                 onClick={handleExport}
-                className="flex items-center justify-center p-2.5 text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-all duration-200 border border-primary/20 shadow-sm"
+                disabled={isExporting}
+                className="flex items-center justify-center p-2.5 text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-all duration-200 border border-primary/20 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Download size={20} />
+                {isExporting ? (
+                  <svg
+                    className="animate-spin"
+                    width={20}
+                    height={20}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                ) : (
+                  <Download size={20} />
+                )}
               </button>
             </Tooltip>
           </div>

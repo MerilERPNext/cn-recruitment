@@ -35,10 +35,10 @@ const MyToDoItem: React.FC<{ item: ToDo; index?: number }> = ({ item }) => {
         <div className="w-10 h-10 min-w-[40px] min-h-[40px] flex-shrink-0 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
           <ClipboardList className="w-5 h-5" />
         </div>
-        <div>
+        <div className="mr-2">
           <Typography
             variant="bodySmall"
-            className="font-medium block line-clamp-1"
+            className="font-medium block line-clamp-1 break-all"
           >
             {cleanDescription || "Task"}
           </Typography>

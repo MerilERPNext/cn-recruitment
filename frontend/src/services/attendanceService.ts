@@ -803,6 +803,11 @@ export const attendanceService = {
       }
     );
   },
+  getPolicyVisibilityFlags: async () => {
+    return FrappeAPI.getMethod(
+      "cn_leave_shift_managment.cn_leave_shift_managment.doctype.attendance_settings.attendance_settings.get_policy_visibility_flags",
+    );
+  },
 
   createPlannedOvertimeRequest: async (
     body: Record<string, unknown>

@@ -15,6 +15,7 @@ import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import RejectionReasonModal from "../../shared/RejectionReasonModal";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -90,8 +91,8 @@ const ApprovalCard = ({
     : [];
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1.5fr 1fr 1fr 1fr 1fr 1fr"
-    : "1fr 1.5fr 1fr 1fr 1fr 1fr 1fr";
+    ? "0.5fr 1fr 1.5fr  1fr 1fr 1fr 1fr 1fr 1fr"
+    : "1fr 1.5fr 1fr  1fr 1fr 1fr 1fr 1fr";
 
   const cleanExplaination = sanitizeToPlainText(
     data?.reference_document?.explanation,
@@ -147,6 +148,9 @@ const ApprovalCard = ({
             </Typography>
           </Tooltip>
 
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {getAssignedUsersCell(data)}
+          </Typography>
           {/* Date */}
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.from_date)}
@@ -240,8 +244,8 @@ const ApprovalCard = ({
                     roles={data?.allocated_roles}
                     username={data?.username}
                     role={data?.role}
-                  RoleAssignedUsers={data?.role_assigned_users}
-                />
+                    RoleAssignedUsers={data?.role_assigned_users}
+                  />
                   <div className="flex flex-col gap-1 text-right">
                     <Typography variant="mobileCardLabel">Due Date</Typography>
                     <Typography variant="mobileCardValue">
@@ -274,7 +278,12 @@ const ApprovalCard = ({
                   {truncateByChars(cleanExplaination, 40)}
                 </Typography>
               </div>
-
+              <div>
+                <Typography variant="mobileCardLabel">Assigned To</Typography>
+                <Typography variant="mobileCardValue">
+                  {getAssignedUsersCell(data)}
+                </Typography>
+              </div>
               {/* Actions */}
               {data?.todo_status === "Open" && !isActed ? (
                 <TeamApprovalActionPill

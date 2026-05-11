@@ -56,7 +56,6 @@ const EmployeeAttendanceDetails = ({
   const query = new URLSearchParams(search);
   const dateParam = query.get("date");
   const { targetEmployeeId } = useTargetUser();
-
   const status =
     propStatus?.toLowerCase().replace(/-/g, " ") ||
     query.get("status")?.toLowerCase().replace(/-/g, " ");
@@ -186,7 +185,6 @@ const EmployeeAttendanceDetails = ({
     "edit_leave_request",
     "My Attendance",
   );
-
   const hasExistingRequest =
     attendanceRequests && attendanceRequests.length > 0;
 
@@ -469,7 +467,7 @@ const EmployeeAttendanceDetails = ({
           <div className="pt-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col gap-6">
               {attendanceRequests.map((req, idx) => (
-                <AttendanceRequestInfo key={req.name || idx} data={req} />
+                <AttendanceRequestInfo key={req.name || idx} data={req} propStatus={propStatus} />
               ))}
             </div>
           </div>
@@ -477,27 +475,31 @@ const EmployeeAttendanceDetails = ({
       </div>
     );
   };
-  const renderFooterButton = () => {
-    if (
-      data?.custom_auto_created === 1 ||
-      status === "on leave" ||
-      !!leaveEvent
-    )
-      return null;
-    // const isButtonDisabled = status !== "absent" && status !== "half day";
 
-    if (hasExistingRequest) {
-      return (
-        <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-100">
-          <p className="text-blue-800 text-sm font-medium">
-            Attendance Request is already submitted for this date.
-          </p>
-        </div>
-      );
-    }
+  const renderFooterButton = () => {
+    // if (
+    //   data?.custom_auto_created === 1 ||
+    //   status === "on leave" ||
+    //   !!leaveEvent
+    // )
+    //   return null;
+
+    const hasActiveAttendanceRequest = attendanceRequests?.some(
+      (x) => x?.custom_status === "Pending" || x?.custom_status === "Approved",
+    );
+    const hasActiveLeaveRequest =
+      leaveDetails?.status === "Open" || leaveDetails?.status === "Approved";
+    // each button is only blocked by its own active request
+    // attendance pending → hide attendance btn, show leave btn
+    // leave pending → hide leave btn, show attendance btn
+    const showAttendanceBtn = canRequestAttendance && !hasActiveAttendanceRequest;
+    const showLeaveBtn = canRequestLeave && !hasActiveLeaveRequest;
+
+    if ((!showAttendanceBtn && !showLeaveBtn) || propStatus === 'present') return null;
+
     return (
       <div className="flex items-center justify-center gap-2">
-        {(status === "absent" || status === "half day") && canRequestLeave && (
+        {showLeaveBtn && (
           <Button
             variant="soft"
             fullWidth
@@ -509,12 +511,11 @@ const EmployeeAttendanceDetails = ({
             Leave Request
           </Button>
         )}
-        {canRequestAttendance && (
+        {showAttendanceBtn && (
           <Button
             variant="soft"
             fullWidth
             size="md"
-            // disabled={isButtonDisabled}
             bgColor="primary"
             onClick={() => setShowReqAttendanceCorrection(true)}
           >
@@ -617,8 +618,10 @@ const AttendanceCard = ({ record }: { record: EmployeeCheckInLog }) => {
 
 export const AttendanceRequestInfo = ({
   data,
+  propStatus
 }: {
   data: AttendanceRequest;
+  propStatus?: string;
 }) => {
 
   const formatTime = (timeString?: string): string => {
@@ -666,6 +669,13 @@ export const AttendanceRequestInfo = ({
           Attendance Request Info
         </Typography>
 
+        {propStatus === "week-off" && (
+          <Badge
+            label={"Week Off"}
+            backgroundColor={status.backgroundColor}
+            textColor={status.textColor}
+          />
+        )}
         {data.custom_status && (
           <Badge
             label={data.custom_status === "Cancelled" ? "Revoked" : data.custom_status}

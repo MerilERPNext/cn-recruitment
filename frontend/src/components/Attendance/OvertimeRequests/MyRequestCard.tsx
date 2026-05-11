@@ -12,13 +12,14 @@ import {
 } from "../../../utils/sanitizeToPlainText";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import Button from "../../shared/atoms/Button";
-import { Edit, RotateCcw } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import toast from "react-hot-toast";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 export function MyRequestCard({
   request,
@@ -52,7 +53,7 @@ export function MyRequestCard({
   // Only allow editing if status is "Open"
   const canEdit = request?.status === "Open" && request?.can_edit;
   const canRevoke = request?.status === "Open" && request?.custom_allow_revoke;
-  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 0.5fr";
+  const gridTemplateColumns = "1.5fr  1fr 1fr 1fr 1fr 0.5fr";
   const revokeEventMutation = useRevokeEvent();
   const loading = useLoadingOverlay();
 
@@ -104,6 +105,9 @@ export function MyRequestCard({
             </Typography>
           </Tooltip>
           <Typography variant="bodySmall" className="font-medium text-center">
+            {getAssignedUsersCell(request)}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(request?.reference_document?.creation)}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
@@ -118,7 +122,7 @@ export function MyRequestCard({
               RoleAssignedUsers={request?.role_assigned_users || []}
               position="left"
             >
-              <StatusBadge status={request?.status} />
+              <StatusBadge status={request?.status === "Cancelled" ? "Revoked" : request?.status} />
             </AllocatedToTooltip>
           </div>
           <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
@@ -136,14 +140,14 @@ export function MyRequestCard({
             >
               <Edit className="w-4 h-4" />
             </Button>}
-            {canRevokeOvertimeRequest && <Button size="sm" variant="subtle"
+            {request?.status !== "Cancelled" && canRevoke && <Button size="sm" variant="subtle"
               disabled={!canRevoke || isActed}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 handleRevokeClick();
               }}>
-              <RotateCcw className="w-4 h-4" />
+              <Trash2 className="w-4 h-4  text-white md:text-red-400" />
             </Button>}
           </div>
         </div>
@@ -162,8 +166,8 @@ export function MyRequestCard({
                   users={request?.allocated_to}
                   roles={request?.allocated_roles}
                   username={request?.username}
-                RoleAssignedUsers={request?.role_assigned_users}
-              />
+                  RoleAssignedUsers={request?.role_assigned_users}
+                />
 
                 <StatusBadge status={request?.status} />
               </div>
@@ -196,6 +200,12 @@ export function MyRequestCard({
                     {truncateByChars(cleanDescription, 40)}
                   </Typography>
                 </div>
+                <div >
+                  <Typography variant="mobileCardLabel">Assigned To</Typography>
+                  <Typography variant="mobileCardValue">
+                    {getAssignedUsersCell(request)}
+                  </Typography>
+                </div>
                 <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
                   {canEditOvertimeRequest && <Button
                     size="sm"
@@ -211,14 +221,14 @@ export function MyRequestCard({
                   >
                     <Edit className="w-4 h-4" /> Edit
                   </Button>}
-                  {canRevokeOvertimeRequest && <Button size="sm" variant="soft"
+                  {request?.status !== "Cancelled" && canRevoke && <Button size="sm" variant="subtle"
                     disabled={!canRevoke || isActed}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       handleRevokeClick();
                     }}>
-                    <RotateCcw className="w-4 h-4" /> Revoke
+                    <Trash2 className="w-4 h-4  text-white md:text-red-400" />
                   </Button>}
                   {
                     !canRevokeOvertimeRequest && !canEditOvertimeRequest && <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">

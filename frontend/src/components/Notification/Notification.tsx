@@ -144,7 +144,6 @@ const NotificationList = () => {
     for (let i = 1; i <= totalPages; i++) {
       pageNumbers.push(i);
     }
-
     return (
       <div className="flex-shrink-0 flex gap-4 items-center justify-between overflow-x-scroll px-4 py-3 border-t bg-white">
         <p className="text-sm text-gray-500 whitespace-nowrap">
@@ -232,7 +231,7 @@ const NotificationList = () => {
               : "text-primary border border-primary-400 py-1 px-2 rounded hover:bg-primary-100 cursor-pointer"
             }`}
         >
-          {markAllAsRead.isPending ? "Marking..." : "Mark all "}
+          {markAllAsRead.isPending ? "Marking..." : "Mark all as read"}
         </button>
       </div>
 
@@ -296,7 +295,11 @@ const NotificationList = () => {
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t flex justify-end">
+            <div className="px-6 py-4 border-t flex justify-end gap-2">
+              {/* Handler needs to be implemented */}
+              <Button size="md">
+                Act
+              </Button>
               <Button size="md" onClick={handleDrawerClose}>
                 Close
               </Button>

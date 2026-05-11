@@ -13,10 +13,12 @@ import { truncateByChars } from "../../../utils/sanitizeToPlainText";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
-import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+
 import Tooltip from "../../shared/Tooltip";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -79,7 +81,8 @@ const EmpAttendanceRequestCard = ({
   const formattedDueDate = formatToIndianDate(data?.due_date);
   const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation);
   const duration = getDays(formattedFromDate, formattedToDate);
-  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 0.8fr 1fr 1fr 1fr";
+  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 0.8fr 1fr 1fr 1fr";
+
   return (
     <>
       {isDesktop ? (
@@ -96,45 +99,10 @@ const EmpAttendanceRequestCard = ({
               {truncateByChars(data?.reference_document?.custom_request_type)}
             </Typography>
           </Tooltip>
-          {/* <Tooltip
-            type="custom"
-            content={
-              <div>
-                <div className="
-                bg-white rounded-xl shadow-xl
-                border border-primary-100
-                min-w-[200px] max-w-[320px]
-                max-h-[60vh] overflow-y-auto
-            ">
-                  <div className="bg-primary-50 px-3.5 py-2 border-b border-primary-100">
-                    <span className="text-[11px] font-brand font-semibold uppercase tracking-wider text-primary-700">
-                      Assigned To
-                    </span>
-                  </div>
-                  {
-                    data?.approval_stages_status?.map((item: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-2 w-full">
 
-                        <div className="bg-primary-50 p-2 border rounded-md border-primary-100">
-                          <div className="text-[10px] font-semibold text-primary-700">
-                            {item?.user} ({item?.employee_id})
-                          </div>
-                          <div className="text-[10px] font-semibold text-gray-500">
-                            {item?.stage_name}
-                          </div>
-                        </div>
-
-                      </div>
-                    ))
-                  }
-                </div>
-              </div>
-            }>
-
-            <Typography variant="bodySmall" className="font-medium text-center">
-              {data?.approval_stages_status?.[0]?.stage_name} ({data?.approval_stages_status?.length})
-            </Typography>
-          </Tooltip> */}
+          <div className="flex items-center justify-center">
+            {getAssignedUsersCell(data)}
+          </div>
           {/* From Date */}
           <Typography variant="bodySmall" className="font-medium text-center">
             {formattedFromDate}
@@ -233,6 +201,12 @@ const EmpAttendanceRequestCard = ({
               </div>
             </div>
 
+            <div>
+              <Typography variant="mobileCardLabel">Assigned To</Typography>
+              <Typography variant="mobileCardValue">
+                {getAssignedUsersCell(data)}
+              </Typography>
+            </div>
             {/* Actions */}
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
