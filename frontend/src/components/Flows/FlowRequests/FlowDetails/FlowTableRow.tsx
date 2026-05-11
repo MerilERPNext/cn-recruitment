@@ -118,12 +118,11 @@ const FlowTableRow = ({
 
       <div className="flex justify-center items-center overflow-hidden">
         <Typography variant="bodySmall" className="font-medium truncate text-center">
-          {stage.user || "-"}
+          {stage.approval_time ? stage.user || "-" : "-"}
         </Typography>
       </div>
 
       <div className="flex justify-center items-center">
-        {/* <StatusBadge status={stage.status || "-"} /> */}
         <AllocatedToTooltip
           position="right"
           users={stage.allocated_to}
