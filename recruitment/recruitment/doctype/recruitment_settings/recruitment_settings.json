@@ -14,6 +14,11 @@
 "mapping_fields",
 "recruitment_tool",
 "dummy_salary_structure_assignment",
+"job_offer_review_section",
+"enable_job_offer_review_flow",
+"job_offer_default_cc_emails",
+"job_offer_review_email_template",
+"default_offer_letter_print_format",
 "interview_settings_section",
 "authorized_feedback_roles"
 ],
@@ -70,6 +75,39 @@
 "fieldtype": "Table",
 "label": "Recruitment Tool",
 "options": "Recruitment Tool"
+},
+{
+"fieldname": "job_offer_review_section",
+"fieldtype": "Section Break",
+"label": "Job Offer Review"
+},
+{
+"default": "0",
+"description": "When on, HR sees a 'Submit for Review' option in the Job Offer submit modal.",
+"fieldname": "enable_job_offer_review_flow",
+"fieldtype": "Check",
+"label": "Enable Job Offer Review Flow"
+},
+{
+"description": "Comma-separated emails CC'd on every Job Offer email (e.g. jobs@walnuteduai.in).",
+"fieldname": "job_offer_default_cc_emails",
+"fieldtype": "Small Text",
+"label": "Job Offer Default CC Emails"
+},
+{
+"description": "Template used to notify the reviewer when a Job Offer is sent for review.",
+"fieldname": "job_offer_review_email_template",
+"fieldtype": "Link",
+"label": "Job Offer Review Email Template",
+"options": "Email Template"
+},
+{
+"description": "Print format used as the offer-letter PDF attached to the candidate's offer email.",
+"fieldname": "default_offer_letter_print_format",
+"fieldtype": "Link",
+"label": "Default Offer Letter Print Format",
+"options": "Print Format",
+"link_filters": "[[\"Print Format\",\"doc_type\",\"=\",\"Job Offer\"]]"
 },
 {
 "fieldname": "interview_settings_section",
