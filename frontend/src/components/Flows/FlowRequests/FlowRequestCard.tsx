@@ -31,15 +31,15 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
         };
     }, [request.approval_status, request.approval_stages]);
 
-    const pendingWorkflowAllocatedTo = useMemo(() => {
-        if (request.workflow_status.toLowerCase() !== "pending") return null;
-        const stage = request.workflow_stages?.find(stage => stage.status.toLocaleLowerCase() === "pending");
-        if (!stage) return null;
-        return {
-            allocated_to: stage.allocated_to,
-            role_assigned_users: stage.role_assigned_users
-        };
-    }, [request.workflow_status, request.workflow_stages]);
+    // const pendingWorkflowAllocatedTo = useMemo(() => {
+    //     if (request.workflow_status.toLowerCase() !== "pending") return null;
+    //     const stage = request.workflow_stages?.find(stage => stage.status.toLocaleLowerCase() === "pending");
+    //     if (!stage) return null;
+    //     return {
+    //         allocated_to: stage.allocated_to,
+    //         role_assigned_users: stage.role_assigned_users
+    //     };
+    // }, [request.workflow_status, request.workflow_stages]);
 
 
 
