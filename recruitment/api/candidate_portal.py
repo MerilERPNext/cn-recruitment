@@ -293,15 +293,19 @@ def _build_tabbed_response(portal_rows, meta_lookup, doc=None):
         ]
 
         # Compute per-tab field status counts
-        counts = {"total": 0, "approved": 0, "rejected": 0, "pending": 0, "filled": 0}
+        # "filled" = candidate has submitted (Approved + Rejected + Filled)
+        # "pending" = candidate hasn't filled yet
+        counts = {"total": 0, "filled": 0, "approved": 0, "rejected": 0, "pending": 0}
         for sec in sections:
             for field in sec["fields"]:
                 counts["total"] += 1
                 status = (field.get("approval_status") or "Pending").strip().lower()
                 if status == "approved":
                     counts["approved"] += 1
+                    counts["filled"] += 1
                 elif status == "rejected":
                     counts["rejected"] += 1
+                    counts["filled"] += 1
                 elif status == "filled":
                     counts["filled"] += 1
                 else:
