@@ -91,6 +91,14 @@ export const leaveService = {
     return typed.message.data;
   },
 
+  allowApplicationOfOptionalHolidaysForPastDates: async (): Promise<boolean> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.cn_leave_shift_managment.doctype.leave_settings.leave_settings.allow_application_of_optional_holidays_for_past_dates"
+    );
+
+    return response as boolean;
+  },
+
   getTeamRequests: async (): Promise<TeamRequest[]> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_leave_applications"

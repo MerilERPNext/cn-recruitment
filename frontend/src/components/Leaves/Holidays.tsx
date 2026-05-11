@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 import {
+  useAllowApplicationOfOptionalHolidaysForPastDates,
   useGetAttendancePolicyForDate,
   useGetHolidays,
   useGetLeaveBalance,
@@ -38,7 +39,9 @@ const DateBadge: React.FC<DateBadgeProps> = ({ date, type }) => {
     : "bg-primary/10 text-primary";
 
   return (
-    <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg ${colorClass} font-semibold`}>
+    <div
+      className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg ${colorClass} font-semibold`}
+    >
       <span className="text-lg leading-none">{day}</span>
       <span className="text-[10px] mt-0.5 opacity-80">{month}</span>
     </div>
@@ -57,7 +60,7 @@ const HolidayRow: React.FC<{
   const canApplyPermission = isActionEnabled(
     userUiPermission,
     "optional_holiday_apply",
-    "Holidays"
+    "Holidays",
   );
 
   const showRequestButton = canRequest && !statusLabel && canApplyPermission;
@@ -73,7 +76,10 @@ const HolidayRow: React.FC<{
   return (
     <tr className="border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
       <td className="py-4 pl-4 pr-3 align-middle">
-        <DateBadge date={holiday.date} type={holiday.type_name || holiday.type} />
+        <DateBadge
+          date={holiday.date}
+          type={holiday.type_name || holiday.type}
+        />
       </td>
       <td className="py-4 px-3 align-middle">
         <span className="text-gray-900 font-medium text-sm sm:text-base">
@@ -84,11 +90,11 @@ const HolidayRow: React.FC<{
         <span className="text-gray-600 text-sm">{weekday}</span>
       </td>
       <td className="py-4 px-3 align-middle text-sm text-gray-600">
-        {holiday.type_name === "Mandatory" ? "Holiday" : (holiday.type_name || "Holiday")}
+        {holiday.type_name === "Mandatory"
+          ? "Holiday"
+          : holiday.type_name || "Holiday"}
       </td>
-      <td className="py-4 px-3 align-middle">
-        {renderStatus()}
-      </td>
+      <td className="py-4 px-3 align-middle">{renderStatus()}</td>
       <td className="py-4 pl-3 pr-4 align-middle text-right">
         {showRequestButton && (
           <button
@@ -144,6 +150,15 @@ const Holidays: React.FC = () => {
     isLoading: isLeaveReqLoading,
     refetch,
   } = useMyLeaveRequests(employee?.name);
+  const {
+    data: allowPastOptionalHolidayRequests,
+    isLoading: isPastOptionalHolidayRuleLoading,
+  } = useAllowApplicationOfOptionalHolidaysForPastDates();
+
+  console.log(
+    "allowPastOptionalHolidayRequests",
+    allowPastOptionalHolidayRequests,
+  );
 
   useEffect(() => {
     const unsub = setRefetch(refetch);
@@ -155,7 +170,7 @@ const Holidays: React.FC = () => {
 
   const { data: attendancePolicy } = useGetAttendancePolicyForDate(
     employee?.name,
-    today
+    today,
   );
 
   const { data: leaveBalance, isLoading: isBalanceLoading } =
@@ -166,34 +181,36 @@ const Holidays: React.FC = () => {
     return holidaysData
       .filter(
         (g: HolidayGroup) =>
-          g.type_name === "National Holiday" || g.type_name === "Mandatory"
+          g.type_name === "National Holiday" || g.type_name === "Mandatory",
       )
       .flatMap((g: HolidayGroup) =>
-        g.holidays.map(h => ({ ...h, type_name: g.type_name }))
+        g.holidays.map((h) => ({ ...h, type_name: g.type_name })),
       );
   }, [holidaysData]);
 
   const optionalHolidays: HolidayWithType[] = useMemo(() => {
-    const group = holidaysData?.find((g: HolidayGroup) => g.type_name === "Optional");
+    const group = holidaysData?.find(
+      (g: HolidayGroup) => g.type_name === "Optional",
+    );
     if (!group) return [];
-    return group.holidays.map(h => ({ ...h, type_name: "Optional Holiday" }));
+    return group.holidays.map((h) => ({ ...h, type_name: "Optional Holiday" }));
   }, [holidaysData]);
 
   const allHolidays: HolidayWithType[] = useMemo(
     () =>
       [...regularHolidays, ...optionalHolidays].sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
       ),
-    [regularHolidays, optionalHolidays]
+    [regularHolidays, optionalHolidays],
   );
 
   const optionalBalance = leaveBalance?.leave_balance?.find(
-    (b) => b.optional_leave === 1
+    (b) => b.optional_leave === 1,
   );
 
   const getHolidayStatus = (date: string) => {
     const req = leaveRequests?.find(
-      (r) => r.from_date === date && r.to_date === date
+      (r) => r.from_date === date && r.to_date === date,
     );
     if (!req) return null;
     if (req.status === "Approved") return "Approved";
@@ -211,7 +228,8 @@ const Holidays: React.FC = () => {
     isEmployeeLoading ||
     isHolidayLoading ||
     isLeaveReqLoading ||
-    isBalanceLoading
+    isBalanceLoading ||
+    isPastOptionalHolidayRuleLoading
   ) {
     return (
       <div className="p-4 sm:p-6">
@@ -272,23 +290,39 @@ const Holidays: React.FC = () => {
 
         {!attendancePolicy && showOptionalOnly && (
           <p className="text-center text-red-500 mb-6 text-sm flex items-center justify-center gap-2 bg-red-50 py-2 rounded-lg border border-red-100">
-            <span className="font-bold">!</span> Please contact HR to assign an attendance policy
+            <span className="font-bold">!</span> Please contact HR to assign an
+            attendance policy
           </p>
         )}
 
         {listToShow.length === 0 ? (
-          <NoDataFound title="No Holidays Found" subtitle="There are no holidays available for the selected year." />
+          <NoDataFound
+            title="No Holidays Found"
+            subtitle="There are no holidays available for the selected year."
+          />
         ) : (
           <div className="rounded-2xl border border-gray-100 overflow-x-auto bg-white shadow-sm ring-1 ring-gray-900/5">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50/50">
-                  <th className="py-4 pl-4 pr-3 text-sm font-semibold text-gray-900">Date</th>
-                  <th className="py-4 px-3 text-sm font-semibold text-gray-900">Occasion</th>
-                  <th className="py-4 px-3 text-sm font-semibold text-gray-900">Day</th>
-                  <th className="py-4 px-3 text-sm font-semibold text-gray-900">Holiday Type</th>
-                  <th className="py-4 px-3 text-sm font-semibold text-gray-900">Request Status</th>
-                  <th className="py-4 pl-3 pr-4 text-sm font-semibold text-gray-900 text-right">Actions</th>
+                  <th className="py-4 pl-4 pr-3 text-sm font-semibold text-gray-900">
+                    Date
+                  </th>
+                  <th className="py-4 px-3 text-sm font-semibold text-gray-900">
+                    Occasion
+                  </th>
+                  <th className="py-4 px-3 text-sm font-semibold text-gray-900">
+                    Day
+                  </th>
+                  <th className="py-4 px-3 text-sm font-semibold text-gray-900">
+                    Holiday Type
+                  </th>
+                  <th className="py-4 px-3 text-sm font-semibold text-gray-900">
+                    Request Status
+                  </th>
+                  <th className="py-4 pl-3 pr-4 text-sm font-semibold text-gray-900 text-right">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -297,7 +331,11 @@ const Holidays: React.FC = () => {
                     key={h.name}
                     holiday={h}
                     statusLabel={getHolidayStatus(h.date)}
-                    canRequest={h?.type === "Optional"}
+                    canRequest={
+                      h?.type === "Optional" &&
+                      (h.date >= today ||
+                        Boolean(allowPastOptionalHolidayRequests))
+                    }
                     index={i}
                   />
                 ))}
@@ -311,4 +349,3 @@ const Holidays: React.FC = () => {
 };
 
 export default Holidays;
-

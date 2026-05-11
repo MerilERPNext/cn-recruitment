@@ -95,6 +95,15 @@ export const useGetHolidays = (
   });
 };
 
+export const useAllowApplicationOfOptionalHolidaysForPastDates = () => {
+  return useQuery<boolean>({
+    queryKey: ["allow-application-of-optional-holidays-for-past-dates"],
+    queryFn: () => leaveService.allowApplicationOfOptionalHolidaysForPastDates(),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+};
+
 export const useTeamRequests = () => {
   return useQuery<TeamRequest[], Error>({
     queryKey: ["teamRequests"],
