@@ -6,9 +6,11 @@ import {
   useApprovalActions,
   useSectionNav,
 } from "../../../hooks/useOnboarding";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import type { ApprovalField, FieldLocalState } from "../../../types/onboarding";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import { Check, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, RotateCcw, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -404,8 +406,12 @@ export default function OnboardingFieldApproval() {
     setFieldStates,
   } = useApprovalData(onboardingName);
 
+  const navigate = useNavigate();
+
   const { singleAction, bulkSelectedAction, sectionAction, bulkApproveAllPending } =
     useApprovalActions(onboardingName, sections, patchFieldState, setFieldStates, showToast);
+
+  const { isDesktop } = useScreenSize();
 
   const secKeys = Object.keys(sections);
   const { activeSection, activeIdx, goToSection, goNext, goPrev } = useSectionNav(
@@ -505,48 +511,95 @@ export default function OnboardingFieldApproval() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex w-full min-h-screen bg-gray-50 font-sans text-sm">
+    <div className={`flex w-full min-h-screen bg-gray-50 font-sans text-sm ${isDesktop ? "flex-row" : "flex-col"}`}>
 
-      {/* ── Sidebar ── */}
-      <aside className="w-64 bg-white border-r border-gray-100 flex flex-col sticky top-0 h-screen overflow-hidden flex-shrink-0">
-        <div className="px-4 py-4 border-b border-gray-100">
-          <h1 className="text-sm font-semibold text-gray-900">Onboarding Approval</h1>
-          <p className="text-xs text-gray-400 mt-0.5 truncate">{onboardingName}</p>
-        </div>
+      {/* ── Sidebar (Desktop Only) ── */}
+      {isDesktop && (
+        <aside className="w-64 bg-white border-r border-gray-100 flex flex-col sticky top-0 h-screen overflow-hidden flex-shrink-0">
+          <div className="px-4 py-4 border-b border-gray-100">
+            <h1 className="text-sm font-semibold text-gray-900">Onboarding Approval</h1>
+            <p className="text-xs text-gray-400 mt-0.5 truncate">{onboardingName}</p>
+          </div>
 
-        <nav className="flex-1 p-2 overflow-y-auto">
-          {pageLoading && (
-            <p className="text-xs text-gray-400 text-center py-6">Loading sections...</p>
-          )}
-          {!pageLoading &&
-            secKeys.map((sec, i) => {
-              const fields = sections[sec].fields;
-              const approved = fields.filter(
-                (f) => fieldStates[f.fieldname]?.status === "Approved"
-              ).length;
-              const rejected = fields.filter(
-                (f) => fieldStates[f.fieldname]?.status === "Rejected"
-              ).length;
-              return (
-                <NavItem
-                  key={sec}
-                  index={i}
-                  label={sec}
-                  total={fields.length}
-                  approved={approved}
-                  rejected={rejected}
-                  active={activeSection === sec}
-                  onClick={() => goToSection(sec)}
-                />
-              );
-            })}
-        </nav>
-
-        {/* ConfigPanel removed */}
-      </aside>
+          <nav className="flex-1 p-2 overflow-y-auto">
+            {pageLoading && (
+              <p className="text-xs text-gray-400 text-center py-6">Loading sections...</p>
+            )}
+            {!pageLoading &&
+              secKeys.map((sec, i) => {
+                const fields = sections[sec].fields;
+                const approved = fields.filter(
+                  (f) => fieldStates[f.fieldname]?.status === "Approved"
+                ).length;
+                const rejected = fields.filter(
+                  (f) => fieldStates[f.fieldname]?.status === "Rejected"
+                ).length;
+                return (
+                  <NavItem
+                    key={sec}
+                    index={i}
+                    label={sec}
+                    total={fields.length}
+                    approved={approved}
+                    rejected={rejected}
+                    active={activeSection === sec}
+                    onClick={() => goToSection(sec)}
+                  />
+                );
+              })}
+          </nav>
+        </aside>
+      )}
 
       {/* ── Main ── */}
-      <main className="flex-1 p-5 overflow-y-auto min-w-0">
+      <main className={`flex-1 overflow-y-auto min-w-0 ${isDesktop ? "p-5" : "p-3 pb-20"}`}>
+
+        {!isDesktop && (
+          <div className="mb-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => navigate(-1)}
+                className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <ChevronLeft className="w-6 h-6 text-gray-700" />
+              </button>
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">Onboarding Approval</h1>
+                <p className="text-[10px] text-gray-400 truncate max-w-[200px]">{onboardingName}</p>
+              </div>
+            </div>
+
+            {/* Horizontal Section Tabs */}
+            {!pageLoading && secKeys.length > 0 && (
+              <div className="flex overflow-x-auto gap-2 py-1 no-scrollbar -mx-3 px-3">
+                {secKeys.map((sec) => {
+                  const fields = sections[sec].fields;
+                  const approved = fields.filter(
+                    (f) => fieldStates[f.fieldname]?.status === "Approved"
+                  ).length;
+                  const isDone = approved === fields.length && fields.length > 0;
+                  const isActive = activeSection === sec;
+
+                  return (
+                    <button
+                      key={sec}
+                      onClick={() => goToSection(sec)}
+                      className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-medium border transition-all ${
+                        isActive
+                          ? "bg-primary-600 text-white border-primary-600 shadow-sm"
+                          : isDone
+                          ? "bg-success-50 text-success-700 border-success-200"
+                          : "bg-white text-gray-600 border-gray-200"
+                      }`}
+                    >
+                      {sec}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Loading */}
         {pageLoading && (
@@ -570,41 +623,53 @@ export default function OnboardingFieldApproval() {
         {!pageLoading && !pageError && activeSection && (
           <div className="w-full space-y-4">
 
-            {/* Breadcrumb */}
-            <div className="text-xs text-gray-400">
-              Onboarding{" "}
-              <span className="text-gray-300">/</span>{" "}
-              <span className="text-primary-600 font-medium">{activeSection}</span>
-            </div>
+            {/* Breadcrumb (Desktop Only) */}
+            {isDesktop && (
+              <div className="text-xs text-gray-400">
+                Onboarding{" "}
+                <span className="text-gray-300">/</span>{" "}
+                <span className="text-primary-600 font-medium">{activeSection}</span>
+              </div>
+            )}
 
             {/* Page header */}
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">{activeSection}</h2>
-                <p className="text-xs text-gray-600 mt-1">
-                  {curFields.length} fields · {curApproved} approved ·{" "}
-                  {curFields.length - curApproved} remaining
-                </p>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className={`${isDesktop ? "text-xl" : "text-lg"} font-semibold text-gray-900`}>{activeSection}</h2>
+                  <p className="text-[10px] text-gray-500 mt-0.5">
+                    {curFields.length} fields · {curApproved} approved ·{" "}
+                    {curFields.length - curApproved} remaining
+                  </p>
+                </div>
+                {!isDesktop && (
+                   <div className="flex items-center gap-1.5">
+                     <span className="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-1 rounded-lg">
+                       {activeIdx + 1} / {secKeys.length}
+                     </span>
+                   </div>
+                )}
               </div>
+
               <div className="flex items-center gap-2 flex-wrap">
                 {/* Section approve — immediate, no comment */}
                 <button
                   onClick={() => handleSectionApprove(activeSection)}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-50 text-success-800 border border-emerald-200 hover:bg-success-100 transition-colors"
+                  className="flex-1 sm:flex-none px-3 py-1.5 text-[11px] font-medium rounded-lg bg-success-50 text-success-800 border border-emerald-200 hover:bg-success-100 transition-colors"
                 >
                   Approve section
                 </button>
                 {/* Section reject — opens comment banner */}
                 <button
                   onClick={() => handleSectionRejectClick(activeSection)}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-error-50 text-error-600 border border-error-200 hover:bg-error-100 transition-colors"
+                  className="flex-1 sm:flex-none px-3 py-1.5 text-[11px] font-medium rounded-lg bg-error-50 text-error-600 border border-error-200 hover:bg-error-100 transition-colors"
                 >
                   Reject section
                 </button>
                 {/* Bulk approve all pending — no comment required */}
                 <button
                   onClick={bulkApproveAllPending}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-500 text-white border border-parimary-600 hover:bg-primary-700 transition-colors"
+                  className="w-full sm:w-auto px-3 py-1.5 text-[11px] font-medium rounded-lg bg-primary-600 text-white border border-primary-600 hover:bg-primary-700 transition-colors"
                   title="Approve all pending fields across entire document"
                 >
                   Approve all pending
@@ -613,22 +678,22 @@ export default function OnboardingFieldApproval() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className={`grid ${isDesktop ? "grid-cols-4" : "grid-cols-2"} gap-2`}>
               {[
                 { label: "Approved", value: approvedAll, color: "text-emerald-600" },
                 { label: "Rejected", value: rejectedAll, color: "text-error-600" },
                 { label: "Pending", value: pendingAll, color: "text-yellow-600" },
                 { label: "Progress", value: `${pct}%`, color: "text-primary-600" },
               ].map(({ label, value, color }) => (
-                <div key={label} className="bg-white border border-gray-100 rounded-xl p-3">
-                  <p className={`text-lg font-semibold ${color}`}>{value}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{label}</p>
+                <div key={label} className="bg-white border border-gray-100 shadow-sm rounded-xl p-3">
+                  <p className={`text-base font-bold ${color}`}>{value}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">{label}</p>
                 </div>
               ))}
             </div>
 
             {/* Progress bar */}
-            <div className="h-1 bg-gray-100 rounded-lg overflow-hidden">
+            <div className="h-1 bg-gray-200 rounded-lg overflow-hidden">
               <div
                 className="h-full bg-primary-500 rounded-lg transition-all duration-500"
                 style={{ width: `${pct}%` }}
@@ -651,39 +716,40 @@ export default function OnboardingFieldApproval() {
 
             {/* ── Bulk-selected action bar ── */}
             {curSelected > 0 && (
-              <div className="flex items-center gap-3 bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 flex-wrap">
-                <span className="text-xs text-primary-700 font-medium flex-1">
-                  {curSelected} field{curSelected > 1 ? "s" : ""} selected
+              <div className="flex items-center gap-2 bg-primary-50 border border-primary-100 rounded-xl px-4 py-3 sticky bottom-4 z-20 shadow-lg">
+                <span className="text-[11px] text-primary-700 font-bold flex-1">
+                  {curSelected} selected
                 </span>
-                {/* Bulk approve — immediate, no comment */}
-                <button
-                  onClick={handleBulkApprove}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-success-200 bg-success-50 text-success-600 hover:bg-success-100 transition-colors"
-                >
-                  Approve selected
-                </button>
-                {/* Bulk reject — opens comment banner */}
-                <button
-                  onClick={handleBulkRejectClick}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-error-200 bg-error-50 text-error-600 hover:bg-error-100 transition-colors"
-                >
-                  Reject selected
-                </button>
-                <button
-                  onClick={clearSelection}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
-                >
-                  Clear
-                </button>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={handleBulkApprove}
+                    className="p-1.5 rounded-lg bg-success-600 text-white shadow-sm"
+                    title="Approve selected"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleBulkRejectClick}
+                    className="p-1.5 rounded-lg bg-error-600 text-white shadow-sm"
+                    title="Reject selected"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={clearSelection}
+                    className="p-1.5 rounded-lg bg-white border border-gray-200 text-gray-600"
+                    title="Clear selection"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             )}
 
             {/* ── Bulk reject comment banner ── */}
             {bulkRejectPending && (
               <PendingRejectBanner
-                label={`${bulkRejectPending.fieldnames.length} selected field${
-                  bulkRejectPending.fieldnames.length > 1 ? "s" : ""
-                }`}
+                label={`${bulkRejectPending.fieldnames.length} fields`}
                 comment={bulkRejectPending.comment}
                 onCommentChange={(v) =>
                   setBulkRejectPending((p) => p && { ...p, comment: v })
@@ -695,67 +761,83 @@ export default function OnboardingFieldApproval() {
             )}
 
             {/* Fields card */}
-            <div className="bg-white border border-gray-100 rounded-xl px-5 py-4">
+            <div className={`bg-white border border-gray-100 rounded-xl ${isDesktop ? "px-5 py-4" : "px-3 py-3"}`}>
 
               {/* Card header */}
               <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
-<div className="flex flex-col items-start gap-1">
-<h3 className="text-sm font-bold text-gray-800">{activeSection}</h3>
-<label className="flex items-center gap-1.5 cursor-pointer text-xs text-gray-500">
+                <div className="flex flex-col items-start gap-1">
+                  <h3 className="text-xs font-bold text-gray-800">Field Checklist</h3>
+                  <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-gray-500">
                     <input
                       type="checkbox"
                       checked={allCurSelected}
                       onChange={(e) => toggleAllCurrentSection(e.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-gray-300 accent-primary-600 cursor-pointer"
+                      className="h-3 w-3 rounded border-gray-300 accent-primary-600 cursor-pointer"
                     />
                     Select all
                   </label>
-            
-</div>
-                <div className="flex items-center gap-2">
-
-                  <span className="text-xs text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-">
-                    {activeIdx + 1} / {secKeys.length}
-                  </span>
                 </div>
+                {isDesktop && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded">
+                      {activeIdx + 1} / {secKeys.length}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Field rows */}
-              {curFields.map((field) => {
-                const state = fieldStates[field.fieldname];
-                if (!state) return null;
-                return (
-                  <FieldRow
-                    key={field.fieldname}
-                    field={field}
-                    state={state}
-                    checked={selectedFields.has(field.fieldname)}
-                    onCheck={(checked) => toggleField(field.fieldname, checked)}
-                    onApprove={() => singleAction(field.fieldname, "Approved")}
-                    onReject={(comment) => singleAction(field.fieldname, "Rejected", comment)}
-                    onCommentChange={(val) =>
-                      patchFieldState(field.fieldname, { comment: val })
-                    }
-                  />
-                );
-              })}
+              <div className="space-y-1">
+                {curFields.map((field) => {
+                  const state = fieldStates[field.fieldname];
+                  if (!state) return null;
+                  return (
+                    <FieldRow
+                      key={field.fieldname}
+                      field={field}
+                      state={state}
+                      checked={selectedFields.has(field.fieldname)}
+                      onCheck={(checked) => toggleField(field.fieldname, checked)}
+                      onApprove={() => singleAction(field.fieldname, "Approved")}
+                      onReject={(comment) => singleAction(field.fieldname, "Rejected", comment)}
+                      onCommentChange={(val) =>
+                        patchFieldState(field.fieldname, { comment: val })
+                      }
+                    />
+                  );
+                })}
+              </div>
             </div>
 
             {/* Prev / Next navigation */}
-            <div className="flex justify-between pt-1">
+            <div className="flex justify-between items-center pt-2">
               <button
                 onClick={goPrev}
                 disabled={activeIdx <= 0}
-                className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-40 transition-all"
               >
-                ← Previous
+                <ChevronLeft className="w-4 h-4" />
+                {isDesktop && "Previous"}
               </button>
+              
+              {!isDesktop && (
+                <div className="flex gap-1.5">
+                   {secKeys.map((_, idx) => (
+                     <div 
+                       key={idx} 
+                       className={`w-1.5 h-1.5 rounded-lg transition-all ${idx === activeIdx ? "bg-primary-500 w-3" : "bg-gray-200"}`} 
+                     />
+                   ))}
+                </div>
+              )}
+
               <button
                 onClick={goNext}
                 disabled={activeIdx >= secKeys.length - 1}
-                className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-bold shadow-md hover:bg-primary-700 disabled:opacity-40 transition-all"
               >
-                Next →
+                {isDesktop && "Next"}
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -765,12 +847,12 @@ export default function OnboardingFieldApproval() {
       {/* ── Toast ── */}
       {toast && (
         <div
-          className={`fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl text-xs font-medium border transition-all ${
+          className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-2xl text-[11px] font-bold border shadow-xl transition-all w-[90%] max-w-sm text-center ${
             toast.type === "error" || toast.msg === "reject"
-              ? "bg-error-50 text-error-600 border-error-200"
+              ? "bg-error-50 text-error-600 border-error-100"
               : toast.type === "info"
-              ? "bg-primary-50 text-primary-700 border-primary-200"
-              : "bg-success-50 text-success-600 border-success-200"
+              ? "bg-primary-50 text-primary-700 border-primary-100"
+              : "bg-success-50 text-success-600 border-success-100"
           }`}
         >
           {toast.msg}

@@ -9,6 +9,7 @@ import DataListView from "../../DataListView";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useNavigate } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 
 
 // ─── Raw API shape ────────────────────────────────────────────────────────────
@@ -209,50 +210,58 @@ export default function EmployeeOnboardingList() {
               renderItem={(item: UiOnboarding) => (
                 <div
                   key={item.id}
-                  className="cursor-pointer border-t-4 border-x border-b mt-2
-                    border-x-primary/20 border-b-primary/20
-                    shadow-sm border-primary bg-white rounded-xl"
+                  onClick={() => navigate(`/webapp/employee-onboarding/onboarding-field-approval/${item.id}`)}
+                  className="cursor-pointer bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all mb-3 overflow-hidden"
                 >
-                  <div className="p-4 flex flex-col gap-3 w-full">
+                  <div className="p-4 space-y-4">
                     {/* Header: Employee Name + Status */}
                     <div className="flex items-start justify-between">
-                      <div className="flex flex-col gap-1">
-                        <Typography variant="mobileCardLabel">Employee Name</Typography>
-                        <Typography variant="mobileCardValue">{item.employeeName}</Typography>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center text-primary-600 font-bold text-sm">
+                          {item.employeeName.charAt(0)}
+                        </div>
+                        <div className="flex flex-col">
+                          <Typography variant="mobileCardLabel" className="text-gray-400">Employee Name</Typography>
+                          <Typography variant="mobileCardValue" className="text-gray-900 font-bold">{item.employeeName}</Typography>
+                        </div>
                       </div>
                       <StatusBadge status={item.boardingStatus} />
                     </div>
 
-                    {/* Department / Designation Row */}
-                    <div className="flex items-start justify-between">
+                    {/* Info Grid */}
+                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-50">
                       <div className="flex flex-col gap-1">
-                        <Typography variant="mobileCardLabel">Department</Typography>
-                        <Typography variant="mobileCardValue">{item.department}</Typography>
+                        <Typography variant="mobileCardLabel" className="text-gray-400">Department</Typography>
+                        <Typography variant="mobileCardValue" className="text-gray-800 text-xs font-medium">{item.department}</Typography>
                       </div>
                       <div className="flex flex-col gap-1 items-end">
-                        <Typography variant="mobileCardLabel">Designation</Typography>
-                        <Typography variant="mobileCardValue">{item.designation}</Typography>
+                        <Typography variant="mobileCardLabel" className="text-gray-400">Designation</Typography>
+                        <Typography variant="mobileCardValue" className="text-gray-800 text-xs font-medium text-right">{item.designation}</Typography>
                       </div>
                     </div>
 
-                    {/* Dates Row */}
-                    <div className="flex items-start justify-between">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="flex flex-col gap-1">
-                        <Typography variant="mobileCardLabel">Date of Joining</Typography>
-                        <Typography variant="mobileCardValue">
+                        <Typography variant="mobileCardLabel" className="text-gray-400">Joining Date</Typography>
+                        <Typography variant="mobileCardValue" className="text-gray-800 text-xs font-medium">
                           {formatToIndianDate(item.dateOfJoining)}
                         </Typography>
                       </div>
                       <div className="flex flex-col gap-1 items-end">
-                        <Typography variant="mobileCardLabel">Boarding Begins On</Typography>
-                        <Typography variant="mobileCardValue">
+                        <Typography variant="mobileCardLabel" className="text-gray-400">Boarding Starts</Typography>
+                        <Typography variant="mobileCardValue" className="text-gray-800 text-xs font-medium text-right">
                           {formatToIndianDate(item.boardingBeginsOn)}
                         </Typography>
                       </div>
                     </div>
-
-                    <div className="w-full flex justify-end">
-
+                  </div>
+                  
+                  {/* Action Footer */}
+                  <div className="bg-gray-50 px-4 py-2 flex justify-between items-center border-t border-gray-100">
+                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Ref: {item.id}</span>
+                    <div className="flex items-center gap-1 text-primary-600 font-bold text-xs">
+                      View Details
+                      <ChevronRight className="w-3 h-3" />
                     </div>
                   </div>
                 </div>
