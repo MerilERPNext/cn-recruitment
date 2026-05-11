@@ -131,10 +131,11 @@ website_context = {"job_offer": "recruitment.www.get_context"}
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "recruitment.utils.jinja_methods",
-# 	"filters": "recruitment.utils.jinja_filters"
-# }
+jinja = {
+    "methods": [
+        "recruitment.api.job_offer_review.get_review_urls",
+    ]
+}
 
 # Installation
 # ------------
@@ -204,9 +205,14 @@ doc_events = {
         "on_submit": "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback"
     },
     "Job Offer":{
-         "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
-		"before_save":"recruitment.customizations.job_offer.calculate_salary_structure"
-        
+        "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+		"before_save":[
+			"recruitment.customizations.job_offer.calculate_salary_structure",
+			"recruitment.api.job_offer_review.lock_review_status",
+		],
+		"before_submit":"recruitment.api.job_offer_review.block_submit_during_review",
+        "on_update_after_submit": "recruitment.api.bulk_job_offer.sync_applicant_status",
+
     },
     "Employee":{
         "validate":["recruitment.customizations.job_applicant.validate_blacklist_employee","recruitment.customizations.employee.duplicate_check.validate_duplicate_employee"],
@@ -230,9 +236,6 @@ doc_events = {
      "Employee Separation": {
         "on_submit": "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date"
     },
-     "Job Offer": {
-        "on_update_after_submit": "recruitment.api.bulk_job_offer.sync_applicant_status"
-    }
       
 }
 
