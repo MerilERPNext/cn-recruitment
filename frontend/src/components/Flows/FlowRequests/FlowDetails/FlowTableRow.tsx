@@ -7,6 +7,7 @@ import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useMemo, useState } from "react";
 
 import { extractAllocatedToUserArray, extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
+import { getStageAssignedUsersCell } from "../../../../utils/getAssignedUsersCell";
 import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
 import ReviewForm from "../../Separation/components/ReviewForm";
 import { createPortal } from "react-dom";
@@ -95,23 +96,6 @@ const FlowTableRow = ({
     setShowForm(true);
   };
 
-  const assigneeText = useMemo(() => {
-    if (stage.role) {
-      let totalUsers = 0;
-      if (stage.role_assigned_users?.length) {
-        stage.role_assigned_users.forEach(r => totalUsers += (r.users?.length || r.user?.length || 0));
-      }
-      return `Assign(${totalUsers})`;
-    }
-
-    const hasDirectUser = stage.user || stage.allocated_to?.length;
-    if (hasDirectUser) {
-      return `${stage.stage_name}(1)`;
-    }
-
-    return "—";
-  }, [stage]);
-
   return (
     <div
       key={stage.stage_name}
@@ -124,17 +108,12 @@ const FlowTableRow = ({
       </div>
 
       <div className="flex justify-center items-center">
-        <AllocatedToTooltip
-          title="Assigned To"
-          position="right"
-          users={stage.role ? undefined : (stage.user ? [stage.user] : stage.allocated_to)}
-          roles={stage.role ? stage.role.split(',').map(r => r.trim()) : undefined}
-          RoleAssignedUsers={stage?.role_assigned_users || []}
-        >
-          <Typography variant="bodySmall" className="font-medium text-center text-primary-600 cursor-pointer">
-            {assigneeText}
-          </Typography>
-        </AllocatedToTooltip>
+        {getStageAssignedUsersCell(
+          stage, 
+          stage?.role_assigned_users, 
+          "right", 
+          (text) => <Typography variant="bodySmall" className="font-medium text-center text-primary-600 cursor-pointer">{text}</Typography>
+        )}
       </div>
 
       <div className="flex justify-center items-center overflow-hidden">
@@ -144,7 +123,16 @@ const FlowTableRow = ({
       </div>
 
       <div className="flex justify-center items-center">
-        <StatusBadge status={stage.status || "-"} />
+        {/* <StatusBadge status={stage.status || "-"} /> */}
+        <AllocatedToTooltip
+          position="right"
+          users={stage.allocated_to}
+          roles={allocatedTo.roles}
+          role={stage.role || ""}
+          RoleAssignedUsers={stage?.role_assigned_users || []}
+        >
+          <StatusBadge status={stage.status || "-"} />
+        </AllocatedToTooltip>
       </div>
 
       <div className="flex justify-center items-center">
