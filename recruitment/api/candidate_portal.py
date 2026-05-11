@@ -154,11 +154,34 @@ def _get_onboarding_portal_rows(onboarding_doc=None):
     return _get_portal_settings(None), "default_form"
 
 
-def _get_job_applicant_portal_settings():
-    try:
-        return frappe.get_single("Job Applicant Portal Settings").portal_fields or []
-    except Exception:
-        return []
+def _get_job_applicant_portal_settings(job_applicant_id=None):
+    selected_form = None
+    if job_applicant_id:
+        try:
+            job_title = frappe.db.get_value("Job Applicant", job_applicant_id, "job_title")
+            if job_title:
+                selected_form = frappe.db.get_value("Job Opening", job_title, "custom_job_applicant_portal_form")
+        except Exception:
+            pass
+
+    if not selected_form:
+        try:
+            selected_form = frappe.db.get_value(
+                "Job Applicant Portal Forms",
+                {"default": 1},
+                "name",
+                order_by="modified desc",
+            )
+        except Exception:
+            pass
+
+    if selected_form:
+        try:
+            return frappe.get_doc("Job Applicant Portal Forms", selected_form).portal_fields or []
+        except Exception:
+            pass
+
+    return []
 
 
 def _get_child_table_fields(child_doctype):
@@ -261,16 +284,36 @@ def _build_tabbed_response(portal_rows, meta_lookup, doc=None):
 
         tab_entry["section_map"][sec_lbl].append(field_entry)
 
-    return [
-        {
+    tabs = []
+    for tab_lbl in tab_order:
+        tab_entry = tab_map[tab_lbl]
+        sections = [
+            {"section": sec_lbl, "fields": tab_entry["section_map"][sec_lbl]}
+            for sec_lbl in tab_entry["section_order"]
+        ]
+
+        # Compute per-tab field status counts
+        counts = {"total": 0, "approved": 0, "rejected": 0, "pending": 0, "filled": 0}
+        for sec in sections:
+            for field in sec["fields"]:
+                counts["total"] += 1
+                status = (field.get("approval_status") or "Pending").strip().lower()
+                if status == "approved":
+                    counts["approved"] += 1
+                elif status == "rejected":
+                    counts["rejected"] += 1
+                elif status == "filled":
+                    counts["filled"] += 1
+                else:
+                    counts["pending"] += 1
+
+        tabs.append({
             "tab": tab_lbl,
-            "sections": [
-                {"section": sec_lbl, "fields": tab_map[tab_lbl]["section_map"][sec_lbl]}
-                for sec_lbl in tab_map[tab_lbl]["section_order"]
-            ],
-        }
-        for tab_lbl in tab_order
-    ]
+            "field_counts": counts,
+            "sections": sections,
+        })
+
+    return tabs
 
 
 @frappe.whitelist()
@@ -321,7 +364,7 @@ def get_all_onboarding_fields_for_onboarding():
 
 @frappe.whitelist()
 def get_all_job_applicant_fields():
-    frappe.has_permission("Job Applicant Portal Settings", "read", throw=True)
+    frappe.has_permission("Job Applicant Portal Forms", "read", throw=True)
     portal_rows = _get_job_applicant_portal_settings()
     meta_lookup = {f["fieldname"]: f for f in _read_job_applicant_meta()}
 
@@ -354,7 +397,7 @@ def get_all_job_applicant_fields():
 
 @frappe.whitelist()
 def get_available_job_applicant_fields():
-    frappe.has_permission("Job Applicant Portal Settings", "read", throw=True)
+    frappe.has_permission("Job Applicant Portal Forms", "read", throw=True)
     fields = _read_job_applicant_meta(include_hidden=True, include_skipped=True)
     return {"status": "success", "total": len(fields), "fields": fields}
 
@@ -547,7 +590,7 @@ def get_job_applicant_portal_form(job_applicant_id):
         return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
 
     doc = frappe.get_doc("Job Applicant", job_applicant_id)
-    portal_rows = _get_job_applicant_portal_settings()
+    portal_rows = _get_job_applicant_portal_settings(job_applicant_id)
 
     if not portal_rows:
         frappe.local.response["http_status_code"] = 404
@@ -627,7 +670,7 @@ def save_job_applicant_portal_data(job_applicant_id, data):
         frappe.local.response["http_status_code"] = 404
         return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
 
-    portal_rows = _get_job_applicant_portal_settings()
+    portal_rows = _get_job_applicant_portal_settings(job_applicant_id)
     allowed_map = {r.fieldname: r for r in portal_rows if not r.get("hidden") and not r.get("read_only")}
 
     if not allowed_map:
@@ -686,10 +729,10 @@ def save_job_applicant_portal_data(job_applicant_id, data):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_job_applicant_portal_field_names():
+def get_job_applicant_portal_field_names(job_applicant_id=None):
     return {
         "status": "success",
-        "fields": [r.fieldname for r in _get_job_applicant_portal_settings()],
+        "fields": [r.fieldname for r in _get_job_applicant_portal_settings(job_applicant_id)],
     }
 
 
