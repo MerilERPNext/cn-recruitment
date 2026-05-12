@@ -21,7 +21,7 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 import ApprovalStagesProgress from "./ApprovalStagesProgress";
-import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import { buildExpenseNavigationState, buildExpenseEditUrl } from "./expenseNavigationHelper";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 interface ExpenseClaimModalProps {
@@ -423,7 +423,8 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                       <button
                         onClick={() => {
                           const navigationState = buildExpenseNavigationState(data, item, isSendedBack);
-                          navigate("/webapp/expenses-app/add-expense", {
+                          const editUrl = buildExpenseEditUrl(data?.name || "", item?.name || "", isSendedBack);
+                          navigate(editUrl, {
                             state: navigationState,
                           });
                         }}
@@ -550,7 +551,8 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                         data,
                         item,
                       );
-                      navigate("/webapp/expenses-app/add-expense", {
+                      const editUrl = buildExpenseEditUrl(data?.name || "", item?.name || "", isSendedBack);
+                      navigate(editUrl, {
                         state: navigationState,
                       });
                     }}
