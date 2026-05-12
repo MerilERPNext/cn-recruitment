@@ -16,6 +16,7 @@ import MobileAllocatedTo from "../../../shared/MobileAllocatedTo";
 import FormPreview from "../../../shared/molecules/FormPreview";
 import ActModal from "./ActModal";
 import { handleActionType } from "../../../../hooks/userApprovalList";
+import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 
 const getIcon = (status: string) => {
     const iconProps = { size: 20, strokeWidth: 3, className: "text-white" };
@@ -225,12 +226,26 @@ const FlowTableRow = ({
                             >
                                 Action By
                             </Typography>
-                            <Typography
-                                variant="mobileCardValue"
-                                className="text-right flex-1 min-w-0 truncate mt-0.5"
-                            >
-                                {stage.approval_time ? stage.user || "-" : "-"}
-                            </Typography>
+                            {stage.approval_time && stage.user ? (
+                                <WrapperHoverCard
+                                    employeeId={stage.allocated_to?.find(a => a.name === stage.user)?.employee || ""}
+                                    placement="bottom-left"
+                                >
+                                    <Typography
+                                        variant="mobileCardValue"
+                                        className="text-right flex-1 min-w-0 truncate mt-0.5 cursor-pointer"
+                                    >
+                                        {stage.user}
+                                    </Typography>
+                                </WrapperHoverCard>
+                            ) : (
+                                <Typography
+                                    variant="mobileCardValue"
+                                    className="text-right flex-1 min-w-0 truncate mt-0.5"
+                                >
+                                    -
+                                </Typography>
+                            )}
                         </div>
 
                         <div className="flex justify-between items-start text-sm gap-4">

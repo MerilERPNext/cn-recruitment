@@ -16,6 +16,7 @@ import AttachmentPreview from "./AttachmentPreview";
 import FormPreview from "../../../shared/molecules/FormPreview";
 import ActModal from "./ActModal";
 import { handleActionType } from "../../../../hooks/userApprovalList";
+import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 
 const FlowTableRow = ({
   stage,
@@ -115,9 +116,20 @@ const FlowTableRow = ({
       </div>
 
       <div className="flex justify-center items-center overflow-hidden">
-        <Typography variant="bodySmall" className="font-medium truncate text-center">
-          {stage.approval_time ? stage.user || "-" : "-"}
-        </Typography>
+        {stage.approval_time && stage.user ? (
+          <WrapperHoverCard
+            employeeId={stage.allocated_to?.find(a => a.name === stage.user)?.employee || ""}
+            placement="center-left"
+          >
+            <Typography variant="bodySmall" className="font-medium truncate text-center cursor-pointer">
+              {stage.user}
+            </Typography>
+          </WrapperHoverCard>
+        ) : (
+          <Typography variant="bodySmall" className="font-medium truncate text-center">
+            -
+          </Typography>
+        )}
       </div>
 
       <div className="flex justify-center items-center">
