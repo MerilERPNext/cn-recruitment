@@ -373,14 +373,16 @@ const MyAdvanceExpenseList = () => {
         <CardTable
           titles={[
             "Advance Id",
+            "Assigned To",
             "Advance Category",
             "Advance Policy",
             "Posting Date",
+            "Created At",
             "Advance Amount",
             "Status",
             "Actions",
           ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1fr","1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
           columnSortConfig={COLUMN_SORT_CONFIG_EXPENSE_ADVANCE}
 
         >
