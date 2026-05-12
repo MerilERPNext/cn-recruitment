@@ -199,7 +199,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
   );
 
   const addRow = () => {
-    const limit = maxParticipants || 5;
+    const limit = maxParticipants;
     if (participants.length >= limit) {
       toast.error(`Max. Allowed Participant - ${limit}`);
       return;
@@ -758,9 +758,9 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
           <button
             onClick={addRow}
             type="button"
-            disabled={participants.length >= (maxParticipants || 5)}
+            disabled={participants.length >= maxParticipants}
             className={`flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${
-              participants.length >= (maxParticipants || 5)
+              participants.length >= maxParticipants
                 ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-100"
                 : "text-gray-700 hover:bg-gray-50"
             }`}
