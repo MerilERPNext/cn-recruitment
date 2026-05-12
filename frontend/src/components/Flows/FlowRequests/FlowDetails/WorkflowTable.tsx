@@ -12,7 +12,7 @@ import { handleActionType, useApprovalAction } from "../../../../hooks/userAppro
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import Button from "../../../shared/atoms/Button";
 import { Check, Clock, User, X } from "lucide-react";
-import { extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
+import { extractRolesAndUsers, FormIOForm, getStageActorDetails } from "../../../../utils/flowUtils";
 import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
 import Tooltip from "../../../shared/Tooltip";
 import { useQueryClient } from "@tanstack/react-query";
@@ -153,35 +153,11 @@ const WorkflowCard = ({
     const actorEmail = stage.todo?.modified_by;
     if (!actorEmail) return null;
 
-    if (stage.allocated_to) {
-      const match = stage.allocated_to.find(
-        (u) => u.name === actorEmail || u.employee === actorEmail
-      );
-      if (match) {
-        return {
-          name: match.name || actorEmail.split("@")[0],
-          employee: match.employee || ""
-        };
-      }
-    }
-
-    if (stage.role_assigned_users) {
-      for (const r of stage.role_assigned_users) {
-        const uList = r.users || r.user || [];
-        const match = uList.find((u) => u.user_id === actorEmail);
-        if (match) {
-          return {
-            name: match.name,
-            employee: match.employee
-          };
-        }
-      }
-    }
-
-    return {
-      name: actorEmail.split("@")[0],
-      employee: ""
-    };
+    return getStageActorDetails(
+      stage.allocated_to,
+      stage.role_assigned_users,
+      actorEmail
+    );
   }, [stage]);
 
   const canPerformActions = useMemo(() => {

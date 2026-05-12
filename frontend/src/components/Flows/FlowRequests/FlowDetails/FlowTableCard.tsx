@@ -6,7 +6,7 @@ import { Attachment, FlowRequestItem, FlowRequestStage } from "../../../../types
 
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
-import { extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
+import { extractRolesAndUsers, FormIOForm, getStageActorDetails } from "../../../../utils/flowUtils";
 import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
 import { createPortal } from "react-dom";
@@ -107,6 +107,16 @@ const FlowTableRow = ({
 
         return actionPermission;
     }, [currentUser, isActive, allocatedTo, stage.can_act]);
+
+    const actorDetails = useMemo(() => {
+        if (!stage.approval_time) return null;
+        return getStageActorDetails(
+            stage.allocated_to,
+            stage?.role_assigned_users,
+            stage.user_id,
+            stage.user
+        );
+    }, [stage]);
 
     const [showActModal, setShowActModal] = useState(false);
 
@@ -226,16 +236,16 @@ const FlowTableRow = ({
                             >
                                 Action By
                             </Typography>
-                            {stage.approval_time && stage.user ? (
+                            {stage.approval_time && actorDetails ? (
                                 <WrapperHoverCard
-                                    employeeId={stage.allocated_to?.find(a => a.name === stage.user)?.employee || ""}
+                                    employeeId={actorDetails.employee}
                                     placement="bottom-left"
                                 >
                                     <Typography
                                         variant="mobileCardValue"
-                                        className="text-right flex-1 min-w-0 truncate mt-0.5 cursor-pointer"
+                                        className="text-right flex-1 min-w-0 truncate mt-0.5 cursor-pointer text-primary-600 hover:underline"
                                     >
-                                        {stage.user}
+                                        {actorDetails.name}
                                     </Typography>
                                 </WrapperHoverCard>
                             ) : (

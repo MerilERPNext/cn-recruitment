@@ -165,34 +165,34 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
         effectivePlacement = "center-left";
       } else if (placement === "center-left" && rect.left - gap - cardRect.width - padding < 0) {
         effectivePlacement = "center-right";
-      } else if (placement === "bottom-right" && rect.bottom + 8 + cardRect.height + padding > vh) {
+      } else if (placement === "bottom-right" && rect.bottom + gap + cardRect.height + padding > vh) {
         effectivePlacement = "top-right";
-      } else if (placement === "bottom-left" && rect.bottom + 8 + cardRect.height + padding > vh) {
+      } else if (placement === "bottom-left" && rect.bottom + gap + cardRect.height + padding > vh) {
         effectivePlacement = "top-left";
-      } else if (placement === "top-right" && rect.top - cardRect.height - 8 - padding < 0) {
+      } else if (placement === "top-right" && rect.top - cardRect.height - gap - padding < 0) {
         effectivePlacement = "bottom-right";
-      } else if (placement === "top-left" && rect.top - cardRect.height - 8 - padding < 0) {
+      } else if (placement === "top-left" && rect.top - cardRect.height - gap - padding < 0) {
         effectivePlacement = "bottom-left";
       }
 
       switch (effectivePlacement) {
         case "bottom-right":
-          top = rect.bottom + 8;
+          top = rect.bottom + gap;
           left = rect.left;
           break;
 
         case "bottom-left":
-          top = rect.bottom + 8;
+          top = rect.bottom + gap;
           left = rect.right - cardRect.width;
           break;
 
         case "top-right":
-          top = rect.top - cardRect.height - 8;
+          top = rect.top - cardRect.height - gap;
           left = rect.left;
           break;
 
         case "top-left":
-          top = rect.top - cardRect.height - 8;
+          top = rect.top - cardRect.height - gap;
           left = rect.right - cardRect.width;
           break;
 

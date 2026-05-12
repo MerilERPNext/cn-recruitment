@@ -6,7 +6,7 @@ import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useMemo, useState } from "react";
 
-import { extractAllocatedToUserArray, extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
+import { extractAllocatedToUserArray, extractRolesAndUsers, FormIOForm, getStageActorDetails } from "../../../../utils/flowUtils";
 import { getStageAssignedUsersCell } from "../../../../utils/getAssignedUsersCell";
 import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
 import ReviewForm from "../../Separation/components/ReviewForm";
@@ -69,6 +69,15 @@ const FlowTableRow = ({
     return actionPermission;
   }, [currentUser, isActive, allocatedTo, stage.can_act, allocatedToUserArray]);
 
+  const actorDetails = useMemo(() => {
+    if (!stage.approval_time) return null;
+    return getStageActorDetails(
+      stage.allocated_to,
+      stage?.role_assigned_users,
+      stage.user_id,
+      stage.user
+    );
+  }, [stage]);
 
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -116,13 +125,13 @@ const FlowTableRow = ({
       </div>
 
       <div className="flex justify-center items-center overflow-hidden">
-        {stage.approval_time && stage.user ? (
+        {stage.approval_time && actorDetails ? (
           <WrapperHoverCard
-            employeeId={stage.allocated_to?.find(a => a.name === stage.user)?.employee || ""}
+            employeeId={actorDetails.employee}
             placement="center-left"
           >
-            <Typography variant="bodySmall" className="font-medium truncate text-center cursor-pointer">
-              {stage.user}
+            <Typography variant="bodySmall" className="font-medium truncate text-center cursor-pointer text-primary-600 hover:underline">
+              {actorDetails.name}
             </Typography>
           </WrapperHoverCard>
         ) : (
