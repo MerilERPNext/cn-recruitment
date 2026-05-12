@@ -14,11 +14,13 @@ import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import StatusBadge from "../shared/atoms/statusBadge";
 import ShiftRequestFormModal from "./ShiftRequestFormModal";
+import { getAssignedUsersCell } from "../../utils/getAssignedUsersCell";
 
 const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
+  const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation);
 
   const navigate = useNavigate();
   const [edit, setEdit] = useState(false);
@@ -70,7 +72,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
     return "";
   };
 
-  const gridTemplateColumns = "1fr 1fr 1fr 1fr 1fr";
+  const gridTemplateColumns = "1fr 1fr 1fr 1fr 1fr 1fr 1fr";
   const canEdit = Boolean(data?.can_edit && !isActed);
   const canRevoke = Boolean(
     data?.custom_allow_revoke &&
@@ -98,8 +100,16 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               {getShiftTimeline(data?.reference_document?.shift_type || "")}
             </Typography>
           </Typography>
-
+          {/* <div className="flex items-center justify-center">
+            {getAssignedUsersCell(data)}
+          </div> */}
+         
           {/* From Date */}
+          <Typography variant="bodySmall" className="font-medium text-center">
+  
+              {getAssignedUsersCell(data)}
+            
+          </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.from_date || "")}
           </Typography>
@@ -108,6 +118,10 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.to_date || "")}
           </Typography>
+            <Typography variant="bodySmall" className="font-medium text-center">
+              {formattedCreationDate}
+            </Typography>
+          
 
           {/* Status */}
 
@@ -146,8 +160,8 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
                 users={data?.allocated_to}
                 roles={data?.allocated_roles}
                 username={data?.username}
-              RoleAssignedUsers={data?.role_assigned_users}
-            />
+                RoleAssignedUsers={data?.role_assigned_users}
+              />
 
               <StatusBadge status={badgeStatus} />
             </div>
@@ -187,6 +201,12 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               </div>
             </div>
 
+              <div>
+                <Typography variant="mobileCardLabel">Assigned To</Typography>
+                <Typography variant="mobileCardValue">
+                  {getAssignedUsersCell(data)}
+                </Typography>
+              </div>
             {/* Actions */}
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
