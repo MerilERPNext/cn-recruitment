@@ -810,6 +810,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               queryClient.invalidateQueries({
                 queryKey: [`attendance-requests-${activeEmployeeId}`],
               });
+              queryClient.invalidateQueries({
+                queryKey: ["attendance-calendar-details"],
+              });
               setRefetchAttendance(true);
             }, 4000);
             toast.success(message);
