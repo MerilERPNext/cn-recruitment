@@ -51,6 +51,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
   const [isError, setIsError] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [employeeInfo, setEmployeeInfo] = useState<DataResponse | null>(null);
+  const [imgError, setImgError] = useState(false);
 
   const hasFetchedRef = useRef(false);
   const mountedAt = useRef(Date.now());
@@ -64,6 +65,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
     setEmployeeInfo(null);
     setIsError(false);
     setError(null);
+    setImgError(false);
   }, [employeeId]);
 
   /* Fetch profile */
@@ -354,11 +356,12 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                       <>
                         {/* Header */}
                         <div className="flex items-start gap-4">
-                          {emp?.Image && typeof emp.Image === "string" ? (
+                          {emp?.Image && typeof emp.Image === "string" && !imgError ? (
                             <img
                               src={emp.Image}
                               className="w-16 h-16 rounded-full object-cover"
                               alt="avatar"
+                              onError={() => setImgError(true)}
                             />
                           ) : (
                             <div
