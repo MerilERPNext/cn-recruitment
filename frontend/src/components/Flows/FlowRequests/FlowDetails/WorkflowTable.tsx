@@ -12,7 +12,7 @@ import { handleActionType, useApprovalAction } from "../../../../hooks/userAppro
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import Button from "../../../shared/atoms/Button";
 import { Check, Clock, User, X } from "lucide-react";
-import { extractRolesAndUsers, FormIOForm, getStageActorDetails } from "../../../../utils/flowUtils";
+import { extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
 import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
 import Tooltip from "../../../shared/Tooltip";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,23 +21,12 @@ import ReviewForm from "../../Separation/components/ReviewForm";
 import AttachmentPreview from "./AttachmentPreview";
 import MobileAllocatedTo from "../../../shared/MobileAllocatedTo";
 import FormPreview from "../../../shared/molecules/FormPreview";
-import WrapperHoverCard from "../../../shared/WrapperHoverCard";
-import { getStageAssignedUsersCell } from "../../../../utils/getAssignedUsersCell";
 
 interface WorkflowTableProps {
   data: FlowRequestItem;
 }
 
-const titles = [
-  "Stage Name",
-  "Assigned To",
-  "Action Taken By",
-  "Status",
-  "Actual Trigger Date",
-  "Due Date",
-  "Completed Date",
-  "Actions",
-];
+const titles = ["Stage Name", "Status", "Due Date", "Actions"];
 
 const WorkflowTable: React.FC<WorkflowTableProps> = ({ data }) => {
   const { isDesktop } = useScreenSize();
@@ -148,18 +137,6 @@ const WorkflowCard = ({
 
   const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
 
-  const actionTakenBy = useMemo(() => {
-    if (stage.status === "Pending") return null;
-    const actorEmail = stage.todo?.modified_by;
-    if (!actorEmail) return null;
-
-    return getStageActorDetails(
-      stage.allocated_to,
-      stage.role_assigned_users,
-      actorEmail
-    );
-  }, [stage]);
-
   const canPerformActions = useMemo(() => {
     if (!isActive || !stage.can_act) return false;
     let actionPermission = false;
@@ -239,84 +216,52 @@ const WorkflowCard = ({
     {isDesktop ? (
       <div
         key={idx}
-        className="hover:bg-primary-100 px-6 py-4 grid grid-cols-8 items-center text-center cursor-pointer text-xs w-full border-b gap-4"
+        className="hover:bg-primary-100  py-4 text-center grid grid-cols-4 cursor-pointer text-xs w-full border-b"
       >
-        <div className="flex justify-center items-center">
+
+
+        <div>
+          {" "}
           <Typography variant="bodySmall" className="font-medium text-center">
-            {stage.trigger_title || "-"}
+            {stage.trigger_title}
           </Typography>
         </div>
 
-        <div className="flex justify-center items-center">
-          {getStageAssignedUsersCell(
-            stage,
-            stage?.role_assigned_users,
-            "right",
-            (text) => <Typography variant="bodySmall" className="font-medium text-center text-primary-600 cursor-pointer">{text}</Typography>
-          )}
-        </div>
-
-        <div className="flex justify-center items-center overflow-hidden">
-          {actionTakenBy ? (
-            <WrapperHoverCard
-              employeeId={actionTakenBy.employee}
-              placement="center-left"
-            >
-              <Typography variant="bodySmall" className="font-medium truncate text-center text-primary-600 cursor-pointer hover:underline">
-                {actionTakenBy.name}
-              </Typography>
-            </WrapperHoverCard>
-          ) : (
-            <Typography variant="bodySmall" className="font-medium truncate text-center">
-              -
-            </Typography>
-          )}
-        </div>
-
-        <div className="flex justify-center items-center">
+        <div>
+          {" "}
           <AllocatedToTooltip
             position="right"
             users={stage.allocated_to}
             roles={allocatedTo.roles}
-            role={stage.role || ""}
             RoleAssignedUsers={stage?.role_assigned_users || []}
           >
             <StatusBadge status={stage.status || "-"} />
           </AllocatedToTooltip>
         </div>
-
-        <div className="flex justify-center items-center">
+        <div>
+          {" "}
           <Typography variant="bodySmall" className="font-medium text-center">
-            {formatToIndianDate(stage?.todo?.creation) || "-"}
+            {formatToIndianDate(stage.todo.date) || "-"}
           </Typography>
         </div>
 
-        <div className="flex justify-center items-center">
+        <div>
+          {" "}
           <Typography variant="bodySmall" className="font-medium text-center">
-            {formatToIndianDate(stage?.todo?.date) || "-"}
+            {stage?.form_data && stage.status != "Pending" && (
+              <Button
+                variant="outline"
+                onClick={handleShowForm}
+              >
+                Review Form
+              </Button>
+            )}
+            {canPerformActions && actions.length > 0 && (
+              <Button onClick={() => onAction(actions[0], stage?.todo)}>
+                Act
+              </Button>
+            )}
           </Typography>
-        </div>
-
-        <div className="flex justify-center items-center">
-          <Typography variant="bodySmall" className="font-medium text-center">
-            {stage.status !== "Pending" ? formatToIndianDate(stage.todo?.modified || "") || "-" : "-"}
-          </Typography>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {stage?.form_data && stage.status != "Pending" && (
-            <Button
-              variant="outline"
-              onClick={handleShowForm}
-            >
-              Review Form
-            </Button>
-          )}
-          {canPerformActions && actions.length > 0 && (
-            <Button onClick={() => onAction(actions[0], stage?.todo)}>
-              Act
-            </Button>
-          )}
         </div>
       </div>
     ) : (
@@ -376,6 +321,7 @@ const WorkflowCard = ({
 
             <div className="space-y-2.5">
               {/* Assign To Users */}
+
               <div className="flex items-start text-sm gap-2">
                 <Typography
                   variant="mobileCardLabel"
@@ -388,86 +334,23 @@ const WorkflowCard = ({
                     users={stage.allocated_to}
                     roles={allocatedTo.roles}
                     showLabel={false}
-                    RoleAssignedUsers={stage?.role_assigned_users}
-                  />
+                  RoleAssignedUsers={stage?.role_assigned_users}
+                />
                 </div>
               </div>
 
-              {/* Action Taken By */}
               <div className="flex justify-between items-start text-sm gap-4">
                 <Typography
                   variant="mobileCardLabel"
                   className="block text-gray-500 shrink-0 mt-0.5"
                 >
-                  Action By
-                </Typography>
-                {actionTakenBy ? (
-                  <WrapperHoverCard
-                    employeeId={actionTakenBy.employee}
-                    placement="bottom-left"
-                  >
-                    <Typography
-                      variant="mobileCardValue"
-                      className="text-right flex-1 min-w-0 truncate mt-0.5 text-primary-600 cursor-pointer"
-                    >
-                      {actionTakenBy.name}
-                    </Typography>
-                  </WrapperHoverCard>
-                ) : (
-                  <Typography
-                    variant="mobileCardValue"
-                    className="text-right flex-1 min-w-0 truncate mt-0.5"
-                  >
-                    -
-                  </Typography>
-                )}
-              </div>
-
-              {/* Actual Trigger Date */}
-              <div className="flex justify-between items-start text-sm gap-4">
-                <Typography
-                  variant="mobileCardLabel"
-                  className="block text-gray-500 shrink-0 mt-0.5"
-                >
-                  Trigger Date
-                </Typography>
-                <Typography
-                  variant="mobileCardValue"
-                  className="text-right flex-1 min-w-0 mt-0.5"
-                >
-                  {formatToIndianDate(stage.todo?.creation) || "-"}
-                </Typography>
-              </div>
-
-              {/* Due Date */}
-              <div className="flex justify-between items-start text-sm gap-4">
-                <Typography
-                  variant="mobileCardLabel"
-                  className="block text-gray-500 shrink-0 mt-0.5"
-                >
-                  Due Date
+                  Date
                 </Typography>
                 <Typography
                   variant="mobileCardValue"
                   className="text-right flex-1 min-w-0 mt-0.5"
                 >
                   {formatToIndianDate(stage.todo?.date) || "-"}
-                </Typography>
-              </div>
-
-              {/* Completed Date */}
-              <div className="flex justify-between items-start text-sm gap-4">
-                <Typography
-                  variant="mobileCardLabel"
-                  className="block text-gray-500 shrink-0 mt-0.5"
-                >
-                  Completed Date
-                </Typography>
-                <Typography
-                  variant="mobileCardValue"
-                  className="text-right flex-1 min-w-0 mt-0.5"
-                >
-                  {stage.status !== "Pending" ? formatToIndianDate(stage.todo?.modified || "") || "-" : "-"}
                 </Typography>
               </div>
             </div>
@@ -477,7 +360,6 @@ const WorkflowCard = ({
               onClick={handleShowForm}
               className="mt-2 w-full"
               variant="outline"
-              size="md"
             >
               Review Form
             </Button>
