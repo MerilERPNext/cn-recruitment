@@ -47,7 +47,10 @@ import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { SharedExpenseCard, SharedExpensesRow } from "./SharedExpenses";
-import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import {
+  buildExpenseNavigationState,
+  buildExpenseEditUrl,
+} from "./expenseNavigationHelper";
 import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 const getStatusBadgeClasses = (status: string) => {
@@ -130,7 +133,8 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
       canEdit,
     );
 
-    navigate("/webapp/expenses-app/add-expense", {
+    const editUrl = buildExpenseEditUrl(expenseClaim.name, expenseItem.name, canEdit);
+    navigate(editUrl, {
       state: navigationState,
     });
   };
@@ -340,7 +344,8 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       expenseItem,
       canEdit,
     );
-    navigate("/webapp/expenses-app/add-expense", { state: navigationState });
+    const editUrl = buildExpenseEditUrl(expenseClaim.name, expenseItem.name, canEdit);
+    navigate(editUrl, { state: navigationState });
   };
 
   return (
@@ -1463,7 +1468,12 @@ const ExpensesList: React.FC = () => {
                               expenseClaim?.expenses?.[0],
                               false,
                             );
-                            navigate("/webapp/expenses-app/add-expense", {
+                            const editUrl = buildExpenseEditUrl(
+                              expenseClaim.name,
+                              expenseClaim?.expenses?.[0].name,
+                              false,
+                            );
+                            navigate(editUrl, {
                               state: navigationState,
                             });
                           }}
@@ -1563,7 +1573,12 @@ const ExpensesList: React.FC = () => {
                                     expenseClaim?.expenses?.[0],
                                     false,
                                   );
-                                navigate("/webapp/expenses-app/add-expense", {
+                                const editUrl = buildExpenseEditUrl(
+                                  expenseClaim.name,
+                                  expenseClaim?.expenses?.[0].name,
+                                  false,
+                                );
+                                navigate(editUrl, {
                                   state: navigationState,
                                 });
                               }}

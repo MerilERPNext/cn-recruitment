@@ -187,3 +187,18 @@ export const buildExpenseNavigationState = (
     },
   };
 };
+
+export const buildExpenseEditUrl = (
+  claimName: string,
+  itemName: string,
+  isResubmit?: boolean,
+) => {
+  const baseUrl = "/webapp/expenses-app/add-expense";
+  const params = new URLSearchParams();
+  params.append("expenseClaim", claimName);
+  params.append("expenseItem", itemName);
+  if (isResubmit) {
+    params.append("isResubmit", "true");
+  }
+  return `${baseUrl}?${params.toString()}`;
+};
