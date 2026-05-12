@@ -102,9 +102,8 @@ function FieldRow({
 
   return (
     <div
-      className={`flex items-center gap-3 py-3  border-b border-gray-100 last:border-0 transition-colors ${
-        checked ? "bg-blue-50/40" : ""
-      }`}
+      className={`flex items-center gap-3 py-3  border-b border-gray-100 last:border-0 transition-colors ${checked ? "bg-blue-50/40" : ""
+        }`}
     >
       {/* Checkbox */}
       <input
@@ -122,28 +121,28 @@ function FieldRow({
         </div>
 
         {val ? (
-  <div className="mt-1">
-    {field.fieldtype === "Attach" || field.fieldtype === "Attach Image" ? (
-      <a
-        href={val}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-primary-500 underline rounded-lg break-words text-xs border p-2 block"
-      >
-        View Attachment
-      </a>
-    ) : (
-      <div
-        className="text-xs text-gray-800 border rounded-lg p-2 break-words leading-relaxed w-full"
-        dangerouslySetInnerHTML={{ __html: val }}
-      />
-    )}
-  </div>
-) : (
-  <div className="text-xs text-gray-500 border rounded-lg p-2 break-words leading-relaxed w-full">
-    Empty value
-  </div>
-)}
+          <div className="mt-1">
+            {field.fieldtype === "Attach" || field.fieldtype === "Attach Image" ? (
+              <a
+                href={val}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-500 underline rounded-lg break-words text-xs border p-2 block"
+              >
+                View Attachment
+              </a>
+            ) : (
+              <div
+                className="text-xs text-gray-800 border rounded-lg p-2 break-words leading-relaxed w-full"
+                dangerouslySetInnerHTML={{ __html: val }}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="text-xs text-gray-500 border rounded-lg p-2 break-words leading-relaxed w-full">
+            Empty value
+          </div>
+        )}
 
         {/* Mandatory comment box — shown only when reject is pending */}
         {pendingReject && (
@@ -159,11 +158,10 @@ function FieldRow({
               onChange={(e) => handleCommentChange(e.target.value)}
               placeholder="Add a mandatory comment before rejecting..."
               autoFocus
-              className={`w-full text-xs px-2.5 py-1.5 border rounded-lg bg-white text-gray-700 resize-none outline-none focus:ring-1 placeholder-gray-400 ${
-                canSubmitReject
+              className={`w-full text-xs px-2.5 py-1.5 border rounded-lg bg-white text-gray-700 resize-none outline-none focus:ring-1 placeholder-gray-400 ${canSubmitReject
                   ? "border-gray-200 focus:border-primary-400 focus:ring-primary-100"
                   : "border-yellow-300 focus:border-yellow-400 focus:ring-yellow-100"
-              }`}
+                }`}
             />
             {!canSubmitReject && (
               <p className="text-xs text-yellow-600">Please enter a comment to continue.</p>
@@ -190,57 +188,55 @@ function FieldRow({
 
       {/* Action buttons */}
       <div className="flex items-center gap-2 mt-5 flex-shrink-0 flex-wrap justify-end">
-        <StatusBadge status={state.status}/>
+        <StatusBadge status={state.status} />
         <div className="h-8 flex items-center px-2  rounded-3xl bg-gray-10 w-fit">
-        <div className="relative group w-fit ">
-  <button
-    onClick={handleApproveClick}
-    disabled={state.loading}
-    className={`h-8 flex items-center gap-1 px-1 py-1 rounded-3xl font-bold bg-gray-10 ${
-      state.status === "Approved"
-        ? "text-green-500 "
-        : "text-green-500 "
-    }`}
-  >
-    <Check className="w-3.5 h-3.5" strokeWidth={2} />
-  </button>
+          <div className="relative group w-fit ">
+            <button
+              onClick={handleApproveClick}
+              disabled={state.loading}
+              className={`h-8 flex items-center gap-1 px-1 py-1 rounded-3xl font-bold bg-gray-10 ${state.status === "Approved"
+                  ? "text-green-500 "
+                  : "text-green-500 "
+                }`}
+            >
+              <Check className="w-3.5 h-3.5" strokeWidth={2} />
+            </button>
 
-  {/* Tooltip */}
-  <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 
+            {/* Tooltip */}
+            <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 
     whitespace-nowrap rounded bg-black text-white text-xs px-2 py-1 
     opacity-0 group-hover:opacity-100 transition pointer-events-none">
-    Approve
-  </span>
-</div>
-<span className="w-[1px] h-4 bg-gray-300" />
-<div className="relative group w-fit">
-        <button
-          onClick={handleRejectClick}
-          disabled={state.loading}
-          title="Reject"
-          className={`h-8 w-5 flex items-center justify-center rounded-lg text-xs font-bold transition-all disabled:opacity-40 ${
-            state.status === "Rejected"
-              ? " text-red-500 "
-              : pendingReject
-              ? " text-red-500 "
-              : " text-red-500 "
-          }`}
-        >
-          <X  className="w-3.5 h-3.5" strokeWidth={2} />
-        </button>
-        <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 
+              Approve
+            </span>
+          </div>
+          <span className="w-[1px] h-4 bg-gray-300" />
+          <div className="relative group w-fit">
+            <button
+              onClick={handleRejectClick}
+              disabled={state.loading}
+              title="Reject"
+              className={`h-8 w-5 flex items-center justify-center rounded-lg text-xs font-bold transition-all disabled:opacity-40 ${state.status === "Rejected"
+                  ? " text-red-500 "
+                  : pendingReject
+                    ? " text-red-500 "
+                    : " text-red-500 "
+                }`}
+            >
+              <X className="w-3.5 h-3.5" strokeWidth={2} />
+            </button>
+            <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 
     whitespace-nowrap rounded bg-black text-white text-xs px-2 py-1 
     opacity-0 group-hover:opacity-100 transition pointer-events-none">
-    Reject
-  </span>
-  </div>
+              Reject
+            </span>
+          </div>
         </div>
 
         {state.loading && (
           <div className="h-4 w-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
         )}
       </div>
-      </div>
+    </div>
   );
 }
 
@@ -269,20 +265,18 @@ function NavItem({
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-0.5 text-left transition-all ${
-        active ? "bg-primary-500 text-white shadow-sm" : "hover:bg-gray-100 text-gray-700"
-      }`}
+      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-0.5 text-left transition-all ${active ? "bg-primary-500 text-white shadow-sm" : "hover:bg-gray-100 text-gray-700"
+        }`}
     >
       <div
-        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
-          active
+        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${active
             ? "bg-white/20 text-white"
             : isDone
-            ? "bg-success-100 text-success-800"
-            : isPartial
-            ? "bg-amber-100 text-amber-800"
-            : "bg-gray-100 text-gray-500"
-        }`}
+              ? "bg-success-100 text-success-800"
+              : isPartial
+                ? "bg-amber-100 text-amber-800"
+                : "bg-gray-100 text-gray-500"
+          }`}
       >
         {isDone && !active ? "✓" : index + 1}
       </div>
@@ -339,11 +333,10 @@ function PendingRejectBanner({
         value={comment}
         onChange={(e) => onCommentChange(e.target.value)}
         placeholder="Enter your comment..."
-        className={`w-full text-xs px-2.5 py-1.5 border rounded-lg bg-white text-gray-700 resize-none outline-none focus:ring-1 placeholder-gray-400 ${
-          canSubmit
+        className={`w-full text-xs px-2.5 py-1.5 border rounded-lg bg-white text-gray-700 resize-none outline-none focus:ring-1 placeholder-gray-400 ${canSubmit
             ? "border-gray-200 focus:border-primary-400 focus:ring-blue-100"
             : "border-yellow-300 focus:border-yellow-400 focus:ring-yellow-100"
-        }`}
+          }`}
       />
       {!canSubmit && (
         <p className="text-xs text-yellow-600">Please enter a comment to continue.</p>
@@ -557,7 +550,7 @@ export default function OnboardingFieldApproval() {
         {!isDesktop && (
           <div className="mb-4 space-y-3">
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => navigate(-1)}
                 className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
               >
@@ -584,13 +577,12 @@ export default function OnboardingFieldApproval() {
                     <button
                       key={sec}
                       onClick={() => goToSection(sec)}
-                      className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-medium border transition-all ${
-                        isActive
+                      className={`flex-shrink-0 px-4 py-2 rounded-lg text-xs font-medium border transition-all ${isActive
                           ? "bg-primary-600 text-white border-primary-600 shadow-sm"
                           : isDone
-                          ? "bg-success-50 text-success-700 border-success-200"
-                          : "bg-white text-gray-600 border-gray-200"
-                      }`}
+                            ? "bg-success-50 text-success-700 border-success-200"
+                            : "bg-white text-gray-600 border-gray-200"
+                        }`}
                     >
                       {sec}
                     </button>
@@ -643,11 +635,11 @@ export default function OnboardingFieldApproval() {
                   </p>
                 </div>
                 {!isDesktop && (
-                   <div className="flex items-center gap-1.5">
-                     <span className="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-1 rounded-lg">
-                       {activeIdx + 1} / {secKeys.length}
-                     </span>
-                   </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-1 rounded-lg">
+                      {activeIdx + 1} / {secKeys.length}
+                    </span>
+                  </div>
                 )}
               </div>
 
@@ -819,15 +811,15 @@ export default function OnboardingFieldApproval() {
                 <ChevronLeft className="w-4 h-4" />
                 {isDesktop && "Previous"}
               </button>
-              
+
               {!isDesktop && (
                 <div className="flex gap-1.5">
-                   {secKeys.map((_, idx) => (
-                     <div 
-                       key={idx} 
-                       className={`w-1.5 h-1.5 rounded-lg transition-all ${idx === activeIdx ? "bg-primary-500 w-3" : "bg-gray-200"}`} 
-                     />
-                   ))}
+                  {secKeys.map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`w-1.5 h-1.5 rounded-lg transition-all ${idx === activeIdx ? "bg-primary-500 w-3" : "bg-gray-200"}`}
+                    />
+                  ))}
                 </div>
               )}
 
@@ -847,13 +839,12 @@ export default function OnboardingFieldApproval() {
       {/* ── Toast ── */}
       {toast && (
         <div
-          className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-2xl text-[11px] font-bold border shadow-xl transition-all w-[90%] max-w-sm text-center ${
-            toast.type === "error" || toast.msg === "reject"
+          className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-2xl text-[11px] font-bold border shadow-xl transition-all w-[90%] max-w-sm text-center ${toast.type === "error" || toast.msg === "reject"
               ? "bg-error-50 text-error-600 border-error-100"
               : toast.type === "info"
-              ? "bg-primary-50 text-primary-700 border-primary-100"
-              : "bg-success-50 text-success-600 border-success-100"
-          }`}
+                ? "bg-primary-50 text-primary-700 border-primary-100"
+                : "bg-success-50 text-success-600 border-success-100"
+            }`}
         >
           {toast.msg}
         </div>
