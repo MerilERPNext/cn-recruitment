@@ -274,9 +274,11 @@ const MyRequests: React.FC = () => {
         <CardTable
           titles={[
             "Employee Name",
+            "Assigned To",
             "Company",
             "Claim Benefit For",
             "Claim Date",
+            "Created At",
             "Claimed Amount",
             "Taxable Amount",
             "Non Taxable Amount",
