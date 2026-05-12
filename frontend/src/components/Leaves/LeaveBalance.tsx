@@ -421,7 +421,7 @@ const LeaveBalance: React.FC = () => {
                               {leave.entitled}
                             </p>
                             <p className="text-xs text-gray-600">
-                              Total balance
+                              Total Leaves
                             </p>
                           </div>
                         </div>
