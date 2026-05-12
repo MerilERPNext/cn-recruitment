@@ -6,7 +6,7 @@ import { Attachment, FlowRequestItem, FlowRequestStage } from "../../../../types
 
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
-import { extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
+import { extractRolesAndUsers, FormIOForm, getStageActorDetails } from "../../../../utils/flowUtils";
 import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
 import { createPortal } from "react-dom";
@@ -16,6 +16,7 @@ import MobileAllocatedTo from "../../../shared/MobileAllocatedTo";
 import FormPreview from "../../../shared/molecules/FormPreview";
 import ActModal from "./ActModal";
 import { handleActionType } from "../../../../hooks/userApprovalList";
+import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 
 const getIcon = (status: string) => {
     const iconProps = { size: 20, strokeWidth: 3, className: "text-white" };
@@ -106,6 +107,16 @@ const FlowTableRow = ({
 
         return actionPermission;
     }, [currentUser, isActive, allocatedTo, stage.can_act]);
+
+    const actorDetails = useMemo(() => {
+        if (!stage.approval_time) return null;
+        return getStageActorDetails(
+            stage.allocated_to,
+            stage?.role_assigned_users,
+            stage.user_id,
+            stage.user
+        );
+    }, [stage]);
 
     const [showActModal, setShowActModal] = useState(false);
 
@@ -225,12 +236,26 @@ const FlowTableRow = ({
                             >
                                 Action By
                             </Typography>
-                            <Typography
-                                variant="mobileCardValue"
-                                className="text-right flex-1 min-w-0 truncate mt-0.5"
-                            >
-                                {stage.approval_time ? stage.user || "-" : "-"}
-                            </Typography>
+                            {stage.approval_time && actorDetails ? (
+                                <WrapperHoverCard
+                                    employeeId={actorDetails.employee}
+                                    placement="bottom-left"
+                                >
+                                    <Typography
+                                        variant="mobileCardValue"
+                                        className="text-right flex-1 min-w-0 truncate mt-0.5 cursor-pointer text-primary-600 hover:underline"
+                                    >
+                                        {actorDetails.name}
+                                    </Typography>
+                                </WrapperHoverCard>
+                            ) : (
+                                <Typography
+                                    variant="mobileCardValue"
+                                    className="text-right flex-1 min-w-0 truncate mt-0.5"
+                                >
+                                    -
+                                </Typography>
+                            )}
                         </div>
 
                         <div className="flex justify-between items-start text-sm gap-4">
