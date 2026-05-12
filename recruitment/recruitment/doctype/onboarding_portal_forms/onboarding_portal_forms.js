@@ -82,6 +82,27 @@ function _render_field_inspector(frm, fields) {
     // ─────────────────────────────────────────────────────────────────────
     // Action cell HTML — add / added (+remove+mandatory toggle)
     // ─────────────────────────────────────────────────────────────────────
+
+    // Returns the current selected_child_fields for an added Table row
+    function _getSelectedChildFields(fn) {
+        const row = _getRow(fn);
+        if (!row || !row.selected_child_fields) return null;
+        try { return JSON.parse(row.selected_child_fields); } catch(e) { return null; }
+    }
+
+    // Badge showing child field selection count
+    function _childFieldBadge(fn) {
+        const sel = _getSelectedChildFields(fn);
+        if (!sel) return `<span class="cps-child-badge badge badge-info"
+                               data-fn="${fn}"
+                               style="font-size:0.62rem;background:#0d6efd;color:#fff;"
+                               title="All child fields included">All child fields</span>`;
+        return `<span class="cps-child-badge badge badge-warning"
+                      data-fn="${fn}"
+                      style="font-size:0.62rem;background:#fd7e14;color:#fff;"
+                      title="${sel.length} child fields selected">${sel.length} child fields</span>`;
+    }
+
     function _actionCell(isAdded, fn, lbl, ft, tab, sec) {
         const mandatory = isAdded ? _isMandatory(fn) : false;
         const mandCheck = `
@@ -101,9 +122,20 @@ function _render_field_inspector(frm, fields) {
             </label>`;
 
         if (isAdded) {
+            const isTable = ft === "Table";
             return `
                 <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap;">
                     ${mandCheck}
+                    ${isTable ? `
+                    <button class="btn btn-xs cps-child-fields-btn"
+                            data-fn="${fn}"
+                            title="Select which child fields to expose"
+                            style="font-size:0.69rem;padding:2px 7px;
+                                   background:#6610f2;color:#fff;border:none;border-radius:3px;">
+                        ⚙ Child Fields
+                    </button>
+                    ${_childFieldBadge(fn)}
+                    ` : ""}
                     <span class="badge badge-success cps-added-badge"
                           style="font-size:0.68rem;">✓ Added</span>
                     <button class="btn btn-xs cps-remove-btn"
@@ -354,6 +386,26 @@ function _render_field_inspector(frm, fields) {
                             ${_actionCell(isAdded, fnEsc, lblEsc, ftEsc, tabEsc, secEsc)}
                         </td>
                     </tr>`;
+
+                    // For Table fields: add a hidden expandable child-field selection row
+                    if (f.fieldtype === "Table" && f.options) {
+                        const childDt = frappe.utils.escape_html(f.options);
+                        html += `
+                    <tr class="cps-child-panel-row" data-fn="${fnEsc}" style="display:none;">
+                        <td colspan="5" style="background:#f8f0ff;padding:0;border-top:none;">
+                            <div class="cps-child-panel" data-fn="${fnEsc}" data-child-dt="${childDt}"
+                                 style="padding:10px 18px 14px;">
+                                <div style="font-size:0.78rem;font-weight:600;color:#6610f2;margin-bottom:8px;">
+                                    ⚙ Child Fields for <code style="color:#c0392b;">${fnEsc}</code>
+                                    <span style="font-weight:400;color:#555;"> — select which fields to expose in the candidate portal</span>
+                                </div>
+                                <div class="cps-child-panel-content" data-fn="${fnEsc}">
+                                    <em style="color:#888;font-size:0.8rem;">Loading child fields…</em>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                    }
                 });
 
                 html += `
@@ -390,6 +442,11 @@ function _render_field_inspector(frm, fields) {
         const secKey = $row.data("sec-key");
         if (secKey) _syncSecSelectChk(secKey);
         _syncBulkAddState();
+
+        // Hide child panel row when field is removed
+        if (!isAdded) {
+            $w.find(`.cps-child-panel-row[data-fn="${fn}"]`).slideUp(150);
+        }
     }
 
     function _secFieldsByKey(secKey) {
@@ -487,6 +544,146 @@ function _render_field_inspector(frm, fields) {
         } else {
             $chk.prop("checked", false).prop("indeterminate", false);
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Save child field selection back to the portal_fields row
+    // ─────────────────────────────────────────────────────────────────────
+    function _saveChildFieldSelection(fn, selectedFieldnames) {
+        const childRow = _getRow(fn);
+        if (!childRow) {
+            frappe.show_alert({ message: __(`Add "${fn}" to portal fields first before configuring child fields.`), indicator: "orange" });
+            return;
+        }
+        const jsonVal = selectedFieldnames.length > 0 ? JSON.stringify(selectedFieldnames) : "";
+        frappe.model.set_value(childRow.doctype, childRow.name, "selected_child_fields", jsonVal);
+        frm.refresh_field("portal_fields");
+
+        // Update the badge in the action cell
+        const $actionCell = $w.find(`.cps-action-cell[data-fn="${fn}"]`);
+        $actionCell.find(".cps-child-badge").replaceWith(
+            selectedFieldnames.length > 0
+                ? `<span class="cps-child-badge badge badge-warning" data-fn="${fn}"
+                         style="font-size:0.62rem;background:#fd7e14;color:#fff;"
+                         title="${selectedFieldnames.length} child fields selected">${selectedFieldnames.length} child fields</span>`
+                : `<span class="cps-child-badge badge badge-info" data-fn="${fn}"
+                         style="font-size:0.62rem;background:#0d6efd;color:#fff;"
+                         title="All child fields included">All child fields</span>`
+        );
+
+        frappe.show_alert({
+            message: selectedFieldnames.length > 0
+                ? __(`Saved: ${selectedFieldnames.length} child field(s) selected for "${fn}"`)
+                : __(`Reset: all child fields will be exposed for "${fn}"`),
+            indicator: "green"
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Render child field checkboxes inside the panel
+    // ─────────────────────────────────────────────────────────────────────
+    function _renderChildPanel(fn, childDt, $panelContent) {
+        frappe.call({
+            method: "recruitment.api.candidate_portal.get_child_doctype_fields",
+            args: { child_doctype: childDt },
+            callback(r) {
+                if (!r.message || r.message.status !== "success") {
+                    $panelContent.html(`<em style="color:red;">Could not load child fields.</em>`);
+                    return;
+                }
+                const childFields = r.message.fields || [];
+                if (!childFields.length) {
+                    $panelContent.html(`<em style="color:#888;">No fields found for ${childDt}.</em>`);
+                    return;
+                }
+
+                // Get currently selected (from portal_fields row)
+                const currentSel = _getSelectedChildFields(fn);
+                const selectedSet = currentSel ? new Set(currentSel) : null; // null = all selected
+
+                let html = `
+                <div style="margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    <button class="btn btn-xs cps-child-sel-all"
+                            style="font-size:0.71rem;padding:3px 9px;background:#198754;color:#fff;border:none;border-radius:3px;">
+                        ✓ Select All
+                    </button>
+                    <button class="btn btn-xs cps-child-sel-none"
+                            style="font-size:0.71rem;padding:3px 9px;background:#adb5bd;color:#1f1f1f;border:none;border-radius:3px;">
+                        ✕ Clear All
+                    </button>
+                    <span class="cps-child-sel-count" style="font-size:0.75rem;color:#555;font-weight:600;"></span>
+                    <button class="btn btn-xs cps-child-save-btn"
+                            data-fn="${frappe.utils.escape_html(fn)}"
+                            style="font-size:0.71rem;padding:3px 10px;background:#6610f2;color:#fff;border:none;border-radius:3px;margin-left:auto;">
+                        💾 Save Child Field Selection
+                    </button>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px 18px;">`;
+
+                childFields.forEach(cf => {
+                    const cfFn  = frappe.utils.escape_html(cf.fieldname);
+                    const cfLbl = frappe.utils.escape_html(cf.label || cf.fieldname);
+                    const cfFt  = frappe.utils.escape_html(cf.fieldtype);
+                    // Checked if: no selection set (all) OR this field is in selection
+                    const isChk = selectedSet === null || selectedSet.has(cf.fieldname);
+                    html += `
+                    <label style="display:inline-flex;align-items:center;gap:5px;
+                                  font-size:0.75rem;cursor:pointer;min-width:200px;
+                                  padding:2px 4px;border-radius:3px;
+                                  ${isChk ? 'background:#f0e8ff;' : ''}"
+                           title="${cfFt}">
+                        <input type="checkbox" class="cps-child-field-chk"
+                               value="${cfFn}" ${isChk ? 'checked' : ''}
+                               style="cursor:pointer;width:12px;height:12px;" />
+                        <code style="font-size:0.68rem;color:#c0392b;">${cfFn}</code>
+                        <span style="color:#333;">${cfLbl}</span>
+                        <span class="badge badge-secondary" style="font-size:0.6rem;">${cfFt}</span>
+                    </label>`;
+                });
+
+                html += `</div>`;
+                $panelContent.html(html);
+
+                // Update count immediately
+                _updateChildSelCount($panelContent);
+
+                // Select All
+                $panelContent.find(".cps-child-sel-all").on("click", function() {
+                    $panelContent.find(".cps-child-field-chk").prop("checked", true);
+                    $panelContent.find("label").css("background", "#f0e8ff");
+                    _updateChildSelCount($panelContent);
+                });
+
+                // Clear All
+                $panelContent.find(".cps-child-sel-none").on("click", function() {
+                    $panelContent.find(".cps-child-field-chk").prop("checked", false);
+                    $panelContent.find("label").css("background", "");
+                    _updateChildSelCount($panelContent);
+                });
+
+                // Individual checkbox highlight
+                $panelContent.on("change", ".cps-child-field-chk", function() {
+                    $(this).closest("label").css("background", $(this).prop("checked") ? "#f0e8ff" : "");
+                    _updateChildSelCount($panelContent);
+                });
+
+                // Save button
+                $panelContent.find(".cps-child-save-btn").on("click", function() {
+                    const parentFn = $(this).data("fn");
+                    const selected = $panelContent.find(".cps-child-field-chk:checked")
+                        .map(function() { return $(this).val(); }).get();
+                    const allCount = childFields.length;
+                    // If all selected, store empty string (= all) for cleanliness
+                    _saveChildFieldSelection(parentFn, selected.length === allCount ? [] : selected);
+                });
+            }
+        });
+    }
+
+    function _updateChildSelCount($panelContent) {
+        const total   = $panelContent.find(".cps-child-field-chk").length;
+        const checked = $panelContent.find(".cps-child-field-chk:checked").length;
+        $panelContent.find(".cps-child-sel-count").text(`${checked} / ${total} selected`);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -597,6 +794,28 @@ function _render_field_inspector(frm, fields) {
         _bindActionCellEvents($(this));
     });
     _syncBulkAddState();
+
+    // ── Child Fields toggle button (event delegation) ─────────────────────
+    $w.on("click.cps", ".cps-child-fields-btn", function (e) {
+        e.stopPropagation();
+        const fn = $(this).data("fn");
+        const $panelRow     = $w.find(`.cps-child-panel-row[data-fn="${fn}"]`);
+        const $panel        = $panelRow.find(`.cps-child-panel[data-fn="${fn}"]`);
+        const $panelContent = $panelRow.find(`.cps-child-panel-content[data-fn="${fn}"]`);
+        const childDt       = $panel.data("child-dt");
+
+        if ($panelRow.is(":visible")) {
+            $panelRow.slideUp(180);
+            return;
+        }
+
+        // First open: replace the "Loading…" placeholder with actual data
+        if ($panelContent.find("em").length && $panelContent.text().includes("Loading")) {
+            _renderChildPanel(fn, childDt, $panelContent);
+        }
+
+        $panelRow.slideDown(200);
+    });
 
     $w.on("change.cps", ".cps-row-select", function () {
         const secKey = $(this).closest(".cps-field-row").data("sec-key");

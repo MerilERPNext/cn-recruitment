@@ -54,8 +54,6 @@ fixtures = [
 # include js in doctype views
 doctype_js = {
     "Job Offer": ["public/js/job_offer.js"],
-    "Job Requisition": ["public/js/job_requisition.js"],
-    "Job Opening": ["public/js/job_opening.js"],
     "Job Applicant": ["public/js/job_applicant.js"],
     "Interview": ["public/js/interview.js"],
     "User": ["public/js/user.js"],
@@ -106,8 +104,6 @@ website_generators = ["Web Page"]
 website_context = {"job_offer": "recruitment.www.get_context"}
 
 permission_query_conditions = {
-    "Job Requisition": "recruitment.permissions.doc_type_permissions.jr_query",
-    "Job Opening": "recruitment.permissions.doc_type_permissions.jo_query",
     "Interview": "recruitment.permissions.doc_type_permissions.interview_query",
     "Job Applicant": "recruitment.permissions.doc_type_permissions.ja_query",
 }
@@ -247,12 +243,9 @@ scheduler_events = {
 #
 override_whitelisted_methods = {
     "hrms.hr.doctype.employee_onboarding.employee_onboarding.make_employee": "recruitment.customizations.employee_onboarding.employee_onboarding.make_employee",
-    "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening": "recruitment.customizations.job_requisition.job_requisition.make_job_opening",
-   
 }
 override_doctype_class = {
     "Employee Onboarding": "recruitment.customizations.employee_onboarding.overide_class.CustomEmployeeOnboarding",
-    "Job Opening": "recruitment.customizations.job_opening.class_override.CustomJobOpening",
     "Job Offer": "recruitment.customizations.job_offer.CustomJobOffer",
 }
 #
