@@ -44,9 +44,9 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
   const handleShowSelfForm = () => {
     let formData: Record<string, any> = {};
     try {
-      formData = JSON.parse(data?.initiator_forms?.[0]?.form_data);
+      formData = JSON.parse(data?.initiator_forms?.[0]?.form_data_display || "{}");
     } catch (error) {
-      console.error("Invalid initiator_forms form_data JSON:", error);
+      console.error("Invalid initiator_forms form_data_display JSON:", error);
       return;
     }
     const schema = (formData as any)?.form?.components;
