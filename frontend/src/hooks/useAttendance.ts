@@ -200,7 +200,7 @@ export const useAllAttendanceRequests = (
   options?: any
 ): UseQueryResult<AttendanceRequest[], Error> => {
   return useQuery<AttendanceRequest[], Error>({
-    queryKey: ["attendance", "all", filters],
+    queryKey: ["attendance-calendar-details", filters],
     queryFn: () =>
       attendanceService.getAllAttendanceRequests(pageSize, filters),
     refetchOnWindowFocus: true,

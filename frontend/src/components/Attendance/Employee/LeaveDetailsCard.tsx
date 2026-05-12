@@ -9,7 +9,7 @@ import { formatToIndianDateWithTime } from "../../../utils/formatToIndianDate";
 export const LeaveDetailsCard = ({ data, propStatus }: { data: LeaveApplication, propStatus?: string }) => {
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), "dd MMM yyyy");
+      return format(new Date(dateString), "dd-MM-yyyy");
     } catch {
       return dateString;
     }

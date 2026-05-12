@@ -81,10 +81,6 @@ const EmployeeAttendanceDetails = ({
     return events?.find((e) => e.doctype === "Leave Request");
   }, [events]);
 
-  const hasAttendanceRequestEvent = useMemo(() => {
-    return events?.some((e) => e.doctype === "Attendance Request");
-  }, [events]);
-
   const isLeaveRecord =
     data?.custom_auto_created === 1 ||
     status === "on leave" ||
@@ -109,6 +105,10 @@ const EmployeeAttendanceDetails = ({
 
   const { data: buttonStatus } = useGetButtonsStatus(
     currentEmployee?.employee || "",
+  );
+  const leaveDetailsFromButtonStatusData = buttonStatus?.leave_applications?.filter(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (item: any) => new Date(item?.from_date).toDateString() === validDate?.toDateString(),
   );
   const { start, end } = useMemo(() => {
     if (!validDate) return { start: "", end: "" };
@@ -135,11 +135,7 @@ const EmployeeAttendanceDetails = ({
 
   const { data: attendanceRequests } = useAllAttendanceRequests(
     1000,
-    validDate &&
-      effectiveEmployeeId &&
-      (hasAttendanceRequestEvent ||
-        status === "absent" ||
-        status === "half day")
+    validDate && effectiveEmployeeId
       ? [
         ["employee", "=", effectiveEmployeeId],
         ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
@@ -148,12 +144,7 @@ const EmployeeAttendanceDetails = ({
       ]
       : [],
     {
-      enabled:
-        !!validDate &&
-        !!effectiveEmployeeId &&
-        (hasAttendanceRequestEvent ||
-          status === "absent" ||
-          status === "half day"),
+      enabled: !!validDate && !!effectiveEmployeeId,
     },
   );
   const { data: leaveUserUiPermission } = useGetUiPermission(
@@ -239,24 +230,24 @@ const EmployeeAttendanceDetails = ({
   const handleEdit = () => {
     if (leaveDetails) {
       openLeaveModal({
-        leaveType: leaveDetails.leave_type,
+        // leaveType: leaveDetails.leave_type,
         fromDate: leaveDetails.from_date,
         toDate: leaveDetails.to_date,
-        halfDay: leaveDetails.half_day === 1,
-        halfDayOption: leaveDetails.custom_half_day_type as
-          | "First Half"
-          | "Second Half"
-          | undefined,
-        half_day_date: leaveDetails.half_day_date || "",
-        custom_second_half_day_date:
-          leaveDetails.custom_second_half_day_date || "",
-        description: leaveDetails.description,
-        custom_reason: leaveDetails.custom_reason || "",
-        custom_attachment: leaveDetails.custom_attachment
-          ? [{ url: leaveDetails.custom_attachment }]
-          : undefined,
-        isEdit: true,
-        leave_application: leaveDetails.name,
+        // halfDay: leaveDetails.half_day === 1,
+        // halfDayOption: leaveDetails.custom_half_day_type as
+        //   | "First Half"
+        //   | "Second Half"
+        //   | undefined,
+        // half_day_date: leaveDetails.half_day_date || "",
+        // custom_second_half_day_date:
+        //   leaveDetails.custom_second_half_day_date || "",
+        // description: leaveDetails.description,
+        // custom_reason: leaveDetails.custom_reason || "",
+        // custom_attachment: leaveDetails.custom_attachment
+        //   ? [{ url: leaveDetails.custom_attachment }]
+        //   : undefined,
+        // isEdit: true,
+        // leave_application: leaveDetails.name,
         source: "other",
       });
     } else {
@@ -398,7 +389,10 @@ const EmployeeAttendanceDetails = ({
     if (!leaveDetails) return null;
     return (
       <div>
-        <LeaveDetailsCard data={leaveDetails} propStatus={propStatus} />
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        {leaveDetailsFromButtonStatusData?.map((item: any) => {
+          return <LeaveDetailsCard data={item} propStatus={propStatus} />
+        })}
         {data?.custom_auto_created === 1 ||
           (leaveEvent && status === "on leave")
           ? renderLeaveDetailsActions()
@@ -487,8 +481,12 @@ const EmployeeAttendanceDetails = ({
     const hasActiveAttendanceRequest = attendanceRequests?.some(
       (x) => x?.custom_status === "Pending" || x?.custom_status === "Approved",
     );
-    const hasActiveLeaveRequest =
-      leaveDetails?.status === "Open" || leaveDetails?.status === "Approved";
+    // leaveDetails?.status === "Open" || leaveDetails?.status === "Approved";
+    const hasActiveLeaveRequest = leaveDetailsFromButtonStatusData?.some(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (item: any) => ["Open", "Approved"].includes(item.status),
+    );
+
     // each button is only blocked by its own active request
     // attendance pending → hide attendance btn, show leave btn
     // leave pending → hide leave btn, show attendance btn

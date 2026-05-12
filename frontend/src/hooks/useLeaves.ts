@@ -446,6 +446,9 @@ export function useCreateLeaveApplication() {
         });
         queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
         queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+        queryClient.invalidateQueries({
+          queryKey: ["leave-buttons-status"],
+        });
       }, 1500);
     },
   });

@@ -734,7 +734,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   const isAmountReadonly = !!expenseTypePayload?.is_amount_readonly;
   const isShareAllowed = Boolean(expenseTypePayload?.shared_expense_allowed);
   const maxAllowedParticipants =
-    Number(expenseTypePayload?.shared_expense_limit) || 5;
+    Number(expenseTypePayload?.shared_expense_limit || 0);
   const isAttachmentMandatory = useMemo(() => {
     const fields = expenseTypePayload?.fields;
     if (!Array.isArray(fields)) return false;

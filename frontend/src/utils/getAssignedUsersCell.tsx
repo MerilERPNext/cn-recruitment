@@ -16,7 +16,7 @@ export const getStageAssignedUsersCell = (
         (acc: number, r: any) => acc + (r.users?.length || r.user?.length || 0),
         0,
       ) ?? 0;
-    
+
     const text = `Assign(${totalUsers})`;
     return (
       <AllocatedToTooltip
@@ -30,11 +30,11 @@ export const getStageAssignedUsersCell = (
     );
   }
 
-  const label = `${stage.stage_name || "-"}(1)`;
-  const users = stage.allocated_to?.length 
-    ? stage.allocated_to 
-    : stage.user 
-      ? [{ name: stage.user, employee: stage.employee_id, designation_name: stage.designation_name }] 
+  const label = `${stage?.designation_name || stage?.stage_name || "-"}(1) `;
+  const users = stage.allocated_to?.length
+    ? stage.allocated_to
+    : stage.user
+      ? [{ name: stage.user, employee: stage.employee_id, designation_name: stage.designation_name }]
       : [];
 
   return (
@@ -50,12 +50,15 @@ export const getStageAssignedUsersCell = (
 
 export const getAssignedUsersCell = (item: any) => {
   const stages: any[] = item?.approval_stages_status ?? [];
-  const pendingStages = stages.filter((s) => s.status?.toLowerCase() === "pending");
-  const pendingWithRole = stages.find((s) => !!s.role);
-  const pendingAny = pendingStages[0];
   const fallback = stages[stages.length - 1];
 
-  const activeStage = pendingWithRole ?? pendingAny ?? fallback;
+  // The active stage is the first one that is not "Approved"
+  const activeStage =
+    stages.find((s) => s.status?.toLowerCase() !== "approved") ?? fallback;
 
-  return getStageAssignedUsersCell(activeStage, item?.role_assigned_users, "left");
+  return getStageAssignedUsersCell(
+    activeStage,
+    item?.role_assigned_users,
+    "left"
+  );
 };
