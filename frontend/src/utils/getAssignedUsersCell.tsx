@@ -30,7 +30,7 @@ export const getStageAssignedUsersCell = (
     );
   }
 
-  const label = `${stage?.designation_name || "-"}(1)`;
+  const label = `${stage?.designation_name || stage?.stage_name || "-"}(1) `;
   const users = stage.allocated_to?.length
     ? stage.allocated_to
     : stage.user
@@ -50,12 +50,15 @@ export const getStageAssignedUsersCell = (
 
 export const getAssignedUsersCell = (item: any) => {
   const stages: any[] = item?.approval_stages_status ?? [];
-  const pendingStages = stages.filter((s) => s.status?.toLowerCase() === "pending");
-  const pendingWithRole = stages.find((s) => !!s.role);
-  const pendingAny = pendingStages[0];
   const fallback = stages[stages.length - 1];
 
-  const activeStage = pendingWithRole ?? pendingAny ?? fallback;
+  // The active stage is the first one that is not "Approved"
+  const activeStage =
+    stages.find((s) => s.status?.toLowerCase() !== "approved") ?? fallback;
 
-  return getStageAssignedUsersCell(activeStage, item?.role_assigned_users, "left");
+  return getStageAssignedUsersCell(
+    activeStage,
+    item?.role_assigned_users,
+    "left"
+  );
 };
