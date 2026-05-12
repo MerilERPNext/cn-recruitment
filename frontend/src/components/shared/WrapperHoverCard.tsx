@@ -148,11 +148,32 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
       const rect = targetRef.current.getBoundingClientRect();
       const cardRect = cardRef.current.getBoundingClientRect();
+      const padding = 12;
+      const gap = 12;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
 
       let top = 0;
       let left = 0;
 
-      switch (placement) {
+      // Determine effective placement — flip if preferred side clips
+      let effectivePlacement = placement;
+
+      if (placement === "center-right" && rect.right + gap + cardRect.width + padding > vw) {
+        effectivePlacement = "center-left";
+      } else if (placement === "center-left" && rect.left - gap - cardRect.width - padding < 0) {
+        effectivePlacement = "center-right";
+      } else if (placement === "bottom-right" && rect.bottom + 8 + cardRect.height + padding > vh) {
+        effectivePlacement = "top-right";
+      } else if (placement === "bottom-left" && rect.bottom + 8 + cardRect.height + padding > vh) {
+        effectivePlacement = "top-left";
+      } else if (placement === "top-right" && rect.top - cardRect.height - 8 - padding < 0) {
+        effectivePlacement = "bottom-right";
+      } else if (placement === "top-left" && rect.top - cardRect.height - 8 - padding < 0) {
+        effectivePlacement = "bottom-left";
+      }
+
+      switch (effectivePlacement) {
         case "bottom-right":
           top = rect.bottom + 8;
           left = rect.left;
@@ -175,20 +196,20 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
         case "center-left":
           top = rect.top + rect.height / 2 - cardRect.height / 2;
-          left = rect.left - cardRect.width - 12;
+          left = rect.left - cardRect.width - gap;
           break;
 
         case "center-right":
         default:
           top = rect.top + rect.height / 2 - cardRect.height / 2;
-          left = rect.right + 12;
+          left = rect.right + gap;
       }
 
-      const padding = 12;
+      // Final viewport clamping as a safety net
       const minTop = padding;
-      const maxTop = window.innerHeight - cardRect.height - padding;
+      const maxTop = vh - cardRect.height - padding;
       const minLeft = padding;
-      const maxLeft = window.innerWidth - cardRect.width - padding;
+      const maxLeft = vw - cardRect.width - padding;
 
       setPos({
         top: Math.max(minTop, Math.min(top, maxTop)),
@@ -199,10 +220,21 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
     if (!show) return;
 
     updatePosition();
+
+    // Observe card size changes (e.g. when data loads and card expands)
+    let resizeObserver: ResizeObserver | null = null;
+    if (cardRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        updatePosition();
+      });
+      resizeObserver.observe(cardRef.current);
+    }
+
     window.addEventListener("scroll", updatePosition, true);
     window.addEventListener("resize", updatePosition);
 
     return () => {
+      resizeObserver?.disconnect();
       window.removeEventListener("scroll", updatePosition, true);
       window.removeEventListener("resize", updatePosition);
     };
@@ -263,8 +295,8 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                 left: pos.left,
                 opacity: isAnimating ? 1 : 0,
                 transform: isAnimating
-                  ? "scale(1) translateY(-8px)"
-                  : "scale(0.95) translateY(12px)",
+                  ? "scale(1) translateY(0)"
+                  : "scale(0.95) translateY(4px)",
                 transition: isAnimating
                   ? "opacity 300ms cubic-bezier(0.34, 1.56, 0.64, 1), transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)"
                   : "opacity 150ms ease-in, transform 150ms ease-in",
