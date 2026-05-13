@@ -130,14 +130,29 @@ const WorkflowCard = ({
   isLast: boolean;
   handleAction: handleActionType;
 }) => {
-  const actions = stage?.todo?.custom_doctype_actions
-    ? JSON.parse(stage?.todo?.custom_doctype_actions)
-    : [];
-  const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
-    ? JSON.parse(
-        stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'),
-      )
-    : [];
+  const actions = useMemo(() => {
+    try {
+      return stage?.todo?.custom_doctype_actions
+        ? JSON.parse(stage.todo.custom_doctype_actions)
+        : [];
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions", e);
+      return [];
+    }
+  }, [stage?.todo?.custom_doctype_actions]);
+
+  const actionsWithForm = useMemo(() => {
+    try {
+      return stage?.todo?.custom_doctype_actions_with_form
+        ? JSON.parse(
+            stage.todo.custom_doctype_actions_with_form.replace(/'/g, '"'),
+          )
+        : [];
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions_with_form", e);
+      return [];
+    }
+  }, [stage?.todo?.custom_doctype_actions_with_form]);
 
   const { isDesktop } = useScreenSize();
 
