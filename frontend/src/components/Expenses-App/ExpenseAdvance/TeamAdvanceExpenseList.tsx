@@ -3,15 +3,15 @@ import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_ADVANCE } from "../../../utils/tableSortConfig";
 import ApprovalList from "../../shared/ApprovalList";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { Typography } from "../../shared/atoms/Typography";
-import CardTable from "../../shared/CardTable";
 import { BulkSelectProvider } from "../../shared/BulkSelectContext";
+import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceApprovalCard from "./AdvanceApprovalCard";
 import TeamAdvanceDetailView from "./TeamAdvanceDetailView";
-import { getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_ADVANCE } from "../../../utils/tableSortConfig";
 
 const TeamAdvanceExpenseList = () => {
   const { data: currentUser } = useCurrentUser();
@@ -34,7 +34,7 @@ const TeamAdvanceExpenseList = () => {
       if (request?.todo_id) {
         const computedStatus =
           request.todo_status === "Closed" &&
-            request.reference_document.custom_final_status !== "Rejected"
+          request.reference_document.custom_final_status !== "Rejected"
             ? "Approved"
             : request.reference_document.custom_final_status;
 
@@ -60,28 +60,28 @@ const TeamAdvanceExpenseList = () => {
   const { isDesktop } = useScreenSize();
   const tableTitles = isBulkSelectEnabled
     ? [
-      "Select",
-      "Advance Id",
-      "Employee",
-      "Department",
-      "Advance Amount",
-      "Due Date",
-      "Status",
-      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+        "Select",
+        "Advance Id",
+        "Employee",
+        "Department",
+        "Advance Amount",
+        "Due Date",
+        "Status",
+        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
 
-      "Actions",
-    ]
+        "Actions",
+      ]
     : [
-      "Advance Id",
-      "Employee",
-      "Department",
-      "Advance Amount",
-      "Due Date",
-      "Status",
-      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+        "Advance Id",
+        "Employee",
+        "Department",
+        "Advance Amount",
+        "Due Date",
+        "Status",
+        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
 
-      "Actions",
-    ];
+        "Actions",
+      ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? activeStatus === "Approved"
@@ -139,77 +139,85 @@ const TeamAdvanceExpenseList = () => {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <BulkSelectProvider>
-        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}
-          columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_ADVANCE(isBulkSelectEnabled, activeStatus === "Approved")}
-        >
-          {currentUser?.name && (
-            <ApprovalList
-              doctype={"Employee Advance"}
-              refetch={refetchApprovalList}
-              onApprovalRefetchComplete={handleApprovalRefetchComplete}
-              pageSize={10}
-              infiniteScroll={false}
-              loadMorePagination={false}
-              showPagination={true}
-              isSearch={true}
-              isFilter={true}
-              columnWidths={tableColumnWidths}
-              onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-              filterFields={[
-                {
-                  fieldname: "custom_final_status",
-                  label: "Status",
-                  fieldtype: "Select",
-                  options: [
-                    {
-                      label: "Pending",
-                      value: "Pending",
+          <CardTable
+            titles={tableTitles}
+            columnWidths={tableColumnWidths}
+            columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_ADVANCE(
+              isBulkSelectEnabled,
+              activeStatus === "Approved",
+            )}
+          >
+            {currentUser?.name && (
+              <ApprovalList
+                doctype={"Employee Advance"}
+                refetch={refetchApprovalList}
+                onApprovalRefetchComplete={handleApprovalRefetchComplete}
+                pageSize={10}
+                infiniteScroll={false}
+                loadMorePagination={false}
+                showPagination={true}
+                isSearch={true}
+                isFilter={true}
+                columnWidths={tableColumnWidths}
+                onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+                filterFields={[
+                  {
+                    fieldname: "custom_final_status",
+                    label: "Status",
+                    fieldtype: "Select",
+                    options: [
+                      {
+                        label: "Pending",
+                        value: "Pending",
+                      },
+                      {
+                        label: "Approved",
+                        key: "Approved",
+                        value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                        customAPIParams: { todo_status: "Closed" },
+                      },
+                      {
+                        label: "Rejected",
+                        value: "Rejected",
+                      },
+                    ],
+                    emptyValueConfig: {
+                      filterValue: ["!=", "Cancelled"],
                     },
-                    {
-                      label: "Approved",
-                      key: "Approved",
-                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                      customAPIParams: { todo_status: "Closed" },
-                    },
-                    {
-                      label: "Rejected",
-                      value: "Rejected",
-                    },
-                  ],
-                  emptyValueConfig: {
-                    filterValue: ["!=", "Cancelled"],
                   },
-                },
-              ]}
-              defaultFilters={{ custom_final_status: "Pending", custom_type: "Reimbursement / Expense Advance", }}
-              SkeletonComponent={CardSkeleton}
-              onActiveFiltersChange={(filters) => {
-                setActiveStatus(filters?.custom_final_status || "Pending");
-              }}
-              noRecordsScreen={noRecordsScreen}
-              renderCardContent={(item) => {
-                if (
-                  item?.data?.custom_selected_doctype_action === "Send Back"
-                ) {
-                  return null;
-                }
-                return (
-                  <AdvanceApprovalCard
-                    data={item?.data}
-                    isSelected={item?.isSelected}
-                    onToggleSelect={item?.onToggleSelect}
-                    loadingAction={item?.loadingAction}
-                    isBulkSelectEnabled={isBulkSelectEnabled}
-                    onClick={(request: any) => handleRequestClick(request)}
-                    onAction={item?.onAction}
-                    activeStatus={activeStatus}
-                    isActed={item?.isActed}
-                  />
-                );
-              }}
-            />
-          )}
-        </CardTable>
+                ]}
+                defaultFilters={{
+                  custom_final_status: "Pending",
+                  custom_type: "Reimbursement / Expense Advance",
+                }}
+                SkeletonComponent={CardSkeleton}
+                onActiveFiltersChange={(filters) => {
+                  setActiveStatus(filters?.custom_final_status || "Pending");
+                }}
+                noRecordsScreen={noRecordsScreen}
+                renderCardContent={(item) => {
+                  if (
+                    item?.data?.custom_selected_doctype_action === "Send Back"
+                  ) {
+                    return null;
+                  }
+                  return (
+                    <AdvanceApprovalCard
+                      data={item?.data}
+                      isSelected={item?.isSelected}
+                      onToggleSelect={item?.onToggleSelect}
+                      loadingAction={item?.loadingAction}
+                      isBulkSelectEnabled={isBulkSelectEnabled}
+                      onClick={(request: any) => handleRequestClick(request)}
+                      onAction={item?.onAction}
+                      activeStatus={activeStatus}
+                      isActed={item?.isActed}
+                    />
+                  );
+                }}
+              />
+            )}
+          </CardTable>
         </BulkSelectProvider>
       </div>
       {(requestId || referenceName) && (
