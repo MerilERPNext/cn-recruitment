@@ -1,4 +1,3 @@
-import AttendanceLegend from "./AttendanceLegend";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { useNavigate } from "react-router-dom";
 import { ViewAll } from "../../../shared/atoms/ViewAll";
@@ -13,6 +12,7 @@ import OvertimeLog from "./OvertimeLog";
 import RegularizeDrawer from "./RegularizeDrawer";
 import { useGetUiPermission } from "../../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../../utils/uiPermission";
+import { Typography } from "../../../shared/atoms/Typography";
 
 const ListView = () => {
   const { data: userUiPermission } = useGetUiPermission("Attendance");
@@ -26,16 +26,27 @@ const ListView = () => {
   const [openSidebarFor, setOpenSidebarFor] = useState<{ isOpen: boolean, for: string | null, label: string, sideBarSize: DrawerSize }>({ isOpen: false, for: null, label: "", sideBarSize: "xl" });
 
   return (
-    <div className="w-full flex justify-end md:justify-between items-center border-b border-gray-100 pb-2">
-      {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
+    <div className="w-full flex justify-end md:justify-between items-start pb-2">
+
       {isDesktop && (
+        <div className="flex-shrink-0">
+          <div className="py-1 md:py-4">
+            <Typography variant="h4">My Attendance</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage employee attendance
+            </Typography>
+          </div>
+        </div>
+      )}
+      {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
+      {/* {isDesktop && (
         <div className="flex flex-col gap-2 mt-4 mx-5">
           <h4 className="text-sm font-semibold text-gray-700">
             Attendance Legend:
           </h4>
           <AttendanceLegend />
         </div>
-      )}
+      )} */}
       {/* <button
         className="text-gray-500 px-2 mt-4 flex gap-1 justify-center items-center"
         onClick={() => {
@@ -45,7 +56,7 @@ const ListView = () => {
         List View
         <ArrowUpRight className="h-5 w-5" />
       </button> */}
-      <div className="flex gap-2 justify-between w-full md:w-fit md:justify-center items-center  mt-4 px-2">
+      <div className="flex gap-2 justify-end w-full md:w-fit md:justify-center items-center  mt-4 px-2">
 
         <ViewAll
           title="List View"

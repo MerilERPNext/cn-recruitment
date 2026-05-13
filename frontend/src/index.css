@@ -179,6 +179,44 @@ code {
   /* aspect-ratio: 1 !important; */
 }
 
+/* Desktop attendance calendar - unique scoped styles */
+.desktop-att-cal .react-datepicker__day {
+  height: 5.5rem !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  margin: 0 !important;
+  border-right: 1px solid #f3f4f6 !important;
+  border-bottom: 1px solid #f3f4f6 !important;
+  padding: 0 !important;
+}
+
+.desktop-att-cal .react-datepicker__week {
+  border: none !important;
+}
+
+.desktop-att-cal .react-datepicker__day:last-child {
+  border-right: none !important;
+}
+
+.desktop-att-cal .react-datepicker__day-name {
+  border-right: 1px solid #f3f4f6 !important;
+  padding: 0.4rem 0 !important;
+  background-color: #f9fafb !important;
+  border-radius: 10px 10px 0 0 !important;
+
+}
+
+.desktop-att-cal .react-datepicker__day-names {
+  border: 1px solid #f3f4f6 !important;
+  border-radius: 10px 10px 0 0 !important;
+  /* border-bottom: 2px solid #e5e7eb !important; */
+}
+
+.desktop-att-cal .react-datepicker__month {
+  border: 1px solid #f3f4f6 !important;
+  border-top: none !important;
+}
+
 .react-datepicker__day-names {
   display: flex !important;
   width: 100% !important;
