@@ -564,7 +564,7 @@ const AdvanceMobileRow = ({
         <div>
           <Typography variant="mobileCardLabel">Assigned To</Typography>
           <Typography variant="mobileCardValue">
-            {getAssignedUsersCell(advance)}
+            {getAssignedUsersCell(advance.todo)}
           </Typography>
         </div>
         <MobileAllocatedTo

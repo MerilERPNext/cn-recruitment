@@ -21,7 +21,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
   const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation);
-console.log('-------------------------------data',data)
+console.log('-------------------------------shift request api',data)
   const navigate = useNavigate();
   const [edit, setEdit] = useState(false);
   const [isActed, setIsActed] = useState(false);
