@@ -39,6 +39,7 @@ import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { queryClient } from "../../../providers/QueryProvider";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
   {
@@ -462,7 +463,9 @@ const BenefitSlipItem = ({
           </WrapperHoverCard>
         </Typography>
       </Link>
-
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {getAssignedUsersCell(item?.todo_list)}
+      </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {item?.company}
       </Typography>
