@@ -99,7 +99,7 @@ export function BulkActionFooter({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="sticky bottom-0 left-0 z-20 bg-white border-t border-gray-200 px-6 py-3 flex items-center gap-3">
+    <div className="sticky bottom-0 left-0 z-20 bg-white border-t border-gray-200 px-6 py-3 flex items-center gap-3 justify-end">
       <span className="text-sm text-gray-600 mr-2">
         {selectedCount} selected
       </span>
