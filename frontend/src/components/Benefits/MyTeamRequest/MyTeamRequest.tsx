@@ -7,6 +7,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable from "../../shared/CardTable";
+import { BulkSelectProvider } from "../../shared/BulkSelectContext";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { BenefitRequestDetailModal } from "../BenefitRequestDetailModal";
 import BenefitRequestItem from "./BenefitRequestItem";
@@ -130,6 +131,7 @@ const MyTeamRequest: React.FC = () => {
       )}
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        <BulkSelectProvider>
         <CardTable titles={tableTitles} columnWidths={finalColumnWidths}
           columnSortConfig={columnSortConfig}
         >
@@ -193,6 +195,7 @@ const MyTeamRequest: React.FC = () => {
             }}
           />
         </CardTable>
+        </BulkSelectProvider>
       </div>
       {(requestId || referenceName) && (
         <BenefitRequestDetailModal
