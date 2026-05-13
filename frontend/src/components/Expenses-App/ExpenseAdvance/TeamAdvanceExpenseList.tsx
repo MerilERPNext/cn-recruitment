@@ -7,6 +7,7 @@ import ApprovalList from "../../shared/ApprovalList";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable from "../../shared/CardTable";
+import { BulkSelectProvider } from "../../shared/BulkSelectContext";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceApprovalCard from "./AdvanceApprovalCard";
 import TeamAdvanceDetailView from "./TeamAdvanceDetailView";
@@ -137,6 +138,7 @@ const TeamAdvanceExpenseList = () => {
       )}
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        <BulkSelectProvider>
         <CardTable titles={tableTitles} columnWidths={tableColumnWidths}
           columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_ADVANCE(isBulkSelectEnabled, activeStatus === "Approved")}
         >
@@ -179,7 +181,7 @@ const TeamAdvanceExpenseList = () => {
                   },
                 },
               ]}
-              defaultFilters={{ custom_final_status: "Pending" }}
+              defaultFilters={{ custom_final_status: "Pending", custom_type: "Reimbursement / Expense Advance", }}
               SkeletonComponent={CardSkeleton}
               onActiveFiltersChange={(filters) => {
                 setActiveStatus(filters?.custom_final_status || "Pending");
@@ -191,7 +193,6 @@ const TeamAdvanceExpenseList = () => {
                 ) {
                   return null;
                 }
-
                 return (
                   <AdvanceApprovalCard
                     data={item?.data}
@@ -209,6 +210,7 @@ const TeamAdvanceExpenseList = () => {
             />
           )}
         </CardTable>
+        </BulkSelectProvider>
       </div>
       {(requestId || referenceName) && (
         <TeamAdvanceDetailView
