@@ -1,22 +1,30 @@
-
-import { FlowRequestItem, FlowRequestStage, Attachment } from "../../../../types/flows";
+import { useMemo, useState } from "react";
+import useCurrentUser from "../../../../hooks/useCurrentUser";
+import {
+  Attachment,
+  FlowRequestItem,
+  FlowRequestStage,
+} from "../../../../types/flows";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import { Typography } from "../../../shared/atoms/Typography";
-import formatToIndianDate from "../../../../utils/formatToIndianDate";
-import useCurrentUser from "../../../../hooks/useCurrentUser";
-import { useMemo, useState } from "react";
 
-import { extractAllocatedToUserArray, extractRolesAndUsers, FormIOForm, getStageActorDetails } from "../../../../utils/flowUtils";
+import { createPortal } from "react-dom";
+import { handleActionType } from "../../../../hooks/userApprovalList";
+import {
+  extractAllocatedToUserArray,
+  extractRolesAndUsers,
+  FormIOForm,
+  getStageActorDetails,
+} from "../../../../utils/flowUtils";
 import { getStageAssignedUsersCell } from "../../../../utils/getAssignedUsersCell";
 import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
-import ReviewForm from "../../Separation/components/ReviewForm";
-import { createPortal } from "react-dom";
 import Button from "../../../shared/atoms/Button";
-import AttachmentPreview from "./AttachmentPreview";
 import FormPreview from "../../../shared/molecules/FormPreview";
-import ActModal from "./ActModal";
-import { handleActionType } from "../../../../hooks/userApprovalList";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
+import ReviewForm from "../../Separation/components/ReviewForm";
+import ActModal from "./ActModal";
+import AttachmentPreview from "./AttachmentPreview";
 
 const FlowTableRow = ({
   stage,
@@ -33,14 +41,29 @@ const FlowTableRow = ({
   initiatorForms?: FlowRequestItem["initiator_forms"];
   handleAction: handleActionType;
 }) => {
-  const actions = stage?.todo?.custom_doctype_actions
-    ? JSON.parse(stage?.todo?.custom_doctype_actions)
-    : [];
-  const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
-    ? JSON.parse(
-      stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'),
-    )
-    : [];
+  const actions = useMemo(() => {
+    try {
+      return stage?.todo?.custom_doctype_actions
+        ? JSON.parse(stage.todo.custom_doctype_actions)
+        : [];
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions", e);
+      return [];
+    }
+  }, [stage?.todo?.custom_doctype_actions]);
+
+  const actionsWithForm = useMemo(() => {
+    try {
+      return stage?.todo?.custom_doctype_actions_with_form
+        ? JSON.parse(
+            stage.todo.custom_doctype_actions_with_form.replace(/'/g, '"'),
+          )
+        : [];
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions_with_form", e);
+      return [];
+    }
+  }, [stage?.todo?.custom_doctype_actions_with_form]);
 
   const onAction = (action: string, data: FlowRequestStage["todo"]) => {
     handleAction(action, {
@@ -75,14 +98,16 @@ const FlowTableRow = ({
       stage.allocated_to,
       stage?.role_assigned_users,
       stage.user_id,
-      stage.user
+      stage.user,
     );
   }, [stage]);
 
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showActModal, setShowActModal] = useState(false);
-  const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+  const [responseData, setResponseData] = useState<{
+    addAttachment?: Attachment[];
+  } | null>(null);
   const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
 
   const handleShowForm = () => {
@@ -93,7 +118,11 @@ const FlowTableRow = ({
     let data: Record<string, unknown> = {};
 
     try {
-      data = JSON.parse(stage?.approval_response_data_display || stage?.approval_response_data || "{}");
+      data = JSON.parse(
+        stage?.approval_response_data_display ||
+          stage?.approval_response_data ||
+          "{}",
+      );
     } catch (error) {
       console.error("Invalid approval_response_data JSON:", error);
       data = {};
@@ -117,10 +146,17 @@ const FlowTableRow = ({
 
       <div className="flex justify-center items-center">
         {getStageAssignedUsersCell(
-          stage, 
-          stage?.role_assigned_users, 
-          "right", 
-          (text) => <Typography variant="bodySmall" className="font-medium text-center text-primary-600 cursor-pointer">{text}</Typography>
+          stage,
+          stage?.role_assigned_users,
+          "right",
+          (text) => (
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center text-primary-600 cursor-pointer"
+            >
+              {text}
+            </Typography>
+          ),
         )}
       </div>
 
@@ -130,12 +166,18 @@ const FlowTableRow = ({
             employeeId={actorDetails.employee}
             placement="center-left"
           >
-            <Typography variant="bodySmall" className="font-medium truncate text-center cursor-pointer text-primary-600 hover:underline">
+            <Typography
+              variant="bodySmall"
+              className="font-medium truncate text-center cursor-pointer text-primary-600 hover:underline"
+            >
               {actorDetails.name}
             </Typography>
           </WrapperHoverCard>
         ) : (
-          <Typography variant="bodySmall" className="font-medium truncate text-center">
+          <Typography
+            variant="bodySmall"
+            className="font-medium truncate text-center"
+          >
             -
           </Typography>
         )}
@@ -173,11 +215,9 @@ const FlowTableRow = ({
 
       <div className="flex flex-wrap items-center justify-center gap-2">
         <>
-          {(stage?.approval_response_data_display || stage?.approval_response_data) && (
-            <Button
-              variant="outline"
-              onClick={handleShowForm}
-            >
+          {(stage?.approval_response_data_display ||
+            stage?.approval_response_data) && (
+            <Button variant="outline" onClick={handleShowForm}>
               Review Form
             </Button>
           )}
@@ -197,18 +237,22 @@ const FlowTableRow = ({
           )}
         </>
       </div>
-      {formSchema && showForm && createPortal(
-        <ReviewForm onClose={() => setShowForm(false)}>
-          <FormPreview
-            containerId={`flow-stage-${stage.stage_name}-form-preview`}
-            schema={formSchema}
-            submissionData={formAnswer}
-            readOnly={true}
-          />
-          <AttachmentPreview attachments={responseData?.addAttachment || []} />
-        </ReviewForm>,
-        document.body,
-      )}
+      {formSchema &&
+        showForm &&
+        createPortal(
+          <ReviewForm onClose={() => setShowForm(false)}>
+            <FormPreview
+              containerId={`flow-stage-${stage.stage_name}-form-preview`}
+              schema={formSchema}
+              submissionData={formAnswer}
+              readOnly={true}
+            />
+            <AttachmentPreview
+              attachments={responseData?.addAttachment || []}
+            />
+          </ReviewForm>,
+          document.body,
+        )}
       {showActModal && (
         <ActModal
           stage={stage}
@@ -224,6 +268,5 @@ const FlowTableRow = ({
     </div>
   );
 };
-
 
 export default FlowTableRow;
