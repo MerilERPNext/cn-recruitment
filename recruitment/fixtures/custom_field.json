@@ -5641,5 +5641,29 @@
   "translatable": 0,
   "unique": 0,
   "width": null
+ },
+ {
+  "doctype": "Custom Field",
+  "dt": "Job Applicant",
+  "fieldname": "custom_pre_offer_portal_form",
+  "fieldtype": "Link",
+  "options": "Job Applicant Portal Forms",
+  "label": "Pre Offer Portal Form",
+  "insert_after": "custom_blacklist",
+  "name": "Job Applicant-custom_pre_offer_portal_form",
+  "module": "Recruitment"
+ },
+ {
+  "doctype": "Custom Field",
+  "dt": "Job Applicant",
+  "fieldname": "custom_pre_offer_form_status",
+  "fieldtype": "Select",
+  "options": "\nPending\nSent\nFilled",
+  "label": "Pre Offer Form Status",
+  "default": "Pending",
+  "read_only": 1,
+  "insert_after": "custom_pre_offer_portal_form",
+  "name": "Job Applicant-custom_pre_offer_form_status",
+  "module": "Recruitment"
  }
 ]
