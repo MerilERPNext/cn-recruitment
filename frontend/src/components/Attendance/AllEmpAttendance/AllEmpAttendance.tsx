@@ -471,6 +471,27 @@ const AllEmpAttendance = () => {
                   }
                 };
 
+                // Get status color
+                const getStatusColor = (status: Status): string => {
+                  switch (status) {
+                    case "present":
+                      return "bg-green-100 text-green-700";
+                    case "absent":
+                      return "bg-red-100 text-red-700";
+                    case "on-leave":
+                    case "unpaid":
+                    case "half-day":
+                      return "bg-orange-100 text-orange-700";
+                    case "week-off":
+                    case "holiday":
+                      return "bg-blue-100 text-blue-700";
+                    case "default":
+                      return "bg-gray-100 text-gray-700";
+                    default:
+                      return "bg-gray-100 text-gray-700";
+                  }
+                };
+
                 // // Filter out approved attendance requests (they're already reflected in attendance)
                 // const displayEvents = statusInfo.events.filter(
                 //   (event) => !(event.doctype === "Attendance Request" && event.status === "Approved")
@@ -503,8 +524,10 @@ const AllEmpAttendance = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                       {format(date, "dd MMM yyyy, EEE")}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      {getStatusDisplay(statusInfo.status)}
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(statusInfo.status)}`}>
+                        {getStatusDisplay(statusInfo.status)}
+                      </span>
                     </td>
                     <td className="px-4 py-3 whitespace-normal text-sm text-gray-700">
                       {statusInfo.events.length > 0 ? (

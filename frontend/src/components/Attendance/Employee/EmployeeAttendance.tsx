@@ -228,8 +228,11 @@ const EmployeeAttendance = () => {
         const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
           record.doctype,
         );
+        const isHoliday = ["Holiday", "Holidays"].includes(record.doctype);
 
         if (isAttendanceType) {
+          // Actual Attendance record takes priority over Holiday (e.g. working on a week-off)
+          if (isHoliday && attendanceRecord?.doctype === "Attendance") return;
           attendanceRecord = record;
           const rawStatus = record.status?.toLowerCase().trim();
 

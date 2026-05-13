@@ -1,7 +1,7 @@
-// job_applicant_portal_settings.js
+// employee_onboarding_portal_settings.js
 // Interactive Field Inspector — collapsible sections, Add Section, Remove, & Mandatory toggle
 
-frappe.ui.form.on("Job Applicant Portal Settings", {
+frappe.ui.form.on("Job Applicant Portal Forms", {
 
     refresh(frm) {
         frm.fields_dict["available_fields_html"].$wrapper.html("");

@@ -154,9 +154,16 @@ def _get_onboarding_portal_rows(onboarding_doc=None):
     return _get_portal_settings(None), "default_form"
 
 
-def _get_job_applicant_portal_settings(job_applicant_id=None):
-    selected_form = None
-    if job_applicant_id:
+def _get_job_applicant_portal_settings(job_applicant_id=None, job_opening=None, form_name=None):
+    selected_form = form_name or None
+
+    if not selected_form and job_opening:
+        try:
+            selected_form = frappe.db.get_value("Job Opening", job_opening, "custom_job_applicant_portal_form")
+        except Exception:
+            pass
+
+    if not selected_form and job_applicant_id:
         try:
             job_title = frappe.db.get_value("Job Applicant", job_applicant_id, "job_title")
             if job_title:
@@ -177,11 +184,13 @@ def _get_job_applicant_portal_settings(job_applicant_id=None):
 
     if selected_form:
         try:
-            return frappe.get_doc("Job Applicant Portal Forms", selected_form).portal_fields or []
+            rows = frappe.get_doc("Job Applicant Portal Forms", selected_form).portal_fields or []
+            return rows, selected_form
         except Exception:
             pass
 
-    return []
+    return [], None
+
 
 
 def _get_child_table_fields(child_doctype):
@@ -208,6 +217,23 @@ def _get_child_table_fields(child_doctype):
         })
 
     return fields
+
+
+def _filter_child_fields(all_fields, selected_child_fields_json):
+    """
+    Filters child fields to only those in the selected_child_fields JSON list.
+    If selected_child_fields_json is empty/None, returns all fields (backward compat).
+    """
+    if not selected_child_fields_json:
+        return all_fields
+    try:
+        import json as _json
+        selected = set(_json.loads(selected_child_fields_json))
+        if not selected:
+            return all_fields
+        return [f for f in all_fields if f["fieldname"] in selected]
+    except Exception:
+        return all_fields
 
 
 def _serialize_doc_field_value(doc, fieldname, fieldtype):
@@ -271,7 +297,10 @@ def _build_tabbed_response(portal_rows, meta_lookup, doc=None):
         }
         if fieldtype == "Table":
             field_entry["child_doctype"] = field_options
-            field_entry["child_fields"] = _get_child_table_fields(field_options)
+            all_child = _get_child_table_fields(field_options)
+            field_entry["child_fields"] = _filter_child_fields(
+                all_child, row.get("selected_child_fields")
+            )
 
         if tab_lbl not in tab_map:
             tab_map[tab_lbl] = {"section_order": [], "section_map": {}}
@@ -321,7 +350,20 @@ def _build_tabbed_response(portal_rows, meta_lookup, doc=None):
 
 
 @frappe.whitelist()
+def get_child_doctype_fields(child_doctype):
+    """Returns all non-layout fields for a given child DocType.
+    Used by the Field Inspector UI to populate child field selection panels."""
+    frappe.has_permission("Onboarding Portal Forms", "read", throw=True)
+    if not child_doctype:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("child_doctype is required.")}
+    fields = _get_child_table_fields(child_doctype)
+    return {"status": "success", "child_doctype": child_doctype, "fields": fields}
+
+
+@frappe.whitelist()
 def get_onboarding_form_fields(form_name):
+
     frappe.has_permission("Onboarding Portal Forms", "read", throw=True)
 
     if not form_name:
@@ -366,10 +408,24 @@ def get_all_onboarding_fields_for_onboarding():
     return {"status": "success", "total": len(fields), "fields": fields}
 
 
-@frappe.whitelist()
-def get_all_job_applicant_fields():
-    frappe.has_permission("Job Applicant Portal Forms", "read", throw=True)
-    portal_rows = _get_job_applicant_portal_settings()
+@frappe.whitelist(allow_guest=True)
+def get_all_job_applicant_fields(job_opening=None, form_name=None):
+    portal_rows, resolved_form = _get_job_applicant_portal_settings(
+        job_opening=job_opening or None,
+        form_name=form_name or None,
+    )
+
+    if resolved_form is None:
+        frappe.local.response["http_status_code"] = 404
+        hint = (
+            f" No portal form is linked to Job Opening '{job_opening}'."
+            if job_opening else ""
+        )
+        return {
+            "status": "error",
+            "message": _("No Job Applicant Portal Form found.{0} Please link a form to the Job Opening or set a default form.").format(hint),
+        }
+
     meta_lookup = {f["fieldname"]: f for f in _read_job_applicant_meta()}
 
     fields = []
@@ -396,7 +452,12 @@ def get_all_job_applicant_fields():
 
         fields.append(field_entry)
 
-    return {"status": "success", "total": len(fields), "fields": fields}
+    return {
+        "status": "success",
+        "form_name": resolved_form,
+        "total": len(fields),
+        "fields": fields,
+    }
 
 
 @frappe.whitelist()
@@ -594,7 +655,7 @@ def get_job_applicant_portal_form(job_applicant_id):
         return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
 
     doc = frappe.get_doc("Job Applicant", job_applicant_id)
-    portal_rows = _get_job_applicant_portal_settings(job_applicant_id)
+    portal_rows, _ = _get_job_applicant_portal_settings(job_applicant_id)
 
     if not portal_rows:
         frappe.local.response["http_status_code"] = 404
@@ -674,7 +735,7 @@ def save_job_applicant_portal_data(job_applicant_id, data):
         frappe.local.response["http_status_code"] = 404
         return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
 
-    portal_rows = _get_job_applicant_portal_settings(job_applicant_id)
+    portal_rows, _ = _get_job_applicant_portal_settings(job_applicant_id)
     allowed_map = {r.fieldname: r for r in portal_rows if not r.get("hidden") and not r.get("read_only")}
 
     if not allowed_map:
@@ -736,7 +797,7 @@ def save_job_applicant_portal_data(job_applicant_id, data):
 def get_job_applicant_portal_field_names(job_applicant_id=None):
     return {
         "status": "success",
-        "fields": [r.fieldname for r in _get_job_applicant_portal_settings(job_applicant_id)],
+        "fields": [r.fieldname for r in _get_job_applicant_portal_settings(job_applicant_id)[0]],
     }
 
 
