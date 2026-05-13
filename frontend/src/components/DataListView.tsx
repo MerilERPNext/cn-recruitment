@@ -659,7 +659,6 @@ const DataListView = <T extends BaseItem>({
     if (clientSortFn) {
       data = clientSortFn(data);
     }
-    console.log(data, '--------------------------------------data')
     return data;
   }, [
     infiniteScroll,
