@@ -467,6 +467,185 @@ def get_available_job_applicant_fields():
     return {"status": "success", "total": len(fields), "fields": fields}
 
 
+def _get_pre_offer_portal_settings(job_applicant_id):
+    form_name = frappe.db.get_value("Job Applicant", job_applicant_id, "custom_pre_offer_portal_form")
+    if not form_name:
+        return [], None
+    try:
+        rows = frappe.get_doc("Job Applicant Portal Forms", form_name).portal_fields or []
+        return rows, form_name
+    except Exception:
+        return [], None
+
+
+@frappe.whitelist(allow_guest=True)
+def get_pre_offer_form(job_applicant_id):
+    if not job_applicant_id:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Job Applicant ID is required.")}
+
+    if not frappe.db.exists("Job Applicant", job_applicant_id):
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
+
+    portal_rows, resolved_form = _get_pre_offer_portal_settings(job_applicant_id)
+
+    if resolved_form is None:
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _("No Pre Offer Form has been sent for this applicant yet.")}
+
+    doc = frappe.get_doc("Job Applicant", job_applicant_id)
+    meta_lookup = {f["fieldname"]: f for f in _read_job_applicant_meta()}
+    tab_order = []
+    tab_map = {}
+
+    for row in portal_rows:
+        fn = row.fieldname
+        tab_lbl = (row.tab_label or "").strip()
+        sec_lbl = (row.section_label or "").strip()
+        meta = meta_lookup.get(fn, {})
+
+        fieldtype = row.fieldtype or meta.get("fieldtype", "Data")
+        field_options = row.options or meta.get("options", "")
+
+        field_entry = {
+            "fieldname": fn,
+            "label": row.label or meta.get("label", fn),
+            "fieldtype": fieldtype,
+            "is_mandatory": int(row.is_mandatory or 0),
+            "read_only": int(row.read_only or 0),
+            "hidden": int(row.hidden or 0),
+            "options": field_options,
+            "value": _serialize_doc_field_value(doc, fn, fieldtype),
+        }
+        if fieldtype == "Table":
+            field_entry["child_doctype"] = field_options
+            field_entry["child_fields"] = _get_child_table_fields(field_options)
+
+        if tab_lbl not in tab_map:
+            tab_map[tab_lbl] = {"section_order": [], "section_map": {}}
+            tab_order.append(tab_lbl)
+
+        tab_entry = tab_map[tab_lbl]
+        if sec_lbl not in tab_entry["section_map"]:
+            tab_entry["section_map"][sec_lbl] = []
+            tab_entry["section_order"].append(sec_lbl)
+
+        tab_entry["section_map"][sec_lbl].append(field_entry)
+
+    return {
+        "status": "success",
+        "job_applicant": job_applicant_id,
+        "form_name": resolved_form,
+        "pre_offer_form_status": doc.get("custom_pre_offer_form_status") or "Sent",
+        "tabs": [
+            {
+                "tab": tab_lbl,
+                "sections": [
+                    {"section": sec_lbl, "fields": tab_map[tab_lbl]["section_map"][sec_lbl]}
+                    for sec_lbl in tab_map[tab_lbl]["section_order"]
+                ],
+            }
+            for tab_lbl in tab_order
+        ],
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def save_pre_offer_form_data(job_applicant_id, data):
+    if isinstance(data, str):
+        try:
+            data = frappe.parse_json(data)
+        except Exception:
+            frappe.local.response["http_status_code"] = 400
+            return {"status": "error", "message": _("Invalid JSON data.")}
+
+    if not isinstance(data, dict):
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Data must be a JSON object.")}
+
+    if not job_applicant_id:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Job Applicant ID is required.")}
+
+    if not frappe.db.exists("Job Applicant", job_applicant_id):
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
+
+    portal_rows, resolved_form = _get_pre_offer_portal_settings(job_applicant_id)
+
+    if resolved_form is None:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("No Pre Offer Form configured for this applicant.")}
+
+    allowed_map = {r.fieldname: r for r in portal_rows if not r.get("hidden") and not r.get("read_only")}
+
+    if not allowed_map:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("No editable fields configured in the Pre Offer Form.")}
+
+    missing = [
+        row.label or fn for fn, row in allowed_map.items()
+        if row.get("is_mandatory") and (fn not in data or data[fn] in (None, "", []))
+    ]
+
+    if missing:
+        frappe.local.response["http_status_code"] = 422
+        return {
+            "status": "error",
+            "message": _("The following mandatory fields are missing: {0}").format(", ".join(missing)),
+            "missing_fields": missing,
+        }
+
+    meta_lookup = {f["fieldname"]: f for f in _read_job_applicant_meta()}
+
+    try:
+        doc = frappe.get_doc("Job Applicant", job_applicant_id)
+        updated = []
+
+        for fn, value in data.items():
+            if fn not in allowed_map:
+                continue
+            meta = meta_lookup.get(fn, {})
+            fieldtype = allowed_map[fn].get("fieldtype") or meta.get("fieldtype", "Data")
+
+            if fieldtype == "Table" and isinstance(value, list):
+                doc.set(fn, [])
+                for row_data in value:
+                    doc.append(fn, row_data)
+            else:
+                doc.set(fn, value)
+
+            updated.append(fn)
+
+        doc.custom_pre_offer_form_status = "Filled"
+        doc.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        from recruitment.api.action_center import mark_item_completed
+        candidate_email = doc.email_id
+        if candidate_email:
+            mark_item_completed(
+                reference_doctype="Job Applicant",
+                reference_docname=job_applicant_id,
+                candidate_email=candidate_email,
+                commit=True,
+            )
+
+        return {
+            "status": "success",
+            "message": _("Pre Offer Form submitted successfully."),
+            "updated_fields": updated,
+        }
+
+    except Exception as e:
+        frappe.db.rollback()
+        frappe.log_error(frappe.get_traceback(), "Pre Offer Form Save Error")
+        frappe.local.response["http_status_code"] = 500
+        return {"status": "error", "message": str(e)}
+
+
+
 @frappe.whitelist(allow_guest=True)
 def get_candidate_portal_form(job_applicant_id):
     """

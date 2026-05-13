@@ -1,38 +1,46 @@
-import { useNavigate, useSearchParams } from "react-router";
-import LayoutHeader from "../../shared/LayoutHeader";
-import { ChevronLeft, ChevronRight, ClipboardPlus, Edit, LogIn, MoreVertical, Shield } from "lucide-react";
-import { useEffect, useMemo, useState, useCallback } from "react";
 import {
-  startOfMonth,
+  addMonths,
+  eachDayOfInterval,
   endOfMonth,
   format,
-  parse,
   isValid as isValidDate,
-  eachDayOfInterval,
-  addMonths,
+  parse,
+  startOfMonth,
   subMonths,
 } from "date-fns";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ClipboardPlus,
+  Edit,
+  LogIn,
+  MoreVertical,
+  Shield,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
+import LayoutHeader from "../../shared/LayoutHeader";
 
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import Modal from "../../shared/Modal";
-import EmployeeAttendanceDetails from "../Employee/EmployeeAttendanceDetails";
-import { AttendanceRecord } from "../../../types/attendance";
-import { Typography } from "../../shared/atoms/Typography";
-import Button from "../../shared/atoms/Button";
 import { useQueryClient } from "@tanstack/react-query";
-import { ViewAll } from "../../shared/atoms/ViewAll";
-import RegularizeDrawer from "../Employee/EmployeeAttendence/RegularizeDrawer";
-import DropdownMenu from "../../shared/DropDownMenu";
-import SideDrawer, { DrawerSize } from "../../shared/SideDrawer";
-import ViewPolicies from "../Employee/EmployeeAttendence/ViewPolicies";
-import CheckInStatus from "../Employee/EmployeeAttendence/CheckInStatus";
-import AuditReport from "../Employee/EmployeeAttendence/AuditReport";
-import OvertimeLog from "../Employee/EmployeeAttendence/OvertimeLog";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { AttendanceRecord } from "../../../types/attendance";
 import { isActionEnabled } from "../../../utils/uiPermission";
-import { EditAttendance } from "../Team/EditAttendance";
+import Button from "../../shared/atoms/Button";
+import { Typography } from "../../shared/atoms/Typography";
+import { ViewAll } from "../../shared/atoms/ViewAll";
+import DropdownMenu from "../../shared/DropDownMenu";
+import Modal from "../../shared/Modal";
+import SideDrawer, { DrawerSize } from "../../shared/SideDrawer";
 import Tooltip from "../../shared/Tooltip";
+import EmployeeAttendanceDetails from "../Employee/EmployeeAttendanceDetails";
+import AuditReport from "../Employee/EmployeeAttendence/AuditReport";
+import CheckInStatus from "../Employee/EmployeeAttendence/CheckInStatus";
+import OvertimeLog from "../Employee/EmployeeAttendence/OvertimeLog";
+import RegularizeDrawer from "../Employee/EmployeeAttendence/RegularizeDrawer";
+import ViewPolicies from "../Employee/EmployeeAttendence/ViewPolicies";
+import { EditAttendance } from "../Team/EditAttendance";
 
 /* -------------------- Helpers -------------------- */
 const formatTimeSafe = (timeStr?: string) => {
@@ -52,11 +60,18 @@ const AllEmpAttendance = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
   const queryClient = useQueryClient();
-  const [openSidebarFor, setOpenSidebarFor] = useState<{ isOpen: boolean, for: string | null, label: string, sideBarSize: DrawerSize }>({ isOpen: false, for: null, label: "", sideBarSize: "xl" });
+  const [openSidebarFor, setOpenSidebarFor] = useState<{
+    isOpen: boolean;
+    for: string | null;
+    label: string;
+    sideBarSize: DrawerSize;
+  }>({ isOpen: false, for: null, label: "", sideBarSize: "xl" });
 
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [editAttendance, setEditAttendance] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(
+    null,
+  );
   const [showDetailsFor, setShowDetailsFor] = useState<{
     date: Date;
     status: string;
@@ -89,14 +104,13 @@ const AllEmpAttendance = () => {
   const canRegularize = isActionEnabled(
     userUiPermission,
     "regularize_attendance",
-    "My Attendance"
+    "My Attendance",
   );
   const canEditAttendance = isActionEnabled(
     userUiPermission,
     "edit_attendance",
-    "My Attendance"
+    "My Attendance",
   );
-
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -105,10 +119,7 @@ const AllEmpAttendance = () => {
     const newDateISO = currentMonth?.toISOString() || "";
 
     if (currentDateParam !== newDateISO) {
-      setSearchParams(
-        { date: newDateISO },
-        { replace: true }
-      );
+      setSearchParams({ date: newDateISO }, { replace: true });
     }
   }, [currentMonth, setSearchParams, searchParams]);
 
@@ -319,16 +330,17 @@ const AllEmpAttendance = () => {
       {/* 🔁 Month Navigation */}
       <div className="relative flex justify-between items-center py-3 px-4 ">
         {/* 🔙 Back Icon — LEFT CORNER */}
-        {isDesktop && <button
-          onClick={() => navigate("/webapp/attendance/emp-attendance")}
-          className="flex items-center text-gray-600 hover:text-black transition-colors w-full"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>}
+        {isDesktop && (
+          <button
+            onClick={() => navigate("/webapp/attendance/emp-attendance")}
+            className="flex items-center text-gray-600 hover:text-black transition-colors w-full"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        )}
 
         {/* 📅 Month Navigation — CENTER */}
         <div className="mx-auto flex items-center justify-center gap-2 w-full">
-
           <Button
             size="sm"
             variant="subtle"
@@ -337,7 +349,10 @@ const AllEmpAttendance = () => {
             <ChevronLeft className="h-5 w-5" />
           </Button>
 
-          <Typography variant={isDesktop ? "bodyMedium" : "bodySmall"} className="font-semibold text-center">
+          <Typography
+            variant={isDesktop ? "bodyMedium" : "bodySmall"}
+            className="font-semibold text-center"
+          >
             {format(currentMonth, "MMM yyyy")}
           </Typography>
 
@@ -350,7 +365,6 @@ const AllEmpAttendance = () => {
           </Button>
         </div>
         <div className="flex gap-2 justify-end items-center w-full">
-
           <ViewAll
             title={isDesktop ? "Calendar View" : "Cal View"}
             className="text-gray-500 px-2 flex gap-1 justify-center items-center text-nowrap"
@@ -359,16 +373,59 @@ const AllEmpAttendance = () => {
             }}
           />
           <div className="flex gap-2">
-
             {canRegularize && <RegularizeDrawer />}
 
             <DropdownMenu
-              placement={'bottom-left'}
+              placement={"bottom-left"}
               items={[
-                { label: "View Policies", icon: <Shield className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "policies", label: "View Policies", sideBarSize: "xl" }) } },
-                { label: "Check In Status", icon: <LogIn className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "checkInStatus", label: "Check In Status", sideBarSize: "xxl" }) } },
-                { label: "Audit Report", icon: <ClipboardPlus className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "auditReport", label: "Audit Report", sideBarSize: "xxl" }) } },
-                { label: "Overtime Log", icon: <ClipboardPlus className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "overtimeLog", label: "Overtime Log", sideBarSize: "xxl" }) } },
+                {
+                  label: "View Policies",
+                  icon: <Shield className="h-4 w-4" />,
+                  onClick: () => {
+                    setOpenSidebarFor({
+                      isOpen: true,
+                      for: "policies",
+                      label: "View Policies",
+                      sideBarSize: "xl",
+                    });
+                  },
+                },
+                {
+                  label: "Check In Status",
+                  icon: <LogIn className="h-4 w-4" />,
+                  onClick: () => {
+                    setOpenSidebarFor({
+                      isOpen: true,
+                      for: "checkInStatus",
+                      label: "Check In Status",
+                      sideBarSize: "xxl",
+                    });
+                  },
+                },
+                {
+                  label: "Audit Report",
+                  icon: <ClipboardPlus className="h-4 w-4" />,
+                  onClick: () => {
+                    setOpenSidebarFor({
+                      isOpen: true,
+                      for: "auditReport",
+                      label: "Audit Report",
+                      sideBarSize: "xxl",
+                    });
+                  },
+                },
+                {
+                  label: "Overtime Log",
+                  icon: <ClipboardPlus className="h-4 w-4" />,
+                  onClick: () => {
+                    setOpenSidebarFor({
+                      isOpen: true,
+                      for: "overtimeLog",
+                      label: "Overtime Log",
+                      sideBarSize: "xxl",
+                    });
+                  },
+                },
               ]}
             >
               <button className="p-1 border-1 rounded-lg hover:bg-gray-200">
@@ -378,20 +435,25 @@ const AllEmpAttendance = () => {
           </div>
           <SideDrawer
             open={openSidebarFor.isOpen}
-            onClose={() => setOpenSidebarFor({ isOpen: false, for: null, label: "", sideBarSize: "xl" })}
+            onClose={() =>
+              setOpenSidebarFor({
+                isOpen: false,
+                for: null,
+                label: "",
+                sideBarSize: "xl",
+              })
+            }
             side="right"
             title={openSidebarFor.label}
             size={openSidebarFor.sideBarSize}
           >
             <div className="pb-20">
-
               {openSidebarFor.for === "policies" && <ViewPolicies />}
               {openSidebarFor.for === "checkInStatus" && <CheckInStatus />}
               {openSidebarFor.for === "auditReport" && <AuditReport />}
               {openSidebarFor.for === "overtimeLog" && <OvertimeLog />}
             </div>
           </SideDrawer>
-
         </div>
       </div>
 
@@ -401,27 +463,50 @@ const AllEmpAttendance = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
                   Date
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
                   Status
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
                   Requests
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
                   Shift
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
                   Check In
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                >
                   Check Out
                 </th>
-                {canEditAttendance && <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Actions
-                </th>}
+                {canEditAttendance && (
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                  >
+                    Actions
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -456,7 +541,39 @@ const AllEmpAttendance = () => {
                 };
 
                 // Get event badge color
-                const getEventColor = (doctype: string): string => {
+                const getEventColor = (
+                  doctype: string,
+                  statusLabel?: string,
+                ): string => {
+                  const normalizedStatus = statusLabel?.toLowerCase().trim();
+
+                  if (
+                    normalizedStatus === "leave approval" ||
+                    normalizedStatus === "leave approval pending"
+                  ) {
+                    return "bg-yellow-50 text-yellow-700 border border-yellow-200";
+                  }
+
+                  if (normalizedStatus === "approved" || normalizedStatus === "leave approved") {
+                    return "bg-green-50 text-green-700 border border-green-200";
+                  }
+
+                  if (normalizedStatus === "rejected") {
+                    return "bg-red-50 text-red-700 border border-red-200";
+                  }
+
+                  if (normalizedStatus === "revoked") {
+                    return "bg-gray-50 text-gray-700 border border-gray-200";
+                  }
+
+                  if (normalizedStatus === "out duty") {
+                    return "bg-purple-50 text-purple-700 border border-purple-200";
+                  }
+
+                  if (normalizedStatus === "attendance adjustment") {
+                    return "bg-blue-50 text-blue-700 border border-blue-200";
+                  }
+
                   switch (doctype) {
                     case "Attendance Request":
                       return "bg-blue-50 text-blue-700 border border-blue-200";
@@ -467,7 +584,7 @@ const AllEmpAttendance = () => {
                     case "Out Duty":
                       return "bg-purple-50 text-purple-700 border border-purple-200";
                     default:
-                      return "bg-gray-50 text-gray-700 border border-gray-200";
+                      return "bg-blue-50 text-blue-700 border border-blue-200";
                   }
                 };
 
@@ -505,18 +622,20 @@ const AllEmpAttendance = () => {
                     onClick={() => {
                       setShowDetailsFor({
                         date: date,
-                        data: record || ({
-                          name: `placeholder-${format(date, "yyyy-MM-dd")}`,
-                          doctype: "Attendance",
-                          start: format(date, "yyyy-MM-dd"),
-                          end: format(date, "yyyy-MM-dd"),
-                          title: "No Data",
-                          status: getStatusDisplay(statusInfo.status),
-                          docstatus: "",
-                          employee: "",
-                        } as AttendanceRecord),
+                        data:
+                          record ||
+                          ({
+                            name: `placeholder-${format(date, "yyyy-MM-dd")}`,
+                            doctype: "Attendance",
+                            start: format(date, "yyyy-MM-dd"),
+                            end: format(date, "yyyy-MM-dd"),
+                            title: "No Data",
+                            status: getStatusDisplay(statusInfo.status),
+                            docstatus: "",
+                            employee: "",
+                          } as AttendanceRecord),
                         status: statusInfo.status.replace(/-/g, " "),
-                        events: statusInfo.events
+                        events: statusInfo.events,
                       });
                     }}
                     className={`hover:bg-primary-50 transition-colors cursor-pointer`}
@@ -525,7 +644,9 @@ const AllEmpAttendance = () => {
                       {format(date, "dd MMM yyyy, EEE")}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(statusInfo.status)}`}>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(statusInfo.status)}`}
+                      >
                         {getStatusDisplay(statusInfo.status)}
                       </span>
                     </td>
@@ -533,17 +654,20 @@ const AllEmpAttendance = () => {
                       {statusInfo.events.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {statusInfo.events.map((event, i) => {
-                            const eventType = event.doctype === "Attendance Request" && event.request_type === "Out Duty"
-                              ? event.request_type
-                              : event.doctype;
+                            const eventType =
+                              event.doctype === "Attendance Request" &&
+                              event.request_type === "Out Duty"
+                                ? event.request_type
+                                : event.doctype;
+                            const eventLabel =
+                              event?.custom_status || event?.status;
                             return (
                               <Tooltip content={eventType}>
-
                                 <span
                                   key={i}
-                                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getEventColor(eventType)}`}
+                                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getEventColor(eventType, eventLabel)}`}
                                 >
-                                  {event?.custom_status || event?.status}
+                                  {eventLabel}
                                 </span>
                               </Tooltip>
                             );
@@ -557,31 +681,37 @@ const AllEmpAttendance = () => {
                       {record?.shift ? `${record.shift}` : "-"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      {record?.doctype === "Attendance" ? formatTimeSafe(record.in_time) : "-"}
+                      {record?.doctype === "Attendance"
+                        ? formatTimeSafe(record.in_time)
+                        : "-"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      {record?.doctype === "Attendance" ? formatTimeSafe(record.out_time) : "-"}
+                      {record?.doctype === "Attendance"
+                        ? formatTimeSafe(record.out_time)
+                        : "-"}
                     </td>
-                    {canEditAttendance && <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      <Button
-                        variant="subtle"
-                        size="sm"
-                        contentAlign="start"
-                        disabled={record?.doctype !== "Attendance"}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          if (record && record.doctype === "Attendance") {
-                            setSelectedRecord(record);
-                            setEditAttendance(true);
-                          }
-                        }}
-                      >
-                        <Tooltip content="Edit">
-                          <Edit size={16} />
-                        </Tooltip>
-                      </Button>
-                    </td>}
+                    {canEditAttendance && (
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                        <Button
+                          variant="subtle"
+                          size="sm"
+                          contentAlign="start"
+                          disabled={record?.doctype !== "Attendance"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            if (record && record.doctype === "Attendance") {
+                              setSelectedRecord(record);
+                              setEditAttendance(true);
+                            }
+                          }}
+                        >
+                          <Tooltip content="Edit">
+                            <Edit size={16} />
+                          </Tooltip>
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
