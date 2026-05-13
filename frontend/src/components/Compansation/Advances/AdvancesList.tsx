@@ -387,7 +387,7 @@ const AdvanceDesktopRow = ({
   const { data: currentUser } = useCurrentUser();
   const todo = advance.todo ?? null;
   const canRevoke = todo?.custom_allow_revoke === 1 && !isActed;
-
+  const formattedCreationDate = formatToIndianDate(advance?.todo?.reference_document?.creation as string);
   const canEdit =
     todo?.can_edit === true &&
     currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase() &&
@@ -395,7 +395,6 @@ const AdvanceDesktopRow = ({
 
   const loading = useLoadingOverlay();
   const revokeEventMutation = useRevokeEvent();
-
   const handleRevokeClick = () => {
     if (!todo?.todo_id) return;
     loading?.show("Revoking Request...");
@@ -430,7 +429,7 @@ const AdvanceDesktopRow = ({
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
 
-        {getAssignedUsersCell(advance)}
+        {getAssignedUsersCell(advance.todo)}
 
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
@@ -451,7 +450,7 @@ const AdvanceDesktopRow = ({
         {formatToIndianDate(advance.endDate)}
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
-        -
+        {formattedCreationDate}
       </Typography>
 
       <div className="flex items-center justify-center">
