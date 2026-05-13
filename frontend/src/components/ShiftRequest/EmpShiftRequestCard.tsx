@@ -18,7 +18,7 @@ import { getAssignedUsersCell } from "../../utils/getAssignedUsersCell";
 
 const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const { isDesktop } = useScreenSize();
-  const revokeEventMutation = useRevokeEvent();
+  const revokeEventMutation = useRevokeEvent()
   const { setRefetchAttendance } = useGlobalStore();
   const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation);
   const navigate = useNavigate();

@@ -669,7 +669,7 @@ const DataListView = <T extends BaseItem>({
     clientFilterFn,
     clientSortFn,
   ]);
-
+ 
   // Handle accumulating data for load more pagination
   useEffect(() => {
     if (loadMorePagination && loadMoreQueryResult.data?.data) {

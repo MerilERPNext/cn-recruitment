@@ -101,7 +101,7 @@ const AllMyShiftRequestsList = () => {
               isSearch={true}
               isFilter={true}
               filterFields={[
-                {
+                { 
                   fieldname: "status",
                   label: "Status",
                   fieldtype: "Select",

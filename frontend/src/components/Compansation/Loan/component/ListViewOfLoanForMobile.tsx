@@ -12,6 +12,7 @@ import { useLoadingOverlay } from "../../../../context/OverlayContext";
 import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 import { queryClient } from "../../../../providers/QueryProvider";
+import { getAssignedUsersCell } from "../../../../utils/getAssignedUsersCell";
 
 
 export const LoantItem: React.FC<{
@@ -86,6 +87,10 @@ export const LoantItem: React.FC<{
             <Typography variant="mobileCardValue">
               {item.loan_type}
             </Typography>
+             <Typography variant="bodySmall" className="font-medium text-center">
+                      {getAssignedUsersCell(item?.todo_list)}
+                    </Typography>
+                    
           </div>
         </div>
 
