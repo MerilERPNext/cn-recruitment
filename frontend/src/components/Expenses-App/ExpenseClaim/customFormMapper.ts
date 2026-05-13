@@ -40,6 +40,13 @@ export const processCustomComponents = (comps: any[]): any[] => {
         );
       }
 
+      if (next.type === "datetime") {
+        next.format = "dd-MM-yyyy";
+        if (!next.placeholder) {
+          next.placeholder = "dd-mm-yyyy";
+        }
+      }
+
       if (Array.isArray(next.components)) {
         next.components = processCustomComponents(next.components);
       }

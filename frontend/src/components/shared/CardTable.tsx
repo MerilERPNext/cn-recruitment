@@ -126,15 +126,19 @@ const CardTable = ({
                       onClick={() => handleSort(field)}
                       className="flex items-center justify-center gap-1 focus:outline-none"
                     >
-                      <Typography
-                        variant="bodySmall"
-                        className="font-bold text-center whitespace-nowrap"
-                      >
-                        {title}
-                      </Typography>
+                      {typeof title === "string" || typeof title === "number" ? (
+                        <Typography
+                          variant="bodySmall"
+                          className="font-bold text-center whitespace-nowrap"
+                        >
+                          {title}
+                        </Typography>
+                      ) : (
+                        title
+                      )}
                       <SortIcon direction={activeDirection} />
                     </button>
-                  ) : (
+                  ) : typeof title === "string" || typeof title === "number" ? (
                     <Typography
                       key={index}
                       variant="bodySmall"
@@ -142,6 +146,10 @@ const CardTable = ({
                     >
                       {title}
                     </Typography>
+                  ) : (
+                    <div key={index} className="flex justify-center items-center w-full">
+                      {title}
+                    </div>
                   );
                 })}
               </div>
