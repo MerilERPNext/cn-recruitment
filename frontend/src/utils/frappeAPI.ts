@@ -272,11 +272,12 @@ export const FrappeAPI = {
     _docname?: string,
     _doctype?: string,
     _folder?: string,
+    _is_private = "1",
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<{ file_url: string; name: string;[key: string]: any }> => {
     const formData = new FormData();
     formData.append("file", file, _file_name || file.name);
-    formData.append("is_private", "1");
+    formData.append("is_private", _is_private);
     if (_file_name) formData.append("file_name", _file_name);
     if (_doctype) formData.append("doctype", _doctype);
     if (_folder) formData.append("folder", _folder);
