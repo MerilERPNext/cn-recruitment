@@ -75,47 +75,61 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
     }, [selectedDate, setSearchParams, searchParams]);
 
     const getAttendanceEvents = (attendance: AttendanceStatusInfo) => {
-        const validEvents = (attendance?.events ?? []).filter(
-            (event) => event.status !== "Revoked"
-        );
+        // const validEvents = (attendance?.events ?? []).filter(
+        //     (event) => event.status !== "Revoked"
+        // );
 
-        if (validEvents.length === 0) return null;
+        if (attendance?.events?.length === 0) return null;
 
-        const uniqueEvents = Array.from(
-            validEvents.reduce((map, event) => {
-                const key =
+        // const uniqueEvents = Array.from(
+        //     attendance?.events?.reduce((map, event) => {
+        //         const key =
+        //             event?.doctype === "Attendance Request" &&
+        //                 event?.request_type === "Out Duty"
+        //                 ? "Out Duty"
+        //                 : event?.doctype;
+        //         if (!map.has(key)) map.set(key, event);
+        //         return map;
+        //     }, new Map<string, AttendanceRecord>()).values()
+        // );
+        const events =
+            attendance?.events?.map((event) => ({
+                ...event,
+                doctype:
                     event?.doctype === "Attendance Request" &&
                         event?.request_type === "Out Duty"
                         ? "Out Duty"
-                        : event?.doctype;
-                if (!map.has(key)) map.set(key, event);
-                return map;
-            }, new Map<string, AttendanceRecord>()).values()
-        );
-
+                        : event?.doctype,
+            })) || [];
         return (
-            <div className="flex flex-col gap-0.5">
-                {uniqueEvents.map((event, index) => {
-                    const doctypeKey =
-                        event?.doctype === "Attendance Request" &&
-                            event?.request_type === "Out Duty"
-                            ? "Out Duty"
-                            : event?.doctype;
-                    const badge = getEventBadgeStyle(doctypeKey);
-                    return (
-                        <div
-                            key={index}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                // console.log(event, "-----------------------")
-                            }}
-                            className={`w-fit text-[10px] font-medium pl-1.5 pr-1 py-0.5 leading-tight ${badge.className}`}
-                            title={doctypeKey}
-                        >
-                            {badge.label}
-                        </div>
-                    );
-                })}
+            <div className="flex items-end gap-1 overflow-hidden">
+                <div className="flex flex-col gap-0.5 overflow-hidden min-w-0 flex-1">
+                    {events.slice(0, 3).map((event, index) => {
+                        const doctypeKey =
+                            event?.doctype === "Attendance Request" &&
+                                event?.request_type === "Out Duty"
+                                ? "Out Duty"
+                                : event?.doctype;
+                        const badge = getEventBadgeStyle(doctypeKey);
+                        return (
+                            <div
+                                key={index}
+                                // onClick={(e) => {
+                                // e.stopPropagation();
+                                // }}
+                                className={`min-w-0 w-fit text-[10px] font-medium pl-1.5 pr-1 py-0.5 leading-tight truncate ${badge.className}`}
+                                title={`${badge.label} ${event.status}`}
+                            >
+                                {badge.label} {event.status}
+                            </div>
+                        );
+                    })}
+                </div>
+                {events.length > 3 && (
+                    <div className="flex-shrink-0 text-[10px] font-semibold px-1 py-0.5 rounded bg-gray-100 text-gray-500 leading-tight">
+                        +{events.length - 3}
+                    </div>
+                )}
             </div>
         );
     };
@@ -229,10 +243,10 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     const isHalfDay = attendance?.status === "half-day";
 
                     const cellBase =
-                        "w-full h-full flex flex-col p-1.5 transition-all duration-200";
+                        "w-full h-full flex flex-col p-2 transition-all duration-200";
                     const weekOffBg = isWeekOff ? "bg-gray-100" : "";
                     const selectedRing = isSelected
-                        ? "ring-2 ring-inset ring-gray-800"
+                        ? "ring-1 ring-inset ring-primary-400 rounded-lg"
                         : "hover:bg-gray-50";
 
                     if (isHalfDay) {
@@ -248,7 +262,9 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                                 style={{ backgroundImage: gradient }}
                             >
                                 <div className="flex justify-between items-start">
-                                    <span className="text-sm font-semibold text-gray-800">
+                                    <span
+                                        className={`text-sm font-semibold text-gray-800 ${new Date().toDateString() === date.toDateString() ? "bg-primary-500 text-white rounded-full h-6 w-6 flex items-center justify-center text-xs" : ""} `}
+                                    >
                                         {day}
                                     </span>
                                 </div>
@@ -263,7 +279,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                         <div className={`${cellBase} ${weekOffBg} ${selectedRing}`}>
                             <div className="flex justify-start items-center gap-2">
                                 <span
-                                    className={`text-sm font-semibold ${isWeekOff ? "text-gray-400" : "text-gray-800"}`}
+                                    className={`text-sm font-semibold ${isWeekOff ? "text-gray-400" : "text-gray-800"} ${new Date().toDateString() === date.toDateString() ? "bg-primary-500 text-white rounded-full h-6 w-6 flex items-center justify-center text-xs" : ""}`}
                                 >
                                     {day}
                                 </span>
