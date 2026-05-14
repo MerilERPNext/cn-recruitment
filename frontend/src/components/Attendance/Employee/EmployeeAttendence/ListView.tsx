@@ -38,24 +38,6 @@ const ListView = () => {
           </div>
         </div>
       )}
-      {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
-      {/* {isDesktop && (
-        <div className="flex flex-col gap-2 mt-4 mx-5">
-          <h4 className="text-sm font-semibold text-gray-700">
-            Attendance Legend:
-          </h4>
-          <AttendanceLegend />
-        </div>
-      )} */}
-      {/* <button
-        className="text-gray-500 px-2 mt-4 flex gap-1 justify-center items-center"
-        onClick={() => {
-          navigate("/webapp/attendance/emp-attendance/all");
-        }}
-      >
-        List View
-        <ArrowUpRight className="h-5 w-5" />
-      </button> */}
       <div className="flex gap-2 justify-end w-full md:w-fit md:justify-center items-center  mt-4 px-2">
 
         <ViewAll

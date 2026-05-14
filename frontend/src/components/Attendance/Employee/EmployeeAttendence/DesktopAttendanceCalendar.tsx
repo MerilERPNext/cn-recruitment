@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 
-import { CheckCircle2, ChevronLeft, ChevronRight, Home, XCircle } from "lucide-react";
+import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Home, XCircle } from "lucide-react";
 
 import DatePicker from "react-datepicker";
 import { AttendanceRecord } from "../../../../types/attendance";
@@ -152,7 +152,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                 </div>
             case "on-leave":
                 return <div className="p-1 bg-yellow-50 rounded-lg">
-                    <Home className="w-4 h-4 text-yellow-600 flex-shrink-0" />
+                    <Calendar className="w-4 h-4 text-yellow-600 flex-shrink-0" />
                 </div>
             default:
                 return null;
