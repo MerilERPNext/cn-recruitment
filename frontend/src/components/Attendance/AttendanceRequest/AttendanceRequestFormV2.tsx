@@ -388,7 +388,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           const maxD = parseDateLocal(attendanceRequestAttachmentsMandatory.allowed_to_date);
 
           (["from_date", "to_date"] as const).forEach((key) => {
-            const comp = panel.components.find((c: SchemaComponent) => c.key === key);
+            const comp = panel?.components?.find((c: SchemaComponent) => c.key === key);
             if (!comp) return;
             if (!comp.datePicker) comp.datePicker = {};
             if (!comp.widget) comp.widget = {};
