@@ -92,15 +92,17 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
         //         return map;
         //     }, new Map<string, AttendanceRecord>()).values()
         // );
-        const events =
-            attendance?.events?.map((event) => ({
+        const prioritized = new Set(["Approved", "Rejected"]);
+        const events = (attendance?.events?.map((event) => ({
                 ...event,
                 doctype:
                     event?.doctype === "Attendance Request" &&
                         event?.request_type === "Out Duty"
                         ? "Out Duty"
                         : event?.doctype,
-            })) || [];
+            })) || []).sort((a, b) =>
+                (prioritized.has(a.status) ? 0 : 1) - (prioritized.has(b.status) ? 0 : 1)
+            );
         return (
             <div className="flex items-end gap-1 overflow-hidden">
                 <div className="flex flex-col gap-0.5 overflow-hidden min-w-0 flex-1">
