@@ -33,6 +33,7 @@ import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV
 import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
 import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
 import Cardtable from "./EmployeeAttendence/CardTable";
+import DesktopAttendanceCalendar from "./EmployeeAttendence/DesktopAttendanceCalendar";
 
 const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
   {
@@ -42,6 +43,7 @@ const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
     getValue: (item: MyAttendanceRequest) =>
       item.reference_document?.custom_request_type ?? "",
   },
+  { sortable: false },
   {
     sortable: true,
     type: "date",
@@ -227,8 +229,11 @@ const EmployeeAttendance = () => {
         const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
           record.doctype,
         );
+        const isHoliday = ["Holiday", "Holidays"].includes(record.doctype);
 
         if (isAttendanceType) {
+          // Actual Attendance record takes priority over Holiday (e.g. working on a week-off)
+          if (isHoliday && attendanceRecord?.doctype === "Attendance") return;
           attendanceRecord = record;
           const rawStatus = record.status?.toLowerCase().trim();
 
@@ -310,14 +315,22 @@ const EmployeeAttendance = () => {
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
-        <Card className="pb-2 rounded-tl-lg rounded-tr-lg sm:rounded-lg lg:rounded-lg">
-          <ListView />
-          <AttendanceCalendar
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            getAttendanceStatus={getAttendanceStatus}
-            setShowDetailsFor={setShowDetailsFor}
-          />
+        <ListView />
+        <Card className="pb-2 rounded-tl-lg rounded-tr-lg sm:rounded-lg lg:rounded-lg mt-0 pt-0">
+          {
+            isDesktop ? <DesktopAttendanceCalendar
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              getAttendanceStatus={getAttendanceStatus}
+              setShowDetailsFor={setShowDetailsFor}
+            /> :
+              <AttendanceCalendar
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                getAttendanceStatus={getAttendanceStatus}
+                setShowDetailsFor={setShowDetailsFor}
+              />
+          }
 
           {/* Legends - Only show for mobile since desktop shows at top */}
           {!isDesktop && <AttendanceLegend isCompact={true} />}
@@ -355,12 +368,14 @@ const EmployeeAttendance = () => {
             />
           </div>
           <CardTable
-            columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+            columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "0.8fr", "1fr", "1fr", "1fr"]}
             titles={[
               "Request Type",
+              "Assigned To",
               "From Date",
               "To Date",
               "Due Date",
+              "Created At",
               "Duration",
               "Status",
               "Actions",

@@ -15,7 +15,7 @@ def _error_response(message, status_code=400):
 
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_dashboard(email):
     try:
         if not email:

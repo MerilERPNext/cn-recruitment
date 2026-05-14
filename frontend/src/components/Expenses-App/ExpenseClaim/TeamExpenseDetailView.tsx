@@ -719,27 +719,23 @@ export function TeamExpenseDetailView({
                             </Typography>
                           </div>
 
-                          {item.custom_invoice_number && (
-                            <div className="flex flex-col gap-1">
-                              <Typography variant="mobileCardLabel">
-                                INVOICE
-                              </Typography>
-                              <Typography variant="mobileCardValue">
-                                {item.custom_invoice_number}
-                              </Typography>
-                            </div>
-                          )}
+                          <div className="flex flex-col gap-1">
+                            <Typography variant="mobileCardLabel">
+                              INVOICE
+                            </Typography>
+                            <Typography variant="mobileCardValue">
+                              {item.custom_invoice_number || "--"}
+                            </Typography>
+                          </div>
 
-                          {item.custom_mercent && (
-                            <div className="flex flex-col gap-1">
-                              <Typography variant="mobileCardLabel">
-                                MERCHANT
-                              </Typography>
-                              <Typography variant="mobileCardValue">
-                                {item.custom_mercent}
-                              </Typography>
-                            </div>
-                          )}
+                          <div className="flex flex-col gap-1">
+                            <Typography variant="mobileCardLabel">
+                              MERCHANT
+                            </Typography>
+                            <Typography variant="mobileCardValue">
+                              {item.custom_mercent || "--"}
+                            </Typography>
+                          </div>
 
                           {item.custom_from_location && (
                             <div className="flex flex-col gap-1">

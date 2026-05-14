@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactElement, Suspense } from "react";
 import { Navigate } from "react-router";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useFrappeDocument } from "./hooks/useFrappeQuery";
+import { ExpenseClaim, Expense } from "./types/expenseAdvance";
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
 import { useScreenSize } from "./hooks/useScreenSize";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
@@ -26,7 +28,10 @@ import SearchMembers from "./components/SearchMembers";
 import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
 import Onboarding from "./components/Onboarding/Onboarding";
 import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
-import { ExpenseNavigationState } from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
+import {
+  ExpenseNavigationState,
+  buildExpenseNavigationState,
+} from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -459,19 +464,80 @@ const LeaderboardPage = lazyWithRetry(
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const navigationState = location.state as ExpenseNavigationState | null;
-  const initialExpense = navigationState?.expense || null;
-  const expense_claim_name = navigationState?.expense_claim_name || null;
+
+  console.log("[AddExpensePage] Initial Location State:", navigationState);
+
+  const queryExpenseClaim = searchParams.get("expenseClaim");
+  const queryExpenseItem = searchParams.get("expenseItem");
+  const queryIsResubmit = searchParams.get("isResubmit") === "true";
+
+  console.log("[AddExpensePage] URL params:", {
+    queryExpenseClaim,
+    queryExpenseItem,
+    queryIsResubmit,
+  });
+
+  // We must decide if we need to fetch backup data.
+  const needsBackupHydration =
+    !navigationState?.expense && !!queryExpenseClaim && !!queryExpenseItem;
+
+  if (needsBackupHydration) {
+    console.warn(
+      "[AddExpensePage] Location state missing or incomplete. Triggering API hydration fallback.",
+    );
+  }
+
+  const { data: fetchedDoc, isLoading } = useFrappeDocument(
+    "Expense Claim",
+    needsBackupHydration ? queryExpenseClaim! : "",
+  );
+
+  if (needsBackupHydration && isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  // Reconstruction of state from fetched data if location.state went AWOL
+  let resolvedExpense = navigationState?.expense || null;
+  let resolvedClaimName = navigationState?.expense_claim_name || null;
+  let resolvedIsResubmit = navigationState?.isResubmit || false;
+
+  if (needsBackupHydration && fetchedDoc) {
+    const claimData = fetchedDoc as unknown as ExpenseClaim;
+    const matchingItem = claimData.expenses?.find(
+      (e: Expense) => e.name === queryExpenseItem,
+    );
+
+    if (matchingItem) {
+      const fallbackState = buildExpenseNavigationState(
+        claimData,
+        matchingItem,
+        queryIsResubmit,
+      );
+      resolvedExpense = fallbackState.expense;
+      resolvedClaimName = fallbackState.expense_claim_name;
+      resolvedIsResubmit = fallbackState.isResubmit || false;
+    }
+  }
+
   const draft_document_name = navigationState?.draft_document_name || null;
-  const isResubmit = navigationState?.isResubmit || false;
   const isEditingFromDraft = Boolean(draft_document_name);
+
   return (
     <AddExpenseFormV2
-      initialExpense={initialExpense}
-      expense_claim_name={expense_claim_name}
+      key={
+        resolvedExpense
+          ? `edit-${resolvedClaimName}-${resolvedExpense.name}`
+          : "add-new"
+      }
+      initialExpense={resolvedExpense}
+      expense_claim_name={resolvedClaimName}
       draft_document_name={draft_document_name}
-      isEditingFromDetailsPage={Boolean(initialExpense) && !isEditingFromDraft}
-      isResubmit={isResubmit}
+      isEditingFromDetailsPage={
+        Boolean(resolvedExpense) && !isEditingFromDraft
+      }
+      isResubmit={resolvedIsResubmit}
     />
   );
 };

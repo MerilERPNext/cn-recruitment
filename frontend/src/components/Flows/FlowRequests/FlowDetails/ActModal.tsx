@@ -82,7 +82,7 @@ function parseInitiationForm(initiatorForms?: FlowRequestItem["initiator_forms"]
 
   let formData: JsonToFormData;
   try {
-    formData = JSON.parse(initiatorForms[0]?.form_data || "{}");
+    formData = JSON.parse(initiatorForms[0]?.form_data_display || "{}");
   } catch {
     return { schema: null, answer: {}, attachments: [] };
   }

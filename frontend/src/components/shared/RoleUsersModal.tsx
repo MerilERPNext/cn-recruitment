@@ -18,6 +18,8 @@ const RoleUsersModal: React.FC<RoleUsersModalProps> = ({ isOpen, onClose, roleDa
     const isDesktop = useScreenSize();
     if (!isOpen || !roleData) return null;
 
+    const usersList = roleData?.users || roleData?.user || [];
+
     return createPortal(
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
@@ -66,9 +68,9 @@ const RoleUsersModal: React.FC<RoleUsersModalProps> = ({ isOpen, onClose, roleDa
                                 </Tooltip>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                     <span className="inline-flex items-center gap-1 text-xs font-semibold font-brand text-primary-600 bg-primary-50 border border-primary-200/60 rounded-md px-1.5 py-0.5 tracking-wide">
-                                        {roleData?.user?.length}
+                                        {usersList.length}
                                         <span className="font-medium text-primary-500">
-                                            {roleData?.user?.length === 1 ? 'member' : 'members'}
+                                            {usersList.length === 1 ? 'member' : 'members'}
                                         </span>
                                     </span>
                                 </div>
@@ -86,7 +88,7 @@ const RoleUsersModal: React.FC<RoleUsersModalProps> = ({ isOpen, onClose, roleDa
 
                 {/* ============ Content ============ */}
                 <div className="flex-1 overflow-y-auto p-4 bg-gray-50/30">
-                    {roleData?.user?.length === 0 ? (
+                    {usersList.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                             <div className="flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 mb-4">
                                 <UserX size={28} strokeWidth={1.5} className="text-gray-300" />
@@ -100,7 +102,7 @@ const RoleUsersModal: React.FC<RoleUsersModalProps> = ({ isOpen, onClose, roleDa
                         </div>
                     ) : (
                         <div className="flex flex-col gap-2">
-                            {roleData.user?.map((u, index) => (
+                            {usersList.map((u, index) => (
                                 <div
                                     className="flex items-center gap-3 w-full text-left p-3 rounded-xl border border-gray-100 bg-white hover:border-primary-200 hover:shadow-[0_2px_12px_rgba(97,114,243,0.1)] hover:bg-gradient-to-r hover:from-primary-50/40 hover:to-white transition-all duration-200 cursor-pointer group"
                                     style={{

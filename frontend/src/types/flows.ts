@@ -92,8 +92,13 @@ export type TodoResponse = {
 
 export type RoleAssignedUsersType = {
   role: string;
-  user: {
-    user_id: string;
+  user?: {
+    user_id?: string;
+    name: string;
+    employee: string;
+  }[];
+  users?: {
+    user_id?: string;
     name: string;
     employee: string;
   }[];
@@ -114,6 +119,7 @@ export type FlowRequestStage = {
   };
   role_assigned_users?: RoleAssignedUsersType[];
   approval_response_data: string;
+  approval_response_data_display?: string;
   todo: {
     custom_approval_type: "Approval Matrix" | "Multi Actions";
     name: string;
@@ -173,6 +179,7 @@ export type FlowRequestItem = {
   workflow_stages: WorkflowStage[];
   initiator_forms: {
     form_data: string;
+    form_data_display?: string;
     status: string;
     target: string;
     target_name: string;

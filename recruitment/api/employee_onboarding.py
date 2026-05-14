@@ -221,7 +221,13 @@ def update_onboarding_details(email, data):
 
 
 @frappe.whitelist()
-def get_employee_onboarding_list(order_by="boarding_status asc", page_length=10, start=0):
+def get_employee_onboarding_list(
+    order_by="boarding_status asc",
+    page_length=10,
+    start=0,
+    search_term=None,
+    search_fields=None,
+):
     try:
         frappe.has_permission(DOCTYPENAME, "read", throw=True)
 
@@ -275,9 +281,47 @@ def get_employee_onboarding_list(order_by="boarding_status asc", page_length=10,
         default_order_field = "boarding_status" if "boarding_status" in allowed_order_fields else "creation"
         safe_order_by = _sanitize_order_by(order_by, allowed_order_fields, default_order_field)
 
+        # ── Search filter ──────────────────────────────────────────────────────
+        # Allowed fields that can be searched against
+        _SEARCHABLE_FIELDS = {
+            "name", "employee_name", "job_applicant",
+            "department", "designation", "boarding_status",
+        }
+
+        # Parse search_fields from JSON string if needed
+        if isinstance(search_fields, str):
+            try:
+                import json as _json
+                search_fields = _json.loads(search_fields)
+            except Exception:
+                search_fields = []
+
+        # Default search fields if none provided
+        if not search_fields or not isinstance(search_fields, list):
+            search_fields = ["employee_name", "job_applicant", "department", "designation"]
+
+        # Restrict to allowed + valid fields only
+        search_fields = [
+            f for f in search_fields
+            if f in _SEARCHABLE_FIELDS and f in valid_fields
+        ]
+        if not search_fields:
+            search_fields = ["employee_name", "job_applicant"]
+
+        # Build OR filters when a search term is provided
+        filters = []
+        if search_term and str(search_term).strip():
+            term = f"%{str(search_term).strip()}%"
+            or_filters = [[DOCTYPENAME, f, "like", term] for f in search_fields]
+            # frappe.get_list supports or_filters as a list of conditions
+        else:
+            or_filters = []
+
         data = frappe.get_list(
             DOCTYPENAME,
             fields=fields,
+            filters=filters,
+            or_filters=or_filters if or_filters else None,
             order_by=safe_order_by,
             start=start_value,
             page_length=page_length_value,
@@ -286,6 +330,8 @@ def get_employee_onboarding_list(order_by="boarding_status asc", page_length=10,
         count_result = frappe.get_list(
             DOCTYPENAME,
             fields=["count(name) as total_count"],
+            filters=filters,
+            or_filters=or_filters if or_filters else None,
             page_length=1,
         )
         total_count = int((count_result[0] or {}).get("total_count") or 0) if count_result else 0
@@ -300,6 +346,10 @@ def get_employee_onboarding_list(order_by="boarding_status asc", page_length=10,
                 "has_more": (start_value + page_length_value) < total_count,
             },
             order_by=safe_order_by,
+            search={
+                "search_term": search_term or "",
+                "search_fields": search_fields,
+            },
         )
     except frappe.ValidationError as e:
         return _error_response(str(e), 400)

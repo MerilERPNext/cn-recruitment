@@ -98,8 +98,8 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
     let displayFirstLabel = firstLabel;
     if (!firstIsUser && firstLabel) {
         const assigned = RoleAssignedUsers?.find(r => r.role === firstLabel);
-        if (assigned && assigned?.user?.length > 0) {
-            displayFirstLabel = `${firstLabel} (${assigned?.user?.length})`;
+        if (assigned?.user?.length) {
+            displayFirstLabel = `${firstLabel} (${assigned.user.length})`;
         }
     }
 

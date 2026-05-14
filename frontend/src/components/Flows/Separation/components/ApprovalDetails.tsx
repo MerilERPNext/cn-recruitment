@@ -40,7 +40,7 @@ export default function ApprovalDetails({
           label: "Date of Joining",
           value: formatToIndianDate(activeEmployee?.date_of_joining || ""),
         },
-        { label: "Status", value: activeEmployee?.custom_employment_status || "N/A" },
+        { label: "Status", value: activeEmployee?.custom_employment_status || "" },
       );
     }
 

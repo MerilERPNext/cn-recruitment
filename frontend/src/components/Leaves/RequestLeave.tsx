@@ -568,7 +568,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       {
         type: "select",
         key: "leaveType",
-        label: "Leave Type <span style='color:red;margin-left:3px;'> *</span>",
+        label:
+          defaults?.source === "holiday"
+            ? "Holiday Type <span style='color:red;margin-left:3px;'> *</span>"
+            : "Leave Type <span style='color:red;margin-left:3px;'> *</span>",
         errorLabel: "Leave Type",
         placeholder: "Select Leave Type",
         input: true,
@@ -795,7 +798,11 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-        <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
+        <h2 className="text-lg font-semibold text-gray-800">
+          {defaults?.source === "holiday"
+            ? "Request Optional Holiday"
+            : "Request Leave"}
+        </h2>
         {isDesktop && (
           <button
             onClick={(e) => {

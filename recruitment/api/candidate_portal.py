@@ -154,9 +154,16 @@ def _get_onboarding_portal_rows(onboarding_doc=None):
     return _get_portal_settings(None), "default_form"
 
 
-def _get_job_applicant_portal_settings(job_applicant_id=None):
-    selected_form = None
-    if job_applicant_id:
+def _get_job_applicant_portal_settings(job_applicant_id=None, job_opening=None, form_name=None):
+    selected_form = form_name or None
+
+    if not selected_form and job_opening:
+        try:
+            selected_form = frappe.db.get_value("Job Opening", job_opening, "custom_job_applicant_portal_form")
+        except Exception:
+            pass
+
+    if not selected_form and job_applicant_id:
         try:
             job_title = frappe.db.get_value("Job Applicant", job_applicant_id, "job_title")
             if job_title:
@@ -177,11 +184,13 @@ def _get_job_applicant_portal_settings(job_applicant_id=None):
 
     if selected_form:
         try:
-            return frappe.get_doc("Job Applicant Portal Forms", selected_form).portal_fields or []
+            rows = frappe.get_doc("Job Applicant Portal Forms", selected_form).portal_fields or []
+            return rows, selected_form
         except Exception:
             pass
 
-    return []
+    return [], None
+
 
 
 def _get_child_table_fields(child_doctype):
@@ -208,6 +217,23 @@ def _get_child_table_fields(child_doctype):
         })
 
     return fields
+
+
+def _filter_child_fields(all_fields, selected_child_fields_json):
+    """
+    Filters child fields to only those in the selected_child_fields JSON list.
+    If selected_child_fields_json is empty/None, returns all fields (backward compat).
+    """
+    if not selected_child_fields_json:
+        return all_fields
+    try:
+        import json as _json
+        selected = set(_json.loads(selected_child_fields_json))
+        if not selected:
+            return all_fields
+        return [f for f in all_fields if f["fieldname"] in selected]
+    except Exception:
+        return all_fields
 
 
 def _serialize_doc_field_value(doc, fieldname, fieldtype):
@@ -271,7 +297,10 @@ def _build_tabbed_response(portal_rows, meta_lookup, doc=None):
         }
         if fieldtype == "Table":
             field_entry["child_doctype"] = field_options
-            field_entry["child_fields"] = _get_child_table_fields(field_options)
+            all_child = _get_child_table_fields(field_options)
+            field_entry["child_fields"] = _filter_child_fields(
+                all_child, row.get("selected_child_fields")
+            )
 
         if tab_lbl not in tab_map:
             tab_map[tab_lbl] = {"section_order": [], "section_map": {}}
@@ -321,7 +350,20 @@ def _build_tabbed_response(portal_rows, meta_lookup, doc=None):
 
 
 @frappe.whitelist()
+def get_child_doctype_fields(child_doctype):
+    """Returns all non-layout fields for a given child DocType.
+    Used by the Field Inspector UI to populate child field selection panels."""
+    frappe.has_permission("Onboarding Portal Forms", "read", throw=True)
+    if not child_doctype:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("child_doctype is required.")}
+    fields = _get_child_table_fields(child_doctype)
+    return {"status": "success", "child_doctype": child_doctype, "fields": fields}
+
+
+@frappe.whitelist()
 def get_onboarding_form_fields(form_name):
+
     frappe.has_permission("Onboarding Portal Forms", "read", throw=True)
 
     if not form_name:
@@ -366,10 +408,24 @@ def get_all_onboarding_fields_for_onboarding():
     return {"status": "success", "total": len(fields), "fields": fields}
 
 
-@frappe.whitelist()
-def get_all_job_applicant_fields():
-    frappe.has_permission("Job Applicant Portal Forms", "read", throw=True)
-    portal_rows = _get_job_applicant_portal_settings()
+@frappe.whitelist(allow_guest=True)
+def get_all_job_applicant_fields(job_opening=None, form_name=None):
+    portal_rows, resolved_form = _get_job_applicant_portal_settings(
+        job_opening=job_opening or None,
+        form_name=form_name or None,
+    )
+
+    if resolved_form is None:
+        frappe.local.response["http_status_code"] = 404
+        hint = (
+            f" No portal form is linked to Job Opening '{job_opening}'."
+            if job_opening else ""
+        )
+        return {
+            "status": "error",
+            "message": _("No Job Applicant Portal Form found.{0} Please link a form to the Job Opening or set a default form.").format(hint),
+        }
+
     meta_lookup = {f["fieldname"]: f for f in _read_job_applicant_meta()}
 
     fields = []
@@ -396,7 +452,12 @@ def get_all_job_applicant_fields():
 
         fields.append(field_entry)
 
-    return {"status": "success", "total": len(fields), "fields": fields}
+    return {
+        "status": "success",
+        "form_name": resolved_form,
+        "total": len(fields),
+        "fields": fields,
+    }
 
 
 @frappe.whitelist()
@@ -404,6 +465,185 @@ def get_available_job_applicant_fields():
     frappe.has_permission("Job Applicant Portal Forms", "read", throw=True)
     fields = _read_job_applicant_meta(include_hidden=True, include_skipped=True)
     return {"status": "success", "total": len(fields), "fields": fields}
+
+
+def _get_pre_offer_portal_settings(job_applicant_id):
+    form_name = frappe.db.get_value("Job Applicant", job_applicant_id, "custom_pre_offer_portal_form")
+    if not form_name:
+        return [], None
+    try:
+        rows = frappe.get_doc("Job Applicant Portal Forms", form_name).portal_fields or []
+        return rows, form_name
+    except Exception:
+        return [], None
+
+
+@frappe.whitelist(allow_guest=True)
+def get_pre_offer_form(job_applicant_id):
+    if not job_applicant_id:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Job Applicant ID is required.")}
+
+    if not frappe.db.exists("Job Applicant", job_applicant_id):
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
+
+    portal_rows, resolved_form = _get_pre_offer_portal_settings(job_applicant_id)
+
+    if resolved_form is None:
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _("No Pre Offer Form has been sent for this applicant yet.")}
+
+    doc = frappe.get_doc("Job Applicant", job_applicant_id)
+    meta_lookup = {f["fieldname"]: f for f in _read_job_applicant_meta()}
+    tab_order = []
+    tab_map = {}
+
+    for row in portal_rows:
+        fn = row.fieldname
+        tab_lbl = (row.tab_label or "").strip()
+        sec_lbl = (row.section_label or "").strip()
+        meta = meta_lookup.get(fn, {})
+
+        fieldtype = row.fieldtype or meta.get("fieldtype", "Data")
+        field_options = row.options or meta.get("options", "")
+
+        field_entry = {
+            "fieldname": fn,
+            "label": row.label or meta.get("label", fn),
+            "fieldtype": fieldtype,
+            "is_mandatory": int(row.is_mandatory or 0),
+            "read_only": int(row.read_only or 0),
+            "hidden": int(row.hidden or 0),
+            "options": field_options,
+            "value": _serialize_doc_field_value(doc, fn, fieldtype),
+        }
+        if fieldtype == "Table":
+            field_entry["child_doctype"] = field_options
+            field_entry["child_fields"] = _get_child_table_fields(field_options)
+
+        if tab_lbl not in tab_map:
+            tab_map[tab_lbl] = {"section_order": [], "section_map": {}}
+            tab_order.append(tab_lbl)
+
+        tab_entry = tab_map[tab_lbl]
+        if sec_lbl not in tab_entry["section_map"]:
+            tab_entry["section_map"][sec_lbl] = []
+            tab_entry["section_order"].append(sec_lbl)
+
+        tab_entry["section_map"][sec_lbl].append(field_entry)
+
+    return {
+        "status": "success",
+        "job_applicant": job_applicant_id,
+        "form_name": resolved_form,
+        "pre_offer_form_status": doc.get("custom_pre_offer_form_status") or "Sent",
+        "tabs": [
+            {
+                "tab": tab_lbl,
+                "sections": [
+                    {"section": sec_lbl, "fields": tab_map[tab_lbl]["section_map"][sec_lbl]}
+                    for sec_lbl in tab_map[tab_lbl]["section_order"]
+                ],
+            }
+            for tab_lbl in tab_order
+        ],
+    }
+
+
+@frappe.whitelist(allow_guest=True)
+def save_pre_offer_form_data(job_applicant_id, data):
+    if isinstance(data, str):
+        try:
+            data = frappe.parse_json(data)
+        except Exception:
+            frappe.local.response["http_status_code"] = 400
+            return {"status": "error", "message": _("Invalid JSON data.")}
+
+    if not isinstance(data, dict):
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Data must be a JSON object.")}
+
+    if not job_applicant_id:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Job Applicant ID is required.")}
+
+    if not frappe.db.exists("Job Applicant", job_applicant_id):
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
+
+    portal_rows, resolved_form = _get_pre_offer_portal_settings(job_applicant_id)
+
+    if resolved_form is None:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("No Pre Offer Form configured for this applicant.")}
+
+    allowed_map = {r.fieldname: r for r in portal_rows if not r.get("hidden") and not r.get("read_only")}
+
+    if not allowed_map:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("No editable fields configured in the Pre Offer Form.")}
+
+    missing = [
+        row.label or fn for fn, row in allowed_map.items()
+        if row.get("is_mandatory") and (fn not in data or data[fn] in (None, "", []))
+    ]
+
+    if missing:
+        frappe.local.response["http_status_code"] = 422
+        return {
+            "status": "error",
+            "message": _("The following mandatory fields are missing: {0}").format(", ".join(missing)),
+            "missing_fields": missing,
+        }
+
+    meta_lookup = {f["fieldname"]: f for f in _read_job_applicant_meta()}
+
+    try:
+        doc = frappe.get_doc("Job Applicant", job_applicant_id)
+        updated = []
+
+        for fn, value in data.items():
+            if fn not in allowed_map:
+                continue
+            meta = meta_lookup.get(fn, {})
+            fieldtype = allowed_map[fn].get("fieldtype") or meta.get("fieldtype", "Data")
+
+            if fieldtype == "Table" and isinstance(value, list):
+                doc.set(fn, [])
+                for row_data in value:
+                    doc.append(fn, row_data)
+            else:
+                doc.set(fn, value)
+
+            updated.append(fn)
+
+        doc.custom_pre_offer_form_status = "Filled"
+        doc.save(ignore_permissions=True)
+        frappe.db.commit()
+
+        from recruitment.api.action_center import mark_item_completed
+        candidate_email = doc.email_id
+        if candidate_email:
+            mark_item_completed(
+                reference_doctype="Job Applicant",
+                reference_docname=job_applicant_id,
+                candidate_email=candidate_email,
+                commit=True,
+            )
+
+        return {
+            "status": "success",
+            "message": _("Pre Offer Form submitted successfully."),
+            "updated_fields": updated,
+        }
+
+    except Exception as e:
+        frappe.db.rollback()
+        frappe.log_error(frappe.get_traceback(), "Pre Offer Form Save Error")
+        frappe.local.response["http_status_code"] = 500
+        return {"status": "error", "message": str(e)}
+
 
 
 @frappe.whitelist(allow_guest=True)
@@ -594,7 +834,7 @@ def get_job_applicant_portal_form(job_applicant_id):
         return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
 
     doc = frappe.get_doc("Job Applicant", job_applicant_id)
-    portal_rows = _get_job_applicant_portal_settings(job_applicant_id)
+    portal_rows, _ = _get_job_applicant_portal_settings(job_applicant_id)
 
     if not portal_rows:
         frappe.local.response["http_status_code"] = 404
@@ -674,7 +914,7 @@ def save_job_applicant_portal_data(job_applicant_id, data):
         frappe.local.response["http_status_code"] = 404
         return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
 
-    portal_rows = _get_job_applicant_portal_settings(job_applicant_id)
+    portal_rows, _ = _get_job_applicant_portal_settings(job_applicant_id)
     allowed_map = {r.fieldname: r for r in portal_rows if not r.get("hidden") and not r.get("read_only")}
 
     if not allowed_map:
@@ -736,7 +976,7 @@ def save_job_applicant_portal_data(job_applicant_id, data):
 def get_job_applicant_portal_field_names(job_applicant_id=None):
     return {
         "status": "success",
-        "fields": [r.fieldname for r in _get_job_applicant_portal_settings(job_applicant_id)],
+        "fields": [r.fieldname for r in _get_job_applicant_portal_settings(job_applicant_id)[0]],
     }
 
 

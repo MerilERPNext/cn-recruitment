@@ -1,5 +1,6 @@
-import { FlowRequestStage, WorkflowStage } from "../types/flows";
+import { FlowRequestStage, WorkflowStage, RoleAssignedUsersType } from "../types/flows";
 import { FormIOComponent } from "../types/formio";
+import { allocatedToType } from "../types/allocatedToTooltip";
 
 export const extractRolesAndUsers = (stage: FlowRequestStage | WorkflowStage) => {
   const roles = stage?.todo?.custom_assigned_to_roles?.map(role => role.role) ?? [];
@@ -163,4 +164,66 @@ export const getFileComponents = (components: FormIOComponent[]): FormIOComponen
 
   traverse(components);
   return result;
+};
+
+/**
+ * Robustly matches an actor (by email/name/employee ID) against allocated users and role-assigned users
+ * to retrieve their details (display name and employee ID).
+ */
+export const getStageActorDetails = (
+  allocatedTo?: allocatedToType[],
+  roleAssignedUsers?: RoleAssignedUsersType[],
+  primaryId?: string | null,
+  secondaryId?: string | null
+): { name: string; employee: string } | null => {
+  if (!primaryId && !secondaryId) return null;
+
+  const idsToMatch = [primaryId, secondaryId].filter(Boolean) as string[];
+
+  // 1. Try matching against allocated_to array
+  if (allocatedTo && allocatedTo.length > 0) {
+    for (const u of allocatedTo) {
+      const match = idsToMatch.some(
+        (id) =>
+          u.name === id ||
+          u.employee === id ||
+          u.user_id === id ||
+          u.email === id
+      );
+      if (match) {
+        return {
+          name: u.name || (primaryId ? primaryId.split("@")[0] : ""),
+          employee: u.employee || "",
+        };
+      }
+    }
+  }
+
+  // 2. Try matching against role_assigned_users
+  if (roleAssignedUsers && roleAssignedUsers.length > 0) {
+    for (const r of roleAssignedUsers) {
+      const uList = r.users || r.user || [];
+      for (const u of uList) {
+        const match = idsToMatch.some(
+          (id) =>
+            u.user_id === id ||
+            u.name === id ||
+            u.employee === id
+        );
+        if (match) {
+          return {
+            name: u.name,
+            employee: u.employee || "",
+          };
+        }
+      }
+    }
+  }
+
+  // 3. Fallback to extracting name from secondaryId or primaryId
+  const fallbackName = secondaryId || (primaryId ? primaryId.split("@")[0] : "");
+  return {
+    name: fallbackName,
+    employee: "",
+  };
 };

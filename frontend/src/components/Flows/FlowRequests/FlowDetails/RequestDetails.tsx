@@ -1,30 +1,34 @@
 import { useEffect, useState } from "react";
-import HeaderBar from "../../../HeaderBar";
 import { Attachment } from "../../../../types/flows";
+import HeaderBar from "../../../HeaderBar";
 
-import formatToIndianDate from "../../../../utils/formatToIndianDate";
-import FlowTable from "./FlowTable";
-import WorkflowTable from "./WorkflowTable";
-import Button from "../../../shared/atoms/Button";
-import { FormIOForm } from "../../../../utils/flowUtils";
-import { createPortal } from "react-dom";
-import ReviewForm from "../../Separation/components/ReviewForm";
 import { Eye } from "lucide-react";
-import { useScreenSize } from "../../../../hooks/useScreenSize";
-import AttachmentPreview from "./AttachmentPreview";
-import { useGetFlowRequestById } from "../../../../hooks/useFlows";
+import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
-import TableSkeleton, { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
+import { useGetFlowRequestById } from "../../../../hooks/useFlows";
+import { useScreenSize } from "../../../../hooks/useScreenSize";
+import { FormIOComponent } from "../../../../types/formio";
+import { FormIOForm } from "../../../../utils/flowUtils";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import Button from "../../../shared/atoms/Button";
 import NoDataFound from "../../../shared/atoms/NoDataFound";
 import FormPreview from "../../../shared/molecules/FormPreview";
-import { FormIOComponent } from "../../../../types/formio";
+import TableSkeleton, {
+  CardSkeleton,
+} from "../../../shared/molecules/Skeletons/TableSkeleton";
+import ReviewForm from "../../Separation/components/ReviewForm";
+import AttachmentPreview from "./AttachmentPreview";
+import FlowTable from "./FlowTable";
+import WorkflowTable from "./WorkflowTable";
 
-import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import { useQueryClient } from "@tanstack/react-query";
+import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 
 type FlowStatusType = "Approval Flow Status" | "Workflow Status";
-type JsonToFormData = { form?: { components?: FormIOComponent[] }, submission_data?: Record<string, unknown> };
-
+type JsonToFormData = {
+  form?: { components?: FormIOComponent[] };
+  submission_data?: Record<string, unknown>;
+};
 
 const RequestDetails: React.FC = () => {
   const { id } = useParams();
@@ -35,22 +39,27 @@ const RequestDetails: React.FC = () => {
     "Approval Flow Status",
   );
   const [showSelfForm, setShowSelfForm] = useState(false);
-  const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+  const [responseData, setResponseData] = useState<{
+    addAttachment?: Attachment[];
+  } | null>(null);
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
 
-  const haveInitiatorForm = data?.initiator_forms && data.initiator_forms.length > 0;
+  const haveInitiatorForm =
+    data?.initiator_forms && data.initiator_forms.length > 0;
 
   const handleShowSelfForm = () => {
     let formData: JsonToFormData;
     try {
-      formData = JSON.parse(data?.initiator_forms?.[0]?.form_data || "{}");
+      formData = JSON.parse(
+        data?.initiator_forms?.[0]?.form_data_display || "{}",
+      );
     } catch (error) {
-      console.error("Invalid initiator_forms form_data JSON:", error);
+      console.error("Invalid initiator_forms form_data_display JSON:", error);
       return;
     }
     const schema = formData?.form?.components ?? [];
-    const answer = (formData)?.submission_data ?? {};
+    const answer = formData?.submission_data ?? {};
 
     if (!schema) return;
     setFormSchema({ display: "form", components: schema });
@@ -63,7 +72,9 @@ const RequestDetails: React.FC = () => {
   useEffect(() => {
     const handleChatClose = () => {
       queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
-      queryClient.invalidateQueries({ queryKey: ["employee-flow-request-details"] });
+      queryClient.invalidateQueries({
+        queryKey: ["employee-flow-request-details"],
+      });
     };
 
     document.addEventListener("chatnext:modal:chat:close", handleChatClose);
@@ -83,11 +94,11 @@ const RequestDetails: React.FC = () => {
     } else {
       navigate("/webapp/flow-app/flow-requests");
     }
-  }
+  };
 
   const tabs = [
     { label: "Approval Flow Status", value: "Approval Flow Status" },
-    ...(data?.workflow_stages && data.workflow_stages.length > 0
+    ...(data?.workflow_stages
       ? [{ label: "Workflow Status", value: "Workflow Status" }]
       : []),
   ];
@@ -136,7 +147,9 @@ const RequestDetails: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <NoDataFound subtitle="Flow Request Record not Found" />
-        <Button variant="outline" onClick={handleNavigateBack}>Go Back</Button>
+        <Button variant="outline" onClick={handleNavigateBack}>
+          Go Back
+        </Button>
       </div>
     );
   }
@@ -149,15 +162,16 @@ const RequestDetails: React.FC = () => {
             title={data?.flow_name}
             onBack={handleNavigateBack}
             rightSlot={
-              haveInitiatorForm ?
+              haveInitiatorForm ? (
                 <Button
                   variant="outline"
                   onClick={handleShowSelfForm}
-                  className={`flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm ${isDesktop ? 'px-3' : 'px-2'}`}
+                  className={`flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm ${isDesktop ? "px-3" : "px-2"}`}
                 >
                   <Eye size={16} className="text-primary-600" />
                   {isDesktop && <span>Initiation Form</span>}
-                </Button> : null
+                </Button>
+              ) : null
             }
           />
         </div>
@@ -171,10 +185,11 @@ const RequestDetails: React.FC = () => {
                   onClick={() => setFlowStatusType(btn.value as FlowStatusType)}
                   disabled={isActive}
                   className={`flex-1 sm:flex-none px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all duration-200 
-          ${isActive
-                      ? "bg-primary-600 text-white font-semibold shadow-inner"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
-                    }
+          ${
+            isActive
+              ? "bg-primary-600 text-white font-semibold shadow-inner"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
+          }
           ${index === 0 ? "rounded-l-sm" : "rounded-r-sm"}`}
                 >
                   {btn.label}
@@ -183,17 +198,24 @@ const RequestDetails: React.FC = () => {
             })}
           </div>
 
-          <div className="flex flex-row sm:items-center justify-between w-full gap-4 sm:gap-6 text-sm py-1">
+          <div className="flex flex-row sm:items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6 text-sm py-1">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 min-w-0">
-              <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px] whitespace-nowrap">Initiated By</span>
+              <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px] whitespace-nowrap">
+                Initiated By
+              </span>
               <span className="text-gray-900 font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-100 truncate max-w-[140px] sm:max-w-none hover:text-primary cursor-pointer transition-colors duration-200">
                 <WrapperHoverCard employeeId={data?.initiated_by_employee_id}>
-                  {data?.initiated_by}
+                  {data?.initiated_by}{" "}
+                  {data?.initiated_by_employee_id
+                    ? `(${data?.initiated_by_employee_id})`
+                    : ""}
                 </WrapperHoverCard>
               </span>
             </div>
             <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2 min-w-0">
-              <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px] whitespace-nowrap">Initiated On</span>
+              <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px] whitespace-nowrap">
+                Initiated On
+              </span>
               <span className="text-gray-900 font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-100 whitespace-nowrap">
                 {formatToIndianDate(data?.initiated_on)}
               </span>
@@ -221,7 +243,9 @@ const RequestDetails: React.FC = () => {
               submissionData={formAnswer}
               readOnly={true}
             />
-            <AttachmentPreview attachments={responseData?.addAttachment || []} />
+            <AttachmentPreview
+              attachments={responseData?.addAttachment || []}
+            />
           </ReviewForm>,
           document.body,
         )}

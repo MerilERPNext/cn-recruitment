@@ -13,7 +13,10 @@ import { useApprovalAction } from "../../../../hooks/userApprovalList";
 
 const titles = [
   "Stage Name",
+  "Assigned To",
+  "Action Taken By",
   "Status",
+  "Actual Trigger Date",
   "Due Date",
   "Completed Date",
   "Actions",
