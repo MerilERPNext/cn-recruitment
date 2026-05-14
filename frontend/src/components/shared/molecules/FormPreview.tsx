@@ -1,7 +1,8 @@
-import React, { useMemo, useLayoutEffect } from "react";
+import React, { useMemo, useLayoutEffect, useState, useEffect } from "react";
 import { Form } from "@tsed/react-formio";
 import { FormIOForm, getFileComponents, buildFormFromSchemaAndAnswer } from "../../../utils/flowUtils";
 import { FormioPreviewItem, FormioPreviewPortal } from "./FormioPreview";
+import { FormIoChangeObj } from "../../../types/formio";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -18,6 +19,9 @@ export interface FormPreviewProps {
   readOnly?: boolean;
   /** Optional callback when a file is removed (only relevant when readOnly is false). */
   onRemoveFile?: (compKey: string, index: number) => void;
+  /** Optional callback when form data changes (only relevant when readOnly is false). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onChange?: (submission: any) => void;
   /** Optional extra className on the wrapper div. */
   className?: string;
 }
@@ -160,10 +164,16 @@ const FormPreview: React.FC<FormPreviewProps> = ({
   submissionData,
   readOnly = true,
   onRemoveFile,
+  onChange,
   className,
 }) => {
   // Inject the global CSS rule synchronously before paint
   useHideNativeFileList();
+
+  const [currentData, setCurrentData] = useState(submissionData);
+  useEffect(() => {
+    setCurrentData(submissionData);
+  }, [submissionData]);
 
   // Build a read-only version of the form when in readOnly mode
   const resolvedForm = useMemo(() => {
@@ -173,22 +183,37 @@ const FormPreview: React.FC<FormPreviewProps> = ({
     return schema;
   }, [schema, submissionData, readOnly]);
 
+  const handleChange = (submission: FormIoChangeObj) => {
+    if (submission?.data) {
+      setCurrentData({ ...submission.data });
+    }
+    if (onChange) {
+      onChange(submission);
+    }
+  };
+
+  // Memoize the submission object so Form.io doesn't think it changed on every re-render
+  // This prevents Form.io from "restoring" old state when currentData triggers a local re-render
+  const memoizedSubmission = useMemo(() => ({ data: submissionData }), [submissionData]);
+
   return (
     <div id={containerId} className={`formio-hide-attachment ${className || ""}`}>
       <Form
+        key={readOnly ? 'readonly' : 'editable'}
         form={resolvedForm}
-        submission={readOnly ? { data: submissionData } : undefined}
+        submission={memoizedSubmission}
         options={{
           readOnly,
           ...(readOnly ? {} : { buttonSettings: { showSubmit: false } }),
         }}
+        {...(!readOnly ? { onChange: handleChange } : {})}
       />
 
       {/* Portal-based custom attachment previews */}
       <FormioAttachmentPreviews
         formId={containerId}
         schema={schema}
-        submissionData={submissionData}
+        submissionData={currentData}
         readOnly={readOnly}
         onRemoveFile={onRemoveFile}
       />

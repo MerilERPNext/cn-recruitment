@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Attachment } from "../../../../types/flows";
 import HeaderBar from "../../../HeaderBar";
 
-import { ChevronDown, Eye } from "lucide-react";
+import { ChevronDown, Eye, Pencil, Save } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
-import { useGetFlowRequestById } from "../../../../hooks/useFlows";
+import { useGetFlowRequestById, useUpdateInitiatorFormSubmission } from "../../../../hooks/useFlows";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { FormIOComponent } from "../../../../types/formio";
 import { FormIOForm } from "../../../../utils/flowUtils";
@@ -23,6 +23,7 @@ import WorkflowTable from "./WorkflowTable";
 
 import { useQueryClient } from "@tanstack/react-query";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
+import toast from "react-hot-toast";
 
 type JsonToFormData = {
   form?: { components?: FormIOComponent[] };
@@ -37,33 +38,91 @@ const RequestDetails: React.FC = () => {
   const [approvalExpanded, setApprovalExpanded] = useState(false);
   const [workflowExpanded, setWorkflowExpanded] = useState(false);
   const [showSelfForm, setShowSelfForm] = useState(false);
+  const [isEditingForm, setIsEditingForm] = useState(false);
   const [responseData, setResponseData] = useState<{
     addAttachment?: Attachment[];
   } | null>(null);
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
+  const [isFormValid, setIsFormValid] = useState(true);
+  const editedSubmissionDataRef = useRef<Record<string, unknown>>({});
+
+  const updateInitiatorMutation = useUpdateInitiatorFormSubmission();
 
   const haveInitiatorForm =
     data?.initiator_forms && data.initiator_forms.length > 0;
 
   const handleShowSelfForm = () => {
-    let formData: JsonToFormData;
+    let displayData: JsonToFormData;
+    let rawData: JsonToFormData;
     try {
-      formData = JSON.parse(
+      displayData = JSON.parse(
         data?.initiator_forms?.[0]?.form_data_display || "{}",
       );
+      rawData = JSON.parse(
+        data?.initiator_forms?.[0]?.form_data || "{}",
+      );
     } catch (error) {
-      console.error("Invalid initiator_forms form_data_display JSON:", error);
+      console.error("Invalid initiator_forms JSON:", error);
       return;
     }
-    const schema = formData?.form?.components ?? [];
-    const answer = formData?.submission_data ?? {};
+    const answer = displayData?.submission_data ?? rawData?.submission_data ?? {};
 
-    if (!schema) return;
-    setFormSchema({ display: "form", components: schema });
+    if (Object.keys(answer).length === 0 && !rawData?.form?.components && !displayData?.form?.components) return;
     setFormAnswer(answer);
+    editedSubmissionDataRef.current = { ...answer };
     setResponseData(answer);
+    setIsEditingForm(false);
     setShowSelfForm(true);
+  };
+
+  const handleFormChange = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (submission: any) => {
+      if (submission?.data) {
+        editedSubmissionDataRef.current = { ...submission.data };
+      }
+      if (typeof submission?.isValid === "boolean") {
+        setIsFormValid(submission.isValid);
+      }
+    },
+    [],
+  );
+
+  const handleSaveForm = () => {
+    if (!isFormValid) {
+      toast.error("Please fill all required fields correctly.");
+      return;
+    }
+
+    const conversationDoc = data?.initiator_forms?.[0]?.conversation_doc;
+    if (!conversationDoc) {
+      toast.error("Unable to save: missing conversation document reference.");
+      return;
+    }
+
+    updateInitiatorMutation.mutate(
+      {
+        conversation_doc: conversationDoc,
+        submission_data: editedSubmissionDataRef.current,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Initiator form updated successfully.");
+          setIsEditingForm(false);
+          setFormAnswer({ ...editedSubmissionDataRef.current });
+          queryClient.invalidateQueries({
+            queryKey: ["employee-flow-request-details"],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["employee-flow-requests"],
+          });
+        },
+        onError: () => {
+          toast.error("Failed to update initiator form. Please try again.");
+        },
+      },
+    );
   };
 
   const queryClient = useQueryClient();
@@ -84,6 +143,46 @@ const RequestDetails: React.FC = () => {
       );
     };
   }, [queryClient]);
+
+  useEffect(() => {
+    if (!haveInitiatorForm || !data?.initiator_forms) return;
+
+    let displayData: JsonToFormData;
+    let rawData: JsonToFormData;
+    try {
+      displayData = JSON.parse(
+        data.initiator_forms[0]?.form_data_display || "{}",
+      );
+      rawData = JSON.parse(
+        data.initiator_forms[0]?.form_data || "{}",
+      );
+    } catch (e: unknown) {
+      console.log("Failed to parse form data", (e as Error)?.message);
+      return;
+    }
+
+    const rawSchema = isEditingForm
+      ? (rawData?.form?.components ?? displayData?.form?.components ?? [])
+      : (displayData?.form?.components ?? rawData?.form?.components ?? []);
+
+    // Filter out the native Form.io submit button since we have our own sticky footer
+    const schemaToUse = rawSchema.filter(
+      (comp) => !(comp.type === "button" && comp.action === "submit")
+    );
+
+    const answerToUse = displayData?.submission_data ?? rawData?.submission_data ?? {};
+
+    setFormSchema({ display: "form", components: schemaToUse });
+
+    // Only update the answers from backend if we are not currently editing,
+    // to avoid overwriting user input during background refetches.
+    if (!isEditingForm) {
+      setFormAnswer(answerToUse);
+      setResponseData(answerToUse);
+      // Also update the ref so if they click edit again, it starts from the latest backend state
+      editedSubmissionDataRef.current = { ...answerToUse };
+    }
+  }, [isEditingForm, data, haveInitiatorForm]);
 
   const navigate = useNavigate();
   const handleNavigateBack = () => {
@@ -197,8 +296,8 @@ const RequestDetails: React.FC = () => {
             }
           />
         </div>
-        <div className="px-8 flex items-center justify-end mb-4 flex-wrap gap-4">
-          <div className="flex flex-row sm:items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6 text-sm py-1">
+        <div className="px-8 flex items-center justify-between mb-4 flex-wrap gap-4">
+          <div className="flex flex-row sm:items-center justify-between w-full gap-4 sm:gap-6 text-sm py-1">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 min-w-0">
               <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px] whitespace-nowrap">
                 Initiated By
@@ -411,18 +510,60 @@ const RequestDetails: React.FC = () => {
         showSelfForm &&
         createPortal(
           <ReviewForm
-            onClose={() => setShowSelfForm(false)}
-            title="Initiation Form"
+            onClose={() => {
+              setShowSelfForm(false);
+              setIsEditingForm(false);
+            }}
+            showReqFormio={isEditingForm}
+            title={isEditingForm ? "Edit Initiation Form" : "Initiation Form"}
+            headerAction={
+              !!data.can_edit_initiator_form && <Button
+                variant={isEditingForm ? "soft" : "outline"}
+                size="sm"
+                onClick={() => setIsEditingForm((prev) => !prev)}
+                className={`flex items-center gap-1.5 py-1 px-2.5 transition-all rounded-md ${isEditingForm
+                  ? "border-primary-300 text-primary-700 bg-primary-50"
+                  : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                  }`}
+              >
+                <Pencil size={13} className={isEditingForm ? "text-primary-600" : "text-gray-500"} />
+                <span className="text-xs font-medium">{isEditingForm ? "Editing" : "Edit"}</span>
+              </Button>
+            }
           >
             <FormPreview
               containerId="initiation-form-preview"
               schema={formSchema}
               submissionData={formAnswer}
-              readOnly={false}
+              readOnly={!isEditingForm}
+              onChange={(s) => { if (isEditingForm) handleFormChange(s); }}
             />
-            <AttachmentPreview
-              attachments={responseData?.addAttachment || []}
-            />
+            {!isEditingForm && (
+              <AttachmentPreview
+                attachments={responseData?.addAttachment || []}
+              />
+            )}
+            {isEditingForm && (
+              <div className="sticky bottom-0 mt-4 pt-3 pb-2 border-t border-gray-100 bg-white/95 backdrop-blur-sm flex items-center justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditingForm(false)}
+                  className="px-4 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="contain"
+                  onClick={handleSaveForm}
+                  loading={updateInitiatorMutation.isPending}
+                  disabled={updateInitiatorMutation.isPending}
+                  className="px-4 py-2 rounded-lg flex items-center gap-2"
+                >
+                  <Save size={15} />
+                  Save Changes
+                </Button>
+              </div>
+            )}
           </ReviewForm>,
           document.body,
         )}
