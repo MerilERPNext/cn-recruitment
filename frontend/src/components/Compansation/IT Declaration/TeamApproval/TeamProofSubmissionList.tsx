@@ -68,7 +68,7 @@ const TeamProofSubmissionList = () => {
       <div className="flex-1 overflow-y-auto md:px-4 pb-20">
         <CardTable titles={titles} columnWidths={columnWidths}>
           <ApprovalList
-          status="Open"
+            status="Open"
             doctype="Employee Tax Exemption Proof Submission"
             refetch={refetch}
             setRefetch={setRefetch}
