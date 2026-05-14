@@ -12,12 +12,16 @@ import Button from "../shared/atoms/Button";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { LibraryTableSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import { Typography } from "../shared/atoms/Typography";
+import { FilePreview } from "../shared/molecules/FilePreview";
+import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const { targetEmployeeId } = useTargetUser();
+  const queryClient = useQueryClient()
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const employeeId = useMemo(() => {
     if (targetEmployeeId && targetEmployeeId.trim() !== "") {
@@ -37,22 +41,23 @@ const DocumentLibrary = () => {
     "view_employee_document",
     "Employee Profile",
   );
-  console.log("userUiPermission:", userUiPermission, canViewDocument);
   const canDownloadDocument = isActionEnabled(
     userUiPermission,
     "download_employee_document",
     "Employee Profile",
   );
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!selectedDocId) return;
 
     submitAcknowledgement(selectedDocId, {
       onSuccess: () => {
-        alert("Acknowledgement submitted successfully!");
+        toast.success("Acknowledgement submitted successfully!");
         setSelectedFile(null);
         setSelectedDocId(null);
         setAcknowledged(false);
+        queryClient.invalidateQueries({ queryKey: ["employee-documents"] })
       },
     });
   };
@@ -225,42 +230,46 @@ const DocumentLibrary = () => {
                       </span>
                     </td>
                     <td className="py-4 px-6">
-                      {/* Acknowledgement Required → show Acknowledge button */}
-                      {doc.status === "Acknowledgement Required" && (
-                        <button
-                          onClick={() => {
-                            setSelectedFile(doc.file_name); // preview ke liye
-                            setSelectedDocId(doc.name); // 👈 acknowledgement ke liye
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all"
-                        >
-                          Acknowledge
-                        </button>
-                      )}
+                      <div className="flex gap-2 items-center">
 
-                      {/* Draft or Approved → show View + Download buttons */}
-                      {(doc.type === "Personal" ||
-                        doc.status === "Approved") && (
-                          <div className="flex gap-2">
+
+                        {/* Personal or Approved → show View + Download buttons */}
+                        {(doc.type === "Personal" || doc.status === "Approved") && (
+                          <>
                             {canViewDocument && (
-                              <button
+                              <Button
+                                variant="soft"
                                 onClick={() => setSelectedFile(doc.file_name)}
-                                className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-4 py-2 rounded-lg transition-all"
                               >
                                 View
-                              </button>
+                              </Button>
                             )}
                             {canDownloadDocument && (
                               <a
                                 href={getFileUrl(doc.file_name)}
                                 download
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all"
+                              // className="inline-flex items-center px-4 py-1 rounded-md bg-primary-500 hover:bg-primary-600 text-white hover:text-white transition-colors text-xs font-brand"
                               >
-                                Download
+                                <Button variant="contain" >
+                                  Download
+                                </Button>
                               </a>
                             )}
-                          </div>
+                          </>
                         )}
+                        {/* Acknowledgement Required → show Acknowledge button */}
+                        {doc.status === "Acknowledgement Required" && (
+                          <Button
+                            variant="contain"
+                            onClick={() => {
+                              setSelectedFile(doc.file_name);
+                              setSelectedDocId(doc.name);
+                            }}
+                          >
+                            Acknowledge
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -295,67 +304,39 @@ const DocumentLibrary = () => {
               </button>
             </div>
 
-            {/* PDF viewer */}
             <div className="flex-1 overflow-hidden">
-              <iframe
-                src={getFileUrl(selectedFile) + "#toolbar=0"}
-                title="Document PDF"
-                className="w-full h-[80vh]"
-              ></iframe>
+              <FilePreview
+                fileUrl={getFileUrl(selectedFile)}
+                fileName={selectedFile}
+                className="h-full"
+              />
             </div>
-            {showAcknowledgement && (
-              <div
-                className={`border-t p-4 w-full transition-all duration-300 ${acknowledged ? "bg-green-100" : "bg-red-100"
-                  }`}
-              >
-                <p
-                  className={`font-medium transition-all duration-300 ${acknowledged ? "text-green-700" : "text-red-700"
-                    }`}
-                >
-                  {acknowledged
-                    ? "Confirm Acknowledge Complete"
-                    : "Confirm Acknowledgement Required by checkbox"}
-                </p>
-              </div>
-            )}
-
-            <div className="flex justify-between items-center p-4">
-              <div className="flex justify-between items-center p-4">
+            <div className="flex justify-between items-center border-t p-4">
+              <div>
                 {showAcknowledgement && (
-                  <div className="flex justify-start items-center">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       id="acknowledgeCheckbox"
                       checked={acknowledged}
                       onChange={handleCheckboxChange}
-                      className="mr-2 accent-green-600 w-4 h-4 cursor-pointer"
+                      className="accent-green-600 w-4 h-4 cursor-pointer"
                     />
-                    <label
-                      htmlFor="acknowledgeCheckbox"
-                      className={`font-bold cursor-pointer ${acknowledged ? "text-green-700" : "text-gray-700"
-                        }`}
-                    >
-                      Acknowledgement Required
-                    </label>
-                  </div>
+                    <span className={`font-medium ${acknowledged ? "text-green-700" : "text-gray-700"}`}>
+                      I acknowledge this document
+                    </span>
+                  </label>
                 )}
               </div>
 
-              <div className=" flex justify-end">
-                <button
-                  onClick={closeModal}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded-md"
-                >
+              <div className="flex gap-2">
+                <Button variant="soft" onClick={closeModal}>
                   Close
-                </button>
-                {/* Only show Acknowledge button if status = "Acknowledgement Required" */}
+                </Button>
                 {showAcknowledgement && acknowledged && (
-                  <button
-                    onClick={handleSubmit}
-                    className="ml-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md"
-                  >
+                  <Button variant="contain" onClick={handleSubmit}>
                     Submit
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

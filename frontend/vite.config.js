@@ -28,7 +28,17 @@ export default defineConfig({
             output: {
                 entryFileNames: "[name].[hash].js",
                 chunkFileNames: "[name].[hash].js",
-                assetFileNames: "[name].[hash].[ext]",
+                // Force the pdf.js worker to output with a .js extension.
+                // pdfjs-dist v4 ships the worker as .mjs (ES module). Production servers
+                // commonly lack a MIME-type entry for .mjs and serve it as
+                // application/octet-stream, which the browser rejects for module scripts.
+                // .js files are universally served as application/javascript.
+                assetFileNames: (assetInfo) => {
+                    if (assetInfo.name && /pdf\.worker/.test(assetInfo.name)) {
+                        return "[name].[hash].js";
+                    }
+                    return "[name].[hash].[ext]";
+                },
                 // Vendor chunking configuration for better caching and optimization
                 manualChunks: {
                     'vendor-react': ['react', 'react-dom', 'react-router', 'react-router-dom'],

@@ -206,10 +206,10 @@ export const FrappeAPI = {
             `⚠️ Method ${method} returned 417 Expectation Failed - likely device ID or attendance API issue`
           );
 
-          // For specific attendance methods, return empty data instead of throwing
+          // For read-only attendance/event methods, return empty data instead of throwing
           if (
             method.includes("get_events") ||
-            method.includes("attendance") ||
+            method.includes("get_attendance") ||
             method.includes("device_id")
           ) {
             console.warn(
