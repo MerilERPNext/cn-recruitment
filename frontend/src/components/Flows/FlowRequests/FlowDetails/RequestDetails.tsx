@@ -418,7 +418,7 @@ const RequestDetails: React.FC = () => {
               containerId="initiation-form-preview"
               schema={formSchema}
               submissionData={formAnswer}
-              readOnly={true}
+              readOnly={false}
             />
             <AttachmentPreview
               attachments={responseData?.addAttachment || []}

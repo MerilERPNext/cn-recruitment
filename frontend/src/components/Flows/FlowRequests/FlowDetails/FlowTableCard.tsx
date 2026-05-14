@@ -89,6 +89,7 @@ const FlowTableRow = ({
             custom_open_chatnext_assistant_on_action:
                 actionsWithForm.includes(action),
         });
+        setShowActModal(false);
     };
     const { data: currentUser } = useCurrentUser();
 

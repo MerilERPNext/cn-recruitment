@@ -56,8 +56,8 @@ const FlowTableRow = ({
     try {
       return stage?.todo?.custom_doctype_actions_with_form
         ? JSON.parse(
-            stage.todo.custom_doctype_actions_with_form.replace(/'/g, '"'),
-          )
+          stage.todo.custom_doctype_actions_with_form.replace(/'/g, '"'),
+        )
         : [];
     } catch (e) {
       console.error("Failed to parse custom_doctype_actions_with_form", e);
@@ -72,6 +72,7 @@ const FlowTableRow = ({
       custom_open_chatnext_assistant_on_action:
         actionsWithForm.includes(action),
     });
+    setShowActModal(false);
   };
   const { data: currentUser } = useCurrentUser();
 
@@ -120,8 +121,8 @@ const FlowTableRow = ({
     try {
       data = JSON.parse(
         stage?.approval_response_data_display ||
-          stage?.approval_response_data ||
-          "{}",
+        stage?.approval_response_data ||
+        "{}",
       );
     } catch (error) {
       console.error("Invalid approval_response_data JSON:", error);
@@ -217,10 +218,10 @@ const FlowTableRow = ({
         <>
           {(stage?.approval_response_data_display ||
             stage?.approval_response_data) && (
-            <Button variant="outline" onClick={handleShowForm}>
-              Review Form
-            </Button>
-          )}
+              <Button variant="outline" onClick={handleShowForm}>
+                Review Form
+              </Button>
+            )}
           {canPerformActions && (
             <Button
               variant="contain"
