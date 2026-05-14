@@ -157,7 +157,7 @@ const RequestDetails: React.FC = () => {
         data.initiator_forms[0]?.form_data || "{}",
       );
     } catch (e: unknown) {
-      console.log("Failed to parse form data", (e as Error)?.message);
+      console.error("Failed to parse form data", (e as Error)?.message);
       return;
     }
 

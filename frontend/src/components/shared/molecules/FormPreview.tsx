@@ -20,8 +20,7 @@ export interface FormPreviewProps {
   /** Optional callback when a file is removed (only relevant when readOnly is false). */
   onRemoveFile?: (compKey: string, index: number) => void;
   /** Optional callback when form data changes (only relevant when readOnly is false). */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onChange?: (submission: any) => void;
+  onChange?: (submission: FormIoChangeObj) => void;
   /** Optional extra className on the wrapper div. */
   className?: string;
 }
