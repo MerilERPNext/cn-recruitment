@@ -964,9 +964,8 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
       if (processedReceiptFilesRef.current.has(fingerprint)) return;
       processedReceiptFilesRef.current.add(fingerprint);
 
-      const toastId = toast.loading("Reading receipt...");
-
       try {
+        loading?.show("Scanning receipt...");
         const content = await fileToBase64Content(targetFile);
         const response = (await FrappeAPI.callMethod(
           "chatnext_expense_trips.document_extraction.api.extract_receipt_fields_from_base64",
@@ -988,23 +987,19 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
             : {};
 
         if (applyReceiptExtraction(fields)) {
-          toast.success("Receipt details filled. Please review before saving.", {
-            id: toastId,
-          });
+          toast.success("Receipt details filled. Please review before saving.");
         } else {
-          toast("Receipt uploaded. I could not find new fields to fill.", {
-            id: toastId,
-          });
+          toast("Receipt uploaded. I could not find new fields to fill.");
         }
       } catch (error) {
         processedReceiptFilesRef.current.delete(fingerprint);
         console.error("Receipt extraction failed", error);
-        toast.error("Could not read this receipt. You can still enter it manually.", {
-          id: toastId,
-        });
+        toast("Receipt uploaded. Fields could not be detected, please enter them manually.");
+      } finally {
+        loading?.hide();
       }
     },
-    [applyReceiptExtraction, mainFormData?.expenseCategory, mainFormData?.expenseType],
+    [applyReceiptExtraction, loading, mainFormData?.expenseCategory, mainFormData?.expenseType],
   );
 
   const { data: employeesList, isFetching: isLoadingEmployees } = useEmployees([
