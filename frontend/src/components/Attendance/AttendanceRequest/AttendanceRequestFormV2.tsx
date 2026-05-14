@@ -373,6 +373,29 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           delete companyField.selectValues;
           delete companyField.refreshOn;
         }
+
+        // Inject allowed date boundaries so this rebuild never overwrites them.
+        // This effect clones from baseSchema (original JSON) every time it runs,
+        // which would erase any date constraints set by the separate attachment
+        // effect if that one happened to run first.
+        if (attendanceRequestAttachmentsMandatory) {
+          const parseDateLocal = (d: string | undefined) => {
+            if (!d) return undefined;
+            const p = new Date(d);
+            return isNaN(p.getTime()) ? undefined : p;
+          };
+          const minD = parseDateLocal(attendanceRequestAttachmentsMandatory.allowed_from_date);
+          const maxD = parseDateLocal(attendanceRequestAttachmentsMandatory.allowed_to_date);
+
+          (["from_date", "to_date"] as const).forEach((key) => {
+            const comp = panel.components.find((c: SchemaComponent) => c.key === key);
+            if (!comp) return;
+            if (!comp.datePicker) comp.datePicker = {};
+            if (!comp.widget) comp.widget = {};
+            if (minD) { comp.datePicker.minDate = minD; comp.widget.minDate = minD; }
+            if (maxD) { comp.datePicker.maxDate = maxD; comp.widget.maxDate = maxD; }
+          });
+        }
       }
 
       try {
@@ -386,8 +409,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       }
     }
     // include requiredFieldMap so required flags are respected after filtering
+    // include attendanceRequestAttachmentsMandatory so date constraints survive
+    // schema rebuilds triggered by reqValidationmutation arriving after attachment data
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reqValidationmutation?.data, propSchema, requiredFieldMap]);
+  }, [reqValidationmutation?.data, propSchema, requiredFieldMap, attendanceRequestAttachmentsMandatory]);
 
   const start = useMemo(() => {
     const d = fromDateChanged ? new Date(fromDateChanged) : selectedDate;
