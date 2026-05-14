@@ -280,6 +280,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const { mutateAsync: validateExpense, isPending: isValidating } =
     useValidateExpense();
   const { uploadFiles, loading: isUploadingFiles } = useFileUploader();
+  const loading = useLoadingOverlay();
   const { mutateAsync: fetchApplicableCategories } = useGetApplicableExpenseCategoriesMutation();
   const { mutateAsync: fetchExpenseTypesByCategory } = useGetExpenseTypesByCategoryMutation();
   const { data: claimAttachments } = useGetExpenseAttachments(
@@ -665,7 +666,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
     try {
       setIsFileProcessing(true);
-      toast.loading("Reading receipt and extracting fields...", { id: "receipt-ocr" });
+      loading?.show("Scanning receipt...");
       const content = await fileToDataUrl(file);
       const result: any = await FrappeAPI.callMethod(
         "chatnext_expense_trips.document_extraction.api.extract_receipt_fields_from_base64",
@@ -685,16 +686,17 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
           id: "receipt-ocr",
         });
       } else if (result?.warnings?.length) {
-        toast.error(result.warnings[0], { id: "receipt-ocr" });
+        toast(result.warnings[0], { id: "receipt-ocr" });
       } else {
         toast("Receipt read, but no empty fields needed updating.", { id: "receipt-ocr" });
       }
     } catch (error) {
       console.error("Receipt extraction failed:", error);
-      toast.error("Could not read this receipt clearly.", { id: "receipt-ocr" });
+      toast("Receipt uploaded. Fields could not be detected, please enter them manually.", { id: "receipt-ocr" });
       processedReceiptFilesRef.current.delete(fingerprint);
     } finally {
       setIsFileProcessing(false);
+      loading?.hide();
     }
   };
 
@@ -1363,8 +1365,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       });
     }
   }, [isSharePanelOpen]);
-
-  const loading = useLoadingOverlay();
 
   const submitAll = async (type: "General" | "Relocation", specificExpenses?: Expense[]) => {
     if (type === "Relocation") {
