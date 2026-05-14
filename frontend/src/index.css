@@ -181,13 +181,13 @@ code {
 
 /* Desktop attendance calendar - unique scoped styles */
 .desktop-att-cal .react-datepicker__day {
-  height: 5.5rem !important;
+  height: 6rem !important;
   align-items: stretch !important;
   justify-content: stretch !important;
   margin: 0 !important;
   border-right: 1px solid #f3f4f6 !important;
   border-bottom: 1px solid #f3f4f6 !important;
-  padding: 0 !important;
+  padding: 8px !important;
 }
 
 .desktop-att-cal .react-datepicker__week {

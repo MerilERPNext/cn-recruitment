@@ -85,7 +85,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
             validEvents.reduce((map, event) => {
                 const key =
                     event?.doctype === "Attendance Request" &&
-                    event?.request_type === "Out Duty"
+                        event?.request_type === "Out Duty"
                         ? "Out Duty"
                         : event?.doctype;
                 if (!map.has(key)) map.set(key, event);
@@ -98,7 +98,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                 {uniqueEvents.map((event, index) => {
                     const doctypeKey =
                         event?.doctype === "Attendance Request" &&
-                        event?.request_type === "Out Duty"
+                            event?.request_type === "Out Duty"
                             ? "Out Duty"
                             : event?.doctype;
                     const badge = getEventBadgeStyle(doctypeKey);
@@ -107,7 +107,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                             key={index}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                console.log(event, "-----------------------")
+                                // console.log(event, "-----------------------")
                             }}
                             className={`w-fit text-[10px] font-medium pl-1.5 pr-1 py-0.5 leading-tight ${badge.className}`}
                             title={doctypeKey}
@@ -127,10 +127,6 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
                 </div>
             case "absent":
-                return <div className="p-1 bg-red-50 rounded-lg">
-
-                    <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                </div>
             case "unpaid":
                 return <div className="p-1 bg-red-50 rounded-lg">
 
@@ -165,20 +161,6 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                 return (
                     <span className="w-fit text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 leading-tight">
                         Opt. Holiday
-                    </span>
-                );
-            case "unpaid":
-                return (
-                    <div className="w-fit border-l-2 border-red-400 pl-1.5">
-                        <span className="text-[10px] font-medium text-red-600 leading-tight">
-                            Unpaid
-                        </span>
-                    </div>
-                );
-            case "work-from-home":
-                return (
-                    <span className="w-fit text-[10px] font-medium px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 leading-tight">
-                        WFH
                     </span>
                 );
             default:
