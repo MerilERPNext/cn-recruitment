@@ -428,7 +428,6 @@ const BenefitSlipItem = ({
   const formattedCreationDate = formatToIndianDate(
     todo?.reference_document?.creation || "",
   );
-
   const canEdit = todo?.can_edit === true && !isActed;
   const canRevoke =
     todo?.custom_allow_revoke === 1 &&

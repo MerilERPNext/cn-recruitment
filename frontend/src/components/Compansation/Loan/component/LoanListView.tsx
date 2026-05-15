@@ -196,16 +196,14 @@ export const LoanRow = ({
         </Typography>
 
         <Typography variant="bodySmall" className="font-medium text-center">
-          {getAssignedUsersCell(loan?.todo_list)}
+          {getAssignedUsersCell(loan?.todo_list?.[0])}
         </Typography>
         
         {/* Loan Type */}
         <Typography variant="bodySmall" className="font-medium text-center">
           {loan.loan_type}
         </Typography>
-
        
-
         {/* Loan Amount */}
         <Typography variant="bodySmall" className="font-medium text-center">
           {loan.status === "Open"
