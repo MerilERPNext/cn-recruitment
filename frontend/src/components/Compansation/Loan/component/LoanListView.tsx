@@ -20,6 +20,7 @@ import { useLoadingOverlay } from "../../../../context/OverlayContext";
 import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 import { queryClient } from "../../../../providers/QueryProvider";
+import { getAssignedUsersCell } from "../../../../utils/getAssignedUsersCell";
 
 
 interface LoanListProps {
@@ -129,6 +130,7 @@ export const LoanRow = ({
 }: LoanRowProps) => {
   const [expanded, setExpanded] = useState<boolean>(false);
   const [isActed, setIsActed] = useState(false);
+
   const onToggle = () => {
     setExpanded(prev => !prev);
   }
@@ -136,6 +138,7 @@ export const LoanRow = ({
   const todo = Array.isArray(loan.todo_list) && loan.todo_list.length > 0
     ? loan.todo_list[0]
     : null;
+  const formattedCreationDate = formatToIndianDate(loan?.todo_list?.[0].reference_document?.creation ?? "");
 
   const canRevoke =
     loan.status === "Open" && todo?.custom_allow_revoke === 1 && !isActed;
@@ -165,7 +168,6 @@ export const LoanRow = ({
       },
     );
   };
-
   return (
     <div
       onClick={onToggle}
@@ -194,11 +196,15 @@ export const LoanRow = ({
           {loan.loan_name}
         </Typography>
 
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {getAssignedUsersCell(loan?.todo_list?.[0])}
+        </Typography>
+        
         {/* Loan Type */}
         <Typography variant="bodySmall" className="font-medium text-center">
           {loan.loan_type}
         </Typography>
-
+       
         {/* Loan Amount */}
         <Typography variant="bodySmall" className="font-medium text-center">
           {loan.status === "Open"
@@ -215,7 +221,9 @@ export const LoanRow = ({
         <Typography variant="bodySmall" className="font-medium text-center">
           {loan.standard_interest || "0"}%
         </Typography>
-
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {formattedCreationDate}
+        </Typography>
         {/* EMI Type */}
         <Typography variant="bodySmall" className="font-medium text-center">
           {loan.emi_type}{" "}

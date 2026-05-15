@@ -178,9 +178,11 @@ const MyLeaveRequests = ({
               activeStatus === "Rejected"
                 ? [
                   "Request Id",
+                  "Assigned To",
                   "Leave Type",
                   "From Date",
                   "To Date",
+                  "Created At",
                   "Description",
                   "Reason",
                   "Leave Days",
@@ -190,9 +192,11 @@ const MyLeaveRequests = ({
                 ]
                 : [
                   "Request Id",
+                  "Assigned To",
                   "Leave Type",
                   "From Date",
                   "To Date",
+                  "Created At",
                   "Description",
                   "Reason",
                   "Leave Days",
@@ -202,8 +206,8 @@ const MyLeaveRequests = ({
             }
             columnWidths={
               activeStatus === "Rejected"
-                ? ["1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr"]
-                : ["1fr 1.5fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr"]
+                ? ["1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr"]
+                : ["1fr 1.5fr 1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr"]
             }
             columnSortConfig={COLUMN_SORT_CONFIG_MY_LEAVE_REQUEST}
           >

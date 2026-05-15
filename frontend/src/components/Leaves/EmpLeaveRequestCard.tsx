@@ -20,6 +20,7 @@ import { Typography } from "../shared/atoms/Typography";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
 import Tooltip from "../shared/Tooltip";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
+import { getAssignedUsersCell } from "../../utils/getAssignedUsersCell";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -36,6 +37,7 @@ const EmpLeaveRequestCard = ({
   const { isDesktop } = useScreenSize();
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [isActed, setIsActed] = useState(false);
+  const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation);
 
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
@@ -124,7 +126,7 @@ const EmpLeaveRequestCard = ({
     <>
       {isDesktop ? (
         <div
-          style={{ gridTemplateColumns: showRejectReason ? "1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr" : "1fr 1.5fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr" }}
+          style={{ gridTemplateColumns: showRejectReason ? "1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr  1fr 1fr 1.5fr 1fr" : "1fr 1.5fr 1fr   1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr" }}
           className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         >
           <Tooltip
@@ -138,6 +140,11 @@ const EmpLeaveRequestCard = ({
               {data?.reference_document?.name}
             </Typography>
           </Tooltip>
+
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {getAssignedUsersCell(data)}
+          </Typography>
+
           <Tooltip
             content={`${data?.reference_document?.custom_leave_type_name}`}
             triggerClassName="w-full truncate min-w-0 block"
@@ -155,7 +162,9 @@ const EmpLeaveRequestCard = ({
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document.to_date)}
           </Typography>
-
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formattedCreationDate}
+          </Typography>
           <Tooltip
             content={cleanDescription}
             triggerClassName="w-full truncate min-w-0 block"
@@ -257,6 +266,7 @@ const EmpLeaveRequestCard = ({
                   {data?.reference_document?.custom_leave_type_name}
                 </Typography>
               </div>
+              
               <div className="flex flex-col gap-1 text-right">
                 <Typography variant="mobileCardLabel">Leave Days</Typography>
                 <Typography variant="mobileCardValue">
@@ -320,6 +330,12 @@ const EmpLeaveRequestCard = ({
                 </Typography>
               </div>
             )}
+              <div>
+                <Typography variant="mobileCardLabel">Assigned To</Typography>
+                <Typography variant="mobileCardValue">
+                  {getAssignedUsersCell(data)}
+                </Typography>
+              </div>
 
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
