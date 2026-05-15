@@ -517,7 +517,7 @@ const RequestDetails: React.FC = () => {
             showReqFormio={isEditingForm}
             title={isEditingForm ? "Edit Initiation Form" : "Initiation Form"}
             headerAction={
-              !!data.can_edit_initiator_form && <Button
+              !!data?.can_edit_initiator_form && <Button
                 variant={isEditingForm ? "soft" : "outline"}
                 size="sm"
                 onClick={() => setIsEditingForm((prev) => !prev)}
@@ -529,6 +529,29 @@ const RequestDetails: React.FC = () => {
                 <Pencil size={13} className={isEditingForm ? "text-primary-600" : "text-gray-500"} />
                 <span className="text-xs font-medium">{isEditingForm ? "Editing" : "Edit"}</span>
               </Button>
+            }
+            footerAction={
+              isEditingForm ? (
+                <div className="flex items-center justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditingForm(false)}
+                    className="px-4 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contain"
+                    onClick={handleSaveForm}
+                    loading={updateInitiatorMutation.isPending}
+                    disabled={updateInitiatorMutation.isPending}
+                    className="px-4 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <Save size={15} />
+                    Save Changes
+                  </Button>
+                </div>
+              ) : undefined
             }
           >
             <FormPreview
@@ -542,27 +565,6 @@ const RequestDetails: React.FC = () => {
               <AttachmentPreview
                 attachments={responseData?.addAttachment || []}
               />
-            )}
-            {isEditingForm && (
-              <div className="sticky bottom-0 mt-4 pt-3 pb-2 border-t border-gray-100 bg-white/95 backdrop-blur-sm flex items-center justify-end gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsEditingForm(false)}
-                  className="px-4 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="contain"
-                  onClick={handleSaveForm}
-                  loading={updateInitiatorMutation.isPending}
-                  disabled={updateInitiatorMutation.isPending}
-                  className="px-4 py-2 rounded-lg flex items-center gap-2"
-                >
-                  <Save size={15} />
-                  Save Changes
-                </Button>
-              </div>
             )}
           </ReviewForm>,
           document.body,

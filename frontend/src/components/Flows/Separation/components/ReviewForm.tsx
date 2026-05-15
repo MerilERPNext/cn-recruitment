@@ -7,9 +7,10 @@ interface ReviewFormProps {
   title?: string;
   headerAction?: React.ReactNode;
   showReqFormio?: boolean;
+  footerAction?: React.ReactNode;
 }
 
-const ReviewForm = ({ onClose, children, title = "Review Form", headerAction, showReqFormio = false }: ReviewFormProps) => {
+const ReviewForm = ({ onClose, children, title = "Review Form", headerAction, showReqFormio = false, footerAction }: ReviewFormProps) => {
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 ${showReqFormio ? "show-req-astrik" : ""}`}
@@ -37,9 +38,16 @@ const ReviewForm = ({ onClose, children, title = "Review Form", headerAction, sh
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-2 pb-32 md:pb-6 px-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-2 pb-4">
           {children}
         </div>
+
+        {/* Footer Area */}
+        {footerAction && (
+          <div className="px-4 py-3 border-t border-gray-200 bg-white shrink-0">
+            {footerAction}
+          </div>
+        )}
       </div>
     </div>
   );
