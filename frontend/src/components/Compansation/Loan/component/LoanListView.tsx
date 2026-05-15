@@ -196,7 +196,7 @@ export const LoanRow = ({
         </Typography>
 
         <Typography variant="bodySmall" className="font-medium text-center">
-          {getAssignedUsersCell(loan?.todo_list)}
+          {getAssignedUsersCell(loan?.todo_list?.[0])}
         </Typography>
         
         {/* Loan Type */}
@@ -222,9 +222,7 @@ export const LoanRow = ({
         <Typography variant="bodySmall" className="font-medium text-center">
           {loan.standard_interest || "0"}%
         </Typography>
-        {/* <Typography variant="bodySmall" className="font-medium text-center">
-          {formattedCreationDate}
-        </Typography> */}
+       
         {/* EMI Type */}
         <Typography variant="bodySmall" className="font-medium text-center">
           {loan.emi_type}{" "}
