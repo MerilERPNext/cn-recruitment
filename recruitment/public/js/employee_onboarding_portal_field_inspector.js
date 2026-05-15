@@ -8,9 +8,33 @@ frappe.ui.form.on("Employee Onboarding", {
     },
 
     custom_onboarding_portal_form(frm) {
-        if (frm.doc.docstatus !== 0 || !frm.doc.custom_onboarding_portal_form) return;
+        if (frm.doc.docstatus !== 0) return;
 
         const hasRows = (frm.doc.custom_candidate_portal_fields || []).length > 0;
+
+        // Form was cleared → offer to clear the rows that were loaded from it
+        if (!frm.doc.custom_onboarding_portal_form) {
+            if (!hasRows) return;
+            frappe.confirm(
+                __("Removing the linked form will also clear the candidate portal fields loaded from it. Continue?"),
+                () => {
+                    frm.clear_table("custom_candidate_portal_fields");
+                    frm.refresh_field("custom_candidate_portal_fields");
+                    // Wipe the inspector UI as well so stale "Added" badges don't linger
+                    const $w = frm.fields_dict["custom_available_candidate_portal_fields_html"];
+                    if ($w && $w.$wrapper) $w.$wrapper.html("");
+                    frappe.show_alert({
+                        message: __("Cleared candidate portal fields."),
+                        indicator: "orange"
+                    });
+                }
+                // If user cancels, the form field stays cleared but rows remain — they
+                // can re-pick the form to reload, or remove rows manually.
+            );
+            return;
+        }
+
+        // Form was set → load fields from it (replacing existing, after confirm)
         const proceed = () => _load_selected_portal_form_rows(frm);
 
         if (hasRows) {
@@ -57,6 +81,9 @@ function _apply_form_rows(frm, rows) {
         row.read_only = r.read_only;
         row.hidden = r.hidden;
         row.options = r.options;
+        // Carry over child-field configuration from the source form template
+        row.selected_child_fields  = r.selected_child_fields  || "";
+        row.mandatory_child_fields = r.mandatory_child_fields || "";
     });
     frm.refresh_field("custom_candidate_portal_fields");
 }
@@ -139,6 +166,41 @@ function _render_field_inspector(frm, fields) {
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // Child-field helpers — selected and mandatory subsets per Table field
+    // ─────────────────────────────────────────────────────────────────────
+    function _getSelectedChildFields(fn) {
+        const row = _getRow(fn);
+        if (!row || !row.selected_child_fields) return null;
+        try { return JSON.parse(row.selected_child_fields); } catch(e) { return null; }
+    }
+
+    function _getMandatoryChildFields(fn) {
+        const row = _getRow(fn);
+        if (!row || !row.mandatory_child_fields) return [];
+        try {
+            const v = JSON.parse(row.mandatory_child_fields);
+            return Array.isArray(v) ? v : [];
+        } catch(e) { return []; }
+    }
+
+    function _childFieldBadge(fn) {
+        const sel  = _getSelectedChildFields(fn);
+        const mand = _getMandatoryChildFields(fn);
+        const mandSuffix = mand.length
+            ? ` <span style="background:rgba(255,255,255,0.25);padding:0 4px;border-radius:6px;
+                              margin-left:3px;font-weight:600;">★${mand.length}</span>`
+            : "";
+        if (!sel) return `<span class="cps-child-badge badge badge-info"
+                               data-fn="${fn}"
+                               style="font-size:0.62rem;background:#0d6efd;color:#fff;white-space:nowrap;"
+                               title="All child fields included${mand.length ? `, ${mand.length} mandatory` : ""}">All child fields${mandSuffix}</span>`;
+        return `<span class="cps-child-badge badge badge-warning"
+                      data-fn="${fn}"
+                      style="font-size:0.62rem;background:#fd7e14;color:#fff;white-space:nowrap;"
+                      title="${sel.length} child fields selected${mand.length ? `, ${mand.length} mandatory` : ""}">${sel.length} child fields${mandSuffix}</span>`;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     // Action cell HTML — add / added (+remove+mandatory toggle)
     // ─────────────────────────────────────────────────────────────────────
     function _actionCell(isAdded, fn, lbl, ft, tab, sec) {
@@ -160,28 +222,42 @@ function _render_field_inspector(frm, fields) {
             </label>`;
 
         if (isAdded) {
+            const isTable = ft === "Table";
             return `
-                <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap;">
+                <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;">
                     ${mandCheck}
+                    ${isTable ? `
+                    <button class="btn btn-xs cps-child-fields-btn"
+                            data-fn="${fn}"
+                            title="Select which child fields to expose"
+                            style="font-size:0.69rem;padding:2px 7px;
+                                   background:#6610f2;color:#fff;border:none;border-radius:3px;
+                                   white-space:nowrap;">
+                        ⚙ Child Fields
+                    </button>
+                    ${_childFieldBadge(fn)}
+                    ` : ""}
                     <span class="badge badge-success cps-added-badge"
-                          style="font-size:0.68rem;">✓ Added</span>
+                          style="font-size:0.68rem;white-space:nowrap;">✓ Added</span>
                     <button class="btn btn-xs cps-remove-btn"
                             data-fn="${fn}"
                             style="font-size:0.69rem;padding:2px 7px;
-                                   background:#dc3545;color:#fff;border:none;border-radius:3px;">
+                                   background:#dc3545;color:#fff;border:none;border-radius:3px;
+                                   white-space:nowrap;">
                         ✕ Remove
                     </button>
                 </div>`;
         }
 
         return `
-            <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:nowrap;">
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;">
                 ${mandCheck}
                 <button class="btn btn-xs cps-add-btn"
                         data-fn="${fn}" data-lbl="${lbl}"
                         data-ft="${ft}" data-tab="${tab}" data-sec="${sec}"
                         style="font-size:0.69rem;padding:2px 8px;
-                               background:#2e6cd1;color:#fff;border:none;border-radius:3px;">
+                               background:#2e6cd1;color:#fff;border:none;border-radius:3px;
+                               white-space:nowrap;">
                     + Add
                 </button>
             </div>`;
@@ -413,6 +489,46 @@ function _render_field_inspector(frm, fields) {
                             ${_actionCell(isAdded, fnEsc, lblEsc, ftEsc, tabEsc, secEsc)}
                         </td>
                     </tr>`;
+
+                    if (f.fieldtype === "Table" && f.options) {
+                        const childDt = frappe.utils.escape_html(f.options);
+                        html += `
+                    <tr class="cps-child-panel-row" data-fn="${fnEsc}" style="display:none;">
+                        <td colspan="5" style="background:linear-gradient(180deg,#faf5ff 0%,#ffffff 100%);
+                                              padding:0;border-top:2px solid #6610f2;">
+                            <div class="cps-child-panel" data-fn="${fnEsc}" data-child-dt="${childDt}"
+                                 style="padding:14px 20px 18px;">
+                                <div style="display:flex;justify-content:space-between;align-items:flex-start;
+                                            gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+                                    <div style="min-width:0;">
+                                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                            <span style="background:#6610f2;color:#fff;padding:3px 9px;
+                                                         border-radius:4px;font-size:0.7rem;
+                                                         font-weight:700;letter-spacing:0.3px;">⚙ CHILD FIELDS</span>
+                                            <code style="color:#c0392b;font-size:0.78rem;font-weight:600;">${fnEsc}</code>
+                                        </div>
+                                        <div style="font-size:0.74rem;color:#555;margin-top:5px;">
+                                            Choose which fields of this child table to expose in the candidate portal.
+                                        </div>
+                                    </div>
+                                    <button class="cps-child-close-btn" data-fn="${fnEsc}"
+                                            title="Close panel"
+                                            style="background:#fff;border:1px solid #d0c5e2;color:#6610f2;
+                                                   padding:4px 11px;font-size:0.72rem;border-radius:4px;
+                                                   cursor:pointer;font-weight:600;white-space:nowrap;">
+                                        ✕ Close
+                                    </button>
+                                </div>
+                                <div class="cps-child-panel-content" data-fn="${fnEsc}">
+                                    <div style="color:#888;font-size:0.82rem;padding:18px;text-align:center;
+                                                background:#fff;border:1px dashed #d4c5e8;border-radius:6px;">
+                                        ⟳ Loading child fields…
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                    }
                 });
 
                 html += `
@@ -449,6 +565,19 @@ function _render_field_inspector(frm, fields) {
         const secKey = $row.data("sec-key");
         if (secKey) _syncSecSelectChk(secKey);
         _syncBulkAddState();
+
+        // Hide child panel row when field is removed AND reset its content so a
+        // future re-add starts from a fresh render against the new (empty) row state.
+        if (!isAdded) {
+            const $panelRow = $w.find(`.cps-child-panel-row[data-fn="${fn}"]`);
+            $panelRow.slideUp(150, function () {
+                $panelRow.find(`.cps-child-panel-content[data-fn="${fn}"]`).html(`
+                    <div style="color:#888;font-size:0.82rem;padding:18px;text-align:center;
+                                background:#fff;border:1px dashed #d4c5e8;border-radius:6px;">
+                        ⟳ Loading child fields…
+                    </div>`);
+            });
+        }
     }
 
     function _secFieldsByKey(secKey) {
@@ -845,6 +974,435 @@ function _render_field_inspector(frm, fields) {
             message: __(`Removed ${removedCount} field(s) from "${sec}"`),
             indicator: "orange"
         });
+    });
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Save child field selection back to the per-record row (and persist)
+    // ─────────────────────────────────────────────────────────────────────
+    function _saveChildFieldSelection(fn, selectedFieldnames, mandatoryFieldnames) {
+        if (!_isDraft()) {
+            frappe.msgprint(__("Candidate portal fields can be edited only in Draft."));
+            return;
+        }
+        const childRow = _getRow(fn);
+        if (!childRow) {
+            frappe.show_alert({ message: __(`Add "${fn}" to portal fields first before configuring child fields.`), indicator: "orange" });
+            return;
+        }
+        const selectedJson  = (selectedFieldnames && selectedFieldnames.length > 0) ? JSON.stringify(selectedFieldnames) : "";
+        const validMandatory = (mandatoryFieldnames || []).filter(m => {
+            if (!selectedFieldnames || selectedFieldnames.length === 0) return true;
+            return selectedFieldnames.indexOf(m) !== -1;
+        });
+        const mandatoryJson = validMandatory.length > 0 ? JSON.stringify(validMandatory) : "";
+
+        const selCount  = selectedFieldnames ? selectedFieldnames.length : 0;
+        const mandCount = validMandatory.length;
+        const summaryMsg =
+            (selCount > 0
+                ? `${selCount} child field(s) selected`
+                : `all child fields will be exposed`)
+            + (mandCount > 0 ? `, ${mandCount} marked mandatory` : "")
+            + ` for "${fn}"`;
+
+        Promise.all([
+            frappe.model.set_value(childRow.doctype, childRow.name, "selected_child_fields",  selectedJson),
+            frappe.model.set_value(childRow.doctype, childRow.name, "mandatory_child_fields", mandatoryJson),
+        ]).then(() => {
+            frm.refresh_field("custom_candidate_portal_fields");
+            const $actionCell = $w.find(`.cps-action-cell[data-fn="${fn}"]`);
+            $actionCell.find(".cps-child-badge").replaceWith(_childFieldBadge(fn));
+            return frm.save();
+        }).then(() => {
+            frappe.show_alert({
+                message: __("Saved & persisted: " + summaryMsg),
+                indicator: "green"
+            });
+        }).catch((err) => {
+            console.error("Child field selection save failed:", err);
+            frappe.show_alert({
+                message: __(
+                    "Changes staged in-memory but the form could not be saved automatically. " +
+                    "Please press Ctrl+S to save the form so the changes persist."
+                ),
+                indicator: "orange"
+            });
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Render child field grid inside the expandable panel
+    // ─────────────────────────────────────────────────────────────────────
+    function _renderChildPanel(fn, childDt, $panelContent) {
+        frappe.call({
+            method: "recruitment.api.candidate_portal.get_child_doctype_fields",
+            args: { child_doctype: childDt },
+            callback(r) {
+                if (!r.message || r.message.status !== "success") {
+                    $panelContent.html(`<em style="color:red;">Could not load child fields.</em>`);
+                    return;
+                }
+                const childFields = r.message.fields || [];
+                if (!childFields.length) {
+                    $panelContent.html(`<em style="color:#888;">No fields found for ${childDt}.</em>`);
+                    return;
+                }
+
+                const currentSel = _getSelectedChildFields(fn);
+                const selectedSet = currentSel ? new Set(currentSel) : null;
+                const mandatorySet = new Set(_getMandatoryChildFields(fn));
+
+                const types = Array.from(new Set(childFields.map(f => f.fieldtype))).sort();
+                const filterChipsHTML = types.length > 1
+                    ? `<div class="cps-child-filter-chips"
+                            style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;
+                                   padding-top:8px;border-top:1px dashed #e8dcf5;">
+                        <span style="font-size:0.7rem;color:#555;font-weight:600;
+                                     padding:3px 4px 3px 0;">Filter:</span>
+                        <button class="cps-child-type-chip cps-child-type-active" data-type=""
+                                style="font-size:0.68rem;padding:2px 10px;border:1px solid #6610f2;
+                                       background:#6610f2;color:#fff;border-radius:11px;
+                                       cursor:pointer;font-weight:600;">
+                            All
+                        </button>
+                        ${types.map(t => `
+                            <button class="cps-child-type-chip" data-type="${frappe.utils.escape_html(t)}"
+                                    style="font-size:0.68rem;padding:2px 10px;border:1px solid #c39bd3;
+                                           background:#fff;color:#6610f2;border-radius:11px;cursor:pointer;">
+                                ${frappe.utils.escape_html(t)}
+                            </button>`).join("")}
+                    </div>`
+                    : "";
+
+                let html = `
+                <div class="cps-child-toolbar"
+                     style="background:#fff;border:1px solid #e0d4ef;border-radius:6px;
+                            padding:10px 12px;margin-bottom:12px;
+                            box-shadow:0 1px 3px rgba(102,16,242,0.06);">
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <input type="text" class="form-control cps-child-search"
+                               placeholder="🔍 Search child fields by name or label…"
+                               style="flex:1;min-width:200px;max-width:340px;height:30px;
+                                      font-size:0.78rem;border:1px solid #d4c5e8;" />
+                        <button class="btn btn-xs cps-child-sel-all"
+                                title="Select all visible fields"
+                                style="font-size:0.71rem;padding:4px 11px;background:#198754;color:#fff;
+                                       border:none;border-radius:4px;font-weight:600;">
+                            ✓ Select All
+                        </button>
+                        <button class="btn btn-xs cps-child-sel-none"
+                                title="Clear all visible fields"
+                                style="font-size:0.71rem;padding:4px 11px;background:#fff;color:#444;
+                                       border:1px solid #ccc;border-radius:4px;">
+                            ✕ Clear
+                        </button>
+                        <button class="btn btn-xs cps-child-mand-all"
+                                title="Toggle mandatory on currently-visible selected fields (respects search & type filter)"
+                                style="font-size:0.71rem;padding:4px 11px;background:#fff;color:#c0392b;
+                                       border:1px solid #f1b0b7;border-radius:4px;font-weight:600;">
+                            ★ Mandatory: Visible
+                        </button>
+                        <div style="flex:1;min-width:170px;display:flex;align-items:center;gap:7px;">
+                            <div style="flex:1;height:7px;background:#eee;border-radius:4px;overflow:hidden;">
+                                <div class="cps-child-progress-bar"
+                                     style="height:100%;width:0%;background:linear-gradient(90deg,#6610f2,#a78bfa);
+                                            transition:width 0.25s;"></div>
+                            </div>
+                            <span class="cps-child-sel-count"
+                                  style="font-size:0.72rem;color:#444;font-weight:600;white-space:nowrap;
+                                         min-width:110px;text-align:right;">0 / ${childFields.length}</span>
+                        </div>
+                        <button class="btn btn-xs cps-child-save-btn"
+                                data-fn="${frappe.utils.escape_html(fn)}"
+                                style="font-size:0.74rem;padding:5px 13px;background:#6610f2;color:#fff;
+                                       border:none;border-radius:4px;font-weight:600;
+                                       box-shadow:0 1px 3px rgba(102,16,242,0.25);">
+                            💾 Save Selection
+                        </button>
+                    </div>
+                    ${filterChipsHTML}
+                </div>
+
+                <div class="cps-child-grid"
+                     style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+                            gap:7px;">`;
+
+                childFields.forEach(cf => {
+                    const cfFn  = frappe.utils.escape_html(cf.fieldname);
+                    const cfLbl = frappe.utils.escape_html(cf.label || cf.fieldname);
+                    const cfFt  = frappe.utils.escape_html(cf.fieldtype);
+                    const isChk  = selectedSet === null || selectedSet.has(cf.fieldname);
+                    const isMand = mandatorySet.has(cf.fieldname);
+                    const searchKey = ((cf.label || "") + " " + (cf.fieldname || "")).toLowerCase();
+                    html += `
+                    <label class="cps-child-card"
+                           data-search-key="${frappe.utils.escape_html(searchKey)}"
+                           data-type="${cfFt}"
+                           style="display:flex;align-items:center;gap:9px;
+                                  padding:8px 11px;cursor:pointer;
+                                  border:1px solid ${isMand ? '#dc3545' : (isChk ? '#a78bfa' : '#e3dcef')};
+                                  border-left:${isMand ? '3px solid #dc3545' : (isChk ? '1px solid #a78bfa' : '1px solid #e3dcef')};
+                                  border-radius:5px;
+                                  background:${isChk ? '#f5edff' : '#fff'};
+                                  transition:background 0.15s,border-color 0.15s,box-shadow 0.15s;
+                                  user-select:none;"
+                           onmouseenter="this.style.boxShadow='0 1px 4px rgba(102,16,242,0.15)'"
+                           onmouseleave="this.style.boxShadow='none'">
+                        <input type="checkbox" class="cps-child-field-chk"
+                               value="${cfFn}" ${isChk ? 'checked' : ''}
+                               style="cursor:pointer;width:15px;height:15px;flex-shrink:0;
+                                      accent-color:#6610f2;" />
+                        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;">
+                            <div style="font-size:0.78rem;color:#1f1f1f;font-weight:500;
+                                        overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                                 title="${cfLbl}">${cfLbl}</div>
+                            <code style="font-size:0.66rem;color:#7a3a8a;
+                                         overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                                  title="${cfFn}">${cfFn}</code>
+                        </div>
+                        <span class="badge"
+                              style="font-size:0.6rem;background:#ede5f7;color:#5a2a8a;
+                                     padding:2px 7px;border-radius:10px;flex-shrink:0;
+                                     font-weight:600;">${cfFt}</span>
+                        <button type="button" class="cps-child-mand-toggle"
+                                data-fn-val="${cfFn}"
+                                title="${isMand ? 'Click to unmark mandatory' : 'Mark as mandatory in portal'}"
+                                style="flex-shrink:0;width:24px;height:24px;padding:0;
+                                       border:1px solid ${isMand ? '#dc3545' : '#d4c5e8'};
+                                       background:${isMand ? '#dc3545' : '#fff'};
+                                       color:${isMand ? '#fff' : '#aaa'};
+                                       border-radius:50%;cursor:pointer;font-size:0.78rem;
+                                       line-height:1;font-weight:700;
+                                       display:inline-flex;align-items:center;justify-content:center;">★</button>
+                    </label>`;
+                });
+
+                html += `</div>
+                <div class="cps-child-empty"
+                     style="display:none;text-align:center;color:#888;font-size:0.84rem;
+                            padding:28px;font-style:italic;
+                            border:1px dashed #d4c5e8;border-radius:6px;
+                            background:#fafafa;margin-top:6px;">
+                    🔍 No child fields match your filters.
+                </div>`;
+
+                $panelContent.html(html);
+                _updateChildSelCount($panelContent);
+
+                const _isCardSel  = $card => $card.find(".cps-child-field-chk").prop("checked");
+                const _isCardMand = $card => $card.find(".cps-child-mand-toggle").attr("data-mand") === "1";
+                const _setCardMand = ($card, mand) => {
+                    const $btn = $card.find(".cps-child-mand-toggle");
+                    $btn.attr("data-mand", mand ? "1" : "0").css({
+                        "background": mand ? "#dc3545" : "#fff",
+                        "color": mand ? "#fff" : "#aaa",
+                        "border-color": mand ? "#dc3545" : "#d4c5e8"
+                    }).attr("title", mand ? "Click to unmark mandatory" : "Mark as mandatory in portal");
+                    _restyleCard($card);
+                };
+                const _restyleCard = $card => {
+                    const sel  = _isCardSel($card);
+                    const mand = _isCardMand($card);
+                    $card.css({
+                        "background": sel ? "#f5edff" : "#fff",
+                        "border-color": mand ? "#dc3545" : (sel ? "#a78bfa" : "#e3dcef"),
+                        "border-left-width": mand ? "3px" : "1px",
+                        "border-left-color": mand ? "#dc3545" : (sel ? "#a78bfa" : "#e3dcef")
+                    });
+                };
+
+                $panelContent.find(".cps-child-card").each(function() {
+                    const $card = $(this);
+                    const fnVal = $card.find(".cps-child-mand-toggle").data("fn-val");
+                    $card.find(".cps-child-mand-toggle")
+                         .attr("data-mand", mandatorySet.has(fnVal) ? "1" : "0");
+                });
+
+                const initialSel  = {};
+                const initialMand = {};
+                $panelContent.find(".cps-child-card").each(function() {
+                    const $card = $(this);
+                    const fnVal = $card.find(".cps-child-mand-toggle").data("fn-val");
+                    initialSel[fnVal]  = _isCardSel($card);
+                    initialMand[fnVal] = _isCardMand($card);
+                });
+                const $saveBtn = $panelContent.find(".cps-child-save-btn");
+                let isDirty = false;
+                const _setDirty = (dirty) => {
+                    if (dirty === isDirty) return;
+                    isDirty = dirty;
+                    $saveBtn.css({
+                        "background": dirty ? "#dc3545" : "#6610f2",
+                        "box-shadow": dirty
+                            ? "0 1px 6px rgba(220,53,69,0.4)"
+                            : "0 1px 3px rgba(102,16,242,0.25)"
+                    }).html(dirty ? "💾 Save Changes •" : "💾 Save Selection");
+                };
+                const _checkDirty = () => {
+                    let dirty = false;
+                    $panelContent.find(".cps-child-card").each(function() {
+                        const $card = $(this);
+                        const fnVal = $card.find(".cps-child-mand-toggle").data("fn-val");
+                        if (_isCardSel($card) !== initialSel[fnVal] ||
+                            _isCardMand($card) !== initialMand[fnVal]) {
+                            dirty = true; return false;
+                        }
+                    });
+                    _setDirty(dirty);
+                };
+
+                const _applyFilters = () => {
+                    const q = ($panelContent.find(".cps-child-search").val() || "").toLowerCase().trim();
+                    const activeType = $panelContent.find(".cps-child-type-active").data("type") || "";
+                    let visibleCount = 0;
+                    $panelContent.find(".cps-child-card").each(function() {
+                        const $card = $(this);
+                        const matchSearch = !q || ($card.data("search-key") || "").includes(q);
+                        const matchType = !activeType || $card.data("type") === activeType;
+                        const show = matchSearch && matchType;
+                        $card.toggle(show);
+                        if (show) visibleCount++;
+                    });
+                    $panelContent.find(".cps-child-empty").toggle(visibleCount === 0);
+                };
+
+                $panelContent.find(".cps-child-sel-all").on("click", function() {
+                    $panelContent.find(".cps-child-card:visible").each(function() {
+                        const $card = $(this);
+                        $card.find(".cps-child-field-chk").prop("checked", true);
+                        _restyleCard($card);
+                    });
+                    _updateChildSelCount($panelContent);
+                    _checkDirty();
+                });
+
+                $panelContent.find(".cps-child-sel-none").on("click", function() {
+                    $panelContent.find(".cps-child-card:visible").each(function() {
+                        const $card = $(this);
+                        $card.find(".cps-child-field-chk").prop("checked", false);
+                        _setCardMand($card, false);
+                    });
+                    _updateChildSelCount($panelContent);
+                    _checkDirty();
+                });
+
+                $panelContent.find(".cps-child-mand-all").on("click", function() {
+                    const $visibleSelected = $panelContent.find(".cps-child-card:visible").filter(function() {
+                        return _isCardSel($(this));
+                    });
+                    if (!$visibleSelected.length) {
+                        frappe.show_alert({
+                            message: __("Select fields first, then mark them mandatory."),
+                            indicator: "orange"
+                        });
+                        return;
+                    }
+                    const anyOff = $visibleSelected.toArray().some(c => !_isCardMand($(c)));
+                    $visibleSelected.each(function() { _setCardMand($(this), anyOff); });
+                    _updateChildSelCount($panelContent);
+                    _checkDirty();
+                });
+
+                $panelContent.on("change", ".cps-child-field-chk", function() {
+                    const $card = $(this).closest(".cps-child-card");
+                    if (!$(this).prop("checked")) {
+                        _setCardMand($card, false);
+                    }
+                    _restyleCard($card);
+                    _updateChildSelCount($panelContent);
+                    _checkDirty();
+                });
+
+                $panelContent.on("click", ".cps-child-mand-toggle", function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const $card = $(this).closest(".cps-child-card");
+                    if (!_isCardSel($card)) {
+                        $card.find(".cps-child-field-chk").prop("checked", true);
+                    }
+                    _setCardMand($card, !_isCardMand($card));
+                    _updateChildSelCount($panelContent);
+                    _checkDirty();
+                });
+
+                $panelContent.on("input", ".cps-child-search", _applyFilters);
+
+                $panelContent.on("click", ".cps-child-type-chip", function() {
+                    $panelContent.find(".cps-child-type-chip")
+                        .removeClass("cps-child-type-active")
+                        .css({
+                            "background": "#fff",
+                            "color": "#6610f2",
+                            "border-color": "#c39bd3",
+                            "font-weight": "400"
+                        });
+                    $(this).addClass("cps-child-type-active").css({
+                        "background": "#6610f2",
+                        "color": "#fff",
+                        "border-color": "#6610f2",
+                        "font-weight": "600"
+                    });
+                    _applyFilters();
+                });
+
+                $panelContent.find(".cps-child-save-btn").on("click", function() {
+                    const parentFn = $(this).data("fn");
+                    const selected = $panelContent.find(".cps-child-field-chk:checked")
+                        .map(function() { return $(this).val(); }).get();
+                    const mandatory = $panelContent.find(".cps-child-mand-toggle[data-mand='1']")
+                        .map(function() { return $(this).data("fn-val"); }).get();
+                    const allCount = childFields.length;
+                    const selToSave = selected.length === allCount ? [] : selected;
+                    _saveChildFieldSelection(parentFn, selToSave, mandatory);
+
+                    $panelContent.find(".cps-child-card").each(function() {
+                        const $card = $(this);
+                        const fnVal = $card.find(".cps-child-mand-toggle").data("fn-val");
+                        initialSel[fnVal]  = _isCardSel($card);
+                        initialMand[fnVal] = _isCardMand($card);
+                    });
+                    _setDirty(false);
+                });
+            }
+        });
+    }
+
+    function _updateChildSelCount($panelContent) {
+        const total     = $panelContent.find(".cps-child-field-chk").length;
+        const checked   = $panelContent.find(".cps-child-field-chk:checked").length;
+        const mandatory = $panelContent.find(".cps-child-mand-toggle[data-mand='1']").length;
+        const mandSuffix = mandatory > 0
+            ? ` <span style="color:#c0392b;">• ★${mandatory}</span>`
+            : "";
+        $panelContent.find(".cps-child-sel-count").html(`${checked} / ${total}${mandSuffix}`);
+        const pct = total ? (checked / total) * 100 : 0;
+        $panelContent.find(".cps-child-progress-bar").css("width", `${pct}%`);
+    }
+
+    // ── Child Fields toggle button (event delegation) ─────────────────────
+    $w.on("click.cps", ".cps-child-fields-btn", function (e) {
+        e.stopPropagation();
+        const fn = $(this).data("fn");
+        const $panelRow     = $w.find(`.cps-child-panel-row[data-fn="${fn}"]`);
+        const $panel        = $panelRow.find(`.cps-child-panel[data-fn="${fn}"]`);
+        const $panelContent = $panelRow.find(`.cps-child-panel-content[data-fn="${fn}"]`);
+        const childDt       = $panel.data("child-dt");
+
+        if ($panelRow.is(":visible")) {
+            $panelRow.slideUp(180);
+            return;
+        }
+        if ($panelContent.text().includes("Loading")) {
+            _renderChildPanel(fn, childDt, $panelContent);
+        }
+        $panelRow.slideDown(200);
+    });
+
+    // ── Close panel button inside child panel header ──────────────────────
+    $w.on("click.cps", ".cps-child-close-btn", function (e) {
+        e.stopPropagation();
+        const fn = $(this).data("fn");
+        $w.find(`.cps-child-panel-row[data-fn="${fn}"]`).slideUp(180);
     });
 
     // ─────────────────────────────────────────────────────────────────────
