@@ -165,6 +165,7 @@ export type FlowRequestItem = {
   request_id: string;
   flow_name: string;
   category: string;
+  effective_date: string | null;
   initiated_on: string;
   can_edit_initiator_form: boolean;
   initiated_by: string;

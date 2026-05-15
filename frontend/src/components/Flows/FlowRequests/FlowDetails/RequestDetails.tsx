@@ -241,15 +241,9 @@ const RequestDetails: React.FC = () => {
               <div className="h-11 w-full bg-gray-100 rounded-lg" />
             </div>
 
-            <div className="flex flex-row sm:items-center justify-between w-full sm:w-auto gap-4 sm:gap-6 text-sm py-1">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 min-w-0">
-                <div className="h-3 w-16 sm:w-20 bg-gray-200 rounded" />
-                <div className="h-5 sm:h-6 w-24 sm:w-32 bg-gray-100 rounded border border-gray-100" />
-              </div>
-              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2 min-w-0">
-                <div className="h-3 w-16 sm:w-20 bg-gray-200 rounded" />
-                <div className="h-5 sm:h-6 w-24 sm:w-28 bg-gray-100 rounded border border-gray-100" />
-              </div>
+            <div className="flex flex-row flex-wrap items-center gap-3 w-full py-1">
+              <div className="h-8 w-44 bg-gray-200 rounded-lg border border-gray-100" />
+              <div className="h-8 w-36 bg-gray-100 rounded-lg border border-gray-100" />
             </div>
           </div>
         </div>
@@ -296,30 +290,43 @@ const RequestDetails: React.FC = () => {
             }
           />
         </div>
-        <div className="px-8 flex items-center justify-between mb-4 flex-wrap gap-4">
-          <div className="flex flex-row sm:items-center justify-between w-full gap-4 sm:gap-6 text-sm py-1">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 min-w-0">
-              <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px] whitespace-nowrap">
-                Initiated By
-              </span>
-              <span className="text-gray-900 font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-100 truncate max-w-[140px] sm:max-w-none hover:text-primary cursor-pointer transition-colors duration-200">
-                <WrapperHoverCard employeeId={data?.initiated_by_employee_id}>
-                  {data?.initiated_by}{" "}
-                  {data?.initiated_by_employee_id
-                    ? `(${data?.initiated_by_employee_id})`
-                    : ""}
-                </WrapperHoverCard>
-              </span>
-            </div>
-            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2 min-w-0">
-              <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px] whitespace-nowrap">
-                Initiated On
-              </span>
-              <span className="text-gray-900 font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-100 whitespace-nowrap">
-                {formatToIndianDate(data?.initiated_on)}
-              </span>
-            </div>
+        <div className="px-4 sm:px-8 flex flex-row flex-wrap items-center gap-3 mb-5 mt-1">
+          <div className="flex items-center gap-2.5 min-w-0 bg-white border border-gray-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] rounded-lg px-3 py-1.5 transition-all hover:shadow-md hover:border-gray-300/80">
+            <span className="font-medium text-gray-500 text-[10px] sm:text-[11px] uppercase tracking-wider whitespace-nowrap">
+              Initiated By
+            </span>
+            <div className="w-px h-3.5 bg-gray-200"></div>
+            <span className="text-gray-900 font-semibold text-[13px] sm:text-sm truncate hover:text-primary-600 cursor-pointer transition-colors duration-200">
+              <WrapperHoverCard employeeId={data?.initiated_by_employee_id}>
+                {data?.initiated_by}{" "}
+                {data?.initiated_by_employee_id
+                  ? `(${data?.initiated_by_employee_id})`
+                  : ""}
+              </WrapperHoverCard>
+            </span>
           </div>
+
+          <div className="flex items-center gap-2.5 min-w-0 bg-white border border-gray-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] rounded-lg px-3 py-1.5 transition-all hover:shadow-md hover:border-gray-300/80">
+            <span className="font-medium text-gray-500 text-[10px] sm:text-[11px] uppercase tracking-wider whitespace-nowrap">
+              Initiated On
+            </span>
+            <div className="w-px h-3.5 bg-gray-200"></div>
+            <span className="text-gray-900 font-semibold text-[13px] sm:text-sm whitespace-nowrap">
+              {formatToIndianDate(data?.initiated_on)}
+            </span>
+          </div>
+
+          {data?.effective_date && (
+            <div className="flex items-center gap-2.5 min-w-0 bg-white border border-gray-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] rounded-lg px-3 py-1.5 transition-all hover:shadow-md hover:border-gray-300/80">
+              <span className="font-medium text-gray-500 text-[10px] sm:text-[11px] uppercase tracking-wider whitespace-nowrap">
+                Effective Date
+              </span>
+              <div className="w-px h-3.5 bg-gray-200"></div>
+              <span className="text-gray-900 font-semibold text-[13px] sm:text-sm whitespace-nowrap">
+                {formatToIndianDate(data.effective_date)}
+              </span>
+            </div>
+          )}
         </div>
       </div>
       <div className="overflow-y-auto flex-1">
