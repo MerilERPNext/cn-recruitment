@@ -11,7 +11,8 @@ import {
   getShouldShowConfirmationButton,
   postSelectEventFromOptions,
   getDifinitionNameForSeparation,
-  getFlowRequestById
+  getFlowRequestById,
+  updateInitiatorFormSubmission
 } from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
@@ -204,3 +205,15 @@ export const useGetFlowRequestById = (
   });
 };
 
+export const useUpdateInitiatorFormSubmission = () => {
+  return useMutation({
+    mutationFn: ({
+      conversation_doc,
+      submission_data,
+    }: {
+      conversation_doc: string;
+      submission_data: Record<string, unknown>;
+    }) =>
+      updateInitiatorFormSubmission(conversation_doc, submission_data),
+  });
+};

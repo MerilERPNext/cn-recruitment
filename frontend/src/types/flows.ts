@@ -165,7 +165,9 @@ export type FlowRequestItem = {
   request_id: string;
   flow_name: string;
   category: string;
+  effective_date: string | null;
   initiated_on: string;
+  can_edit_initiator_form: boolean;
   initiated_by: string;
   initiated_for: string;
   initiated_by_emp_id: string;
@@ -178,6 +180,7 @@ export type FlowRequestItem = {
   approval_stages: FlowRequestStage[];
   workflow_stages: WorkflowStage[];
   initiator_forms: {
+    conversation_doc: string;
     form_data: string;
     form_data_display?: string;
     status: string;

@@ -759,10 +759,6 @@ interface StaticListViewProps<T extends BaseItemStatic> {
   onRefresh?: () => void;
 
   getItemKey?: (item: T, index: number) => string;
-  /** When true, filters are staged and only applied when the Apply button is clicked. */
-  requireApplyButton?: boolean;
-  /** When true, the drawer closes automatically when a Select value is chosen (single-pick UX). */
-  closeOnSelect?: boolean;
 }
 
 export const StaticListView = <T extends BaseItemStatic>({
@@ -787,8 +783,6 @@ export const StaticListView = <T extends BaseItemStatic>({
   showRefreshButton = false,
   onRefresh,
   getItemKey,
-  requireApplyButton = false,
-  closeOnSelect = false,
 }: StaticListViewProps<T>) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<Record<string, any>>({});
@@ -796,7 +790,14 @@ export const StaticListView = <T extends BaseItemStatic>({
   const [pendingFilters, setPendingFilters] = useState<Record<string, any>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    if (showFilters && !isFilterApplied) {
+      setPendingFilters({ ...filters });
+    }
+  }, [showFilters]);
   const { isDesktop } = useScreenSize();
 
   // Debounce search input
@@ -981,24 +982,19 @@ export const StaticListView = <T extends BaseItemStatic>({
     );
 
   const handleFilterChange = (fieldname: string, value: string) => {
-    if (requireApplyButton) {
-      // Stage the change — only apply when Apply is clicked
-      setPendingFilters((p) => ({ ...p, [fieldname]: value }));
-    } else {
-      // Instant-apply
-      setFilters((p: Record<string, any>) => ({ ...p, [fieldname]: value }));
-      if (closeOnSelect) setShowFilters(false);
-    }
+    setPendingFilters((p) => ({ ...p, [fieldname]: value }));
   };
 
   const handleApplyFilters = () => {
     setFilters(pendingFilters);
+    setIsFilterApplied(true);
     setShowFilters(false);
   };
 
   const clearFilters = () => {
     setFilters({});
     setPendingFilters({});
+    setIsFilterApplied(false);
     setSearchTerm("");
     setDebouncedSearch("");
   };
@@ -1079,7 +1075,7 @@ export const StaticListView = <T extends BaseItemStatic>({
 
                     {f.fieldtype === "Select" ? (
                       <select
-                        value={(requireApplyButton ? pendingFilters : filters)[f.fieldname] || ""}
+                        value={pendingFilters[f.fieldname] || ""}
                         onChange={(e) =>
                           handleFilterChange(f.fieldname, e.target.value)
                         }
@@ -1095,7 +1091,7 @@ export const StaticListView = <T extends BaseItemStatic>({
                     ) : (
                       <input
                         type="text"
-                        value={(requireApplyButton ? pendingFilters : filters)[f.fieldname] || ""}
+                        value={pendingFilters[f.fieldname] || ""}
                         onChange={(e) =>
                           handleFilterChange(f.fieldname, e.target.value)
                         }
@@ -1114,23 +1110,12 @@ export const StaticListView = <T extends BaseItemStatic>({
                 >
                   Clear
                 </button>
-                {requireApplyButton ? (
-                  <button
-                    onClick={handleApplyFilters}
-                    className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    Apply
-                  </button>
-                ) : (
-                  !isDesktop && (
-                    <button
-                      onClick={() => setShowFilters(false)}
-                      className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-                    >
-                      Close
-                    </button>
-                  )
-                )}
+                <button
+                  onClick={handleApplyFilters}
+                  className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Apply
+                </button>
               </div>
             </div>
           </>
