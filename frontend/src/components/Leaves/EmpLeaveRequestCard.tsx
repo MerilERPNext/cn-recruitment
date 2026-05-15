@@ -96,6 +96,11 @@ const EmpLeaveRequestCard = ({
   };
 
   const handleEditClick = () => {
+    const existingAttachments =
+      data?.attachments && data.attachments.length > 0
+        ? data.attachments
+        : data?.reference_document?.custom_attachment;
+
     openModal({
       fromDate: data?.reference_document?.from_date,
       toDate: data?.reference_document?.to_date,
@@ -103,7 +108,7 @@ const EmpLeaveRequestCard = ({
       description: data?.reference_document?.description,
       custom_reason: data?.reference_document?.custom_reason,
       halfDay: data?.reference_document?.half_day,
-      custom_attachment: data?.reference_document?.custom_attachment,
+      custom_attachment: existingAttachments,
       half_day_date: data?.reference_document?.half_day_date,
       custom_second_half_day_date:
         data?.reference_document?.custom_second_half_day_date,
