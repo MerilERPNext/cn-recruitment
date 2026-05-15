@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactNode } from "react";
 import AllocatedToTooltip from "../components/shared/AllocatedToTooltip";
+import { RoleAssignedUsersType } from "../types/flows";
 
 export const getStageAssignedUsersCell = (
   stage: any,
-  roleAssignedUsers: any[] = [],
+  roleAssignedUsers: RoleAssignedUsersType[] = [],
   position: "left" | "right" | "top" | "bottom" = "left",
   textWrapper?: (text: string) => ReactNode
 ) => {
@@ -30,13 +31,13 @@ export const getStageAssignedUsersCell = (
     );
   }
 
-  const label = `${stage?.designation_name || stage?.stage_name || "-"}(1) `;
   const users = stage.allocated_to?.length
     ? stage.allocated_to
     : stage.user
       ? [{ name: stage.user, employee: stage.employee_id, designation_name: stage.designation_name }]
       : [];
 
+  const label = `${stage?.designation_name || stage?.stage_name || "Not Assigned"} `;
   return (
     <AllocatedToTooltip
       title="Assigned To"
