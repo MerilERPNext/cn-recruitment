@@ -103,7 +103,7 @@ const EmpAttendanceRequestCard = ({
           <div className="flex items-center justify-center">
             {getAssignedUsersCell(data)}
           </div>
-          {/* From Date */}
+          {/* From Date */} 
           <Typography variant="bodySmall" className="font-medium text-center">
             {formattedFromDate}
           </Typography>

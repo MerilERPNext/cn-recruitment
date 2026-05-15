@@ -43,18 +43,23 @@ import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
   {
-    sortable: false,
+    sortable: true,
+    type: "string",
+    field: "employee_name",
+    getValue: (item: BenefitPayslip) => item.employee_name ?? "",
   },
   {
     sortable: false,
   },
   {
     sortable: true,
+    type: "string",
     field: "company",
     getValue: (item: BenefitPayslip) => item.company ?? "",
   },
   {
     sortable: true,
+    type: "string",
     field: "earning_component",
     getValue: (item: BenefitPayslip) =>
       item.earning_component ?? "",
@@ -288,6 +293,7 @@ const MyRequests: React.FC = () => {
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         {LockRequestMessage}
         <CardTable
+          columnWidths={["1.2fr", "1fr", "1fr", "1.1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
           titles={[
             "Employee Name",
             "Assigned To",
@@ -300,19 +306,6 @@ const MyRequests: React.FC = () => {
             "Non Taxable Amount",
             "Status",
             "Actions",
-          ]}
-          columnWidths={[
-            "1fr",
-            "1fr",
-            "1fr",
-            "1fr",
-            "1fr",
-            "1fr",
-            "1fr",
-            "1fr",
-            "1fr",
-            "1fr",
-            "1fr",
           ]}
           columnSortConfig={COLUMN_SORT_CONFIG}
         >
@@ -432,7 +425,10 @@ const BenefitSlipItem = ({
   const { isDesktop } = useScreenSize();
   const todo: TodoType | null = (Array.isArray(item.todo_list) && item.todo_list.length > 0) ? item.todo_list[0] : null;
   const [isActed, setIsActed] = useState(false);
-  const formattedCreationDate = formatToIndianDate(todo?.reference_document?.creation || "");
+  const formattedCreationDate = formatToIndianDate(
+    todo?.reference_document?.creation || "",
+  );
+
   const canEdit = todo?.can_edit === true && !isActed;
   const canRevoke =
     todo?.custom_allow_revoke === 1 &&
@@ -477,7 +473,10 @@ const BenefitSlipItem = ({
   };
 
   return isDesktop ? (
-    <div className="grid grid-cols-11 max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer">
+    <div
+      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
+      style={{ gridTemplateColumns: "1.2fr 1fr 1fr 1.1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
+    >
       <Link
         to={`/webapp/employee-profile?target_user=${item?.employee}`}
         target="_blank"
@@ -518,6 +517,7 @@ const BenefitSlipItem = ({
           {formatCurrency(maskAmounts ? "#####" : item?.custom_taxable_amount)}
         </span>
       </Typography>
+
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={`${maskAmounts ? "blur-[3px]" : ""}`}>
           {formatCurrency(
@@ -600,6 +600,26 @@ const BenefitSlipItem = ({
               </Typography>
               <Typography variant="mobileCardValue">
                 {formatToIndianDate(item?.claim_date || "")}
+              </Typography>
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel" className="block">
+                Created At
+              </Typography>
+              <Typography variant="mobileCardValue">
+                {formattedCreationDate}
+              </Typography>
+            </div>
+          </div>
+
+          {/* Row: Assigned To + Claim Amount */}
+          <div className="flex justify-between mt-4">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel" className="block">
+                Assigned To
+              </Typography>
+              <Typography variant="mobileCardValue">
+                {getAssignedUsersCell(todo)}
               </Typography>
             </div>
             <div className="flex flex-col gap-1 text-right">
