@@ -145,8 +145,8 @@ const WorkflowCard = ({
     try {
       return stage?.todo?.custom_doctype_actions_with_form
         ? JSON.parse(
-            stage.todo.custom_doctype_actions_with_form.replace(/'/g, '"'),
-          )
+          stage.todo.custom_doctype_actions_with_form.replace(/'/g, '"'),
+        )
         : [];
     } catch (e) {
       console.error("Failed to parse custom_doctype_actions_with_form", e);
@@ -268,7 +268,10 @@ const WorkflowCard = ({
   const handleShowForm = () => {
     let formData: Record<string, unknown> = {};
     try {
-      formData = stage?.form_data ? JSON.parse(stage.form_data) : {};
+      formData = JSON.parse(
+        stage?.form_data_display || stage?.form_data ||
+        "{}",
+      );
     } catch (error) {
       console.error("Invalid form_data JSON:", error);
       return;

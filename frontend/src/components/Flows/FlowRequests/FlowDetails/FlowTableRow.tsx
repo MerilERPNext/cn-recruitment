@@ -119,8 +119,7 @@ const FlowTableRow = ({
     let data: Record<string, unknown> = {};
 
     try {
-      data = JSON.parse(
-        stage?.approval_response_data_display ||
+      data = stage?.form_data_display || JSON.parse(
         stage?.approval_response_data ||
         "{}",
       );

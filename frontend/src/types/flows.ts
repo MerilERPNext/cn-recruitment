@@ -108,6 +108,7 @@ export type FlowRequestStage = {
   stage_name: string;
   allocated_to: Array<allocatedToType>;
   user_id: string;
+  form_data_display: Record<string, unknown>;
   user: string;
   role: string | null;
   status: string;
@@ -199,6 +200,7 @@ export type WorkflowStage = {
   target_name: string;
   action_options: string;
   form_data: string;
+  form_data_display: string;
   trigger_title: string;
   can_act: boolean;
   role?: string | null;

@@ -34,7 +34,7 @@ const FlowRequests: React.FC = () => {
 
   const {
     data: flowRequests,
-    isFetching: flowRequestsLoading,
+    isLoading: flowRequestsLoading,
     refetch: refetchFlowRequests,
   } = useGetFlowRequests();
 
