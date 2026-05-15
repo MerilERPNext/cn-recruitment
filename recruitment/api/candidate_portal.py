@@ -990,3 +990,12 @@ def get_candidate_feature_flags():
             result[row.page_name.strip().lower().replace(" ", "_")] = row.is_enabled
 
     return result
+
+
+@frappe.whitelist(allow_guest=True)
+def get_website_branding():
+    settings = frappe.get_single("Website Settings")
+    return {
+        "title_prefix": settings.title_prefix,
+        "app_logo": settings.app_logo,
+    }
