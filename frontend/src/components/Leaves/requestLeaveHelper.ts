@@ -119,6 +119,10 @@ export const normalizeAttachments = (...attachmentGroups: any[]) => {
 
       const identity = [
         attachment.file?.name || "",
+        attachment.file?.size !== undefined ? String(attachment.file.size) : "",
+        attachment.file instanceof File
+          ? String(attachment.file.lastModified)
+          : "",
         attachment.name || "",
         attachment.originalName || "",
         attachment.url || attachment.file_url || "",
