@@ -138,6 +138,7 @@ export const LoanRow = ({
   const todo = Array.isArray(loan.todo_list) && loan.todo_list.length > 0
     ? loan.todo_list[0]
     : null;
+  const formattedCreationDate = formatToIndianDate(loan?.todo_list?.[0].reference_document?.creation ?? "");
 
   const canRevoke =
     loan.status === "Open" && todo?.custom_allow_revoke === 1 && !isActed;
@@ -220,9 +221,9 @@ export const LoanRow = ({
         <Typography variant="bodySmall" className="font-medium text-center">
           {loan.standard_interest || "0"}%
         </Typography>
-        {/* <Typography variant="bodySmall" className="font-medium text-center">
+        <Typography variant="bodySmall" className="font-medium text-center">
           {formattedCreationDate}
-        </Typography> */}
+        </Typography>
         {/* EMI Type */}
         <Typography variant="bodySmall" className="font-medium text-center">
           {loan.emi_type}{" "}
