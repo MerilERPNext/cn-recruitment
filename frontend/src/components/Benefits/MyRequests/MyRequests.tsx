@@ -50,7 +50,11 @@ const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
   },
   {
     sortable: true,
-    type: "date",
+    field: "company",
+    getValue: (item: BenefitPayslip) => item.company ?? "",
+  },
+  {
+    sortable: true,
     field: "earning_component",
     getValue: (item: BenefitPayslip) =>
       item.earning_component ?? "",
@@ -61,12 +65,20 @@ const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
     field: "claim_date",
     getValue: (item: BenefitPayslip) =>
       item?.claim_date ?? "",
-  }, {
+  },
+  {
     sortable: true,
     type: "date",
+    field: "creation",
+    getValue: (item: BenefitPayslip) =>
+      item?.todo_list?.[0]?.reference_document?.creation ?? "",
+  },
+  {
+    sortable: true,
+    type: "number",
     field: "claimed_amount",
     getValue: (item: BenefitPayslip) =>
-      item?.claimed_amount ?? "",
+      item?.claimed_amount ?? 0,
   },
   {
     sortable: true,
@@ -77,6 +89,9 @@ const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
     sortable: true,
     field: "custom_non_taxable_amount",
     getValue: (item: BenefitPayslip) => item.custom_non_taxable_amount ?? 0,
+  },
+  {
+    sortable: false,
   },
   {
     sortable: false,
@@ -286,6 +301,19 @@ const MyRequests: React.FC = () => {
             "Status",
             "Actions",
           ]}
+          columnWidths={[
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+          ]}
           columnSortConfig={COLUMN_SORT_CONFIG}
         >
           <DataListView
@@ -332,8 +360,8 @@ const MyRequests: React.FC = () => {
                   },
                 ],
                 emptyValueConfig: {
-                    filterValue: ["!=", "Cancelled"],
-                  },
+                  filterValue: ["!=", "Cancelled"],
+                },
               },
             ]}
             onFiltersChange={(filter) => setCustomStatus(filterStatusMap[filter.custom_status as "Open" | "Approved" | "Rejected" | "Cancelled"])}
@@ -404,7 +432,7 @@ const BenefitSlipItem = ({
   const { isDesktop } = useScreenSize();
   const todo: TodoType | null = (Array.isArray(item.todo_list) && item.todo_list.length > 0) ? item.todo_list[0] : null;
   const [isActed, setIsActed] = useState(false);
-
+  const formattedCreationDate = formatToIndianDate(todo?.reference_document?.creation || "");
   const canEdit = todo?.can_edit === true && !isActed;
   const canRevoke =
     todo?.custom_allow_revoke === 1 &&
@@ -449,7 +477,7 @@ const BenefitSlipItem = ({
   };
 
   return isDesktop ? (
-    <div className="grid grid-cols-9 max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer">
+    <div className="grid grid-cols-11 max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer">
       <Link
         to={`/webapp/employee-profile?target_user=${item?.employee}`}
         target="_blank"
@@ -464,7 +492,7 @@ const BenefitSlipItem = ({
         </Typography>
       </Link>
       <Typography variant="bodySmall" className="font-medium text-center">
-        {getAssignedUsersCell(item?.todo_list)}
+        {getAssignedUsersCell(todo)}
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {item?.company}
@@ -474,6 +502,9 @@ const BenefitSlipItem = ({
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {formatToIndianDate(item?.claim_date || "")}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formattedCreationDate}
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
@@ -487,7 +518,6 @@ const BenefitSlipItem = ({
           {formatCurrency(maskAmounts ? "#####" : item?.custom_taxable_amount)}
         </span>
       </Typography>
-
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={`${maskAmounts ? "blur-[3px]" : ""}`}>
           {formatCurrency(
@@ -499,10 +529,10 @@ const BenefitSlipItem = ({
       <div className="flex items-center justify-center">
         <AllocatedToTooltip
           position="left"
-          users={item?.todo_list[0]?.allocated_to}
-          RoleAssignedUsers={item?.todo_list[0]?.role_assigned_users}
-          roles={item?.todo_list[0]?.allocated_roles}
-          role={item?.todo_list[0]?.role ?? ""}
+          users={todo?.allocated_to}
+          RoleAssignedUsers={todo?.role_assigned_users}
+          roles={todo?.allocated_roles}
+          role={todo?.role ?? ""}
         >
           <StatusBadge status={badgeStatus} />
         </AllocatedToTooltip>
