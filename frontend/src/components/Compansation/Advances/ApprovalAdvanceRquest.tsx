@@ -105,9 +105,9 @@ const TeamAdvanceRequest = () => {
     {
       sortable: true,
       type: "date",
-      field: "posting_date",
+      field: "repayment_end_date",
       getValue: (item: any) =>
-        item?.reference_document?.posting_date ?? "",
+        item?.reference_document?.repayment_end_date ?? "",
     },
     {
       sortable: true,

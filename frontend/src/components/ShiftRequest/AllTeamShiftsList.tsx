@@ -14,7 +14,6 @@ import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
-import { BulkSelectProvider } from "../shared/BulkSelectContext";
 
 const TeamShiftRowItem: React.FC<{
   item: ApiShiftAssignment;
@@ -147,8 +146,7 @@ const AllTeamShiftsList: React.FC = () => {
             </div>
           )}
           <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-            <BulkSelectProvider>
-              <CardTable
+            <CardTable
                 titles={[
                   "Employee",
                   "Shift Type",
@@ -175,7 +173,6 @@ const AllTeamShiftsList: React.FC = () => {
                   />
                 )}
               </CardTable>
-            </BulkSelectProvider>
           </div>
         </div>
       ) : (
