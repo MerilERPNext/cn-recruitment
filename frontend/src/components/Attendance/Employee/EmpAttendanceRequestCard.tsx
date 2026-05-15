@@ -61,7 +61,6 @@ const EmpAttendanceRequestCard = ({
       );
     }
   };
-  console.log(data,'-------------------------------------attendance data')
   function getDays(from_date: string, to_date: string) {
     const format = "dd-MM-yyyy";
 

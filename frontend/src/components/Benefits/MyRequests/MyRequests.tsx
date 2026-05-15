@@ -418,6 +418,7 @@ const BenefitSlipItem = ({
       : item?.custom_status;
   const revokeEventMutation = useRevokeEvent();
   const loading = useLoadingOverlay();
+  const formattedCreationDate = formatToIndianDate(item?.todo_list?.[0].reference_document?.creation ?? "");
 
   const handleRevokeClick = () => {
     if (todo?.todo_id) {
@@ -474,6 +475,9 @@ const BenefitSlipItem = ({
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {formatToIndianDate(item?.claim_date || "")}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formattedCreationDate}
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
