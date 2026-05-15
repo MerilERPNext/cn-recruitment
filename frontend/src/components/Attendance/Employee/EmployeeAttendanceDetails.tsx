@@ -607,7 +607,7 @@ const AttendanceCard = ({ record }: { record: EmployeeCheckInLog }) => {
 
       <div className="space-y-1">
         <Typography variant="bodySmall" color="body2">
-          {format(new Date(record.time), "hh:mm a, dd/MM/yyyy")}
+          {formatToIndianDateWithTime(record.time)}
         </Typography>
       </div>
     </div>

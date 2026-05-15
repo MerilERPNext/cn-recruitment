@@ -25,6 +25,7 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailModal from "./AdvanceDetailModal";
 import { COLUMN_SORT_CONFIG_EXPENSE_ADVANCE } from "../../../utils/tableSortConfig";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvance, setSelectedAdvance] = useState<{
@@ -145,15 +146,16 @@ const MyAdvanceExpenseList = () => {
             {doc.name}
           </Typography>
         </Tooltip>
+       
         <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.custom_advance_type}
+          {doc.custom_advance_type} 
         </Typography>
         <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.custom_advance_policy}
+          {doc.custom_advance_policy} 
         </Typography>
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatToIndianDate(doc.posting_date)}
-        </Typography>
+        </Typography> 
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatCurrency(doc.advance_amount)}
         </Typography>
@@ -373,14 +375,16 @@ const MyAdvanceExpenseList = () => {
         <CardTable
           titles={[
             "Advance Id",
+            "Assigned To",
             "Advance Category",
             "Advance Policy",
             "Posting Date",
+            "Created At",
             "Advance Amount",
             "Status",
             "Actions",
           ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1fr","1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
           columnSortConfig={COLUMN_SORT_CONFIG_EXPENSE_ADVANCE}
 
         >

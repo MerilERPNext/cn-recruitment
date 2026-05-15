@@ -158,3 +158,18 @@ export const getOpenApprovalTodos = async (
 
   return response as any;
 };
+
+export const updateInitiatorFormSubmission = async (
+  conversation_doc: string,
+  submission_data: Record<string, unknown>
+) => {
+  const response = await FrappeAPI.callMethod(
+    'cn_hrms_core.cn_hrms_core.apis.funnel_activity.update_initiator_form_submission',
+    {
+      conversation_doc,
+      submission_data: JSON.stringify(submission_data),
+    },
+  );
+
+  return response as any;
+};

@@ -61,7 +61,6 @@ const EmpAttendanceRequestCard = ({
       );
     }
   };
-
   function getDays(from_date: string, to_date: string) {
     const format = "dd-MM-yyyy";
 
@@ -103,7 +102,7 @@ const EmpAttendanceRequestCard = ({
           <div className="flex items-center justify-center">
             {getAssignedUsersCell(data)}
           </div>
-          {/* From Date */}
+          {/* From Date */} 
           <Typography variant="bodySmall" className="font-medium text-center">
             {formattedFromDate}
           </Typography>

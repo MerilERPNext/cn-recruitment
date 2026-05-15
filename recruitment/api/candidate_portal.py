@@ -219,21 +219,42 @@ def _get_child_table_fields(child_doctype):
     return fields
 
 
-def _filter_child_fields(all_fields, selected_child_fields_json):
+def _filter_child_fields(all_fields, selected_child_fields_json, mandatory_child_fields_json=None):
     """
-    Filters child fields to only those in the selected_child_fields JSON list.
-    If selected_child_fields_json is empty/None, returns all fields (backward compat).
+    Filters child fields to only those in selected_child_fields_json (empty = all).
+    Marks fields listed in mandatory_child_fields_json as portal-mandatory by setting reqd=1.
+    Both inputs are JSON arrays of fieldnames; missing/invalid inputs degrade gracefully.
     """
-    if not selected_child_fields_json:
-        return all_fields
-    try:
-        import json as _json
-        selected = set(_json.loads(selected_child_fields_json))
-        if not selected:
-            return all_fields
-        return [f for f in all_fields if f["fieldname"] in selected]
-    except Exception:
-        return all_fields
+    import json as _json
+
+    selected = None
+    if selected_child_fields_json:
+        try:
+            parsed = set(_json.loads(selected_child_fields_json))
+            if parsed:
+                selected = parsed
+        except Exception:
+            selected = None
+
+    mandatory = set()
+    if mandatory_child_fields_json:
+        try:
+            parsed = _json.loads(mandatory_child_fields_json)
+            if isinstance(parsed, list):
+                mandatory = set(parsed)
+        except Exception:
+            mandatory = set()
+
+    result = []
+    for f in all_fields:
+        if selected is not None and f["fieldname"] not in selected:
+            continue
+        if f["fieldname"] in mandatory:
+            f = dict(f)
+            f["reqd"] = 1
+            f["portal_mandatory"] = 1
+        result.append(f)
+    return result
 
 
 def _serialize_doc_field_value(doc, fieldname, fieldtype):
@@ -299,7 +320,9 @@ def _build_tabbed_response(portal_rows, meta_lookup, doc=None):
             field_entry["child_doctype"] = field_options
             all_child = _get_child_table_fields(field_options)
             field_entry["child_fields"] = _filter_child_fields(
-                all_child, row.get("selected_child_fields")
+                all_child,
+                row.get("selected_child_fields"),
+                row.get("mandatory_child_fields"),
             )
 
         if tab_lbl not in tab_map:
@@ -382,6 +405,9 @@ def get_onboarding_form_fields(form_name):
             "read_only": row.read_only,
             "hidden": row.hidden,
             "options": row.options,
+            # Carry the child-field configuration over to the per-record table
+            "selected_child_fields":  row.get("selected_child_fields")  or "",
+            "mandatory_child_fields": row.get("mandatory_child_fields") or "",
         }
         for row in (doc.get("portal_fields") or [])
     ]
@@ -448,7 +474,12 @@ def get_all_job_applicant_fields(job_opening=None, form_name=None):
         }
         if fieldtype == "Table":
             field_entry["child_doctype"] = field_options
-            field_entry["child_fields"] = _get_child_table_fields(field_options)
+            all_child = _get_child_table_fields(field_options)
+            field_entry["child_fields"] = _filter_child_fields(
+                all_child,
+                row.get("selected_child_fields"),
+                row.get("mandatory_child_fields"),
+            )
 
         fields.append(field_entry)
 
@@ -520,7 +551,12 @@ def get_pre_offer_form(job_applicant_id):
         }
         if fieldtype == "Table":
             field_entry["child_doctype"] = field_options
-            field_entry["child_fields"] = _get_child_table_fields(field_options)
+            all_child = _get_child_table_fields(field_options)
+            field_entry["child_fields"] = _filter_child_fields(
+                all_child,
+                row.get("selected_child_fields"),
+                row.get("mandatory_child_fields"),
+            )
 
         if tab_lbl not in tab_map:
             tab_map[tab_lbl] = {"section_order": [], "section_map": {}}
@@ -864,7 +900,12 @@ def get_job_applicant_portal_form(job_applicant_id):
         }
         if fieldtype == "Table":
             field_entry["child_doctype"] = field_options
-            field_entry["child_fields"] = _get_child_table_fields(field_options)
+            all_child = _get_child_table_fields(field_options)
+            field_entry["child_fields"] = _filter_child_fields(
+                all_child,
+                row.get("selected_child_fields"),
+                row.get("mandatory_child_fields"),
+            )
 
         if tab_lbl not in tab_map:
             tab_map[tab_lbl] = {"section_order": [], "section_map": {}}
@@ -990,3 +1031,12 @@ def get_candidate_feature_flags():
             result[row.page_name.strip().lower().replace(" ", "_")] = row.is_enabled
 
     return result
+
+
+@frappe.whitelist(allow_guest=True)
+def get_website_branding():
+    settings = frappe.get_single("Website Settings")
+    return {
+        "title_prefix": settings.title_prefix,
+        "app_logo": settings.app_logo,
+    }
