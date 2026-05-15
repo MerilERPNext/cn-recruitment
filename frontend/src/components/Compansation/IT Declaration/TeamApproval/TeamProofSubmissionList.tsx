@@ -11,6 +11,7 @@ import CardTable from "../../../shared/CardTable";
 import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
 import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 import TeamProofApprovalCard from "./TeamProofApprovalCard";
+import { BulkSelectProvider } from "../../../shared/BulkSelectContext";
 
 const TeamProofSubmissionList = () => {
   const [refetch, setRefetch] = useState(false);
@@ -66,66 +67,68 @@ const TeamProofSubmissionList = () => {
 
       {/* List */}
       <div className="flex-1 overflow-y-auto md:px-4 pb-20">
-        <CardTable titles={titles} columnWidths={columnWidths}>
-          <ApprovalList
-          status="Open"
-            doctype="Employee Tax Exemption Proof Submission"
-            refetch={refetch}
-            setRefetch={setRefetch}
-            pageSize={10}
-            infiniteScroll={false}
-            loadMorePagination={false}
-            showPagination={true}
-            isSearch
-            isFilter
-            filterFields={[
-              {
-                fieldname: "status",
-                label: "Status",
-                fieldtype: "Select",
-                options: [
-                  {
-                    label: "Pending",
-                    key: "Pending",
-                    value: "Pending",
-                    customAPIParams: { todo_status: "Open" }
-                  },
-                  {
-                    label: "Approved",
-                    key: "Approved",
-                    value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                    customAPIParams: { todo_status: "Closed" }
-                  },
-                  {
-                    label: "Rejected",
-                    key: "Rejected",
-                    value: "Rejected"
-                  },
-                ],
-                emptyValueConfig: {
-                  filterValue: ["!=", "Cancelled"]
+        <BulkSelectProvider>
+          <CardTable titles={titles} columnWidths={columnWidths}>
+            <ApprovalList
+              status="Open"
+              doctype="Employee Tax Exemption Proof Submission"
+              refetch={refetch}
+              setRefetch={setRefetch}
+              pageSize={10}
+              infiniteScroll={false}
+              loadMorePagination={false}
+              showPagination={true}
+              isSearch
+              isFilter
+              filterFields={[
+                {
+                  fieldname: "status",
+                  label: "Status",
+                  fieldtype: "Select",
+                  options: [
+                    {
+                      label: "Pending",
+                      key: "Pending",
+                      value: "Pending",
+                      customAPIParams: { todo_status: "Open" }
+                    },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" }
+                    },
+                    {
+                      label: "Rejected",
+                      key: "Rejected",
+                      value: "Rejected"
+                    },
+                  ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"]
+                  }
+                },
+              ]}
+              defaultFilters={{ status: "Open" }}
+              columnWidths={columnWidths}
+              SkeletonComponent={CardSkeleton}
+              noRecordsScreen={noRecordsScreen}
+              bulkSelectVisible={false}
+              renderCardContent={(item) => {
+                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                  return null;
                 }
-              },
-            ]}
-            defaultFilters={{ status: "Open" }}
-            columnWidths={columnWidths}
-            SkeletonComponent={CardSkeleton}
-            noRecordsScreen={noRecordsScreen}
-            bulkSelectVisible={false}
-            renderCardContent={(item) => {
-              if (item?.data?.custom_selected_doctype_action === "Send Back") {
-                return null;
-              }
-              return <TeamProofApprovalCard
-                data={item.data}
-                loadingAction={item.loadingAction}
-                onAction={item.onAction}
-                onClick={handleRowClick}
-                isActed={item.isActed}
-              />
-            }}
-          />
-        </CardTable>
+                return <TeamProofApprovalCard
+                  data={item.data}
+                  loadingAction={item.loadingAction}
+                  onAction={item.onAction}
+                  onClick={handleRowClick}
+                  isActed={item.isActed}
+                />
+              }}
+            />
+          </CardTable>
+        </BulkSelectProvider>
       </div>
     </div>
   );

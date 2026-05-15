@@ -14,6 +14,7 @@ import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
+import { BulkSelectProvider } from "../shared/BulkSelectContext";
 
 const TeamShiftRowItem: React.FC<{
   item: ApiShiftAssignment;
@@ -146,33 +147,35 @@ const AllTeamShiftsList: React.FC = () => {
             </div>
           )}
           <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-            <CardTable
-              titles={[
-                "Employee",
-                "Shift Type",
-                "Start Date",
-                "End Date",
-                "Status",
-              ]}
-              columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
-            >
-              {isLoading ? (
-                <CardSkeleton />
-              ) : teamShifts.length > 0 ? (
-                teamShifts.map((shift, index) => (
-                  <TeamShiftRowItem
-                    key={shift.name}
-                    item={shift}
-                    index={index}
+            <BulkSelectProvider>
+              <CardTable
+                titles={[
+                  "Employee",
+                  "Shift Type",
+                  "Start Date",
+                  "End Date",
+                  "Status",
+                ]}
+                columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
+              >
+                {isLoading ? (
+                  <CardSkeleton />
+                ) : teamShifts.length > 0 ? (
+                  teamShifts.map((shift, index) => (
+                    <TeamShiftRowItem
+                      key={shift.name}
+                      item={shift}
+                      index={index}
+                    />
+                  ))
+                ) : (
+                  <NoDataFound
+                    title="No Team Shift Assignments"
+                    subtitle="No team shifts found."
                   />
-                ))
-              ) : (
-                <NoDataFound
-                  title="No Team Shift Assignments"
-                  subtitle="No team shifts found."
-                />
-              )}
-            </CardTable>
+                )}
+              </CardTable>
+            </BulkSelectProvider>
           </div>
         </div>
       ) : (
