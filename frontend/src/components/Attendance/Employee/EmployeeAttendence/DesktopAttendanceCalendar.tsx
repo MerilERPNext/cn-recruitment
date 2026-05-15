@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 
-import { Calendar, CheckCircle2, ChevronLeft, ChevronRight, Home, XCircle } from "lucide-react";
+import { Calendar, CalendarRange, CheckCircle2, ChevronLeft, ChevronRight, CircleX, Gift, Home, XCircle } from "lucide-react";
 
 import DatePicker from "react-datepicker";
 import { AttendanceRecord } from "../../../../types/attendance";
@@ -28,18 +28,33 @@ type AttendanceStatusInfo = {
     record?: AttendanceRecord; // the attendance record whose status is being used
 };
 
-const getEventBadgeStyle = (doctype: string): { label: string; className: string } => {
+const getEventBadgeStyle = (doctype: string): { label: string; borderClass: string } => {
     switch (doctype) {
         case "Attendance Request":
-            return { label: "Att. Request", className: "bg-blue-50 text-blue-700 border-l-2 border-blue-400" };
+            return { label: "Att. Request", borderClass: "border-l-2 border-blue-400" };
         case "Leave Request":
-            return { label: "Leave Req.", className: "bg-pink-50 text-pink-700 border-l-2 border-pink-400" };
+            return { label: "Leave Req.", borderClass: "border-l-2 border-pink-400" };
         case "Overtime Request":
-            return { label: "Overtime", className: "bg-orange-50 text-orange-700 border-l-2 border-orange-400" };
+            return { label: "Overtime", borderClass: "border-l-2 border-orange-400" };
         case "Out Duty":
-            return { label: "Out Duty", className: "bg-purple-50 text-purple-700 border-l-2 border-purple-400" };
+            return { label: "Out Duty", borderClass: "border-l-2 border-purple-400" };
         default:
-            return { label: doctype, className: "bg-gray-50 text-gray-600 border-l-2 border-gray-400" };
+            return { label: doctype, borderClass: "border-l-2 border-gray-400" };
+    }
+};
+
+const getStatusBgStyle = (status: string): string => {
+    switch (status) {
+        case "Approved":
+            return "bg-green-50 text-green-700 border-l-2 border-green-400";
+        case "Rejected":
+            return "bg-red-50 text-red-700 border-l-2 border-red-400";
+        case "Pending":
+            return "bg-yellow-50 text-yellow-700 border-l-2 border-yellow-400";
+        case "Revoked":
+            return "bg-purple-50 text-purple-700 border-l-2 border-purple-400";
+        default:
+            return "bg-gray-50 text-gray-600 border-l-2 border-gray-400";
     }
 };
 
@@ -94,15 +109,15 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
         // );
         const prioritized = new Set(["Approved", "Rejected"]);
         const events = (attendance?.events?.map((event) => ({
-                ...event,
-                doctype:
-                    event?.doctype === "Attendance Request" &&
-                        event?.request_type === "Out Duty"
-                        ? "Out Duty"
-                        : event?.doctype,
-            })) || []).sort((a, b) =>
-                (prioritized.has(a.status) ? 0 : 1) - (prioritized.has(b.status) ? 0 : 1)
-            );
+            ...event,
+            doctype:
+                event?.doctype === "Attendance Request" &&
+                    event?.request_type === "Out Duty"
+                    ? "Out Duty"
+                    : event?.doctype,
+        })) || []).sort((a, b) =>
+            (prioritized.has(a.status) ? 0 : 1) - (prioritized.has(b.status) ? 0 : 1)
+        );
         return (
             <div className="flex items-end gap-1 overflow-hidden">
                 <div className="flex flex-col gap-0.5 overflow-hidden min-w-0 flex-1">
@@ -119,7 +134,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                                 // onClick={(e) => {
                                 // e.stopPropagation();
                                 // }}
-                                className={`min-w-0 w-fit text-[10px] font-medium pl-1.5 pr-1 py-0.5 leading-tight truncate ${badge.className}`}
+                                className={`min-w-0 text-[10px] font-medium pl-1.5 pr-1 py-0.5 leading-tight truncate ${getStatusBgStyle(event.status)}`}
                                 title={`${badge.label} ${event.status}`}
                             >
                                 {badge.label} {event.status}
@@ -137,6 +152,11 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
     };
 
     const renderStatusIcon = (attendance: AttendanceStatusInfo) => {
+        if (attendance.record?.is_optional_leave) {
+            return <div className="p-1 bg-blue-50 rounded-lg">
+                <CalendarRange className="w-4 h-4 text-blue-600 flex-shrink-0" />
+            </div>
+        }
         switch (attendance?.status) {
             case "present":
                 return <div className="p-1 bg-green-50 rounded-lg">
@@ -145,12 +165,19 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
             case "absent":
             case "unpaid":
                 return <div className="p-1 bg-red-50 rounded-lg">
-
                     <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
                 </div>
             case "work-from-home":
                 return <div className="p-1 bg-purple-50 rounded-lg">
                     <Home className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                </div>
+            case "week-off":
+                return <div className="p-1 bg-gray-50 rounded-lg">
+                    <CircleX className="w-4 h-4 text-gray-600 flex-shrink-0" />
+                </div>
+            case "holiday":
+                return <div className="p-1 bg-blue-50 rounded-lg">
+                    <Gift className="w-4 h-4 text-blue-600 flex-shrink-0" />
                 </div>
             case "on-leave":
                 return <div className="p-1 bg-yellow-50 rounded-lg">
@@ -295,6 +322,57 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     );
                 }}
             />
+
+            {/* Legend */}
+            <div className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1.5 px-3 py-2.5 border-t border-gray-100 text-[11px] text-gray-600">
+                <div className="flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                    <span>Present</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <XCircle className="w-3.5 h-3.5 text-red-500" />
+                    <span>Absent</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <Home className="w-3.5 h-3.5 text-purple-500" />
+                    <span>WFH</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-yellow-500" />
+                    <span>On Leave</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <XCircle className="w-3.5 h-3.5 text-grey-500" />
+                    <span>Week Off</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <Gift className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Holiday</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <CalendarRange className="w-3.5 h-3.5 text-blue-500" />
+                    <span>Optional Holiday</span>
+                </div>
+
+                <div className="w-px h-3.5 bg-gray-200 mx-1" />
+
+                <div className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block" />
+                    <span>Pending</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
+                    <span>Approved</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
+                    <span>Rejected</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <span className="w-2.5 h-2.5 rounded-full bg-purple-400 inline-block" />
+                    <span>Revoked</span>
+                </div>
+            </div>
         </div>
     );
 };
