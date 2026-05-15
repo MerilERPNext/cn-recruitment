@@ -88,7 +88,7 @@ export const LoantItem: React.FC<{
               {item.loan_type}
             </Typography>
              <Typography variant="bodySmall" className="font-medium text-center">
-                      {getAssignedUsersCell(item?.todo_list)}
+                      {getAssignedUsersCell(item?.todo_list?.[0])}
                     </Typography>
                     
           </div>
