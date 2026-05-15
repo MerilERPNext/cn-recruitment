@@ -1,12 +1,13 @@
 import React, { useEffect } from "react";
 
-import { Calendar, CalendarRange, CheckCircle2, ChevronLeft, ChevronRight, CircleX, Gift, Home, XCircle } from "lucide-react";
+import { Calendar, CalendarRange, CheckCircle2, ChevronLeft, ChevronRight, CircleX, Columns2, Gift, Home, XCircle } from "lucide-react";
 
 import DatePicker from "react-datepicker";
 import { AttendanceRecord } from "../../../../types/attendance";
-import { gradientClassMap } from "../../../../utils/helperUtils";
+
 import Button from "../../../shared/atoms/Button";
 import { useSearchParams } from "react-router-dom";
+import Tooltip from "../../../shared/Tooltip";
 
 type Status =
     | "present"
@@ -31,15 +32,28 @@ type AttendanceStatusInfo = {
 const getEventBadgeStyle = (doctype: string): { label: string; borderClass: string } => {
     switch (doctype) {
         case "Attendance Request":
-            return { label: "Att. Request", borderClass: "border-l-2 border-blue-400" };
+            return { label: "Attendance Request", borderClass: "border-l-2 border-blue-400" };
         case "Leave Request":
-            return { label: "Leave Req.", borderClass: "border-l-2 border-pink-400" };
+            return { label: "Leave Request", borderClass: "border-l-2 border-pink-400" };
         case "Overtime Request":
-            return { label: "Overtime", borderClass: "border-l-2 border-orange-400" };
+            return { label: "Overtime Request", borderClass: "border-l-2 border-orange-400" };
         case "Out Duty":
             return { label: "Out Duty", borderClass: "border-l-2 border-purple-400" };
         default:
             return { label: doctype, borderClass: "border-l-2 border-gray-400" };
+    }
+};
+
+
+const getHalfDayColor = (status: string): string => {
+    switch (status?.toLowerCase()) {
+        case "present": return "text-green-500";
+        case "absent": return "text-red-500";
+        case "leave": return "text-yellow-500";
+        case "work from home": return "text-purple-500";
+        case "holiday": return "text-blue-500";
+        case "week off": return "text-gray-400";
+        default: return "text-gray-400";
     }
 };
 
@@ -50,6 +64,7 @@ const getStatusBgStyle = (status: string): string => {
         case "Rejected":
             return "bg-red-50 text-red-700 border-l-2 border-red-400";
         case "Pending":
+        case "Open":
             return "bg-yellow-50 text-yellow-700 border-l-2 border-yellow-400";
         case "Revoked":
             return "bg-purple-50 text-purple-700 border-l-2 border-purple-400";
@@ -90,11 +105,12 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
     }, [selectedDate, setSearchParams, searchParams]);
 
     const getAttendanceEvents = (attendance: AttendanceStatusInfo) => {
-        // const validEvents = (attendance?.events ?? []).filter(
-        //     (event) => event.status !== "Revoked"
-        // );
+        const validEvents = (attendance?.events ?? []).filter((event) => {
+            return event.status !== "Rejected" && event.status !== "Revoked";
 
-        if (attendance?.events?.length === 0) return null;
+        });
+
+        if (validEvents?.length === 0) return null;
 
         // const uniqueEvents = Array.from(
         //     attendance?.events?.reduce((map, event) => {
@@ -108,7 +124,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
         //     }, new Map<string, AttendanceRecord>()).values()
         // );
         const prioritized = new Set(["Approved", "Rejected"]);
-        const events = (attendance?.events?.map((event) => ({
+        const events = (validEvents?.map((event) => ({
             ...event,
             doctype:
                 event?.doctype === "Attendance Request" &&
@@ -129,16 +145,19 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                                 : event?.doctype;
                         const badge = getEventBadgeStyle(doctypeKey);
                         return (
-                            <div
-                                key={index}
-                                // onClick={(e) => {
-                                // e.stopPropagation();
-                                // }}
-                                className={`min-w-0 text-[10px] font-medium pl-1.5 pr-1 py-0.5 leading-tight truncate ${getStatusBgStyle(event.status)}`}
-                                title={`${badge.label} ${event.status}`}
-                            >
-                                {badge.label} {event.status}
-                            </div>
+                            <Tooltip content={event.doctype + " " + event.status}>
+
+                                <div
+                                    key={index}
+                                    // onClick={(e) => {
+                                    // e.stopPropagation();
+                                    // }}
+                                    className={`min-w-0 text-[10px] font-medium pl-1.5 pr-1 py-0.5 leading-tight truncate ${getStatusBgStyle(event.status)}`}
+                                    title={`${badge.label} ${event.status}`}
+                                >
+                                    {badge.label} {event.status}
+                                </div>
+                            </Tooltip>
                         );
                     })}
                 </div>
@@ -183,6 +202,22 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                 return <div className="p-1 bg-yellow-50 rounded-lg">
                     <Calendar className="w-4 h-4 text-yellow-600 flex-shrink-0" />
                 </div>
+            case "half-day": {
+                const firstColor = getHalfDayColor(attendance?.firstHalf || "");
+                const secondColor = getHalfDayColor(attendance?.secondHalf || "");
+                return (
+                    <div className="p-1 bg-gray-50 rounded-lg">
+                        <div className="relative w-4 h-4 flex-shrink-0">
+                            <div className="absolute inset-0" style={{ clipPath: "inset(0 50% 0 0)" }}>
+                                <Columns2 className={`w-4 h-4 ${firstColor}`} />
+                            </div>
+                            <div className="absolute inset-0" style={{ clipPath: "inset(0 0 0 50%)" }}>
+                                <Columns2 className={`w-4 h-4 ${secondColor}`} />
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
             default:
                 return null;
         }
@@ -269,7 +304,6 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     const isSelected =
                         selectedDate?.toDateString() === date.toDateString();
                     const isWeekOff = attendance?.status === "week-off";
-                    const isHalfDay = attendance?.status === "half-day";
 
                     const cellBase =
                         "w-full h-full flex flex-col p-2 transition-all duration-200";
@@ -277,32 +311,6 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     const selectedRing = isSelected
                         ? "ring-1 ring-inset ring-primary-400 rounded-lg"
                         : "hover:bg-gray-50";
-
-                    if (isHalfDay) {
-                        const firstColor =
-                            gradientClassMap[attendance?.firstHalf?.toLowerCase() || ""];
-                        const secondColor =
-                            gradientClassMap[attendance?.secondHalf?.toLowerCase() || ""];
-                        const gradient = `linear-gradient(to bottom right, ${firstColor} 50%, ${secondColor} 50%)`;
-
-                        return (
-                            <div
-                                className={`${cellBase} ${selectedRing}`}
-                                style={{ backgroundImage: gradient }}
-                            >
-                                <div className="flex justify-between items-start">
-                                    <span
-                                        className={`text-sm font-semibold text-gray-800 ${new Date().toDateString() === date.toDateString() ? "bg-primary-500 text-white rounded-full h-6 w-6 flex items-center justify-center text-xs" : ""} `}
-                                    >
-                                        {day}
-                                    </span>
-                                </div>
-                                <div className="mt-auto">
-                                    {getAttendanceEvents(attendance)}
-                                </div>
-                            </div>
-                        );
-                    }
 
                     return (
                         <div className={`${cellBase} ${weekOffBg} ${selectedRing}`}>
@@ -312,7 +320,10 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                                 >
                                     {day}
                                 </span>
-                                {renderStatusIcon(attendance)}
+                                <Tooltip content={attendance?.status.toUpperCase()}>
+
+                                    {renderStatusIcon(attendance)}
+                                </Tooltip>
                             </div>
                             <div className="mt-auto flex flex-col gap-1">
                                 {renderStatusBadge(attendance)}
@@ -342,6 +353,10 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     <span>On Leave</span>
                 </div>
                 <div className="flex items-center gap-1">
+                    <Columns2 className="w-3.5 h-3.5 text-orange-500" />
+                    <span>Half Day</span>
+                </div>
+                <div className="flex items-center gap-1">
                     <XCircle className="w-3.5 h-3.5 text-grey-500" />
                     <span>Week Off</span>
                 </div>
@@ -364,16 +379,16 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
                     <span>Approved</span>
                 </div>
-                <div className="flex items-center gap-1">
+                {/* <div className="flex items-center gap-1">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
                     <span>Rejected</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <span className="w-2.5 h-2.5 rounded-full bg-purple-400 inline-block" />
-                    <span>Revoked</span>
-                </div>
+                    <span>Revoked</span> */}
+                {/* </div> */}
             </div>
-        </div>
+        </div >
     );
 };
 

@@ -218,6 +218,11 @@ code {
   border-top: none !important;
 }
 
+.employee-datepicker-lg .react-datepicker__day--outside-month {
+  opacity: 0.3 !important;
+  background-color: #f9fafb !important;
+}
+
 .react-datepicker__day-names {
   display: flex !important;
   width: 100% !important;

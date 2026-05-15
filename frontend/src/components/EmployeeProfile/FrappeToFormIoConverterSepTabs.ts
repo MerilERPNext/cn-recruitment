@@ -8,6 +8,9 @@ const tableFieldsCache = new Map<string, any[]>();
 // Tabs from the backend that should never be rendered in the profile UI
 const SKIP_TAB_LABELS = new Set(["Attendance & Leaves"]);
 
+// Fields that should be hidden in the profile view but are still needed in the edit form
+const PROFILE_VIEW_SKIP_FIELDS = new Set(["custom_same_as_current"]);
+
 export const READ_ONLY_FIELDS = [
   "custom_cxo",
   "custom_designation_name",
@@ -664,14 +667,28 @@ export async function convertToFormioWithTabMetadata(
 
   for (const field of apiFields) {
     if (!field || !field.fieldtype || field?.label === "Connections") continue;
-    if (field.hidden === true) continue;
+
+    if (field.hidden === true || field.hidden === 1) {
+      if (field.fieldtype === "Tab Break") {
+        if (fieldsBuffer.length > 0 && currentSection) {
+          currentSection.components.push(...fieldsBuffer);
+          fieldsBuffer = [];
+        }
+        closeCurrentStructures();
+        if (currentTab) tabs.push(currentTab);
+        currentTab = null;
+        currentSection = null;
+        fieldsBuffer = [];
+      }
+      continue;
+    }
 
     if (lastFieldType.endsWith(" Break") && field.fieldtype === lastFieldType) {
       continue;
     }
     lastFieldType = field.fieldtype;
 
-    if (field.fieldtype === "Button" || field.hidden === 1) continue;
+    if (field.fieldtype === "Button") continue;
 
     if (field.fieldtype === "Tab Break") {
       if (fieldsBuffer.length > 0 && currentSection) {
@@ -1437,7 +1454,13 @@ export async function convertFieldsToSimpleTabbedData(
   for (const field of apiFields) {
     if (!field || !field.fieldtype || field?.label === "Connections") continue;
 
-    if (field.hidden === true || field.hidden === 1) continue;
+    if (field.hidden === true || field.hidden === 1) {
+      if (field.fieldtype === "Tab Break") {
+        flushSection();
+        currentTab = null;
+      }
+      continue;
+    }
 
     if (lastFieldType.endsWith(" Break") && field.fieldtype === lastFieldType) {
       continue;
@@ -1487,6 +1510,7 @@ export async function convertFieldsToSimpleTabbedData(
     } else {
       // It's a field
       if (!currentTab) continue;
+      if (PROFILE_VIEW_SKIP_FIELDS.has(field.fieldname)) continue;
       if (!currentSection) {
         currentSection = { label: "", key: `${currentTab.key}_default`, columns: [] };
         currentColumn = { key: `${currentSection.key}_col0`, fields: [] };
