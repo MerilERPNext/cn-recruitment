@@ -45,7 +45,7 @@ const Expenses = lazyWithRetry(
   "Expenses",
 );
 const FlexiDeclaration = lazyWithRetry(
-  () => import("./components/Compansation/FlexiDeclaration/FlexiDeclaration"),
+  () => import("./components/Compansation/fl/FlexiDeclaration"),
 )
 const RecruitmentApp = lazyWithRetry(
   () => import("./components/RecruitmentApp"),

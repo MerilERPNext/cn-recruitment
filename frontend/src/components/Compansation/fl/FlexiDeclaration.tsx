@@ -1,11 +1,16 @@
 import { useState, useEffect } from "react";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGetYearFilterOptions } from "../../../hooks/useBenefit";
-import { useFlexiComponents, useUpdateFlexiComponents } from "../../../hooks/payroll/useFlexiDeclaration";
+import {
+  useFlexiComponents,
+  useUpdateFlexiComponents,
+  // useFlexiLockingPeriodVisibility,
+  useIndividualEmployeeFlexiLockingPeriod
+} from "../../../hooks/payroll/useFlexiDeclaration";
 import { FlexiComponent, ComponentPartOfCTC } from "../../../types/flexiDeclaration";
 import { IoIosArrowDown } from "react-icons/io";
-
-
+import { EditFlexiLockingPeriod } from "./Component/EditFlexiLockingPeriod";
+// import { format } from "date-fns";
 
 function formatINR(num: string | number | undefined | null) {
   if (num === undefined || num === null || num === "") return "";
@@ -16,8 +21,8 @@ function formatINR(num: string | number | undefined | null) {
 
 export default function FlexiDeclaration() {
   const [showValues, setShowValues] = useState(false);
-  const [npsType, setNpsType] = useState("amount");
   const [selectedPeriod, setSelectedPeriod] = useState("25-26");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const { data: currentEmployee, } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: yearOptions } = useGetYearFilterOptions(currentEmployee?.company || "");
@@ -32,6 +37,17 @@ export default function FlexiDeclaration() {
     currentEmployee?.name || "",
     selectedPeriod || "",
     currentEmployee?.company || ""
+  );
+
+  // const { data: visibilityData, refetch: refetchVisibility } = useFlexiLockingPeriodVisibility({
+  //   employee: currentEmployee?.name || "",
+  //   payroll_period: selectedPeriod || "",
+  //   posting_date: format(new Date(), "yyyy-MM-dd"),
+  //   doctype: "Salary Structure Assignment"
+  // });
+
+  const { data: lockingPeriodData, refetch: refetchLockingPeriod } = useIndividualEmployeeFlexiLockingPeriod(
+    currentEmployee?.name || ""
   );
 
   const updateMutation = useUpdateFlexiComponents();
@@ -76,6 +92,8 @@ export default function FlexiDeclaration() {
       alert("Failed to update flexi components.");
     }
   };
+
+  const isClosed = lockingPeriodData?.status === "Closed";
 
   return (
     <div className="bg-app min-h-screen text-text-title font-brand">
@@ -131,18 +149,28 @@ export default function FlexiDeclaration() {
             <span className="font-bold text-[15px] text-text-title">
               Flexi Declaration For FY {selectedPeriod} (₹)
             </span>
-            <span className="bg-error-50 text-error text-[10px] font-bold px-2 py-0.5 rounded tracking-widest uppercase">CLOSED</span>
-            <span className="text-text-body2 cursor-pointer text-[14px]">✏️</span>
+            <span className={`${isClosed ? "bg-error-50 text-error" : "bg-success-50 text-success"} text-[10px] font-bold px-2 py-0.5 rounded tracking-widest uppercase`}>
+              {lockingPeriodData?.status || "OPEN"}
+            </span>
+            
+             <span
+                className="text-text-body2 cursor-pointer text-[14px]"
+                onClick={() => setIsEditModalOpen(true)}
+              >
+                ✏️
+              </span>
+        
           </div>
+
 
           <div className="flex flex-col gap-4.5">
             {flexiComponents.map((comp: FlexiComponent) =>
               comp.salary_component === "NPS" ? (
                 <div key={comp.salary_component}>
                   <label className="text-[12px] text-text-body2 block mb-1.5">
-                    {comp.salary_component} (0 - {formatINR(comp.max_amount)})
+                    {comp.salary_component} (0 - {formatINR(comp.max_amount)}) Anual
                   </label>
-                  <div className="flex gap-4 mb-2">
+                  {/* <div className="flex gap-4 mb-2">
                     <label className="flex items-center gap-1.25 text-[13px] text-text-body1 cursor-pointer">
                       <input type="radio" name="nps" checked={npsType === "amount"} onChange={() => setNpsType("amount")} className="accent-primary" />
                       Amount
@@ -151,7 +179,7 @@ export default function FlexiDeclaration() {
                       <input type="radio" name="nps" checked={npsType === "percentage"} onChange={() => setNpsType("percentage")} className="accent-primary" />
                       Percentage
                     </label>
-                  </div>
+                  </div> */}
                   <input
                     type="text"
                     placeholder="Enter Amount"
@@ -164,7 +192,7 @@ export default function FlexiDeclaration() {
               ) : (
                 <div key={comp.salary_component}>
                   <label className="text-[12px] text-text-body2 block mb-1.5">
-                    {comp.salary_component} (0 - {formatINR(comp.max_amount)})
+                    {comp.salary_component} (0 - {formatINR(comp.max_amount)}) Annual
                   </label>
                   <input
                     type="text"
@@ -227,6 +255,17 @@ export default function FlexiDeclaration() {
           </div>
         </div>
       </div>
+
+      <EditFlexiLockingPeriod
+        open={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        data={lockingPeriodData}
+        onRefetchData={() => {
+          refetchLockingPeriod();
+          // refetchVisibility();
+        }}
+      />
     </div>
   );
 }
+

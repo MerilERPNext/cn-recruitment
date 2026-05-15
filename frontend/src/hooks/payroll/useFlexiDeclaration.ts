@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient, UseQueryResult } from "@tanstack/react-query";
-import { fetchFlexiComponents, updateFlexiComponents } from "../../services/payrollApi/flexiDeclarationService";
-import { FlexiDataResponse, FlexiComponent } from "../../types/flexiDeclaration";
+import {
+  fetchFlexiComponents,
+  updateFlexiComponents,
+  fetchFlexiLockingPeriodVisibility,
+  fetchIndividualEmployeeFlexiLockingPeriod,
+  setIndividualEmployeeFlexiLockingPeriod
+} from "../../services/payrollApi/flexiDeclarationService";
+import { FlexiDataResponse, FlexiComponent, FlexiLockingPeriod, FlexiLockingPeriodVisibility } from "../../types/flexiDeclaration";
 
 export const useFlexiComponents = (
   employee: string | undefined,
@@ -23,3 +29,35 @@ export const useUpdateFlexiComponents = () => {
     },
   });
 };
+
+export const useFlexiLockingPeriodVisibility = (params: {
+  employee: string;
+  payroll_period: string;
+  posting_date: string;
+  doctype: string;
+}) => {
+  return useQuery({
+    queryKey: ["flexi-locking-period-visibility", params],
+    queryFn: () => fetchFlexiLockingPeriodVisibility(params),
+    enabled: !!params.employee && !!params.payroll_period,
+  });
+};
+
+export const useIndividualEmployeeFlexiLockingPeriod = (employee: string) => {
+  return useQuery({
+    queryKey: ["individual-employee-flexi-locking-period", employee],
+    queryFn: () => fetchIndividualEmployeeFlexiLockingPeriod(employee),
+    enabled: !!employee,
+  });
+};
+
+export const useSetIndividualEmployeeFlexiLockingPeriod = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: FlexiLockingPeriod) => setIndividualEmployeeFlexiLockingPeriod(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["individual-employee-flexi-locking-period"] });
+    },
+  });
+};
+

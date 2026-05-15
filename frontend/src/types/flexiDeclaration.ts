@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface FlexiComponent {
   salary_component: string;
   type: string;
@@ -45,3 +46,18 @@ export interface FlexiDataResponse {
 export interface YearOption {
   name: string;
 }
+
+export interface FlexiLockingPeriodVisibility {
+  visibility: boolean;
+}
+
+export interface FlexiLockingPeriod {
+  individual_start_date: any;
+  individual_end_date: any;
+  employee: string;
+  start_date: string;
+  end_date: string;
+  status: "Open" | "Closed";
+  doctype_name: string;
+}
+
