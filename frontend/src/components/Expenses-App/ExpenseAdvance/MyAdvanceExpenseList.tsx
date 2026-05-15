@@ -148,14 +148,14 @@ const MyAdvanceExpenseList = () => {
         </Tooltip>
        
         <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.custom_advance_type}
+          {doc.custom_advance_type} 
         </Typography>
         <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.custom_advance_policy}
+          {doc.custom_advance_policy} 
         </Typography>
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatToIndianDate(doc.posting_date)}
-        </Typography>
+        </Typography> 
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatCurrency(doc.advance_amount)}
         </Typography>
