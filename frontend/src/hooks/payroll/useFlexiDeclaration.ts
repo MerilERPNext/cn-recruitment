@@ -6,7 +6,7 @@ import {
   fetchIndividualEmployeeFlexiLockingPeriod,
   setIndividualEmployeeFlexiLockingPeriod
 } from "../../services/payrollApi/flexiDeclarationService";
-import { FlexiDataResponse, FlexiComponent, FlexiLockingPeriod, FlexiLockingPeriodVisibility } from "../../types/flexiDeclaration";
+import { FlexiDataResponse, FlexiComponent, FlexiLockingPeriod } from "../../types/flexiDeclaration";
 
 export const useFlexiComponents = (
   employee: string | undefined,

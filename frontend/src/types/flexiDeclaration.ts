@@ -51,7 +51,7 @@ export interface FlexiLockingPeriodVisibility {
   visibility: boolean;
 }
 
-export interface FlexiLockingPeriod {
+export interface FlexiLockingPeriod extends Record<string, unknown> {
   individual_start_date: any;
   individual_end_date: any;
   employee: string;

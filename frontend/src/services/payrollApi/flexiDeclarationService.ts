@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import FrappeAPI from "../../utils/frappeAPI";
 import { FlexiComponent, FlexiDataResponse, FlexiLockingPeriod, FlexiLockingPeriodVisibility } from "../../types/flexiDeclaration";
 
@@ -44,11 +45,14 @@ export const fetchIndividualEmployeeFlexiLockingPeriod = async (employee: string
   return response as FlexiLockingPeriod;
 };
 
-export const setIndividualEmployeeFlexiLockingPeriod = async (data: FlexiLockingPeriod): Promise<any> => {
+export const setIndividualEmployeeFlexiLockingPeriod = async (
+  data: FlexiLockingPeriod
+): Promise<any> => {
   const response = await FrappeAPI.callMethod(
     "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.release_config.set_individual_employee_flexi_locking_period",
-    data
+    { ...data }
   );
+
   return response;
 };
 
