@@ -67,6 +67,7 @@ def signup(email, password, full_name=None, mobile_no=None):
     candidate.email_verified = 1
     candidate.save(ignore_permissions=True)
     session = _create_candidate_session(candidate.name, settings, "Signup Email OTP")
+    _set_session_cookie(session.session_token, settings)
     frappe.db.commit()
     return {"status": "success", "user": _public_candidate(candidate.name), "session_id": session.name}
 
@@ -384,9 +385,20 @@ def _assert_candidate_can_login(candidate, allow_pending=False):
     if candidate.status == "Disabled":
         frappe.throw(_("Candidate account is disabled."), frappe.PermissionError)
     if candidate.status == "Locked":
+        if candidate.locked_until and get_datetime(candidate.locked_until) <= now_datetime():
+            _clear_candidate_lock(candidate)
+            return
         frappe.throw(_("Candidate account is locked."), frappe.PermissionError)
     if candidate.status == "Pending Verification" and not allow_pending:
         frappe.throw(_("Please verify your email OTP before signing in."), frappe.PermissionError)
+
+
+def _clear_candidate_lock(candidate):
+    candidate.status = "Active"
+    candidate.failed_login_attempts = 0
+    candidate.locked_until = None
+    candidate.save(ignore_permissions=True)
+    frappe.db.commit()
 
 
 def _verify_candidate_password(candidate, password):
@@ -400,6 +412,7 @@ def _verify_candidate_password(candidate, password):
             candidate.status = "Locked"
             candidate.locked_until = add_to_date(now_datetime(), minutes=15)
         candidate.save(ignore_permissions=True)
+        frappe.db.commit()
         frappe.throw(_("Invalid email or password."), frappe.AuthenticationError)
 
 
