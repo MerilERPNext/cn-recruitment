@@ -50,76 +50,76 @@ const TeamAdvanceRequest = () => {
   const isModalOpen = !!selectedItem || !!(requestId || referenceName);
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee Name",
-        "Advance Type",
-        "Amount",
-        "Start Date",
-        "End Date",
-        "Status",
-        "Actions",
-      ]
+      "Select",
+      "Employee Name",
+      "Advance Type",
+      "Amount",
+      "Start Date",
+      "End Date",
+      "Status",
+      "Actions",
+    ]
     : [
-        "Employee Name",
-        "Advance Type",
-        "Amount",
-        "Start Date",
-        "End Date",
-        "Status",
-        "Actions",
-      ];
+      "Employee Name",
+      "Advance Type",
+      "Amount",
+      "Start Date",
+      "End Date",
+      "Status",
+      "Actions",
+    ];
 
-      const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
-        {
-          sortable: false, // Select checkbox
-        },
-        {
-          sortable: true,
-          type: "string",
-          field: "employee_name",
-          getValue: (item: any) =>
-            item?.reference_document?.employee_name ?? "",
-        },
-        {
-          sortable: true,
-          type: "string",
-          field: "advance_type",
-          getValue: (item: any) =>
-            item?.reference_document?.custom_advance_type ?? "",
-        },
-        {
-          sortable: true,
-          type: "number",
-          field: "amount",
-          getValue: (item: any) =>
-            item?.reference_document?.advance_amount ?? 0,
-        },
-        {
-          sortable: true,
-          type: "date",
-          field: "start_date",
-          getValue: (item: any) =>
-            item?.reference_document?.custom_repayment_start_date ?? "",
-        },
-        {
-          sortable: true,
-          type: "date",
-          field: "posting_date",
-          getValue: (item: any) =>
-            item?.reference_document?.posting_date ?? "",
-        },
-        {
-          sortable: true,
-          type: "string",
-          field: "status",
-          getValue: (item: any) =>
-            item?.reference_document?.status ?? "",
-        },
-        {
-          sortable: false, // Actions
-        },
-      ];
-      
+  const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
+    {
+      sortable: false, // Select checkbox
+    },
+    {
+      sortable: true,
+      type: "string",
+      field: "employee_name",
+      getValue: (item: any) =>
+        item?.reference_document?.employee_name ?? "",
+    },
+    {
+      sortable: true,
+      type: "string",
+      field: "advance_type",
+      getValue: (item: any) =>
+        item?.reference_document?.custom_advance_type ?? "",
+    },
+    {
+      sortable: true,
+      type: "number",
+      field: "amount",
+      getValue: (item: any) =>
+        item?.reference_document?.advance_amount ?? 0,
+    },
+    {
+      sortable: true,
+      type: "date",
+      field: "start_date",
+      getValue: (item: any) =>
+        item?.reference_document?.custom_repayment_start_date ?? "",
+    },
+    {
+      sortable: true,
+      type: "date",
+      field: "posting_date",
+      getValue: (item: any) =>
+        item?.reference_document?.posting_date ?? "",
+    },
+    {
+      sortable: true,
+      type: "string",
+      field: "status",
+      getValue: (item: any) =>
+        item?.reference_document?.status ?? "",
+    },
+    {
+      sortable: false, // Actions
+    },
+  ];
+
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
     : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
@@ -138,7 +138,7 @@ const TeamAdvanceRequest = () => {
       )}
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable titles={tableTitles} columnWidths={tableColumnWidths} columnSortConfig={PERQUISITE_SORT_CONFIG}> 
+        <CardTable titles={tableTitles} columnWidths={tableColumnWidths} columnSortConfig={PERQUISITE_SORT_CONFIG}>
           <ApprovalList
             status="Pending"
             doctype={"Employee Advance"}
