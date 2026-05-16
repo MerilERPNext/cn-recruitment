@@ -3,20 +3,19 @@ import hmac
 import json
 import random
 import re
-from datetime import datetime
+import secrets
 
 import frappe
 from frappe import _
-from frappe.auth import LoginManager
 from frappe.utils import add_to_date, cint, get_datetime, now_datetime
 from frappe.utils.jinja import render_template
-from frappe.utils.password import check_password
 
 from recruitment.recruitment.doctype.candidate_portal_auth_settings.candidate_portal_auth_settings import (
     get_settings,
 )
 
 
+COOKIE_NAME = "candidate_portal_session"
 FINAL_OTP_STATUSES = ("Verified", "Failed", "Expired", "Revoked")
 SAFE_SETTINGS_FIELDS = (
     "enabled",
@@ -33,7 +32,10 @@ SAFE_SETTINGS_FIELDS = (
 @frappe.whitelist(allow_guest=True)
 def get_auth_settings():
     settings = get_settings()
-    return {field: cint(settings.get(field)) if field.startswith(("allow_", "enable_", "signup_", "enabled")) else settings.get(field) for field in SAFE_SETTINGS_FIELDS}
+    return {
+        field: cint(settings.get(field)) if field.startswith(("allow_", "enable_", "signup_", "enabled")) else settings.get(field)
+        for field in SAFE_SETTINGS_FIELDS
+    }
 
 
 @frappe.whitelist(allow_guest=True)
@@ -42,32 +44,32 @@ def signup(email, password, full_name=None, mobile_no=None):
     _require_enabled(settings)
     if not cint(settings.allow_signup):
         frappe.throw(_("Candidate signup is disabled."), frappe.PermissionError)
-    if not cint(settings.create_frappe_user_on_signup):
-        frappe.throw(_("Candidate user creation is disabled in Candidate Portal Auth Settings."))
 
     email = _normalize_email(email)
     full_name = (full_name or "").strip()
-    if frappe.db.exists("User", email):
-        frappe.throw(_("User already registered."), frappe.DuplicateEntryError)
+    if frappe.db.exists("Candidate Portal User", email):
+        frappe.throw(_("Candidate already registered."), frappe.DuplicateEntryError)
 
-    user = _create_candidate_user(settings, email, password, full_name, mobile_no)
+    candidate = _create_candidate(email, password, full_name, mobile_no)
     if cint(settings.signup_requires_otp_verification):
         if not cint(settings.enable_email_otp):
             frappe.throw(_("Email OTP must be enabled when signup OTP verification is required."))
-        result = _issue_otp(settings, email, "Signup", "Email", user=user.name)
+        result = _issue_otp(settings, email, "Signup", "Email", candidate=candidate.name)
         frappe.db.commit()
         return {
             "status": "otp_required",
-            "user": _public_user(user.name),
+            "user": _public_candidate(candidate.name),
             "otp_log": result.get("otp_log"),
             "delivery_status": result.get("delivery_status"),
         }
 
-    if cint(settings.enable_user_after_otp_verification) and not cint(user.enabled):
-        frappe.db.set_value("User", user.name, "enabled", 1)
-    _login_user(user.name, settings)
+    candidate.status = "Active"
+    candidate.email_verified = 1
+    candidate.save(ignore_permissions=True)
+    session = _create_candidate_session(candidate.name, settings, "Signup Email OTP")
+    _set_session_cookie(session.session_token, settings)
     frappe.db.commit()
-    return {"status": "success", "user": _public_user(user.name)}
+    return {"status": "success", "user": _public_candidate(candidate.name), "session_id": session.name}
 
 
 @frappe.whitelist(allow_guest=True)
@@ -78,14 +80,11 @@ def login(email, password):
         frappe.throw(_("Password login is disabled."), frappe.PermissionError)
 
     email = _normalize_email(email)
-    if getattr(frappe.local, "request", None):
-        LoginManager().authenticate(user=email, pwd=password)
-    else:
-        check_password(email, password)
-    _ensure_candidate_user(email, settings)
-    _login_user(email, settings)
+    candidate = _get_candidate_for_login(email)
+    _assert_candidate_can_login(candidate)
+    _verify_candidate_password(candidate, password)
     frappe.db.commit()
-    return {"status": "success", "user": _public_user(email)}
+    return {"status": "password_verified", "user": _public_candidate(candidate.name)}
 
 
 @frappe.whitelist(allow_guest=True)
@@ -104,11 +103,11 @@ def request_otp(identifier, purpose="Login", identifier_type="Email"):
     elif not cint(settings.enable_mobile_otp):
         frappe.throw(_("Mobile OTP is disabled."), frappe.PermissionError)
 
-    user = _resolve_user_for_identifier(identifier, identifier_type, purpose)
+    candidate = _resolve_candidate_for_identifier(identifier, identifier_type, purpose)
     if purpose == "Login":
-        _ensure_candidate_user(user, settings)
+        _assert_candidate_can_login(candidate)
 
-    result = _issue_otp(settings, identifier, purpose, identifier_type, user=user)
+    result = _issue_otp(settings, identifier, purpose, identifier_type, candidate=candidate.name if candidate else None)
     frappe.db.commit()
     return result
 
@@ -146,37 +145,49 @@ def verify_otp(identifier, otp, purpose="Login", identifier_type="Email"):
     log.verified_at = now
     log.save(ignore_permissions=True)
 
-    if not log.user:
-        frappe.throw(_("No user is linked to this OTP request."))
+    if not log.candidate:
+        frappe.throw(_("No candidate is linked to this OTP request."))
 
-    if purpose in ("Signup", "Verify Email") and cint(settings.enable_user_after_otp_verification):
-        frappe.db.set_value("User", log.user, "enabled", 1)
+    candidate = frappe.get_doc("Candidate Portal User", log.candidate)
+    if purpose in ("Signup", "Verify Email"):
+        candidate.status = "Active"
+        candidate.email_verified = 1
+        candidate.save(ignore_permissions=True)
+    _assert_candidate_can_login(candidate, allow_pending=purpose in ("Signup", "Verify Email"))
 
-    _ensure_candidate_user(log.user, settings)
-    _login_user(log.user, settings)
+    login_method = "Signup Email OTP" if purpose == "Signup" else "Password + Email OTP"
+    session = _create_candidate_session(candidate.name, settings, login_method, otp_log=log.name)
+    _set_session_cookie(session.session_token, settings)
     frappe.db.commit()
-    return {"status": "success", "user": _public_user(log.user)}
+    return {"status": "success", "user": _public_candidate(candidate.name), "session_id": session.name}
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def logout():
-    if getattr(frappe.local, "login_manager", None):
-        frappe.local.login_manager.logout()
-    else:
-        LoginManager().logout()
+    token = _get_session_cookie()
+    if token:
+        session = _get_active_session(token)
+        if session:
+            _revoke_session(session, "Logout")
+    _delete_session_cookie()
     frappe.db.commit()
     return {"status": "success"}
 
 
 @frappe.whitelist(allow_guest=True)
 def me():
-    user = getattr(frappe.session, "user", "Guest")
-    if not user or user == "Guest":
+    token = _get_session_cookie()
+    if not token:
         return {"user": None}
-    settings = get_settings()
-    if not _has_candidate_role(user, settings.candidate_role):
+
+    session = _get_active_session(token)
+    if not session:
+        _delete_session_cookie()
         return {"user": None}
-    return {"user": _public_user(user)}
+
+    session.last_seen_at = now_datetime()
+    session.save(ignore_permissions=True)
+    return {"user": _public_candidate(session.candidate), "session_id": session.name}
 
 
 @frappe.whitelist()
@@ -202,7 +213,24 @@ def get_latest_debug_otp(identifier, purpose="Login", identifier_type="Email"):
     return {"otp": log.otp_preview, "status": log.status, "expires_at": log.expires_at}
 
 
-def _issue_otp(settings, identifier, purpose, identifier_type, user=None):
+def _create_candidate(email, password, full_name=None, mobile_no=None):
+    first_name, last_name = _split_name(full_name or email.split("@")[0])
+    candidate = frappe.new_doc("Candidate Portal User")
+    candidate.email = email
+    candidate.full_name = full_name or " ".join(part for part in (first_name, last_name) if part)
+    candidate.mobile_no = mobile_no
+    candidate.status = "Pending Verification"
+    candidate.email_verified = 0
+    candidate.mobile_verified = 0
+    candidate.password_hash = _hash_password(password)
+    candidate.password_updated_at = now_datetime()
+    candidate.signup_ip_address = _request_ip()
+    candidate.signup_user_agent = _request_user_agent()
+    candidate.insert(ignore_permissions=True)
+    return candidate
+
+
+def _issue_otp(settings, identifier, purpose, identifier_type, candidate=None):
     _enforce_otp_rate_limits(settings, identifier, purpose, identifier_type)
     if cint(settings.revoke_existing_otps_on_new_request):
         _revoke_active_otps(identifier, purpose, identifier_type)
@@ -214,7 +242,7 @@ def _issue_otp(settings, identifier, purpose, identifier_type, user=None):
     log.identifier_type = identifier_type
     log.purpose = purpose
     log.status = "Generated"
-    log.user = user
+    log.candidate = candidate
     log.expires_at = add_to_date(now_datetime(), minutes=cint(settings.otp_expiry_minutes))
     log.otp_hash = _hash_otp(identifier, otp)
     log.otp_preview = otp if cint(settings.store_plain_otp_for_debug) else ""
@@ -222,9 +250,9 @@ def _issue_otp(settings, identifier, purpose, identifier_type, user=None):
     log.max_attempts = cint(settings.max_attempts_per_otp)
     log.delivery_channel = delivery_channel
     log.delivery_status = "Pending"
-    log.session_id = getattr(frappe.session, "sid", None)
-    log.ip_address = getattr(frappe.local, "request_ip", None)
-    log.user_agent = frappe.get_request_header("User-Agent") if getattr(frappe.local, "request", None) else None
+    log.session_id = _get_session_cookie()
+    log.ip_address = _request_ip()
+    log.user_agent = _request_user_agent()
     log.request_id = frappe.get_request_header("X-Request-ID") if getattr(frappe.local, "request", None) else None
     log.settings_snapshot = json.dumps(_settings_snapshot(settings))
     log.created_by_api = 1
@@ -237,16 +265,11 @@ def _issue_otp(settings, identifier, purpose, identifier_type, user=None):
     log.provider_reference = delivery.get("provider_reference")
     log.error_message = delivery.get("error_message")
     log.save(ignore_permissions=True)
-
     return {"status": "otp_required", "otp_log": log.name, "delivery_status": log.delivery_status}
 
 
 def _deliver_otp(settings, identifier, purpose, delivery_channel, otp):
-    context = {
-        "otp": otp,
-        "purpose": purpose,
-        "expiry_minutes": cint(settings.otp_expiry_minutes),
-    }
+    context = {"otp": otp, "purpose": purpose, "expiry_minutes": cint(settings.otp_expiry_minutes)}
     try:
         if delivery_channel == "Email":
             frappe.sendmail(
@@ -266,72 +289,205 @@ def _deliver_otp(settings, identifier, purpose, delivery_channel, otp):
         return {"status": "Failed", "error_message": str(exc)}
 
 
-def _create_candidate_user(settings, email, password, full_name=None, mobile_no=None):
-    first_name, last_name = _split_name(full_name or email.split("@")[0])
-    user = frappe.new_doc("User")
-    user.email = email
-    user.username = email
-    user.first_name = first_name
-    user.last_name = last_name
-    user.user_type = "Website User"
-    user.enabled = 0 if cint(settings.signup_requires_otp_verification) else 1
-    user.send_welcome_email = cint(settings.send_frappe_welcome_email)
-    user.mobile_no = mobile_no
-    user.append("roles", {"role": settings.candidate_role})
-    user.new_password = password
-    user.insert(ignore_permissions=True)
-    return user
-
-
-def _login_user(user, settings):
-    if not getattr(frappe.local, "request", None):
-        frappe.set_user(user)
-        return
-
-    login_manager = LoginManager()
-    login_manager.login_as(user)
-    frappe.local.login_manager = login_manager
+def _create_candidate_session(candidate, settings, login_method, otp_log=None):
     if cint(settings.logout_other_sessions_on_login):
-        from frappe.sessions import clear_sessions
+        _revoke_candidate_sessions(candidate, "New login")
 
-        clear_sessions(user, keep_current=True)
+    token = secrets.token_urlsafe(48)
+    now = now_datetime()
+    session = frappe.new_doc("Candidate Portal Session")
+    session.candidate = candidate
+    session.status = "Active"
+    session.login_method = login_method
+    session.otp_log = otp_log
+    session.issued_at = now
+    session_hours = cint(settings.get("session_expiry_hours")) or 24
+    session.expires_at = add_to_date(now, hours=session_hours)
+    session.last_seen_at = now
+    session.session_token_hash = _hash_session_token(token)
+    session.ip_address = _request_ip()
+    session.user_agent = _request_user_agent()
+    session.request_id = frappe.get_request_header("X-Request-ID") if getattr(frappe.local, "request", None) else None
+    session.insert(ignore_permissions=True)
+    session.session_token = token
+
+    frappe.db.set_value(
+        "Candidate Portal User",
+        candidate,
+        {
+            "last_login_at": now,
+            "last_session": session.name,
+            "last_login_ip_address": session.ip_address,
+            "last_login_user_agent": session.user_agent,
+            "failed_login_attempts": 0,
+        },
+    )
+    return session
 
 
-def _ensure_candidate_user(user, settings):
-    if not frappe.db.exists("User", user):
-        frappe.throw(_("User not found."), frappe.DoesNotExistError)
-    if not cint(frappe.db.get_value("User", user, "enabled")):
-        frappe.throw(_("User is disabled. Please verify OTP first."), frappe.PermissionError)
-    if not _has_candidate_role(user, settings.candidate_role):
-        frappe.throw(_("User is not allowed to access the candidate portal."), frappe.PermissionError)
+def _get_active_session(token):
+    token_hash = _hash_session_token(token)
+    name = frappe.db.get_value(
+        "Candidate Portal Session",
+        {"session_token_hash": token_hash, "status": "Active"},
+        "name",
+        order_by="creation desc",
+    )
+    if not name:
+        return None
+
+    session = frappe.get_doc("Candidate Portal Session", name)
+    if get_datetime(session.expires_at) < now_datetime():
+        _revoke_session(session, "Expired", status="Expired")
+        return None
+
+    candidate_status = frappe.db.get_value("Candidate Portal User", session.candidate, "status")
+    if candidate_status != "Active":
+        _revoke_session(session, "Candidate inactive")
+        return None
+    return session
 
 
-def _has_candidate_role(user, role):
-    return bool(frappe.db.exists("Has Role", {"parent": user, "role": role}))
+def _revoke_candidate_sessions(candidate, reason):
+    names = frappe.get_all(
+        "Candidate Portal Session",
+        filters={"candidate": candidate, "status": "Active"},
+        pluck="name",
+    )
+    for name in names:
+        _revoke_session(frappe.get_doc("Candidate Portal Session", name), reason)
 
 
-def _public_user(user):
+def _revoke_session(session, reason, status="Revoked"):
+    session.status = status
+    session.revoked_at = now_datetime()
+    session.revoked_reason = reason
+    session.save(ignore_permissions=True)
+
+
+def _get_candidate_for_login(email):
+    if not frappe.db.exists("Candidate Portal User", email):
+        frappe.throw(_("No candidate account found for this email."), frappe.DoesNotExistError)
+    return frappe.get_doc("Candidate Portal User", email)
+
+
+def _resolve_candidate_for_identifier(identifier, identifier_type, purpose):
+    if identifier_type == "Email":
+        name = frappe.db.get_value("Candidate Portal User", {"email": identifier}, "name")
+    else:
+        name = frappe.db.get_value("Candidate Portal User", {"mobile_no": identifier}, "name")
+    if purpose == "Login" and not name:
+        frappe.throw(_("No candidate account found for this identifier."), frappe.DoesNotExistError)
+    return frappe.get_doc("Candidate Portal User", name) if name else None
+
+
+def _assert_candidate_can_login(candidate, allow_pending=False):
+    if candidate.status == "Disabled":
+        frappe.throw(_("Candidate account is disabled."), frappe.PermissionError)
+    if candidate.status == "Locked":
+        if candidate.locked_until and get_datetime(candidate.locked_until) <= now_datetime():
+            _clear_candidate_lock(candidate)
+            return
+        frappe.throw(_("Candidate account is locked."), frappe.PermissionError)
+    if candidate.status == "Pending Verification" and not allow_pending:
+        frappe.throw(_("Please verify your email OTP before signing in."), frappe.PermissionError)
+
+
+def _clear_candidate_lock(candidate):
+    candidate.status = "Active"
+    candidate.failed_login_attempts = 0
+    candidate.locked_until = None
+    candidate.save(ignore_permissions=True)
+    frappe.db.commit()
+
+
+def _verify_candidate_password(candidate, password):
+    if candidate.locked_until and get_datetime(candidate.locked_until) > now_datetime():
+        frappe.throw(_("Candidate account is temporarily locked."), frappe.PermissionError)
+
+    stored_hash = candidate.get_password("password_hash") or candidate.password_hash
+    if not _check_password(password, stored_hash):
+        candidate.failed_login_attempts = cint(candidate.failed_login_attempts) + 1
+        if candidate.failed_login_attempts >= 5:
+            candidate.status = "Locked"
+            candidate.locked_until = add_to_date(now_datetime(), minutes=15)
+        candidate.save(ignore_permissions=True)
+        frappe.db.commit()
+        frappe.throw(_("Invalid email or password."), frappe.AuthenticationError)
+
+
+def _public_candidate(candidate):
     values = frappe.db.get_value(
-        "User",
-        user,
-        ["name", "email", "first_name", "last_name", "full_name", "user_image", "enabled", "user_type"],
+        "Candidate Portal User",
+        candidate,
+        ["name", "email", "full_name", "mobile_no", "status", "email_verified"],
         as_dict=True,
     )
     if not values:
         return None
-    values["roles"] = frappe.get_roles(user)
-    return values
+    full_name = values.full_name or values.email
+    return {
+        "id": values.name,
+        "name": values.name,
+        "email": values.email,
+        "full_name": full_name,
+        "first_name": _split_name(full_name)[0],
+        "last_name": _split_name(full_name)[1],
+        "enabled": values.status == "Active",
+        "user_type": "Candidate Portal User",
+        "roles": ["Candidate"],
+        "user_metadata": {"full_name": full_name, "email": values.email, "avatar_url": None},
+    }
 
 
-def _resolve_user_for_identifier(identifier, identifier_type, purpose):
-    if identifier_type == "Email":
-        user = frappe.db.get_value("User", {"email": identifier}, "name")
-    else:
-        user = frappe.db.get_value("User", {"mobile_no": identifier}, "name")
+def _set_session_cookie(token, settings):
+    if not getattr(frappe.local, "cookie_manager", None):
+        return
+    session_hours = cint(settings.get("session_expiry_hours")) or 24
+    frappe.local.cookie_manager.set_cookie(
+        COOKIE_NAME,
+        token,
+        httponly=True,
+        secure=bool(cint(settings.cookie_secure)),
+        samesite=settings.cookie_same_site or "Lax",
+        max_age=session_hours * 60 * 60,
+    )
 
-    if purpose == "Login" and not user:
-        frappe.throw(_("No candidate account found for this identifier."), frappe.DoesNotExistError)
-    return user
+
+def _delete_session_cookie():
+    if getattr(frappe.local, "cookie_manager", None):
+        frappe.local.cookie_manager.delete_cookie(COOKIE_NAME)
+
+
+def _get_session_cookie():
+    if getattr(frappe.local, "request", None):
+        return frappe.local.request.cookies.get(COOKIE_NAME)
+    return None
+
+
+def _hash_password(password):
+    if not password or len(password) < 8:
+        frappe.throw(_("Password must be at least 8 characters."))
+    salt = secrets.token_hex(16)
+    iterations = 260000
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), iterations).hex()
+    return f"pbkdf2_sha256${iterations}${salt}${digest}"
+
+
+def _check_password(password, encoded):
+    try:
+        algorithm, iterations, salt, digest = (encoded or "").split("$", 3)
+        if algorithm != "pbkdf2_sha256":
+            return False
+        candidate_digest = hashlib.pbkdf2_hmac("sha256", (password or "").encode(), salt.encode(), int(iterations)).hex()
+        return hmac.compare_digest(candidate_digest, digest)
+    except Exception:
+        return False
+
+
+def _hash_session_token(token):
+    key = frappe.conf.get("encryption_key") or frappe.local.site or "candidate-portal"
+    return hmac.new(str(key).encode(), token.encode(), hashlib.sha256).hexdigest()
 
 
 def _get_active_otp_log(identifier, purpose, identifier_type):
@@ -360,12 +516,7 @@ def _enforce_otp_rate_limits(settings, identifier, purpose, identifier_type):
     since = add_to_date(now, hours=-1)
     count = frappe.db.count(
         "Candidate Portal OTP Log",
-        {
-            "identifier": identifier,
-            "identifier_type": identifier_type,
-            "purpose": purpose,
-            "creation": (">=", since),
-        },
+        {"identifier": identifier, "identifier_type": identifier_type, "purpose": purpose, "creation": (">=", since)},
     )
     if count >= cint(settings.max_otps_per_hour):
         frappe.throw(_("Too many OTP requests. Please try again later."))
@@ -374,12 +525,7 @@ def _enforce_otp_rate_limits(settings, identifier, purpose, identifier_type):
 def _revoke_active_otps(identifier, purpose, identifier_type):
     names = frappe.get_all(
         "Candidate Portal OTP Log",
-        filters={
-            "identifier": identifier,
-            "identifier_type": identifier_type,
-            "purpose": purpose,
-            "status": ("not in", FINAL_OTP_STATUSES),
-        },
+        filters={"identifier": identifier, "identifier_type": identifier_type, "purpose": purpose, "status": ("not in", FINAL_OTP_STATUSES)},
         pluck="name",
     )
     for name in names:
@@ -406,7 +552,6 @@ def _settings_snapshot(settings):
         "enable_email_otp": cint(settings.enable_email_otp),
         "enable_mobile_otp": cint(settings.enable_mobile_otp),
         "mobile_delivery_mode": settings.mobile_delivery_mode,
-        "candidate_role": settings.candidate_role,
     }
 
 
@@ -467,3 +612,11 @@ def _split_name(full_name):
     if not parts:
         return "Candidate", ""
     return parts[0], " ".join(parts[1:])
+
+
+def _request_ip():
+    return getattr(frappe.local, "request_ip", None)
+
+
+def _request_user_agent():
+    return frappe.get_request_header("User-Agent") if getattr(frappe.local, "request", None) else None
