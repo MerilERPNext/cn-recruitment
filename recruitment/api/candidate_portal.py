@@ -434,7 +434,7 @@ def get_all_onboarding_fields_for_onboarding():
     return {"status": "success", "total": len(fields), "fields": fields}
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_all_job_applicant_fields(job_opening=None, form_name=None):
     portal_rows, resolved_form = _get_job_applicant_portal_settings(
         job_opening=job_opening or None,
@@ -509,7 +509,7 @@ def _get_pre_offer_portal_settings(job_applicant_id):
         return [], None
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_pre_offer_form(job_applicant_id):
     if not job_applicant_id:
         frappe.local.response["http_status_code"] = 400
@@ -587,7 +587,7 @@ def get_pre_offer_form(job_applicant_id):
     }
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def save_pre_offer_form_data(job_applicant_id, data):
     if isinstance(data, str):
         try:
@@ -682,7 +682,7 @@ def save_pre_offer_form_data(job_applicant_id, data):
 
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_candidate_portal_form(job_applicant_id):
     """
     Returns the structured portal form for a given job applicant.
@@ -719,7 +719,7 @@ def get_candidate_portal_form(job_applicant_id):
     }
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def save_candidate_portal_data(job_applicant_id, data):
     if isinstance(data, str):
         try:
@@ -844,7 +844,7 @@ def save_candidate_portal_data(job_applicant_id, data):
         return {"status": "error", "message": str(e)}
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_portal_field_names(job_applicant_id=None):
     onboarding_doc = None
     if job_applicant_id:
@@ -859,7 +859,7 @@ def get_portal_field_names(job_applicant_id=None):
     }
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_job_applicant_portal_form(job_applicant_id):
     if not job_applicant_id:
         frappe.local.response["http_status_code"] = 400
@@ -934,7 +934,7 @@ def get_job_applicant_portal_form(job_applicant_id):
     }
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def save_job_applicant_portal_data(job_applicant_id, data):
     if isinstance(data, str):
         try:
@@ -1013,7 +1013,7 @@ def save_job_applicant_portal_data(job_applicant_id, data):
         return {"status": "error", "message": str(e)}
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_job_applicant_portal_field_names(job_applicant_id=None):
     return {
         "status": "success",
@@ -1021,7 +1021,7 @@ def get_job_applicant_portal_field_names(job_applicant_id=None):
     }
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_candidate_feature_flags():
     doc = frappe.get_single("Candidate Portal Feature Flag")
 
@@ -1031,6 +1031,40 @@ def get_candidate_feature_flags():
             result[row.page_name.strip().lower().replace(" ", "_")] = row.is_enabled
 
     return result
+
+
+@frappe.whitelist()
+def get_link_field_options(doctype, search_text=None, limit=20):
+    """Returns [{id, label}] for a doctype; label uses title_field when set."""
+    if not doctype:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Doctype is required.")}
+
+    try:
+        title_field = frappe.get_meta(doctype).get("title_field") or None
+    except Exception:
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _("Doctype '{0}' not found.").format(doctype)}
+
+    has_title = bool(title_field) and title_field != "name"
+    fields = ["name"] + ([title_field] if has_title else [])
+
+    or_filters = None
+    if search_text:
+        like = f"%{search_text}%"
+        or_filters = [["name", "like", like]] + ([[title_field, "like", like]] if has_title else [])
+
+    try:
+        records = frappe.get_all(
+            doctype, fields=fields, or_filters=or_filters,
+            limit=int(limit or 20), order_by=f"{title_field or 'name'} asc",
+        )
+    except Exception as e:
+        frappe.local.response["http_status_code"] = 500
+        return {"status": "error", "message": str(e)}
+
+    results = [{"id": r["name"], "label": (r.get(title_field) if has_title else None) or r["name"]} for r in records]
+    return {"status": "success", "doctype": doctype, "title_field": title_field, "total": len(results), "results": results}
 
 
 @frappe.whitelist(allow_guest=True)
