@@ -17,7 +17,7 @@ const goals = [
     weight: 30,
     status: "On-track",
     statusPulse: "bg-green-700",
-    statusBadgeColor: "bg-green-50 text-green-700",
+    statusBadgeColor: "bg-green-100",
     state: "In Progress",
     barColor: "bg-green-500",
     krs: [
@@ -38,7 +38,7 @@ const goals = [
     weight: 20,
     status: "At-risk",
     statusPulse: "bg-yellow-700",
-    statusBadgeColor: "bg-yellow-50 text-yellow-700",
+    statusBadgeColor: "bg-yellow-100 w-full",
     state: "In Progress",
     barColor: "bg-yellow-500",
   },
@@ -54,7 +54,7 @@ const goals = [
     weight: 15,
     status: "On-track",
     statusPulse: "bg-green-700",
-    statusBadgeColor: "bg-green-50 text-green-700",
+    statusBadgeColor: "bg-green-100",
     state: "In Progress",
     barColor: "bg-green-500",
   },
@@ -86,7 +86,7 @@ const goals = [
     weight: 15,
     status: "Off-track",
     statusPulse: "bg-red-700",
-    statusBadgeColor: "bg-red-50 text-red-700",
+    statusBadgeColor: "bg-red-100 ring-1 ring-inset ring-red-300 text-red-700",
     state: "In Progress",
     barColor: "bg-red-500",
   }
@@ -100,7 +100,7 @@ const MyGoals: React.FC = () => {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
-            <Typography variant="h2">My Goals &middot; FY26</Typography>
+            <Typography variant="h3">My Goals &middot; FY26</Typography>
             <Typography variant="bodySmall" className="text-gray-500">5 goals &middot; 100% weightage &middot; Goal lock 21 May 2026</Typography>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -124,7 +124,7 @@ const MyGoals: React.FC = () => {
           {/* Parent Goal Box */}
           <div className="bg-[#f0f7ff] border border-blue-100 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between mb-6 z-10 relative gap-4">
              <div className="flex items-center gap-4">
-               <Badge label="ORG" backgroundColor="bg-blue-500" textColor="text-white" size="md" />
+               <Badge label="ORG" backgroundColor="bg-blue-500 h-full" textColor="text-white" size="md" />
                <div>
                  <Typography variant="bodyMedium" className="font-semibold text-gray-900 mb-0.5">PW FY26 &middot; Become the #1 EdTech platform in India by Q4</Typography>
                  <Typography variant="caption" className="text-gray-500">Cascaded from Alakh Pandey &middot; OKR &middot; 8 org-level KRs</Typography>
@@ -149,7 +149,7 @@ const MyGoals: React.FC = () => {
                       <div className="flex items-start gap-4 flex-1">
                          <div className="flex flex-col gap-1 w-20 md:w-[100px] shrink-0 mt-0.5">
                             <div className="self-start">
-                               <Badge label={goal.type} backgroundColor="bg-purple-50" textColor="text-purple-600" size="sm" />
+                               <Badge label={goal.type} backgroundColor="bg-purple-100 " textColor="text-purple-700" size="sm" />
                             </div>
                             <Typography variant="caption" className="text-gray-500 ml-1">{goal.label}</Typography>
                          </div>
@@ -173,9 +173,9 @@ const MyGoals: React.FC = () => {
                                </div>
                             </div>
                          </div>
-                         <div className="w-[90px] shrink-0 flex flex-row sm:flex-col items-center sm:items-end justify-end gap-2">
-                            <Badge label={goal.status} backgroundColor={goal.statusBadgeColor.split(' ')[0]} textColor={goal.statusBadgeColor.split(' ')[1]} size="sm" pulse={{ show: true, color: goal.statusPulse }} />
-                            <Badge label={goal.state} backgroundColor="bg-blue-50" textColor="text-blue-600" size="sm" />
+                         <div className="min-w-fit shrink-0 flex  flex-col items-center sm:items-end justify-center gap-2">
+                            <Badge label={goal.status} backgroundColor={goal.statusBadgeColor.substring(0, goal.statusBadgeColor.lastIndexOf(' '))} textColor={goal.statusBadgeColor.substring(goal.statusBadgeColor.lastIndexOf(' ') + 1)} size="sm" pulse={{ show: true, color: goal.statusPulse }} />
+                            <Badge label={goal.state} backgroundColor="bg-blue-100 w-full" textColor="text-blue-700" size="sm" />
                          </div>
                       </div>
                    </div>
@@ -192,7 +192,7 @@ const MyGoals: React.FC = () => {
                                   <div className="hidden md:block absolute left-[-24px] top-1/2 w-[24px] h-px bg-gray-200 z-0"></div>
                                   
                                   <div className="flex items-center gap-4 flex-1 md:pl-4">
-                                     <Badge label={kr.id} backgroundColor="bg-purple-50" textColor="text-purple-600" size="sm" />
+                                     <Badge label={kr.id} backgroundColor="bg-purple-100 ring-1 ring-inset ring-purple-300" textColor="text-purple-700" size="sm" />
                                      <Typography variant="caption" className="text-gray-600">{kr.title}</Typography>
                                   </div>
                                   

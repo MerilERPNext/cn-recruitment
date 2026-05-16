@@ -16,10 +16,10 @@ const Overview: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <Badge label="CYCLE LIVE" backgroundColor="bg-blue-50" textColor="text-blue-600" size="sm" pulse={{ show: true, color: "bg-blue-600" }} />
+                <Badge label="CYCLE LIVE" backgroundColor="bg-blue-100 ring-1 ring-inset ring-blue-300" textColor="text-blue-700" size="sm" pulse={{ show: true, color: "bg-blue-600" }} />
                 <Typography variant="bodySmall" className="text-gray-500">Apr 2026 &rarr; Mar 2027 &middot; India Tech</Typography>
               </div>
-              <Typography variant="h2" >FY26 Annual Performance Cycle</Typography>
+              <Typography variant="h3" >FY26 Annual Performance Cycle</Typography>
               <Typography variant="bodySmall" className="text-gray-500">Configured by HR &middot; India Tech BU &middot; 2,140 participants</Typography>
             </div>
             <div className="flex flex-col items-end">
@@ -151,7 +151,7 @@ const Overview: React.FC = () => {
                 {/* Goal 1 */}
                 <div className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
                   <div className="self-start mt-1">
-                    <Badge label="OKR" backgroundColor="bg-blue-50" textColor="text-blue-600" size="sm" />
+                    <Badge label="OKR" backgroundColor="bg-blue-100 ring-1 ring-inset ring-blue-300" textColor="text-blue-700" size="sm" />
                   </div>
                   <div className="flex-1">
                     <Typography variant="bodyMedium" className="font-semibold text-gray-900 mb-1">Ship Oxygen 2.0 dashboard to 100% of PW employees</Typography>
@@ -166,14 +166,14 @@ const Overview: React.FC = () => {
                     </div>
                   </div>
                   <div className="w-24 flex justify-end">
-                    <Badge label="On-track" backgroundColor="bg-green-50" textColor="text-green-700" size="sm" pulse={{ show: true, color: "bg-green-700" }} />
+                    <Badge label="On-track" backgroundColor="bg-green-100 ring-1 ring-inset ring-green-300" textColor="text-green-700" size="sm" pulse={{ show: true, color: "bg-green-700" }} />
                   </div>
                 </div>
 
                 {/* Goal 2 */}
                 <div className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
                   <div className="self-start mt-1">
-                    <Badge label="OKR" backgroundColor="bg-blue-50" textColor="text-blue-600" size="sm" />
+                    <Badge label="OKR" backgroundColor="bg-blue-100 ring-1 ring-inset ring-blue-300" textColor="text-blue-700" size="sm" />
                   </div>
                   <div className="flex-1">
                     <Typography variant="bodyMedium" className="font-semibold text-gray-900 mb-1">Reduce design &rarr; engineering handoff time by 40%</Typography>
@@ -188,14 +188,14 @@ const Overview: React.FC = () => {
                     </div>
                   </div>
                   <div className="w-24 flex justify-end">
-                    <Badge label="At-risk" backgroundColor="bg-yellow-50" textColor="text-yellow-700" size="sm" pulse={{ show: true, color: "bg-yellow-700" }} />
+                    <Badge label="At-risk" backgroundColor="bg-yellow-100 ring-1 ring-inset ring-yellow-300" textColor="text-yellow-700" size="sm" pulse={{ show: true, color: "bg-yellow-700" }} />
                   </div>
                 </div>
 
                 {/* Goal 3 */}
                 <div className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
                   <div className="self-start mt-1">
-                    <Badge label="OKR" backgroundColor="bg-blue-50" textColor="text-blue-600" size="sm" />
+                    <Badge label="OKR" backgroundColor="bg-blue-100 ring-1 ring-inset ring-blue-300" textColor="text-blue-700" size="sm" />
                   </div>
                   <div className="flex-1">
                     <Typography variant="bodyMedium" className="font-semibold text-gray-900 mb-1">Mentor 2 junior designers to mid-level promotion</Typography>
@@ -210,14 +210,14 @@ const Overview: React.FC = () => {
                     </div>
                   </div>
                   <div className="w-24 flex justify-end">
-                    <Badge label="On-track" backgroundColor="bg-green-50" textColor="text-green-700" size="sm" pulse={{ show: true, color: "bg-green-700" }} />
+                    <Badge label="On-track" backgroundColor="bg-green-100 ring-1 ring-inset ring-green-300" textColor="text-green-700" size="sm" pulse={{ show: true, color: "bg-green-700" }} />
                   </div>
                 </div>
 
                 {/* Goal 4 */}
                 <div className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
                   <div className="self-start mt-1">
-                    <Badge label="OKR" backgroundColor="bg-blue-50" textColor="text-blue-600" size="sm" />
+                    <Badge label="OKR" backgroundColor="bg-blue-100 ring-1 ring-inset ring-blue-300" textColor="text-blue-700" size="sm" />
                   </div>
                   <div className="flex-1">
                     <Typography variant="bodyMedium" className="font-semibold text-gray-900 mb-1">Maintain CSAT for design partnership &ge; 4.5 / 5</Typography>
@@ -232,14 +232,14 @@ const Overview: React.FC = () => {
                     </div>
                   </div>
                   <div className="w-24 flex justify-end">
-                    <Badge label="On-track" backgroundColor="bg-green-50" textColor="text-green-700" size="sm" pulse={{ show: true, color: "bg-green-700" }} />
+                    <Badge label="On-track" backgroundColor="bg-green-100 ring-1 ring-inset ring-green-300" textColor="text-green-700" size="sm" pulse={{ show: true, color: "bg-green-700" }} />
                   </div>
                 </div>
 
                 {/* Goal 5 */}
                 <div className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
                   <div className="self-start mt-1">
-                    <Badge label="OKR" backgroundColor="bg-blue-50" textColor="text-blue-600" size="sm" />
+                    <Badge label="OKR" backgroundColor="bg-blue-100 ring-1 ring-inset ring-blue-300" textColor="text-blue-700" size="sm" />
                   </div>
                   <div className="flex-1">
                     <Typography variant="bodyMedium" className="font-semibold text-gray-900 mb-1">Launch design-thinking workshop series across 5 BUs</Typography>
@@ -254,7 +254,7 @@ const Overview: React.FC = () => {
                     </div>
                   </div>
                   <div className="w-24 flex justify-end">
-                    <Badge label="Off-track" backgroundColor="bg-red-50" textColor="text-red-700" size="sm" pulse={{ show: true, color: "bg-red-700" }} />
+                    <Badge label="Off-track" backgroundColor="bg-red-100 ring-1 ring-inset ring-red-300" textColor="text-red-700" size="sm" pulse={{ show: true, color: "bg-red-700" }} />
                   </div>
                 </div>
 
@@ -328,7 +328,7 @@ const Overview: React.FC = () => {
                         <Typography variant="bodyMedium" className="font-medium text-gray-900">Karthik Iyer <Typography component="span" variant="caption" className="font-normal ml-1">&middot; Eng Lead</Typography></Typography>
                       </div>
                     </div>
-                    <Badge label="Praise" backgroundColor="bg-green-50" textColor="text-green-700" size="sm" />
+                    <Badge label="Praise" backgroundColor="bg-green-100 ring-1 ring-inset ring-green-300" textColor="text-green-700" size="sm" />
                   </div>
                   <Typography variant="bodySmall" className="text-gray-600 pl-11">
                     "Pallavi's design system v2 audit unblocked a major release."
@@ -345,7 +345,7 @@ const Overview: React.FC = () => {
                         <Typography variant="bodyMedium" className="font-medium text-gray-900">Neha Patel <Typography component="span" variant="caption" className="font-normal ml-1">&middot; Product Manager</Typography></Typography>
                       </div>
                     </div>
-                    <Badge label="Praise" backgroundColor="bg-green-50" textColor="text-green-700" size="sm" />
+                    <Badge label="Praise" backgroundColor="bg-green-100 ring-1 ring-inset ring-green-300" textColor="text-green-700" size="sm" />
                   </div>
                   <Typography variant="bodySmall" className="text-gray-600 pl-11">
                     "Excellent stakeholder management during the dashboard rebuild."
@@ -362,7 +362,7 @@ const Overview: React.FC = () => {
                         <Typography variant="bodyMedium" className="font-medium text-gray-900">Rohit Khanna <Typography component="span" variant="caption" className="font-normal ml-1">&middot; Manager &middot; 1:1</Typography></Typography>
                       </div>
                     </div>
-                    <Badge label="Coaching" backgroundColor="bg-purple-50" textColor="text-purple-700" size="sm" />
+                    <Badge label="Coaching" backgroundColor="bg-purple-100 ring-1 ring-inset ring-purple-300" textColor="text-purple-700" size="sm" />
                   </div>
                 </div>
               </div>
