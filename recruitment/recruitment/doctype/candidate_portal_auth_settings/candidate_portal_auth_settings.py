@@ -4,7 +4,6 @@ from frappe.model.document import Document
 from frappe.utils import cint
 
 
-DEFAULT_CANDIDATE_ROLE = "Candidate Portal User"
 DEFAULT_EMAIL_SUBJECT = "Your Candidate Portal OTP"
 DEFAULT_EMAIL_TEMPLATE = (
     "<p>Your OTP for {{ purpose }} is <strong>{{ otp }}</strong>.</p>"
@@ -15,8 +14,6 @@ DEFAULT_SMS_TEMPLATE = "Your Candidate Portal OTP is {{ otp }}. It expires in {{
 
 class CandidatePortalAuthSettings(Document):
     def validate(self):
-        ensure_candidate_portal_role(self.candidate_role or DEFAULT_CANDIDATE_ROLE)
-        self.candidate_role = self.candidate_role or DEFAULT_CANDIDATE_ROLE
         self.email_otp_subject = self.email_otp_subject or DEFAULT_EMAIL_SUBJECT
         self.email_otp_template = self.email_otp_template or DEFAULT_EMAIL_TEMPLATE
         self.sms_otp_template = self.sms_otp_template or DEFAULT_SMS_TEMPLATE
@@ -30,6 +27,7 @@ class CandidatePortalAuthSettings(Document):
             "max_attempts_per_otp": (1, 20),
             "resend_cooldown_seconds": (0, 3600),
             "max_otps_per_hour": (1, 60),
+            "session_expiry_hours": (1, 720),
         }
         for fieldname, (minimum, maximum) in limits.items():
             value = cint(self.get(fieldname))
@@ -42,22 +40,6 @@ class CandidatePortalAuthSettings(Document):
             frappe.throw(_("Enable at least one OTP channel."))
         if cint(self.enable_mobile_otp) and self.mobile_delivery_mode == "Disabled":
             frappe.throw(_("Select a mobile delivery mode when mobile OTP is enabled."))
-
-
-def ensure_candidate_portal_role(role_name=DEFAULT_CANDIDATE_ROLE):
-    if frappe.db.exists("Role", role_name):
-        role = frappe.get_doc("Role", role_name)
-        if cint(role.desk_access):
-            role.desk_access = 0
-            role.save(ignore_permissions=True)
-        return role_name
-
-    role = frappe.new_doc("Role")
-    role.role_name = role_name
-    role.desk_access = 0
-    role.is_custom = 1
-    role.insert(ignore_permissions=True)
-    return role.name
 
 
 def get_settings():
@@ -74,10 +56,7 @@ def apply_missing_defaults(settings):
         "allow_email_otp_login": 1,
         "allow_signup": 1,
         "signup_requires_otp_verification": 1,
-        "create_frappe_user_on_signup": 1,
-        "candidate_role": DEFAULT_CANDIDATE_ROLE,
-        "enable_user_after_otp_verification": 1,
-        "send_frappe_welcome_email": 0,
+        "session_expiry_hours": 24,
         "otp_length": 6,
         "otp_expiry_minutes": 10,
         "max_attempts_per_otp": 5,
@@ -101,7 +80,6 @@ def apply_missing_defaults(settings):
             settings.set(fieldname, value)
             changed = True
 
-    ensure_candidate_portal_role(settings.candidate_role)
     if changed:
         settings.save(ignore_permissions=True)
         frappe.db.commit()
