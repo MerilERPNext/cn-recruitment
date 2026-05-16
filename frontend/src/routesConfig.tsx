@@ -32,6 +32,7 @@ import {
   ExpenseNavigationState,
   buildExpenseNavigationState,
 } from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
+import MyGoals from "./components/Performance/MyGoals/MyGoals";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -1154,6 +1155,11 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Performance",
     children: [
       { path: "overview", element: <Overview />, permissionKey: "Overview" },
+      {
+        path: "my-goals",
+        element: <MyGoals />,
+        permissionKey: "My Goals",
+      },
       {
         path: "new-goal-plan",
         element: <NewGoalPlan />,
