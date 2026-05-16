@@ -1,4 +1,5 @@
 export interface NotificationLog {
+  email_content: string;
   name: string;
   subject: string;
   for_user: string;

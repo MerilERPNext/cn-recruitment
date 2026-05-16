@@ -227,6 +227,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/it-declaration-form",
           permissionKey: "IT Declaration",
         },
+        {
+          name: "Flexi Declaration",
+          icon: BadgeIndianRupee,
+          href: "/webapp/salary-slip-app/flexi-declaration-form",
+          permissionKey: "Flexi Declaration",
+        },
 
         {
           name: "Team IT Declaration",

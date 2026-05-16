@@ -50,86 +50,86 @@ const TeamLoanRequest = () => {
 
   // Modal is open if EITHER a row was clicked OR URL already has an ID (direct URL open)
   const isModalOpen = !!selectedItem || !!(requestId || referenceName);
- const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
-        {
-          sortable: false, // Select checkbox
-        },
-        {
-          sortable: false,
-        },
-        {
-          sortable: true,
-          type: "string",
-          field: "loan_product",
-          getValue: (item: any) =>
-            item?.reference_document?.loan_product ?? "",
-        },
-        {
-          sortable: true,
-          type: "number",
-          field: "loan_amount",
-          getValue: (item: any) =>
-            item?.reference_document?.loan_amount ?? 0,
-        },
-        {
-          sortable: true,
-          type: "date",
-          field: "rate_of_interest",
-          getValue: (item: any) =>
-            item?.reference_document?.rate_of_interest ?? "",
-        },
-        {
-          sortable: true,
-          type: "number",
-          field: "total_payable_interest",
-          getValue: (item: any) =>
-            item?.reference_document?.total_payable_interest ?? "",
-        },
-        {
-          sortable: true,
-          type: "date",
-          field: "custom_repayment_start_date",
-          getValue: (item: any) =>
-            item?.reference_document?.custom_repayment_start_date ?? "",
-        },
-        {
-          sortable: true,
-          type: "date",
-          field: "posting_date",
-          getValue: (item: any) =>
-            item?.reference_document?.posting_date ?? "",
-        },
-        {
-          sortable: false, // Actions
-        },
-        {
-          sortable: false, // Actions
-        },
-      ];
+  const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
+    {
+      sortable: false, // Select checkbox
+    },
+    {
+      sortable: false,
+    },
+    {
+      sortable: true,
+      type: "string",
+      field: "loan_product",
+      getValue: (item: any) =>
+        item?.reference_document?.loan_product ?? "",
+    },
+    {
+      sortable: true,
+      type: "number",
+      field: "loan_amount",
+      getValue: (item: any) =>
+        item?.reference_document?.loan_amount ?? 0,
+    },
+    {
+      sortable: true,
+      type: "date",
+      field: "rate_of_interest",
+      getValue: (item: any) =>
+        item?.reference_document?.rate_of_interest ?? "",
+    },
+    {
+      sortable: true,
+      type: "number",
+      field: "total_payable_interest",
+      getValue: (item: any) =>
+        item?.reference_document?.total_payable_interest ?? "",
+    },
+    {
+      sortable: true,
+      type: "date",
+      field: "custom_repayment_start_date",
+      getValue: (item: any) =>
+        item?.reference_document?.custom_repayment_start_date ?? "",
+    },
+    {
+      sortable: true,
+      type: "date",
+      field: "posting_date",
+      getValue: (item: any) =>
+        item?.reference_document?.posting_date ?? "",
+    },
+    {
+      sortable: false, // Actions
+    },
+    {
+      sortable: false, // Actions
+    },
+  ];
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Loan Type",
-        "Loan Amount",
-        "Rate of Interest",
-        "Standard Interest",
-        "Start Date",
-        "End Date",
-        "Status",
-        "Actions",
-      ]
+      "Select",
+      "Employee",
+      "Loan Type",
+      "Loan Amount",
+      "Rate of Interest",
+      "Standard Interest",
+      "Start Date",
+      "End Date",
+      "Status",
+      "Actions",
+    ]
     : [
-        "Employee",
-        "Loan Type",
-        "Loan Amount",
-        "Rate of Interest",
-        "Standard Interest",
-        "Start Date",
-        "End Date",
-        "Status",
-        "Actions",
-      ];
+      "Employee",
+      "Loan Type",
+      "Loan Amount",
+      "Rate of Interest",
+      "Standard Interest",
+      "Start Date",
+      "End Date",
+      "Status",
+      "Actions",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]

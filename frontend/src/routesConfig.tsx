@@ -44,6 +44,9 @@ const Expenses = lazyWithRetry(
   () => import("./components/Expenses"),
   "Expenses",
 );
+const FlexiDeclaration = lazyWithRetry(
+  () => import("./components/Compansation/fl/FlexiDeclaration"),
+)
 const RecruitmentApp = lazyWithRetry(
   () => import("./components/RecruitmentApp"),
   "RecruitmentApp",
@@ -705,6 +708,11 @@ export const routesConfig: AppRoute[] = [
         path: "it-declaration-form",
         element: <ITDeclarationForm />,
         permissionKey: "IT Declaration",
+      },
+      {
+        path: "flexi-declaration-form",
+        element: <FlexiDeclaration />,
+        permissionKey: "Flexi Declaration",
       },
       {
         path: "team-approval-it-declaration/:proofId",
