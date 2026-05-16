@@ -25,6 +25,7 @@ export interface LeaveRequest {
   posting_date: string;
   reason_name?: string;
   docstatus: number;
+  creation?: string;
 }
 
 export interface TeamLeaveRequest {

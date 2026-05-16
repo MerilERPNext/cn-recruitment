@@ -25,7 +25,6 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailModal from "./AdvanceDetailModal";
 import { COLUMN_SORT_CONFIG_EXPENSE_ADVANCE } from "../../../utils/tableSortConfig";
-import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvance, setSelectedAdvance] = useState<{
