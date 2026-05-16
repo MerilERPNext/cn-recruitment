@@ -37,7 +37,7 @@ const EmpLeaveRequestCard = ({
   const { isDesktop } = useScreenSize();
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [isActed, setIsActed] = useState(false);
-  const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation);
+  const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation ?? "");
 
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
