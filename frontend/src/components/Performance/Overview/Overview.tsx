@@ -20,10 +20,8 @@ const Overview: React.FC = () => {
 
         {/* Main Content Grid */}
         <div className={`grid ${!isDesktop ? 'grid-cols-1' : 'grid-cols-[1fr,0.6fr]'} gap-6`}>
-          {/* Left Column - My Goals */}
           <OverviewGoals />
 
-          {/* Right Column - Tasks and Feedback */}
           <OverviewSidebar />
         </div>
       </div>
