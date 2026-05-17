@@ -2,11 +2,36 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Filter } from 'lucide-react';
 import { Typography } from '../../shared/atoms/Typography';
-import Badge from '../../shared/Badge';
+import Badge, { type BadgeVariant } from '../../shared/Badge';
 import Button from '../../shared/atoms/Button';
 import { useScreenSize } from '../../../hooks/useScreenSize';
 
-export const goals = [
+export type GoalStatus = 'On-track' | 'At-risk' | 'Off-track';
+
+export interface GoalKeyResult {
+  id: string;
+  title: string;
+  percentage: number;
+}
+
+export interface Goal {
+  type: string;
+  label: string;
+  title: string;
+  subtitle: string;
+  current: number;
+  target: number;
+  unit: string;
+  percentage: number;
+  weight: number;
+  status: GoalStatus;
+  state: string;
+  barColor: string;
+  krs?: GoalKeyResult[];
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const goals: Goal[] = [
   {
     type: "OKR",
     label: "Individual",
@@ -84,7 +109,7 @@ export const goals = [
   }
 ];
 
-const getStatusVariant = (status: string) => {
+const getStatusVariant = (status: GoalStatus): BadgeVariant => {
   if (status === 'On-track') return 'success';
   if (status === 'At-risk') return 'warning';
   if (status === 'Off-track') return 'danger';
@@ -190,12 +215,12 @@ const MyGoals: React.FC = () => {
                             <div className={`${isMobile ? 'flex-1 ml-4' : 'w-[128px]'} shrink-0 flex flex-col gap-1.5`}>
                                <Typography variant="caption" className="text-gray-500 text-right">{goal.percentage}% - {goal.weight}w</Typography>
                                <div className="w-full bg-gray-100 rounded-md h-1.5 overflow-hidden">
-                                  <div className={`h-1.5 rounded-md ${goal.barColor}`} style={{ width: `${goal.percentage}%` }}></div>
+                                  <div className={`h-1.5 rounded-md ${goal.barColor}`} style={{ width: `${goal.percentage}%` }} />
                                </div>
                             </div>
                          </div>
                          <div className={`min-w-fit shrink-0 flex ${isMobile ? 'flex-row w-full justify-start' : 'flex-col items-end'} gap-2 mt-2 md:mt-0`}>
-                            <Badge label={goal.status} variant={getStatusVariant(goal.status) as any} size="sm" pulse={{ show: true }} />
+                            <Badge label={goal.status} variant={getStatusVariant(goal.status)} size="sm" pulse={{ show: true }} />
                             <Badge label={goal.state} variant="info" size="sm" />
                          </div>
                       </div>
@@ -206,11 +231,11 @@ const MyGoals: React.FC = () => {
                       <div className="bg-gray-50/50 border-t border-gray-100 p-4 relative z-10">
                          <div className={`relative ${isMobile ? 'pl-2' : 'pl-12'} space-y-4`}>
                             {/* Vertical line for KRs */}
-                            {!isMobile && <div className="absolute left-[24px] top-[-16px] bottom-4 w-px bg-gray-200 z-0"></div>}
-                            {goal.krs.map((kr, kIdx) => (
+                            {!isMobile && <div className="absolute left-[24px] top-[-16px] bottom-4 w-px bg-gray-200 z-0" />}
+                            {goal.krs.map((kr: GoalKeyResult, kIdx: number) => (
                                <div key={kIdx} className={`relative flex ${!isDesktop ? 'flex-col gap-2' : 'flex-row items-center'} `}>
                                   {/* Horizontal line to KR */}
-                                  {!isMobile && <div className="absolute left-[-24px] top-[14px] w-[24px] h-px bg-gray-200 z-0"></div>}
+                                  {!isMobile && <div className="absolute left-[-24px] top-[14px] w-[24px] h-px bg-gray-200 z-0" />}
                                   
                                   <div className={`flex ${!isDesktop ? 'items-start' : 'items-center'} gap-3 flex-1 md:pl-4`}>
                                      <div className="mt-0.5 flex-shrink-0">
@@ -225,11 +250,11 @@ const MyGoals: React.FC = () => {
                                         <div className={`${!isDesktop ? 'flex-1' : 'w-[128px]'} shrink-0 mt-1 flex flex-col gap-1`}>
                                            {!isDesktop && <Typography variant="caption" className="text-gray-500 text-right">{kr.percentage}%</Typography>}
                                            <div className="w-full bg-gray-200 rounded-md h-1.5 overflow-hidden">
-                                              <div className="h-1.5 rounded-md bg-blue-500" style={{ width: `${kr.percentage}%` }}></div>
+                                              <div className="h-1.5 rounded-md bg-blue-500" style={{ width: `${kr.percentage}%` }} />
                                            </div>
                                         </div>
                                      </div>
-                                     <div className="w-[90px] shrink-0 hidden xl:block"></div>
+                                     <div className="w-[90px] shrink-0 hidden xl:block" />
                                   </div>
                                </div>
                             ))}

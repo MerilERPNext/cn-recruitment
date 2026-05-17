@@ -2,11 +2,11 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Paperclip, Mic } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
-import Badge from '../../../shared/Badge';
+import Badge, { type BadgeVariant } from '../../../shared/Badge';
 import Button from '../../../shared/atoms/Button';
-import { goals } from '../MyGoals';
+import { goals, type Goal, type GoalKeyResult } from '../MyGoals';
 
-const getStatusVariant = (status: string) => {
+const getStatusVariant = (status: Goal['status']): BadgeVariant => {
   if (status === 'On-track') return 'success';
   if (status === 'At-risk') return 'warning';
   if (status === 'Off-track') return 'danger';
@@ -55,7 +55,8 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
 const GoalDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const goal = id ? goals[Number(id)] : null;
+  const goalIndex = id ? Number(id) : Number.NaN;
+  const goal = Number.isInteger(goalIndex) ? goals[goalIndex] : undefined;
   const topRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -76,7 +77,6 @@ const GoalDetails: React.FC = () => {
 
   return (
     <div ref={topRef} id="goal-details-container" className="min-h-full bg-[#f8fafc] overflow-y-scroll p-6 font-sans">
-      <div  />
       <div className="max-w-[1200px] mx-auto space-y-6">
         
         {/* Back Button */}
@@ -98,7 +98,7 @@ const GoalDetails: React.FC = () => {
                 <Badge label={goal.state} variant="info" size="sm" />
                 <Badge 
                   label={goal.status} 
-                  variant={getStatusVariant(goal.status) as any}
+                  variant={getStatusVariant(goal.status)}
                   size="sm" 
                   pulse={{ show: true }} 
                 />
@@ -161,7 +161,7 @@ const GoalDetails: React.FC = () => {
               </div>
 
               <div className="space-y-6">
-                {goal.krs && goal.krs.map((kr: any, idx: number) => (
+                {goal.krs?.map((kr: GoalKeyResult, idx: number, krs: GoalKeyResult[]) => (
                   <div key={idx} className="relative">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
@@ -177,9 +177,9 @@ const GoalDetails: React.FC = () => {
                       <div 
                         className={`h-2 rounded-md ${kr.percentage >= 75 ? 'bg-green-500' : kr.percentage >= 50 ? 'bg-yellow-500' : 'bg-blue-500'}`} 
                         style={{ width: `${kr.percentage}%` }}
-                      ></div>
+                      />
                     </div>
-                    {idx !== goal.krs.length - 1 && <hr className="mt-6 border-gray-100" />}
+                    {idx !== krs.length - 1 && <hr className="mt-6 border-gray-100" />}
                   </div>
                 ))}
                 {(!goal.krs || goal.krs.length === 0) && (

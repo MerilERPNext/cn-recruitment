@@ -103,16 +103,20 @@ const goalsData: GoalItem[] = [
   }
 ];
 
+import { useScreenSize } from '../../../../hooks/useScreenSize';
+
 const OverviewGoals: React.FC = () => {
+  const { isMobile } = useScreenSize();
+
   return (
     <div className=" space-y-6">
       <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-        <div className="flex justify-between items-center mb-6">
+        <div className={`flex ${isMobile ? 'flex-col items-start gap-4' : 'justify-between items-center'} mb-6`}>
           <div className="flex items-center gap-3">
             <Typography variant="h4" className="font-bold text-gray-900">My Goals</Typography>
             <div className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">{goalsData.length}</div>
           </div>
-          <div className="flex items-center gap-3 text-sm">
+          <div className={`flex ${isMobile ? 'justify-between w-full' : 'items-center'} gap-3 text-sm`}>
             <Typography variant="bodySmall" className="text-gray-500">Sum of weightage: <span className="font-semibold text-gray-900">100%</span></Typography>
             <button className="text-blue-600 font-medium hover:text-blue-700 flex items-center gap-1">
               Open all <ArrowRight className="w-3 h-3" />
@@ -122,24 +126,28 @@ const OverviewGoals: React.FC = () => {
 
         <div className="space-y-4">
           {goalsData.map((goal) => (
-            <div key={goal.id} className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
-              <div className="self-start mt-1">
-                <Badge label={goal.type} backgroundColor={goal.typeBgColor} textColor={goal.typeTextColor} size="sm" />
-              </div>
-              <div className="flex-1">
-                <Typography variant="bodySmall" className="font-semibold text-gray-900 mb-1">{goal.title}</Typography>
-                <Typography variant="caption" className="text-gray-500">Weightage <span className="font-semibold text-gray-700">{goal.weightage}</span> &middot; {goal.category} &middot; {goal.progressText}</Typography>
-              </div>
-              <div className="w-32 flex flex-col items-end gap-2">
-                <div className="w-full flex items-center gap-3">
-                  <Typography variant="caption" className="font-medium text-gray-500">{goal.progressPercentage}%</Typography>
-                  <div className="w-full bg-gray-100 rounded-md h-1.5 overflow-hidden">
-                    <div className={`h-1.5 rounded-md ${goal.progressColor}`} style={{ width: `${goal.progressPercentage}%` }}></div>
-                  </div>
+            <div key={goal.id} className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center gap-4'} p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors`}>
+              <div className="flex items-start gap-3 flex-1 w-full">
+                <div className="self-start mt-1">
+                  <Badge label={goal.type} backgroundColor={goal.typeBgColor} textColor={goal.typeTextColor} size="sm" />
+                </div>
+                <div className="flex-1">
+                  <Typography variant="bodySmall" className="font-semibold text-gray-900 mb-1">{goal.title}</Typography>
+                  <Typography variant="caption" className="text-gray-500">Weightage <span className="font-semibold text-gray-700">{goal.weightage}</span> &middot; {goal.category} &middot; {goal.progressText}</Typography>
                 </div>
               </div>
-              <div className="w-24 flex justify-end">
-                <Badge label={goal.status} backgroundColor={goal.statusBgColor} textColor={goal.statusTextColor} size="sm" pulse={{ show: true, color: goal.statusPulse }} />
+              <div className={`flex ${isMobile ? 'w-full justify-between items-center mt-2' : 'items-center gap-4'}`}>
+                <div className={`${isMobile ? 'w-1/2' : 'w-32'} flex flex-col items-end gap-2`}>
+                  <div className="w-full flex items-center gap-3">
+                    <Typography variant="caption" className="font-medium text-gray-500">{goal.progressPercentage}%</Typography>
+                    <div className="w-full bg-gray-100 rounded-md h-1.5 overflow-hidden">
+                      <div className={`h-1.5 rounded-md ${goal.progressColor}`} style={{ width: `${goal.progressPercentage}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+                <div className={`${isMobile ? 'w-auto' : 'w-24 flex justify-end'}`}>
+                  <Badge label={goal.status} backgroundColor={goal.statusBgColor} textColor={goal.statusTextColor} size="sm" pulse={{ show: true, color: goal.statusPulse }} />
+                </div>
               </div>
             </div>
           ))}
