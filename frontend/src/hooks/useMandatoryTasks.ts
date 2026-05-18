@@ -15,16 +15,3 @@ export const useMandatoryTasks = (
   });
 };
 
-export const useMandatoryHrTasksPending = (
-  options?: { enabled?: boolean },
-): UseQueryResult<boolean, Error> => {
-  return useQuery<boolean, Error>({
-    queryKey: [...MANDATORY_TASKS_QUERY_KEY, "has-pending"],
-    queryFn: async () => {
-      const result = await mandatoryTasksService.getMandatoryTasks();
-      return (result.data?.length ?? 0) > 0;
-    },
-    enabled: options?.enabled ?? true,
-    staleTime: 30 * 1000,
-  });
-};

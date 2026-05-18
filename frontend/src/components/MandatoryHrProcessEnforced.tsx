@@ -11,10 +11,7 @@ import {
   IoHomeOutline,
 } from "react-icons/io5";
 import { useScreenSize } from "../hooks/useScreenSize";
-import {
-  useMandatoryHrTasksPending,
-  useMandatoryTasks,
-} from "../hooks/useMandatoryTasks";
+import { useMandatoryTasks } from "../hooks/useMandatoryTasks";
 import type { MandatoryTask } from "../types/mandatoryTasks";
 import { sanitizeToPlainText } from "../utils/sanitizeToPlainText";
 import { ROUTES } from "../constants/routes";
@@ -137,8 +134,6 @@ const MandatoryHrProcessEnforced: React.FC = () => {
   const [mandatoryTasksExpanded, setMandatoryTasksExpanded] = useState(true);
   const { data: currentEmployee, isLoading: isCurrentEmployeeLoading } =
     useCurrentEmployeeDetails({ logged_in_employee_details: true });
-  const { data: hasMandatoryTasks = false, isLoading: isMandatoryCheckLoading } =
-    useMandatoryHrTasksPending({ enabled: !!currentEmployee });
   const {
     data: mandatoryResponse,
     isLoading: isMandatoryListLoading,
@@ -147,6 +142,8 @@ const MandatoryHrProcessEnforced: React.FC = () => {
   const { isMobile } = useScreenSize();
 
   const mandatoryTasks = mandatoryResponse?.data ?? [];
+  const hasMandatoryTasks = mandatoryTasks.length > 0;
+  const isMandatoryCheckLoading = isMandatoryListLoading;
   const isListLoading = isCurrentEmployeeLoading || isMandatoryListLoading;
 
   return (
