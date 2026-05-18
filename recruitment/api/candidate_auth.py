@@ -4,6 +4,7 @@ import json
 import random
 import re
 import secrets
+from functools import wraps
 
 import frappe
 from frappe import _
@@ -27,6 +28,72 @@ SAFE_SETTINGS_FIELDS = (
     "enable_mobile_otp",
     "mobile_delivery_mode",
 )
+
+
+def candidate_required(fn):
+    """Whitelisted endpoint that requires a valid Candidate Portal Session cookie.
+
+    Validates the `candidate_portal_session` cookie, refuses unauthenticated
+    callers with 401, and stashes the resolved candidate on `frappe.local`
+    so the endpoint body can read it via `get_current_candidate()`.
+    """
+
+    @frappe.whitelist(allow_guest=True)
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        token = _get_session_cookie()
+        if not token:
+            frappe.local.response["http_status_code"] = 401
+            frappe.throw(_("Authentication required."), frappe.AuthenticationError)
+
+        session = _get_active_session(token)
+        if not session:
+            _delete_session_cookie()
+            frappe.local.response["http_status_code"] = 401
+            frappe.throw(_("Session expired. Please log in again."), frappe.AuthenticationError)
+
+        session.last_seen_at = now_datetime()
+        session.save(ignore_permissions=True)
+
+        frappe.local.candidate_session = session
+        frappe.local.candidate = session.candidate
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
+def get_current_candidate():
+    """Return the authenticated candidate's name (Candidate Portal User id).
+
+    Only meaningful inside an endpoint wrapped by `@candidate_required`.
+    Returns None outside that scope.
+    """
+    return getattr(frappe.local, "candidate", None)
+
+
+def get_current_candidate_session():
+    """Return the active Candidate Portal Session document for the current request."""
+    return getattr(frappe.local, "candidate_session", None)
+
+
+def enforce_candidate_identity(email=None, job_applicant_id=None):
+    """Assert any supplied identifier belongs to the authenticated candidate."""
+    session_email = get_current_candidate()
+    if not session_email:
+        frappe.local.response["http_status_code"] = 401
+        frappe.throw(_("Authentication required."), frappe.AuthenticationError)
+
+    if email and (email or "").strip().lower() != session_email.lower():
+        frappe.local.response["http_status_code"] = 403
+        frappe.throw(_("Not allowed to access this resource."), frappe.PermissionError)
+
+    if job_applicant_id:
+        linked = frappe.db.get_value("Candidate Portal User", session_email, "job_applicant")
+        if not linked or linked != job_applicant_id:
+            frappe.local.response["http_status_code"] = 403
+            frappe.throw(_("Not allowed to access this resource."), frappe.PermissionError)
+
+    return session_email
 
 
 @frappe.whitelist(allow_guest=True)

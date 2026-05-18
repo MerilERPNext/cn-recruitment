@@ -1,6 +1,8 @@
 import frappe
 from frappe import _
 
+from recruitment.api.candidate_auth import candidate_required, enforce_candidate_identity
+
 _LAYOUT_TYPES = frozenset({
     "Column Break", "Tab Break", "Section Break", "HTML", "HTML Editor",
     "Button", "Fold", "Heading", "Break", "Image", "Attach Image",
@@ -434,7 +436,7 @@ def get_all_onboarding_fields_for_onboarding():
     return {"status": "success", "total": len(fields), "fields": fields}
 
 
-@frappe.whitelist()
+@candidate_required
 def get_all_job_applicant_fields(job_opening=None, form_name=None):
     portal_rows, resolved_form = _get_job_applicant_portal_settings(
         job_opening=job_opening or None,
@@ -509,11 +511,13 @@ def _get_pre_offer_portal_settings(job_applicant_id):
         return [], None
 
 
-@frappe.whitelist()
+@candidate_required
 def get_pre_offer_form(job_applicant_id):
     if not job_applicant_id:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Job Applicant ID is required.")}
+
+    enforce_candidate_identity(job_applicant_id=job_applicant_id)
 
     if not frappe.db.exists("Job Applicant", job_applicant_id):
         frappe.local.response["http_status_code"] = 404
@@ -587,7 +591,7 @@ def get_pre_offer_form(job_applicant_id):
     }
 
 
-@frappe.whitelist()
+@candidate_required
 def save_pre_offer_form_data(job_applicant_id, data):
     if isinstance(data, str):
         try:
@@ -603,6 +607,8 @@ def save_pre_offer_form_data(job_applicant_id, data):
     if not job_applicant_id:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Job Applicant ID is required.")}
+
+    enforce_candidate_identity(job_applicant_id=job_applicant_id)
 
     if not frappe.db.exists("Job Applicant", job_applicant_id):
         frappe.local.response["http_status_code"] = 404
@@ -682,7 +688,7 @@ def save_pre_offer_form_data(job_applicant_id, data):
 
 
 
-@frappe.whitelist()
+@candidate_required
 def get_candidate_portal_form(job_applicant_id):
     """
     Returns the structured portal form for a given job applicant.
@@ -695,6 +701,7 @@ def get_candidate_portal_form(job_applicant_id):
         Falls back to the global default Onboarding Portal Form.
         All field values will be null.
     """
+    enforce_candidate_identity(job_applicant_id=job_applicant_id)
     onboarding_name = _get_onboarding_name_by_job_applicant(job_applicant_id)
     doc = frappe.get_doc("Employee Onboarding", onboarding_name) if onboarding_name else None
 
@@ -719,7 +726,7 @@ def get_candidate_portal_form(job_applicant_id):
     }
 
 
-@frappe.whitelist()
+@candidate_required
 def save_candidate_portal_data(job_applicant_id, data):
     if isinstance(data, str):
         try:
@@ -732,6 +739,7 @@ def save_candidate_portal_data(job_applicant_id, data):
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Data must be a JSON object.")}
 
+    enforce_candidate_identity(job_applicant_id=job_applicant_id)
     onboarding_name = _get_onboarding_name_by_job_applicant(job_applicant_id)
 
     if not onboarding_name:
@@ -844,8 +852,9 @@ def save_candidate_portal_data(job_applicant_id, data):
         return {"status": "error", "message": str(e)}
 
 
-@frappe.whitelist()
+@candidate_required
 def get_portal_field_names(job_applicant_id=None):
+    enforce_candidate_identity(job_applicant_id=job_applicant_id)
     onboarding_doc = None
     if job_applicant_id:
         onboarding_name = _get_onboarding_name_by_job_applicant(job_applicant_id)
@@ -859,11 +868,13 @@ def get_portal_field_names(job_applicant_id=None):
     }
 
 
-@frappe.whitelist()
+@candidate_required
 def get_job_applicant_portal_form(job_applicant_id):
     if not job_applicant_id:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Job Applicant ID is required.")}
+
+    enforce_candidate_identity(job_applicant_id=job_applicant_id)
 
     if not frappe.db.exists("Job Applicant", job_applicant_id):
         frappe.local.response["http_status_code"] = 404
@@ -934,7 +945,7 @@ def get_job_applicant_portal_form(job_applicant_id):
     }
 
 
-@frappe.whitelist()
+@candidate_required
 def save_job_applicant_portal_data(job_applicant_id, data):
     if isinstance(data, str):
         try:
@@ -950,6 +961,8 @@ def save_job_applicant_portal_data(job_applicant_id, data):
     if not job_applicant_id:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Job Applicant ID is required.")}
+
+    enforce_candidate_identity(job_applicant_id=job_applicant_id)
 
     if not frappe.db.exists("Job Applicant", job_applicant_id):
         frappe.local.response["http_status_code"] = 404
@@ -1013,15 +1026,16 @@ def save_job_applicant_portal_data(job_applicant_id, data):
         return {"status": "error", "message": str(e)}
 
 
-@frappe.whitelist()
+@candidate_required
 def get_job_applicant_portal_field_names(job_applicant_id=None):
+    enforce_candidate_identity(job_applicant_id=job_applicant_id)
     return {
         "status": "success",
         "fields": [r.fieldname for r in _get_job_applicant_portal_settings(job_applicant_id)[0]],
     }
 
 
-@frappe.whitelist()
+@candidate_required
 def get_candidate_feature_flags():
     doc = frappe.get_single("Candidate Portal Feature Flag")
 
@@ -1033,7 +1047,7 @@ def get_candidate_feature_flags():
     return result
 
 
-@frappe.whitelist()
+@candidate_required
 def get_link_field_options(doctype, search_text=None, limit=20):
     """Returns [{id, label}] for a doctype; label uses title_field when set."""
     if not doctype:
