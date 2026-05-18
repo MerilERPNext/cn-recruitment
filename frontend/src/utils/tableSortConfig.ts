@@ -5,7 +5,7 @@ import { MyLeaveRequestType } from "../types/leaves";
 //LEAVE SORT CONFIGS
 export const COLUMN_SORT_CONFIG_MY_LEAVE_REQUEST: ColumnSortConfig[] = [
   {
-    sortable: false
+    sortable: false,
   },
   {
     sortable: true,
@@ -29,10 +29,10 @@ export const COLUMN_SORT_CONFIG_MY_LEAVE_REQUEST: ColumnSortConfig[] = [
       item.reference_document?.to_date ?? "",
   },
   {
-    sortable: false
+    sortable: false,
   },
   {
-    sortable: false
+    sortable: false,
   },
   {
     sortable: false,
@@ -42,7 +42,7 @@ export const COLUMN_SORT_CONFIG_MY_LEAVE_REQUEST: ColumnSortConfig[] = [
 
 export const getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST = (
   isBulkSelect: boolean,
-  isRejected: boolean
+  isRejected: boolean,
 ): ColumnSortConfig[] => {
   const config: ColumnSortConfig[] = [];
 
@@ -116,7 +116,7 @@ export const getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST = (
 //EXPENSE CLAIM SORT CONFIGS
 export const COLUMN_SORT_CONFIG_EXPENSE_CLAIM: ColumnSortConfig[] = [
   {
-    sortable: false
+    sortable: false,
   },
   {
     sortable: true,
@@ -125,7 +125,7 @@ export const COLUMN_SORT_CONFIG_EXPENSE_CLAIM: ColumnSortConfig[] = [
     getValue: (item: ExpenseClaimType) =>
       item.reference_document?.custom_expense_category_name ?? "",
   },
-   {
+  {
     sortable: true,
     type: "string",
     field: "custom_claim_type_name",
@@ -161,10 +161,10 @@ export const COLUMN_SORT_CONFIG_EXPENSE_CLAIM: ColumnSortConfig[] = [
       item.reference_document?.creation ?? "",
   },
   {
-    sortable: false
+    sortable: false,
   },
   {
-    sortable: false
+    sortable: false,
   },
   {
     sortable: false,
@@ -218,7 +218,7 @@ export const COLUMN_SORT_CONFIG_SHARED_EXPENSE: ColumnSortConfig[] = [
 
 export const getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_CLAIM = (
   isBulkSelect: boolean,
-  isApproved: boolean
+  isApproved: boolean,
 ): ColumnSortConfig[] => {
   const config: ColumnSortConfig[] = [];
 
@@ -302,7 +302,7 @@ export const getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_CLAIM = (
 //EXPENSE ADVANCE SORT CONFIGS
 export const COLUMN_SORT_CONFIG_EXPENSE_ADVANCE: ColumnSortConfig[] = [
   {
-    sortable: false
+    sortable: false,
   },
   {
     sortable: true,
@@ -311,7 +311,7 @@ export const COLUMN_SORT_CONFIG_EXPENSE_ADVANCE: ColumnSortConfig[] = [
     getValue: (item: ExpenseAdvanceType) =>
       item.reference_document?.custom_advance_type ?? "",
   },
-   {
+  {
     sortable: true,
     type: "string",
     field: "custom_advance_policy_name",
@@ -325,7 +325,7 @@ export const COLUMN_SORT_CONFIG_EXPENSE_ADVANCE: ColumnSortConfig[] = [
     getValue: (item: ExpenseAdvanceType) =>
       item.reference_document?.posting_date ?? "",
   },
-    {
+  {
     sortable: true,
     type: "number",
     field: "advance_amount",
@@ -336,10 +336,10 @@ export const COLUMN_SORT_CONFIG_EXPENSE_ADVANCE: ColumnSortConfig[] = [
     sortable: false,
   },
   {
-    sortable: false
+    sortable: false,
   },
   {
-    sortable: false
+    sortable: false,
   },
   {
     sortable: false,
@@ -349,7 +349,7 @@ export const COLUMN_SORT_CONFIG_EXPENSE_ADVANCE: ColumnSortConfig[] = [
 
 export const getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_ADVANCE = (
   isBulkSelect: boolean,
-  isApproved: boolean
+  isApproved: boolean,
 ): ColumnSortConfig[] => {
   const config: ColumnSortConfig[] = [];
 
@@ -397,4 +397,41 @@ export const getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_ADVANCE = (
   return config;
 };
 
-
+// SCHEDULED IMPORTS SORT CONFIG
+export const COLUMN_SORT_CONFIG_SCHEDULED_IMPORTS: ColumnSortConfig[] = [
+  {
+    sortable: true,
+    type: "string",
+    field: "name",
+    getValue: (item: any) => item.name ?? "",
+  }, // Import ID
+  {
+    sortable: true,
+    type: "string",
+    field: "import_type",
+    getValue: (item: any) => item.import_type ?? "",
+  }, // Import Name
+  { sortable: false }, // Source
+  {
+    sortable: true,
+    type: "string",
+    field: "file_to_import",
+    getValue: (item: any) => item.file_to_import ?? "",
+  }, // File Name
+  {
+    sortable: true,
+    type: "date",
+    field: "creation",
+    getValue: (item: any) => item.started_at ?? item.creation ?? "",
+  }, // Initiated On
+  {
+    sortable: true,
+    type: "string",
+    field: "owner",
+    getValue: (item: any) => item.owner ?? "",
+  }, // Initiated By
+  { sortable: false }, // Scheduled Time
+  { sortable: false }, // Status
+  { sortable: false }, // Summary
+  { sortable: false }, // Actions
+];
