@@ -30,9 +30,30 @@ def _serialize(doc):
         "experience": doc.experience,
         "employment_type": doc.employment_type,
         "form_data": form_data,
+        "progress": _compute_progress(doc.job_opening, form_data),
         "creation": doc.creation,
         "modified": doc.modified,
     }
+
+
+def _compute_progress(opening, form_data):
+    """Returns {total, filled, percentage} based on the portal form linked to the Job Opening."""
+    form_name = frappe.db.get_value("Job Opening", opening, "custom_job_applicant_portal_form") if opening else None
+    if not form_name:
+        return {"total": 0, "filled": 0, "percentage": 0}
+    try:
+        rows = frappe.get_doc("Job Applicant Portal Forms", form_name).portal_fields or []
+    except Exception:
+        return {"total": 0, "filled": 0, "percentage": 0}
+
+    fieldnames = [r.fieldname for r in rows if r.fieldname and not r.get("hidden")]
+    total = len(fieldnames)
+    if not total:
+        return {"total": 0, "filled": 0, "percentage": 0}
+
+    data = form_data if isinstance(form_data, dict) else {}
+    filled = sum(1 for fn in fieldnames if data.get(fn) not in (None, "", [], {}))
+    return {"total": total, "filled": filled, "percentage": round(filled * 100 / total)}
 
 
 def _coerce_form_data(form_data):
@@ -246,7 +267,7 @@ def delete_draft(job_applicant_email, job_opening):
     name = _find_draft(email, opening)
     if not name:
         return _err(
-            f"No Draft Application exists for '{email}' and Job Opening '{opening}'.", 404
+            f"No Draft Application exists for '{email}' and Job Opening '{opening}'.", 200
         )
 
     try:

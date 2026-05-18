@@ -1,4 +1,5 @@
 import frappe
+from recruitment.api.candidate_auth import candidate_required, enforce_candidate_identity
 
 DOCTYPENAME = "Employee Onboarding"
 
@@ -15,11 +16,12 @@ def _error_response(message, status_code=400):
 
 
 
-@frappe.whitelist()
+@candidate_required
 def get_dashboard(email):
     try:
         if not email:
             return _error_response("email is required.", 400)
+        enforce_candidate_identity(email=email)
 
         row = frappe.db.get_value(
             DOCTYPENAME,
