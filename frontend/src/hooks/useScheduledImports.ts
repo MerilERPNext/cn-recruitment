@@ -12,10 +12,10 @@ const isPermissionError = (error: unknown): boolean =>
 const defaultRetry = (failureCount: number, error: unknown) =>
   isPermissionError(error) ? false : failureCount < 3;
 
-export const useScheduledImports = (owner: string) => {
+export const useScheduledImports = (owner: string, monthFilter?: string) => {
   return useQuery<ScheduledDataImport[], Error>({
-    queryKey: ["scheduled-data-imports", owner],
-    queryFn: () => scheduledImportsService.getImportsByOwner(owner),
+    queryKey: ["scheduled-data-imports", owner, monthFilter],
+    queryFn: () => scheduledImportsService.getImportsByOwner(owner, monthFilter),
     enabled: !!owner,
     staleTime: 2 * 60 * 1000, // 2 minutes
     retry: defaultRetry,

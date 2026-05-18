@@ -135,7 +135,7 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
 
       {/* Actions */}
       <div className="flex items-center justify-center gap-2 flex-shrink-0">
-        {!!item.error_log && (
+        {true && (
           <Button
             size="sm"
             variant="outline"
@@ -157,18 +157,6 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
           >
             <Download size={12} />
             Download File
-          </Button>
-        )}
-        {item.file_to_import && (
-          <Button
-            size="sm"
-            variant="outline"
-            bgColor="error"
-            onClick={() => onErrorReport(item)}
-            className="text-xs flex items-center gap-1"
-          >
-            <AlertCircle size={12} />
-            Error Report
           </Button>
         )}
       </div>

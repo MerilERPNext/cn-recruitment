@@ -60,7 +60,15 @@ const ScheduledImportsPage: React.FC = () => {
 
   const { data: uiPermissions } = useGetUiPermission();
 
-  const { data: allImports = [] } = useScheduledImports(owner ?? "");
+  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [monthFilter, setMonthFilter] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [orderBy, setOrderBy] = useState<string>("creation desc");
+
+  const { data: allImports = [] } = useScheduledImports(owner ?? "", monthFilter);
+
   const hasPermission = useMemo(() => {
     if (!uiPermissions || uiPermissions.length === 0) return false;
     const appPerm = uiPermissions.find(
@@ -69,18 +77,12 @@ const ScheduledImportsPage: React.FC = () => {
     return appPerm?.enabled;
   }, [uiPermissions]);
 
-  const [activeFilter, setActiveFilter] = useState<string>("all");
-  const [monthFilter, setMonthFilter] = useState<string>(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  });
-  const [orderBy, setOrderBy] = useState<string>("creation desc");
-
   const summary: ImportStatusSummary = useMemo(() => {
     return allImports.reduce<ImportStatusSummary>(
       (acc, item) => {
         acc.total += 1;
-        if (item.status === "Processing") acc.processing += 1;
+        if (item.status === "Draft") acc.pendingApproval += 1;
+        else if (item.status === "Processing") acc.processing += 1;
         else if (item.status === "Processed") acc.processed += 1;
         else if (item.status === "Scheduled") acc.pendingScheduled += 1;
         else if (item.status === "Failed" || item.status === "Cancelled")
@@ -221,21 +223,22 @@ const ScheduledImportsPage: React.FC = () => {
               defaultFilters={(() => {
                 const filters: Record<string, any> = {};
                 if (owner) filters.owner = owner;
-                if (activeFilter === "pending-scheduled")
+                if (activeFilter === "pending-approval")
+                  filters.status = "Draft";
+                else if (activeFilter === "pending-scheduled")
                   filters.status = "Scheduled";
                 else if (activeFilter === "processing")
                   filters.status = "Processing";
                 else if (activeFilter === "processed")
                   filters.status = "Processed";
-                if (activeFilter === "rejected-failed")
+                else if (activeFilter === "rejected-failed")
                   filters.status = ["in", ["Failed", "Cancelled"]];
 
                 if (monthFilter) {
                   const [year, month] = monthFilter.split("-");
                   const startDate = `${year}-${month}-01`;
-                  const endDate = new Date(Number(year), Number(month), 0)
-                    .toISOString()
-                    .split("T")[0];
+                  const lastDay = new Date(Number(year), Number(month), 0);
+                  const endDate = `${year}-${month}-${String(lastDay.getDate()).padStart(2, "0")}`;
                   filters.creation = ["between", [startDate, endDate]];
                 }
 
@@ -282,21 +285,22 @@ const ScheduledImportsPage: React.FC = () => {
             defaultFilters={(() => {
               const filters: Record<string, any> = {};
               if (owner) filters.owner = owner;
-              if (activeFilter === "pending-scheduled")
-                filters.status = ["in", ["Draft", "Scheduled"]];
+              if (activeFilter === "pending-approval")
+                filters.status = "Draft";
+              else if (activeFilter === "pending-scheduled")
+                filters.status = "Scheduled";
               else if (activeFilter === "processing")
                 filters.status = "Processing";
               else if (activeFilter === "processed")
-                filters.status = ["in", ["Processed", "Completed"]];
-              if (activeFilter === "rejected-failed")
+                filters.status = "Processed";
+              else if (activeFilter === "rejected-failed")
                 filters.status = ["in", ["Failed", "Cancelled"]];
 
               if (monthFilter) {
                 const [year, month] = monthFilter.split("-");
                 const startDate = `${year}-${month}-01`;
-                const endDate = new Date(Number(year), Number(month), 0)
-                  .toISOString()
-                  .split("T")[0];
+                const lastDay = new Date(Number(year), Number(month), 0);
+                const endDate = `${year}-${month}-${String(lastDay.getDate()).padStart(2, "0")}`;
                 filters.creation = ["between", [startDate, endDate]];
               }
 
