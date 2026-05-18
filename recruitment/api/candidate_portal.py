@@ -1084,8 +1084,9 @@ def get_candidate_feature_flags():
 
 
 @candidate_required
-def get_link_field_options(doctype, search_text=None, limit=20):
-    """Returns [{id, label}] for a doctype; label uses title_field when set."""
+def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20):
+    """Returns [{id, label}] for a doctype; label uses title_field when set.
+    Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins)."""
     if not doctype:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Doctype is required.")}
@@ -1099,9 +1100,10 @@ def get_link_field_options(doctype, search_text=None, limit=20):
     has_title = bool(title_field) and title_field != "name"
     fields = ["name"] + ([title_field] if has_title else [])
 
+    search = (search_text or query or txt or "").strip()
     or_filters = None
-    if search_text:
-        like = f"%{search_text}%"
+    if search:
+        like = f"%{search}%"
         or_filters = [["name", "like", like]] + ([[title_field, "like", like]] if has_title else [])
 
     try:
