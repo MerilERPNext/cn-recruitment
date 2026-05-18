@@ -67,7 +67,7 @@ def _sanitize_order_by(order_by, allowed_fields, default_field):
     return f"{fieldname} {direction}"
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def update_onboarding_details(email, data):
     """
     Updates an Employee Onboarding record identified by the job_applicant email.
@@ -359,7 +359,7 @@ def get_employee_onboarding_list(
         frappe.log_error(frappe.get_traceback(), "Employee Onboarding List API Error")
         return _error_response("Unable to fetch Employee Onboarding list right now.", 500)
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_applicant_status(email):
     """
     Full journey for a candidate: every Job Applicant record under this email,
