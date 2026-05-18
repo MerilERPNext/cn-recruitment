@@ -11,8 +11,8 @@ import { FlexiComponent, ComponentPartOfCTC } from "../../../types/flexiDeclarat
 import { IoIosArrowDown } from "react-icons/io";
 import { EditFlexiLockingPeriod } from "./Component/EditFlexiLockingPeriod";
 import { SquarePen } from "lucide-react";
-import NoDataFound from "../../shared/atoms/NoDataFound";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import toast from "react-hot-toast";
 // import { format } from "date-fns";
 
 function formatINR(num: string | number | undefined | null) {
@@ -24,7 +24,7 @@ function formatINR(num: string | number | undefined | null) {
 
 export default function FlexiDeclaration() {
   const [showValues, setShowValues] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState("25-26");
+  const [selectedPeriod, setSelectedPeriod] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { isDesktop } = useScreenSize();
   const { data: currentEmployee, } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
@@ -74,7 +74,7 @@ export default function FlexiDeclaration() {
 
     const updatedComponents = flexiComponents.map((comp) => ({
       ...comp,
-      amount: Number(flexi[comp.salary_component]) || 0
+      amount: Number(flexi[comp.salary_component]?.replace(/,/g, '')) || 0
     }));
 
     try {
@@ -82,10 +82,9 @@ export default function FlexiDeclaration() {
         id: flexiData.salary_data.assignment_name,
         flexi_components: updatedComponents
       });
-      alert("Flexi components updated successfully!");
+      toast.success("Flexi components updated successfully!");
     } catch (err) {
-      console.error("Update failed:", err);
-      alert("Failed to update flexi components.");
+      toast.error(`Failed to update flexi components. ${err instanceof Error ? err.message : ""}`);
     }
   };
 
@@ -245,19 +244,15 @@ export default function FlexiDeclaration() {
             )}
             {flexiComponents.length === 0 && !isLoading && (
               <div className="text-[14px] text-text-body2 text-center py-5">
-                <NoDataFound
-                  title="No Records Found"
-                  subtitle="No Flexi Declaration records available for this period."
-                />
+<div className="flex items-center justify-center py-10">
+  <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
+</div>
               </div>
             )}
             {isLoading && (
-              <div className="text-[14px] text-text-body2 text-center py-5">
-                <NoDataFound
-                  title="No Records Found"
-                  subtitle="No Flexi Declaration records available for this period."
-                />
-              </div>
+              <div className="flex justify-center py-10">
+  <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
+</div>
             )}
           </div>
         </div>
