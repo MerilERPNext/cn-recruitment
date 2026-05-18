@@ -144,7 +144,7 @@ def _apply_form_data(doc, payload):
 
 
 @candidate_required
-def save_draft(job_applicant_email, job_opening, form_data=None, status=DRAFT_STATUS):
+def save_application(job_applicant_email, job_opening, form_data=None, status=DRAFT_STATUS):
     if not job_applicant_email:
         return _err("job_applicant_email is required.", 400)
     if not job_opening:
@@ -206,15 +206,15 @@ def save_draft(job_applicant_email, job_opening, form_data=None, status=DRAFT_ST
         frappe.db.commit()
     except Exception as e:
         frappe.db.rollback()
-        frappe.log_error(frappe.get_traceback(), "Draft Application save_draft failed")
+        frappe.log_error(frappe.get_traceback(), "Job Application save_application failed")
         if target_status == SUBMIT_STATUS:
             return _err(f"Unable to submit application: {type(e).__name__}: {e}", 500)
-        return _err("Unable to save Draft Application right now.", 500)
+        return _err("Unable to save application right now.", 500)
 
     if target_status == DRAFT_STATUS:
-        message = "Draft Application created." if created else "Draft Application updated."
+        message = "Application draft created." if created else "Application draft updated."
     else:
-        message = "Job Applicant submitted." if created else "Job Applicant submitted from Draft Application."
+        message = "Application submitted." if created else "Application submitted from draft."
 
     return _ok(
         message,
