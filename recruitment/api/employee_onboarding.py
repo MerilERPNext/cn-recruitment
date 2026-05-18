@@ -1,6 +1,10 @@
 import frappe
 import re
-from recruitment.api.candidate_portal import _get_onboarding_portal_rows, _read_onboarding_meta
+from recruitment.api.candidate_portal import (
+    _get_active_pre_release,
+    _get_onboarding_portal_rows,
+    _read_onboarding_meta,
+)
 from recruitment.api.candidate_auth import candidate_required, enforce_candidate_identity
 
 DOCTYPENAME = "Employee Onboarding"
@@ -89,16 +93,30 @@ def update_onboarding_details(email, data):
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "code": 400, "message": "Data must be a valid dictionary of fields to update."}
 
+    applicant_name = frappe.db.get_value(
+        "Job Applicant",
+        {"email_id": email},
+        "name",
+        order_by="modified desc",
+    )
+    if not applicant_name:
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "code": 404, "message": f"No Job Applicant found for {email}"}
+
     onboarding_name = frappe.db.get_value(
         "Employee Onboarding",
-        {"job_applicant": email, "docstatus": ("<", 2)},
+        {"job_applicant": applicant_name, "docstatus": ("<", 2)},
         "name",
         order_by="creation desc",
     )
 
     if not onboarding_name:
-        frappe.local.response["http_status_code"] = 404
-        return {"status": "error", "code": 404, "message": f"No Employee Onboarding record found for {email}"}
+        pre_release = _get_active_pre_release(applicant_name)
+        if not pre_release:
+            frappe.local.response["http_status_code"] = 404
+            return {"status": "error", "code": 404, "message": f"No Employee Onboarding record or pending release found for {email}"}
+        release_doc = frappe.get_doc("Pre Onboarding Release", pre_release["name"])
+        onboarding_name = release_doc.materialize_onboarding(prefill=data)
 
     try:
         doc = frappe.get_doc("Employee Onboarding", onboarding_name)

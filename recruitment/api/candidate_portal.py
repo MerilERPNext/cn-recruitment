@@ -828,7 +828,7 @@ def save_candidate_portal_data(job_applicant_id, data):
             frappe.local.response["http_status_code"] = 404
             return {"status": "error", "message": _(f"No onboarding form pending for '{job_applicant_id}'.")}
         release_doc = frappe.get_doc("Pre Onboarding Release", pre_release["name"])
-        onboarding_name = release_doc.materialize_onboarding()
+        onboarding_name = release_doc.materialize_onboarding(prefill=data)
         pre_release = None  # materialized; no longer "active"
 
     onboarding_doc = frappe.get_doc("Employee Onboarding", onboarding_name)

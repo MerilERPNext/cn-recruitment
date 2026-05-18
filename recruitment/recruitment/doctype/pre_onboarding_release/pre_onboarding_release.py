@@ -34,10 +34,12 @@ class PreOnboardingRelease(Document):
             return
         self._sync_action_center_item()
 
-    def materialize_onboarding(self):
+    def materialize_onboarding(self, prefill=None):
         """Creates the Employee Onboarding doc from this release, stamps the
         release fields onto it, links back, and clears the release-side action
-        item. Idempotent: if the EO already exists, returns its name."""
+        item. `prefill` (candidate payload) supplies date_of_joining /
+        boarding_begins_on so the upstream mandatory check doesn't block insert.
+        Idempotent."""
         if self.employee_onboarding:
             return self.employee_onboarding
 
@@ -51,6 +53,15 @@ class PreOnboardingRelease(Document):
         doc.custom_onboarding_buddy = self.onboarding_buddy
         doc.custom_joining_buddy = self.joining_buddy
         doc.custom_manager = self.manager
+
+        prefill = prefill or {}
+        doj = prefill.get("date_of_joining") or prefill.get("custom_date_of_joining")
+        if doj:
+            doc.date_of_joining = doj
+        bbo = prefill.get("boarding_begins_on") or doc.date_of_joining
+        if bbo:
+            doc.boarding_begins_on = bbo
+
         doc.insert(ignore_permissions=True)
 
         self.db_set("employee_onboarding", doc.name, update_modified=False)
