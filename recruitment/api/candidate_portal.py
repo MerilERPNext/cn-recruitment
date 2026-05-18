@@ -489,6 +489,19 @@ def get_all_job_applicant_fields(job_opening=None, form_name=None):
 
     meta_lookup = {f["fieldname"]: f for f in _read_job_applicant_meta()}
 
+    applicant_doc = None
+    applicant_name = None
+    session_email = (get_current_candidate() or "").strip().lower()
+    if session_email and job_opening:
+        applicant_name = frappe.db.get_value(
+            "Job Applicant",
+            {"email_id": session_email, "job_title": job_opening},
+            "name",
+            order_by="modified desc",
+        )
+        if applicant_name:
+            applicant_doc = frappe.get_doc("Job Applicant", applicant_name)
+
     fields = []
     for row in portal_rows:
         fn = row.fieldname
@@ -516,11 +529,17 @@ def get_all_job_applicant_fields(job_opening=None, form_name=None):
                 row.get("mandatory_child_fields"),
             )
 
+        if applicant_doc is not None and applicant_doc.meta.get_field(fn):
+            value = _serialize_doc_field_value(applicant_doc, fn, fieldtype)
+            if value not in (None, "", [], {}):
+                field_entry["value"] = value
+
         fields.append(field_entry)
 
     return {
         "status": "success",
         "form_name": resolved_form,
+        "job_applicant": applicant_name,
         "total": len(fields),
         "fields": fields,
     }
