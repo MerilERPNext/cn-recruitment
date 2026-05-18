@@ -4,6 +4,7 @@ import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.form.css";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { Upload } from "lucide-react";
 
 import { expenseSchema } from "./expenseSchema";
 import ExpenseFieldSkeleton from "./ExpenseFieldSkeleton";
@@ -425,6 +426,35 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
                   <style>{`
                   ${hiddenFileListKeys.map((key) => `.formio-component-${key} .list-group { display: none !important; }`).join("\n")}
                 `}</style>
+                )}
+                {!isEditingExistingExpense && ocrDeps.isManualMode && (
+                  <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/40 to-indigo-50/40 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                      </span>
+                      <div>
+                        <p className="text-xs font-semibold text-gray-800">
+                          Entering details manually
+                        </p>
+                        <p className="text-[10px] text-gray-500">
+                          You can switch back to scan a receipt for auto-filling.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        ocrDeps.setIsManualMode(false);
+                        ocrDeps.setOcrStatus("idle");
+                      }}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2 text-xs font-bold text-blue-600 shadow-sm transition-all hover:bg-blue-50/80 active:scale-[0.98] sm:w-auto"
+                    >
+                      <Upload className="h-3.5 w-3.5 text-blue-500" />
+                      Upload Receipt Instead
+                    </button>
+                  </div>
                 )}
                 <Form
                   key={`${selectedExpenseType || "no-expense-type"}-${dynamicFormRevision}`}
