@@ -134,13 +134,18 @@ def _get_onboarding_name_by_job_applicant(job_applicant_id):
     )
 
 
-def _get_onboarding_portal_rows(onboarding_doc=None):
+def _get_onboarding_portal_rows(onboarding_doc=None, pre_release=None):
     """
     Returns (portal_field_rows, form_source) based on priority:
-      1. custom_candidate_portal_fields child table  -> "per_record_fields"
-      2. custom_onboarding_portal_form linked form   -> "linked_form"
-      3. Global default Onboarding Portal Forms      -> "default_form"
+      1. Active Pre Onboarding Release's selected form -> "pre_release_form"
+         (HR's latest intent for this candidate wins.)
+      2. custom_candidate_portal_fields child table    -> "per_record_fields"
+      3. custom_onboarding_portal_form linked form     -> "linked_form"
+      4. Global default Onboarding Portal Forms        -> "default_form"
     """
+    if pre_release and pre_release.get("onboarding_portal_form"):
+        return _get_portal_settings(pre_release["onboarding_portal_form"]), "pre_release_form"
+
     if onboarding_doc and onboarding_doc.meta.get_field("custom_candidate_portal_fields"):
         rows = onboarding_doc.get("custom_candidate_portal_fields") or []
         if rows:
@@ -154,6 +159,20 @@ def _get_onboarding_portal_rows(onboarding_doc=None):
         return _get_portal_settings(selected_form), "linked_form"
 
     return _get_portal_settings(None), "default_form"
+
+
+def _get_active_pre_release(job_applicant):
+    """Returns the latest Pre Onboarding Release for the applicant that has not yet
+    materialized an Employee Onboarding doc, as a dict, or None."""
+    if not job_applicant:
+        return None
+    return frappe.db.get_value(
+        "Pre Onboarding Release",
+        {"job_applicant": job_applicant, "employee_onboarding": ["is", "not set"]},
+        ["name", "onboarding_portal_form"],
+        as_dict=True,
+        order_by="creation desc",
+    )
 
 
 def _get_job_applicant_portal_settings(job_applicant_id=None, job_opening=None, form_name=None):
@@ -288,7 +307,21 @@ def _serialize_doc_field_value(doc, fieldname, fieldtype):
 _CANDIDATE_READONLY_STATUSES = frozenset({"Filled", "Approved"})
 
 
-def _build_tabbed_response(portal_rows, meta_lookup, doc=None):
+def _resolve_field_value(eo_doc, applicant_doc, fieldname, fieldtype):
+    """EO value wins; fall back to the same fieldname on Job Applicant when EO is
+    empty/missing so pre-offer data the candidate already entered auto-populates."""
+    if eo_doc is not None:
+        val = _serialize_doc_field_value(eo_doc, fieldname, fieldtype)
+        if val not in (None, "", []):
+            return val
+    if applicant_doc is not None and applicant_doc.meta.get_field(fieldname):
+        val = _serialize_doc_field_value(applicant_doc, fieldname, fieldtype)
+        if val not in (None, "", []):
+            return val
+    return None
+
+
+def _build_tabbed_response(portal_rows, meta_lookup, doc=None, applicant_doc=None):
     tab_order = []
     tab_map = {}
 
@@ -314,7 +347,7 @@ def _build_tabbed_response(portal_rows, meta_lookup, doc=None):
             "read_only": effective_read_only,
             "hidden": int(row.hidden or 0),
             "options": field_options,
-            "value": _serialize_doc_field_value(doc, fn, fieldtype) if doc else None,
+            "value": _resolve_field_value(doc, applicant_doc, fn, fieldtype),
             "approval_status": approval_status,
             "hr_comment": row.get("hr_comment") or "",
         }
@@ -737,11 +770,17 @@ def get_candidate_portal_form(job_applicant_id):
         Falls back to the global default Onboarding Portal Form.
         All field values will be null.
     """
-    enforce_candidate_identity(job_applicant_id=job_applicant_id)
-    onboarding_name = _get_onboarding_name_by_job_applicant(job_applicant_id)
-    doc = frappe.get_doc("Employee Onboarding", onboarding_name) if onboarding_name else None
+    applicant_name = _resolve_candidate_applicant(job_applicant_id)
+    if not applicant_name:
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
 
-    portal_rows, form_source = _get_onboarding_portal_rows(doc)
+    onboarding_name = _get_onboarding_name_by_job_applicant(applicant_name)
+    doc = frappe.get_doc("Employee Onboarding", onboarding_name) if onboarding_name else None
+    pre_release = _get_active_pre_release(applicant_name)
+    applicant_doc = frappe.get_doc("Job Applicant", applicant_name)
+
+    portal_rows, form_source = _get_onboarding_portal_rows(doc, pre_release)
 
     if not portal_rows:
         frappe.local.response["http_status_code"] = 404
@@ -754,11 +793,12 @@ def get_candidate_portal_form(job_applicant_id):
 
     return {
         "status": "success",
-        "job_applicant": job_applicant_id,
+        "job_applicant": applicant_name,
         "form_source": form_source,
         "onboarding_name": doc.name if doc else None,
+        "pre_release_name": pre_release["name"] if pre_release else None,
         "boarding_status": doc.boarding_status if doc else None,
-        "tabs": _build_tabbed_response(portal_rows, meta_lookup, doc),
+        "tabs": _build_tabbed_response(portal_rows, meta_lookup, doc, applicant_doc),
     }
 
 
@@ -775,15 +815,24 @@ def save_candidate_portal_data(job_applicant_id, data):
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Data must be a JSON object.")}
 
-    enforce_candidate_identity(job_applicant_id=job_applicant_id)
-    onboarding_name = _get_onboarding_name_by_job_applicant(job_applicant_id)
+    applicant_name = _resolve_candidate_applicant(job_applicant_id)
+    if not applicant_name:
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
+
+    onboarding_name = _get_onboarding_name_by_job_applicant(applicant_name)
+    pre_release = _get_active_pre_release(applicant_name)
 
     if not onboarding_name:
-        frappe.local.response["http_status_code"] = 404
-        return {"status": "error", "message": _(f"Employee Onboarding for '{job_applicant_id}' not found.")}
+        if not pre_release:
+            frappe.local.response["http_status_code"] = 404
+            return {"status": "error", "message": _(f"No onboarding form pending for '{job_applicant_id}'.")}
+        release_doc = frappe.get_doc("Pre Onboarding Release", pre_release["name"])
+        onboarding_name = release_doc.materialize_onboarding()
+        pre_release = None  # materialized; no longer "active"
 
     onboarding_doc = frappe.get_doc("Employee Onboarding", onboarding_name)
-    portal_rows, _ = _get_onboarding_portal_rows(onboarding_doc)
+    portal_rows, _ = _get_onboarding_portal_rows(onboarding_doc, pre_release)
 
     # Only allow editing fields where approval_status is Pending or Rejected
     _EDITABLE_STATUSES = frozenset({"Pending", "Rejected"})

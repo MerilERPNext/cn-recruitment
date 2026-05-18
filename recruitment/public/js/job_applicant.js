@@ -1068,3 +1068,35 @@ frappe.ui.form.on('Job Applicant', {
         }, __('Actions'));
     }
 });
+
+
+frappe.ui.form.on('Job Applicant', {
+    refresh(frm) {
+        if (frm.doc.__islocal || frm.doc.status !== 'Accepted') return;
+
+        frm.add_custom_button(__('Create Pre Onboarding Release'), () => {
+            frappe.db.get_value(
+                'Pre Onboarding Release',
+                { job_applicant: frm.doc.name, status: ['!=', 'Onboarding Created'] },
+                'name'
+            ).then(({ message }) => {
+                if (message && message.name) {
+                    frappe.set_route('Form', 'Pre Onboarding Release', message.name);
+                    return;
+                }
+                frappe.db.get_list('Job Offer', {
+                    filters: { job_applicant: frm.doc.name, status: 'Accepted' },
+                    fields: ['name'],
+                    order_by: 'creation desc',
+                    limit: 1,
+                }).then((rows) => {
+                    const offer = rows && rows[0] && rows[0].name;
+                    frappe.new_doc('Pre Onboarding Release', Object.assign(
+                        { job_applicant: frm.doc.name },
+                        offer ? { job_offer: offer } : {}
+                    ));
+                });
+            });
+        }, __('Actions'));
+    }
+});
