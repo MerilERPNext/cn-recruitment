@@ -220,7 +220,7 @@ def get_job_applicant(job_applicant):
 
 
 @candidate_required
-def submit_draft(job_applicant_email, job_opening):
+def submit_draft(job_applicant_email, job_opening, form_data=None):
     if not job_applicant_email:
         return _err("job_applicant_email is required.", 400)
     if not job_opening:
@@ -230,16 +230,46 @@ def submit_draft(job_applicant_email, job_opening):
     opening = job_opening.strip()
     enforce_candidate_identity(email=email)
 
-    name = _find_draft(email, opening)
-    if not name:
+    if not frappe.db.exists("Job Opening", opening):
+        return _err(f"No Job Opening found with name '{opening}'.", 404)
+
+    try:
+        payload = _coerce_form_data(form_data)
+    except ValueError as e:
+        return _err(str(e), 400)
+
+    existing_draft = _find_draft(email, opening)
+    existing_submitted = frappe.db.get_value(
+        APPLICANT_DOCTYPE,
+        {"email_id": email, "job_title": opening, "status": ["!=", DRAFT_STATUS]},
+        "name",
+        order_by="modified desc",
+    )
+    if existing_submitted:
         return _err(
-            f"No Draft Application exists for '{email}' and Job Opening '{opening}'.", 404
+            f"An application already exists for '{email}' and Job Opening '{opening}': {existing_submitted}.",
+            409,
         )
 
     try:
-        doc = frappe.get_doc(APPLICANT_DOCTYPE, name)
+        if existing_draft:
+            doc = frappe.get_doc(APPLICANT_DOCTYPE, existing_draft)
+            created = False
+        else:
+            doc = frappe.new_doc(APPLICANT_DOCTYPE)
+            created = True
+
+        _apply_form_data(doc, payload)
+
+        doc.email_id = email
+        doc.job_title = opening
         doc.status = SUBMIT_STATUS
-        doc.save(ignore_permissions=True)
+
+        if created:
+            doc.insert(ignore_permissions=True)
+        else:
+            doc.save(ignore_permissions=True)
+
         frappe.db.commit()
     except Exception as e:
         frappe.db.rollback()
@@ -247,12 +277,13 @@ def submit_draft(job_applicant_email, job_opening):
         return _err(f"Unable to submit Draft Application: {type(e).__name__}: {e}", 500)
 
     return _ok(
-        "Job Applicant submitted from Draft Application.",
+        "Job Applicant submitted." if created else "Job Applicant submitted from Draft Application.",
         {
             "job_applicant": doc.name,
             "job_applicant_email": email,
             "job_opening": opening,
-            "draft_name": doc.name,
+            "draft_name": existing_draft,
+            "created": created,
         },
         http=201,
     )
