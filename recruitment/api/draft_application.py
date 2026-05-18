@@ -9,6 +9,7 @@ from recruitment.api.candidate_auth import (
 APPLICANT_DOCTYPE = "Job Applicant"
 DRAFT_STATUS = "Draft"
 SUBMIT_STATUS = "Open"
+ALLOWED_STATUSES = {DRAFT_STATUS, SUBMIT_STATUS}
 
 
 def _ok(message, data, http=200):
@@ -22,18 +23,37 @@ def _err(message, http=400):
 
 
 def _opening_context(opening_name):
+    if not opening_name:
+        return {"job_title": None, "company": None, "location": None, "experience": None, "employment_type": None}
+
     opening = frappe.db.get_value(
         "Job Opening",
         opening_name,
-        ["designation", "company", "custom_location", "custom_experience_range", "custom_employee_type"],
+        ["designation", "company", "location", "employment_type", "job_requisition"],
         as_dict=True,
     ) or {}
+
+    experience = None
+    req = opening.get("job_requisition")
+    if req:
+        req_row = frappe.db.get_value(
+            "Job Requisition",
+            req,
+            ["custom_experience_range_from", "custom_experience_range_to", "custom_experience_unit"],
+            as_dict=True,
+        ) or {}
+        lo, hi, unit = req_row.get("custom_experience_range_from"), req_row.get("custom_experience_range_to"), req_row.get("custom_experience_unit")
+        if lo and hi:
+            experience = f"{lo}-{hi} {unit or ''}".strip()
+        elif lo:
+            experience = f"{lo}+ {unit or ''}".strip()
+
     return {
         "job_title": opening.get("designation"),
         "company": opening.get("company"),
-        "location": opening.get("custom_location"),
-        "experience": opening.get("custom_experience_range"),
-        "employment_type": opening.get("custom_employee_type"),
+        "location": opening.get("location"),
+        "experience": experience,
+        "employment_type": opening.get("employment_type"),
     }
 
 
@@ -124,7 +144,7 @@ def _apply_form_data(doc, payload):
 
 
 @candidate_required
-def save_draft(job_applicant_email, job_opening, form_data=None):
+def save_draft(job_applicant_email, job_opening, form_data=None, status=DRAFT_STATUS):
     if not job_applicant_email:
         return _err("job_applicant_email is required.", 400)
     if not job_opening:
@@ -132,6 +152,13 @@ def save_draft(job_applicant_email, job_opening, form_data=None):
 
     email = job_applicant_email.strip()
     opening = job_opening.strip()
+    target_status = (status or DRAFT_STATUS).strip()
+    if target_status not in ALLOWED_STATUSES:
+        return _err(
+            f"status must be one of {sorted(ALLOWED_STATUSES)}; got '{target_status}'.",
+            400,
+        )
+
     enforce_candidate_identity(email=email)
 
     if not frappe.db.exists("Job Opening", opening):
@@ -142,11 +169,24 @@ def save_draft(job_applicant_email, job_opening, form_data=None):
     except ValueError as e:
         return _err(str(e), 400)
 
-    existing = _find_draft(email, opening)
+    existing_draft = _find_draft(email, opening)
+
+    if target_status == SUBMIT_STATUS:
+        existing_submitted = frappe.db.get_value(
+            APPLICANT_DOCTYPE,
+            {"email_id": email, "job_title": opening, "status": ["!=", DRAFT_STATUS]},
+            "name",
+            order_by="modified desc",
+        )
+        if existing_submitted:
+            return _err(
+                f"An application already exists for '{email}' and Job Opening '{opening}': {existing_submitted}.",
+                409,
+            )
 
     try:
-        if existing:
-            doc = frappe.get_doc(APPLICANT_DOCTYPE, existing)
+        if existing_draft:
+            doc = frappe.get_doc(APPLICANT_DOCTYPE, existing_draft)
             created = False
         else:
             doc = frappe.new_doc(APPLICANT_DOCTYPE)
@@ -156,7 +196,7 @@ def save_draft(job_applicant_email, job_opening, form_data=None):
 
         doc.email_id = email
         doc.job_title = opening
-        doc.status = DRAFT_STATUS
+        doc.status = target_status
 
         if created:
             doc.insert(ignore_permissions=True)
@@ -164,13 +204,20 @@ def save_draft(job_applicant_email, job_opening, form_data=None):
             doc.save(ignore_permissions=True)
 
         frappe.db.commit()
-    except Exception:
+    except Exception as e:
         frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "Draft Application save_draft failed")
+        if target_status == SUBMIT_STATUS:
+            return _err(f"Unable to submit application: {type(e).__name__}: {e}", 500)
         return _err("Unable to save Draft Application right now.", 500)
 
+    if target_status == DRAFT_STATUS:
+        message = "Draft Application created." if created else "Draft Application updated."
+    else:
+        message = "Job Applicant submitted." if created else "Job Applicant submitted from Draft Application."
+
     return _ok(
-        "Draft Application created." if created else "Draft Application updated.",
+        message,
         _serialize_draft(doc),
         http=201 if created else 200,
     )
@@ -217,76 +264,6 @@ def get_job_applicant(job_applicant):
         return _err("Not allowed to access this Job Applicant.", 403)
 
     return _ok("Job Applicant fetched.", doc.as_dict(convert_dates_to_str=True))
-
-
-@candidate_required
-def submit_draft(job_applicant_email, job_opening, form_data=None):
-    if not job_applicant_email:
-        return _err("job_applicant_email is required.", 400)
-    if not job_opening:
-        return _err("job_opening is required.", 400)
-
-    email = job_applicant_email.strip()
-    opening = job_opening.strip()
-    enforce_candidate_identity(email=email)
-
-    if not frappe.db.exists("Job Opening", opening):
-        return _err(f"No Job Opening found with name '{opening}'.", 404)
-
-    try:
-        payload = _coerce_form_data(form_data)
-    except ValueError as e:
-        return _err(str(e), 400)
-
-    existing_draft = _find_draft(email, opening)
-    existing_submitted = frappe.db.get_value(
-        APPLICANT_DOCTYPE,
-        {"email_id": email, "job_title": opening, "status": ["!=", DRAFT_STATUS]},
-        "name",
-        order_by="modified desc",
-    )
-    if existing_submitted:
-        return _err(
-            f"An application already exists for '{email}' and Job Opening '{opening}': {existing_submitted}.",
-            409,
-        )
-
-    try:
-        if existing_draft:
-            doc = frappe.get_doc(APPLICANT_DOCTYPE, existing_draft)
-            created = False
-        else:
-            doc = frappe.new_doc(APPLICANT_DOCTYPE)
-            created = True
-
-        _apply_form_data(doc, payload)
-
-        doc.email_id = email
-        doc.job_title = opening
-        doc.status = SUBMIT_STATUS
-
-        if created:
-            doc.insert(ignore_permissions=True)
-        else:
-            doc.save(ignore_permissions=True)
-
-        frappe.db.commit()
-    except Exception as e:
-        frappe.db.rollback()
-        frappe.log_error(frappe.get_traceback(), "Draft Application submit_draft failed")
-        return _err(f"Unable to submit Draft Application: {type(e).__name__}: {e}", 500)
-
-    return _ok(
-        "Job Applicant submitted." if created else "Job Applicant submitted from Draft Application.",
-        {
-            "job_applicant": doc.name,
-            "job_applicant_email": email,
-            "job_opening": opening,
-            "draft_name": existing_draft,
-            "created": created,
-        },
-        http=201,
-    )
 
 
 @candidate_required
