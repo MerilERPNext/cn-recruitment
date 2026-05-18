@@ -449,7 +449,7 @@ const RequestDetails: React.FC = () => {
                 }`}
             >
               <div className="border-t border-gray-100">
-                <FlowTable data={data} />
+                <FlowTable data={data} noPadding={true} />
               </div>
             </div>
           </div>
@@ -506,7 +506,7 @@ const RequestDetails: React.FC = () => {
                   }`}
               >
                 <div className="border-t border-gray-200">
-                  <WorkflowTable data={data} />
+                  <WorkflowTable data={data} noPadding={true} />
                 </div>
               </div>
             </div>

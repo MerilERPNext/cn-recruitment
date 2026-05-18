@@ -24,6 +24,9 @@ const CardTable = ({
   children,
   columnSortConfig = [],
   onSortChange,
+  noBorder = false,
+  noShadow = false,
+  noRound = false,
 }: {
   titles: ReactNode[];
   columnWidths?: string[];
@@ -31,6 +34,9 @@ const CardTable = ({
   columnSortConfig?: ColumnSortConfig[];
   /** Optional callback — use when you need the parent to react to sort changes (e.g. server-side sort). */
   onSortChange?: (field: string, direction: SortDirection) => void;
+  noBorder?: boolean;
+  noShadow?: boolean;
+  noRound?: boolean;
 }) => {
   const { isDesktop } = useScreenSize();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -83,14 +89,18 @@ const CardTable = ({
     ? columnWidths.join(" ")
     : `repeat(${titles.length}, 1fr)`;
 
+  const borderClass = noBorder ? "" : "md:border border-gray-100";
+  const shadowClass = noShadow ? "" : "shadow-sm";
+  const roundClass = noRound ? "" : "rounded-lg";
+
   return (
     <CardTableSortContext.Provider value={{ sortState, columnSortConfig }}>
-      <div className="bg-white rounded-lg shadow-sm md:border border-gray-100 flex flex-col max-h-full">
+      <div className={`bg-white flex flex-col max-h-full ${roundClass} ${shadowClass} ${borderClass}`}>
         <div
           ref={scrollRef}
           className={
             isDesktop
-              ? "overflow-x-auto rounded-lg bg-white shadow-sm flex flex-col h-full"
+              ? `overflow-x-auto bg-white flex flex-col h-full ${roundClass} ${shadowClass}`
               : "flex flex-col h-full"
           }
           style={
