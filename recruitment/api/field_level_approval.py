@@ -33,6 +33,10 @@ VALID_STATUSES = frozenset({"Pending", "Filled", "Approved", "Rejected"})
 
 def _get_child_meta_fields(child_doctype):
     """Returns user-facing field defs from a child doctype."""
+    if not child_doctype:
+        return []
+    if not frappe.db.exists("DocType", child_doctype):
+        return []
     try:
         meta = frappe.get_meta(child_doctype)
     except Exception:

@@ -357,6 +357,10 @@ def release_pre_onboarding(job_applicant_id, data):
 
     # Create the draft Employee Onboarding immediately so the candidate's submissions
     # land on a pre-existing draft instead of materializing one lazily on first save.
+    # The EO's after_insert hook (sync_onboarding_action_item) creates the candidate's
+    # Action Center Item referencing the Employee Onboarding — we don't add a second
+    # item against Job Applicant here. If materialization fails, fall back to a JA-tied
+    # item so the candidate still has an entry point.
     employee_onboarding_name = None
     try:
         from recruitment.api.candidate_portal import materialize_onboarding_from_applicant
@@ -364,7 +368,7 @@ def release_pre_onboarding(job_applicant_id, data):
     except Exception:
         frappe.log_error(frappe.get_traceback(), "release_pre_onboarding: materialize_onboarding failed")
 
-    if applicant.email_id:
+    if not employee_onboarding_name and applicant.email_id:
         _upsert_minimal_item(
             candidate_email=applicant.email_id,
             reference_doctype="Job Applicant",
