@@ -7,12 +7,19 @@ import HeaderBar from '../HeaderBar';
 import { GoalModelProvider } from './GoalModelContext';
 type TabName =
     "Overview"
+    | "My Goals"
+    | "Self Review" | "Peer Nomination"
+    | "Feedback"
     | "New Goal Plan"
     | "Performance Review";
 
 
 const tabRoutes: Record<TabName, string> = {
     Overview: "/webapp/performance-app/overview",
+    "My Goals": "/webapp/performance-app/my-goals",
+    "Self Review": "/webapp/performance-app/review",
+    "Peer Nomination": "/webapp/performance-app/review/peer-nomination",
+    Feedback: "/webapp/performance-app/feedback",
     "New Goal Plan": "/webapp/performance-app/new-goal-plan",
     "Performance Review": "/webapp/performance-app/performance-review",
 };
