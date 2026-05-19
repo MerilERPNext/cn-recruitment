@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
-import { CheckCircle, Clock, Sparkles, Plus } from 'lucide-react';
+import React, { useState, Suspense, lazy } from 'react';
+import { Sparkles } from 'lucide-react';
 import { Typography } from '../../shared/atoms/Typography';
 import Button from '../../shared/atoms/Button';
-import Badge from '../../shared/Badge';
+
+const SelfReviewSidebar = lazy(() => import('./components/SelfReviewSidebar').then(m => ({ default: m.SelfReviewSidebar })));
+const AchievementCard = lazy(() => import('./components/AchievementCard').then(m => ({ default: m.AchievementCard })));
+const SelfReviewRightSidebar = lazy(() => import('./components/SelfReviewRightSidebar').then(m => ({ default: m.SelfReviewRightSidebar })));
 
 const Review = () => {
   const [achievements] = useState([
@@ -28,75 +31,11 @@ const Review = () => {
 
   return (
     <div className="min-h-full bg-[#f8fafc] overflow-y-scroll p-4 sm:p-6 font-sans">
+      <Suspense fallback={<div className="p-6 text-center text-gray-500">Loading...</div>}>
       <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row gap-6">
         
         {/* Left Sidebar */}
-        <div className={`w-full xl:w-64 shrink-0 flex flex-col gap-6`}>
-           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-              <Typography variant="caption" className="text-gray-500 font-semibold tracking-wider mb-4 block">SELF-REVIEW</Typography>
-              
-              <div className="flex flex-col gap-1">
-                 {/* Step 1 */}
-                 <div className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-3">
-                       <CheckCircle className="w-5 h-5 text-green-500" />
-                       <Typography variant="bodyMedium" className="text-gray-700">Goals & KRs</Typography>
-                    </div>
-                    <Typography variant="caption" className="text-gray-400">5Q</Typography>
-                 </div>
-                 
-                 {/* Step 2 (Active) */}
-                 <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 cursor-pointer">
-                    <div className="flex items-center gap-3">
-                       <div className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">2</div>
-                       <Typography variant="bodyMedium" className="text-blue-700 font-semibold">Achievements</Typography>
-                    </div>
-                    <Typography variant="caption" className="text-blue-500">3Q</Typography>
-                 </div>
-
-                 {/* Step 3 */}
-                 <div className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-3">
-                       <div className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">3</div>
-                       <Typography variant="bodyMedium" className="text-gray-600">Development Plan</Typography>
-                    </div>
-                    <Typography variant="caption" className="text-gray-400">4Q</Typography>
-                 </div>
-
-                 {/* Step 4 */}
-                 <div className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-3">
-                       <div className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">4</div>
-                       <Typography variant="bodyMedium" className="text-gray-600">Career Aspirations</Typography>
-                    </div>
-                    <Typography variant="caption" className="text-gray-400">2Q</Typography>
-                 </div>
-
-                 {/* Step 5 */}
-                 <div className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-3">
-                       <div className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">5</div>
-                       <Typography variant="bodyMedium" className="text-gray-600">Overall Comments</Typography>
-                    </div>
-                    <Typography variant="caption" className="text-gray-400">1Q</Typography>
-                 </div>
-              </div>
-
-              <div className="mt-8 pt-4 border-t border-gray-100">
-                 <div className="flex justify-between items-center mb-2">
-                    <Typography variant="caption" className="text-gray-600">Progress</Typography>
-                    <Typography variant="caption" className="text-gray-900 font-semibold">1 of 5 done</Typography>
-                 </div>
-                 <div className="w-full bg-gray-100 rounded-md h-1.5 mb-3">
-                    <div className="bg-blue-500 h-1.5 rounded-md" style={{ width: '20%' }}></div>
-                 </div>
-                 <div className="flex items-center gap-1.5 text-gray-400">
-                    <Clock className="w-3.5 h-3.5" />
-                    <Typography variant="caption">Autosaved 12s ago</Typography>
-                 </div>
-              </div>
-           </div>
-        </div>
+        <SelfReviewSidebar />
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col gap-4 min-w-0">
@@ -120,89 +59,15 @@ const Review = () => {
 
            {/* Form Cards */}
            {achievements.map((achievement) => (
-             <div key={achievement.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
-                <div className="flex justify-between items-start mb-4">
-                   <label className="block text-sm font-medium text-gray-700">
-                      Achievement title <span className="text-red-500">*</span>
-                   </label>
-                   <Button variant="outline" bgColor="text" size="sm" className="text-gray-600 h-8">Remove</Button>
-                </div>
-                <input 
-                  type="text" 
-                  value={achievement.title}
-                  readOnly
-                  className="w-full border border-gray-200 rounded-lg p-3 text-gray-900 mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white" 
-                />
-
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                   Impact & evidence <span className="text-red-500">*</span>
-                </label>
-                <textarea 
-                  value={achievement.impact}
-                  readOnly
-                  rows={4}
-                  className="w-full border border-gray-200 rounded-lg p-3 text-gray-900 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none bg-white" 
-                />
-                
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                   <button className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 transition-colors text-sm font-medium text-left">
-                      <Plus className="w-4 h-4 shrink-0" /> <span className="whitespace-normal sm:whitespace-nowrap">Attach evidence (Figma, doc, dashboard)</span>
-                   </button>
-                   <Typography variant="caption" className="text-gray-400 self-end sm:self-auto">{achievement.chars} / 1000</Typography>
-                </div>
-             </div>
+             <AchievementCard key={achievement.id} achievement={achievement} />
            ))}
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-full xl:w-80 shrink-0 flex flex-col gap-4">
-           {/* AI Highlight */}
-           <div className="bg-purple-50/50 rounded-xl border border-purple-100 p-5">
-              <div className="flex items-center gap-2 mb-3 text-purple-700 font-semibold text-sm tracking-wide">
-                 <Sparkles className="w-4 h-4" /> AI HIGHLIGHT
-              </div>
-              <Typography variant="bodyMedium" className="text-gray-700 leading-relaxed">
-                 From your 11 check-ins this quarter, the achievement most-mentioned by peers is the <span className="font-semibold text-gray-900">Oxygen 2.0 dashboard rebuild</span> — 6 of 4 peer reviewers cited it as their top callout.
-              </Typography>
-           </div>
-
-           {/* Reviewer Visibility */}
-           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-              <Typography variant="caption" className="text-gray-500 font-semibold tracking-wider mb-4 block">REVIEWER VISIBILITY</Typography>
-              
-              <div className="flex flex-col gap-5">
-                 <div>
-                    <Typography variant="bodyMedium" className="font-semibold text-gray-900">Rohit Khanna &middot; Manager</Typography>
-                    <Typography variant="caption" className="text-gray-500 mt-0.5 block">Sees: All sections</Typography>
-                 </div>
-                 <div>
-                    <Typography variant="bodyMedium" className="font-semibold text-gray-900">Aditi Sharma &middot; Skip</Typography>
-                    <Typography variant="caption" className="text-gray-500 mt-0.5 block">Sees: Manager rating + comments</Typography>
-                 </div>
-                 <div>
-                    <Typography variant="bodyMedium" className="font-semibold text-gray-900">Peers (4)</Typography>
-                    <Typography variant="caption" className="text-gray-500 mt-0.5 block">Sees: Achievements + Development only</Typography>
-                 </div>
-              </div>
-           </div>
-
-           {/* Last Cycle */}
-           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-              <Typography variant="caption" className="text-gray-500 font-semibold tracking-wider mb-4 block">LAST CYCLE (FY25)</Typography>
-              
-              <div className="flex items-center gap-3 mb-4">
-                 <Badge label="Exceeds · 4/5" variant="success" size="md" />
-                 <Typography variant="caption" className="text-gray-500 leading-tight">Final &middot; Released 12 Apr<br/>2025</Typography>
-              </div>
-
-              <Typography variant="bodyMedium" className="text-gray-600 italic leading-relaxed">
-                 "Pallavi consistently demonstrates Learner's Mindset; ready to step into senior leadership."
-              </Typography>
-              <Typography variant="caption" className="text-gray-400 mt-3 block">— Rohit Khanna</Typography>
-           </div>
-        </div>
+        <SelfReviewRightSidebar />
 
       </div>
+      </Suspense>
     </div>
   );
 };
