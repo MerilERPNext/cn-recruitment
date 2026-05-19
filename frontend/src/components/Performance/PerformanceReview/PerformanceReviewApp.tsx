@@ -24,7 +24,7 @@ const PerformanceReviewApp = () => {
           </div>
           
           <div className={`bg-white/20 border border-white/20 rounded-xl p-6 flex flex-col items-center justify-center ${isMobile ? 'w-full' : 'w-auto min-w-[200px]'} z-10`}>
-            <Typography variant="caption" className="text-blue-100 text-xs font-bold uppercase tracking-widest mb-1">OVERALL RATING</Typography>
+            <Typography variant="caption" className="text-white text-xs font-bold uppercase tracking-widest mb-1">OVERALL RATING</Typography>
             <Typography variant="h1" className="text-4xl font-bold text-white mb-2">Exceeds</Typography>
             <Typography variant="bodyMedium" className="text-blue-100 text-sm font-medium">4 / 5</Typography>
           </div>
