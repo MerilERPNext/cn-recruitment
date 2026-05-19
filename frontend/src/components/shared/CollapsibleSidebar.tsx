@@ -413,6 +413,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Overview",
         },
         {
+          name: "Review",
+          icon: Goal,
+          href: "/webapp/performance-app/review",
+          permissionKey: "Overview",
+        },
+        {
           name: "New Goal Plan",
           icon: Goal,
           href: "/webapp/performance-app/new-goal-plan",
