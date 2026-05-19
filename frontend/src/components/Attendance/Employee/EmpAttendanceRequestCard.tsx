@@ -19,6 +19,7 @@ import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import Tooltip from "../../shared/Tooltip";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
+import { useQueryClient } from "@tanstack/react-query";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -33,6 +34,8 @@ const EmpAttendanceRequestCard = ({
   const [isActed, setIsActed] = useState(false);
   const { isDesktop } = useScreenSize();
   const loading = useLoadingOverlay();
+  const queryClient = useQueryClient();
+
   const handleRevokeClick = () => {
     if (data?.todo_id) {
       loading?.show("Revoking Request...");
@@ -49,6 +52,10 @@ const EmpAttendanceRequestCard = ({
               setRefetchAttendance(true);
             }, 2000);
             toast.success("Attendance Request Revoked Successfully!");
+            queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+            queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+            queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+            queryClient.invalidateQueries({ queryKey: ["attendance-requests"] });
           },
           onError: (error) => {
             const formatedError = errorResponseFormater(error);
@@ -61,7 +68,6 @@ const EmpAttendanceRequestCard = ({
       );
     }
   };
-
   function getDays(from_date: string, to_date: string) {
     const format = "dd-MM-yyyy";
 

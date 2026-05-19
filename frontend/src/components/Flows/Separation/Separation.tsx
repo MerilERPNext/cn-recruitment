@@ -71,6 +71,7 @@ const Separation = () => {
 
 
   const item = separationFunnelDetails?.data?.[0];
+  const separationPending = item?.approval_status === "Pending";
 
   const reference_name = item?.workflow_stages?.[0]?.todo?.reference_name ?? null;
   const { data: separationType, isLoading: isLoadingSeparationType } = useGetEmployeeSeparationType(reference_name);
@@ -158,6 +159,7 @@ const Separation = () => {
     isViewingOtherUser &&
     !!termination_funnel_data?.name &&
     enabledActions.terminate &&
+    !separationPending &&
     !isLoadingSeparationType &&
     (!separationType?.custom_resignaion_type ||
       separationType.custom_resignaion_type !== "Termination" ||

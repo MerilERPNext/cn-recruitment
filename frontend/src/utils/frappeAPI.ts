@@ -40,8 +40,8 @@ const apiClient = axios.create({
     Accept: "application/json",
     ...(import.meta.env.DEV
       ? {
-          Authorization: "token " + import.meta.env.VITE_DEV_FRAPPE_API_TOKEN,
-        }
+        Authorization: "token " + import.meta.env.VITE_DEV_FRAPPE_API_TOKEN,
+      }
       : {}),
     // ✅ Safe check for csrf_token
     "X-Frappe-CSRF-Token":
@@ -60,12 +60,12 @@ apiClient.interceptors.request.use(
     ) {
       config.headers["X-Frappe-CSRF-Token"] = window.csrf_token;
     }
-    
+
     // Inject target employee ID header if set
     if (currentTargetEmployeeId) {
       config.headers["X-Target-Employee-Id"] = currentTargetEmployeeId;
     }
-    
+
     return config;
   },
   (error) => Promise.reject(error)
@@ -185,7 +185,7 @@ export const FrappeAPI = {
     const response = await apiClient.get(`/api/method/${method}`, { params });
     return response.data.message;
   },
-  
+
   callMethod: async (
     method: string,
     args: Record<string, unknown> = {}
@@ -272,13 +272,13 @@ export const FrappeAPI = {
     _docname?: string,
     _doctype?: string,
     _folder?: string,
-    _is_private?: string
+    _is_private = "1",
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): Promise<{ file_url: string; name: string; [key: string]: any }> => {
+  ): Promise<{ file_url: string; name: string;[key: string]: any }> => {
     const formData = new FormData();
     formData.append("file", file, _file_name || file.name);
+    formData.append("is_private", _is_private);
     if (_file_name) formData.append("file_name", _file_name);
-    if (_is_private) formData.append("is_private", _is_private);
     if (_doctype) formData.append("doctype", _doctype);
     if (_folder) formData.append("folder", _folder);
     if (_docname) formData.append("docname", _docname);

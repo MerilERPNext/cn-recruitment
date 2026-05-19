@@ -20,7 +20,7 @@
                 "required": true
             },
             "valueProperty": "name",
-            "template": "<span>{{ item.employee_name }} ({{item.name}})</span>",
+            "template": "<span><div>{{ item.employee_name || '-' }} ({{ item.name || '-' }})</div><div style=\"font-size:0.85em;color:#6b7280;\">{{ item.department ||'' }}, {{item.branch || ''}}</div></span>",
             "selectValues": "data",
             "lazyLoad": false
         },

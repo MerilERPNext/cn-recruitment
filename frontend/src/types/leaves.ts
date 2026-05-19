@@ -15,13 +15,17 @@ export interface LeaveRequest {
   custom_reason?: string;
   custom_rejection_reason?: string;
   half_day: boolean;
-  custom_attachment?: { url: string }[];
+  custom_attachment?:
+    | string
+    | string[]
+    | { url?: string; file_url?: string; name?: string }[];
   half_day_date?: string;
   custom_second_half_day_date?: string;
   total_leave_days: number;
   posting_date: string;
   reason_name?: string;
   docstatus: number;
+  creation?: string;
 }
 
 export interface TeamLeaveRequest {
@@ -173,6 +177,51 @@ export interface LeaveFieldFlags {
   show_individual_continuous?: number;
 }
 
+export interface FormSubmissionData {
+  leaveType?: string;
+  fromDate?: string;
+  toDate?: string;
+  halfDay?: boolean;
+  half_day?: 0 | 1;
+  halfDayOption?: "First Half" | "Second Half";
+  description?: string;
+  half_day_date?: string;
+  custom_second_half_day_date?: string;
+  attachment?:
+    | string
+    | string[]
+    | { url?: string; file_url?: string; name?: string }[];
+  custom_reason?: string;
+  custom_attachment?: unknown[];
+}
+
+export interface RequestLeaveProps {
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+export interface RequestLeaveDefaults {
+  fromDate?: string;
+  toDate?: string;
+  leaveType?: string;
+  leaveTypeName?: string;
+  halfDay?: boolean;
+  halfDayOption?: "First Half" | "Second Half";
+  half_day_date?: string;
+  custom_second_half_day_date?: string;
+  description?: string;
+  custom_reason?: string;
+  custom_attachment?:
+    | string
+    | string[]
+    | { url?: string; file_url?: string; name?: string }[];
+  source?: "holiday" | "balances" | "other";
+  hideHalfDayToggle?: boolean;
+  isEdit?: boolean;
+  isResubmit?: boolean;
+  leave_application?: string;
+}
+
 export interface LeaveFieldResponse {
   show: LeaveFieldFlags;
   mandatory: LeaveFieldFlags;
@@ -197,6 +246,7 @@ export interface LeaveReason {
 //Leave requestType
 export interface MyLeaveRequestType {
   reference_document: LeaveRequest;
+  attachments?: { file_url?: string; url?: string; name?: string }[];
   allocated_to: string[];
   role_assigned_users?: RoleAssignedUsersType[];
   allocated_roles?: string[];
@@ -302,7 +352,7 @@ export type EditApprovedLeavePayload = {
     custom_second_half_day_date?: string;
     description?: string;
     custom_reason?: string;
-    custom_attachment?: string | string[];
+    custom_attachment?: string | string[] | null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
   };

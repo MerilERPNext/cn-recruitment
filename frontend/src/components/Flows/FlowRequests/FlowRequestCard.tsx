@@ -129,13 +129,13 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
                                 />
                             )} */}
                             {pendingApprovalAllocatedTo && (
-                            <MobileAllocatedTo
-                                users={pendingApprovalAllocatedTo?.allocated_to}
-                                RoleAssignedUsers={pendingApprovalAllocatedTo?.role_assigned_users}
-                                align="right"
-                                showLabel={false}
-                            />
-                        )}
+                                <MobileAllocatedTo
+                                    users={pendingApprovalAllocatedTo?.allocated_to}
+                                    RoleAssignedUsers={pendingApprovalAllocatedTo?.role_assigned_users}
+                                    align="right"
+                                    showLabel={false}
+                                />
+                            )}
                         </div>
                         <div className="flex flex-col gap-1 items-end">
                             <Typography variant="caption" className="text-gray-500">
@@ -150,7 +150,7 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
     }
 
     return (
-        <div className="px-4 py-4 grid grid-cols-[1fr_1fr_150px_150px_150px_150px_150px] gap-4 text-center cursor-pointer hover:bg-blue-50" onClick={() => handleShowDetails(request)}>
+        <div className="px-4 py-3 grid grid-cols-[1fr_1fr_150px_150px_150px_150px_150px] gap-4 text-center cursor-pointer hover:bg-blue-50" onClick={() => handleShowDetails(request)}>
             <div>  <Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.flow_name}>{truncateByChars(request.flow_name, 40)}</Tooltip></Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.category}>{truncateByChars(request.category, 40)}</Tooltip></Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center">{formatToIndianDate(request.initiated_on)}</Typography></div>

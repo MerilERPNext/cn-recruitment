@@ -1,22 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-type RequestLeaveDefaults = {
-  fromDate?: string;
-  toDate?: string;
-  leaveType?: string;
-  leaveTypeName?: string;
-  halfDay?: boolean;
-  halfDayOption?: "First Half" | "Second Half";
-  half_day_date?: string;
-  custom_second_half_day_date?: string;
-  description?: string;
-  custom_reason?: string;
-  custom_attachment?: { url: string }[];
-  source?: "holiday" | "balances" | "other";
-  hideHalfDayToggle?: boolean;
-  isEdit?: boolean;
-  isResubmit?: boolean;
-  leave_application?: string;
-};
+import { RequestLeaveDefaults } from "../../types/leaves";
 
 type RequestLeaveModalContextType = {
   showModal: boolean;

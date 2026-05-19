@@ -659,7 +659,6 @@ const DataListView = <T extends BaseItem>({
     if (clientSortFn) {
       data = clientSortFn(data);
     }
-
     return data;
   }, [
     infiniteScroll,
@@ -670,7 +669,7 @@ const DataListView = <T extends BaseItem>({
     clientFilterFn,
     clientSortFn,
   ]);
-
+ 
   // Handle accumulating data for load more pagination
   useEffect(() => {
     if (loadMorePagination && loadMoreQueryResult.data?.data) {
@@ -1231,7 +1230,7 @@ const DataListView = <T extends BaseItem>({
                   onClick={() => onItemClick?.(item)}
                   className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
                     }`}
-                >
+                > 
                   {ItemComponent ? (
                     <ItemComponent item={item} index={index} />
                   ) : renderItem ? (

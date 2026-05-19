@@ -213,6 +213,17 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
     currentEmployee?.name !== undefined &&
     targetEmployeeId !== currentEmployee.name;
 
+  // Sync window.target_pw_user_id:
+  // - If impersonating another user, set it to the impersonated employee's ID
+  // - Otherwise, default to the logged-in employee's own ID (name field)
+  useEffect(() => {
+    if (isViewingOtherUser && targetEmployeeId) {
+      window.target_pw_user_id = targetEmployeeId;
+    } else {
+      window.target_pw_user_id = currentEmployee?.name ?? null;
+    }
+  }, [isViewingOtherUser, targetEmployeeId, currentEmployee?.name]);
+
   return (
     <ViewedUserContext.Provider
       value={{

@@ -99,7 +99,6 @@ const EmployeeAttendanceDetails = ({
     "Leave Application",
     isLeaveRecord && leaveApplicationName ? leaveApplicationName : null!,
   ) as { data: LeaveApplication | undefined };
-
   const effectiveEmployeeId =
     data?.employee || targetEmployeeId || currentEmployee?.employee;
 
@@ -509,7 +508,7 @@ const EmployeeAttendanceDetails = ({
             Leave Request
           </Button>
         )}
-        {showAttendanceBtn && (
+        {(showAttendanceBtn || leaveDetailsFromButtonStatusData?.some(leave => leave.status === 'Open')) && (
           <Button
             variant="soft"
             fullWidth
@@ -607,7 +606,7 @@ const AttendanceCard = ({ record }: { record: EmployeeCheckInLog }) => {
 
       <div className="space-y-1">
         <Typography variant="bodySmall" color="body2">
-          {format(new Date(record.time), "hh:mm a, dd/MM/yyyy")}
+          {formatToIndianDateWithTime(record.time)}
         </Typography>
       </div>
     </div>

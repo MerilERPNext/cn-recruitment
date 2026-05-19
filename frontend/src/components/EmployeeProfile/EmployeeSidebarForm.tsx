@@ -17,6 +17,16 @@ interface EditableField {
     rowIndex?: number;
 }
 
+const SAME_AS_CURRENT_ADDRESS_MAP: Record<string, string> = {
+    current_flat_no: "permanent_flat",
+    current_street: "permanent_street",
+    current_landmark: "permanent_landmark",
+    current_pincode: "permanent_pincode",
+    current_country: "permanent_country",
+    current_state: "permanent_state",
+    current_city: "permanent_city",
+};
+
 interface TabWithSchema {
     key: string;
     label: string;
@@ -269,6 +279,19 @@ const EmployeeSidebarForm = ({
                             onChange={(payload: any) => {
                                 if (payload.changed && !isInitializing.current) {
                                     setIsDirty(true);
+
+                                    if (payload.changed?.component?.key === "custom_same_as_current" && payload.changed.value === true) {
+                                        const storageKey = edit?.fieldname
+                                            ? `${edit.key}-${edit.fieldname}${edit.rowIndex !== undefined ? `-${edit.rowIndex}` : ""}`
+                                            : edit?.key || "";
+                                        const instance = formInstances.current[storageKey];
+                                        if (instance && payload.data) {
+                                            Object.entries(SAME_AS_CURRENT_ADDRESS_MAP).forEach(([currentKey, permanentKey]) => {
+                                                const comp = instance.getComponent(permanentKey);
+                                                if (comp) comp.setValue(payload.data[currentKey] || "");
+                                            });
+                                        }
+                                    }
                                 }
                             }}
                             onFormReady={(instance: any) => {
