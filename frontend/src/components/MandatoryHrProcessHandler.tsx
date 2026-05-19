@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useCurrentEmployeeDetails } from "../hooks/useEmployee";
 import { useMandatoryTasks } from "../hooks/useMandatoryTasks";
 import { ROUTES } from "../constants/routes";
+import { useFrappeDocumentCount } from "../hooks/useFrappeQuery";
 
 const SESSION_MANDATORY_HR_SHOWN_KEY = "mandatory_hr_page_shown";
 const SESSION_MANDATORY_HR_REDIRECT_TO_KEY = "mandatory_hr_redirect_to";
@@ -34,6 +35,25 @@ const MandatoryHrProcessHandler = () => {
     enabled: !!currentEmployee,
   });
 
+  const {
+    data: mandatoryPoliciesCount,
+    isFetching: isMandatoryPoliciesCountFetching,
+  } = useFrappeDocumentCount(
+    {
+      doctype: "Policy Details",
+      filters: [
+        ["status", "=", "Pending"],
+        ["employee_id", "=", currentEmployee?.name || ""],
+        ["sign_off_mandatory", "=", 1],
+        ["triggered_from_flow", "!=", 1],
+        ["due_date", ">=", new Date().toLocaleDateString('en-CA')],
+      ],
+    },
+    {
+      enabled: !!currentEmployee,
+    }
+  );
+
   const mandatoryTasks = useMemo(
     () => mandatoryResponse?.data ?? [],
     [mandatoryResponse?.data],
@@ -50,8 +70,17 @@ const MandatoryHrProcessHandler = () => {
     if (
       isCurrentEmployeeFetching ||
       isMandatoryTasksFetching ||
-      mandatoryResponse === undefined
+      mandatoryResponse === undefined ||
+      isMandatoryPoliciesCountFetching ||
+      mandatoryPoliciesCount === undefined
     ) {
+      return;
+    }
+
+    const onPoliciesPage = location.pathname.includes(ROUTES.POLICIES_ENFORCED);
+
+    // First complete hr policy then enforce hr process mandatory
+    if (mandatoryPoliciesCount > 0 || onPoliciesPage) {
       return;
     }
 
@@ -123,6 +152,8 @@ const MandatoryHrProcessHandler = () => {
     redirectTo,
     location.pathname,
     location.hash,
+    mandatoryPoliciesCount,
+    isMandatoryPoliciesCountFetching,
   ]);
 
   useEffect(() => {
