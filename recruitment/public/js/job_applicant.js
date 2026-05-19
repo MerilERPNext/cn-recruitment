@@ -1024,42 +1024,42 @@ frappe.ui.form.on('Job Applicant', {
         if (frm.doc.__islocal) return;
 
         frm.add_custom_button(__('Send Pre Offer Form'), () => {
-            const current = frm.doc.custom_pre_offer_portal_form || '';
-
             frappe.prompt(
                 [{
                     label: __('Pre Offer Portal Form'),
                     fieldname: 'form_name',
                     fieldtype: 'Link',
                     options: 'Job Applicant Portal Forms',
-                    default: current,
                     reqd: 1,
+                    description: __('Tip: call this action again to send additional forms; each one creates its own action item for the candidate.'),
                 }],
                 ({ form_name }) => {
-                    frm.set_value('custom_pre_offer_portal_form', form_name);
-                    frm.save().then(() => {
-                        frappe.call({
-                            method: 'recruitment.api.action_center.send_pre_offer_form',
-                            args: {
-                                job_applicant_id: frm.doc.name,
-                                form_name: form_name,
-                            },
-                            callback(r) {
-                                if (r.message && r.message.status === 'success') {
-                                    frappe.show_alert({
-                                        message: __('Pre Offer Form sent to candidate.'),
-                                        indicator: 'green',
-                                    });
-                                    frm.reload_doc();
-                                } else {
-                                    frappe.msgprint({
-                                        title: __('Error'),
-                                        indicator: 'red',
-                                        message: (r.message && r.message.message) || __('Failed to send Pre Offer Form.'),
-                                    });
+                    frappe.call({
+                        method: 'recruitment.api.action_center.send_pre_offer_form',
+                        args: {
+                            job_applicant_id: frm.doc.name,
+                            form_name: form_name,
+                        },
+                        freeze: true,
+                        freeze_message: __('Sending Pre Offer Form...'),
+                        callback(r) {
+                            if (r.message && r.message.status === 'success') {
+                                const skipped = (r.message.skipped || []);
+                                const sent = (r.message.sent || []);
+                                let msg = __('Pre Offer Form sent to candidate.');
+                                if (sent.length === 0 && skipped.length) {
+                                    msg = __('Form already sent — no change.');
                                 }
-                            },
-                        });
+                                frappe.show_alert({ message: msg, indicator: 'green' });
+                                frm.reload_doc();
+                            } else {
+                                frappe.msgprint({
+                                    title: __('Error'),
+                                    indicator: 'red',
+                                    message: (r.message && r.message.message) || __('Failed to send Pre Offer Form.'),
+                                });
+                            }
+                        },
                     });
                 },
                 __('Send Pre Offer Form'),
@@ -1074,29 +1074,93 @@ frappe.ui.form.on('Job Applicant', {
     refresh(frm) {
         if (frm.doc.__islocal || frm.doc.status !== 'Accepted') return;
 
-        frm.add_custom_button(__('Create Pre Onboarding Release'), () => {
-            frappe.db.get_value(
-                'Pre Onboarding Release',
-                { job_applicant: frm.doc.name, status: ['!=', 'Onboarding Created'] },
-                'name'
-            ).then(({ message }) => {
-                if (message && message.name) {
-                    frappe.set_route('Form', 'Pre Onboarding Release', message.name);
-                    return;
-                }
-                frappe.db.get_list('Job Offer', {
-                    filters: { job_applicant: frm.doc.name, status: 'Accepted' },
-                    fields: ['name'],
-                    order_by: 'creation desc',
-                    limit: 1,
-                }).then((rows) => {
-                    const offer = rows && rows[0] && rows[0].name;
-                    frappe.new_doc('Pre Onboarding Release', Object.assign(
-                        { job_applicant: frm.doc.name },
-                        offer ? { job_offer: offer } : {}
-                    ));
-                });
-            });
+        const label = frm.doc.custom_pre_onboarding_status === 'Released'
+            ? __('Update Pre Onboarding Release')
+            : __('Send Pre Onboarding Form');
+
+        frm.add_custom_button(label, () => {
+            recruitment.open_pre_onboarding_dialog(frm.doc.name, frm.doc, () => frm.reload_doc());
         }, __('Actions'));
     }
 });
+
+
+window.recruitment = window.recruitment || {};
+
+recruitment.open_pre_onboarding_dialog = function (job_applicant_id, prefill_doc, on_success) {
+    const prefill = prefill_doc || {};
+    const dlg = new frappe.ui.Dialog({
+        title: __('Send Pre Onboarding Form'),
+        fields: [
+            {
+                fieldname: 'onboarding_portal_form',
+                fieldtype: 'Link',
+                label: __('Onboarding Portal Form'),
+                options: 'Onboarding Portal Forms',
+                reqd: 1,
+                default: prefill.custom_onboarding_portal_form || ''
+            },
+            {
+                fieldname: 'bgv_vendor',
+                fieldtype: 'Link',
+                label: __('BGV Vendor'),
+                options: 'Supplier',
+                default: prefill.custom_bgv_vendor || ''
+            },
+            { fieldtype: 'Section Break', label: __('Contacts') },
+            {
+                fieldname: 'onboarding_buddy',
+                fieldtype: 'Link',
+                label: __('Onboarding Buddy'),
+                options: 'User',
+                default: prefill.custom_onboarding_buddy || ''
+            },
+            {
+                fieldname: 'joining_buddy',
+                fieldtype: 'Link',
+                label: __('Joining Buddy'),
+                options: 'User',
+                default: prefill.custom_joining_buddy || ''
+            },
+            { fieldtype: 'Column Break' },
+            {
+                fieldname: 'manager',
+                fieldtype: 'Link',
+                label: __('Manager'),
+                options: 'User',
+                default: prefill.custom_manager || ''
+            }
+        ],
+        primary_action_label: __('Release'),
+        primary_action(values) {
+            frappe.call({
+                method: 'recruitment.api.action_center.release_pre_onboarding',
+                args: { job_applicant_id, data: values },
+                freeze: true,
+                freeze_message: __('Releasing pre onboarding...'),
+                callback: (r) => {
+                    if (r.message && r.message.status === 'success') {
+                        frappe.show_alert({ message: r.message.message || __('Released.'), indicator: 'green' });
+                        dlg.hide();
+                        if (typeof on_success === 'function') on_success();
+                    }
+                }
+            });
+        }
+    });
+
+    if (!prefill.custom_onboarding_buddy && !prefill.custom_joining_buddy && !prefill.custom_manager) {
+        frappe.call({
+            method: 'recruitment.api.action_center.get_pre_onboarding_buddy_suggestions',
+            args: { job_applicant_id },
+            callback: (r) => {
+                const s = (r.message && r.message.suggestions) || {};
+                if (s.onboarding_buddy) dlg.set_value('onboarding_buddy', s.onboarding_buddy);
+                if (s.joining_buddy) dlg.set_value('joining_buddy', s.joining_buddy);
+                if (s.manager) dlg.set_value('manager', s.manager);
+            }
+        });
+    }
+
+    dlg.show();
+};

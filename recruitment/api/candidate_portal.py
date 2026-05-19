@@ -162,17 +162,135 @@ def _get_onboarding_portal_rows(onboarding_doc=None, pre_release=None):
 
 
 def _get_active_pre_release(job_applicant):
-    """Returns the latest Pre Onboarding Release for the applicant that has not yet
-    materialized an Employee Onboarding doc, as a dict, or None."""
+    """Returns a dict describing the applicant's released pre-onboarding state when
+    no Employee Onboarding has been materialized yet, or None.
+
+    The dict shape mirrors the legacy Pre Onboarding Release row:
+      {"name": <job_applicant_id>, "onboarding_portal_form": <form>}
+    `name` is the applicant ID since pre-release data now lives on Job Applicant.
+    """
     if not job_applicant:
         return None
-    return frappe.db.get_value(
-        "Pre Onboarding Release",
-        {"job_applicant": job_applicant, "employee_onboarding": ["is", "not set"]},
-        ["name", "onboarding_portal_form"],
+    row = frappe.db.get_value(
+        "Job Applicant",
+        job_applicant,
+        [
+            "custom_onboarding_portal_form",
+            "custom_pre_onboarding_status",
+            "custom_pre_onboarding_employee_onboarding",
+        ],
         as_dict=True,
+    )
+    if not row:
+        return None
+    if row.get("custom_pre_onboarding_employee_onboarding"):
+        return None
+    if (row.get("custom_pre_onboarding_status") or "") not in ("Released", "Draft"):
+        return None
+    if not row.get("custom_onboarding_portal_form"):
+        return None
+    return {
+        "name": job_applicant,
+        "onboarding_portal_form": row["custom_onboarding_portal_form"],
+    }
+
+
+_KEY_CONTACT_ROLES = (
+    ("custom_onboarding_buddy", "Onboarding Buddy"),
+    ("custom_joining_buddy", "Joining Buddy"),
+    ("custom_manager", "Manager"),
+)
+
+
+def _append_key_contact_rows(doc, applicant):
+    """Adds Onboarding Buddy / Joining Buddy / Manager rows to Employee Onboarding's
+    custom_key_contacts child table. Each role is a User on the applicant; we resolve
+    it to the matching Employee via Employee.user_id. Rows with no matching Employee
+    are skipped (the row needs an Employee link to satisfy the child schema)."""
+    existing = {
+        (row.employee, (row.role or "").strip())
+        for row in (doc.get("custom_key_contacts") or [])
+        if row.employee
+    }
+    for source_field, role_label in _KEY_CONTACT_ROLES:
+        user_id = applicant.get(source_field)
+        if not user_id:
+            continue
+        employee = frappe.db.get_value("Employee", {"user_id": user_id}, "name")
+        if not employee:
+            continue
+        if (employee, role_label) in existing:
+            continue
+        doc.append("custom_key_contacts", {"employee": employee, "role": role_label})
+        existing.add((employee, role_label))
+
+
+def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
+    """Creates the Employee Onboarding doc from the applicant's pre-onboarding fields,
+    stamps the release fields onto it, links back via custom_pre_onboarding_employee_onboarding,
+    and clears the action item.
+
+    If a draft EO already exists, refreshes BGV Vendor + custom_key_contacts (Onboarding/
+    Joining Buddy + Manager, resolved to Employee via user_id) from the applicant and returns
+    its name. Existing key-contact rows are preserved; only missing role/employee combinations
+    are appended.
+
+    Buddies/Manager (Users) are stored as rows in custom_key_contacts (resolved to Employee
+    via user_id), not as separate Link fields on Employee Onboarding."""
+    if not job_applicant_id:
+        return None
+
+    applicant = frappe.get_doc("Job Applicant", job_applicant_id)
+
+    existing_eo = applicant.get("custom_pre_onboarding_employee_onboarding")
+    if existing_eo:
+        try:
+            eo_doc = frappe.get_doc("Employee Onboarding", existing_eo)
+            if eo_doc.docstatus == 0:
+                if applicant.get("custom_bgv_vendor"):
+                    eo_doc.custom_bgv_vendor = applicant.get("custom_bgv_vendor")
+                _append_key_contact_rows(eo_doc, applicant)
+                eo_doc.save(ignore_permissions=True)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "materialize_onboarding_from_applicant: refresh existing EO failed")
+        return existing_eo
+
+    if not applicant.get("custom_onboarding_portal_form"):
+        frappe.throw(_("No Onboarding Portal Form has been released for this applicant."))
+
+    job_offer = frappe.db.get_value(
+        "Job Offer",
+        {"job_applicant": job_applicant_id, "status": "Accepted", "docstatus": ("<", 2)},
+        "name",
         order_by="creation desc",
     )
+
+    doc = frappe.new_doc("Employee Onboarding")
+    doc.job_applicant = job_applicant_id
+    if job_offer:
+        doc.job_offer = job_offer
+    doc.custom_onboarding_portal_form = applicant.custom_onboarding_portal_form
+    doc.custom_bgv_vendor = applicant.get("custom_bgv_vendor")
+
+    _append_key_contact_rows(doc, applicant)
+
+    prefill = prefill or {}
+    doj = prefill.get("date_of_joining") or prefill.get("custom_date_of_joining")
+    if doj:
+        doc.date_of_joining = doj
+    bbo = prefill.get("boarding_begins_on") or doc.date_of_joining
+    if bbo:
+        doc.boarding_begins_on = bbo
+
+    doc.insert(ignore_permissions=True)
+
+    from frappe.utils import now_datetime
+    applicant.db_set("custom_pre_onboarding_employee_onboarding", doc.name, update_modified=False)
+    applicant.db_set("custom_pre_onboarding_status", "Onboarding Created", update_modified=False)
+    if not applicant.get("custom_pre_onboarding_released_at"):
+        applicant.db_set("custom_pre_onboarding_released_at", now_datetime(), update_modified=False)
+
+    return doc.name
 
 
 def _get_job_applicant_portal_settings(job_applicant_id=None, job_opening=None, form_name=None):
@@ -590,33 +708,84 @@ def _resolve_candidate_applicant(provided, prefer_field=None):
     return provided
 
 
-def _get_pre_offer_portal_settings(job_applicant_id):
-    form_name = frappe.db.get_value("Job Applicant", job_applicant_id, "custom_pre_offer_portal_form")
-    if not form_name:
-        return [], None
+def _get_pre_offer_form_rows(applicant_name):
+    """Returns the list of pre-offer form rows from Job Applicant.custom_pre_offer_forms."""
+    return frappe.get_all(
+        "Job Applicant Pre Offer Form",
+        filters={"parent": applicant_name, "parenttype": "Job Applicant", "parentfield": "custom_pre_offer_forms"},
+        fields=["name", "portal_form", "status", "sent_at", "filled_at", "action_item"],
+        order_by="idx asc",
+    )
+
+
+def _portal_form_rows(form_name):
+    """Returns the portal field config rows for a given Job Applicant Portal Forms doc."""
+    if not form_name or not frappe.db.exists("Job Applicant Portal Forms", form_name):
+        return []
     try:
-        rows = frappe.get_doc("Job Applicant Portal Forms", form_name).portal_fields or []
-        return rows, form_name
+        return frappe.get_doc("Job Applicant Portal Forms", form_name).portal_fields or []
     except Exception:
-        return [], None
+        return []
+
+
+def _resolve_pre_offer_target(applicant_name, requested_form):
+    """Picks which pre-offer form row to render/save against.
+    If `requested_form` is given, returns that row if present; else None.
+    If not given, returns the first row with status='Sent' (the next pending one)."""
+    rows = _get_pre_offer_form_rows(applicant_name)
+    if not rows:
+        return None, []
+    if requested_form:
+        for r in rows:
+            if r["portal_form"] == requested_form:
+                return r, rows
+        return None, rows
+    for r in rows:
+        if (r.get("status") or "").strip() == "Sent":
+            return r, rows
+    return rows[0], rows
 
 
 @candidate_required
-def get_pre_offer_form(job_applicant_id):
+def get_pre_offer_form(job_applicant_id, form_name=None):
+    """Returns a pre-offer form for the candidate to fill.
+
+    - If `form_name` is provided, returns that specific form (tabs + values).
+    - If not, returns the next pending (status='Sent') form; falls back to the first row.
+    - Always includes `forms[]`: the full list of pre-offer forms with their status, so the
+      frontend can render a selector when the candidate has multiple pending forms.
+    """
     if not job_applicant_id:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Job Applicant ID is required.")}
 
-    applicant_name = _resolve_candidate_applicant(job_applicant_id, prefer_field="custom_pre_offer_portal_form")
+    applicant_name = _resolve_candidate_applicant(job_applicant_id)
     if not applicant_name or not frappe.db.exists("Job Applicant", applicant_name):
         frappe.local.response["http_status_code"] = 404
         return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
 
-    portal_rows, resolved_form = _get_pre_offer_portal_settings(applicant_name)
+    target_row, all_rows = _resolve_pre_offer_target(applicant_name, form_name)
 
-    if resolved_form is None:
+    if target_row is None and form_name:
+        frappe.local.response["http_status_code"] = 404
+        return {
+            "status": "error",
+            "message": _("Pre Offer Form '{0}' has not been sent to this applicant.").format(form_name),
+            "forms": all_rows,
+        }
+
+    if target_row is None:
         frappe.local.response["http_status_code"] = 404
         return {"status": "error", "message": _("No Pre Offer Form has been sent for this applicant yet.")}
+
+    portal_rows = _portal_form_rows(target_row["portal_form"])
+    if not portal_rows:
+        frappe.local.response["http_status_code"] = 404
+        return {
+            "status": "error",
+            "message": _("Pre Offer Form '{0}' has no fields configured.").format(target_row["portal_form"]),
+            "forms": all_rows,
+        }
 
     doc = frappe.get_doc("Job Applicant", applicant_name)
     meta_lookup = {f["fieldname"]: f for f in _read_job_applicant_meta()}
@@ -665,8 +834,9 @@ def get_pre_offer_form(job_applicant_id):
     return {
         "status": "success",
         "job_applicant": applicant_name,
-        "form_name": resolved_form,
-        "pre_offer_form_status": doc.get("custom_pre_offer_form_status") or "Sent",
+        "form_name": target_row["portal_form"],
+        "pre_offer_form_status": target_row.get("status") or "Sent",
+        "forms": all_rows,
         "tabs": [
             {
                 "tab": tab_lbl,
@@ -681,7 +851,13 @@ def get_pre_offer_form(job_applicant_id):
 
 
 @candidate_required
-def save_pre_offer_form_data(job_applicant_id, data):
+def save_pre_offer_form_data(job_applicant_id, data, form_name=None):
+    """Persist a candidate's pre-offer form submission.
+
+    `form_name` identifies which pre-offer form is being filled. If omitted, the next pending
+    form (status='Sent') is auto-selected; ambiguous cases (multiple Sent) require `form_name`.
+    Marks the child row + its action item as Filled/Completed.
+    """
     if isinstance(data, str):
         try:
             data = frappe.parse_json(data)
@@ -697,16 +873,47 @@ def save_pre_offer_form_data(job_applicant_id, data):
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Job Applicant ID is required.")}
 
-    applicant_name = _resolve_candidate_applicant(job_applicant_id, prefer_field="custom_pre_offer_portal_form")
+    applicant_name = _resolve_candidate_applicant(job_applicant_id)
     if not applicant_name or not frappe.db.exists("Job Applicant", applicant_name):
         frappe.local.response["http_status_code"] = 404
         return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
 
-    portal_rows, resolved_form = _get_pre_offer_portal_settings(applicant_name)
-
-    if resolved_form is None:
+    all_rows = _get_pre_offer_form_rows(applicant_name)
+    if not all_rows:
         frappe.local.response["http_status_code"] = 400
-        return {"status": "error", "message": _("No Pre Offer Form configured for this applicant.")}
+        return {"status": "error", "message": _("No Pre Offer Form has been sent to this applicant.")}
+
+    target_row = None
+    if form_name:
+        for r in all_rows:
+            if r["portal_form"] == form_name:
+                target_row = r
+                break
+        if not target_row:
+            frappe.local.response["http_status_code"] = 404
+            return {"status": "error", "message": _("Pre Offer Form '{0}' has not been sent to this applicant.").format(form_name)}
+    else:
+        pending = [r for r in all_rows if (r.get("status") or "") == "Sent"]
+        if len(pending) == 1:
+            target_row = pending[0]
+        elif len(pending) > 1:
+            frappe.local.response["http_status_code"] = 400
+            return {
+                "status": "error",
+                "message": _("Multiple Pre Offer Forms are pending; please specify which one with `form_name`."),
+                "pending_forms": [r["portal_form"] for r in pending],
+            }
+        elif all_rows:
+            target_row = all_rows[0]
+
+    if target_row is None:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("No Pre Offer Form is pending for this applicant.")}
+
+    portal_rows = _portal_form_rows(target_row["portal_form"])
+    if not portal_rows:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Pre Offer Form '{0}' has no fields configured.").format(target_row["portal_form"])}
 
     allowed_map = {r.fieldname: r for r in portal_rows if not r.get("hidden") and not r.get("read_only")}
 
@@ -748,23 +955,42 @@ def save_pre_offer_form_data(job_applicant_id, data):
 
             updated.append(fn)
 
-        doc.custom_pre_offer_form_status = "Filled"
+        from frappe.utils import now_datetime
+        for child_row in (doc.get("custom_pre_offer_forms") or []):
+            if child_row.portal_form == target_row["portal_form"]:
+                child_row.status = "Filled"
+                child_row.filled_at = now_datetime()
+                break
+
+        pre_offer_rows = doc.get("custom_pre_offer_forms") or []
+        if pre_offer_rows and all((r.status or "") == "Filled" for r in pre_offer_rows):
+            doc.custom_substatus = "Pre Offer Form Filled"
+
         doc.save(ignore_permissions=True)
         frappe.db.commit()
 
         from recruitment.api.action_center import mark_item_completed
         candidate_email = doc.email_id
         if candidate_email:
-            mark_item_completed(
-                reference_doctype="Job Applicant",
-                reference_docname=applicant_name,
-                candidate_email=candidate_email,
-                commit=True,
-            )
+            if target_row.get("name"):
+                mark_item_completed(
+                    reference_doctype="Job Applicant Pre Offer Form",
+                    reference_docname=target_row["name"],
+                    candidate_email=candidate_email,
+                    commit=True,
+                )
+            else:
+                mark_item_completed(
+                    reference_doctype="Job Applicant",
+                    reference_docname=applicant_name,
+                    candidate_email=candidate_email,
+                    commit=True,
+                )
 
         return {
             "status": "success",
             "message": _("Pre Offer Form submitted successfully."),
+            "form_name": target_row["portal_form"],
             "updated_fields": updated,
         }
 
@@ -846,8 +1072,7 @@ def save_candidate_portal_data(job_applicant_id, data):
         if not pre_release:
             frappe.local.response["http_status_code"] = 404
             return {"status": "error", "message": _(f"No onboarding form pending for '{job_applicant_id}'.")}
-        release_doc = frappe.get_doc("Pre Onboarding Release", pre_release["name"])
-        onboarding_name = release_doc.materialize_onboarding(prefill=data)
+        onboarding_name = materialize_onboarding_from_applicant(applicant_name, prefill=data)
         pre_release = None  # materialized; no longer "active"
 
     onboarding_doc = frappe.get_doc("Employee Onboarding", onboarding_name)
@@ -940,6 +1165,18 @@ def save_candidate_portal_data(job_applicant_id, data):
             sync_onboarding_field_rejection_action(doc)
         except Exception:
             frappe.log_error(frappe.get_traceback(), "Action Center Sync Failed (Candidate Refill)")
+
+        # Stamp applicant substatus on first candidate fill
+        try:
+            current_substatus = frappe.db.get_value("Job Applicant", applicant_name, "custom_substatus")
+            if (current_substatus or "") != "Pre Onboarding Filled":
+                frappe.db.set_value(
+                    "Job Applicant", applicant_name,
+                    "custom_substatus", "Pre Onboarding Filled",
+                    update_modified=False,
+                )
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "Failed to update applicant substatus on candidate fill")
 
         frappe.db.commit()
 
