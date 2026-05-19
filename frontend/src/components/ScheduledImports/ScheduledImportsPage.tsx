@@ -60,9 +60,9 @@ const ScheduledImportsPage: React.FC = () => {
   const { targetEmployeeId } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
   const { data: loggedInUserId } = useLoggedInUser();
-  const targetedEmployeeIdValue = targetEmployee?.company_email || targetEmployee?.prefered_email
+  const targetedEmployeeIdValue = targetEmployee?.company_email || targetEmployee?.prefered_email;
 
-  const owner = targetedEmployeeIdValue || loggedInUserId;
+  const owner = targetEmployeeId ? targetedEmployeeIdValue : loggedInUserId;
 
   const { data: uiPermissions } = useGetUiPermission();
 
