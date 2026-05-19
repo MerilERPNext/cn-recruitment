@@ -171,16 +171,25 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
     };
 
     const renderStatusIcon = (attendance: AttendanceStatusInfo) => {
+        if (attendance.events?.some((e) => e.status === "Approved")) {
+            return <div className="p-1 bg-green-50 rounded-lg">
+                <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+            </div>;
+        }
         if (attendance.record?.is_optional_leave) {
             return <div className="p-1 bg-blue-50 rounded-lg">
                 <CalendarRange className="w-4 h-4 text-blue-600 flex-shrink-0" />
             </div>
         }
         switch (attendance?.status) {
-            case "present":
+            case "present": {
+                const hasApproved = attendance.events?.some((e) => e.status === "Approved");
+                const hasPending = attendance.events?.some((e) => e.status === "Pending" || e.status === "Open");
+                if (hasPending && !hasApproved) return null;
                 return <div className="p-1 bg-green-50 rounded-lg">
                     <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                </div>
+                </div>;
+            }
             case "absent":
             case "unpaid":
                 return <div className="p-1 bg-red-50 rounded-lg">
@@ -203,6 +212,10 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     <Calendar className="w-4 h-4 text-yellow-600 flex-shrink-0" />
                 </div>
             case "half-day": {
+                const hasAbsent =
+                    attendance?.firstHalf?.toLowerCase() === "absent" ||
+                    attendance?.secondHalf?.toLowerCase() === "absent";
+                if (hasAbsent) return null;
                 const firstColor = getHalfDayColor(attendance?.firstHalf || "");
                 const secondColor = getHalfDayColor(attendance?.secondHalf || "");
                 return (
@@ -241,6 +254,17 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                         Opt. Holiday
                     </span>
                 );
+            case "half-day": {
+                const hasAbsent =
+                    attendance?.firstHalf?.toLowerCase() === "absent" ||
+                    attendance?.secondHalf?.toLowerCase() === "absent";
+                if (!hasAbsent) return null;
+                return (
+                    <span className="w-fit text-[10px] font-medium pl-1.5 pr-1 py-0.5 border-l-2 border-red-400 bg-red-50 text-red-600 leading-tight">
+                        Half Day Absent
+                    </span>
+                );
+            }
             default:
                 return null;
         }

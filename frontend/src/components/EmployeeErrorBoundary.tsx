@@ -18,6 +18,7 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+  isDynamicImportError?: boolean;
 }
 
 class EmployeeErrorBoundary extends Component<Props, State> {
@@ -28,7 +29,10 @@ class EmployeeErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): State {
     console.error("EmployeeErrorBoundary caught an error:", error);
-    return { hasError: true, error };
+    const isDynamicImportError = DYNAMIC_IMPORT_ERROR_MESSAGES.some((msg) =>
+      error.message.includes(msg)
+    );
+    return { hasError: true, error, isDynamicImportError };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
@@ -51,7 +55,17 @@ class EmployeeErrorBoundary extends Component<Props, State> {
           DYNAMIC_IMPORT_RELOAD_STORAGE_KEY,
           now.toString()
         );
-        window.location.reload();
+
+        // Clear caches before reloading to ensure we get the latest index.html
+        if (typeof caches !== 'undefined') {
+          caches.keys().then((names) => {
+            names.forEach((name) => caches.delete(name));
+          }).finally(() => {
+            window.location.reload();
+          });
+        } else {
+          window.location.reload();
+        }
         return;
       }
 
@@ -80,6 +94,54 @@ class EmployeeErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      if (this.state.isDynamicImportError) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="max-w-md w-full mx-auto p-6">
+              <div className="bg-white rounded-lg shadow-lg p-6 text-center">
+                <div className="flex justify-center mb-4">
+                  <svg
+                    className="h-12 w-12 text-blue-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-medium text-gray-900 mb-2">
+                  Update Available
+                </h3>
+                <p className="text-sm text-gray-500 mb-6">
+                  A new version of the application is available. Please refresh to continue.
+                </p>
+                <button
+                  onClick={() => {
+                    if (typeof caches !== 'undefined') {
+                      caches.keys().then((names) => {
+                        names.forEach((name) => caches.delete(name));
+                      }).finally(() => {
+                        window.location.reload();
+                      });
+                    } else {
+                      window.location.reload();
+                    }
+                  }}
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+                >
+                  Refresh Application
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
       return (
         this.props.fallback || (
           <div className="min-h-screen flex items-center justify-center bg-gray-50">

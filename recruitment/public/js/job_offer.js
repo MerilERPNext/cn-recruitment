@@ -103,5 +103,29 @@ frappe.ui.form.on("Job Offer", {
 		} else {
 			frm.set_value("custom_ctc_per_annum", null);
 		}
-	}	
+	}
 })
+
+
+frappe.ui.form.on('Job Offer', {
+    refresh(frm) {
+        if (frm.doc.__islocal || frm.doc.status !== 'Accepted') return;
+
+        frm.add_custom_button(__('Create Pre Onboarding Release'), () => {
+            frappe.db.get_value(
+                'Pre Onboarding Release',
+                { job_applicant: frm.doc.job_applicant, status: ['!=', 'Onboarding Created'] },
+                'name'
+            ).then(({ message }) => {
+                if (message && message.name) {
+                    frappe.set_route('Form', 'Pre Onboarding Release', message.name);
+                    return;
+                }
+                frappe.new_doc('Pre Onboarding Release', {
+                    job_applicant: frm.doc.job_applicant,
+                    job_offer: frm.doc.name,
+                });
+            });
+        }, __('Actions'));
+    }
+});

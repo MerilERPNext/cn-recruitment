@@ -1,0 +1,197 @@
+{
+ "actions": [],
+ "autoname": "format:PRE-OB-{YYYY}-{#####}",
+ "creation": "2026-05-18 00:00:00",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "candidate_section",
+  "job_applicant",
+  "candidate_email",
+  "job_offer",
+  "column_break_candidate",
+  "designation",
+  "department",
+  "form_section",
+  "onboarding_portal_form",
+  "column_break_form",
+  "bgv_vendor",
+  "contacts_section",
+  "onboarding_buddy",
+  "joining_buddy",
+  "column_break_contacts",
+  "manager",
+  "status_section",
+  "status",
+  "released_at",
+  "column_break_status",
+  "employee_onboarding"
+ ],
+ "fields": [
+  {
+   "fieldname": "candidate_section",
+   "fieldtype": "Section Break",
+   "label": "Candidate"
+  },
+  {
+   "fieldname": "job_applicant",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Job Applicant",
+   "options": "Job Applicant",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "job_applicant.email_id",
+   "fetch_if_empty": 1,
+   "fieldname": "candidate_email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Candidate Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "job_offer",
+   "fieldtype": "Link",
+   "label": "Job Offer",
+   "options": "Job Offer"
+  },
+  {
+   "fieldname": "column_break_candidate",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "job_applicant.designation",
+   "fetch_if_empty": 1,
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "job_applicant.custom_department",
+   "fetch_if_empty": 1,
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department",
+   "read_only": 1
+  },
+  {
+   "fieldname": "form_section",
+   "fieldtype": "Section Break",
+   "label": "Onboarding Form & BGV"
+  },
+  {
+   "fieldname": "onboarding_portal_form",
+   "fieldtype": "Link",
+   "label": "Onboarding Portal Form",
+   "options": "Onboarding Portal Forms",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_form",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "bgv_vendor",
+   "fieldtype": "Link",
+   "label": "BGV Vendor",
+   "options": "Supplier"
+  },
+  {
+   "description": "Auto-suggested from active Onboarding Buddy Assignment Rules; you can override.",
+   "fieldname": "contacts_section",
+   "fieldtype": "Section Break",
+   "label": "Contacts"
+  },
+  {
+   "fieldname": "onboarding_buddy",
+   "fieldtype": "Link",
+   "label": "Onboarding Buddy",
+   "options": "User"
+  },
+  {
+   "fieldname": "joining_buddy",
+   "fieldtype": "Link",
+   "label": "Joining Buddy",
+   "options": "User"
+  },
+  {
+   "fieldname": "column_break_contacts",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "manager",
+   "fieldtype": "Link",
+   "label": "Manager",
+   "options": "User"
+  },
+  {
+   "fieldname": "status_section",
+   "fieldtype": "Section Break",
+   "label": "Status"
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nReleased\nOnboarding Created",
+   "reqd": 1
+  },
+  {
+   "fieldname": "released_at",
+   "fieldtype": "Datetime",
+   "label": "Released At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee_onboarding",
+   "fieldtype": "Link",
+   "label": "Employee Onboarding",
+   "options": "Employee Onboarding"
+  }
+ ],
+ "links": [],
+ "modified": "2026-05-18 18:01:44.298286",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Pre Onboarding Release",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
