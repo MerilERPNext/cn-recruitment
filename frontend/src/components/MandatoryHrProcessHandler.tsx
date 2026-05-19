@@ -45,7 +45,7 @@ const MandatoryHrProcessHandler = () => {
         ["status", "=", "Pending"],
         ["employee_id", "=", currentEmployee?.name || ""],
         ["sign_off_mandatory", "=", 1],
-        ["triggered_from_flow", "!=", 1],
+        ["triggered_from_flow", "=", 0],
         ["due_date", ">=", new Date().toLocaleDateString('en-CA')],
       ],
     },
