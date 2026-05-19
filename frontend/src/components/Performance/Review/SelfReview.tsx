@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Clock, Sparkles, Plus } from 'lucide-react';
 import { Typography } from '../../shared/atoms/Typography';
 import Button from '../../shared/atoms/Button';
 import Badge from '../../shared/Badge';
-import { useScreenSize } from '../../../hooks/useScreenSize';
 
 const Review = () => {
-  const { isMobile } = useScreenSize();
-  const navigate = useNavigate();
-
   const [achievements] = useState([
     {
       id: 1,
@@ -32,7 +27,7 @@ const Review = () => {
   ]);
 
   return (
-    <div className={`min-h-full bg-[#f8fafc] overflow-y-scroll ${isMobile ? 'p-4' : 'p-6'} font-sans`}>
+    <div className="min-h-full bg-[#f8fafc] overflow-y-scroll p-4 sm:p-6 font-sans">
       <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row gap-6">
         
         {/* Left Sidebar */}
@@ -106,7 +101,7 @@ const Review = () => {
         {/* Main Content */}
         <div className="flex-1 flex flex-col gap-4 min-w-0">
            {/* Header Card */}
-           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                  <Typography variant="caption" className="text-gray-500 font-semibold tracking-wider mb-1 block">SECTION 2 OF 5</Typography>
                  <Typography variant="h3" className="mb-2">Achievements</Typography>
@@ -117,7 +112,7 @@ const Review = () => {
                 bgColor="primary" 
                 size="md" 
                 icon={<Sparkles className="w-4 h-4 text-purple-500" />} 
-                className="bg-purple-50 border-purple-100 text-purple-700 hover:bg-purple-100 whitespace-nowrap"
+                className="bg-purple-50 border-purple-100 text-purple-700 hover:bg-purple-100 whitespace-nowrap w-full sm:w-auto justify-center"
               >
                  AI: Pre-fill from check-ins
               </Button>
@@ -125,7 +120,7 @@ const Review = () => {
 
            {/* Form Cards */}
            {achievements.map((achievement) => (
-             <div key={achievement.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+             <div key={achievement.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
                 <div className="flex justify-between items-start mb-4">
                    <label className="block text-sm font-medium text-gray-700">
                       Achievement title <span className="text-red-500">*</span>
@@ -149,11 +144,11 @@ const Review = () => {
                   className="w-full border border-gray-200 rounded-lg p-3 text-gray-900 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none bg-white" 
                 />
                 
-                <div className="flex justify-between items-center">
-                   <button className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 transition-colors text-sm font-medium">
-                      <Plus className="w-4 h-4" /> Attach evidence (Figma, doc, dashboard)
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                   <button className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 transition-colors text-sm font-medium text-left">
+                      <Plus className="w-4 h-4 shrink-0" /> <span className="whitespace-normal sm:whitespace-nowrap">Attach evidence (Figma, doc, dashboard)</span>
                    </button>
-                   <Typography variant="caption" className="text-gray-400">{achievement.chars} / 1000</Typography>
+                   <Typography variant="caption" className="text-gray-400 self-end sm:self-auto">{achievement.chars} / 1000</Typography>
                 </div>
              </div>
            ))}

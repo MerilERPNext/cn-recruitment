@@ -146,7 +146,7 @@ const PeerNominationPage = () => {
           {/* List Header */}
           <div className="bg-gray-50/50 p-4 border-b border-gray-100 flex justify-between items-center">
             <Typography variant="caption" className="font-semibold text-gray-500 tracking-wider">SUGGESTED REVIEWERS (8)</Typography>
-            <Typography variant="caption" className="text-gray-500 hidden sm:block">Inferred from Slack, Jira & Figma - last 90 days</Typography>
+            <Typography variant="caption" className="text-gray-500">Inferred from Slack, Jira & Figma · last 90 days</Typography>
           </div>
 
           {/* List Content */}
@@ -167,7 +167,7 @@ const PeerNominationPage = () => {
                 
                 {/* Action & Badge */}
                 <div className="flex items-center gap-4 md:ml-auto">
-                  <div className="hidden lg:block">
+                  <div>
                     <Badge label={reviewer.suggestionText} variant="purple" size="sm" icon={<Sparkle className="w-3.5 h-3.5" />} />
                   </div>
                   {reviewer.selected ? (
