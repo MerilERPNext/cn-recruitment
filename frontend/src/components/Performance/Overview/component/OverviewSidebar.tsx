@@ -99,7 +99,7 @@ const OverviewSidebar: React.FC = () => {
           {tasksData.map((task) => {
             const Icon = task.icon;
             return (
-              <div key={task.id} className="flex items-center gap-4">
+              <div key={task.id} className="flex items-center lg:flex-row flex-col text-center lg:text-left flex-wrap gap-4">
                 <div className={`w-10 h-10 rounded-lg ${task.iconBgColor} ${task.iconTextColor} flex items-center justify-center shrink-0`}>
                   <Icon className="w-5 h-5" />
                 </div>
