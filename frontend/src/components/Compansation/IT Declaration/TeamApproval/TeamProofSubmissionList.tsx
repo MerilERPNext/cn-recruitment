@@ -68,6 +68,7 @@ const TeamProofSubmissionList = () => {
       {/* List */}
       <div className="flex-1 overflow-y-auto md:px-4 pb-20">
         <BulkSelectProvider>
+
           <CardTable titles={titles} columnWidths={columnWidths}>
             <ApprovalList
               status="Open"
@@ -128,6 +129,7 @@ const TeamProofSubmissionList = () => {
               }}
             />
           </CardTable>
+
         </BulkSelectProvider>
       </div>
     </div>

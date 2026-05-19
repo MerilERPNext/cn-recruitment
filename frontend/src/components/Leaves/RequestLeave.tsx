@@ -28,7 +28,10 @@ import {
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useRequiredFields } from "../../hooks/useRequiredFields";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import { LeaveFieldFlags } from "../../types/leaves";
+import {
+  FormSubmissionData,
+  RequestLeaveProps,
+} from "../../types/leaves";
 import { expenseService } from "../../services/expenseService";
 import FrappeAPI from "../../utils/frappeAPI";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
@@ -38,108 +41,17 @@ import Button from "../shared/atoms/Button";
 import AttendanceStatusModal from "./AttendanceStatusModal";
 import DailyConfiguration from "./DailyConfiguration";
 import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
+import RequestLeaveAttachmentPreview from "./RequestLeaveAttachmentPreview";
+import { buildRequestLeaveSchema } from "./requestLeaveSchema";
+import {
+  findRecentLeaveApplicationTarget,
+  getExistingAttachmentUrls,
+  getPendingAttachmentUploads,
+  normalizeAttachments,
+  resolveLeaveApplicationTarget,
+} from "./requestLeaveHelper";
 import { useFileUploader } from "../../hooks/useFileUploader";
 import { FilePreviewModal } from "../shared/molecules/FilePreviewModal";
-
-interface FormSubmissionData {
-  leaveType?: string;
-  fromDate?: string;
-  toDate?: string;
-  halfDay?: boolean;
-  half_day?: 0 | 1;
-  halfDayOption?: "First Half" | "Second Half";
-  description?: string;
-  half_day_date?: string;
-  custom_second_half_day_date?: string;
-  attachment?: { url: string }[];
-  custom_reason?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  custom_attachment?: any[];
-}
-
-interface RequestLeaveProps {
-  onSuccess?: () => void;
-  onCancel?: () => void;
-}
-
-const AttachmentPreviewVanilla: React.FC<{ 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  currentAttachments: any[]; 
-  onPreview: (file: { url: string; name: string }) => void 
-}> = ({ currentAttachments, onPreview }) => {
-  useEffect(() => {
-    console.log("AttachmentPreviewVanilla - currentAttachments:", currentAttachments);
-    const interval = setInterval(() => {
-      const portal = document.getElementById("attachment-preview-portal");
-      if (!portal) return;
-
-      const hash = currentAttachments.map(a => a.url || a.originalName || a.name || "file").join("|");
-
-      if (portal.getAttribute("data-hash") === hash) {
-        if (portal.children.length > 0) return;
-      }
-
-      portal.setAttribute("data-hash", hash);
-
-      if (currentAttachments.length === 0) {
-        portal.innerHTML = "";
-        return;
-      }
-
-      let html = '<div class="h-full px-2 lg:px-6">';
-      html += '<h3 class="text-md font-medium mb-2 text-gray-800">Attachments Preview</h3>';
-      html += '<div class="flex flex-wrap gap-3">';
-
-      console.log("Rendering attachments:", currentAttachments);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      currentAttachments.forEach((f: any) => {
-        let actualFile = f.file;
-        if (actualFile && !(actualFile instanceof Blob || actualFile instanceof File)) {
-          actualFile = null;
-        }
-        const url = f.url;
-        if (!actualFile && !url) return;
-        let parsedUrl = url;
-        if (url && typeof url === 'string' && !url.startsWith('http') && !url.startsWith('/') && !url.startsWith('blob:')) {
-          parsedUrl = `/files/${url}`;
-        }
-        const previewUrl = actualFile ? URL.createObjectURL(actualFile) : parsedUrl;
-        const isImage = actualFile
-          ? actualFile.type?.startsWith("image/")
-          : (f.type?.startsWith("image/") || /\.(jpeg|jpg|gif|png|webp|svg|ico)$/i.test(f.name || ""));
-        const safeName = (f.originalName || f.name || "Attachment").replace(/"/g, '&quot;');
-
-        html += '<div class="flex items-center gap-3 rounded-lg p-2 shadow-sm bg-gray-50 hover:bg-white transition-colors w-fit max-w-[300px]" style="border: 1px solid #cbd5e1 !important;">';
-
-        if (isImage) {
-          html += `<img src="${previewUrl}" alt="${safeName}" class="w-12 h-12 object-cover rounded shadow-sm cursor-pointer shrink-0 preview-image-trigger" data-preview-url="${previewUrl}" data-preview-name="${safeName}" style="border: 1px solid #cbd5e1 !important;" />`;
-        } else {
-          html += `<div class="w-12 h-12 flex items-center justify-center bg-gray-200 shadow-sm rounded cursor-pointer text-[10px] font-semibold text-gray-600 uppercase shrink-0 preview-image-trigger" data-preview-url="${previewUrl}" data-preview-name="${safeName}" style="border: 1px solid #cbd5e1 !important;">Open</div>`;
-        }
-        html += `<p class="text-sm text-gray-700 font-medium truncate max-w-[180px] cursor-pointer preview-image-trigger" data-preview-url="${previewUrl}" data-preview-name="${safeName}" title="${safeName}">${safeName}</p>`;
-        html += '</div>';
-      });
-
-      html += '</div></div>';
-      portal.innerHTML = html;
-
-      const triggers = portal.querySelectorAll('.preview-image-trigger');
-      triggers.forEach(el => {
-        el.addEventListener('click', () => {
-          const uri = el.getAttribute('data-preview-url');
-          const name = el.getAttribute('data-preview-name');
-          if (uri && name) onPreview({ url: uri, name });
-          else if (uri) onPreview({ url: uri, name: "Attachment" });
-        });
-      });
-
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [currentAttachments, onPreview]);
-
-  return null;
-};
 
 const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const { data: userId } = useLoggedInUser();
@@ -173,7 +85,28 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [currentAttachments, setCurrentAttachments] = useState<any[]>([]);
   const [isFileProcessing, setIsFileProcessing] = useState(false);
-  const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
+  const [previewFile, setPreviewFile] = useState<{
+    url: string;
+    name: string;
+  } | null>(null);
+
+  const removeFormioFile = useCallback((index: number) => {
+    try {
+      const container = document.querySelector(".formio-component-custom_attachment");
+      if (container) {
+        const removeButtons = container.querySelectorAll(
+          'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times',
+        );
+        if (removeButtons && removeButtons[index]) {
+          (removeButtons[index] as HTMLElement).click();
+        } else {
+          console.error("Form.io native remove button not found");
+        }
+      }
+    } catch (err) {
+      console.error("Failed to cleanly remove attachment:", err);
+    }
+  }, []);
 
   const handleUpdate = useCallback(async () => {
     if (!currentEmployee?.name) {
@@ -185,41 +118,73 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     }
     try {
       const submission = await formInstance.current.submit();
-
+      const normalizedAttachments = normalizeAttachments(
+        currentAttachments,
+        submission.data?.custom_attachment,
+      );
+      const retainedAttachmentUrls = new Set(
+        getExistingAttachmentUrls(normalizedAttachments),
+      );
+      const pendingUploads = getPendingAttachmentUploads(normalizedAttachments);
 
       const payload = buildLeavePayload({
         employee: currentEmployee.name,
         submission: submission.data,
-        dailyConfig:
-          dailyConfig,
+        dailyConfig: dailyConfig,
       });
+
+      const syncRemovedAttachments = async () => {
+        const leaveApplicationName = defaults?.leave_application;
+
+        if (!leaveApplicationName) {
+          return;
+        }
+
+        const existingFileDocuments = await expenseService.getFilesByAttachment(
+          "Leave Application",
+          leaveApplicationName,
+        );
+
+        const filesToDelete = existingFileDocuments.filter((fileDocument) => {
+          const fileUrl =
+            typeof fileDocument?.file_url === "string"
+              ? fileDocument.file_url
+              : "";
+
+          return Boolean(fileUrl) && !retainedAttachmentUrls.has(fileUrl);
+        });
+
+        await Promise.all(
+          filesToDelete.map((fileDocument) =>
+            expenseService.deleteFile(fileDocument.name),
+          ),
+        );
+      };
 
       if (defaults?.isResubmit) {
         await loading?.wrap(async () => {
-          const attachmentUrls = currentAttachments
-            .filter((a) => a.url && !a.file)
-            .map((a) => a.url);
           await FrappeAPI.updateDocument(
             "Leave Application",
             defaults.leave_application || "",
-            { ...payload, custom_attachment: attachmentUrls.length > 0 ? attachmentUrls : undefined },
+            {
+              ...payload,
+              custom_attachment: null,
+            },
           );
+          await syncRemovedAttachments();
           await expenseService.resubmitApprovalEvent(
             "Leave Application",
             defaults?.leave_application || "",
           );
-          if (currentAttachments.some((a) => a.file)) {
+          if (pendingUploads.length > 0) {
             await uploadFiles(
-              currentAttachments.filter((a) => a.file),
+              pendingUploads,
               "Leave Application",
               defaults.leave_application || "",
             );
           }
         }, "Resubmitting Leave Request...");
       } else {
-        const attachmentUrls = currentAttachments
-          .filter((a) => a.url && !a.file)
-          .map((a) => a.url);
         await editLeaveMutation.mutateAsync({
           leave_application: defaults?.leave_application || "",
           new_values: {
@@ -227,16 +192,19 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             leave_type: submission.data.leaveType,
             from_date: submission.data.fromDate?.split("T")[0],
             to_date: submission.data.toDate?.split("T")[0],
-            half_day: Object.values(dailyConfig).some((v) => v !== "Full Day") ? 1 : 0,
+            half_day: Object.values(dailyConfig).some((v) => v !== "Full Day")
+              ? 1
+              : 0,
             description: submission.data.description,
             custom_reason: submission.data.custom_reason,
-            custom_attachment: attachmentUrls.length > 0 ? attachmentUrls : undefined,
+            custom_attachment: null,
             daily_half_day_config: dailyConfig,
           },
         });
-        if (currentAttachments.some((a) => a.file)) {
+        await syncRemovedAttachments();
+        if (pendingUploads.length > 0) {
           await uploadFiles(
-            currentAttachments.filter((a) => a.file),
+            pendingUploads,
             "Leave Application",
             defaults?.leave_application || "",
           );
@@ -278,9 +246,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
 
   const showDailyConfig = Boolean(
-    formData.fromDate &&
-    formData.toDate &&
-    Object.keys(dailyConfig).length > 0,
+    formData.fromDate && formData.toDate && Object.keys(dailyConfig).length > 0,
   );
 
   const leaveTypeOptions = useMemo(() => {
@@ -330,7 +296,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
     const individualDates = dates.map((d) => {
       const config = dailyConfig[d] || "Full Day";
-      const isHalfDay = config === "First Half" || config === "Second Half" ? 1 : 0;
+      const isHalfDay =
+        config === "First Half" || config === "Second Half" ? 1 : 0;
       return { date: d, half_day: isHalfDay };
     });
     return JSON.stringify(individualDates);
@@ -355,10 +322,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     formData.fromDate || undefined,
     formData.toDate || undefined,
   );
-  
+
   const { data: dateRangeData } = useGetLeaveDateRange(
     currentEmployee?.name,
-    formData.leaveType
+    formData.leaveType,
   );
 
   const { data: requiredFields } = useRequiredFields("Leave Application");
@@ -400,12 +367,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
       setFormData(initial);
       if (defaults.custom_attachment) {
-        const attachments = defaults.custom_attachment.map((att: { url: string }) => ({
-          name: att.url.split("/").pop() || att.url,
-          url: att.url,
-          storage: "url",
-          originalName: att.url.split("/").pop() || att.url,
-        }));
+        const attachments = normalizeAttachments(defaults.custom_attachment);
         setCurrentAttachments(attachments);
       } else {
         setCurrentAttachments([]);
@@ -461,61 +423,55 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   }, [formData.fromDate, formData.toDate]);
 
   const handleSubmit = useCallback(async () => {
-    console.log("handleSubmit called");
-    console.log("currentAttachments at submit time:", currentAttachments);
     if (!currentEmployee?.name || !formInstance.current) {
-      console.log("Early return: currentEmployee:", currentEmployee?.name, "formInstance:", !!formInstance.current);
       return;
     }
 
     try {
-      console.log("About to submit form");
       const submission = await formInstance.current.submit();
-      console.log("Form submission result:", submission);
-      console.log("Submission data:", submission?.data);
-      console.log("Custom attachment from submission:", submission?.data?.custom_attachment);
-      console.log("formInstance submission:", formInstance.current?.submission);
+      const fileComponent =
+        formInstance.current?.getComponent("custom_attachment");
+      const filesFromForm =
+        fileComponent?.dataValue || fileComponent?.value || [];
 
-
-      // Get files from form instance directly as primary source
-      const fileComponent = formInstance.current?.getComponent("custom_attachment");
-      const filesFromForm = fileComponent?.value || [];
-      console.log("Files from form component:", filesFromForm);
-
-      // Combine files from state and form (prefer form instance)
-      const allFiles = [...currentAttachments, ...filesFromForm];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const uniqueFiles = allFiles.filter((file: any, index: number, self: any[]) =>
-        index === self.findIndex((f) => (f.name || f.originalName) === (file.name || file.originalName))
+      const normalizedAttachments = normalizeAttachments(
+        currentAttachments,
+        submission?.data?.custom_attachment,
+        filesFromForm,
       );
-      console.log("Unique files to upload:", uniqueFiles);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      console.log("Files with .file property:", uniqueFiles.filter((f: any) => f.file));
+      const directPendingUploads = getPendingAttachmentUploads(
+        normalizedAttachments,
+      );
+      const pendingUploads =
+        directPendingUploads.length > 0
+          ? directPendingUploads
+          : normalizedAttachments.filter((attachment) =>
+              Boolean(attachment.file),
+            );
 
       const payload = buildLeavePayload({
         employee: currentEmployee.name,
         submission: submission.data,
-        dailyConfig:
-          dailyConfig,
+        dailyConfig: dailyConfig,
       });
 
       await loading?.wrap(async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const response: any = await createLeaveMutation.mutateAsync(payload);
-        console.log("Leave response:", response);
-        const leaveApplicationName = response?.leave_application?.name || response?.name || response?.data?.name;
-        console.log("Leave application name:", leaveApplicationName);
+        const leaveTarget =
+          resolveLeaveApplicationTarget(response) ||
+          (await findRecentLeaveApplicationTarget({
+            employee: currentEmployee.name,
+            leaveType: payload.leave_type,
+            fromDate: payload.from_date,
+            toDate: payload.to_date,
+          }));
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const filesWithFileProperty = uniqueFiles.filter((f: any) => f.file);
-        console.log("Files to upload (with .file):", filesWithFileProperty);
-
-        if (leaveApplicationName && filesWithFileProperty.length > 0) {
-          console.log("Calling uploadFiles...");
+        if (leaveTarget && pendingUploads.length > 0) {
           await uploadFiles(
-            filesWithFileProperty,
-            "Leave Application",
-            leaveApplicationName,
+            pendingUploads,
+            leaveTarget.doctype,
+            leaveTarget.docname,
           );
         }
       }, "Submitting  Leave Request...");
@@ -544,249 +500,35 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     uploadFiles,
   ]);
 
-  const leaveForm = useMemo(() => {
-    const defaultFieldFlags: LeaveFieldFlags = {
-      leave_type: 1,
-      from_date: 1,
-      to_date: 1,
-      custom_reason: 0,
-      description: 0,
-      custom_attachment: 0,
-      half_day: 0,
-      half_day_date: 0,
-      custom_second_half_day_date: 0,
-      show_half_day_options: 0,
-      show_individual_continuous: 0,
-    };
-
-    const mandatory: LeaveFieldFlags = fields?.mandatory ?? defaultFieldFlags;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const halfDayComponents: any[] = [];
-
-    const panelComponents = [
-      {
-        type: "select",
-        key: "leaveType",
-        label: "Leave Type <span style='color:red;margin-left:3px;'> *</span>",
-        errorLabel: "Leave Type",
-        placeholder: "Select Leave Type",
-        input: true,
-        defaultValue: defaults?.leaveType ?? "",
-        validate: { required: true },
-        data: { values: leaveTypeOptions },
-        customClass: "px-2 mb-4",
-        disabled: defaults?.isEdit ? false : Boolean(defaults?.leaveType),
-      },
-
-      {
-        type: "textarea",
-        key: "description",
-        label:
-          mandatory?.description || requiredFieldMap["description"]
-            ? "Message <span style='color:red;margin-left:3px;'> *</span>"
-            : "Message",
-        errorLabel: "Message",
-        defaultValue: defaults?.description ?? "",
-        placeholder: "Enter the message for leave",
-        rows: 3,
-        validate: {
-          required: !!mandatory.description || requiredFieldMap["description"],
-          minLength: 3,
-        },
-        input: true,
-        customClass: "px-2 my-3",
-      },
-
-      ...(defaults?.source !== "holiday"
-        ? [
-          {
-            type: "select",
-            key: "custom_reason",
-            label:
-              mandatory?.custom_reason || requiredFieldMap["custom_reason"]
-                ? "Reason <span style='color:red;margin-left:3px;'> *</span>"
-                : "Reason",
-            errorLabel: "Reason",
-            placeholder: "Select a reason",
-            defaultValue: defaults?.custom_reason ?? "",
-            input: true,
-            validate: {
-              required:
-                !!mandatory.custom_reason ||
-                requiredFieldMap["custom_reason"],
-            },
-            data: {
-              values:
-                reasons?.map((r) => ({
-                  label: r.reason,
-                  value: r.name,
-                })) ?? [],
-            },
-            customClass: "px-2 mb-4",
-            disabled: isReasonLoading || isReasonError,
-          },
-        ]
-        : []),
-
-      ...(defaults?.source !== "holiday"
-        ? [
-          {
-            type: "columns",
-            key: "attachmentColumns",
-            customClass: "px-2",
-            columns: [
-              {
-                width: 6,
-                components: [
-                  {
-                    type: "file",
-                    key: "custom_attachment",
-                    defaultValue: currentAttachments.length > 0 ? currentAttachments : [],
-                    label:
-                      fields?.mandatory?.custom_attachment || isAttachmentMandatory
-                        ? "Attachments <span style='color:red;margin-left:3px;'> *</span>"
-                        : "Attachments",
-                    errorLabel: "Attachments",
-                    input: true,
-                    multiple: true,
-                    storage: "customfiles",
-                    validate: {
-                      required:
-                        !!mandatory.custom_attachment ||
-                        requiredFieldMap["custom_attachment"] ||
-                        isAttachmentMandatory,
-                    },
-                    filePattern: ".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.csv,.xls",
-                    customClass: "mb-4",
-                  },
-                ],
-              },
-              {
-                width: 6,
-                components: [
-                  {
-                    type: "htmlelement",
-                    tag: "div",
-                    attrs: [{ attr: "id", value: "attachment-preview-portal" }],
-                    content: "",
-                  },
-                ],
-              },
-            ],
-          },
-        ]
-        : []),
-
-      {
-        type: "columns",
-        key: "dateColumns",
-        customClass: "px-2",
-        columns: [
-          {
-            width: 6,
-            components: [
-              {
-                type: "datetime",
-                key: "fromDate",
-                label: requiredFieldMap["from_date"]
-                  ? "From Date <span style='color:red;margin-left:3px;'> *</span>"
-                  : "From Date",
-                errorLabel: "From Date",
-                placeholder: "DD-MM-YYYY",
-                enableDate: true,
-                enableTime: false,
-                defaultValue:
-                  defaults?.source === "balances"
-                    ? `${today}T00:00:00+05:30`
-                    : defaults?.fromDate
-                      ? `${defaults.fromDate}T00:00:00`
-                      : "",
-                validate: { required: requiredFieldMap["from_date"] },
-                input: true,
-                customClass: "mb-4",
-                format: "dd-MM-yyyy",
-                datePicker: {
-                  minDate: dateRangeData?.min_date || undefined,
-                  maxDate: dateRangeData?.max_date || undefined,
-                },
-                // disabled: defaults?.isEdit
-                //   ? false
-                //   : Boolean(defaults?.fromDate),
-                disabled:
-                  !defaults?.isEdit &&
-                  defaults?.source !== "other" &&
-                  Boolean(defaults?.fromDate),
-              },
-            ],
-          },
-          {
-            width: 6,
-            components: [
-              {
-                type: "datetime",
-                key: "toDate",
-                label: requiredFieldMap["to_date"]
-                  ? "To Date <span style='color:red;margin-left:3px;'> *</span>"
-                  : "To Date",
-                errorLabel: "To Date",
-                placeholder: "DD-MM-YYYY",
-                enableDate: true,
-                enableTime: false,
-                defaultValue: defaults?.toDate
-                  ? `${defaults.toDate}T00:00:00`
-                  : "",
-                validate: {
-                  required: requiredFieldMap["to_date"],
-                  custom: "if (!input || !data.fromDate) { valid = true; } else { valid = (new Date(input).setHours(0,0,0,0) >= new Date(data.fromDate).setHours(0,0,0,0)) ? true : \"To Date cannot be before From Date\"; }",
-                },
-                input: true,
-                customClass: "mb-4",
-                format: "dd-MM-yyyy",
-                datePicker: {
-                  minDate: formData.fromDate || dateRangeData?.min_date || today,
-                  maxDate: dateRangeData?.max_date || undefined,
-                },
-                // disabled: defaults?.isEdit ? false : Boolean(defaults?.toDate),
-                disabled:
-                  !defaults?.isEdit &&
-                  defaults?.source !== "other" &&
-                  Boolean(defaults?.toDate),
-              },
-            ],
-          },
-        ],
-      },
-
-      ...(defaults?.hideHalfDayToggle ? [] : halfDayComponents),
-    ];
-
-    return {
-      components: [
-        {
-          type: "panel",
-          key: "leavePanel",
-          title: "Leave Application",
-          hideLabel: true,
-          customClass: "px-2",
-          components: panelComponents,
-        },
-      ],
-    };
-  }, [
-    fields,
-    reasons,
-    isReasonLoading,
-    isReasonError,
-    leaveTypeOptions,
-    defaults,
-    requiredFieldMap,
-    isAttachmentMandatory,
-    today,
-    currentAttachments,
-    formData.fromDate,
-    dateRangeData,
-  ]);
+  const leaveForm = useMemo(
+    () =>
+      buildRequestLeaveSchema({
+        dateRangeData,
+        defaults,
+        formFromDate: formData.fromDate,
+        isAttachmentMandatory,
+        isReasonError,
+        isReasonLoading,
+        leaveTypeOptions,
+        mandatory: fields?.mandatory,
+        reasons,
+        requiredFieldMap,
+        today,
+      }),
+    [
+      dateRangeData,
+      defaults,
+      fields?.mandatory,
+      formData.fromDate,
+      isAttachmentMandatory,
+      isReasonError,
+      isReasonLoading,
+      leaveTypeOptions,
+      reasons,
+      requiredFieldMap,
+      today,
+    ],
+  );
 
   const handleAttendanceClick = useCallback(() => {
     setIsAttendanceModalOpen(true);
@@ -795,7 +537,11 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-        <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
+        <h2 className="text-lg font-semibold text-gray-800">
+          {defaults?.source === "holiday"
+            ? "Request Optional Holiday"
+            : "Request Leave"}
+        </h2>
         {isDesktop && (
           <button
             onClick={(e) => {
@@ -838,7 +584,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         </div>
       </div>
 
-
       <div className="flex-1 min-h-0 overflow-y-auto pb-20 md:pb-0">
         <Form
           form={leaveForm}
@@ -871,10 +616,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onChange={(change: any) => {
-            console.log("onChange called:", change);
             const data = change.data as FormSubmissionData;
             const changed = change.changed;
-            console.log("custom_attachment from onChange:", data?.custom_attachment);
             setFormData(data);
             if (data.fromDate && data.toDate) {
               const dates = getDatesBetween(data.fromDate, data.toDate);
@@ -893,31 +636,28 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               setDailyConfig({});
             }
 
-            const newAttachments = [...(data?.custom_attachment || [])];
-            console.log("onChange - newAttachments from form:", newAttachments);
-            setCurrentAttachments(prev => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const stripFile = (arr: any[]) => arr.map((p: any) => ({ ...p, file: undefined }));
-              console.log("onChange - prev:", prev, "newAttachments:", newAttachments);
-              if (JSON.stringify(stripFile(prev)) !== JSON.stringify(stripFile(newAttachments))) {
-                return newAttachments;
-              }
-              return prev;
-            });
+            if (changed?.component?.key === "custom_attachment") {
+              const newAttachments = data?.custom_attachment || [];
+              setCurrentAttachments(newAttachments);
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const hasFilesWithoutUrl = newAttachments.some((f: any) => !f.url && !f.storage);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const hasFilesWithUrl = newAttachments.some((f: any) => f.url || f.storage);
+              const hasFilesWithoutUrl = newAttachments.some(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (f: any) => !f.url && !f.file_url && !f.storage,
+              );
+              const hasFilesWithUrl = newAttachments.some(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (f: any) => f.url || f.file_url || f.storage,
+              );
 
-            if (hasFilesWithoutUrl && !hasFilesWithUrl) {
-              setIsFileProcessing(true);
-              if (changed?.component?.key === "custom_attachment") {
-                toast.loading("Processing attachments...", { id: "file-processing" });
+              if (hasFilesWithoutUrl && !hasFilesWithUrl) {
+                setIsFileProcessing(true);
+                toast.loading("Processing attachments...", {
+                  id: "file-processing",
+                });
+              } else {
+                setIsFileProcessing(false);
+                toast.dismiss("file-processing");
               }
-            } else {
-              setIsFileProcessing(false);
-              toast.dismiss("file-processing");
             }
           }}
         />
@@ -958,7 +698,11 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             size="md"
             variant="contain"
             bgColor="primary"
-            disabled={createLeaveMutation.isPending || isFileProcessing || isUploadingFiles}
+            disabled={
+              createLeaveMutation.isPending ||
+              isFileProcessing ||
+              isUploadingFiles
+            }
             className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 rounded-md font-brand"
           >
             {createLeaveMutation.isPending
@@ -975,7 +719,11 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             size="md"
             variant="contain"
             bgColor="primary"
-            disabled={editLeaveMutation.isPending || isFileProcessing || isUploadingFiles}
+            disabled={
+              editLeaveMutation.isPending ||
+              isFileProcessing ||
+              isUploadingFiles
+            }
             className="w-full md:w-auto min-w-[201px] md:px-4 md:py-2.5 rounded-md font-brand"
           >
             {editLeaveMutation.isPending
@@ -991,9 +739,16 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         )}
       </div>
 
-      <AttachmentPreviewVanilla
+      <style>{`
+        .formio-component-custom_attachment .list-group {
+          display: none !important;
+        }
+      `}</style>
+
+      <RequestLeaveAttachmentPreview
         currentAttachments={currentAttachments}
         onPreview={setPreviewFile}
+        onRemove={removeFormioFile}
       />
 
       {isAttendanceModalOpen && (
@@ -1006,10 +761,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       )}
 
       {previewFile && (
-        <FilePreviewModal 
-          fileUrl={previewFile.url} 
+        <FilePreviewModal
+          fileUrl={previewFile.url}
           fileName={previewFile.name}
-          onClose={() => setPreviewFile(null)} 
+          onClose={() => setPreviewFile(null)}
         />
       )}
     </div>

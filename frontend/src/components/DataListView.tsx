@@ -659,7 +659,6 @@ const DataListView = <T extends BaseItem>({
     if (clientSortFn) {
       data = clientSortFn(data);
     }
-
     return data;
   }, [
     infiniteScroll,
@@ -670,7 +669,7 @@ const DataListView = <T extends BaseItem>({
     clientFilterFn,
     clientSortFn,
   ]);
-
+ 
   // Handle accumulating data for load more pagination
   useEffect(() => {
     if (loadMorePagination && loadMoreQueryResult.data?.data) {
@@ -1231,7 +1230,7 @@ const DataListView = <T extends BaseItem>({
                   onClick={() => onItemClick?.(item)}
                   className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
                     }`}
-                >
+                > 
                   {ItemComponent ? (
                     <ItemComponent item={item} index={index} />
                   ) : renderItem ? (
@@ -1251,33 +1250,33 @@ const DataListView = <T extends BaseItem>({
             )}
           </div>
         )}
-        {PostListComponent && (
-          <PostListComponent
-            data={processedData}
-            isLoading={isListLoading as boolean}
-            error={error}
-            refetch={refetch}
-            setCurrentPage={setCurrentPage}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            startIndex={startIndex}
-            endIndex={endIndex}
-            pageSize={pageSize}
-            totalCount={totalCount}
-          />
-        )}
       </div>
-
-      {/* Pagination — sticky bottom */}
-      {showPagination &&
-        !isListLoading &&
+ 
+      {/* Sticky Footer — Actions & Pagination */}
+      {!isListLoading &&
         !error &&
-        processedData.length > 0 && (
+        processedData.length > 0 &&
+        (PostListComponent || showPagination) && (
           <div
-            className="lg:sticky bottom-0 left-0 z-10 bg-white"
+            className="lg:sticky bottom-0 left-0 z-20 bg-white shadow-[0_-4px_6px_-1px_rgb(0_0_0_/_0.05)]"
             style={{ width: 'var(--card-table-visible-width, 100%)' }}
           >
-            {renderPagination()}
+            {PostListComponent && (
+              <PostListComponent
+                data={processedData}
+                isLoading={isListLoading as boolean}
+                error={error}
+                refetch={refetch}
+                setCurrentPage={setCurrentPage}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                pageSize={pageSize}
+                totalCount={totalCount}
+              />
+            )}
+            {showPagination && renderPagination()}
           </div>
         )}
     </div>

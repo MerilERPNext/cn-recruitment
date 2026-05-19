@@ -1018,3 +1018,85 @@ frappe.ui.form.on('Job Applicant', {
     }
 });
 
+
+frappe.ui.form.on('Job Applicant', {
+    refresh(frm) {
+        if (frm.doc.__islocal) return;
+
+        frm.add_custom_button(__('Send Pre Offer Form'), () => {
+            const current = frm.doc.custom_pre_offer_portal_form || '';
+
+            frappe.prompt(
+                [{
+                    label: __('Pre Offer Portal Form'),
+                    fieldname: 'form_name',
+                    fieldtype: 'Link',
+                    options: 'Job Applicant Portal Forms',
+                    default: current,
+                    reqd: 1,
+                }],
+                ({ form_name }) => {
+                    frm.set_value('custom_pre_offer_portal_form', form_name);
+                    frm.save().then(() => {
+                        frappe.call({
+                            method: 'recruitment.api.action_center.send_pre_offer_form',
+                            args: {
+                                job_applicant_id: frm.doc.name,
+                                form_name: form_name,
+                            },
+                            callback(r) {
+                                if (r.message && r.message.status === 'success') {
+                                    frappe.show_alert({
+                                        message: __('Pre Offer Form sent to candidate.'),
+                                        indicator: 'green',
+                                    });
+                                    frm.reload_doc();
+                                } else {
+                                    frappe.msgprint({
+                                        title: __('Error'),
+                                        indicator: 'red',
+                                        message: (r.message && r.message.message) || __('Failed to send Pre Offer Form.'),
+                                    });
+                                }
+                            },
+                        });
+                    });
+                },
+                __('Send Pre Offer Form'),
+                __('Send')
+            );
+        }, __('Actions'));
+    }
+});
+
+
+frappe.ui.form.on('Job Applicant', {
+    refresh(frm) {
+        if (frm.doc.__islocal || frm.doc.status !== 'Accepted') return;
+
+        frm.add_custom_button(__('Create Pre Onboarding Release'), () => {
+            frappe.db.get_value(
+                'Pre Onboarding Release',
+                { job_applicant: frm.doc.name, status: ['!=', 'Onboarding Created'] },
+                'name'
+            ).then(({ message }) => {
+                if (message && message.name) {
+                    frappe.set_route('Form', 'Pre Onboarding Release', message.name);
+                    return;
+                }
+                frappe.db.get_list('Job Offer', {
+                    filters: { job_applicant: frm.doc.name, status: 'Accepted' },
+                    fields: ['name'],
+                    order_by: 'creation desc',
+                    limit: 1,
+                }).then((rows) => {
+                    const offer = rows && rows[0] && rows[0].name;
+                    frappe.new_doc('Pre Onboarding Release', Object.assign(
+                        { job_applicant: frm.doc.name },
+                        offer ? { job_offer: offer } : {}
+                    ));
+                });
+            });
+        }, __('Actions'));
+    }
+});

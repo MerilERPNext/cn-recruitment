@@ -6,10 +6,10 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
-import { BulkSelectProvider } from "../../shared/BulkSelectContext";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
 import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
+import { BulkSelectProvider } from "../../shared/BulkSelectContext";
 
 const TeamAdvanceRequest = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
@@ -105,9 +105,9 @@ const TeamAdvanceRequest = () => {
     {
       sortable: true,
       type: "date",
-      field: "repayment_end_date",
+      field: "posting_date",
       getValue: (item: any) =>
-        item?.reference_document?.repayment_end_date ?? "",
+        item?.reference_document?.posting_date ?? "",
     },
     {
       sortable: true,
@@ -206,6 +206,7 @@ const TeamAdvanceRequest = () => {
             />
           </CardTable>
         </BulkSelectProvider>
+
       </div>
 
       <AdvanceDetailsModal

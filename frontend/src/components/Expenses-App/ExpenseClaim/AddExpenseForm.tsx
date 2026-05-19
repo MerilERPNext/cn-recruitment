@@ -227,6 +227,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const [isFileProcessing, setIsFileProcessing] = useState(false);
   const hydrationRef = useRef(false);
   const customFormFileCacheRef = useRef<Record<string, File>>({});
+  const processedReceiptFilesRef = useRef<Set<string>>(new Set());
 
   const isEditActive = Boolean(initialExpense || editingExpenseId || isEditingFromDetailsPage || draft_document_name);
 
@@ -235,6 +236,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     setDynamicFields([]);
     setCalcParams(undefined);
     setVehicleType(null);
+    processedReceiptFilesRef.current.clear();
   };
 
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
@@ -278,6 +280,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const { mutateAsync: validateExpense, isPending: isValidating } =
     useValidateExpense();
   const { uploadFiles, loading: isUploadingFiles } = useFileUploader();
+  const loading = useLoadingOverlay();
   const { mutateAsync: fetchApplicableCategories } = useGetApplicableExpenseCategoriesMutation();
   const { mutateAsync: fetchExpenseTypesByCategory } = useGetExpenseTypesByCategoryMutation();
   const { data: claimAttachments } = useGetExpenseAttachments(
@@ -579,6 +582,123 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     setSelectedExpenses((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
+
+  const fileToDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
+  const getReceiptFile = (fileObj: any): File | undefined => {
+    const file = fileObj?.file;
+    return file instanceof File ? file : undefined;
+  };
+
+  const getReceiptFingerprint = (file: File) =>
+    `${file.name}:${file.size}:${file.lastModified}`;
+
+  const isEmptyValue = (value: any) =>
+    value === undefined || value === null || value === "";
+
+  const setDynamicFormValue = (key: string, value: any) => {
+    const component = dynamicFormRef.current?.getComponent?.(key);
+    if (component?.setValue) {
+      component.setValue(value);
+    }
+  };
+
+  const applyReceiptExtraction = (fields: Record<string, any>, currentData: Record<string, any>) => {
+    const nextData = { ...currentData };
+    const applied: string[] = [];
+
+    const applyIfEmpty = (key: string, value: any) => {
+      if (value === undefined || value === null || value === "") return;
+      if (!isEmptyValue(nextData[key])) return;
+      nextData[key] = value;
+      setDynamicFormValue(key, value);
+      applied.push(key);
+    };
+
+    if (fields.expense_date && isEmptyValue(nextData.expense_date)) {
+      const dateValue = new Date(`${fields.expense_date}T00:00:00`);
+      nextData.expense_date = dateValue;
+      setDynamicFormValue("expense_date", dateValue);
+      applied.push("expense_date");
+    }
+
+    applyIfEmpty("amount", fields.amount);
+    applyIfEmpty("description", fields.description);
+    applyIfEmpty("invoice_number", fields.invoice_number);
+    applyIfEmpty("merchant", fields.merchant);
+
+    if (
+      fields.currency &&
+      (isEmptyValue(nextData.currency) ||
+        (nextData.currency === "INR" && fields.currency !== "INR"))
+    ) {
+      nextData.currency = fields.currency;
+      setDynamicFormValue("currency", fields.currency);
+      applied.push("currency");
+    }
+
+    if (applied.length > 0) {
+      setDynamicFormData(nextData);
+    }
+    return applied;
+  };
+
+  const extractReceiptFromAttachments = async (
+    attachments: any[],
+    currentData: Record<string, any>,
+  ) => {
+    const fileObj = attachments.find((attachment) => {
+      const file = getReceiptFile(attachment);
+      return file && !processedReceiptFilesRef.current.has(getReceiptFingerprint(file));
+    });
+
+    const file = getReceiptFile(fileObj);
+    if (!file) return;
+
+    const fingerprint = getReceiptFingerprint(file);
+    processedReceiptFilesRef.current.add(fingerprint);
+
+    try {
+      setIsFileProcessing(true);
+      loading?.show("Scanning receipt...");
+      const content = await fileToDataUrl(file);
+      const result: any = await FrappeAPI.callMethod(
+        "chatnext_expense_trips.document_extraction.api.extract_receipt_fields_from_base64",
+        {
+          file_name: file.name,
+          content,
+          expense_category: mainFormData?.expenseCategory,
+          expense_type: mainFormData?.expenseType,
+        },
+      );
+
+      const fields = result?.fields || {};
+      const applied = applyReceiptExtraction(fields, currentData);
+
+      if (applied.length > 0) {
+        toast.success(`Receipt read: filled ${applied.length} field${applied.length === 1 ? "" : "s"}.`, {
+          id: "receipt-ocr",
+        });
+      } else if (result?.warnings?.length) {
+        toast(result.warnings[0], { id: "receipt-ocr" });
+      } else {
+        toast("Receipt read, but no empty fields needed updating.", { id: "receipt-ocr" });
+      }
+    } catch (error) {
+      console.error("Receipt extraction failed:", error);
+      toast("Receipt uploaded. Fields could not be detected, please enter them manually.", { id: "receipt-ocr" });
+      processedReceiptFilesRef.current.delete(fingerprint);
+    } finally {
+      setIsFileProcessing(false);
+      loading?.hide();
+    }
+  };
 
   const handleDeleteSelected = () => {
     setExpenses((prev) =>
@@ -1245,8 +1365,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       });
     }
   }, [isSharePanelOpen]);
-
-  const loading = useLoadingOverlay();
 
   const submitAll = async (type: "General" | "Relocation", specificExpenses?: Expense[]) => {
     if (type === "Relocation") {
@@ -2184,6 +2302,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 } else {
                   setIsFileProcessing(false);
                   toast.dismiss("file-processing");
+                }
+
+                if (change.changed?.component?.key === "attachments") {
+                  void extractReceiptFromAttachments(newAttachments, change.data || {});
                 }
 
                 if (change.changed?.component?.key === "shareExpenseCheckbox") {

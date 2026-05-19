@@ -21,6 +21,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // -------------------- TYPES --------------------
 interface NotificationLog {
+  email_content: string;
   name: string;
   subject: string;
   for_user: string;
@@ -55,7 +56,16 @@ const NotificationList = () => {
     readFilter
   );
 
-  const apiNotifications: NotificationLog[] = data ?? [];
+  const apiNotifications: NotificationLog[] = (data ?? []).map((item) => ({
+    email_content: item.email_content || "",
+    name: item.name,
+    subject: item.subject,
+    for_user: item.for_user,
+    type: item.type,
+    read: item.read,
+    from_user: item.from_user,
+    creation: item.creation,
+  }));
 
   const [selectedNotification, setSelectedNotification] =
     useState<NotificationLog | null>(null);
@@ -289,10 +299,20 @@ const NotificationList = () => {
                 {new Date(selectedNotification.creation).toLocaleString()}
               </p>
               <div className="pt-4 text-gray-800">
-                {sanitizeToPlainText(selectedNotification.subject)
+              <strong>Subject:</strong>{" "} {sanitizeToPlainText(selectedNotification.subject)
                   .replace(/\s+/g, " ")
                   .trim()}
               </div>
+              {selectedNotification.email_content && (
+  <div className="pt-4 text-gray-800">
+    <strong>Message:</strong>
+    <div
+      dangerouslySetInnerHTML={{
+        __html: selectedNotification.email_content,
+      }}
+    />
+  </div>
+)}
             </div>
 
             <div className="px-6 py-4 border-t flex justify-end gap-2">

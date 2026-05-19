@@ -247,13 +247,13 @@ const ApprovalStageTooltip: React.FC<ApprovalStageTooltipProps> = ({
             </div>
           )}
 
-          {stage.role ? (
+          {(stage.role || stage.designation_name) ? (
             <div className="flex flex-col mt-0.5">
               <span className="text-[9px] uppercase font-semibold text-gray-500 tracking-wider leading-tight">
                 Assigned Role
               </span>
               <span className="font-medium text-xs text-gray-900 leading-tight">
-                {stage.role}
+                {stage.role || stage.designation_name}
               </span>
             </div>
           ) : (

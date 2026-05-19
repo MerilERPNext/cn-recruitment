@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactElement, Suspense } from "react";
 import { Navigate } from "react-router";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
+import { useFrappeDocument } from "./hooks/useFrappeQuery";
 import { useScreenSize } from "./hooks/useScreenSize";
+import { Expense, ExpenseClaim } from "./types/expenseAdvance";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
 
 // Keep critical components as static imports for better UX
@@ -18,15 +20,18 @@ import IncomeTaxSheet from "./components/Compansation/TaxSheet/TaxSheet";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 //import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
 import AddExpenseFormV2 from "./components/Expenses-App/ExpenseClaim/AddExpenseFormV2";
+import {
+  ExpenseNavigationState,
+  buildExpenseNavigationState,
+} from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
+import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
+import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
+import Onboarding from "./components/Onboarding/Onboarding";
 import Requests from "./components/Requests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import SearchMembers from "./components/SearchMembers";
-import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
-import Onboarding from "./components/Onboarding/Onboarding";
-import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
-import { ExpenseNavigationState } from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -38,6 +43,9 @@ const TeamApprovalListExemptionTable = lazyWithRetry(
 const Expenses = lazyWithRetry(
   () => import("./components/Expenses"),
   "Expenses",
+);
+const FlexiDeclaration = lazyWithRetry(
+  () => import("./components/Compansation/fl/FlexiDeclaration"),
 );
 const RecruitmentApp = lazyWithRetry(
   () => import("./components/RecruitmentApp"),
@@ -210,6 +218,10 @@ const Policies = lazyWithRetry(
 const PoliciesEnforced = lazyWithRetry(
   () => import("./components/PoliciesEnforced"),
   "PoliciesEnforced",
+);
+const MandatoryHrProcessEnforced = lazyWithRetry(
+  () => import("./components/MandatoryHrProcessEnforced"),
+  "MandatoryHrProcessEnforced",
 );
 const PolicySignOff = lazyWithRetry(
   () => import("./components/PolicySignOff"),
@@ -455,23 +467,86 @@ const LeaderboardPage = lazyWithRetry(
   () => import("./components/Recognition/LeaderboardPage"),
   "LeaderboardPage",
 );
+const ScheduledImportsPage = lazyWithRetry(
+  () => import("./components/ScheduledImports/ScheduledImportsPage"),
+  "ScheduledImportsPage",
+);
 
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const navigationState = location.state as ExpenseNavigationState | null;
-  const initialExpense = navigationState?.expense || null;
-  const expense_claim_name = navigationState?.expense_claim_name || null;
+
+  console.log("[AddExpensePage] Initial Location State:", navigationState);
+
+  const queryExpenseClaim = searchParams.get("expenseClaim");
+  const queryExpenseItem = searchParams.get("expenseItem");
+  const queryIsResubmit = searchParams.get("isResubmit") === "true";
+
+  console.log("[AddExpensePage] URL params:", {
+    queryExpenseClaim,
+    queryExpenseItem,
+    queryIsResubmit,
+  });
+
+  // We must decide if we need to fetch backup data.
+  const needsBackupHydration =
+    !navigationState?.expense && !!queryExpenseClaim && !!queryExpenseItem;
+
+  if (needsBackupHydration) {
+    console.warn(
+      "[AddExpensePage] Location state missing or incomplete. Triggering API hydration fallback.",
+    );
+  }
+
+  const { data: fetchedDoc, isLoading } = useFrappeDocument(
+    "Expense Claim",
+    needsBackupHydration ? queryExpenseClaim! : "",
+  );
+
+  if (needsBackupHydration && isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  // Reconstruction of state from fetched data if location.state went AWOL
+  let resolvedExpense = navigationState?.expense || null;
+  let resolvedClaimName = navigationState?.expense_claim_name || null;
+  let resolvedIsResubmit = navigationState?.isResubmit || false;
+
+  if (needsBackupHydration && fetchedDoc) {
+    const claimData = fetchedDoc as unknown as ExpenseClaim;
+    const matchingItem = claimData.expenses?.find(
+      (e: Expense) => e.name === queryExpenseItem,
+    );
+
+    if (matchingItem) {
+      const fallbackState = buildExpenseNavigationState(
+        claimData,
+        matchingItem,
+        queryIsResubmit,
+      );
+      resolvedExpense = fallbackState.expense;
+      resolvedClaimName = fallbackState.expense_claim_name;
+      resolvedIsResubmit = fallbackState.isResubmit || false;
+    }
+  }
+
   const draft_document_name = navigationState?.draft_document_name || null;
-  const isResubmit = navigationState?.isResubmit || false;
   const isEditingFromDraft = Boolean(draft_document_name);
+
   return (
     <AddExpenseFormV2
-      initialExpense={initialExpense}
-      expense_claim_name={expense_claim_name}
+      key={
+        resolvedExpense
+          ? `edit-${resolvedClaimName}-${resolvedExpense.name}`
+          : "add-new"
+      }
+      initialExpense={resolvedExpense}
+      expense_claim_name={resolvedClaimName}
       draft_document_name={draft_document_name}
-      isEditingFromDetailsPage={Boolean(initialExpense) && !isEditingFromDraft}
-      isResubmit={isResubmit}
+      isEditingFromDetailsPage={Boolean(resolvedExpense) && !isEditingFromDraft}
+      isResubmit={resolvedIsResubmit}
     />
   );
 };
@@ -576,6 +651,11 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Policies",
   },
   {
+    path: "/webapp/hr-process-mandatory",
+    element: <MandatoryHrProcessEnforced />,
+    permissionKey: "HR Process Mandatory",
+  },
+  {
     path: "/webapp/recruitment-app/job-applicant-detail/:id",
     element: <JobApplicantDetails />,
     permissionKey: "Recruitment",
@@ -639,6 +719,11 @@ export const routesConfig: AppRoute[] = [
         path: "it-declaration-form",
         element: <ITDeclarationForm />,
         permissionKey: "IT Declaration",
+      },
+      {
+        path: "flexi-declaration-form",
+        element: <FlexiDeclaration />,
+        permissionKey: "Flexi Declaration",
       },
       {
         path: "team-approval-it-declaration/:proofId",
@@ -986,7 +1071,7 @@ export const routesConfig: AppRoute[] = [
         path: "request",
         element: <></>, // important: render nothing
         permissionKey: "request-leave",
-      }
+      },
     ],
   },
 
@@ -1055,7 +1140,8 @@ export const routesConfig: AppRoute[] = [
         path: "separation",
         element: <Separation />,
         permissionKey: "Separation",
-      }, {
+      },
+      {
         path: "rejected-separation-request",
         element: <RejectedSeparationRequest />,
         permissionKey: "Rejected Separation Request",
@@ -1151,13 +1237,22 @@ export const routesConfig: AppRoute[] = [
     element: <Onboarding />,
     permissionKey: "Employee Onboarding",
     children: [
-      { path: "onboarding-field-approval/:onboardingId", element: <OnboardingFieldApproval />, permissionKey: "Employee Onboarding" },
+      {
+        path: "onboarding-field-approval/:onboardingId",
+        element: <OnboardingFieldApproval />,
+        permissionKey: "Employee Onboarding",
+      },
     ],
   },
   {
     path: "/webapp/todo-app",
     element: <TodoPage />,
     permissionKey: "Todo",
+  },
+  {
+    path: "/webapp/scheduled-imports",
+    element: <ScheduledImportsPage />,
+    permissionKey: "Scheduled Imports",
   },
   {
     path: "/webapp/recognition",

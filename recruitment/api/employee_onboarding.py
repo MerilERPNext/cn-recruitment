@@ -1,6 +1,11 @@
 import frappe
 import re
-from recruitment.api.candidate_portal import _get_onboarding_portal_rows, _read_onboarding_meta
+from recruitment.api.candidate_portal import (
+    _get_active_pre_release,
+    _get_onboarding_portal_rows,
+    _read_onboarding_meta,
+)
+from recruitment.api.candidate_auth import candidate_required, enforce_candidate_identity
 
 DOCTYPENAME = "Employee Onboarding"
 MAX_PAGE_LENGTH = 100
@@ -67,13 +72,14 @@ def _sanitize_order_by(order_by, allowed_fields, default_field):
     return f"{fieldname} {direction}"
 
 
-@frappe.whitelist(allow_guest=True)
+@candidate_required
 def update_onboarding_details(email, data):
     """
     Updates an Employee Onboarding record identified by the job_applicant email.
     Only fields configured in the candidate portal form AND in Pending/Rejected status are accepted.
     After save, marks each updated field as Filled and snapshots current_value.
     """
+    enforce_candidate_identity(email=email)
     frappe.local.response["http_status_code"] = 200
 
     if isinstance(data, str):
@@ -87,16 +93,30 @@ def update_onboarding_details(email, data):
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "code": 400, "message": "Data must be a valid dictionary of fields to update."}
 
+    applicant_name = frappe.db.get_value(
+        "Job Applicant",
+        {"email_id": email},
+        "name",
+        order_by="modified desc",
+    )
+    if not applicant_name:
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "code": 404, "message": f"No Job Applicant found for {email}"}
+
     onboarding_name = frappe.db.get_value(
         "Employee Onboarding",
-        {"job_applicant": email, "docstatus": ("<", 2)},
+        {"job_applicant": applicant_name, "docstatus": ("<", 2)},
         "name",
         order_by="creation desc",
     )
 
     if not onboarding_name:
-        frappe.local.response["http_status_code"] = 404
-        return {"status": "error", "code": 404, "message": f"No Employee Onboarding record found for {email}"}
+        pre_release = _get_active_pre_release(applicant_name)
+        if not pre_release:
+            frappe.local.response["http_status_code"] = 404
+            return {"status": "error", "code": 404, "message": f"No Employee Onboarding record or pending release found for {email}"}
+        release_doc = frappe.get_doc("Pre Onboarding Release", pre_release["name"])
+        onboarding_name = release_doc.materialize_onboarding(prefill=data)
 
     try:
         doc = frappe.get_doc("Employee Onboarding", onboarding_name)
@@ -221,7 +241,13 @@ def update_onboarding_details(email, data):
 
 
 @frappe.whitelist()
-def get_employee_onboarding_list(order_by="boarding_status asc", page_length=10, start=0):
+def get_employee_onboarding_list(
+    order_by="boarding_status asc",
+    page_length=10,
+    start=0,
+    search_term=None,
+    search_fields=None,
+):
     try:
         frappe.has_permission(DOCTYPENAME, "read", throw=True)
 
@@ -275,9 +301,47 @@ def get_employee_onboarding_list(order_by="boarding_status asc", page_length=10,
         default_order_field = "boarding_status" if "boarding_status" in allowed_order_fields else "creation"
         safe_order_by = _sanitize_order_by(order_by, allowed_order_fields, default_order_field)
 
+        # ── Search filter ──────────────────────────────────────────────────────
+        # Allowed fields that can be searched against
+        _SEARCHABLE_FIELDS = {
+            "name", "employee_name", "job_applicant",
+            "department", "designation", "boarding_status",
+        }
+
+        # Parse search_fields from JSON string if needed
+        if isinstance(search_fields, str):
+            try:
+                import json as _json
+                search_fields = _json.loads(search_fields)
+            except Exception:
+                search_fields = []
+
+        # Default search fields if none provided
+        if not search_fields or not isinstance(search_fields, list):
+            search_fields = ["employee_name", "job_applicant", "department", "designation"]
+
+        # Restrict to allowed + valid fields only
+        search_fields = [
+            f for f in search_fields
+            if f in _SEARCHABLE_FIELDS and f in valid_fields
+        ]
+        if not search_fields:
+            search_fields = ["employee_name", "job_applicant"]
+
+        # Build OR filters when a search term is provided
+        filters = []
+        if search_term and str(search_term).strip():
+            term = f"%{str(search_term).strip()}%"
+            or_filters = [[DOCTYPENAME, f, "like", term] for f in search_fields]
+            # frappe.get_list supports or_filters as a list of conditions
+        else:
+            or_filters = []
+
         data = frappe.get_list(
             DOCTYPENAME,
             fields=fields,
+            filters=filters,
+            or_filters=or_filters if or_filters else None,
             order_by=safe_order_by,
             start=start_value,
             page_length=page_length_value,
@@ -286,6 +350,8 @@ def get_employee_onboarding_list(order_by="boarding_status asc", page_length=10,
         count_result = frappe.get_list(
             DOCTYPENAME,
             fields=["count(name) as total_count"],
+            filters=filters,
+            or_filters=or_filters if or_filters else None,
             page_length=1,
         )
         total_count = int((count_result[0] or {}).get("total_count") or 0) if count_result else 0
@@ -300,6 +366,10 @@ def get_employee_onboarding_list(order_by="boarding_status asc", page_length=10,
                 "has_more": (start_value + page_length_value) < total_count,
             },
             order_by=safe_order_by,
+            search={
+                "search_term": search_term or "",
+                "search_fields": search_fields,
+            },
         )
     except frappe.ValidationError as e:
         return _error_response(str(e), 400)
@@ -309,12 +379,13 @@ def get_employee_onboarding_list(order_by="boarding_status asc", page_length=10,
         frappe.log_error(frappe.get_traceback(), "Employee Onboarding List API Error")
         return _error_response("Unable to fetch Employee Onboarding list right now.", 500)
 
-@frappe.whitelist(allow_guest=True)
+@candidate_required
 def get_applicant_status(email):
     """
     Full journey for a candidate: every Job Applicant record under this email,
     with per-job details and a status timeline (transition dates) for each.
     """
+    enforce_candidate_identity(email=email)
     import json as _json
     from frappe.utils import getdate
 

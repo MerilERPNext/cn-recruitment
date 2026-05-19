@@ -18,10 +18,12 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 const titles = [
   "",
   "Loan Name",
+  "Assigned To",
   "Loan Type",
   "Loan Amount",
   "Rate of Interest",
   "Standard Interest",
+  "Created At",
   "EMI Type",
   "Tenure",
   "Start Date",
@@ -32,6 +34,8 @@ const titles = [
 
 const columnWidths = [
   "0.1rem",
+  "1fr",
+  "1fr",
   "1fr",
   "1fr",
   "1fr",
@@ -93,7 +97,7 @@ const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
 
 export default function LoansPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
- const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { isDesktop } = useScreenSize();
   const { data: user, isFetching: userLoading } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
@@ -232,8 +236,8 @@ export default function LoansPage() {
                       },
                     ],
                     emptyValueConfig: {
-                    filterValue: ["!=", "Cancelled"],
-                  },
+                      filterValue: ["!=", "Cancelled"],
+                    },
                   },
                 ]}
                 pageSize={10}

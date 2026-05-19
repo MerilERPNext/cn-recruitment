@@ -38,7 +38,7 @@ export const NotificationAlertService = {
     }
 
     const response = await FrappeAPI.getDocumentList("Notification Log", {
-      fields: ["name", "subject", "for_user", "type", "read", "from_user", "creation"],
+      fields: ["name", "subject", "for_user", "type", "read", "from_user", "creation","email_content"],
       filters,
       orderBy: "creation desc",
       limit,

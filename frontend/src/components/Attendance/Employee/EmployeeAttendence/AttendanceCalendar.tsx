@@ -74,27 +74,23 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
     setSearchParams(newParams, { replace: true });
   }, [selectedDate, setSearchParams, searchParams]);
   const getAttendanceEvents = (attendance: AttendanceStatusInfo) => {
-    if (attendance.events?.some((event) => event.status === "Revoked")) {
-      return
-    }
-    return (attendance?.events ?? []).length > 0 && (
+    const validEvents = (attendance?.events ?? []).filter(
+      (event) => event.status !== "Revoked"
+    )
+
+    return validEvents.length > 0 && (
       <div className="flex gap-1">
         {Array.from(
           new Set(
-            attendance?.events?.map((event) => event?.doctype === "Attendance Request" && event?.request_type === "Out Duty" ? event?.request_type : event?.doctype)
-            // (attendance?.events ?? [])
-            //   .filter(
-            //     (event) =>
-            //       !(
-            //         event.doctype === "Attendance Request" &&
-            //         event.status === "Approved"
-            //       )
-            //   )
-            //   // here we treat request type Out Duty as a doctype because we don't have a separate doctype for it
-            //   .map((event) => event?.doctype === "Attendance Request" && event?.request_type === "Out Duty" ? event?.request_type : event?.doctype)
+            validEvents.map((event) =>
+              event?.doctype === "Attendance Request" &&
+                event?.request_type === "Out Duty"
+                ? event?.request_type
+                : event?.doctype
+            )
           )
         ).map((doctype, index) => (
-          <div
+          doctype !== "Employee Checkin" && <div
             key={index}
             className={`w-[6px] h-[6px] rounded-full ${getEventDotColor(
               doctype
@@ -174,6 +170,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
         )}
         renderDayContents={(day, date) => {
           const attendance = getAttendanceStatus(date);
+
           const isSelected =
             selectedDate?.toDateString() === date.toDateString();
           const baseClasses = "transition-all duration-200";
@@ -211,6 +208,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
             const secondColor =
               gradientClassMap[attendance?.secondHalf?.toLowerCase() || ""];
             const gradient = `linear-gradient(to bottom right, ${firstColor} 50%, ${secondColor} 50%)`;
+
             return (
               <div
                 className={dayBoxStyles}

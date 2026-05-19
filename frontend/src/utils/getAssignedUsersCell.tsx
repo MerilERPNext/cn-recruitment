@@ -1,44 +1,69 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { ReactNode } from "react";
 import AllocatedToTooltip from "../components/shared/AllocatedToTooltip";
+import { RoleAssignedUsersType } from "../types/flows";
+import { Typography } from "../components/shared/atoms/Typography";
 
-export const getAssignedUsersCell = (item: any) => {
-  const stages: any[] = item?.approval_stages_status ?? [];
-  const pendingStages = stages.filter((s) => s.status?.toLowerCase() === "pending");
-  const pendingWithRole = stages.find((s) => !!s.role);
-  const pendingAny = pendingStages[0];
-  const fallback = stages[stages.length - 1];
+export const getStageAssignedUsersCell = (
+  stage: any,
+  roleAssignedUsers: RoleAssignedUsersType[] = [],
+  position: "left" | "right" | "top" | "bottom" = "left",
+  textWrapper?: (text: string) => ReactNode
+) => {
+  if (!stage) return textWrapper ? textWrapper("—") : <span>—</span>;
 
-  if (pendingWithRole) {
+  if (stage.role) {
     const totalUsers =
-      item?.role_assigned_users?.reduce(
-        (acc: number, r: any) => acc + (r.user?.length ?? 0),
+      roleAssignedUsers?.reduce(
+        (acc: number, r: any) => acc + (r.users?.length || r.user?.length || 0),
         0,
       ) ?? 0;
+
+    const text = `Assign(${totalUsers})`;
     return (
       <AllocatedToTooltip
         title="Assigned To"
-        RoleAssignedUsers={item?.role_assigned_users}
-        roles={[pendingWithRole.role]}
-        position="left"
+        RoleAssignedUsers={roleAssignedUsers}
+        roles={stage.role.split(',').map((r: string) => r.trim())}
+        position={position}
       >
-        <span>{`Assign(${totalUsers})`}</span>
+        {textWrapper ? textWrapper(text) : <span>{text}</span>}
       </AllocatedToTooltip>
     );
   }
 
-  const activeStage = pendingAny ?? fallback;
-  if (!activeStage) return <span>—</span>;
+  const users = stage.allocated_to?.length
+    ? stage.allocated_to
+    : stage.user
+      ? [{ name: stage.user, employee: stage.employee_id, designation_name: stage.designation_name }]
+      : [];
 
-  const label = `${activeStage.stage_name}(1)`;
-  const stageUser: string | undefined = activeStage.user;
-
+  const label = `${stage?.designation_name || stage?.stage_name || "Not Assigned"} `;
   return (
     <AllocatedToTooltip
       title="Assigned To"
-      users={stageUser ? [stageUser] : []}
-      position="left"
+      users={users}
+      position={position}
     >
-      <span>{label}</span>
+      <Typography color="primary" className="underline">
+
+        {textWrapper ? textWrapper(label) : <span>{label}</span>}
+      </Typography>
     </AllocatedToTooltip>
+  );
+};
+
+export const getAssignedUsersCell = (item: any) => {
+  const stages: any[] = item?.approval_stages_status ?? [];
+  const fallback = stages[stages.length - 1];
+
+  // The active stage is the first one that is not "Approved"
+  const activeStage =
+    stages.find((s) => s.status?.toLowerCase() !== "approved") ?? fallback;
+
+  return getStageAssignedUsersCell(
+    activeStage,
+    item?.role_assigned_users,
+    "left"
   );
 };

@@ -373,6 +373,29 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           delete companyField.selectValues;
           delete companyField.refreshOn;
         }
+
+        // Inject allowed date boundaries so this rebuild never overwrites them.
+        // This effect clones from baseSchema (original JSON) every time it runs,
+        // which would erase any date constraints set by the separate attachment
+        // effect if that one happened to run first.
+        if (attendanceRequestAttachmentsMandatory) {
+          const parseDateLocal = (d: string | undefined) => {
+            if (!d) return undefined;
+            const p = new Date(d);
+            return isNaN(p.getTime()) ? undefined : p;
+          };
+          const minD = parseDateLocal(attendanceRequestAttachmentsMandatory.allowed_from_date);
+          const maxD = parseDateLocal(attendanceRequestAttachmentsMandatory.allowed_to_date);
+
+          (["from_date", "to_date"] as const).forEach((key) => {
+            const comp = panel?.components?.find((c: SchemaComponent) => c.key === key);
+            if (!comp) return;
+            if (!comp.datePicker) comp.datePicker = {};
+            if (!comp.widget) comp.widget = {};
+            if (minD) { comp.datePicker.minDate = minD; comp.widget.minDate = minD; }
+            if (maxD) { comp.datePicker.maxDate = maxD; comp.widget.maxDate = maxD; }
+          });
+        }
       }
 
       try {
@@ -386,8 +409,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       }
     }
     // include requiredFieldMap so required flags are respected after filtering
+    // include attendanceRequestAttachmentsMandatory so date constraints survive
+    // schema rebuilds triggered by reqValidationmutation arriving after attachment data
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reqValidationmutation?.data, propSchema, requiredFieldMap]);
+  }, [reqValidationmutation?.data, propSchema, requiredFieldMap, attendanceRequestAttachmentsMandatory]);
 
   const start = useMemo(() => {
     const d = fromDateChanged ? new Date(fromDateChanged) : selectedDate;
@@ -531,130 +556,144 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     }
   }, [isForOthers, currentEmployee]);
 
-  // Sync attachment mandatory status and date limits
+  // Inject allowed date boundaries into the React-level formSchema so that
+  // flatpickr is initialized with the correct min/max on every form rebuild —
+  // including the very first render when data arrives after the form mounts.
   useEffect(() => {
-    if (formAddressInstance.current && attendanceRequestAttachmentsMandatory) {
-      const showAttachmentComp =
-        formAddressInstance.current.getComponent("show_attachment");
-      const allowedFromDateComp =
-        formAddressInstance.current.getComponent("allowed_from_date");
-      const allowedToDateComp =
-        formAddressInstance.current.getComponent("allowed_to_date");
+    if (!attendanceRequestAttachmentsMandatory) return;
 
-      if (showAttachmentComp) {
-        showAttachmentComp.setValue(
-          String(!!attendanceRequestAttachmentsMandatory.is_mandatory),
-          { noUpdateEvent: true },
-        );
-      }
+    const parseDate = (d: string | undefined) => {
+      if (!d) return undefined;
+      const parsed = new Date(d);
+      return isNaN(parsed.getTime()) ? undefined : parsed;
+    };
+    const minD = parseDate(attendanceRequestAttachmentsMandatory.allowed_from_date);
+    const maxD = parseDate(attendanceRequestAttachmentsMandatory.allowed_to_date);
 
-      if (
-        allowedFromDateComp &&
-        attendanceRequestAttachmentsMandatory.allowed_from_date
-      ) {
-        allowedFromDateComp.setValue(
-          attendanceRequestAttachmentsMandatory.allowed_from_date,
-          { noUpdateEvent: true },
-        );
-      }
+    if (!minD && !maxD) return;
 
-      if (
-        allowedToDateComp &&
-        attendanceRequestAttachmentsMandatory.allowed_to_date
-      ) {
-        allowedToDateComp.setValue(
-          attendanceRequestAttachmentsMandatory.allowed_to_date,
-          { noUpdateEvent: true },
-        );
-      }
+    // Update the React schema state so formio rebuilds from_date / to_date with
+    // actual Date objects instead of the "allowed_from_date" string references.
+    // JSON.parse/stringify clones the schema; we then overwrite with the live
+    // Date objects from the closure (they survive serialisation-free).
+    setFormSchema((prev) => {
+      const updated = JSON.parse(JSON.stringify(prev)) as FormSchema;
+      const panel = updated.components?.[0];
+      if (!panel?.components) return prev;
 
-      // Directly update the date components schema to enforce constraints
-      const fromDateComp =
-        formAddressInstance.current.getComponent("from_date");
-      const toDateComp = formAddressInstance.current.getComponent("to_date");
-
-      // Disable to_date if required by API
-      if (toDateComp && toDateComp.component) {
-        toDateComp.component.disabled =
-          !!// eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (attendanceRequestAttachmentsMandatory as any)?.to_date_read_only;
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const updateDateConstraints = (comp: any) => {
-        if (comp && comp.component) {
-          if (!comp.component.datePicker) comp.component.datePicker = {};
-          if (!comp.component.widget) comp.component.widget = {};
-
-          const parseDate = (d: string | undefined) => {
-            if (!d) return undefined;
-            const parsed = new Date(d);
-            return isNaN(parsed.getTime()) ? undefined : parsed;
-          };
-
-          const minD = parseDate(
-            attendanceRequestAttachmentsMandatory.allowed_from_date,
-          );
-          const maxD = parseDate(
-            attendanceRequestAttachmentsMandatory.allowed_to_date,
-          );
-
-          if (minD) {
-            comp.component.datePicker.minDate = minD;
-            comp.component.widget.minDate = minD;
-            comp.component.minDate = minD;
-          } else {
-            delete comp.component.datePicker.minDate;
-            delete comp.component.widget.minDate;
-            delete comp.component.minDate;
-          }
-
-          if (maxD) {
-            comp.component.datePicker.maxDate = maxD;
-            comp.component.widget.maxDate = maxD;
-            comp.component.maxDate = maxD;
-          } else {
-            delete comp.component.datePicker.maxDate;
-            delete comp.component.widget.maxDate;
-            delete comp.component.maxDate;
-          }
+      (["from_date", "to_date"] as const).forEach((key) => {
+        const comp = panel?.components?.find((c: SchemaComponent) => c.key === key);
+        if (!comp) return;
+        if (!comp.datePicker) comp.datePicker = {};
+        if (!comp.widget) comp.widget = {};
+        if (minD) {
+          comp.datePicker.minDate = minD;
+          comp.widget.minDate = minD;
         }
-      };
-      updateDateConstraints(fromDateComp);
-      updateDateConstraints(toDateComp);
-
-      // Refresh form to apply visibility changes and date limits
-      // Capture submission before redraw, patch in new date values so they survive the restore
-      const currentSubmission = formAddressInstance.current.submission;
-      const patchedSubmission = currentSubmission
-        ? JSON.parse(JSON.stringify(currentSubmission))
-        : null;
-
-      if (patchedSubmission?.data) {
-        // Always patch the hidden fields so flatpickr resolves the string references
-        // ("allowed_from_date" / "allowed_to_date") to the correct dates after the restore
-        if (attendanceRequestAttachmentsMandatory.allowed_from_date) {
-          patchedSubmission.data.allowed_from_date = attendanceRequestAttachmentsMandatory.allowed_from_date;
+        if (maxD) {
+          comp.datePicker.maxDate = maxD;
+          comp.widget.maxDate = maxD;
         }
-        if (attendanceRequestAttachmentsMandatory.allowed_to_date) {
-          patchedSubmission.data.allowed_to_date = attendanceRequestAttachmentsMandatory.allowed_to_date;
-        }
+      });
 
-        if (forActionType !== "edit") {
-          if (attendanceRequestAttachmentsMandatory.allowed_from_date) {
-            patchedSubmission.data.from_date = attendanceRequestAttachmentsMandatory.allowed_from_date;
-          }
-          if (attendanceRequestAttachmentsMandatory.allowed_to_date) {
-            patchedSubmission.data.to_date = attendanceRequestAttachmentsMandatory.allowed_to_date;
-          }
-        }
-      }
+      return updated;
+    });
+  }, [attendanceRequestAttachmentsMandatory]);
 
-      formAddressInstance.current.redraw();
-      if (patchedSubmission) {
-        formAddressInstance.current.submission = patchedSubmission;
-      }
+  // Sync attachment mandatory status and date limits onto the live formio instance.
+  // This runs after the form is ready and keeps hidden fields + flatpickr in sync
+  // with the API response (handles both first-load and request-type changes).
+  useEffect(() => {
+    if (!formAddressInstance.current || !attendanceRequestAttachmentsMandatory) return;
+
+    const instance = formAddressInstance.current;
+
+    // Fire change event (no noUpdateEvent) so formio re-evaluates the
+    // attachments field conditional ("when": "show_attachment") automatically.
+    const showAttachmentComp = instance.getComponent("show_attachment");
+    if (showAttachmentComp) {
+      showAttachmentComp.setValue(
+        String(!!attendanceRequestAttachmentsMandatory.is_mandatory),
+      );
     }
+
+    // Keep hidden boundary fields in sync with form data.
+    const allowedFromDateComp = instance.getComponent("allowed_from_date");
+    const allowedToDateComp = instance.getComponent("allowed_to_date");
+    if (allowedFromDateComp && attendanceRequestAttachmentsMandatory.allowed_from_date) {
+      allowedFromDateComp.setValue(
+        attendanceRequestAttachmentsMandatory.allowed_from_date,
+        { noUpdateEvent: true },
+      );
+    }
+    if (allowedToDateComp && attendanceRequestAttachmentsMandatory.allowed_to_date) {
+      allowedToDateComp.setValue(
+        attendanceRequestAttachmentsMandatory.allowed_to_date,
+        { noUpdateEvent: true },
+      );
+    }
+
+    const toDateComp = instance.getComponent("to_date") as any;
+    if (toDateComp?.component) {
+      toDateComp.component.disabled =
+        !!(attendanceRequestAttachmentsMandatory as any)?.to_date_read_only;
+    }
+
+    const parseDate = (d: string | undefined) => {
+      if (!d) return undefined;
+      const parsed = new Date(d);
+      return isNaN(parsed.getTime()) ? undefined : parsed;
+    };
+    const minD = parseDate(attendanceRequestAttachmentsMandatory.allowed_from_date);
+    const maxD = parseDate(attendanceRequestAttachmentsMandatory.allowed_to_date);
+
+    // Patch the runtime component schema so any future component-level redraw
+    // triggered by redrawOn also picks up the correct constraints.
+    const patchRuntimeSchema = (comp: any) => {
+      if (!comp?.component) return;
+      if (!comp.component.datePicker) comp.component.datePicker = {};
+      if (!comp.component.widget) comp.component.widget = {};
+      if (minD) {
+        comp.component.datePicker.minDate = minD;
+        comp.component.widget.minDate = minD;
+        comp.component.minDate = minD;
+      } else {
+        delete comp.component.datePicker.minDate;
+        delete comp.component.widget.minDate;
+        delete comp.component.minDate;
+      }
+      if (maxD) {
+        comp.component.datePicker.maxDate = maxD;
+        comp.component.widget.maxDate = maxD;
+        comp.component.maxDate = maxD;
+      } else {
+        delete comp.component.datePicker.maxDate;
+        delete comp.component.widget.maxDate;
+        delete comp.component.maxDate;
+      }
+    };
+
+    const fromDateComp = instance.getComponent("from_date") as any;
+    patchRuntimeSchema(fromDateComp);
+    patchRuntimeSchema(toDateComp);
+
+    // Best-effort: directly update already-initialised flatpickr instances so
+    // constraints are visible without waiting for the next rebuild.
+    const applyFP = (comp: any) => {
+      try {
+        const el: HTMLElement | undefined = comp?.element ?? comp?.refs?.container;
+        const input = el?.querySelector?.("input.flatpickr-input") as FlatpickrInput | null;
+        const fp = input?._flatpickr as any;
+        if (!fp) return;
+        if (minD) fp.set("minDate", minD);
+        if (maxD) fp.set("maxDate", maxD);
+      } catch {
+        // non-fatal
+      }
+    };
+
+    applyFP(fromDateComp);
+    applyFP(toDateComp);
   }, [attendanceRequestAttachmentsMandatory, isFormReady, forActionType]);
 
   // const formatTime = (date: Date | string | undefined): string | undefined => {
@@ -817,6 +856,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
             setTimeout(() => {
               queryClient.invalidateQueries({
                 queryKey: [`attendance-requests-${activeEmployeeId}`],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ["attendance-calendar-details"],
               });
               setRefetchAttendance(true);
             }, 4000);

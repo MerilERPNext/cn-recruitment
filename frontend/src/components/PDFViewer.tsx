@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min?url';
+// Use explicit .mjs so Vite knows exactly which file to bundle as an asset.
+// vite.config.ts renames it to .js in the output so production servers (which
+// often lack a MIME-type mapping for .mjs) serve it as application/javascript.
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-// Configure PDF.js worker
-const configurePdfWorker = () => {
-  try {
-    pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
-  } catch (error) {
-    console.warn('Failed to configure PDF.js worker locally:', error);
-  }
-};
-configurePdfWorker();
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 interface PDFViewerProps {
   pdfUrl: string;

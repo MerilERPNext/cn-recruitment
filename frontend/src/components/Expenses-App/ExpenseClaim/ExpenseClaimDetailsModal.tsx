@@ -21,7 +21,7 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 import ApprovalStagesProgress from "./ApprovalStagesProgress";
-import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import { buildExpenseNavigationState, buildExpenseEditUrl } from "./expenseNavigationHelper";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 interface ExpenseClaimModalProps {
@@ -46,6 +46,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   status,
   isDraft = false,
 }) => {
+  console.log("Selected Stages", selectedStages)
   const raw = useFrappeDocument("Expense Claim", isDraft ? "" : (id as string));
   const draftRaw = useGetExpenseReferenceDoc(
     isDraft ? (id || undefined) : undefined,
@@ -64,6 +65,8 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   const { data: claimAttachments } = useGetExpenseAttachments(id || undefined);
 
   const finalStatus = status || data?.approval_status;
+
+  const shouldShowSanctionedAmount = Array.isArray(selectedStages) && selectedStages.some((stage: ApprovalStage) => stage.status === "Approved");
 
   const isSendedBack =
     currentUser?.name === selectedSendBackUser && canEditProp && todoStatus !== "Closed";
@@ -406,7 +409,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   <td className="px-4 py-3 text-gray-800">{formatINR(item.amount)}</td>
                   <td className="px-4 py-3 text-gray-800">{formatToIndianDate(item.creation)}</td>
                   <td className="px-4 py-3 text-gray-800">
-                    {finalStatus === "Approved" ? formatINR(item.sanctioned_amount) : "—"}
+                    {shouldShowSanctionedAmount ? formatINR(item.sanctioned_amount) : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-2 items-center justify-center">
@@ -423,7 +426,8 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                       <button
                         onClick={() => {
                           const navigationState = buildExpenseNavigationState(data, item, isSendedBack);
-                          navigate("/webapp/expenses-app/add-expense", {
+                          const editUrl = buildExpenseEditUrl(data?.name || "", item?.name || "", isSendedBack);
+                          navigate(editUrl, {
                             state: navigationState,
                           });
                         }}
@@ -518,7 +522,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                     Sanctioned Amount
                   </Typography>
                   <Typography variant="mobileCardValue">
-                    {finalStatus === "Approved" ? formatINR(item.sanctioned_amount) : "—"}
+                    {shouldShowSanctionedAmount ? formatINR(item.sanctioned_amount) : "—"}
                   </Typography>
                 </div>
               </div>
@@ -550,7 +554,8 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                         data,
                         item,
                       );
-                      navigate("/webapp/expenses-app/add-expense", {
+                      const editUrl = buildExpenseEditUrl(data?.name || "", item?.name || "", isSendedBack);
+                      navigate(editUrl, {
                         state: navigationState,
                       });
                     }}

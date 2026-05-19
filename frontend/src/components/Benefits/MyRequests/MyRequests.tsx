@@ -39,6 +39,7 @@ import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { queryClient } from "../../../providers/QueryProvider";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
   {
@@ -274,9 +275,11 @@ const MyRequests: React.FC = () => {
         <CardTable
           titles={[
             "Employee Name",
+            "Assigned To",
             "Company",
             "Claim Benefit For",
             "Claim Date",
+            "Created At",
             "Claimed Amount",
             "Taxable Amount",
             "Non Taxable Amount",
@@ -415,6 +418,7 @@ const BenefitSlipItem = ({
       : item?.custom_status;
   const revokeEventMutation = useRevokeEvent();
   const loading = useLoadingOverlay();
+  const formattedCreationDate = formatToIndianDate(item?.todo_list?.[0].reference_document?.creation ?? "");
 
   const handleRevokeClick = () => {
     if (todo?.todo_id) {
@@ -460,7 +464,9 @@ const BenefitSlipItem = ({
           </WrapperHoverCard>
         </Typography>
       </Link>
-
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {getAssignedUsersCell(item?.todo_list?.[0])}
+      </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {item?.company}
       </Typography>
@@ -469,6 +475,9 @@ const BenefitSlipItem = ({
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {formatToIndianDate(item?.claim_date || "")}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formattedCreationDate}
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
@@ -578,6 +587,16 @@ const BenefitSlipItem = ({
                 {maskAmounts
                   ? "#####"
                   : formatCurrency(item?.claimed_amount ?? 0)}
+              </Typography>
+              <Typography variant="mobileCardLabel" className="block">
+                Assigned To
+              </Typography>
+              <Typography
+                variant="mobileCardValue"
+                className={maskAmounts ? "blur-[3px]" : ""}
+              >
+                  {getAssignedUsersCell(item?.todo_list?.[0])}
+            
               </Typography>
             </div>
           </div>

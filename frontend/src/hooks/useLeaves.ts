@@ -95,6 +95,15 @@ export const useGetHolidays = (
   });
 };
 
+export const useAllowApplicationOfOptionalHolidaysForPastDates = () => {
+  return useQuery<boolean>({
+    queryKey: ["allow-application-of-optional-holidays-for-past-dates"],
+    queryFn: () => leaveService.allowApplicationOfOptionalHolidaysForPastDates(),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+};
+
 export const useTeamRequests = () => {
   return useQuery<TeamRequest[], Error>({
     queryKey: ["teamRequests"],
@@ -426,6 +435,10 @@ export function useCreateLeaveApplication() {
 
     onSuccess: () => {
       setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+        queryClient.invalidateQueries({
+          queryKey: ["todo-approvals", "Leave Application"],
+        });
         queryClient.invalidateQueries({
           queryKey: ["custom-api"],
         });
@@ -437,6 +450,7 @@ export function useCreateLeaveApplication() {
         });
         queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
         queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+        
       }, 1500);
     },
   });

@@ -31,15 +31,15 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
         };
     }, [request.approval_status, request.approval_stages]);
 
-    const pendingWorkflowAllocatedTo = useMemo(() => {
-        if (request.workflow_status.toLowerCase() !== "pending") return null;
-        const stage = request.workflow_stages?.find(stage => stage.status.toLocaleLowerCase() === "pending");
-        if (!stage) return null;
-        return {
-            allocated_to: stage.allocated_to,
-            role_assigned_users: stage.role_assigned_users
-        };
-    }, [request.workflow_status, request.workflow_stages]);
+    // const pendingWorkflowAllocatedTo = useMemo(() => {
+    //     if (request.workflow_status.toLowerCase() !== "pending") return null;
+    //     const stage = request.workflow_stages?.find(stage => stage.status.toLocaleLowerCase() === "pending");
+    //     if (!stage) return null;
+    //     return {
+    //         allocated_to: stage.allocated_to,
+    //         role_assigned_users: stage.role_assigned_users
+    //     };
+    // }, [request.workflow_status, request.workflow_stages]);
 
 
 
@@ -60,14 +60,14 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
                             Approval Status
                         </Typography>
                         <StatusBadge status={request.approval_status} />
-                        {pendingApprovalAllocatedTo && (
+                        {/* {pendingApprovalAllocatedTo && (
                             <MobileAllocatedTo
                                 users={pendingApprovalAllocatedTo?.allocated_to}
                                 RoleAssignedUsers={pendingApprovalAllocatedTo?.role_assigned_users}
                                 align="right"
                                 showLabel={false}
                             />
-                        )}
+                        )} */}
                     </div>
                 </div>
 
@@ -116,7 +116,7 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
                     <div className="h-[1px] w-full bg-gray-100 mb-4" />
                     <div className="flex justify-between items-center">
                         <div className="flex flex-col gap-1">
-                            <Typography variant="caption" className="text-gray-500">
+                            {/* <Typography variant="caption" className="text-gray-500">
                                 Workflow Status
                             </Typography>
                             <StatusBadge status={request.workflow_status} />
@@ -125,6 +125,14 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
                                     users={pendingWorkflowAllocatedTo?.allocated_to}
                                     RoleAssignedUsers={pendingWorkflowAllocatedTo?.role_assigned_users}
                                     align="left"
+                                    showLabel={false}
+                                />
+                            )} */}
+                            {pendingApprovalAllocatedTo && (
+                                <MobileAllocatedTo
+                                    users={pendingApprovalAllocatedTo?.allocated_to}
+                                    RoleAssignedUsers={pendingApprovalAllocatedTo?.role_assigned_users}
+                                    align="right"
                                     showLabel={false}
                                 />
                             )}
@@ -142,14 +150,14 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
     }
 
     return (
-        <div className="px-4 py-4 grid grid-cols-[1fr_1fr_150px_150px_150px_150px_150px_150px] gap-4 text-center cursor-pointer hover:bg-blue-50" onClick={() => handleShowDetails(request)}>
+        <div className="px-4 py-3 grid grid-cols-[1fr_1fr_150px_150px_150px_150px_150px] gap-4 text-center cursor-pointer hover:bg-blue-50" onClick={() => handleShowDetails(request)}>
             <div>  <Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.flow_name}>{truncateByChars(request.flow_name, 40)}</Tooltip></Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.category}>{truncateByChars(request.category, 40)}</Tooltip></Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center">{formatToIndianDate(request.initiated_on)}</Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center"><WrapperHoverCard employeeId={request.initiated_by_emp_id}>{truncateByChars(request.initiated_by, 15)}</WrapperHoverCard></Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center"><WrapperHoverCard employeeId={request.initiated_for_emp_id}>{truncateByChars(request.initiated_for, 15)}</WrapperHoverCard></Typography></div>
             <div><AllocatedToTooltip users={pendingApprovalAllocatedTo?.allocated_to || []} RoleAssignedUsers={pendingApprovalAllocatedTo?.role_assigned_users || []} position="left"><StatusBadge status={request.approval_status} /></AllocatedToTooltip></div>
-            <div><AllocatedToTooltip users={pendingWorkflowAllocatedTo?.allocated_to || []} RoleAssignedUsers={pendingWorkflowAllocatedTo?.role_assigned_users || []} position="left"><StatusBadge status={request.workflow_status} /></AllocatedToTooltip></div>
+            {/* <div><AllocatedToTooltip users={pendingWorkflowAllocatedTo?.allocated_to || []} RoleAssignedUsers={pendingWorkflowAllocatedTo?.role_assigned_users || []} position="left"><StatusBadge status={request.workflow_status} /></AllocatedToTooltip></div> */}
             <div><StatusBadge status={request.overall_flow_status} /></div>
         </div>
     );

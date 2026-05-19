@@ -14,3 +14,12 @@ export interface FormIOSchema {
     display: "form" | "wizard" | "pdf";
     components: FormIOComponent[];
 }
+
+export interface FormIoChangeObj {
+    changes: {
+        components: FormIOComponent,
+        value: unknown,
+    };
+    data: Record<string, unknown>;
+    isValid: boolean;
+}

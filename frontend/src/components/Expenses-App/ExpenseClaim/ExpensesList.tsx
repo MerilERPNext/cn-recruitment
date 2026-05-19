@@ -47,7 +47,10 @@ import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { SharedExpenseCard, SharedExpensesRow } from "./SharedExpenses";
-import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import {
+  buildExpenseNavigationState,
+  buildExpenseEditUrl,
+} from "./expenseNavigationHelper";
 import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 const getStatusBadgeClasses = (status: string) => {
@@ -130,7 +133,8 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
       canEdit,
     );
 
-    navigate("/webapp/expenses-app/add-expense", {
+    const editUrl = buildExpenseEditUrl(expenseClaim.name, expenseItem.name, canEdit);
+    navigate(editUrl, {
       state: navigationState,
     });
   };
@@ -143,6 +147,10 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
 
   const claimedAmount = formatCurrency(expense?.total_claimed_amount);
   const sanctionedAmount = formatCurrency(expense?.total_sanctioned_amount);
+
+  const showSanctionedAmount =
+    Array.isArray(item?.approval_stages_status) &&
+    item.approval_stages_status.some((stage: any) => stage.status === "Approved");
 
   return (
     <div
@@ -161,8 +169,8 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           <StatusBadge
             status={
               item?.custom_allow_revoke === 1 &&
-                item?.todo_status?.toLowerCase() === "cancelled" &&
-                item?.reference_document?.docstatus === 2
+              item?.todo_status?.toLowerCase() === "cancelled" &&
+              item?.reference_document?.docstatus === 2
                 ? "Revoked"
                 : item?.reference_document?.approval_status
             }
@@ -196,10 +204,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           <div className="flex flex-col gap-1 text-right">
             <Typography variant="mobileCardLabel">Sanctioned Amount</Typography>
             <Typography variant="mobileCardValue">
-              {item?.todo_status?.toLowerCase() === "closed" &&
-                item?.reference_document?.approval_status !== "Rejected"
-                ? sanctionedAmount
-                : " - "}
+              {showSanctionedAmount ? sanctionedAmount : " - "}
             </Typography>
           </div>
         </div>
@@ -312,6 +317,10 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
     currency: "INR",
   }).format(item?.reference_document?.total_sanctioned_amount ?? 0);
 
+  const showSanctionedAmount =
+    Array.isArray(item?.approval_stages_status) &&
+    item.approval_stages_status.some((stage: any) => stage.status === "Approved");
+
   const formattedPaidAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
@@ -340,7 +349,8 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       expenseItem,
       canEdit,
     );
-    navigate("/webapp/expenses-app/add-expense", { state: navigationState });
+    const editUrl = buildExpenseEditUrl(expenseClaim.name, expenseItem.name, canEdit);
+    navigate(editUrl, { state: navigationState });
   };
 
   return (
@@ -389,10 +399,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         {formattedAmount}
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
-        {item?.todo_status?.toLowerCase() === "closed" &&
-          item?.reference_document?.approval_status !== "Rejected"
-          ? formattedSanctionedAmount
-          : " -- "}
+        {showSanctionedAmount ? formattedSanctionedAmount : " -- "}
       </Typography>
       {isPaidFilter && (
         <Typography variant="bodySmall" className="font-medium text-center">
@@ -422,8 +429,8 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           <StatusBadge
             status={
               item?.custom_allow_revoke === 1 &&
-                item?.todo_status?.toLowerCase() === "cancelled" &&
-                item?.reference_document?.docstatus === 2
+              item?.todo_status?.toLowerCase() === "cancelled" &&
+              item?.reference_document?.docstatus === 2
                 ? "Revoked"
                 : item?.reference_document?.approval_status
             }
@@ -438,7 +445,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           isPending={item?.status === "Pending"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-            item?.send_back_user?.toLowerCase() &&
+              item?.send_back_user?.toLowerCase() &&
             canEditExpense &&
             item?.can_edit &&
             !isActed
@@ -448,7 +455,8 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
             item?.custom_allow_revoke === 1 &&
             !(
               (item?.todo_status?.toLowerCase() === "cancelled" &&
-                item?.reference_document?.docstatus === 2) || item?.reference_document?.docstatus === 1
+                item?.reference_document?.docstatus === 2) ||
+              item?.reference_document?.docstatus === 1
             ) &&
             // item?.todo_status?.toLowerCase() === "open" &&
             !isActed
@@ -504,7 +512,7 @@ const ExpensesList: React.FC = () => {
     isOpen: boolean;
     message: string;
     onConfirm: () => void;
-  }>({ isOpen: false, message: "", onConfirm: () => { } });
+  }>({ isOpen: false, message: "", onConfirm: () => {} });
 
   const [submitConfirmModal, setSubmitConfirmModal] = React.useState<{
     isOpen: boolean;
@@ -560,6 +568,28 @@ const ExpensesList: React.FC = () => {
     setCurrentListData(data);
   }, []);
 
+  const filterPendingExpenseItems = useCallback(
+    (data: any[]) => {
+      if (
+        activeTab !== "expenses" ||
+        currentFilters.approval_status !== "Pending"
+      ) {
+        return data;
+      }
+
+      return data.filter((item: any) => {
+        const todoStatus = item?.todo_status?.toLowerCase();
+
+        if (todoStatus !== "closed") {
+          return true;
+        }
+
+        return Boolean(item?.send_back_user?.trim?.());
+      });
+    },
+    [activeTab, currentFilters.approval_status],
+  );
+
   const handleRefetchComplete = useCallback(() => {
     setRefetchAttendance(false);
   }, [setRefetchAttendance]);
@@ -581,8 +611,8 @@ const ExpensesList: React.FC = () => {
     matchedOpenItem?.reference_document?.approval_status === "Draft";
 
   const { data: todoData } = useGetToDoWithReferenceDoc(
-    shouldUseDraftReferenceApi ? (urlRequestId || undefined) : undefined,
-    shouldUseDraftReferenceApi ? (urlReferenceName || undefined) : undefined,
+    shouldUseDraftReferenceApi ? urlRequestId || undefined : undefined,
+    shouldUseDraftReferenceApi ? urlReferenceName || undefined : undefined,
     shouldUseDraftReferenceApi ? "Expense Claim" : undefined,
   );
 
@@ -602,7 +632,7 @@ const ExpensesList: React.FC = () => {
     if (navFilter === "Pending" || navFilter === "Draft") {
       return { approval_status: navFilter };
     }
-    return { approval_status: "Draft" };
+    return {};
     // location.key is the dependency so this recomputes on each new navigation
   }, [location.key]);
 
@@ -682,8 +712,8 @@ const ExpensesList: React.FC = () => {
         const doc = item?.reference_document;
         const rawStatus =
           item?.custom_allow_revoke === 1 &&
-            item?.todo_status?.toLowerCase() === "cancelled" &&
-            doc?.docstatus === 2
+          item?.todo_status?.toLowerCase() === "cancelled" &&
+          doc?.docstatus === 2
             ? "Revoked"
             : doc?.approval_status;
 
@@ -697,8 +727,8 @@ const ExpensesList: React.FC = () => {
         const status = getExportStatus(rawStatus);
 
         const sanctioned =
-          item?.todo_status?.toLowerCase() === "closed" &&
-            doc?.approval_status !== "Rejected"
+          Array.isArray(item?.approval_stages_status) &&
+          item.approval_stages_status.some((stage: any) => stage.status === "Approved")
             ? doc?.total_sanctioned_amount
             : "--";
 
@@ -825,8 +855,8 @@ const ExpensesList: React.FC = () => {
     const isPaidFilter = currentFilters.status === "Paid";
     const status =
       item?.custom_allow_revoke === 1 &&
-        item?.todo_status?.toLowerCase() === "cancelled" &&
-        item?.reference_document?.docstatus === 2
+      item?.todo_status?.toLowerCase() === "cancelled" &&
+      item?.reference_document?.docstatus === 2
         ? "Revoked"
         : item?.reference_document?.approval_status;
     const isDraft = status === "Draft";
@@ -835,7 +865,15 @@ const ExpensesList: React.FC = () => {
       <div
         onClick={() =>
           id &&
-          openModal(id, stages, sendBackUser, canEdit, todoStatus, status, isDraft)
+          openModal(
+            id,
+            stages,
+            sendBackUser,
+            canEdit,
+            todoStatus,
+            status,
+            isDraft,
+          )
         }
         className="cursor-pointer"
       >
@@ -853,8 +891,8 @@ const ExpensesList: React.FC = () => {
 
     const status =
       item?.custom_allow_revoke === 1 &&
-        item?.todo_status?.toLowerCase() === "cancelled" &&
-        item?.reference_document?.docstatus === 2
+      item?.todo_status?.toLowerCase() === "cancelled" &&
+      item?.reference_document?.docstatus === 2
         ? "Revoked"
         : item?.reference_document?.approval_status;
     const isDraft = status === "Draft";
@@ -863,7 +901,15 @@ const ExpensesList: React.FC = () => {
       <div
         onClick={() =>
           id &&
-          openModal(id, stages, sendBackUser, canEdit, todoStatus, status, isDraft)
+          openModal(
+            id,
+            stages,
+            sendBackUser,
+            canEdit,
+            todoStatus,
+            status,
+            isDraft,
+          )
         }
         className="cursor-pointer"
       >
@@ -918,46 +964,68 @@ const ExpensesList: React.FC = () => {
 
   const tableTitles = isDraftFilter
     ? [
-      "",
-      "Expense Id",
-      "Expense Category",
-      "Expense Type",
-      "Claimed Amount",
-      "Sanctioned Amount",
-      "Expense Date",
-      "Claimed Date",
-      "Status",
-      "Actions",
-    ]
+        <div className="flex items-center justify-center" key="select-all">
+          <input
+            type="checkbox"
+            checked={
+              selectedMyExpensesDraftIds.size ===
+                currentListData.length && currentListData.length > 0
+            }
+            onChange={(e) => {
+              if (e.target.checked) {
+                setSelectedMyExpensesDraftIds(
+                  new Set(
+                    currentListData
+                      .map((d: any) => d?.reference_document?.name)
+                      .filter(Boolean),
+                  ),
+                );
+              } else {
+                setSelectedMyExpensesDraftIds(new Set());
+              }
+            }}
+            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+          />
+        </div>,
+        "Expense Id",
+        "Expense Category",
+        "Expense Type",
+        "Claimed Amount",
+        "Sanctioned Amount",
+        "Expense Date",
+        "Claimed Date",
+        "Status",
+        "Actions",
+      ]
     : [
-      "Expense Id",
-      "Expense Category",
-      "Expense Type",
-      "Claimed Amount",
-      "Sanctioned Amount",
-      ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
-      "Expense Date",
-      "Claimed Date",
-      "Assigned To",
-      "Status",
-      "Actions",
-    ];
+        "Expense Id",
+        "Expense Category",
+        "Expense Type",
+        "Claimed Amount",
+        "Sanctioned Amount",
+        ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
+        "Expense Date",
+        "Claimed Date",
+        "Assigned To",
+        "Status",
+        "Actions",
+      ];
 
   const tableColumnWidths = isDraftFilter
     ? ["48px", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "120px"]
     : [
-      "1fr",
-      "1fr",
-      "1fr",
-      "1fr",
-      "1fr",
-      ...(currentFilters.status === "Paid" ? ["1fr"] : []),
-      "1fr",
-      "1fr",
-      "1fr",
-      "1fr",
-      "1fr",
-    ];
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        ...(currentFilters.status === "Paid" ? ["1fr"] : []),
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+      ];
 
   return (
     <div className="flex flex-col h-full">
@@ -991,10 +1059,11 @@ const ExpensesList: React.FC = () => {
                   setCurrentListData([]);
                   setSelectedMyExpensesDraftIds(new Set());
                 }}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "expenses"
-                  ? "bg-white text-primary shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-                  }`}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  activeTab === "expenses"
+                    ? "bg-white text-primary shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
               >
                 My Expenses
               </button>
@@ -1004,10 +1073,11 @@ const ExpensesList: React.FC = () => {
                   setCurrentListData([]);
                   setSelectedMyExpensesDraftIds(new Set());
                 }}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "shared"
-                  ? "bg-white text-primary shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-                  }`}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  activeTab === "shared"
+                    ? "bg-white text-primary shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
               >
                 Shared Expenses
               </button>
@@ -1043,10 +1113,11 @@ const ExpensesList: React.FC = () => {
       {/* ── Mobile Bulk Action Bar (fixed bottom, draft filter mode) ────── */}
       {isDraftFilter && (
         <div
-          className={`md:hidden fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${selectedMyExpensesDraftIds.size > 0
-            ? "translate-y-0 opacity-100 pointer-events-auto"
-            : "translate-y-full opacity-0 pointer-events-none"
-            }`}
+          className={`md:hidden fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
+            selectedMyExpensesDraftIds.size > 0
+              ? "translate-y-0 opacity-100 pointer-events-auto"
+              : "translate-y-full opacity-0 pointer-events-none"
+          }`}
         >
           <div className="bg-white border-t border-gray-200 shadow-[0_-4px_24px_rgba(0,0,0,0.12)] px-4 py-3">
             <div className="flex items-center justify-between mb-2">
@@ -1110,7 +1181,7 @@ const ExpensesList: React.FC = () => {
                       setDeleteConfirmModal({
                         isOpen: false,
                         message: "",
-                        onConfirm: () => { },
+                        onConfirm: () => {},
                       });
                     },
                   });
@@ -1166,7 +1237,8 @@ const ExpensesList: React.FC = () => {
         className={`flex-1 overflow-y-auto md:px-4 pb-5 ${isDraftFilter && selectedMyExpensesDraftIds.size > 0 ? "pb-28 md:pb-24" : "md:pb-20"}`}
       >
         {currentEmployee?.name && activeTab === "expenses" && (
-          <CardTable
+          <>
+            <CardTable
             titles={tableTitles}
             columnWidths={tableColumnWidths}
             columnSortConfig={
@@ -1175,107 +1247,7 @@ const ExpensesList: React.FC = () => {
                 : COLUMN_SORT_CONFIG_EXPENSE_CLAIM
             }
           >
-            {/* Select All header for backend-draft filter mode (desktop only) */}
-            {isDraftFilter && isDesktop && currentListData.length > 0 && (
-              <div
-                className="grid items-center gap-4 px-6 h-12 border-b border-gray-200 bg-gray-50"
-                style={{
-                  gridTemplateColumns:
-                    "48px 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 120px",
-                }}
-              >
-                <div className="flex items-center justify-center">
-                  <input
-                    type="checkbox"
-                    checked={
-                      selectedMyExpensesDraftIds.size ===
-                      currentListData.length && currentListData.length > 0
-                    }
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedMyExpensesDraftIds(
-                          new Set(
-                            currentListData
-                              .map((d: any) => d?.reference_document?.name)
-                              .filter(Boolean),
-                          ),
-                        );
-                      } else {
-                        setSelectedMyExpensesDraftIds(new Set());
-                      }
-                    }}
-                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                  />
-                </div>
-                <div className="col-span-9 flex items-center justify-between pr-4">
-                  <span className="text-sm font-medium text-gray-700">
-                    Select All ({selectedMyExpensesDraftIds.size} selected)
-                  </span>
-                  {selectedMyExpensesDraftIds.size > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="contain"
-                        size="sm"
-                        bgColor="primary"
-                        disabled={updateApprovalStatusMutation.isPending}
-                        onClick={async () => {
-                          const ids = Array.from(selectedMyExpensesDraftIds);
-                          let successCount = 0;
-                          for (const expenseClaimName of ids) {
-                            try {
-                              await updateApprovalStatusMutation.mutateAsync({
-                                expenseClaimName,
-                                approvalStatus: "Pending",
-                              });
-                              successCount++;
-                            } catch {
-                              /* handled in hook */
-                            }
-                          }
-                          if (successCount > 0)
-                            toast.success(
-                              `${successCount} expense(s) submitted for approval.`,
-                            );
-                          setSelectedMyExpensesDraftIds(new Set());
-                        }}
-                      >
-                        {updateApprovalStatusMutation.isPending
-                          ? "Submitting..."
-                          : `Submit Selected (${selectedMyExpensesDraftIds.size})`}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        bgColor="error"
-                        disabled={deleteExpenseClaimMutation.isPending}
-                        onClick={() => {
-                          setDeleteConfirmModal({
-                            isOpen: true,
-                            message: `Are you sure you want to delete ${selectedMyExpensesDraftIds.size} selected draft expense(s)? This cannot be undone.`,
-                            onConfirm: () => {
-                              Array.from(selectedMyExpensesDraftIds).forEach(
-                                (name) =>
-                                  deleteExpenseClaimMutation.mutate(name),
-                              );
-                              setSelectedMyExpensesDraftIds(new Set());
-                              setDeleteConfirmModal({
-                                isOpen: false,
-                                message: "",
-                                onConfirm: () => { },
-                              });
-                            },
-                          });
-                        }}
-                      >
-                        {deleteExpenseClaimMutation.isPending
-                          ? "Deleting..."
-                          : `Delete Selected (${selectedMyExpensesDraftIds.size})`}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+
             <DataListView
               queryKey={["expense-claims-all"]}
               customAPI={{
@@ -1421,7 +1393,12 @@ const ExpensesList: React.FC = () => {
                               expenseClaim?.expenses?.[0],
                               false,
                             );
-                            navigate("/webapp/expenses-app/add-expense", {
+                            const editUrl = buildExpenseEditUrl(
+                              expenseClaim.name,
+                              expenseClaim?.expenses?.[0].name,
+                              false,
+                            );
+                            navigate(editUrl, {
                               state: navigationState,
                             });
                           }}
@@ -1444,7 +1421,7 @@ const ExpensesList: React.FC = () => {
                                 setDeleteConfirmModal({
                                   isOpen: false,
                                   message: "",
-                                  onConfirm: () => { },
+                                  onConfirm: () => {},
                                 });
                               },
                             });
@@ -1521,7 +1498,12 @@ const ExpensesList: React.FC = () => {
                                     expenseClaim?.expenses?.[0],
                                     false,
                                   );
-                                navigate("/webapp/expenses-app/add-expense", {
+                                const editUrl = buildExpenseEditUrl(
+                                  expenseClaim.name,
+                                  expenseClaim?.expenses?.[0].name,
+                                  false,
+                                );
+                                navigate(editUrl, {
                                   state: navigationState,
                                 });
                               }}
@@ -1544,7 +1526,7 @@ const ExpensesList: React.FC = () => {
                                     setDeleteConfirmModal({
                                       isOpen: false,
                                       message: "",
-                                      onConfirm: () => { },
+                                      onConfirm: () => {},
                                     });
                                   },
                                 });
@@ -1646,7 +1628,9 @@ const ExpensesList: React.FC = () => {
                     {
                       label: "Pending",
                       value: "Pending",
-                      customAPIParams: { todo_status: ["in", ["Open", "Closed"]] },
+                      customAPIParams: {
+                        todo_status: ["in", ["Open", "Closed"]],
+                      },
                     },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
@@ -1662,7 +1646,7 @@ const ExpensesList: React.FC = () => {
                     },
                   ],
                   emptyValueConfig: {
-                    filterValue: ["!=", "Cancelled"],
+                    filterValue: ["!=", "Draft"],
                   },
                 },
                 {
@@ -1684,6 +1668,7 @@ const ExpensesList: React.FC = () => {
               ]}
               defaultFilters={computedDefaultFilters}
               onFiltersChange={handleFiltersChange}
+              clientFilterFn={filterPendingExpenseItems}
               onDataLoad={handleDataLoad}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={handleRefetchComplete}
@@ -1694,8 +1679,77 @@ const ExpensesList: React.FC = () => {
               loadMorePagination={false}
               showPagination={true}
               noRecordsScreen={noRecordsScreen}
+              PostListComponent={() =>
+                isDraftFilter && isDesktop && selectedMyExpensesDraftIds.size > 0 ? (
+                  <div className="border-t border-gray-100 bg-gray-50/30 px-6 py-2 flex items-center justify-end gap-3 animate-in slide-in-from-bottom-1">
+                    <span className="text-sm font-medium text-gray-500 mr-2">
+                      {selectedMyExpensesDraftIds.size} selected
+                    </span>
+                    <Button
+                      variant="contain"
+                      bgColor="primary"
+                      size="sm"
+                      className="shadow-sm px-5 h-9"
+                      disabled={updateApprovalStatusMutation.isPending}
+                      onClick={async () => {
+                        const ids = Array.from(selectedMyExpensesDraftIds);
+                        let successCount = 0;
+                        for (const expenseClaimName of ids) {
+                          try {
+                            await updateApprovalStatusMutation.mutateAsync({
+                              expenseClaimName,
+                              approvalStatus: "Pending",
+                            });
+                            successCount++;
+                          } catch {
+                            /* handled in hook */
+                          }
+                        }
+                        if (successCount > 0)
+                          toast.success(
+                            `${successCount} expense(s) submitted for approval.`,
+                          );
+                        setSelectedMyExpensesDraftIds(new Set());
+                      }}
+                    >
+                      {updateApprovalStatusMutation.isPending
+                        ? "Submitting..."
+                        : `Submit Selected (${selectedMyExpensesDraftIds.size})`}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      bgColor="error"
+                      size="sm"
+                      className="px-5 h-9"
+                      disabled={deleteExpenseClaimMutation.isPending}
+                      onClick={() => {
+                        setDeleteConfirmModal({
+                          isOpen: true,
+                          message: `Are you sure you want to delete ${selectedMyExpensesDraftIds.size} selected draft expense(s)? This cannot be undone.`,
+                          onConfirm: () => {
+                            Array.from(selectedMyExpensesDraftIds).forEach((name) =>
+                              deleteExpenseClaimMutation.mutate(name),
+                            );
+                            setSelectedMyExpensesDraftIds(new Set());
+                            setDeleteConfirmModal({
+                              isOpen: false,
+                              message: "",
+                              onConfirm: () => {},
+                            });
+                          },
+                        });
+                      }}
+                    >
+                      {deleteExpenseClaimMutation.isPending
+                        ? "Deleting..."
+                        : `Delete Selected (${selectedMyExpensesDraftIds.size})`}
+                    </Button>
+                  </div>
+                ) : null
+              }
             />
-          </CardTable>
+            </CardTable>
+          </>
         )}
 
         {currentEmployee?.name && activeTab === "shared" && (
@@ -1808,7 +1862,7 @@ const ExpensesList: React.FC = () => {
           setDeleteConfirmModal({
             isOpen: false,
             message: "",
-            onConfirm: () => { },
+            onConfirm: () => {},
           })
         }
         size="sm"
@@ -1826,7 +1880,7 @@ const ExpensesList: React.FC = () => {
                 setDeleteConfirmModal({
                   isOpen: false,
                   message: "",
-                  onConfirm: () => { },
+                  onConfirm: () => {},
                 })
               }
             >
@@ -1981,7 +2035,13 @@ const ExpensesList: React.FC = () => {
                           ...rest
                         } = exp;
                         const formattedExpense: any = { ...rest };
-
+                        console.log(
+                          "",
+                          uid,
+                          saveAndSubmit,
+                          categoryTypeOptions,
+                          submitButton,
+                        );
                         if (expense_date) {
                           formattedExpense.expense_date =
                             formatExpenseDate(expense_date);

@@ -287,7 +287,6 @@ export default function AllShiftsDashboard() {
   const navigate = useNavigate();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
-
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
   const referenceName = searchParams.get("reference_name");

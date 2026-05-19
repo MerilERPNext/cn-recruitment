@@ -33,10 +33,18 @@ const EmployeeOption = ({ employee }: { employee: Employee }) => {
         <span className="text-sm font-medium text-gray-900">
           {employee.employee_name}
         </span>
+        <div className="flex gap-2">
+          {employee.designation && (
+            <span className="text-xs text-gray-500">{employee.designation},</span>
+          )}
+          {employee.department && (
+            <span className="text-xs text-gray-500">{employee.department},</span>
+          )}
+          {employee.branch && (
+            <span className="text-xs text-gray-500">{employee.branch}</span>
+          )}
 
-        {employee.designation && (
-          <span className="text-xs text-gray-500">{employee.designation}</span>
-        )}
+        </div>
       </div>
     </div>
   );

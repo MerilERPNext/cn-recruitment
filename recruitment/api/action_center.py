@@ -133,6 +133,49 @@ def build_job_offer_redirect(candidate_email):
     return "/job_offer?{0}".format(urlencode({"appl": candidate_email}))
 
 
+def build_pre_offer_redirect(job_applicant_id):
+    return "/pre_offer_form?{0}".format(urlencode({"appl": job_applicant_id}))
+
+
+@frappe.whitelist()
+def send_pre_offer_form(job_applicant_id, form_name):
+    frappe.only_for(("System Manager", "HR Manager"))
+
+    if not job_applicant_id:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Job Applicant ID is required.")}
+
+    if not form_name:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Please select a Pre Offer Portal Form before sending.")}
+
+    if not frappe.db.exists("Job Applicant", job_applicant_id):
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
+
+    candidate_email = frappe.db.get_value("Job Applicant", job_applicant_id, "email_id")
+    if not candidate_email:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Candidate email not found on the Job Applicant record.")}
+
+    _upsert_minimal_item(
+        candidate_email=candidate_email,
+        reference_doctype="Job Applicant",
+        reference_docname=job_applicant_id,
+        redirect_url=build_pre_offer_redirect(job_applicant_id),
+        description="Pre Offer Form is ready. Please fill and submit the required details.",
+        commit=False,
+    )
+
+    frappe.db.set_value("Job Applicant", job_applicant_id, {
+        "custom_pre_offer_portal_form": form_name,
+        "custom_pre_offer_form_status": "Sent",
+    })
+    frappe.db.commit()
+
+    return {"status": "success", "message": _("Pre Offer Form sent to candidate.")}
+
+
 def sync_onboarding_action_item(doc, method=None):
     if not getattr(doc, "job_applicant", None):
         return

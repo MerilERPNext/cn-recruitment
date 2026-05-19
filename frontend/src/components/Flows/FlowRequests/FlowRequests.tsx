@@ -17,11 +17,11 @@ const titles = [
   "Initiated By",
   "Initiated For",
   "Approval Status",
-  "Workflow Status",
+  // "Workflow Status",
   "Overall Flow Status",
 ];
 
-const columnWidths = ["1fr 1fr 150px 150px 150px 150px 150px 150px"];
+const columnWidths = ["1fr 1fr 150px 150px 150px 150px 150px"];
 
 const FlowRequests: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -34,7 +34,7 @@ const FlowRequests: React.FC = () => {
 
   const {
     data: flowRequests,
-    isFetching: flowRequestsLoading,
+    isLoading: flowRequestsLoading,
     refetch: refetchFlowRequests,
   } = useGetFlowRequests();
 
@@ -113,12 +113,12 @@ const FlowRequests: React.FC = () => {
                   fieldtype: "Select",
                   options: ["Pending", "Approved", "Rejected"],
                 },
-                {
-                  fieldname: "workflow_status",
-                  label: "Workflow Status",
-                  fieldtype: "Select",
-                  options: ["Pending", "Completed"],
-                },
+                // {
+                //   fieldname: "workflow_status",
+                //   label: "Workflow Status",
+                //   fieldtype: "Select",
+                //   options: ["Pending", "Completed"],
+                // },
                 {
                   fieldname: "overall_flow_status",
                   label: "Overall Flow Status",
