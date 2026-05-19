@@ -12,6 +12,7 @@ interface BadgeProps {
     color?: string
   }
   size?: "sm" | "md" | "lg";
+  icon?: React.ReactNode;
 }
 
 const VARIANT_STYLES: Record<BadgeVariant, { bg: string; text: string; pulse?: string }> = {
@@ -33,6 +34,7 @@ const Badge = ({
   textColor,
   pulse,
   size = "md",
+  icon,
 }: BadgeProps) => {
   const sizeClasses = {
     sm: "py-0.5 px-2 text-xs",
@@ -49,10 +51,11 @@ const Badge = ({
   const showPulse = pulse?.show !== undefined ? pulse.show : !!(variant && styles.pulse);
 
   return (
-    <div className={`w-fit rounded-xl ${styles.bg} ${styles.text} ${sizeClasses[size]} flex justify-center items-center gap-2`}>
+    <div className={`w-fit rounded-xl ${styles.bg} ${styles.text} ${sizeClasses[size]} flex justify-center items-center gap-1.5`}>
       {showPulse && <span
         className={`w-2 h-2 rounded-full animate-pulse ${styles.pulse || pulse?.color}`}
       />}
+      {icon && <span className="flex items-center justify-center shrink-0">{icon}</span>}
       <Typography variant="label" className={styles.text}>
         {label}
       </Typography>

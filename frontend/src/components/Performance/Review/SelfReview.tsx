@@ -157,18 +157,6 @@ const Review = () => {
                 </div>
              </div>
            ))}
-
-           {/* Navigation Actions */}
-           <div className="flex justify-end mt-4">
-              <Button 
-                variant="contain" 
-                bgColor="primary" 
-                size="md" 
-                onClick={() => navigate('/webapp/performance-app/review/peer-nomination')}
-              >
-                 Next: Peer Nomination
-              </Button>
-           </div>
         </div>
 
         {/* Right Sidebar */}

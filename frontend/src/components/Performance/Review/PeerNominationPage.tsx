@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Sparkles, Check } from 'lucide-react';
+import { Search, Sparkles, Check, Sparkle } from 'lucide-react';
 import { Typography } from '../../shared/atoms/Typography';
 import Button from '../../shared/atoms/Button';
 import Badge from '../../shared/Badge';
@@ -11,7 +11,7 @@ const INITIAL_REVIEWERS = [
     initials: "KI",
     name: "Karthik Iyer",
     role: "Eng Lead · Platform",
-    suggestionText: "✨ Worked on Oxygen 2.0 (84 PRs)",
+    suggestionText: "Worked on Oxygen 2.0 (84 PRs)",
     selected: true,
   },
   {
@@ -19,7 +19,7 @@ const INITIAL_REVIEWERS = [
     initials: "NP",
     name: "Neha Patel",
     role: "Product Manager · Oxygen",
-    suggestionText: "✨ PM partner on dashboard rebuild",
+    suggestionText: "PM partner on dashboard rebuild",
     selected: true,
   },
   {
@@ -27,7 +27,7 @@ const INITIAL_REVIEWERS = [
     initials: "MS",
     name: "Mohit Sinha",
     role: "Sr. Designer · Recruitment",
-    suggestionText: "✨ Frequent design crit collaborator",
+    suggestionText: "Frequent design crit collaborator",
     selected: true,
   },
   {
@@ -35,7 +35,7 @@ const INITIAL_REVIEWERS = [
     initials: "RB",
     name: "Riya Banerjee",
     role: "Research Lead",
-    suggestionText: "✨ Joint research projects (3)",
+    suggestionText: "Joint research projects (3)",
     selected: true,
   },
   {
@@ -43,7 +43,7 @@ const INITIAL_REVIEWERS = [
     initials: "AB",
     name: "Aman Bhatt",
     role: "Frontend Eng",
-    suggestionText: "✨ Slack DMs (high freq) + 12 PRs",
+    suggestionText: "Slack DMs (high freq) + 12 PRs",
     selected: false,
   },
   {
@@ -51,7 +51,7 @@ const INITIAL_REVIEWERS = [
     initials: "SD",
     name: "Shreya Das",
     role: "Content Strategist",
-    suggestionText: "✨ Cross-functional workshop facilitator",
+    suggestionText: "Cross-functional workshop facilitator",
     selected: false,
   },
   {
@@ -59,7 +59,7 @@ const INITIAL_REVIEWERS = [
     initials: "VR",
     name: "Vikram Rao",
     role: "Sr. Designer · LMS",
-    suggestionText: "✨ Design system v2 co-author",
+    suggestionText: "Design system v2 co-author",
     selected: false,
   },
   {
@@ -67,7 +67,7 @@ const INITIAL_REVIEWERS = [
     initials: "PM",
     name: "Priya Menon",
     role: "QA Lead",
-    suggestionText: "✨ Joint usability testing",
+    suggestionText: "Joint usability testing",
     selected: false,
   },
 ];
@@ -168,7 +168,7 @@ const PeerNominationPage = () => {
                 {/* Action & Badge */}
                 <div className="flex items-center gap-4 md:ml-auto">
                   <div className="hidden lg:block">
-                    <Badge label={reviewer.suggestionText} variant="purple" size="sm" />
+                    <Badge label={reviewer.suggestionText} variant="purple" size="sm" icon={<Sparkle className="w-3.5 h-3.5" />} />
                   </div>
                   {reviewer.selected ? (
                     <Button 

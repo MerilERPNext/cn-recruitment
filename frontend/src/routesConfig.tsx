@@ -1172,13 +1172,11 @@ export const routesConfig: AppRoute[] = [
         path: "review",
         element: <Review />,
         permissionKey: "",
-        children:[
-          {
-            path: "peer-nomination",
-            element: <PeerNominationPage />,
-            permissionKey: "",
-          },
-        ]
+      },
+      {
+        path: "review/peer-nomination",
+        element: <PeerNominationPage />,
+        permissionKey: "",
       },
       
       {

@@ -415,7 +415,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         {
           name: "Review",
           icon: Goal,
-          href: "/webapp/performance-app/review",
+          href: "/webapp/performance-app",
           permissionKey: "Overview",
           subItems:[
             {
@@ -550,6 +550,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     if (location.pathname === subSubItem.href) {
       return true;
     }
+    
+    if (subSubItem.href === "/webapp/performance-app/review" && location.pathname.startsWith("/webapp/performance-app/review/peer-nomination")) {
+      return false;
+    }
+
     if (location.pathname.startsWith(subSubItem.href)) {
       const remainingPath = location.pathname.substring(subSubItem.href.length);
       return remainingPath === "" || remainingPath.startsWith("/");
