@@ -143,6 +143,9 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                                 event?.request_type === "Out Duty"
                                 ? "Out Duty"
                                 : event?.doctype;
+                        if (doctypeKey === "Employee Checkin") {
+                            return null;
+                        }
                         const badge = getEventBadgeStyle(doctypeKey);
                         return (
                             <Tooltip content={event.doctype + " " + event.status}>
