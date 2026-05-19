@@ -36,6 +36,7 @@ import MyGoals from "./components/Performance/MyGoals/MyGoals";
 import GoalDetails from "./components/Performance/MyGoals/components/GoalDetails";
 import Review from "./components/Performance/Review/SelfReview";
 import PeerNominationPage from "./components/Performance/Review/PeerNominationPage";
+import Feedback from "./components/Performance/Feedback/Feedback";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -1176,6 +1177,11 @@ export const routesConfig: AppRoute[] = [
       {
         path: "review/peer-nomination",
         element: <PeerNominationPage />,
+        permissionKey: "",
+      },
+      {
+        path: "feedback",
+        element: <Feedback />,
         permissionKey: "",
       },
       
