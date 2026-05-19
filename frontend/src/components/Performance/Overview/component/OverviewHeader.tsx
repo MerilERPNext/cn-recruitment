@@ -8,8 +8,8 @@ const OverviewHeader:React.FC = () => {
     const { isMobile } = useScreenSize();
 
   return (
-     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} justify-between ${isMobile ? 'items-start' : 'items-end'} gap-4 mb-8`}>
+     <article aria-label="Cycle Information" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div aria-label="Cycle Details" className={`flex ${isMobile ? 'flex-col' : 'flex-row'} justify-between ${isMobile ? 'items-start' : 'items-end'} gap-4 mb-8`}>
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <Badge label="CYCLE LIVE" backgroundColor="bg-blue-100 ring-1 ring-inset ring-blue-300" textColor="text-blue-700" size="sm" pulse={{ show: true, color: "bg-blue-600" }} />
@@ -74,7 +74,7 @@ const OverviewHeader:React.FC = () => {
                   <Typography variant="bodySmall" className="font-medium text-gray-500">Released</Typography>
                 </div>
               </div>
-            </div>
+            </article>
     
   )
 }

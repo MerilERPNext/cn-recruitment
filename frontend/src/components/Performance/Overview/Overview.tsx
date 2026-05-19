@@ -9,23 +9,31 @@ const Overview: React.FC = () => {
   const { isMobile, isDesktop } = useScreenSize();
 
   return (
-    <div className={`min-h-full bg-[#f8fafc] overflow-y-scroll ${isMobile ? 'p-4' : 'p-6'} font-sans`}>
+    <main aria-label="Performance Overview" className={`min-h-full bg-[#f8fafc] overflow-y-scroll ${isMobile ? 'p-4' : 'p-6'} font-sans`}>
       <div className="max-w-[1200px] mx-auto space-y-6">
 
         {/* Header Section */}
-        <OverviewHeader />
+        <header aria-label="Overview Header">
+          <OverviewHeader />
+        </header>
         
         {/* Stats Row */}
-        <OverviewStats />
+        <section aria-label="Overview Statistics">
+          <OverviewStats />
+        </section>
 
         {/* Main Content Grid */}
-        <div className={`grid ${!isDesktop ? 'grid-cols-1' : 'grid-cols-[1fr,0.6fr]'} gap-6`}>
-          <OverviewGoals />
+        <div aria-label="Main Content Grid" className={`grid ${!isDesktop ? 'grid-cols-1' : 'grid-cols-[1fr,0.6fr]'} gap-6`}>
+          <section aria-label="Overview Goals">
+            <OverviewGoals />
+          </section>
 
-          <OverviewSidebar />
+          <aside aria-label="Overview Sidebar">
+            <OverviewSidebar />
+          </aside>
         </div>
       </div>
-    </div>
+    </main>
   );
 };
 

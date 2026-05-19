@@ -57,11 +57,11 @@ const OverviewStats: React.FC = () => {
   const { isMobile, isDesktop } = useScreenSize();
 
   return (
-    <div className={`grid ${isMobile ? 'grid-cols-1' : isDesktop ? 'grid-cols-4' : 'grid-cols-2'} gap-4`}>
+    <div aria-label="Statistics Grid" className={`grid ${isMobile ? 'grid-cols-1' : isDesktop ? 'grid-cols-4' : 'grid-cols-2'} gap-4`}>
       {statsData.map((stat) => {
         const Icon = stat.icon;
         return (
-          <div key={stat.id} className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between">
+          <article key={stat.id} aria-label={`Statistic: ${stat.title}`} className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between">
             <div className="flex justify-between items-start mb-4">
               <Typography variant="label" className="text-gray-500 font-semibold tracking-wider uppercase">{stat.title}</Typography>
               <div className={`w-8 h-8 rounded-lg ${stat.iconBgColor} flex items-center justify-center ${stat.iconTextColor}`}>
@@ -72,7 +72,7 @@ const OverviewStats: React.FC = () => {
               <Typography variant="h3">{stat.value}</Typography>
               <Typography variant="bodySmall" className="text-gray-500">{stat.subtitle}</Typography>
             </div>
-          </div>
+          </article>
         );
       })}
     </div>

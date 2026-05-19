@@ -109,9 +109,9 @@ const OverviewGoals: React.FC = () => {
   const { isMobile } = useScreenSize();
 
   return (
-    <div className=" space-y-6">
-      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-        <div className={`flex ${isMobile ? 'flex-col items-start gap-4' : 'justify-between items-center'} mb-6`}>
+    <article aria-label="My Goals Container" className=" space-y-6">
+      <section aria-label="Goals List Area" className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+        <header className={`flex ${isMobile ? 'flex-col items-start gap-4' : 'justify-between items-center'} mb-6`}>
           <div className="flex items-center gap-3">
             <Typography variant="h4" className="font-bold text-gray-900">My Goals</Typography>
             <div className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">{goalsData.length}</div>
@@ -122,11 +122,11 @@ const OverviewGoals: React.FC = () => {
               Open all <ArrowRight className="w-3 h-3" />
             </button>
           </div>
-        </div>
+        </header>
 
-        <div className="space-y-4">
+        <div aria-label="Goals Cards" className="space-y-4">
           {goalsData.map((goal) => (
-            <div key={goal.id} className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center gap-4'} p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors`}>
+            <article key={goal.id} aria-label={`Goal: ${goal.title}`} className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center gap-4'} p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors`}>
               <div className="flex items-start gap-3 flex-1 w-full">
                 <div className="self-start mt-1">
                   <Badge label={goal.type} backgroundColor={goal.typeBgColor} textColor={goal.typeTextColor} size="sm" />
@@ -149,11 +149,11 @@ const OverviewGoals: React.FC = () => {
                   <Badge label={goal.status} backgroundColor={goal.statusBgColor} textColor={goal.statusTextColor} size="sm" pulse={{ show: true, color: goal.statusPulse }} />
                 </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
-      </div>
-    </div>
+      </section>
+    </article>
   );
 };
 
