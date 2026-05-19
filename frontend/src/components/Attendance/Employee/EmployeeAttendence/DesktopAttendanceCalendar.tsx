@@ -380,10 +380,6 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     <span>On Leave</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <Columns2 className="w-3.5 h-3.5 text-orange-500" />
-                    <span>Half Day</span>
-                </div>
-                <div className="flex items-center gap-1">
                     <XCircle className="w-3.5 h-3.5 text-grey-500" />
                     <span>Week Off</span>
                 </div>
