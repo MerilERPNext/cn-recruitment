@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Clock, Sparkles, Plus } from 'lucide-react';
 import { Typography } from '../../shared/atoms/Typography';
 import Button from '../../shared/atoms/Button';
@@ -7,6 +8,7 @@ import { useScreenSize } from '../../../hooks/useScreenSize';
 
 const Review = () => {
   const { isMobile } = useScreenSize();
+  const navigate = useNavigate();
 
   const [achievements] = useState([
     {
@@ -90,8 +92,8 @@ const Review = () => {
                     <Typography variant="caption" className="text-gray-600">Progress</Typography>
                     <Typography variant="caption" className="text-gray-900 font-semibold">1 of 5 done</Typography>
                  </div>
-                 <div className="w-full bg-gray-100 rounded-full h-1.5 mb-3">
-                    <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: '20%' }}></div>
+                 <div className="w-full bg-gray-100 rounded-md h-1.5 mb-3">
+                    <div className="bg-blue-500 h-1.5 rounded-md" style={{ width: '20%' }}></div>
                  </div>
                  <div className="flex items-center gap-1.5 text-gray-400">
                     <Clock className="w-3.5 h-3.5" />
@@ -155,6 +157,18 @@ const Review = () => {
                 </div>
              </div>
            ))}
+
+           {/* Navigation Actions */}
+           <div className="flex justify-end mt-4">
+              <Button 
+                variant="contain" 
+                bgColor="primary" 
+                size="md" 
+                onClick={() => navigate('/webapp/performance-app/review/peer-nomination')}
+              >
+                 Next: Peer Nomination
+              </Button>
+           </div>
         </div>
 
         {/* Right Sidebar */}
