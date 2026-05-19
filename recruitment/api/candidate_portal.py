@@ -275,7 +275,11 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
     _append_key_contact_rows(doc, applicant)
 
     prefill = prefill or {}
-    doj = prefill.get("date_of_joining") or prefill.get("custom_date_of_joining")
+    doj = (
+        prefill.get("date_of_joining")
+        or prefill.get("custom_date_of_joining")
+        or applicant.get("custom_expected_doj")
+    )
     if doj:
         doc.date_of_joining = doj
     bbo = prefill.get("boarding_begins_on") or doc.date_of_joining
@@ -289,6 +293,15 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
     applicant.db_set("custom_pre_onboarding_status", "Onboarding Created", update_modified=False)
     if not applicant.get("custom_pre_onboarding_released_at"):
         applicant.db_set("custom_pre_onboarding_released_at", now_datetime(), update_modified=False)
+
+    # Remove any stale Job-Applicant-tied Action Center Item now that the
+    # EO's after_insert hook has created the canonical EO-tied one.
+    if applicant.email_id:
+        try:
+            from recruitment.api.action_center import _delete_minimal_item
+            _delete_minimal_item(applicant.email_id, "Job Applicant", job_applicant_id, commit=False)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "materialize_onboarding_from_applicant: delete JA action item failed")
 
     return doc.name
 
