@@ -438,6 +438,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         
         {
+          name: "Skills And Proficiency",
+          icon: Goal,
+          href: "/webapp/performance-app/skills",
+          permissionKey: "Overview",
+        },
+        
+        {
           name: "New Goal Plan",
           icon: Goal,
           href: "/webapp/performance-app/new-goal-plan",
