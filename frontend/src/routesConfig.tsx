@@ -472,6 +472,11 @@ const ScheduledImportsPage = lazyWithRetry(
   "ScheduledImportsPage",
 );
 
+const FutureTransactionsPage = lazyWithRetry(
+  () => import("./components/EmployeeProfile/FutureTransactionsPage"),
+  "FutureTransactionsPage",
+);
+
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -889,6 +894,11 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/employee-profile",
     element: <EmployeeProfile />,
+    permissionKey: "Employee Profile",
+  },
+  {
+    path: "/webapp/employee-profile/future-transactions",
+    element: <FutureTransactionsPage />,
     permissionKey: "Employee Profile",
   },
 
