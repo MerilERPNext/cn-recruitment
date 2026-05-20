@@ -1120,7 +1120,7 @@ def get_job_applicant_portal_field_names(job_applicant_id=None):
     }
 
 
-@candidate_required
+@frappe.whitelist()
 def get_candidate_feature_flags():
     doc = frappe.get_single("Candidate Portal Feature Flag")
 
