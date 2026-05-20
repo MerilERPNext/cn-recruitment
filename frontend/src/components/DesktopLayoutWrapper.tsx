@@ -20,6 +20,8 @@ import SearchMembers from "./shared/SearchMembers";
 import Button from "./shared/atoms/Button";
 import { Typography } from "./shared/atoms/Typography";
 
+import BulkLeaveModal from "./Leaves/BulkLeaveModal";
+
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
   title?: string;
@@ -38,6 +40,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   // Force static badge count for UI demo
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const { data: currentEmployeeByList, isLoading: currentEmpListIsLoading } =
     useCurrentEmployeeDetails({ logged_in_employee_details: true });
@@ -46,7 +49,6 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const currentEmployee = currentEmployeeByList ?? currentEmployeeByMethod;
   const currentEmpIsLoading = currentEmpListIsLoading || currentEmpMethodIsLoading;
   const { clearTargetEmployee } = useTargetUser();
-
   const { data: currentUser } = useCurrentUser();
   const canRedirectToDesk = currentUser?.roles?.some((role) =>
     ["System User", "Payroll Manager", "System Manager"].includes(role.role),
@@ -197,6 +199,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
             </div>
           )}
           <div className="flex items-center gap-4 flex-shrink-0">
+            <Button size="sm" onClick={() => setIsBulkModalOpen(true)}>
+              Bulk Leave Request
+            </Button>
             <button
               onClick={handleNotificationClick}
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
@@ -395,6 +400,14 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
           )}
         </div>
       </div>
+      <BulkLeaveModal 
+        isOpen={isBulkModalOpen} 
+        onClose={() => setIsBulkModalOpen(false)} 
+        prefilledDates={[
+          { date: new Date().toISOString().split('T')[0] },
+          { date: new Date(Date.now() + 86400000).toISOString().split('T')[0] }
+        ]}
+      />
     </div>
   );
 };
