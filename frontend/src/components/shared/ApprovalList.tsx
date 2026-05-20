@@ -122,7 +122,7 @@ const ApprovalList = ({
     isLoading: boolean;
   } | null>(null);
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<any[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
   const [actedIds, setActedIds] = useState<Set<string>>(new Set());
 
