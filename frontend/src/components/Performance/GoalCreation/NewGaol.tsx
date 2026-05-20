@@ -1,9 +1,11 @@
 import { type MouseEvent, useState } from 'react';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import Button from '../../shared/atoms/Button';
+import Modal from '../../shared/Modal';
 import PageLayoutWrapper from '../../shared/PageLayoutWrapper';
 import DefineGoal from './component/DefineGoal';
 import GoalAlignment from './component/GoalAlignment';
+import GoalLibraryPopup from './component/GoalLibraryPopup';
 import StartGoalSelection from './component/StartGoalSelection';
 import VisibilityAndSubmit from './component/VisibilityAndSubmit';
 
@@ -46,13 +48,14 @@ const stepDefinitions: {
             label: 'Visibility & Submit',
             title: 'Visibility & submit',
             subtitle: 'Choose who sees your OKR and submit for approval.',
-            nextLabel: 'Submit OKR',
+            nextLabel: 'Submit For Approval',
             backLabel: 'Back to Alignment',
         },
     ];
 
 const NewGoal = () => {
     const [activeStepIndex, setActiveStepIndex] = useState(0);
+    const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
 
     const safeStepIndex = Math.min(
         Math.max(activeStepIndex, 0),
@@ -69,7 +72,7 @@ const NewGoal = () => {
 
     const handlePrimaryAction = () => {
         if (isLastStep) {
-            console.log('Submit OKR');
+            setIsGoalLibraryOpen(true);
             return;
         }
 
@@ -107,54 +110,65 @@ const NewGoal = () => {
             case 'alignment':
                 return <GoalAlignment />;
             case 'visibility':
-                return <VisibilityAndSubmit />;
+                return <VisibilityAndSubmit onSubmitForApproval={handlePrimaryAction} />;
             default:
                 return null;
         }
     };
 
     return (
-        <PageLayoutWrapper
-            title={currentStep.title}
-            subtitle={currentStep.subtitle}
-            steps={steps}
-            resetScrollKey={safeStepIndex}
-            footerLeft={
-                <Button
-                    type="button"
-                    variant="outline"
-                    bgColor="text"
-                    fullWidth
-                    className="h-9 cursor-pointer  justify-center w-full  rounded-lg border-gray-200 bg-white px-4 text-gray-700 md:w-auto"
-                    onClick={handleSecondaryAction}
-                >
-                    <ArrowLeft className="w-4 h-4 mr-1" />
-                    {currentStep.backLabel}
-                </Button>
-            }
-            footerRight={
-                <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:justify-end md:gap-3">
-                    <div className="hidden items-center text-xs text-gray-500 md:flex">
-                        <span className="mr-1 text-gray-400">◷</span> Autosaved 4s ago
-                    </div>
-                    <Button type="button" variant="outline" bgColor="text" fullWidth className="h-9 justify-center rounded-lg border-gray-200 bg-white px-4 text-gray-700 md:w-auto">
-                        Save Draft
-                    </Button>
+        <>
+            <PageLayoutWrapper
+                title={currentStep.title}
+                subtitle={currentStep.subtitle}
+                steps={steps}
+                resetScrollKey={safeStepIndex}
+                footerLeft={
                     <Button
                         type="button"
-                        variant="contain"
-                        bgColor="primary"
+                        variant="outline"
+                        bgColor="text"
                         fullWidth
-                        className="h-9 justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700 md:w-auto"
-                        onClick={handlePrimaryAction}
+                        className="h-9 cursor-pointer  justify-center w-full  rounded-lg border-gray-200 bg-white px-4 text-gray-700 md:w-auto"
+                        onClick={handleSecondaryAction}
                     >
-                        {currentStep.nextLabel} <ArrowRight className="w-4 h-4 ml-1" />
+                        <ArrowLeft className="w-4 h-4 mr-1" />
+                        {currentStep.backLabel}
                     </Button>
-                </div>
-            }
-        >
-            {renderStepContent()}
-        </PageLayoutWrapper>
+                }
+                footerRight={
+                    <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:justify-end md:gap-3">
+                        <div className="hidden items-center text-xs text-gray-500 md:flex">
+                            <span className="mr-1 text-gray-400">◷</span> Autosaved 4s ago
+                        </div>
+                        <Button type="button" variant="outline" bgColor="text" fullWidth className="h-9 justify-center rounded-lg border-gray-200 bg-white px-4 text-gray-700 md:w-auto">
+                            Save Draft
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="contain"
+                            bgColor="primary"
+                            fullWidth
+                            className="h-9 justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700 md:w-auto"
+                            onClick={handlePrimaryAction}
+                        >
+                            {currentStep.nextLabel} <ArrowRight className="w-4 h-4 ml-1" />
+                        </Button>
+                    </div>
+                }
+            >
+                {renderStepContent()}
+            </PageLayoutWrapper>
+
+            <Modal
+                isOpen={isGoalLibraryOpen}
+                onClose={() => setIsGoalLibraryOpen(false)}
+                size="xl"
+                className="max-w-[1300px] p-0"
+            >
+                <GoalLibraryPopup onClose={() => setIsGoalLibraryOpen(false)} />
+            </Modal>
+        </>
     );
 };
 

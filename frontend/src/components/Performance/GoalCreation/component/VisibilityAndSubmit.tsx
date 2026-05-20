@@ -110,7 +110,11 @@ const previewKeyResults = [
     { id: 'KR3', text: 'WAU adoption >= 80% by Q3' },
 ];
 
-const VisibilityAndSubmit = () => {
+interface VisibilityAndSubmitProps {
+    onSubmitForApproval?: () => void;
+}
+
+const VisibilityAndSubmit = ({ onSubmitForApproval }: VisibilityAndSubmitProps) => {
     const [selectedVisibility, setSelectedVisibility] = useState<VisibilityOption>('Manager-only');
     const previewRows: PreviewRow[] = [
         ...previewBaseRows.slice(0, 4),
@@ -285,6 +289,7 @@ const VisibilityAndSubmit = () => {
                             bgColor="primary"
                             fullWidth
                             className="h-10 justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                            onClick={onSubmitForApproval}
                         >
                             Submit for Approval
                             <ArrowRight className="h-4 w-4" />
