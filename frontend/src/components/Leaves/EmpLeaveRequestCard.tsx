@@ -79,6 +79,8 @@ const EmpLeaveRequestCard = ({
           onSuccess: () => {
             setIsActed(true);
             queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
+            queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+            queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 2000);
@@ -271,7 +273,7 @@ const EmpLeaveRequestCard = ({
                   {data?.reference_document?.custom_leave_type_name}
                 </Typography>
               </div>
-              
+
               <div className="flex flex-col gap-1 text-right">
                 <Typography variant="mobileCardLabel">Leave Days</Typography>
                 <Typography variant="mobileCardValue">
@@ -335,12 +337,12 @@ const EmpLeaveRequestCard = ({
                 </Typography>
               </div>
             )}
-              <div>
-                <Typography variant="mobileCardLabel">Assigned To</Typography>
-                <Typography variant="mobileCardValue">
-                  {getAssignedUsersCell(data)}
-                </Typography>
-              </div>
+            <div>
+              <Typography variant="mobileCardLabel">Assigned To</Typography>
+              <Typography variant="mobileCardValue">
+                {getAssignedUsersCell(data)}
+              </Typography>
+            </div>
 
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill

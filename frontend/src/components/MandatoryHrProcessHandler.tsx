@@ -160,17 +160,8 @@ const MandatoryHrProcessHandler = () => {
     const handleChatClose = async () => {
       if (!isAutoOpened) return;
 
-      const previousTaskName =
-        sessionStorage.getItem(SESSION_MANDATORY_HR_CURRENT_TASK_KEY) ?? "";
-
       const result = await refetch();
       const tasks = result.data?.data ?? [];
-
-      const previousStillExists = tasks.some(
-        (task) => task.name === previousTaskName,
-      );
-
-      if (previousStillExists) return;
 
       sessionStorage.removeItem(SESSION_MANDATORY_HR_CURRENT_TASK_KEY);
 
