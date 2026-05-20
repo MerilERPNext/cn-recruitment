@@ -6,6 +6,7 @@ import formatToIndianDate from "../../utils/formatToIndianDate";
 import FrappeAPI from "../../utils/frappeAPI";
 import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 export interface FutureTransaction {
   name: string;
@@ -41,7 +42,7 @@ const FutureTransactionRowItem = ({ item }: { item: FutureTransaction }) => {
     },
     onError: (error: any) => {
       console.error("Revoke error:", error);
-      toast.error(error?.message || "Failed to revoke transaction");
+      toast.error(errorResponseFormater(error, "Failed to revoke transaction"));
     },
   });
 
