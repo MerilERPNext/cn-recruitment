@@ -7,16 +7,21 @@ import FrappeAPI from "../../utils/frappeAPI";
 import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 export interface FutureTransaction {
   name: string;
   source_doctype: string;
   effective_date: string;
   field_name: string;
+  field_label: string | null;
   current_value: string | null;
+  current_value_name: string | null;
   old_value: string | null;
   updated_value: string | null;
+  updated_value_name: string | null;
   created_by: string | null;
+  created_by_name: string | null;
   created_on: string | null;
   source_code: string;
   source_name: string;
@@ -50,6 +55,19 @@ const FutureTransactionRowItem = ({ item }: { item: FutureTransaction }) => {
     revokeMutation.mutate();
   };
 
+  const renderValueWithHover = (value: string | null, name: string | null) => {
+    if (name) {
+      return (
+        <WrapperHoverCard employeeId={value || undefined}>
+          <span className="cursor-pointer hover:underline decoration-dashed decoration-gray-400 underline-offset-2">
+            {name}
+          </span>
+        </WrapperHoverCard>
+      );
+    }
+    return <>{value || "—"}</>;
+  };
+
   if (isDesktop) {
     return (
       <div
@@ -59,21 +77,21 @@ const FutureTransactionRowItem = ({ item }: { item: FutureTransaction }) => {
         {/* Type (field_name) */}
         <div className="flex items-center justify-center">
           <Typography variant="bodySmall" className="font-medium text-center">
-            {item.field_name || "—"}
+            {item.field_label || item.field_name || "—"}
           </Typography>
         </div>
 
         {/* Change Requested From (current_value) */}
         <div className="flex items-center justify-center gap-1.5">
           <Typography variant="bodySmall" className="font-medium text-center">
-            {item.current_value || "—"}
+            {renderValueWithHover(item.current_value, item.current_value_name)}
           </Typography>
         </div>
 
         {/* Change Requested To (updated_value) */}
         <div className="flex items-center justify-center">
           <Typography variant="bodySmall" className="font-medium text-center">
-            {item.updated_value || "—"}
+            {renderValueWithHover(item.updated_value, item.updated_value_name)}
           </Typography>
         </div>
 
@@ -84,7 +102,7 @@ const FutureTransactionRowItem = ({ item }: { item: FutureTransaction }) => {
 
         {/* Requested By (created_by) */}
         <Typography variant="bodySmall" className="font-medium text-center">
-          {item.created_by || "—"}
+          {renderValueWithHover(item.created_by, item.created_by_name)}
         </Typography>
 
         {/* Requested On (created_on) */}
@@ -94,12 +112,12 @@ const FutureTransactionRowItem = ({ item }: { item: FutureTransaction }) => {
 
         {/* Source Name (source_type) */}
         <Typography variant="bodySmall" className="font-medium text-center">
-          {item.source_name || "—"}
+          {item.source_type || "—"}
         </Typography>
 
-        {/* Source ID (source_code/name) */}
+        {/* Source ID (source_name) */}
         <Typography variant="bodySmall" className="font-medium text-center">
-          {item.source_code || "—"}
+          {item.source_name || "—"}
         </Typography>
 
         {/* Actions (Revoke button) */}
@@ -130,7 +148,7 @@ const FutureTransactionRowItem = ({ item }: { item: FutureTransaction }) => {
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Type</Typography>
             <Typography variant="mobileCardValue">
-              {item.field_name || "—"}
+              {item.field_label || item.field_name || "—"}
             </Typography>
           </div>
           <div className="flex flex-col gap-1 text-right">
@@ -148,13 +166,13 @@ const FutureTransactionRowItem = ({ item }: { item: FutureTransaction }) => {
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">From</Typography>
             <Typography variant="mobileCardValue">
-              {item.current_value || "—"}
+              {renderValueWithHover(item.current_value, item.current_value_name)}
             </Typography>
           </div>
           <div className="flex flex-col gap-1 text-right">
             <Typography variant="mobileCardLabel">To</Typography>
             <Typography variant="mobileCardValue">
-              {item.updated_value || "—"}
+              {renderValueWithHover(item.updated_value, item.updated_value_name)}
             </Typography>
           </div>
         </div>
@@ -164,13 +182,13 @@ const FutureTransactionRowItem = ({ item }: { item: FutureTransaction }) => {
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Source Name</Typography>
             <Typography variant="mobileCardValue">
-              {item.source_name || "—"}
+              {item.source_type || "—"}
             </Typography>
           </div>
           <div className="flex flex-col gap-1 text-right">
             <Typography variant="mobileCardLabel">Source ID</Typography>
             <Typography variant="mobileCardValue">
-              {item.source_code || "—"}
+              {item.source_name || "—"}
             </Typography>
           </div>
         </div>
@@ -180,7 +198,7 @@ const FutureTransactionRowItem = ({ item }: { item: FutureTransaction }) => {
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Requested By</Typography>
             <Typography variant="mobileCardValue">
-              {item.created_by || "—"}
+              {renderValueWithHover(item.created_by, item.created_by_name)}
             </Typography>
           </div>
           <div className="flex flex-col gap-1 text-right">
