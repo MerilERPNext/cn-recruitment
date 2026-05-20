@@ -131,12 +131,12 @@ const focusAreas = [
 
 const levelLabels = ["L1", "L2", "L3", "L4", "L5"];
 
-const getLevelTone = (level: number, categoryTone: ProjectTone) => {
+const getLevelTone = (level: number) => {
   if (level === 5) return PROJECT_TONES.success.bar;
   if (level === 4) return PROJECT_TONES.primary.bar;
   if (level === 3) return PROJECT_TONES.info.bar;
   if (level === 2) return PROJECT_TONES.warning.bar;
-  return categoryTone === "secondary" ? PROJECT_TONES.secondary.bar : "bg-gray-400";
+  return "bg-gray-400";
 };
 
 const getLevelLabel = (level: number) => {
@@ -146,14 +146,14 @@ const getLevelLabel = (level: number) => {
   return "Beginner";
 };
 
-const SkillLevelBar = ({ current, target, tone }: { current: number; target: number; tone: ProjectTone }) => (
+const SkillLevelBar = ({ current, target }: { current: number; target: number }) => (
   <div className="flex min-w-[230px] items-center gap-1.5">
     {levelLabels.map((label, index) => {
       const level = index + 1;
       const isCurrent = level <= current;
       const isTargetOnly = level > current && level <= target;
       const levelClass = isCurrent
-        ? `${getLevelTone(level, tone)} text-white`
+        ? `${getLevelTone(level)} text-white`
         : isTargetOnly
           ? "border border-dashed border-primary-500 bg-white text-primary-700"
           : "bg-gray-100 text-gray-500";
@@ -220,12 +220,7 @@ const SkillsAndProficiency: React.FC = () => {
         <div className="rounded-lg border border-primary-100 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <Badge label="Skills & Proficiency" backgroundColor="bg-info-50 border border-info-100" textColor="text-info-800" size="sm" />
-                <Typography variant="caption" className="text-gray-700">
-                  Independent of Goals & Competencies · re-assessed quarterly
-                </Typography>
-              </div>
+            
               <Typography variant="h3" className="text-text-title">
                 16 tracked skills across 6 categories
               </Typography>
@@ -283,7 +278,7 @@ const SkillsAndProficiency: React.FC = () => {
               {categories.map((category) => (
                 <div key={category.name}>
                   <div className="flex items-center gap-3 bg-primary-50/60 px-4 py-3">
-                    <div className={`h-7 w-1.5 rounded-full ${PROJECT_TONES[category.tone].accent}`} />
+                    <div className={`h-7 w-1.5 rounded-md ${PROJECT_TONES[category.tone].accent}`} />
                     <Typography variant="bodySmall" className="font-bold text-text-title">
                       {category.name}
                     </Typography>
@@ -309,7 +304,7 @@ const SkillsAndProficiency: React.FC = () => {
                         </Typography>
                       </div>
 
-                      <SkillLevelBar current={skill.current} target={skill.target} tone={category.tone} />
+                      <SkillLevelBar current={skill.current} target={skill.target} />
 
                       <Badge
                         label={skill.delta}

@@ -89,12 +89,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     return (
         <div className="animate-slideUp flex min-h-[690px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
             <div className="relative border-b border-gray-100 px-5 py-4">
-                <div className="flex flex-wrap items-center gap-3">
-                    <Badge label="Library · Step 1" variant="purple" size="sm" />
-                    <Typography variant="caption" className="font-semibold text-gray-500">
-                        506 templates · 142 for Design
-                    </Typography>
-                </div>
+                
 
                 <Typography variant="h4" className="mt-2 text-2xl font-semibold text-gray-900">
                     Goal Library
