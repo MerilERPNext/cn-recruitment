@@ -206,6 +206,8 @@ export function useReplaceLeave() {
 
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
       queryClient.invalidateQueries({ queryKey: ["custom-api"] });
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
     },
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -245,6 +247,9 @@ export function useRevokeApprovedLeave() {
 
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
       queryClient.invalidateQueries({ queryKey: ["custom-api"] });
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
     },
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -450,7 +455,7 @@ export function useCreateLeaveApplication() {
         });
         queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
         queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
-        
+        queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
       }, 1500);
     },
   });
@@ -473,6 +478,22 @@ export const useGetAttendanceStatus = (
     staleTime: 5 * 60 * 1000,
   });
 };
+
+export function useBulkUpdateRejectionReason() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ doctype, docnames, comment }: { doctype: string; docnames: string[]; comment: string }) =>
+      leaveService.bulkUpdateRejectionReason(doctype, docnames, comment),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["teamRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
+    },
+    onError: (err: unknown) => {
+      console.error("Failed to bulk update rejection reason:", err);
+      toast.error(errorResponseFormater(err));
+    },
+  });
+}
 
 export function useUpdateRejectionReason() {
   const queryClient = useQueryClient();

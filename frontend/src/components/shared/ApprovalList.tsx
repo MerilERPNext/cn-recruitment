@@ -10,6 +10,8 @@ import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { useBulkSelectContext } from "./BulkSelectContext";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import RejectionReasonModal from "./RejectionReasonModal";
+import { useBulkUpdateRejectionReason, useIsRejectionReasonMandatory } from "../../hooks/useLeaves";
 
 type ApprovalListProps = {
   doctype: string;
@@ -125,6 +127,11 @@ const ApprovalList = ({
   const [selectedIds, setSelectedIds] = useState<any[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
   const [actedIds, setActedIds] = useState<Set<string>>(new Set());
+
+  const { data: isRejectionMandatory } = useIsRejectionReasonMandatory();
+  const bulkUpdateMutation = useBulkUpdateRejectionReason();
+  const [showBulkCommentModal, setShowBulkCommentModal] = useState(false);
+  const [pendingBulkAction, setPendingBulkAction] = useState<"Approve" | "Reject" | null>(null);
 
   const addActedId = useCallback((id: string) => {
     setActedIds((prev) => new Set(prev).add(id));
@@ -308,6 +315,47 @@ const ApprovalList = ({
   );
 
   const batchActionMutation = useActionOnAttendanceRequest();
+
+  const handleBulkActionClick = (action: "Approve" | "Reject") => {
+    if (action === "Reject" && doctype === "Leave Application") {
+      const isMandatory = isRejectionMandatory?.message ?? true;
+      if (isMandatory) {
+        setPendingBulkAction(action);
+        setShowBulkCommentModal(true);
+        return;
+      }
+    }
+    handleBulkAction(action);
+  };
+
+  const handleSaveBulkComment = async (reason: string) => {
+    try {
+      const docnames = selectedIds.map(id => {
+        const req = allRequests.find(r => r.todo_id === id);
+        return req?.reference_name || req?.reference_document?.name;
+      }).filter(Boolean);
+
+      if (docnames.length > 0) {
+        await bulkUpdateMutation.mutateAsync({
+          doctype,
+          docnames,
+          comment: reason,
+        });
+      }
+      setShowBulkCommentModal(false);
+      if (pendingBulkAction) {
+        handleBulkAction(pendingBulkAction);
+      }
+    } catch (error) {
+      console.error("Failed to save bulk comment", error);
+    }
+  };
+
+  const handleCancelBulkComment = () => {
+    setShowBulkCommentModal(false);
+    setPendingBulkAction(null);
+  };
+
   const handleBulkAction = useCallback(async (action: "Approve" | "Reject") => {
     await loading?.wrap(async () => {
       try {
@@ -349,7 +397,7 @@ const ApprovalList = ({
       } finally {
         setBulkLoading(null);
       }
-    }, `${action}ing selected requests…`);
+    }, `${action} selected requests…`);
   }, [loading, batchActionMutation, selectedIds, triggerRefetch]);
 
   // ── BulkSelectContext sync ───────────────────────────────────────────────
@@ -400,7 +448,7 @@ const ApprovalList = ({
     allRequests.length > 0 && selectedIds.length === allRequests.length;
 
   return (
-    <DataListView
+    <><DataListView
       queryKey={["todo-approvals", doctype]}
       defaultFilters={defaultFilters || { status }}
       customAPI={{
@@ -412,12 +460,9 @@ const ApprovalList = ({
           ...activeFilters,
         },
       }}
-      noRecordsScreen={
-        typeof noRecordsScreen === "function"
-          ? (filters: Record<string, any>) =>
-            noRecordsScreen({ ...filters, ...activeFilters })
-          : noRecordsScreen
-      }
+      noRecordsScreen={typeof noRecordsScreen === "function"
+        ? (filters: Record<string, any>) => noRecordsScreen({ ...filters, ...activeFilters })
+        : noRecordsScreen}
       onFiltersChange={handleFiltersChange}
       isSearch={isSearch}
       isFilter={isFilter}
@@ -441,13 +486,11 @@ const ApprovalList = ({
                 type="checkbox"
                 checked={allSelected}
                 onChange={handleSelectAll}
-                className="cursor-pointer w-4 h-4"
-              />
+                className="cursor-pointer w-4 h-4" />
               <span className="text-sm">Select all pending requests</span>
             </div>
           )
-          : undefined
-      }
+          : undefined}
       PostListComponent={
         // Renders between the last list item and the pagination row.
         // Only visible when at least one item is selected.
@@ -455,12 +498,10 @@ const ApprovalList = ({
           ? () => (
             <BulkActionFooter
               selectedIds={selectedIds}
-              onBulkAction={handleBulkAction}
-              loadingAction={bulkLoading}
-            />
+              onBulkAction={handleBulkActionClick}
+              loadingAction={bulkLoading} />
           )
-          : undefined
-      }
+          : undefined}
       renderItem={(item: any) => {
         const todoId = item?.todo_id;
         const isActed = actedIds.has(todoId);
@@ -491,8 +532,11 @@ const ApprovalList = ({
         if (onApprovalRefetchComplete) {
           onApprovalRefetchComplete();
         }
-      }}
-    />
+      }} /><RejectionReasonModal
+        isOpen={showBulkCommentModal}
+        isPending={bulkUpdateMutation.isPending}
+        onCancel={handleCancelBulkComment}
+        onSave={handleSaveBulkComment} /></>
   );
 };
 
