@@ -15,7 +15,7 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import EmploymentHistory from "../MyProfile/EmploymentHistory";
 import SideDrawer from "../shared/SideDrawer";
-import FutureTransactionstTable from "./FutureTransactionstTable";
+import FutureTransactionsTable from "./FutureTransactionsTable";
 import { Tab } from "../NavigationTab";
 import Button from "../shared/atoms/Button";
 // import AttendanceAssignments from "../Attendance/AttendanceAssignments";
@@ -735,7 +735,7 @@ const EmployeeProfile: React.FC = () => {
         title="Future Transactions"
         className="p-0"
       >
-        <FutureTransactionstTable />
+        <FutureTransactionsTable />
       </SideDrawer>
     </>
   );
