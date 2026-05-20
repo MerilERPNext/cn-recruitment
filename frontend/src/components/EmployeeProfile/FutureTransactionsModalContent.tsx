@@ -86,7 +86,7 @@ const FutureTransactionsModalContent: React.FC<FutureTransactionsModalContentPro
   );
 
   return (
-    <div className="flex flex-col  h-full bg-white sm:max-h-[90vh]">
+    <div className="flex flex-col overflow-y-hidden h-full bg-white sm:max-h-[90vh]">
       {/* Modal Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
         <div>
@@ -106,7 +106,7 @@ const FutureTransactionsModalContent: React.FC<FutureTransactionsModalContentPro
       </div>
 
       {/* Table + DataListView */}
-      <div className="flex-1 overflow-y-auto p-6 min-h-[200px]">
+      <div className="flex-1 p-6 overflow-y-auto">
         <CardTable
           columnWidths={COLUMN_WIDTHS}
           titles={COLUMN_TITLES}
