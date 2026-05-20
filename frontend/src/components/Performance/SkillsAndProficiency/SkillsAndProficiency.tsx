@@ -171,7 +171,7 @@ const SkillLevelBar = ({ current, target }: { current: number; target: number })
 );
 
 const ProficiencyPill = ({ level, tone }: { level: number; tone: ProjectTone }) => (
-  <div className={`min-w-[96px] rounded-full px-3 py-1.5 text-center text-[11px] font-semibold ${PROJECT_TONES[tone].soft}`}>
+  <div className={`min-w-[96px] rounded-md px-3 py-1.5 text-center text-[11px] font-semibold ${PROJECT_TONES[tone].soft}`}>
     L{level} · {getLevelLabel(level)}
   </div>
 );
@@ -314,7 +314,7 @@ const SkillsAndProficiency: React.FC = () => {
                       />
 
                       <ProficiencyPill level={skill.current} tone={skill.current >= 5 ? "success" : skill.current >= 4 ? "primary" : "info"} />
-                      <span className="hidden text-center text-text-body2 lg:block">→</span>
+                      <span className=" text-center text-text-body2 lg:block">→</span>
                       <ProficiencyPill level={skill.target} tone={skill.target >= 5 ? "success" : "primary"} />
 
                       <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-100 text-gray-500 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700">
