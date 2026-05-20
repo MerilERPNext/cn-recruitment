@@ -32,12 +32,6 @@ import {
   ExpenseNavigationState,
   buildExpenseNavigationState,
 } from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
-import MyGoals from "./components/Performance/MyGoals/MyGoals";
-import GoalDetails from "./components/Performance/MyGoals/components/GoalDetails";
-import Review from "./components/Performance/Review/SelfReview";
-import PeerNominationPage from "./components/Performance/Review/PeerNominationPage";
-import Feedback from "./components/Performance/Feedback/Feedback";
-import NewGoal from "./components/Performance/GoalCreation/NewGaol";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -89,6 +83,34 @@ const RequisitionDetails = lazyWithRetry(
 const ReferralList = lazyWithRetry(
   () => import("./components/ReferralList"),
   "ReferralList",
+);
+const MyGoals = lazyWithRetry(
+  () => import("./components/Performance/MyGoals/MyGoals"),
+  "MyGoals",
+);
+const GoalDetails = lazyWithRetry(
+  () => import("./components/Performance/MyGoals/components/GoalDetails"),
+  "GoalDetails",
+);
+const Review = lazyWithRetry(
+  () => import("./components/Performance/Review/SelfReview"),
+  "Review",
+);
+const PeerNominationPage = lazyWithRetry(
+  () => import("./components/Performance/Review/PeerNominationPage"),
+  "PeerNominationPage",
+);
+const Feedback = lazyWithRetry(
+  () => import("./components/Performance/Feedback/Feedback"),
+  "Feedback",
+);
+const NewGoal = lazyWithRetry(
+  () => import("./components/Performance/GoalCreation/NewGaol"),
+  "NewGoal",
+);
+const SkillsAndProficiency = lazyWithRetry(
+  () => import("./components/Performance/SkillsAndProficiency/SkillsAndProficiency"),
+  "SkillsAndProficiency",
 );
 const JobOpeningsUI = lazyWithRetry(
   () => import("./components/JobOpening/JobOpening"),
@@ -1163,7 +1185,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "my-goals",
         element: <MyGoals />,
-        permissionKey: "My Goals",
+        permissionKey: "",
       },
       {
         path: "my-goals/:id",
@@ -1173,17 +1195,17 @@ export const routesConfig: AppRoute[] = [
       {
         path: "review",
         element: <Review />,
-        permissionKey: "Review",
+        permissionKey: "",
       },
       {
         path: "review/peer-nomination",
         element: <PeerNominationPage />,
-        permissionKey: "Peer Nomination",
+        permissionKey: "",
       },
       {
         path: "feedback",
         element: <Feedback />,
-        permissionKey: "Feedback",
+        permissionKey: "",
       },
       
       {
@@ -1198,7 +1220,7 @@ export const routesConfig: AppRoute[] = [
       },
       {
         path: "skills",
-        element: <NewGoal />,
+        element: <SkillsAndProficiency />,
         permissionKey: "",
       },
       {
