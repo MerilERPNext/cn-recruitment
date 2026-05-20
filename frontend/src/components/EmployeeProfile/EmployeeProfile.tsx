@@ -14,8 +14,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import EmploymentHistory from "../MyProfile/EmploymentHistory";
-import Modal from "../shared/Modal";
-import FutureTransactionsModalContent from "./FutureTransactionsModalContent";
+import SideDrawer from "../shared/SideDrawer";
+import FutureTransactionsTable from "./FutureTransactionsTable";
 import { Tab } from "../NavigationTab";
 import Button from "../shared/atoms/Button";
 // import AttendanceAssignments from "../Attendance/AttendanceAssignments";
@@ -474,8 +474,8 @@ const EmployeeProfile: React.FC = () => {
                 variant="subtle"
                 onClick={() => scrollToSection(tab.key)}
                 className={`whitespace-nowrap px-4 py-2 rounded-none text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                    ? "border-primary-600 text-primary-600"
-                    : "border-transparent text-gray-600 hover:text-primary-600"
+                  ? "border-primary-600 text-primary-600"
+                  : "border-transparent text-gray-600 hover:text-primary-600"
                   }`}
               >
                 {tab.label}
@@ -680,8 +680,8 @@ const EmployeeProfile: React.FC = () => {
                       key={tab.key}
                       onClick={() => scrollToSection(tab.key)}
                       className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                          ? "border-primary text-primary"
-                          : "border-transparent text-gray-600 hover:text-primary"
+                        ? "border-primary text-primary"
+                        : "border-transparent text-gray-600 hover:text-primary"
                         }`}
                     >
                       {tab.label}
@@ -728,13 +728,15 @@ const EmployeeProfile: React.FC = () => {
     <>
       {isDesktop ? desktopLayout : mobileLayout}
 
-      <Modal
-        isOpen={isFutureTransactionsOpen}
+      <SideDrawer
+        open={isFutureTransactionsOpen}
         onClose={() => setIsFutureTransactionsOpen(false)}
-        size={isDesktop ? "2xl" : "full"}
+        size={isDesktop ? "xxl" : "full"}
+        title="Future Transactions"
+        className="p-0"
       >
-        <FutureTransactionsModalContent onClose={() => setIsFutureTransactionsOpen(false)} />
-      </Modal>
+        <FutureTransactionsTable />
+      </SideDrawer>
     </>
   );
 };

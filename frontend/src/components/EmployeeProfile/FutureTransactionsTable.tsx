@@ -2,11 +2,9 @@ import { useCallback } from "react";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import DataListView from "../DataListView";
-import { Typography } from "../shared/atoms/Typography";
 import CardTable from "../shared/CardTable";
 import { ColumnSortConfig } from "../shared/CardTableContext";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
-import { X } from "lucide-react";
 import FutureTransactionRowItem, {
   type FutureTransaction,
 } from "./FutureTransactionRowItem";
@@ -67,11 +65,7 @@ const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
   { sortable: false },
 ];
 
-interface FutureTransactionsModalContentProps {
-  onClose: () => void;
-}
-
-const FutureTransactionsModalContent: React.FC<FutureTransactionsModalContentProps> = ({ onClose }) => {
+const FutureTransactionsTable: React.FC = () => {
   const { targetEmployeeId } = useTargetUser();
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
@@ -86,25 +80,7 @@ const FutureTransactionsModalContent: React.FC<FutureTransactionsModalContentPro
   );
 
   return (
-    <div className="flex flex-col overflow-y-hidden h-full bg-white sm:max-h-[90vh]">
-      {/* Modal Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
-        <div>
-          <Typography variant="h4" className="font-bold text-gray-900">
-            Future Transactions
-          </Typography>
-          <Typography variant="bodySmall" color="secondary" className="mt-1">
-            Employment Details Transactions
-          </Typography>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600"
-        >
-          <X size={20} />
-        </button>
-      </div>
-
+    <div className="flex flex-col h-full bg-white">
       {/* Table + DataListView */}
       <div className="flex-1 p-6 overflow-y-auto">
         <CardTable
@@ -140,4 +116,4 @@ const FutureTransactionsModalContent: React.FC<FutureTransactionsModalContentPro
   );
 };
 
-export default FutureTransactionsModalContent;
+export default FutureTransactionsTable;
