@@ -6,9 +6,10 @@ interface StartGoalSelectionProps {
     onContinue?: () => void;
 }
 
-const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => (
-    <>
-        <div className="bg-[#fff8f6] border border-red-100 rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
+const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
+  
+    return <>
+        <div  className="bg-[#fff8f6] border border-red-100 rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
             <div className="bg-white border border-red-100 text-red-500 w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
                 <FileText className="w-6 h-6" />
             </div>
@@ -244,7 +245,6 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => (
                 Bulk Import <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
         </div>
-    </>
-);
+    </>};
 
 export default StartGoalSelection;

@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { type MouseEvent, useState } from 'react';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import Button from '../../shared/atoms/Button';
 import PageLayoutWrapper from '../../shared/PageLayoutWrapper';
+import DefineGoal from './component/DefineGoal';
 import StartGoalSelection from './component/StartGoalSelection';
 
 type GoalWizardStep = 'start' | 'define' | 'alignment' | 'visibility';
@@ -49,18 +50,19 @@ const stepDefinitions: {
     ];
 
 const NewGoal = () => {
-    const [activeStep, setActiveStep] = useState<GoalWizardStep>('start');
+    const [activeStepIndex, setActiveStepIndex] = useState(0);
 
-    const stepIndex = useMemo(
-        () => stepDefinitions.findIndex((step) => step.key === activeStep),
-        [activeStep],
+    const safeStepIndex = Math.min(
+        Math.max(activeStepIndex, 0),
+        stepDefinitions.length - 1,
     );
-    const isLastStep = stepIndex === stepDefinitions.length - 1;
-    const currentStep = stepDefinitions[stepIndex];
+    const activeStep = stepDefinitions[safeStepIndex].key;
+    const isLastStep = safeStepIndex === stepDefinitions.length - 1;
+    const currentStep = stepDefinitions[safeStepIndex];
 
     const steps = stepDefinitions.map((step, index) => ({
         label: step.label,
-        active: index === stepIndex,
+        active: index === safeStepIndex,
     }));
 
     const handlePrimaryAction = () => {
@@ -69,22 +71,28 @@ const NewGoal = () => {
             return;
         }
 
-        const nextStep = stepDefinitions[stepIndex + 1];
-        if (nextStep) {
-            setActiveStep(nextStep.key);
-        }
+        setActiveStepIndex((currentIndex) => {
+            const boundedIndex = Math.min(
+                Math.max(currentIndex, 0),
+                stepDefinitions.length - 1,
+            );
+
+            return Math.min(boundedIndex + 1, stepDefinitions.length - 1);
+        });
     };
 
-    const handleSecondaryAction = () => {
-        if (stepIndex === 0) {
-            console.log('Cancel goal creation');
-            return;
-        }
+    const handleSecondaryAction = (event?: MouseEvent<HTMLButtonElement>) => {
+        event?.preventDefault();
+        event?.stopPropagation();
 
-        const previousStep = stepDefinitions[stepIndex - 1];
-        if (previousStep) {
-            setActiveStep(previousStep.key);
-        }
+        setActiveStepIndex((currentIndex) => {
+            const boundedIndex = Math.min(
+                Math.max(currentIndex, 0),
+                stepDefinitions.length - 1,
+            );
+
+            return Math.max(boundedIndex - 1, 0);
+        });
     };
 
     const renderStepContent = () => {
@@ -93,11 +101,7 @@ const NewGoal = () => {
                 return <StartGoalSelection onContinue={handlePrimaryAction} />;
 
             case 'define':
-                return (
-                    <div className="space-y-8">
-                        
-                    </div>
-                );
+                return <DefineGoal />;
             case 'alignment':
                 return (
                     <div className="space-y-8">
@@ -120,27 +124,30 @@ const NewGoal = () => {
             title={currentStep.title}
             subtitle={currentStep.subtitle}
             steps={steps}
+            resetScrollKey={safeStepIndex}
             footerLeft={
                 <Button
+                    type="button"
                     variant="outline"
                     bgColor="text"
                     fullWidth
-                    className="h-9 justify-center rounded-lg border-gray-200 bg-white px-4 text-gray-700 md:w-auto"
+                    className="h-9 cursor-pointer  justify-center w-full  rounded-lg border-gray-200 bg-white px-4 text-gray-700 md:w-auto"
                     onClick={handleSecondaryAction}
                 >
                     <ArrowLeft className="w-4 h-4 mr-1" />
                     {currentStep.backLabel}
                 </Button>
-            }
+            } 
             footerRight={
                 <div className="flex w-full flex-col gap-2 md:flex-row md:items-center md:justify-end md:gap-3">
                     <div className="hidden items-center text-xs text-gray-500 md:flex">
                         <span className="mr-1 text-gray-400">◷</span> Autosaved 4s ago
                     </div>
-                    <Button variant="outline" bgColor="text" fullWidth className="h-9 justify-center rounded-lg border-gray-200 bg-white px-4 text-gray-700 md:w-auto">
+                    <Button type="button" variant="outline" bgColor="text" fullWidth className="h-9 justify-center rounded-lg border-gray-200 bg-white px-4 text-gray-700 md:w-auto">
                         Save Draft
                     </Button>
                     <Button
+                        type="button"
                         variant="contain"
                         bgColor="primary"
                         fullWidth

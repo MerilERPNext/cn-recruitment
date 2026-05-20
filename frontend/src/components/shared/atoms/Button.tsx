@@ -19,6 +19,7 @@ export type ButtonContentAlign = "start" | "center" | "end" | "between";
 interface ButtonProps {
   icon?: ReactNode;
   children: ReactNode;
+  type?: "button" | "submit" | "reset";
   bgColor?: ButtonColor;
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -35,6 +36,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     {
       children,
       icon,
+      type = "button",
       bgColor = "primary",
       variant = "contain",
       size = "sm",
@@ -157,6 +159,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
+        type={type}
         onClick={onClick}
         disabled={isDisabled}
         className={`
