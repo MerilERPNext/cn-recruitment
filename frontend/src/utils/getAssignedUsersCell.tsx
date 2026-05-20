@@ -2,6 +2,7 @@
 import { ReactNode } from "react";
 import AllocatedToTooltip from "../components/shared/AllocatedToTooltip";
 import { RoleAssignedUsersType } from "../types/flows";
+import { Typography } from "../components/shared/atoms/Typography";
 
 export const getStageAssignedUsersCell = (
   stage: any,
@@ -44,7 +45,10 @@ export const getStageAssignedUsersCell = (
       users={users}
       position={position}
     >
-      {textWrapper ? textWrapper(label) : <span>{label}</span>}
+      <Typography color="primary" className="underline">
+
+        {textWrapper ? textWrapper(label) : <span>{label}</span>}
+      </Typography>
     </AllocatedToTooltip>
   );
 };

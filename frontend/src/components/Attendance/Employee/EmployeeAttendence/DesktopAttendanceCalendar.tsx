@@ -143,6 +143,9 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                                 event?.request_type === "Out Duty"
                                 ? "Out Duty"
                                 : event?.doctype;
+                        if (doctypeKey === "Employee Checkin") {
+                            return null;
+                        }
                         const badge = getEventBadgeStyle(doctypeKey);
                         return (
                             <Tooltip content={event.doctype + " " + event.status}>
@@ -375,10 +378,6 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                 <div className="flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5 text-yellow-500" />
                     <span>On Leave</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <Columns2 className="w-3.5 h-3.5 text-orange-500" />
-                    <span>Half Day</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <XCircle className="w-3.5 h-3.5 text-grey-500" />

@@ -34,6 +34,7 @@ import { LoadingOverlayProvider } from "./context/OverlayContext";
 import GlobalLeaveRequestModal from "./components/Leaves/GlobalLeaveRequestModal";
 
 import { useWebsiteBranding } from "./hooks/useBranding";
+import MandatoryHrProcessHandler from "./components/MandatoryHrProcessHandler";
 
 // Component to sync ViewedUserContext with frappeAPI
 // NOTE: Must be defined BEFORE App to avoid Vite HMR evaluating it outside the provider tree.
@@ -196,6 +197,7 @@ const App: React.FC = () => {
                   )}
                 </Toaster>
                 <MandatoryPoliciesHandler />
+                <MandatoryHrProcessHandler />
 
                 <div
                   className="min-h-screen bg-app"

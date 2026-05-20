@@ -90,7 +90,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
             )
           )
         ).map((doctype, index) => (
-          <div
+          doctype !== "Employee Checkin" && <div
             key={index}
             className={`w-[6px] h-[6px] rounded-full ${getEventDotColor(
               doctype

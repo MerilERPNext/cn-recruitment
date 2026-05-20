@@ -82,15 +82,6 @@ const AttendanceAssignments = ({
             defaultValue: false,
           },
           {
-            label: "Allow self-enrollment for face recognition",
-            key: "allow_self_enroll",
-            type: "checkbox",
-            input: true,
-            customClass: "mb-4",
-            defaultValue: false,
-            customConditional: "show = !!data.enable_check_in ;",
-          },
-          {
             label: "IP Restriction",
             key: "ip_restriction",
             type: "select",

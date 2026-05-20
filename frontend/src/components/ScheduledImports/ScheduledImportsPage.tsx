@@ -24,6 +24,8 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
 import FrappeListView from "../ListView";
 import ImportSummaryCards from "./ImportSummaryCards";
+import { useTargetUser } from "../../context/ViewedUserContext";
+import { useEmployee } from "../../hooks/useEmployee";
 
 const MODULE_PERMISSION_KEY = "Scheduled Imports";
 
@@ -55,8 +57,12 @@ const COLUMN_WIDTHS = [
 
 const ScheduledImportsPage: React.FC = () => {
   const { isDesktop } = useScreenSize();
+  const { targetEmployeeId } = useTargetUser();
+  const { data: targetEmployee } = useEmployee(targetEmployeeId);
+  const { data: loggedInUserId } = useLoggedInUser();
+  const targetedEmployeeIdValue = targetEmployee?.company_email || targetEmployee?.prefered_email;
 
-  const { data: owner } = useLoggedInUser();
+  const owner = targetEmployeeId ? targetedEmployeeIdValue : loggedInUserId;
 
   const { data: uiPermissions } = useGetUiPermission();
 
