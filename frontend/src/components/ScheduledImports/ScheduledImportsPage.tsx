@@ -288,6 +288,7 @@ const ScheduledImportsPage: React.FC = () => {
               "schedule_the_import",
               "status",
               "import_log",
+              "failed_records_count",
             ]}
             searchFields={[
               "name",
