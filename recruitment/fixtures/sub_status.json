@@ -86,5 +86,21 @@
   "name": "02cgsum0tu",
   "parent_status": "Others",
   "sub_status": "Misconduct\nFraudulent Documents\nManual Review Needed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Sub Status",
+  "modified": "2026-05-19 10:00:00.000000",
+  "name": "approvals-substatus",
+  "parent_status": "Approvals",
+  "sub_status": "Pre Offer Form Sent\nPre Offer Form Filled"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Sub Status",
+  "modified": "2026-05-19 10:00:00.000000",
+  "name": "accepted-substatus",
+  "parent_status": "Accepted",
+  "sub_status": "Pre Onboarding Released\nPre Onboarding Filled"
  }
 ]
