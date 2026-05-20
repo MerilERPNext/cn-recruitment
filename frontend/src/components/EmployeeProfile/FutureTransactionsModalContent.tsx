@@ -106,7 +106,7 @@ const FutureTransactionsModalContent: React.FC<FutureTransactionsModalContentPro
       </div>
 
       {/* Table + DataListView */}
-      <div className="flex-grow overflow-y-auto p-6 min-h-[400px]">
+      <div className="flex-1 overflow-y-auto p-6 min-h-[200px]">
         <CardTable
           columnWidths={COLUMN_WIDTHS}
           titles={COLUMN_TITLES}
