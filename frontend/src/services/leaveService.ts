@@ -363,6 +363,16 @@ export const leaveService = {
     );
   },
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  createLeaveApplicationBatch: async (leaveData: any) => {
+    return FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.create_leave_application_batch",
+      {
+        leave_data: leaveData,
+      }
+    );
+  },
+
   getAttendanceStatus: async (
     employeeId: string,
     fromDate: string,
