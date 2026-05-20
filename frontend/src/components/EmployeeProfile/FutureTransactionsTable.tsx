@@ -65,7 +65,7 @@ const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
   { sortable: false },
 ];
 
-const FutureTransactionstTable: React.FC = () => {
+const FutureTransactionsTable: React.FC = () => {
   const { targetEmployeeId } = useTargetUser();
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
@@ -116,4 +116,4 @@ const FutureTransactionstTable: React.FC = () => {
   );
 };
 
-export default FutureTransactionstTable;
+export default FutureTransactionsTable;
