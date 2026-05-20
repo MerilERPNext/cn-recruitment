@@ -1,8 +1,10 @@
 import { Upload } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { scheduledImportsService } from "../../services/scheduledImportsService";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useScheduledImports } from "../../hooks/useScheduledImports";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -26,6 +28,7 @@ import FrappeListView from "../ListView";
 import ImportSummaryCards from "./ImportSummaryCards";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useEmployee } from "../../hooks/useEmployee";
+
 
 const MODULE_PERMISSION_KEY = "Scheduled Imports";
 
@@ -116,8 +119,12 @@ const ScheduledImportsPage: React.FC = () => {
       "/app/scheduled-data-import/new-scheduled-data-import";
   }, []);
 
-  const handleErrorReport = useCallback((item: ScheduledDataImport) => {
-    toast(`Error report functionality coming soon. ${item.name}`);
+  const handleErrorReport = useCallback(async (item: ScheduledDataImport) => {
+    try {
+      await scheduledImportsService.downloadErrorReport(item);
+    } catch (error) {
+      toast.error(errorResponseFormater(error) as any);
+    }
   }, []);
 
   const handleDownloadFile = useCallback((item: ScheduledDataImport) => {
@@ -218,6 +225,7 @@ const ScheduledImportsPage: React.FC = () => {
                 "schedule_the_import",
                 "status",
                 "import_log",
+                "failed_records_count",
               ]}
               searchFields={[
                 "name",

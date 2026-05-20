@@ -135,7 +135,7 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
 
       {/* Actions */}
       <div className="flex items-center justify-center gap-2 flex-shrink-0">
-        {true && (
+        {item.failed_records_count > 0 && (
           <Button
             size="sm"
             variant="outline"
