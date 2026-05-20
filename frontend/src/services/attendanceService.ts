@@ -680,6 +680,20 @@ export const attendanceService = {
       throw error;
     }
   },
+  createAttendanceRequestBatchWithCustomAPI: async (
+    body: Record<string, unknown>
+  ): Promise<boolean> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.api.create_attendance_request_batch",
+        { attendance_data: body }
+      );
+      return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while Adding attendance request in:", error);
+      throw error;
+    }
+  },
 
   updateAttendanceRequest: async (
     body: Record<string, unknown>
