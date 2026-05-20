@@ -14,6 +14,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import EmploymentHistory from "../MyProfile/EmploymentHistory";
+import Modal from "../shared/Modal";
+import FutureTransactionsModalContent from "./FutureTransactionsModalContent";
 import { Tab } from "../NavigationTab";
 import Button from "../shared/atoms/Button";
 // import AttendanceAssignments from "../Attendance/AttendanceAssignments";
@@ -50,6 +52,7 @@ const EMPLOYEMENT_STATUS = {
   confirm: "Active",
   "on notice period": "On Notice",
 };
+
 
 const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -94,6 +97,7 @@ const EmployeeProfile: React.FC = () => {
   //   useState(false);
   const navigate = useNavigate();
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [isFutureTransactionsOpen, setIsFutureTransactionsOpen] = useState(false);
 
   const uploadMutation = useFileUpload();
   const updateDocMutation = useUpdateFrappeDocument();
@@ -451,7 +455,7 @@ const EmployeeProfile: React.FC = () => {
                 size="sm"
                 variant="soft"
                 onClick={() =>
-                  navigate("/webapp/employee-profile/future-transactions")
+                  setIsFutureTransactionsOpen(true)
                 }
                 className="text-[10px] font-bold uppercase tracking-wider h-full px-4 py-2"
               >
@@ -689,7 +693,7 @@ const EmployeeProfile: React.FC = () => {
                   size="sm"
                   variant="soft"
                   onClick={() =>
-                    navigate("/webapp/employee-profile/future-transactions")
+                    setIsFutureTransactionsOpen(true)
                   }
                   className="uppercase tracking-wider shrink-0 px-4 py-2 font-medium"
                 >
@@ -720,7 +724,19 @@ const EmployeeProfile: React.FC = () => {
     </DesktopLayoutWrapper>
   );
 
-  return <>{isDesktop ? desktopLayout : mobileLayout}</>;
+  return (
+    <>
+      {isDesktop ? desktopLayout : mobileLayout}
+
+      <Modal
+        isOpen={isFutureTransactionsOpen}
+        onClose={() => setIsFutureTransactionsOpen(false)}
+        size={isDesktop ? "2xl" : "full"}
+      >
+        <FutureTransactionsModalContent onClose={() => setIsFutureTransactionsOpen(false)} />
+      </Modal>
+    </>
+  );
 };
 
 export default EmployeeProfile;
