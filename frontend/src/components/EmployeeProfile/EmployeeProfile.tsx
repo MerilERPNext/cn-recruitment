@@ -406,7 +406,7 @@ const EmployeeProfile: React.FC = () => {
                     <Badge
                       label={
                         EMPLOYEMENT_STATUS[
-                          user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
+                        user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
                         ] || user?.custom_employment_status
                       }
                       size="sm"
@@ -469,11 +469,10 @@ const EmployeeProfile: React.FC = () => {
                 key={tab.key}
                 variant="subtle"
                 onClick={() => scrollToSection(tab.key)}
-                className={`whitespace-nowrap px-4 py-2 rounded-none text-sm font-medium transition-all duration-200 border-b-2 ${
-                  activeTab === tab.key
+                className={`whitespace-nowrap px-4 py-2 rounded-none text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
                     ? "border-primary-600 text-primary-600"
                     : "border-transparent text-gray-600 hover:text-primary-600"
-                }`}
+                  }`}
               >
                 {tab.label}
               </Button>
@@ -541,7 +540,7 @@ const EmployeeProfile: React.FC = () => {
                       aria-label="Upload new avatar"
                     >
                       {updateDocMutation.isPending ||
-                      uploadMutation.isPending ? (
+                        uploadMutation.isPending ? (
                         <CircularLoader size="sm" color="white" />
                       ) : (
                         <Pencil size={18} />
@@ -574,7 +573,7 @@ const EmployeeProfile: React.FC = () => {
                             <Badge
                               label={
                                 EMPLOYEMENT_STATUS[
-                                  user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
+                                user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
                                 ] || user?.custom_employment_status
                               }
                               size="md"
@@ -656,19 +655,6 @@ const EmployeeProfile: React.FC = () => {
                               </Button>
                             )} */}
                           {canAppreciate && <Appreciations />}
-                          <Button
-                            icon={<History size={14} />}
-                            size="sm"
-                            variant="soft"
-                            onClick={() =>
-                              navigate(
-                                "/webapp/employee-profile/future-transactions",
-                              )
-                            }
-                            className="uppercase tracking-wider h-full px-4 py-2 font-medium"
-                          >
-                            Future Transactions
-                          </Button>
                         </div>
                       </div>
                     </div>
@@ -683,20 +669,32 @@ const EmployeeProfile: React.FC = () => {
           {/* Horizontal Tabs - Sticky inside scroll container */}
           <div className="rounded-md">
             <div className="bg-white sticky top-0 rounded-t-md z-10">
-              <div className="flex overflow-x-auto scrollbar-hide px-6 py-2 tracking-wide">
-                {permittedTabs?.map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => scrollToSection(tab.key)}
-                    className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
-                      activeTab === tab.key
-                        ? "border-primary text-primary"
-                        : "border-transparent text-gray-600 hover:text-primary"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+              <div className="flex items-center justify-between overflow-x-auto scrollbar-hide px-6 py-2 tracking-wide">
+                <div className="flex overflow-x-auto scrollbar-hide">
+                  {permittedTabs?.map((tab) => (
+                    <button
+                      key={tab.key}
+                      onClick={() => scrollToSection(tab.key)}
+                      className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
+                          ? "border-primary text-primary"
+                          : "border-transparent text-gray-600 hover:text-primary"
+                        }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  icon={<History size={14} />}
+                  size="sm"
+                  variant="soft"
+                  onClick={() =>
+                    navigate("/webapp/employee-profile/future-transactions")
+                  }
+                  className="uppercase tracking-wider shrink-0 px-4 py-2 font-medium"
+                >
+                  Future Transactions
+                </Button>
               </div>
             </div>
 
