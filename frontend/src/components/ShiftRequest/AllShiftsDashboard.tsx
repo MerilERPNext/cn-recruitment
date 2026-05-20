@@ -19,6 +19,7 @@ import EmpShiftRequestCard from "./EmpShiftRequestCard";
 import { ShiftDetailView } from "./ShiftDetailView";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 import NoDataFound from "../shared/atoms/NoDataFound";
+import { BulkSelectProvider } from "../shared/BulkSelectContext";
 
 const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
   {
@@ -363,36 +364,38 @@ export default function AllShiftsDashboard() {
                 }
               />
               <div className="border border-gray-100 rounded-lg overflow-x-auto">
-                <CardTable
-                  titles={tableTitles}
-                  columnWidths={tableColumnWidths}
-                  columnSortConfig={columnSortConfig}
-                >
-                  <ApprovalList
-                    status="Draft"
-                    doctype={"Shift Request"}
-                    pageSize={4}
-                    showPagination={false}
-                    refetch={refetchApprovalList}
-                    setRefetch={setRefetchApprovalList}
-                    onApprovalRefetchComplete={handleApprovalRefetchComplete}
+                <BulkSelectProvider>
+                  <CardTable
+                    titles={tableTitles}
                     columnWidths={tableColumnWidths}
-                    SkeletonComponent={() => <CardSkeleton rows={3} />}
-                    onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-                    renderCardContent={(item) => (
-                      <ApprovalRejectionQueue
-                        isSelected={item?.isSelected}
-                        onToggleSelect={item?.onToggleSelect}
-                        data={item?.data}
-                        onAction={item?.onAction}
-                        onClick={handleRequestClick}
-                        loadingAction={item?.loadingAction}
-                        isBulkSelectEnabled={isBulkSelectEnabled}
-                        isActed={item?.isActed}
-                      />
-                    )}
-                  />
-                </CardTable>
+                    columnSortConfig={columnSortConfig}
+                  >
+                    <ApprovalList
+                      status="Draft"
+                      doctype={"Shift Request"}
+                      pageSize={4}
+                      showPagination={false}
+                      refetch={refetchApprovalList}
+                      setRefetch={setRefetchApprovalList}
+                      onApprovalRefetchComplete={handleApprovalRefetchComplete}
+                      columnWidths={tableColumnWidths}
+                      SkeletonComponent={() => <CardSkeleton rows={3} />}
+                      onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+                      renderCardContent={(item) => (
+                        <ApprovalRejectionQueue
+                          isSelected={item?.isSelected}
+                          onToggleSelect={item?.onToggleSelect}
+                          data={item?.data}
+                          onAction={item?.onAction}
+                          onClick={handleRequestClick}
+                          loadingAction={item?.loadingAction}
+                          isBulkSelectEnabled={isBulkSelectEnabled}
+                          isActed={item?.isActed}
+                        />
+                      )}
+                    />
+                  </CardTable>
+                </BulkSelectProvider>
               </div>
             </Card>
             {(requestId || referenceName) && (
