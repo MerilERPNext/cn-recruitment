@@ -77,7 +77,7 @@ const GoalDetails: React.FC = () => {
 
   return (
     <div ref={topRef} id="goal-details-container" className="min-h-full bg-[#f8fafc] overflow-y-scroll p-6 font-sans">
-      <div className="max-w-[1200px] mx-auto space-y-6">
+      <div className="max-w-screen mx-auto space-y-6">
         
         {/* Back Button */}
         <button 

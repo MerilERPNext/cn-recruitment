@@ -10,7 +10,7 @@ const Overview: React.FC = () => {
 
   return (
     <main aria-label="Performance Overview" className={`min-h-full bg-[#f8fafc] overflow-y-scroll ${isMobile ? 'p-4' : 'p-6'} font-sans`}>
-      <div className="max-w-[1200px] mx-auto space-y-6">
+      <div className="max-w-screen mx-auto space-y-6">
 
         {/* Header Section */}
         <header aria-label="Overview Header">

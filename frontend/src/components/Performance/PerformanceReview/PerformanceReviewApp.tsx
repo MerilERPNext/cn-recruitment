@@ -11,7 +11,7 @@ const PerformanceReviewApp = () => {
 
   return (
     <div className="min-h-full bg-[#f8fafc] overflow-y-auto p-4 sm:p-6 font-sans">
-      <div className="max-w-[1000px] mx-auto flex flex-col gap-6">
+      <div className="max-w-screen mx-auto flex flex-col gap-6">
         
         {/* Header Banner */}
         <div className={`bg-blue-500 rounded-2xl p-6 md:p-8 flex ${isMobile ? 'flex-col' : 'flex-row'} justify-between items-start gap-6 text-white shadow-sm relative overflow-hidden`}>

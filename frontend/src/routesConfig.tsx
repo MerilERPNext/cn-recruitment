@@ -37,6 +37,7 @@ import GoalDetails from "./components/Performance/MyGoals/components/GoalDetails
 import Review from "./components/Performance/Review/SelfReview";
 import PeerNominationPage from "./components/Performance/Review/PeerNominationPage";
 import Feedback from "./components/Performance/Feedback/Feedback";
+import NewGoal from "./components/Performance/GoalCreation/NewGaol";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -1188,6 +1189,11 @@ export const routesConfig: AppRoute[] = [
       {
         path: "new-goal-plan",
         element: <NewGoalPlan />,
+        permissionKey: "New Goal Plan",
+      },
+      {
+        path: "my-goals/new-goal",
+        element: <NewGoal />,
         permissionKey: "New Goal Plan",
       },
       {

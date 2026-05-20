@@ -122,7 +122,7 @@ const MyGoals: React.FC = () => {
 
   return (
     <div className={`min-h-full bg-[#f8fafc] overflow-y-scroll ${isMobile ? 'p-4' : 'p-6'} font-sans`}>
-      <div className="max-w-[1200px] mx-auto space-y-6">
+      <div className="max-w-screen mx-auto space-y-6">
         
         {/* Header Section */}
         <div className={`flex ${isMobile ? 'flex-col gap-4' : 'flex-row justify-between items-center'} mb-6`}>
@@ -142,7 +142,7 @@ const MyGoals: React.FC = () => {
               <Button variant="outline" bgColor="text" size="sm" icon={<Filter className="w-4 h-4" />} className={`bg-white h-9 ${isMobile ? 'flex-1 justify-center' : ''}`}>
                 Filter
               </Button>
-              <Button variant="contain" bgColor="primary" size="sm" icon={<Plus className="w-4 h-4" />} className={`h-9 ${isMobile ? 'flex-1 justify-center' : ''}`}>
+              <Button onClick={() => navigate("/webapp/performance-app/my-goals/new-goal")}  variant="contain" bgColor="primary" size="sm" icon={<Plus className="w-4 h-4" />} className={`h-9 ${isMobile ? 'flex-1 justify-center' : ''}`}>
                 New Goal
               </Button>
             </div>
