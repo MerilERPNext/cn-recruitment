@@ -16,7 +16,6 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import EmploymentHistory from "../MyProfile/EmploymentHistory";
 import { Tab } from "../NavigationTab";
 import Button from "../shared/atoms/Button";
-import FutureTransactionsModal from "./FutureTransactionsModal";
 // import AttendanceAssignments from "../Attendance/AttendanceAssignments";
 // import ShowHolidays from "./ShowHolidays";
 
@@ -95,8 +94,6 @@ const EmployeeProfile: React.FC = () => {
   //   useState(false);
   const navigate = useNavigate();
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [isFutureTransactionsOpen, setIsFutureTransactionsOpen] =
-    useState(false);
 
   const uploadMutation = useFileUpload();
   const updateDocMutation = useUpdateFrappeDocument();
@@ -453,7 +450,9 @@ const EmployeeProfile: React.FC = () => {
                 icon={<History size={14} />}
                 size="sm"
                 variant="soft"
-                onClick={() => setIsFutureTransactionsOpen(true)}
+                onClick={() =>
+                  navigate("/webapp/employee-profile/future-transactions")
+                }
                 className="text-[10px] font-bold uppercase tracking-wider h-full px-4 py-2"
               >
                 Future Transactions
@@ -661,7 +660,11 @@ const EmployeeProfile: React.FC = () => {
                             icon={<History size={14} />}
                             size="sm"
                             variant="soft"
-                            onClick={() => setIsFutureTransactionsOpen(true)}
+                            onClick={() =>
+                              navigate(
+                                "/webapp/employee-profile/future-transactions",
+                              )
+                            }
                             className="uppercase tracking-wider h-full px-4 py-2 font-medium"
                           >
                             Future Transactions
@@ -719,16 +722,7 @@ const EmployeeProfile: React.FC = () => {
     </DesktopLayoutWrapper>
   );
 
-  return (
-    <>
-      {isDesktop ? desktopLayout : mobileLayout}
-      <FutureTransactionsModal
-        isOpen={isFutureTransactionsOpen}
-        onClose={() => setIsFutureTransactionsOpen(false)}
-        employeeId={employeeId}
-      />
-    </>
-  );
+  return <>{isDesktop ? desktopLayout : mobileLayout}</>;
 };
 
 export default EmployeeProfile;
