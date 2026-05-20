@@ -15,6 +15,9 @@ interface AchievementCardProps {
 }
 
 export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement }) => {
+  const [title, setTitle] = React.useState(achievement.title);
+  const [impact, setImpact] = React.useState(achievement.impact);
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
       <div className="flex justify-between items-start mb-4">
@@ -25,8 +28,8 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement })
       </div>
       <input 
         type="text" 
-        value={achievement.title}
-        readOnly
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
         className="w-full border border-gray-200 rounded-lg p-3 text-gray-900 mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white" 
       />
 
@@ -34,9 +37,10 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement })
         Impact & evidence <span className="text-red-500">*</span>
       </label>
       <textarea 
-        value={achievement.impact}
-        readOnly
+        value={impact}
+        onChange={(e) => setImpact(e.target.value)}
         rows={4}
+        maxLength={1000}
         className="w-full border border-gray-200 rounded-lg p-3 text-gray-900 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none bg-white" 
       />
       
@@ -44,7 +48,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement })
         <button className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 transition-colors text-sm font-medium text-left">
           <Plus className="w-4 h-4 shrink-0" /> <span className="whitespace-normal sm:whitespace-nowrap">Attach evidence (Figma, doc, dashboard)</span>
         </button>
-        <Typography variant="caption" className="text-gray-400 self-end sm:self-auto">{achievement.chars} / 1000</Typography>
+        <Typography variant="caption" className="text-gray-400 self-end sm:self-auto">{impact.length} / 1000</Typography>
       </div>
     </div>
   );
