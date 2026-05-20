@@ -115,8 +115,8 @@ def update_onboarding_details(email, data):
         if not pre_release:
             frappe.local.response["http_status_code"] = 404
             return {"status": "error", "code": 404, "message": f"No Employee Onboarding record or pending release found for {email}"}
-        release_doc = frappe.get_doc("Pre Onboarding Release", pre_release["name"])
-        onboarding_name = release_doc.materialize_onboarding(prefill=data)
+        from recruitment.api.candidate_portal import materialize_onboarding_from_applicant
+        onboarding_name = materialize_onboarding_from_applicant(applicant_name, prefill=data)
 
     try:
         doc = frappe.get_doc("Employee Onboarding", onboarding_name)
