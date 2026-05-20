@@ -380,6 +380,19 @@ export const leaveService = {
     return response as AttendanceStatusResponse;
   },
 
+  bulkUpdateRejectionReason: async (
+    doctype: string,
+    docnames: string[],
+    comment: string
+  ) => {
+    return FrappeAPI.callMethod("recruitment.api.update_comment.update_comment", {
+      doctype,
+      docnames,
+      fieldname: "custom_rejection_reason",
+      comment,
+    });
+  },
+
   updateRejectionReason: async (
     leaveApplicationId: string,
     reason: string

@@ -13,6 +13,7 @@ import {
   truncateByChars,
 } from "../../utils/sanitizeToPlainText";
 import { isActionEnabled } from "../../utils/uiPermission";
+import Modal from "../shared/Modal";
 import Button from "../shared/atoms/Button";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../shared/atoms/statusBadge";
@@ -33,10 +34,12 @@ const EmpLeaveRequestCard = ({
   buttonStatus,
   onOpenReplaceModal,
   showRejectReason,
+  onRevokeApproved,
 }: EmpLeaveRequestCardProps) => {
   const { isDesktop } = useScreenSize();
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [isActed, setIsActed] = useState(false);
+  const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
   const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation ?? "");
 
   const revokeEventMutation = useRevokeEvent();
@@ -60,14 +63,31 @@ const EmpLeaveRequestCard = ({
   const isPending = data?.reference_document?.status === "Open";
   const isApproved = data?.reference_document?.status === "Approved";
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const fromDate = data?.reference_document?.from_date ? new Date(data.reference_document.from_date) : new Date();
+  fromDate.setHours(0, 0, 0, 0);
+  const isFutureLeave = fromDate > today;
+
   const isResubmit =
     isPending &&
     data?.can_edit &&
     data?.send_back_user === currentUser?.name;
   const allowEdit = leaveButtonConfig?.show_edit_button || isResubmit;
   const allowReplace = leaveButtonConfig?.show_replace_button;
+  const allowRevoke = leaveButtonConfig?.show_revoke_button;
 
   const handleRevokeClick = () => {
+    setShowRevokeConfirm(true);
+  };
+
+  const executeRevoke = () => {
+    if (isApproved && onRevokeApproved) {
+      onRevokeApproved();
+      setIsActed(true);
+      setShowRevokeConfirm(false);
+      return;
+    }
     if (data?.todo_id) {
       revokeEventMutation.mutate(
         {
@@ -81,11 +101,17 @@ const EmpLeaveRequestCard = ({
             queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
             queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
             queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
+            queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+            queryClient.invalidateQueries({ queryKey: ["custom-api"] });
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 2000);
             toast.success("Leave revoked successfully");
+            setShowRevokeConfirm(false);
           },
+          onError: () => {
+            setShowRevokeConfirm(false);
+          }
         },
       );
     }
@@ -235,7 +261,7 @@ const EmpLeaveRequestCard = ({
             <MyApprovalActionPill
               isPending={isPending}
               canRevoke={
-                isPending && data?.custom_allow_revoke && canRequestLeave && !isActed
+                ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && canRequestLeave && !isActed
               }
               canEdit={allowEdit && !isActed}
               isResubmit={isResubmit}
@@ -349,7 +375,7 @@ const EmpLeaveRequestCard = ({
                 variant="buttons"
                 isPending={isPending}
                 canRevoke={
-                  isPending && data?.custom_allow_revoke && canRequestLeave && !isActed
+                  ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && canRequestLeave && !isActed
                 }
                 canEdit={allowEdit && !isActed}
                 isResubmit={isResubmit}
@@ -384,6 +410,36 @@ const EmpLeaveRequestCard = ({
           )}
         </div>
       )}
+
+      <Modal
+        isOpen={showRevokeConfirm}
+        onClose={() => setShowRevokeConfirm(false)}
+        size="sm"
+      >
+        <div className="p-6">
+          <Typography variant="h4" className="mb-4">
+            Confirm Revocation
+          </Typography>
+          <Typography variant="bodyMedium" className="mb-6 text-gray-600">
+            Are you sure you want to revoke this leave request? This action cannot be undone.
+          </Typography>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowRevokeConfirm(false)}
+              disabled={revokeEventMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={executeRevoke}
+              loading={revokeEventMutation.isPending}
+            >
+              Confirm
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

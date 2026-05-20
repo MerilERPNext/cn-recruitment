@@ -8,6 +8,8 @@ import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useLoadingOverlay } from "../../context/OverlayContext";
+import RejectionReasonModal from "./RejectionReasonModal";
+import { useBulkUpdateRejectionReason, useIsRejectionReasonMandatory } from "../../hooks/useLeaves";
 
 type ApprovalListProps = {
   doctype: string;
@@ -124,6 +126,11 @@ const ApprovalList = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
   const [actedIds, setActedIds] = useState<Set<string>>(new Set());
+
+  const { data: isRejectionMandatory } = useIsRejectionReasonMandatory();
+  const bulkUpdateMutation = useBulkUpdateRejectionReason();
+  const [showBulkCommentModal, setShowBulkCommentModal] = useState(false);
+  const [pendingBulkAction, setPendingBulkAction] = useState<"Approve" | "Reject" | null>(null);
 
   const addActedId = useCallback((id: string) => {
     setActedIds((prev) => new Set(prev).add(id));
@@ -305,6 +312,47 @@ const ApprovalList = ({
   );
 
   const batchActionMutation = useActionOnAttendanceRequest();
+  
+  const handleBulkActionClick = (action: "Approve" | "Reject") => {
+    if (action === "Reject" && doctype === "Leave Application") {
+      const isMandatory = isRejectionMandatory?.message ?? true;
+      if (isMandatory) {
+        setPendingBulkAction(action);
+        setShowBulkCommentModal(true);
+        return;
+      }
+    }
+    handleBulkAction(action);
+  };
+
+  const handleSaveBulkComment = async (reason: string) => {
+    try {
+      const docnames = selectedIds.map(id => {
+        const req = allRequests.find(r => r.todo_id === id);
+        return req?.reference_name || req?.reference_document?.name;
+      }).filter(Boolean);
+
+      if (docnames.length > 0) {
+        await bulkUpdateMutation.mutateAsync({
+          doctype,
+          docnames,
+          comment: reason,
+        });
+      }
+      setShowBulkCommentModal(false);
+      if (pendingBulkAction) {
+        handleBulkAction(pendingBulkAction);
+      }
+    } catch (error) {
+      console.error("Failed to save bulk comment", error);
+    }
+  };
+
+  const handleCancelBulkComment = () => {
+    setShowBulkCommentModal(false);
+    setPendingBulkAction(null);
+  };
+
   const handleBulkAction = async (action: "Approve" | "Reject") => {
     await loading?.wrap(async () => {
       try {
@@ -346,7 +394,7 @@ const ApprovalList = ({
       } finally {
         setBulkLoading(null);
       }
-    }, `${action}ing selected requests…`);
+    }, `${action} selected requests…`);
   };
 
   return (
@@ -395,7 +443,7 @@ const ApprovalList = ({
                 selectedIds={selectedIds}
                 pendingRequests={allRequests}
                 onSelectAll={handleSelectAll}
-                onBulkAction={handleBulkAction}
+                onBulkAction={handleBulkActionClick}
                 loadingAction={bulkLoading}
                 columnWidths={columnWidths}
               />
@@ -433,6 +481,13 @@ const ApprovalList = ({
             onApprovalRefetchComplete();
           }
         }}
+      />
+      
+      <RejectionReasonModal
+        isOpen={showBulkCommentModal}
+        isPending={bulkUpdateMutation.isPending}
+        onCancel={handleCancelBulkComment}
+        onSave={handleSaveBulkComment}
       />
     </div>
   );
