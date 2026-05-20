@@ -216,6 +216,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       }, 2000);
 
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
 
       onSuccess?.();
       onCancel?.();
@@ -446,8 +448,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         directPendingUploads.length > 0
           ? directPendingUploads
           : normalizedAttachments.filter((attachment) =>
-              Boolean(attachment.file),
-            );
+            Boolean(attachment.file),
+          );
 
       const payload = buildLeavePayload({
         employee: currentEmployee.name,

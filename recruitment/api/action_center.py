@@ -2,6 +2,7 @@ from urllib.parse import urlencode
 
 import frappe
 from frappe import _
+from frappe.utils import now_datetime
 
 ACTION_DOCTYPE = "Candidate Action Center Item"
 
@@ -133,47 +134,292 @@ def build_job_offer_redirect(candidate_email):
     return "/job_offer?{0}".format(urlencode({"appl": candidate_email}))
 
 
-def build_pre_offer_redirect(job_applicant_id):
-    return "/pre_offer_form?{0}".format(urlencode({"appl": job_applicant_id}))
+def build_pre_offer_redirect(job_applicant_id, form_name=None):
+    params = {"appl": job_applicant_id}
+    if form_name:
+        params["form"] = form_name
+    return "/pre_offer_form?{0}".format(urlencode(params))
+
+
+def _coerce_form_names(form_name):
+    """Accepts a string, comma-separated string, or JSON list; returns a de-duped list preserving order."""
+    if form_name is None:
+        return []
+    if isinstance(form_name, list):
+        items = form_name
+    elif isinstance(form_name, str):
+        s = form_name.strip()
+        if s.startswith("["):
+            try:
+                items = frappe.parse_json(s) or []
+            except Exception:
+                items = []
+        else:
+            items = [p.strip() for p in s.split(",")]
+    else:
+        items = [form_name]
+
+    seen, out = set(), []
+    for item in items:
+        item = (item or "").strip()
+        if item and item not in seen:
+            seen.add(item)
+            out.append(item)
+    return out
 
 
 @frappe.whitelist()
 def send_pre_offer_form(job_applicant_id, form_name):
+    """HR sends one or more Pre Offer Portal Forms to a candidate.
+
+    `form_name` accepts a single form name, a comma-separated string, or a JSON list of names.
+    Each new form is appended to Job Applicant.custom_pre_offer_forms with status=Sent and gets
+    its own Candidate Action Center Item. Forms already in Sent/Filled state are skipped.
+    """
     frappe.only_for(("System Manager", "HR Manager"))
 
     if not job_applicant_id:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Job Applicant ID is required.")}
 
-    if not form_name:
+    form_names = _coerce_form_names(form_name)
+    if not form_names:
         frappe.local.response["http_status_code"] = 400
-        return {"status": "error", "message": _("Please select a Pre Offer Portal Form before sending.")}
+        return {"status": "error", "message": _("Please select at least one Pre Offer Portal Form before sending.")}
 
     if not frappe.db.exists("Job Applicant", job_applicant_id):
         frappe.local.response["http_status_code"] = 404
         return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
+
+    missing_forms = [fn for fn in form_names if not frappe.db.exists("Job Applicant Portal Forms", fn)]
+    if missing_forms:
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _("Portal Form(s) not found: {0}").format(", ".join(missing_forms))}
 
     candidate_email = frappe.db.get_value("Job Applicant", job_applicant_id, "email_id")
     if not candidate_email:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Candidate email not found on the Job Applicant record.")}
 
-    _upsert_minimal_item(
-        candidate_email=candidate_email,
-        reference_doctype="Job Applicant",
-        reference_docname=job_applicant_id,
-        redirect_url=build_pre_offer_redirect(job_applicant_id),
-        description="Pre Offer Form is ready. Please fill and submit the required details.",
-        commit=False,
-    )
+    applicant = frappe.get_doc("Job Applicant", job_applicant_id)
+    existing_rows = {row.portal_form: row for row in (applicant.get("custom_pre_offer_forms") or [])}
 
-    frappe.db.set_value("Job Applicant", job_applicant_id, {
-        "custom_pre_offer_portal_form": form_name,
-        "custom_pre_offer_form_status": "Sent",
-    })
+    added, skipped = [], []
+    for fn in form_names:
+        if fn in existing_rows and existing_rows[fn].status in ("Sent", "Filled"):
+            skipped.append(fn)
+            continue
+
+        if fn in existing_rows:
+            row = existing_rows[fn]
+            row.status = "Sent"
+            row.sent_at = now_datetime()
+            row.filled_at = None
+        else:
+            row = applicant.append("custom_pre_offer_forms", {
+                "portal_form": fn,
+                "status": "Sent",
+                "sent_at": now_datetime(),
+            })
+        added.append(row)
+
+    applicant.save(ignore_permissions=True)
+    applicant.reload()
+
+    row_by_form = {row.portal_form: row for row in (applicant.get("custom_pre_offer_forms") or [])}
+
+    created_items = []
+    for fn in [r.portal_form for r in added]:
+        row = row_by_form.get(fn)
+        if not row:
+            continue
+        item = _upsert_minimal_item(
+            candidate_email=candidate_email,
+            reference_doctype="Job Applicant Pre Offer Form",
+            reference_docname=row.name,
+            redirect_url=build_pre_offer_redirect(job_applicant_id, fn),
+            description=_("Pre Offer Form '{0}' is ready. Please fill and submit the required details.").format(fn),
+            commit=False,
+        )
+        if row.get("action_item") != item.name:
+            row.db_set("action_item", item.name, update_modified=False)
+        created_items.append({"form": fn, "action_item": item.name})
+
+    if added:
+        applicant.db_set("status", "Approvals", update_modified=False)
+        applicant.db_set("custom_substatus", "Pre Offer Form Sent", update_modified=False)
+
     frappe.db.commit()
 
-    return {"status": "success", "message": _("Pre Offer Form sent to candidate.")}
+    return {
+        "status": "success",
+        "message": _("Pre Offer Form(s) sent to candidate."),
+        "sent": [r.portal_form for r in added],
+        "skipped": skipped,
+        "action_items": created_items,
+    }
+
+
+def build_pre_onboarding_redirect(job_applicant_id):
+    return "/onboarding?{0}".format(urlencode({"appl": job_applicant_id}))
+
+
+@frappe.whitelist()
+def release_pre_onboarding(job_applicant_id, data):
+    """HR releases the pre-onboarding form for an applicant.
+
+    `data` is a JSON object containing any of:
+      - onboarding_portal_form (required to release)
+      - bgv_vendor
+      - onboarding_buddy, joining_buddy, manager
+
+    Persists to Job Applicant.custom_* fields, flips custom_pre_onboarding_status to 'Released',
+    stamps custom_pre_onboarding_released_at, and creates a candidate Action Center Item that
+    redirects to /onboarding. Idempotent — repeating refreshes the same row + action item.
+    """
+    frappe.only_for(("System Manager", "HR Manager"))
+
+    if not job_applicant_id:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Job Applicant ID is required.")}
+
+    if not frappe.db.exists("Job Applicant", job_applicant_id):
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
+
+    if isinstance(data, str):
+        try:
+            data = frappe.parse_json(data)
+        except Exception:
+            frappe.local.response["http_status_code"] = 400
+            return {"status": "error", "message": _("Invalid JSON data.")}
+
+    if not isinstance(data, dict):
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Data must be a JSON object.")}
+
+    portal_form = (data.get("onboarding_portal_form") or "").strip()
+    if not portal_form:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Please select an Onboarding Portal Form before releasing.")}
+
+    if not frappe.db.exists("Onboarding Portal Forms", portal_form):
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _("Onboarding Portal Form '{0}' not found.").format(portal_form)}
+
+    applicant = frappe.get_doc("Job Applicant", job_applicant_id)
+
+    # Block re-release only if a submitted/cancelled Employee Onboarding already exists.
+    # A draft EO created by the previous release can be updated below.
+    existing_eo = applicant.get("custom_pre_onboarding_employee_onboarding")
+    if existing_eo:
+        eo_docstatus = frappe.db.get_value("Employee Onboarding", existing_eo, "docstatus")
+        if eo_docstatus and int(eo_docstatus) > 0:
+            frappe.local.response["http_status_code"] = 409
+            return {
+                "status": "error",
+                "message": _("Employee Onboarding already submitted for this applicant; pre-onboarding is locked."),
+                "employee_onboarding": existing_eo,
+            }
+
+    applicant.custom_onboarding_portal_form = portal_form
+    if "bgv_vendor" in data:
+        applicant.custom_bgv_vendor = data.get("bgv_vendor") or None
+    if "onboarding_buddy" in data:
+        applicant.custom_onboarding_buddy = data.get("onboarding_buddy") or None
+    if "joining_buddy" in data:
+        applicant.custom_joining_buddy = data.get("joining_buddy") or None
+    if "manager" in data:
+        applicant.custom_manager = data.get("manager") or None
+
+    try:
+        from recruitment.recruitment.doctype.onboarding_buddy_assignment_rule.onboarding_buddy_assignment_rule import (
+            resolve_buddies,
+        )
+        suggested = resolve_buddies(job_applicant_id) or {}
+        if not applicant.custom_onboarding_buddy and suggested.get("Onboarding Buddy"):
+            applicant.custom_onboarding_buddy = suggested["Onboarding Buddy"]
+        if not applicant.custom_joining_buddy and suggested.get("Joining Buddy"):
+            applicant.custom_joining_buddy = suggested["Joining Buddy"]
+        if not applicant.custom_manager and suggested.get("Manager"):
+            applicant.custom_manager = suggested["Manager"]
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "release_pre_onboarding: resolve_buddies failed")
+
+    applicant.custom_pre_onboarding_status = "Released"
+    if not applicant.get("custom_pre_onboarding_released_at"):
+        applicant.custom_pre_onboarding_released_at = now_datetime()
+
+    applicant.status = "Accepted"
+    applicant.custom_substatus = "Pre Onboarding Released"
+
+    applicant.save(ignore_permissions=True)
+
+    # Create the draft Employee Onboarding immediately so the candidate's submissions
+    # land on a pre-existing draft instead of materializing one lazily on first save.
+    # The EO's after_insert hook (sync_onboarding_action_item) creates the candidate's
+    # Action Center Item referencing the Employee Onboarding — we don't add a second
+    # item against Job Applicant here. If materialization fails, fall back to a JA-tied
+    # item so the candidate still has an entry point.
+    employee_onboarding_name = None
+    try:
+        from recruitment.api.candidate_portal import materialize_onboarding_from_applicant
+        employee_onboarding_name = materialize_onboarding_from_applicant(job_applicant_id)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "release_pre_onboarding: materialize_onboarding failed")
+
+    if not employee_onboarding_name and applicant.email_id:
+        _upsert_minimal_item(
+            candidate_email=applicant.email_id,
+            reference_doctype="Job Applicant",
+            reference_docname=job_applicant_id,
+            redirect_url=build_pre_onboarding_redirect(job_applicant_id),
+            description=_("Onboarding form pending. Open portal to complete required details."),
+            attachment="",
+            commit=False,
+        )
+
+    frappe.db.commit()
+
+    return {
+        "status": "success",
+        "message": _("Pre Onboarding released to candidate."),
+        "job_applicant": job_applicant_id,
+        "onboarding_portal_form": portal_form,
+        "onboarding_buddy": applicant.custom_onboarding_buddy,
+        "joining_buddy": applicant.custom_joining_buddy,
+        "manager": applicant.custom_manager,
+        "bgv_vendor": applicant.custom_bgv_vendor,
+        "pre_onboarding_status": applicant.custom_pre_onboarding_status,
+        "released_at": applicant.custom_pre_onboarding_released_at,
+        "employee_onboarding": employee_onboarding_name,
+    }
+
+
+@frappe.whitelist()
+def get_pre_onboarding_buddy_suggestions(job_applicant_id):
+    """Returns Onboarding/Joining buddy + Manager suggestions for the dialog prefill."""
+    frappe.only_for(("System Manager", "HR Manager"))
+    if not job_applicant_id or not frappe.db.exists("Job Applicant", job_applicant_id):
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _("Job Applicant not found.")}
+
+    try:
+        from recruitment.recruitment.doctype.onboarding_buddy_assignment_rule.onboarding_buddy_assignment_rule import (
+            resolve_buddies,
+        )
+        suggested = resolve_buddies(job_applicant_id) or {}
+    except Exception:
+        suggested = {}
+
+    return {
+        "status": "success",
+        "suggestions": {
+            "onboarding_buddy": suggested.get("Onboarding Buddy"),
+            "joining_buddy": suggested.get("Joining Buddy"),
+            "manager": suggested.get("Manager"),
+        },
+    }
 
 
 def sync_onboarding_action_item(doc, method=None):

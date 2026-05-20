@@ -7,6 +7,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Wallet } from "lucide-react";
 import Button from "../../shared/atoms/Button";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 
 interface CompOffDetailsModalProps {
   compOff: CompensatoryRequestItem;
@@ -28,9 +29,7 @@ const CompOffDetailsModal: React.FC<CompOffDetailsModalProps> = ({
         );
       },
       onError: (error: any) => {
-        toast.error(
-          `Payment request failed: ${error.message || "Unknown error"}`,
-        );
+        toast.error(errorResponseFormater(error) as any);
       },
     });
   };

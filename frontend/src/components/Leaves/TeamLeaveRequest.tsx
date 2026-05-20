@@ -8,6 +8,7 @@ import ApprovalList from "../shared/ApprovalList";
 import { FilterField } from "../DataListView";
 import { Typography } from "../shared/atoms/Typography";
 import CardTable from "../shared/CardTable";
+import { BulkSelectProvider } from "../shared/BulkSelectContext";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import LeaveApprovalCard from "./LeaveApprovalCard";
 import { LeaveDetailView } from "./LeaveDetails";
@@ -212,6 +213,7 @@ const TeamLeaveRequest = () => {
         </div>
       )}
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        <BulkSelectProvider>
         <CardTable titles={tableTitles} columnWidths={finalColumnWidths}
           columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST(
             isBulkSelectEnabled,
@@ -262,6 +264,7 @@ const TeamLeaveRequest = () => {
             />
           ) : null}
         </CardTable>
+        </BulkSelectProvider>
       </div>
       {(requestId || referenceName) && (
         <LeaveDetailView

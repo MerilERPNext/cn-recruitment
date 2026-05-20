@@ -142,7 +142,7 @@ const ImportMobileCard: React.FC<ImportMobileCardProps> = ({
 
         {/* Actions */}
         <div className="flex gap-2 pt-1">
-          {item.file_to_import && (
+          {item.failed_records_count > 0 && (
             <Button
               size="sm"
               variant="outline"

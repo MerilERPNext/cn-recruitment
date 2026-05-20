@@ -201,9 +201,9 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
         </div>
       </div>
 
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+      <div className="overflow-auto max-h-[calc(100vh-250px)] border border-gray-200 rounded-lg relative">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100 border-b border-gray-200">
+          <thead className="bg-gray-100 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
             <tr>
               <th className="px-4 py-3 text-left font-semibold text-gray-700">
                 Time

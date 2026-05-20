@@ -75,9 +75,62 @@ export function BulkActionBar({
             </div>
           )}
         </div>
-
-
       </div>
+    </div>
+  );
+}
+
+// ─── Footer variant ──────────────────────────────────────────────────────────
+// Renders only the action buttons, pinned to the bottom of the table.
+// Used as PostListComponent in ApprovalList when inside a CardTable.
+
+interface BulkActionFooterProps {
+  selectedIds: string[];
+  onBulkAction: (action: "Approve" | "Reject") => void;
+  loadingAction: { action: "Approve" | "Reject"; isLoading: boolean } | null;
+}
+
+export function BulkActionFooter({
+  selectedIds,
+  onBulkAction,
+  loadingAction,
+}: BulkActionFooterProps) {
+  const selectedCount = selectedIds.filter(Boolean).length;
+  if (selectedCount === 0) return null;
+
+  return (
+    <div className="sticky bottom-0 left-0 z-20 bg-white border-t border-gray-200 px-6 py-3 flex items-center gap-3 justify-end">
+      <span className="text-sm text-gray-600 mr-2">
+        {selectedCount} selected
+      </span>
+
+      <Button
+        variant="soft"
+        bgColor="error"
+        onClick={() => onBulkAction("Reject")}
+        disabled={loadingAction?.isLoading && loadingAction?.action === "Reject"}
+      >
+        {loadingAction?.isLoading && loadingAction?.action === "Reject" ? (
+          <span className="animate-spin border-2 border-red-600 border-t-transparent rounded-full w-4 h-4 inline-block" />
+        ) : (
+          <>Bulk Reject ({selectedCount})</>
+        )}
+      </Button>
+
+      <Button
+        variant="soft"
+        bgColor="success"
+        onClick={() => onBulkAction("Approve")}
+        disabled={
+          loadingAction?.isLoading && loadingAction?.action === "Approve"
+        }
+      >
+        {loadingAction?.isLoading && loadingAction?.action === "Approve" ? (
+          <span className="animate-spin border-2 border-green-600 border-t-transparent rounded-full w-4 h-4 inline-block" />
+        ) : (
+          <>Bulk Approve ({selectedCount})</>
+        )}
+      </Button>
     </div>
   );
 }
