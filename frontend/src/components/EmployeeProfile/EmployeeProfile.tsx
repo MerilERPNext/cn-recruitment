@@ -74,9 +74,9 @@ const EmployeeProfile: React.FC = () => {
     "Employee Profile",
   );
 
-  const canShowFutureTransform = isActionEnabled(
+  const canShowFutureTransactions = isActionEnabled(
     userUiPermission,
-    "show_future_transform",
+    "show_future_transactions",
     "Employee Profile",
   );
 
@@ -457,7 +457,7 @@ const EmployeeProfile: React.FC = () => {
                     Attendance Assignment
                   </Button>
                 )} */}
-              {canShowFutureTransform && (
+              {canShowFutureTransactions && (
                 <Button
                   icon={<History size={14} />}
                   size="sm"
@@ -697,7 +697,7 @@ const EmployeeProfile: React.FC = () => {
                     </button>
                   ))}
                 </div>
-                {canShowFutureTransform && (
+                {canShowFutureTransactions && (
                   <Button
                     icon={<History size={14} />}
                     size="sm"
