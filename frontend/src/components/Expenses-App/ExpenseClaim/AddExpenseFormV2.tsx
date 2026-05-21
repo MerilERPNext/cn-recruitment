@@ -216,7 +216,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
       ? Number(rawUnits)
       : undefined;
 
-  useGetUnitPrice(selectedExpenseType, vehicleType);
+  const { data: unitPriceData } = useGetUnitPrice(selectedExpenseType, vehicleType);
 
   const { data: calculatedAmountData } = useCalculateExpenseAmount({
     expense_type: selectedExpenseType,
@@ -256,11 +256,19 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   }, [expenseTypePayload]);
 
   const unitFieldLabel = useMemo(() => {
+    if (unitPriceData) {
+      if (typeof unitPriceData === "object" && "message" in unitPriceData) {
+        return (unitPriceData as any).message;
+      }
+      if (typeof unitPriceData === "string") {
+        return unitPriceData;
+      }
+    }
     const fields = expenseTypePayload?.fields;
     if (!Array.isArray(fields)) return undefined;
     const unitField = fields.find((f: any) => f?.fieldname === "no_of_units");
     return unitField?.label || undefined;
-  }, [expenseTypePayload]);
+  }, [expenseTypePayload, unitPriceData]);
 
   const dynamicSchema = useMemo(
     () =>
