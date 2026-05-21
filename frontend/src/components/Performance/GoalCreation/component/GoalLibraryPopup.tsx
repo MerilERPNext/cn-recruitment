@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { ArrowRight, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
+import { Select } from '../../../shared/atoms/Select';
 import { Typography } from '../../../shared/atoms/Typography';
 
 interface GoalTemplate {
@@ -82,9 +84,24 @@ const templates: GoalTemplate[] = [
     },
 ];
 
-const selectClass = 'h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100';
+const departmentOptions = [
+    { label: 'Design', value: 'Design' },
+    { label: 'Engineering', value: 'Engineering' },
+    { label: 'Product', value: 'Product' },
+    { label: 'Marketing', value: 'Marketing' },
+];
+
+const levelOptions = [
+    { label: 'L3 / L4', value: 'L3 / L4' },
+    { label: 'L1 / L2', value: 'L1 / L2' },
+    { label: 'L5 / L6', value: 'L5 / L6' },
+    { label: 'Manager', value: 'Manager' },
+];
 
 const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => {
+    const [selectedDepartment, setSelectedDepartment] = useState(departmentOptions[0]);
+    const [selectedLevel, setSelectedLevel] = useState(levelOptions[0]);
+
     return (
         <div className="animate-slideUp flex h-full min-h-0 flex-col overflow-hidden bg-white shadow-2xl sm:min-h-[690px] sm:rounded-xl">
             <div className="relative shrink-0 border-b border-gray-100 px-5 py-4">
@@ -115,19 +132,19 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                         />
                     </div>
 
-                    <select className={selectClass} defaultValue="Design">
-                        <option>Design</option>
-                        <option>Engineering</option>
-                        <option>Product</option>
-                        <option>Marketing</option>
-                    </select>
+                    <Select
+                        options={departmentOptions}
+                        value={selectedDepartment}
+                        onChange={setSelectedDepartment}
+                        className="relative w-full"
+                    />
 
-                    <select className={selectClass} defaultValue="L3 / L4">
-                        <option>L3 / L4</option>
-                        <option>L1 / L2</option>
-                        <option>L5 / L6</option>
-                        <option>Manager</option>
-                    </select>
+                    <Select
+                        options={levelOptions}
+                        value={selectedLevel}
+                        onChange={setSelectedLevel}
+                        className="relative w-full"
+                    />
                 </div>
             </div>
 
