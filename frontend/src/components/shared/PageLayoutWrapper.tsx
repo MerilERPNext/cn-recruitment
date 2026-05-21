@@ -83,7 +83,7 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
                 </div>
             </div>
 
-            <div ref={contentRef} className="flex-1 overflow-y-auto pb-24">
+            <div ref={contentRef} className="flex-1 overflow-y-auto ">
                 <div className="max-w-screen mx-auto px-4 sm:px-6 py-8">
                     {children}
                 </div>

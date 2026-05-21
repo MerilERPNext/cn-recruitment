@@ -238,7 +238,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
 
 
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-sm mb-8 sm:mb-12">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center  sm:justify-between gap-4 shadow-sm mb-8 lg:mb-12">
             <div className="flex w-full min-w-0 items-start sm:items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-green-50 text-green-500 flex items-center justify-center shrink-0">
                     <Inbox className="w-6 h-6" />
