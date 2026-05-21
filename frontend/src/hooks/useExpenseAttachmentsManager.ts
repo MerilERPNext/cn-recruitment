@@ -19,6 +19,7 @@ export interface UseExpenseAttachmentsManagerProps {
   linkedDocumentName: string | null | undefined;
   deleteExpenseAttachment: (name: string) => Promise<any>;
   refetchClaimAttachments: () => Promise<any>;
+  onAttachmentsChanged?: () => void;
 }
 
 export const useExpenseAttachmentsManager = ({
@@ -30,6 +31,7 @@ export const useExpenseAttachmentsManager = ({
   linkedDocumentName,
   deleteExpenseAttachment,
   refetchClaimAttachments,
+  onAttachmentsChanged,
 }: UseExpenseAttachmentsManagerProps) => {
   const attachmentHydrationRef = useRef(false);
 
@@ -81,6 +83,13 @@ export const useExpenseAttachmentsManager = ({
       });
 
       attachmentHydrationRef.current = true;
+
+      if (changed) {
+        setTimeout(() => {
+          onAttachmentsChanged?.();
+        }, 0);
+      }
+
       return changed ? nextData : prev;
     });
   }, [
@@ -89,6 +98,7 @@ export const useExpenseAttachmentsManager = ({
     hasFetchedClaimAttachments,
     linkedDocumentName,
     setDynamicFormData,
+    onAttachmentsChanged,
   ]);
 
   const currentAttachments = useMemo(() => {

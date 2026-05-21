@@ -16,13 +16,19 @@ export const buildExpenseRecord = (
   isRelocationAcknowledgementChecked: boolean,
   expenseTypePayload: any,
 ) => {
+  const rawExpenseType = combinedData.expenseType;
+  const expenseTypeName =
+    rawExpenseType && typeof rawExpenseType === "object"
+      ? rawExpenseType.name || rawExpenseType.value || ""
+      : rawExpenseType || "";
+
   const record: Record<string, any> = {
     ...combinedData,
-    expense_type: combinedData.expenseType,
+    expense_type: expenseTypeName,
     reimbursement_category: combinedData.expenseCategory,
     categoryType: combinedData.category_type || "General",
     custom_expense_category_name: combinedData.expenseCategory,
-    custom_expense_type: combinedData.expenseType,
+    custom_expense_type: expenseTypeName,
     amount: combinedData.amount,
   };
 
@@ -45,6 +51,11 @@ export const buildExpenseRecord = (
   delete record.submitButton;
   delete record.saveAndSubmit;
   delete record.attach_receipt;
+  delete record.expenseType;
+  delete record.expenseCategory;
+  delete record.category_type;
+  delete record.custom_odometer_from;
+  delete record.custom_odometer_to;
 
   if (forSubmit) {
     record.custom_is_acknowledged = isAcknowledgementChecked;
