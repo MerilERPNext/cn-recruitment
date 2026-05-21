@@ -822,7 +822,7 @@ const AllEmpAttendance = () => {
               setSelectedDateKeys(new Set());
               onRefetchData();
             }}
-            prefilledDates={selectedRows.map(row => ({ date: format(row.date, 'yyyy-MM-dd') }))}
+            prefilledDates={selectedRows.map(row => ({ date: format(new Date(row.date), 'yyyy-MM-dd') }))}
           />
         )}
         {showAttendanceAdjustmentForm &&

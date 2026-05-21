@@ -214,6 +214,14 @@ const BulkLeaveModal: React.FC<BulkLeaveModalProps> = ({
     };
   }, [isOpen]);
 
+  React.useEffect(() => {
+    return () => {
+      if (previewFile?.url.startsWith("blob:")) {
+        URL.revokeObjectURL(previewFile.url);
+      }
+    };
+  }, [previewFile]);
+
   const handleScroll = React.useCallback(() => {
     const openDropdowns = document.querySelectorAll(
       ".choices.is-open, .flatpickr-calendar.open",
