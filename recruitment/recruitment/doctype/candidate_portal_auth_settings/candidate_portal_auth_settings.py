@@ -56,6 +56,8 @@ def apply_missing_defaults(settings):
         "allow_email_otp_login": 1,
         "allow_signup": 1,
         "signup_requires_otp_verification": 1,
+        "enable_email_signup": 0,
+        "require_otp_on_password_login": 0,
         "session_expiry_hours": 24,
         "otp_length": 6,
         "otp_expiry_minutes": 10,

@@ -35,7 +35,7 @@
   {"fieldname": "session_section", "fieldtype": "Section Break", "label": "Session"},
   {"fieldname": "candidate", "fieldtype": "Link", "in_list_view": 1, "in_standard_filter": 1, "label": "Candidate", "options": "Candidate Portal User", "reqd": 1},
   {"default": "Active", "fieldname": "status", "fieldtype": "Select", "in_list_view": 1, "in_standard_filter": 1, "label": "Status", "options": "Active\nRevoked\nExpired", "reqd": 1},
-  {"fieldname": "login_method", "fieldtype": "Select", "in_list_view": 1, "label": "Login Method", "options": "Password + Email OTP\nPassword + Mobile OTP\nSignup Email OTP", "reqd": 1},
+  {"fieldname": "login_method", "fieldtype": "Select", "in_list_view": 1, "label": "Login Method", "options": "Password\nPassword + Email OTP\nPassword + Mobile OTP\nSignup Email OTP\nActivation Email OTP", "reqd": 1},
   {"fieldname": "otp_log", "fieldtype": "Link", "label": "OTP Log", "options": "Candidate Portal OTP Log", "read_only": 1},
   {"fieldname": "validity_section", "fieldtype": "Section Break", "label": "Validity"},
   {"fieldname": "issued_at", "fieldtype": "Datetime", "label": "Issued At", "reqd": 1},
