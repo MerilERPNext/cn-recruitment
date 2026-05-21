@@ -414,13 +414,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "My Team",
-          icon: Goal,
+          icon: Users,
           href: "/webapp/performance-app/my-team",
           permissionKey: "My Team",
           subItems: [
             {
               name: "Team Dashboard",
-              icon: Goal,
+              icon: ChartNoAxesCombined,
               href: "/webapp/performance-app/team-overview",
               
             },
@@ -434,18 +434,18 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "Review",
-          icon: Goal,
+          icon: CheckCircle,
           href: "/webapp/performance-app",
           permissionKey: "Review",
           subItems: [
             {
               name: "Self Review",
-              icon: Goal,
+              icon: User,
               href: "/webapp/performance-app/review",
             },
             {
               name: "Peer Nomination",
-              icon: Goal,
+              icon: Award,
               href: "/webapp/performance-app/review/peer-nomination",
             }
           ]
@@ -478,20 +478,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
       ],
     },
-    {
-      icon: ChartNoAxesCombined,
-      label: "Performance",
-      path: "/webapp/performance-app",
-      permissionKey: "Performance",
-      subItems: [
-        {
-          name: "Performance Review",
-          icon: ChartNoAxesCombined,
-          href: "/webapp/performance-app/performance-review",
-          permissionKey: "Performance Review",
-        },
-      ],
-    },
+   
     {
       icon: Users,
       label: "Employee Directory",
