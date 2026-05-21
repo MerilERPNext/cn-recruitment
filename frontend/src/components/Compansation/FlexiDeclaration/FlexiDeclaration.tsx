@@ -8,7 +8,7 @@ import {
 } from "../../../hooks/payroll/useFlexiDeclaration";
 import { FlexiComponent, ComponentPartOfCTC } from "../../../types/flexiDeclaration";
 import { IoIosArrowDown } from "react-icons/io";
-import { EditFlexiLockingPeriod } from "./Component/EditFlexiLockingPeriod";
+import { EditFlexiLockingPeriod } from "../fl/Component/EditFlexiLockingPeriod";
 import { SquarePen } from "lucide-react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import toast from "react-hot-toast";
@@ -21,13 +21,30 @@ function formatINR(num: string | number | undefined | null) {
   return val.toLocaleString("en-IN");
 }
 
+/** Shared validation helper — returns an error string or null if valid. */
+function validateFlexiField(value: any, maxAmount: number): string | null {
+  const strVal = value !== undefined && value !== null ? String(value) : "";
+  const cleanValue = strVal.replace(/,/g, "");
+  const numericVal = Number(cleanValue);
+  if (strVal.trim() !== "" && isNaN(numericVal)) {
+    return "Please enter a valid number";
+  }
+  if (numericVal < 0) {
+    return "Amount cannot be negative";
+  }
+  if (numericVal > maxAmount) {
+    return `Amount cannot exceed ${formatINR(maxAmount)}`;
+  }
+  return null;
+}
+
 export default function FlexiDeclaration() {
   const [showValues, setShowValues] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
-  const { data: yearOptions } = useGetYearFilterOptions(currentEmployee?.company || "");
+  const { data: currentEmployee, isLoading: isEmployeeLoading } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: yearOptions, isLoading: isYearOptionsLoading } = useGetYearFilterOptions(currentEmployee?.company || "");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -39,15 +56,17 @@ export default function FlexiDeclaration() {
     }
   }, [yearOptions, selectedPeriod]);
 
-  const { data: flexiData, isLoading } = useFlexiComponents(
+  const { data: flexiData, isLoading: isFlexiLoading } = useFlexiComponents(
     currentEmployee?.name || "",
     selectedPeriod || "",
     currentEmployee?.company || ""
   );
 
-  const { data: lockingPeriodData, refetch: refetchLockingPeriod } = useIndividualEmployeeFlexiLockingPeriod(
+  const { data: lockingPeriodData, isLoading: isLockingLoading, refetch: refetchLockingPeriod } = useIndividualEmployeeFlexiLockingPeriod(
     currentEmployee?.name || ""
   );
+
+  const isLoading = isEmployeeLoading || isYearOptionsLoading || isFlexiLoading || isLockingLoading;
 
   const updateMutation = useUpdateFlexiComponents();
 
@@ -76,46 +95,40 @@ export default function FlexiDeclaration() {
   const isClosed = lockingPeriodData?.status === "Closed";
 
   const handleInputChange = (componentName: string, value: string, maxAmount: number) => {
-    const cleanValue = value.replace(/,/g, '');
     setFlexi(f => ({ ...f, [componentName]: value }));
 
-    const numericVal = Number(cleanValue);
-    if (value.trim() !== "" && isNaN(numericVal)) {
-      setErrors(e => ({ ...e, [componentName]: "Please enter a valid number" }));
-    } else if (numericVal < 0) {
-      setErrors(e => ({ ...e, [componentName]: "Amount cannot be negative" }));
-    } else if (numericVal > maxAmount) {
-      setErrors(e => ({ ...e, [componentName]: `Amount cannot exceed ${formatINR(maxAmount)}` }));
-    } else {
-      setErrors(e => {
-        const next = { ...e };
+    const error = validateFlexiField(value, maxAmount);
+    setErrors(e => {
+      const next = { ...e };
+      if (error) {
+        next[componentName] = error;
+      } else {
         delete next[componentName];
-        return next;
-      });
-    }
+      }
+      return next;
+    });
   };
 
   const handleSave = async () => {
-    if (!flexiData?.salary_data?.assignment_name) return;
+    console.log("handleSave triggered. flexiData:", flexiData, "isClosed:", isClosed, "errors:", errors);
+    if (!flexiData?.salary_data?.assignment_name) {
+      toast.error("Cannot save changes: Active salary structure assignment is missing.");
+      return;
+    }
 
     // Run full validation on save
     const newErrors: Record<string, string> = {};
     flexiComponents.forEach((comp) => {
-      const val = flexi[comp.salary_component] || "";
-      const cleanVal = val.replace(/,/g, '');
-      const numericVal = Number(cleanVal);
+      const val = flexi[comp.salary_component];
       const maxAmt = Number(comp.max_amount) || 0;
-
-      if (val.trim() !== "" && isNaN(numericVal)) {
-        newErrors[comp.salary_component] = "Please enter a valid number";
-      } else if (numericVal < 0) {
-        newErrors[comp.salary_component] = "Amount cannot be negative";
-      } else if (numericVal > maxAmt) {
-        newErrors[comp.salary_component] = `Amount cannot exceed ${formatINR(maxAmt)}`;
+      const error = validateFlexiField(val, maxAmt);
+      if (error) {
+        newErrors[comp.salary_component] = error;
       }
     });
 
     if (Object.keys(newErrors).length > 0) {
+      console.warn("Validation errors found:", newErrors);
       setErrors(newErrors);
       toast.error("Please resolve the validation errors before saving.");
       return;
@@ -126,10 +139,17 @@ export default function FlexiDeclaration() {
       return;
     }
 
-    const updatedComponents = flexiComponents.map((comp) => ({
-      ...comp,
-      amount: Number(flexi[comp.salary_component]?.replace(/,/g, '')) || 0
-    }));
+    const updatedComponents = flexiComponents.map((comp) => {
+      const val = flexi[comp.salary_component];
+      const strVal = val !== undefined && val !== null ? String(val) : "0";
+      const cleanVal = strVal.replace(/,/g, '');
+      return {
+        ...comp,
+        amount: Number(cleanVal) || 0
+      };
+    });
+
+    console.log("Submitting updated components payload:", updatedComponents);
 
     try {
       await updateMutation.mutateAsync({
@@ -138,6 +158,7 @@ export default function FlexiDeclaration() {
       });
       toast.success("Flexi components updated successfully!");
     } catch (err) {
+      console.error("Mutation failed inside handleSave:", err);
       toast.error(`Failed to update flexi components. ${err instanceof Error ? err.message : ""}`);
     }
   };
@@ -179,9 +200,9 @@ export default function FlexiDeclaration() {
               </div>
               <button
                 onClick={handleSave}
-                disabled={updateMutation.isPending || isClosed || Object.keys(errors).length > 0}
+                disabled={updateMutation.isPending || isClosed}
                 className={`bg-primary text-white border-none rounded-md px-4 py-1.5 text-[13px] font-semibold ml-2.5 transition-all duration-200 ${
-                  (updateMutation.isPending || isClosed || Object.keys(errors).length > 0)
+                  (updateMutation.isPending || isClosed)
                     ? "opacity-50 cursor-not-allowed bg-gray-400"
                     : "cursor-pointer"
                 }`}
@@ -200,9 +221,9 @@ export default function FlexiDeclaration() {
               <span className="font-bold text-[16px] text-text-title tracking-tight">Flexi Declaration</span>
               <button
                 onClick={handleSave}
-                disabled={updateMutation.isPending || isClosed || Object.keys(errors).length > 0}
+                disabled={updateMutation.isPending || isClosed}
                 className={`w-[150px] bg-primary text-white border-none rounded-md px-4 py-2 text-[13px] font-semibold transition-all duration-200 ${
-                  (updateMutation.isPending || isClosed || Object.keys(errors).length > 0)
+                  (updateMutation.isPending || isClosed)
                     ? "opacity-50 cursor-not-allowed bg-gray-400"
                     : "cursor-pointer"
                 }`}
@@ -246,106 +267,117 @@ export default function FlexiDeclaration() {
       </div>
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 max-w-[1400px] mx-auto px-4 sm:px-7 py-5 sm:py-7 pb-10">
-
-        {/* LEFT: Flexi Declaration */}
-        <div className="pr-0 sm:pr-6 mb-6 sm:mb-0">
-          <div className="flex items-center gap-2.5 mb-5">
-            <span className="font-bold text-[14px] sm:text-[15px] text-text-title">
-              Flexi Declaration For FY {selectedPeriod} (₹)
-            </span>
-            <span className={`${isClosed ? "bg-error-50 text-error" : "bg-success-50 text-success"} text-[10px] font-bold px-2 py-0.5 rounded tracking-widest uppercase`}>
-              {lockingPeriodData?.status || "OPEN"}
-            </span>
-            <span
-              className="text-text-body2 cursor-pointer text-[14px]"
-              onClick={() => setIsEditModalOpen(true)}
-            >
-              <SquarePen size={14} />
-            </span>
+      {isLoading ? (
+        /* Single loader covers both panels */
+        <div className="flex flex-col items-center justify-center min-h-[320px] py-16">
+          <div className="relative flex items-center justify-center w-16 h-16 mb-4">
+            <div className="absolute w-16 h-16 rounded-full border-[3px] border-gray-100" />
+            <div className="absolute w-16 h-16 rounded-full border-[3px] border-primary border-t-transparent animate-spin" />
           </div>
-
-          <div className="flex flex-col gap-4">
-            {flexiComponents.map((comp: FlexiComponent) => {
-              const isEditable = !isClosed && comp.visibility_type === "Editable";
-              const maxAmt = Number(comp.max_amount) || 0;
-              const hasError = !!errors[comp.salary_component];
-              return (
-                <div key={comp.salary_component}>
-                  <label className="text-[12px] text-text-body2 block mb-1.5 font-medium">
-                    {comp.salary_component} (0 - {formatINR(comp.max_amount)}) Annual
-                  </label>
-                  <input
-                    type="text"
-                    placeholder={comp.salary_component === "NPS" ? "Enter Amount" : undefined}
-                    value={flexi[comp.salary_component] || ""}
-                    onChange={e => handleInputChange(comp.salary_component, e.target.value, maxAmt)}
-                    className={`w-full border rounded-[7px] px-3.5 py-2.5 text-[14px] text-text-title outline-none box-border transition-colors duration-150 ${
-                      hasError ? "border-error focus:border-error focus:ring-1 focus:ring-error" : "border-gray-100"
-                    } ${
-                      !isEditable ? "bg-gray-10/50 cursor-not-allowed" : "bg-white"
-                    }`}
-                    readOnly={!isEditable}
-                  />
-                  {hasError && (
-                    <span className="text-[11px] text-error mt-1 block font-medium">
-                      {errors[comp.salary_component]}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-            {flexiComponents.length === 0 && !isLoading && (
-              <div className="text-[14px] text-text-body2 text-center py-5">
-                No flexi components found.
-              </div>
-            )}
-            {isLoading && (
-              <div className="flex justify-center py-10">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
-              </div>
-            )}
-          </div>
+          <span className="text-[13px] text-text-body2 mt-1">Loading flexi data…</span>
         </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 max-w-[1400px] mx-auto px-4 sm:px-7 py-5 sm:py-7 pb-10">
 
-        {/* RIGHT: Annual & Monthly Fixed Gross */}
-        <div className="pl-0 sm:pl-1">
-          <div className="mb-4">
-            <span className="font-bold text-[14px] sm:text-[15px] text-text-title">
-              Annual &amp; Monthly Fixed Gross (Annual)(Eg-100000)
-            </span>
-          </div>
-
-          <div className="bg-white rounded-[10px] border border-gray-100 overflow-hidden shadow-sm">
-            {/* Table Header */}
-            <div className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] bg-gray-10/30 border-b border-gray-100 px-3 sm:px-4 py-2.5">
-              <span className="text-[11px] sm:text-[12px] font-semibold text-text-body1">Earnings</span>
-              <span className="text-[11px] sm:text-[12px] font-semibold text-text-body1 text-right">Monthly</span>
-              <span className="text-[11px] sm:text-[12px] font-semibold text-text-body1 text-right">Annually</span>
+          {/* LEFT: Flexi Declaration */}
+          <div className="pr-0 sm:pr-6 mb-6 sm:mb-0">
+            <div className="flex items-center gap-2.5 mb-5">
+              <span className="font-bold text-[14px] sm:text-[15px] text-text-title">
+                Flexi Declaration For FY {selectedPeriod} (₹)
+              </span>
+              <span className={`${isClosed ? "bg-error-50 text-error" : "bg-success-50 text-success"} text-[10px] font-bold px-2 py-0.5 rounded tracking-widest uppercase`}>
+                {lockingPeriodData?.status || "OPEN"}
+              </span>
+              <span
+                className="text-text-body2 cursor-pointer text-[14px]"
+                onClick={() => setIsEditModalOpen(true)}
+              >
+                <SquarePen size={14} />
+              </span>
             </div>
 
-            {earningsData.map((row, i) => (
-              <div
-                key={row.label}
-                className={`grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center ${i % 2 === 0 ? "bg-white" : "bg-gray-10/10"} ${i < earningsData.length - 1 ? "border-b border-gray-50" : ""}`}
-              >
-                <span className="text-[12px] sm:text-[13px] text-text-body1 flex items-center gap-1 leading-snug">
-                  {row.label}
-                  {row.info && (
-                    <span className="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full bg-gray-100 text-[10px] text-text-body2 font-bold cursor-pointer">i</span>
-                  )}
-                </span>
-                <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
-                  {showValues ? formatINR(row.monthly) : "*****"}
-                </span>
-                <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
-                  {showValues ? formatINR(row.annually) : "*****"}
-                </span>
+            <div className="flex flex-col gap-4">
+              {flexiComponents.map((comp: FlexiComponent) => {
+                const isEditable = !isClosed && comp.visibility_type === "Editable";
+                const maxAmt = Number(comp.max_amount) || 0;
+                const hasError = !!errors[comp.salary_component];
+                return (
+                  <div key={comp.salary_component}>
+                    <label className="text-[12px] text-text-body2 block mb-1.5 font-medium">
+                      {comp.salary_component} (0 - {formatINR(comp.max_amount)}) Annual
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={comp.salary_component === "NPS" ? "Enter Amount" : undefined}
+                      value={flexi[comp.salary_component] || ""}
+                      onChange={e => handleInputChange(comp.salary_component, e.target.value, maxAmt)}
+                      className={`w-full border rounded-[7px] px-3.5 py-2.5 text-[14px] text-text-title outline-none box-border transition-colors duration-150 ${
+                        hasError ? "border-error focus:border-error focus:ring-1 focus:ring-error" : "border-gray-100"
+                      } ${
+                        !isEditable ? "bg-gray-10/50 cursor-not-allowed" : "bg-white"
+                      }`}
+                      readOnly={!isEditable}
+                    />
+                    {hasError && (
+                      <span className="text-[11px] text-error mt-1 block font-medium">
+                        {errors[comp.salary_component]}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+              {flexiComponents.length === 0 && (
+                <div className="text-[14px] text-text-body2 text-center py-5">
+                  No flexi components found.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT: Annual & Monthly Fixed Gross */}
+          <div className="pl-0 sm:pl-1">
+            <div className="mb-4">
+              <span className="font-bold text-[14px] sm:text-[15px] text-text-title">
+                Annual &amp; Monthly Fixed Gross (Annual)(Eg-100000)
+              </span>
+            </div>
+
+            <div className="bg-white rounded-[10px] border border-gray-100 overflow-hidden shadow-sm">
+              {/* Table Header */}
+              <div className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] bg-gray-10/30 border-b border-gray-100 px-3 sm:px-4 py-2.5">
+                <span className="text-[11px] sm:text-[12px] font-semibold text-text-body1">Earnings</span>
+                <span className="text-[11px] sm:text-[12px] font-semibold text-text-body1 text-right">Monthly</span>
+                <span className="text-[11px] sm:text-[12px] font-semibold text-text-body1 text-right">Annually</span>
               </div>
-            ))}
+
+              {earningsData.map((row, i) => (
+                <div
+                  key={row.label}
+                  className={`grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center ${i % 2 === 0 ? "bg-white" : "bg-gray-10/10"} ${i < earningsData.length - 1 ? "border-b border-gray-50" : ""}`}
+                >
+                  <span className="text-[12px] sm:text-[13px] text-text-body1 flex items-center gap-1 leading-snug">
+                    {row.label}
+                    {row.info && (
+                      <span className="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full bg-gray-100 text-[10px] text-text-body2 font-bold cursor-pointer">i</span>
+                    )}
+                  </span>
+                  <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                    {showValues ? formatINR(row.monthly) : "*****"}
+                  </span>
+                  <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                    {showValues ? formatINR(row.annually) : "*****"}
+                  </span>
+                </div>
+              ))}
+              {earningsData.length === 0 && (
+                <div className="text-[14px] text-text-body2 text-center py-5">
+                  No earnings data found.
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <EditFlexiLockingPeriod
         open={isEditModalOpen}

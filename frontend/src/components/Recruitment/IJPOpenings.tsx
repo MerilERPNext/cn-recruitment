@@ -238,6 +238,60 @@ function SortIcon() {
   );
 }
 
+// ─── Prop Types ───────────────────────────────────────────────────────────────
+
+interface propsResumeComponent {
+  uploadedFile: string | null;
+  onUpload: (fileName: string) => void;
+  onNext: () => void;
+}
+
+interface propsBiographicalStepComponent {
+  onBack: () => void;
+  onNext: () => void;
+}
+
+interface propContactStep {
+  onBack: () => void;
+  onNext: () => void;
+}
+
+interface propWorkExperienceStepComponent {
+  onBack: () => void;
+  onNext: () => void;
+}
+
+interface propsEducationStepComponent {
+  onBack: () => void;
+  onNext: () => void;
+}
+
+interface propsLastSalaryStepComponent {
+  onBack: () => void;
+  onSubmit: () => void;
+}
+
+interface propsListViewComponents {
+  jobs: typeof JOBS;
+  appliedIds: string[];
+  onSelectJob: (job: any) => void;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+}
+
+interface propsDetailViewComponents {
+  job: (typeof JOBS)[0];
+  appliedIds: string[];
+  onBack: () => void;
+  onApply: () => void;
+}
+
+interface propscomponent {
+  job: (typeof JOBS)[0];
+  onCancel: () => void;
+  onSubmitDone: (jobId: string) => void;
+}
+
 // ─── Step Forms ───────────────────────────────────────────────────────────────
 
 function ResumeStep({ uploadedFile, onUpload, onNext }: propsResumeComponent) {
