@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { X } from "lucide-react";
+import { Copy, X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useRef, useMemo, useCallback } from "react";
+import { useRef, useMemo, useCallback, useState } from "react";
 import "../../../../formio.custom.css";
 import {
+    useAttendanceRequestAttachments,
     useCreateNewAttendanceRequestBatch,
     useGetEmployeeShift,
 } from "../../../../hooks/useAttendance";
@@ -18,6 +19,7 @@ import { useLoadingOverlay } from "../../../../context/OverlayContext";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { Typography } from "../../../shared/atoms/Typography";
 import { AttendanceRecord } from "../../../../types/attendance";
+import { useFileUploader } from "../../../../hooks/useFileUploader";
 
 /* ---- local types ---- */
 type AttendanceStatus =
@@ -134,6 +136,19 @@ export const AttendanceAdjustmentForm = ({
     });
 
     const createMutation = useCreateNewAttendanceRequestBatch();
+    const { uploadFiles, loading: isUploadingFiles } = useFileUploader();
+    const { data: attendanceRequestAttachmentsMandatory } =
+        useAttendanceRequestAttachments(
+            currentEmployee?.employee as string,
+            format(selectedRows[0].date, "yyyy-MM-dd"),
+            "Attendance Adjustment",
+        );
+    /**
+     * Keyed by row index → array of Form.io file objects with live File references.
+     * We sync this in onChange because formInstance.submit() serializes submission
+     * data and loses the native File objects stored by the customfiles provider.
+     */
+    const [liveAttachments, setLiveAttachments] = useState<Record<number, any[]>>({});
 
     /* Fetch shift using the first selected row's date as reference */
     const shiftFilterDate = useMemo(() => {
@@ -172,6 +187,7 @@ export const AttendanceAdjustmentForm = ({
                 start_date: parseISO(dateStr).toISOString(),
                 end_date: parseISO(endDateStr).toISOString(),
                 check_in: checkIn,
+                show_attachment: attendanceRequestAttachmentsMandatory?.is_mandatory,
                 check_out: checkOut,
                 custom__request_reason: "",
                 custom_location: "",
@@ -179,7 +195,7 @@ export const AttendanceAdjustmentForm = ({
             };
         });
         return { data: { attendance_adjustment_details: rows } };
-    }, [selectedRows, shiftData]);
+    }, [selectedRows, shiftData, attendanceRequestAttachmentsMandatory]);
 
     const formatTimeFromISO = (isoString: string): string => {
         if (!isoString) return "";
@@ -204,33 +220,53 @@ export const AttendanceAdjustmentForm = ({
                 }
 
                 const employee = currentEmployee?.employee ?? "";
-                const applications = rows.map((row) => {
-                    return {
-                        custom_request_type: "Attendance Adjustment",
-                        company: currentEmployee?.company,
-                        employee,
-                        explanation: row.message ?? "",
-                        from_date: format(new Date(row.start_date), "yyyy-MM-dd"),
-                        to_date: format(new Date(row.end_date), "yyyy-MM-dd"),
-                        custom_from_time: formatTimeFromISO(row.check_in),
-                        custom_to_time: formatTimeFromISO(row.check_out),
-                        custom__request_reason: row.custom__request_reason ?? "",
-                        custom_location: row.custom_location ?? "",
-                    }
-                })
-                await createMutation.mutateAsync({
-                    applications: applications
-                }, {
-                    onSuccess: () => {
-                        toast.success(
-                            `${rows.length} attendance adjustment request${rows.length > 1 ? "s" : ""} submitted successfully.`,
+                const applications = rows.map((row) => ({
+                    custom_request_type: "Attendance Adjustment",
+                    company: currentEmployee?.company,
+                    employee,
+                    explanation: row.message ?? "",
+                    from_date: format(new Date(row.start_date), "yyyy-MM-dd"),
+                    to_date: format(new Date(row.end_date), "yyyy-MM-dd"),
+                    custom_from_time: formatTimeFromISO(row.check_in),
+                    custom_to_time: formatTimeFromISO(row.check_out),
+                    custom__request_reason: row.custom__request_reason ?? "",
+                    custom_location: row.custom_location ?? "",
+                }));
+
+                const responseData = await createMutation.mutateAsync({ applications });
+
+                toast.success(
+                    `${rows.length} attendance adjustment request${rows.length > 1 ? "s" : ""} submitted successfully.`,
+                );
+
+                /* ---- file uploads: one per created request ---- */
+                const createdRequests: any[] = responseData?.attendance_requests ?? [];
+                const rowsWithFiles = createdRequests.filter(
+                    (_req, i) => (liveAttachments[i] ?? []).length > 0,
+                );
+
+                if (rowsWithFiles.length > 0) {
+                    const uploadResults = await Promise.allSettled(
+                        createdRequests.map(async (request, i) => {
+                            // Use liveAttachments (captured via onChange) because
+                            // submit() serializes data and loses the native File references
+                            // that the customfiles storage provider stores at fileObj.file.
+                            const attachments: any[] = liveAttachments[i] ?? [];
+                            if (!attachments.length) return;
+                            await uploadFiles(attachments, "Attendance Request", request.name);
+                        }),
+                    );
+
+                    const failedCount = uploadResults.filter(
+                        (r) => r.status === "rejected",
+                    ).length;
+
+                    if (failedCount > 0) {
+                        toast.error(
+                            `${failedCount} file upload${failedCount > 1 ? "s" : ""} failed. The request${failedCount > 1 ? "s were" : " was"} created but attachment${failedCount > 1 ? "s" : ""} could not be saved.`,
                         );
-                        onSuccess?.();
-                    },
-                    onError: (error) => {
-                        toast.error(errorResponseFormater(error as any, "Submission failed"));
-                    },
-                })
+                    }
+                }
 
                 onSuccess?.();
                 onCancel?.();
@@ -242,6 +278,28 @@ export const AttendanceAdjustmentForm = ({
             }
         }, "Submitting attendance adjustments…");
     };
+
+    const handleApplyFirstRowToAll = useCallback(() => {
+        const instance = formInstance.current;
+        if (!instance) return;
+        const current = instance.submission?.data?.attendance_adjustment_details ?? [];
+        if (current.length < 2) return;
+
+        const { custom__request_reason, custom_location, message } = current[0];
+
+        const updated = current.map((row: any, i: number) =>
+            i === 0
+                ? row
+                : { ...row, custom__request_reason, custom_location, message },
+        );
+
+        instance.setSubmission({
+            data: {
+                ...instance.submission?.data,
+                attendance_adjustment_details: updated,
+            },
+        });
+    }, []);
 
     /* Re-apply prefill whenever shiftData resolves after form is ready */
     const onFormReady = useCallback(
@@ -276,15 +334,28 @@ export const AttendanceAdjustmentForm = ({
                             selected
                         </Typography>
                     </div>
-                    {isDesktop && (
-                        <button
-                            onClick={onCancel}
-                            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-                            aria-label="Close"
-                        >
-                            <X className="h-5 w-5 text-gray-600" />
-                        </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {selectedRows.length > 1 && (
+                            <Button
+                                onClick={handleApplyFirstRowToAll}
+                                size="sm"
+                                variant="outline"
+                                bgColor="primary"
+                                icon={<Copy className="h-4 w-4" />}
+                            >
+                                Apply First Row to All
+                            </Button>
+                        )}
+                        {isDesktop && (
+                            <button
+                                onClick={onCancel}
+                                className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+                                aria-label="Close"
+                            >
+                                <X className="h-5 w-5 text-gray-600" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Form */}
@@ -292,7 +363,20 @@ export const AttendanceAdjustmentForm = ({
                     <style>{STACK_CSS}</style>
                     <Form
                         form={lockedSchema}
-                        onChange={useCallback(() => { }, [])}
+                        onChange={useCallback((submission: any) => {
+                            const detailRows: any[] =
+                                submission?.data?.attendance_adjustment_details ?? [];
+                            const next: Record<number, any[]> = {};
+                            detailRows.forEach((row, i) => {
+                                const files: any[] = row?.attachments ?? [];
+                                // Only keep entries that still hold a live File reference
+                                const live = files.filter(
+                                    (f) => f?.file instanceof File,
+                                );
+                                if (live.length) next[i] = live;
+                            });
+                            setLiveAttachments(next);
+                        }, [])}
                         onFormReady={onFormReady}
                         options={{
                             builder: { styles: false },
@@ -309,20 +393,17 @@ export const AttendanceAdjustmentForm = ({
                 {/* Footer */}
                 <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
                     <div className="max-w-4xl mx-auto flex flex-row gap-3 md:gap-4 md:justify-end">
-                        {!isDesktop && (
-                            <Button
-                                onClick={onCancel}
-                                size="md"
-                                variant="outline"
-                                bgColor="primary"
-                                className="w-full md:w-auto min-w-[150px]"
-                            >
-                                Cancel
-                            </Button>
-                        )}
+
+                        <Button
+                            onClick={onCancel}
+                            variant="outline"
+                            className="!border-gray-300 !text-gray-600 bg-white hover:bg-gray-50 px-6 py-2 h-auto text-sm font-medium rounded-lg"
+                        >
+                            Cancel
+                        </Button>
                         <Button
                             onClick={handleSubmit}
-                            disabled={createMutation.isPending}
+                            disabled={createMutation.isPending || isUploadingFiles}
                             size="md"
                             variant="contain"
                             bgColor="primary"
@@ -330,6 +411,11 @@ export const AttendanceAdjustmentForm = ({
                         >
                             {createMutation.isPending ? (
                                 <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                            ) : isUploadingFiles ? (
+                                <span className="flex items-center gap-2">
+                                    <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                                    Uploading…
+                                </span>
                             ) : (
                                 "Submit"
                             )}

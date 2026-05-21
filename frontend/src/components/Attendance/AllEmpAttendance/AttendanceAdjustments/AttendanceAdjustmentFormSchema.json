@@ -13,7 +13,13 @@
             "customClass": "border-0",
             "components": [
                 {
+                    "type": "hidden",
+                    "key": "show_attachment",
+                    "input": false
+                },
+                {
                     "type": "datetime",
+                    "disabled": true,
                     "key": "start_date",
                     "label": "Start Date",
                     "errorLabel": "Start Date",
@@ -28,6 +34,7 @@
                     "errorLabel": "End Date",
                     "format": "dd-MM-yyyy",
                     "enableTime": false,
+                    "disabled": true,
                     "input": true
                 },
                 {
@@ -109,6 +116,24 @@
                                 "value": "Field Duty"
                             }
                         ]
+                    }
+                },
+                {
+                    "label": "Attachments",
+                    "key": "attachments",
+                    "type": "file",
+                    "input": true,
+                    "multiple": true,
+                    "size": "false",
+                    "storage": "customfiles",
+                    "fileReader": false,
+                    "privateDownload": false,
+                    "filePattern": ".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png",
+                    "tooltip": "Upload receipts or supporting documents.",
+                    "conditional": {
+                        "show": true,
+                        "when": "show_attachment",
+                        "eq": true
                     }
                 },
                 {

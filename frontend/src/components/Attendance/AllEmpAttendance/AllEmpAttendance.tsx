@@ -319,21 +319,31 @@ const AllEmpAttendance = () => {
     [completeMonthData, selectedDateKeys],
   );
 
+  const selectableItems = useMemo(
+    () => completeMonthData.filter(
+      ({ statusInfo }) => statusInfo.record?.attendance_request_allowed !== false,
+    ),
+    [completeMonthData],
+  );
+
   const allSelected =
-    completeMonthData.length > 0 &&
-    selectedDateKeys.size === completeMonthData.length;
+    selectableItems.length > 0 &&
+    selectableItems.every((item) =>
+      selectedDateKeys.has(format(item.date, "yyyy-MM-dd")),
+    );
 
   const toggleSelectAll = () => {
     if (allSelected) {
       setSelectedDateKeys(new Set());
     } else {
       setSelectedDateKeys(
-        new Set(completeMonthData.map((item) => format(item.date, "yyyy-MM-dd"))),
+        new Set(selectableItems.map((item) => format(item.date, "yyyy-MM-dd"))),
       );
     }
   };
 
-  const toggleRow = (dateKey: string) => {
+  const toggleRow = (dateKey: string, selectable: boolean) => {
+    if (!selectable) return;
     setSelectedDateKeys((prev) => {
       const next = new Set(prev);
       if (next.has(dateKey)) {
@@ -344,7 +354,7 @@ const AllEmpAttendance = () => {
       return next;
     });
   };
-
+  console.log(selectedRows, "-----------")
   /* Error state */
   if (isError) {
     return (
@@ -506,7 +516,7 @@ const AllEmpAttendance = () => {
               <tr>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase"
                 >
                   <input
                     type="checkbox"
@@ -691,13 +701,21 @@ const AllEmpAttendance = () => {
                     }}
                     className={`hover:bg-primary-50 transition-colors cursor-pointer`}
                   >
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                      <input
-                        type="checkbox"
-                        checked={selectedDateKeys.has(format(date, "yyyy-MM-dd"))}
-                        onChange={() => toggleRow(format(date, "yyyy-MM-dd"))}
-                        onClick={(e) => e.stopPropagation()}
-                      />
+                    <td className="w-px px-4 py-3">
+                      {(() => {
+                        const dateKey = format(date, "yyyy-MM-dd");
+                        const selectable = statusInfo.record?.attendance_request_allowed !== false;
+                        return (
+                          <input
+                            type="checkbox"
+                            disabled={!selectable}
+                            checked={selectedDateKeys.has(dateKey)}
+                            onChange={() => toggleRow(dateKey, selectable)}
+                            onClick={(e) => e.stopPropagation()}
+                            className={!selectable ? "cursor-not-allowed opacity-40" : "cursor-pointer"}
+                          />
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                       {format(date, "dd MMM yyyy, EEE")}
@@ -781,49 +799,39 @@ const AllEmpAttendance = () => {
           <div className=" w-full sticky bottom-6 left-0 right-0 flex justify-center items-center z-50">
             <div className="px-4 py-3 w-[100%] flex justify-between bg-white items-center shadow-lg rounded-md gap-2">
 
-              {selectedRows.length > 0 && <Typography variant="bodySmall" className="text-primary-600 font-medium">
+              {selectedRows.length > 0 && isDesktop && <Typography variant="bodySmall" className="text-primary-600 font-medium">
                 {selectedRows.length} row{selectedRows.length > 1 ? "s" : ""} selected
               </Typography>}
 
 
-              <div className="flex items-center gap-2">
-
+              <div className={`flex items-center gap-2 ${!isDesktop ? "flex-wrap" : ""}`}>
                 <Button
-                  variant="subtle"
+                  variant="soft"
                   onClick={() => setSelectedDateKeys(new Set())}
                 >
                   Clear
                 </Button>
-                <Button
-                  variant="contain"
-                  bgColor="primary"
-                  size="md"
-                  onClick={() => setShowBulkLeaveModal(true)}
-                >
-                  Request Leave
-                </Button>
-                <Button
-                  variant="contain"
-                  bgColor="primary"
-                  size="md"
-                  onClick={() => setShowAttendanceAdjustmentForm(true)}
-                >
-                  Attendance Adjustment
-                </Button>
+                <div className="flex gap-2 w-full">
+                  <Button
+                    variant="contain"
+                    bgColor="primary"
+                    size="md"
+                    onClick={() => setShowAttendanceAdjustmentForm(true)}
+                  >
+                    Adjustment Adjustment
+                  </Button>
+                  <Button
+                    variant="contain"
+                    bgColor="primary"
+                    size="md"
+                    onClick={() => setShowBulkLeaveModal(true)}
+                  >
+                    Bulk Leave
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        )}
-        {showBulkLeaveModal && (
-          <BulkLeaveModal
-            isOpen={showBulkLeaveModal}
-            onClose={() => {
-              setShowBulkLeaveModal(false);
-              setSelectedDateKeys(new Set());
-              onRefetchData();
-            }}
-            prefilledDates={selectedRows.map(row => ({ date: format(new Date(row.date), 'yyyy-MM-dd') }))}
-          />
         )}
         {showAttendanceAdjustmentForm &&
           <AttendanceAdjustmentForm
@@ -837,6 +845,12 @@ const AllEmpAttendance = () => {
               setSelectedDateKeys(new Set());
             }}
           />}
+        <BulkLeaveModal
+          isOpen={showBulkLeaveModal}
+          onClose={() => setShowBulkLeaveModal(false)}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          prefilledDates={selectedRecord as any}
+        />
         <EditAttendance
           employeeId={selectedRecord?.employee || ""}
           employeeName={selectedRecord?.employee_name || ""}
