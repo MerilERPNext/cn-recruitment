@@ -240,7 +240,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     const fields = expenseTypePayload?.fields;
     if (!Array.isArray(fields)) return false;
     return fields.some((f: any) => f?.fieldname === "odometer_from") &&
-           fields.some((f: any) => f?.fieldname === "odometer_to");
+      fields.some((f: any) => f?.fieldname === "odometer_to");
   }, [expenseTypePayload]);
 
   const rawUnits = dynamicFormData?.units ?? dynamicFormData?.no_of_units;
@@ -425,11 +425,6 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
             const nextData = change?.data || {};
             const changedKey = change?.changed?.component?.key;
             const rawExpenseType = change?.data?.expenseType;
-            
-            // DEMONSTRATION: Logging the claim_type_based_on property if available
-            if (rawExpenseType && typeof rawExpenseType === "object" && rawExpenseType.claim_type_based_on) {
-              console.log("Found claim_type_based_on:", rawExpenseType.claim_type_based_on);
-            }
 
             const nextExpenseType =
               typeof rawExpenseType === "string" ? rawExpenseType : rawExpenseType?.name || rawExpenseType?.value || "";
