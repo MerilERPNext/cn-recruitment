@@ -7,9 +7,9 @@ const LETTER_EVENT_OPTIONS = [
 ];
 
 const NOTIFICATION_TYPE_OPTIONS = [
+	"Initiation",
 	"Confirmed",
 	"Extended",
-	"Separated",
 ];
 
 function cp_get_duplicate_values(rows, fieldname) {
@@ -114,6 +114,21 @@ function cp_refresh_child_table_controls(frm) {
 	}
 }
 
+function cp_ensure_initiation_self_recipient(frm, cdt, cdn) {
+	const row = locals[cdt][cdn];
+	if (!row || row.type !== "Initiation") return;
+
+	const employee_fields = (row.recipient_employee_field || "")
+		.split(",")
+		.map((value) => value.trim())
+		.filter(Boolean);
+
+	if (!employee_fields.includes("employee")) {
+		employee_fields.unshift("employee");
+		frappe.model.set_value(cdt, cdn, "recipient_employee_field", employee_fields.join(", "));
+	}
+}
+
 function cp_open_unified_recipient_dialog(frm, cdt, cdn, {
 	title,
 	roles_field,
@@ -121,6 +136,7 @@ function cp_open_unified_recipient_dialog(frm, cdt, cdn, {
 	level_field,
 	emp_field,
 	user_field,
+	lock_self_employee_field,
 }) {
 	const row = locals[cdt][cdn];
 	const existing_roles = (row[roles_field] || "").split(",").map((r) => r.trim()).filter(Boolean);
@@ -138,7 +154,8 @@ function cp_open_unified_recipient_dialog(frm, cdt, cdn, {
 	const employee_field_options = (frm.__recipient_employee_fields || []).map((fieldname) => ({
 		label: (frm.__employee_field_label_map && frm.__employee_field_label_map[fieldname]) || fieldname,
 		value: fieldname,
-		checked: existing_emp_fields.includes(fieldname),
+		checked: lock_self_employee_field && fieldname === "employee" ? true : existing_emp_fields.includes(fieldname),
+		disabled: lock_self_employee_field && fieldname === "employee",
 	}));
 
 	const user_field_options = (frm.__user_link_fields || []).map((fieldname) => ({
@@ -201,6 +218,9 @@ function cp_open_unified_recipient_dialog(frm, cdt, cdn, {
 				const selected_levels = (values.levels || []).filter(Boolean);
 				const selected_emp_fields = (values.emp_fields || []).filter(Boolean);
 				const selected_user_fields = (values.user_fields || []).filter(Boolean);
+				if (lock_self_employee_field && !selected_emp_fields.includes("employee")) {
+					selected_emp_fields.unshift("employee");
+				}
 
 				frappe.model.set_value(cdt, cdn, roles_field, selected_roles.join(", "));
 				frappe.model.set_value(cdt, cdn, users_field, selected_users.join(", "));
@@ -214,6 +234,12 @@ function cp_open_unified_recipient_dialog(frm, cdt, cdn, {
 		});
 
 		d.show();
+
+		if (lock_self_employee_field) {
+			const self_input = d.$wrapper.find('input[data-unit="employee"]');
+			self_input.prop("checked", true).prop("disabled", true);
+			self_input.closest("label").css({ opacity: 0.7, cursor: "not-allowed" });
+		}
 
 		if (existing_roles.length) {
 			d.fields_dict.roles.set_formatted_input(existing_roles.map((role) => ({ role })));
@@ -523,10 +549,12 @@ frappe.ui.form.on("Notification Configuration Table", {
 
 	type(frm, cdt, cdn) {
 		cp_prevent_duplicate_child_value(frm, "notification_configuration", cdt, cdn, "type", "Type");
+		cp_ensure_initiation_self_recipient(frm, cdt, cdn);
 		cp_refresh_child_table_controls(frm);
 	},
 
 	select_assignees(frm, cdt, cdn) {
+		cp_ensure_initiation_self_recipient(frm, cdt, cdn);
 		cp_open_unified_recipient_dialog(frm, cdt, cdn, {
 			title: "Select Assignees",
 			roles_field: "select_roles",
@@ -534,6 +562,7 @@ frappe.ui.form.on("Notification Configuration Table", {
 			level_field: "recipient_level",
 			emp_field: "recipient_employee_field",
 			user_field: "assignee_user_field",
+			lock_self_employee_field: locals[cdt][cdn].type === "Initiation",
 		});
 	},
 
