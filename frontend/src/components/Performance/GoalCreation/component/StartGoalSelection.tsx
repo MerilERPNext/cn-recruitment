@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
@@ -7,6 +8,9 @@ interface StartGoalSelectionProps {
 }
 
 const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
+    const [blankGoalDescription, setBlankGoalDescription] = useState(
+        "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
+    );
   
     return <>
         <div  className="bg-[#fff8f6] border border-red-100 rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
@@ -67,9 +71,12 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             Use this <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
                     </div>
-                    <div className="bg-blue-50 border border-gray-100 rounded-lg p-4 text-sm ">
-                        Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library.
-                    </div>
+                    <textarea
+                        className="min-h-[92px] w-full resize-none rounded-lg border border-gray-100 bg-blue-50 p-4 text-sm leading-6 text-gray-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                        value={blankGoalDescription}
+                        onChange={(event) => setBlankGoalDescription(event.target.value)}
+                        aria-label="Start from blank description"
+                    />
                 </div>
             </div>
 

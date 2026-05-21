@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Check, Plus, Sparkles, X } from 'lucide-react';
 import Badge from '../../../shared/Badge';
 import Button from '../../../shared/atoms/Button';
@@ -60,6 +61,8 @@ const fieldClass = 'h-9 w-full rounded-lg border border-gray-200 bg-white px-3 t
 const labelClass = 'mb-1.5 block text-xs font-medium text-gray-600';
 
 const DefineGoal = () => {
+    const [weightage, setWeightage] = useState(30);
+
     return (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="space-y-5">
@@ -97,8 +100,15 @@ const DefineGoal = () => {
                         <div>
                             <label className={labelClass}>Weightage</label>
                             <div className="flex items-center gap-3">
-                                <input className="h-2 w-full accent-blue-600" type="range" min="0" max="100" defaultValue="30" />
-                                <span className="w-10 text-sm font-semibold text-blue-600">30%</span>
+                                <input
+                                    className="h-2 w-full accent-blue-600"
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={weightage}
+                                    onChange={(event) => setWeightage(Number(event.target.value))}
+                                />
+                                <span className="w-10 text-sm font-semibold text-blue-600">{weightage}%</span>
                             </div>
                         </div>
 
@@ -273,7 +283,7 @@ const DefineGoal = () => {
                             </Typography>
 
                             <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-gray-500">
-                                <span>30% weight</span>
+                                <span>{weightage}% weight</span>
                                 <span>Q1-Q3 FY26</span>
                                 <span>3 KRs</span>
                             </div>

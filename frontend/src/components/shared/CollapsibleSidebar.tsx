@@ -410,13 +410,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "My Goals",
           icon: Goal,
           href: "/webapp/performance-app/my-goals",
-          permissionKey: "Overview",
+          permissionKey: "My Goals",
         },
         {
           name: "Review",
           icon: Goal,
           href: "/webapp/performance-app",
-          permissionKey: "Overview",
+          permissionKey: "Review",
           subItems:[
             {
               name: "Self Review",
@@ -434,14 +434,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Feedback",
           icon: Goal,
           href: "/webapp/performance-app/feedback",
-          permissionKey: "Overview",
+          permissionKey: "Feedback",
         },
         
         {
           name: "Skills And Proficiency",
           icon: Goal,
           href: "/webapp/performance-app/skills",
-          permissionKey: "Overview",
+          permissionKey: "Skills And Proficiency",
         },
         
         {
