@@ -23,6 +23,7 @@ import {
   resolveLeaveApplicationTargets,
 } from "./requestLeaveHelper";
 import type { LeaveReason } from "../../types/leaves";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface FormioSubmission {
   data: {
@@ -60,6 +61,7 @@ const BulkLeaveModal: React.FC<BulkLeaveModalProps> = ({
   prefilledDates,
 }) => {
   const formRef = useRef<FormioInstance | null>(null);
+  const { isDesktop } = useScreenSize();
   const [previewFile, setPreviewFile] = React.useState<{
     url: string;
     name: string;
@@ -257,9 +259,9 @@ const BulkLeaveModal: React.FC<BulkLeaveModalProps> = ({
           defaultValue:
             prefilledDates && prefilledDates.length > 0
               ? prefilledDates.map((item) => ({
-                  fromDate: item.date.split("T")[0],
-                  toDate: item.date.split("T")[0],
-                }))
+                fromDate: item.date.split("T")[0],
+                toDate: item.date.split("T")[0],
+              }))
               : [{}, {}],
           components: [
             {
@@ -481,8 +483,8 @@ const BulkLeaveModal: React.FC<BulkLeaveModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex justify-center items-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl flex flex-col overflow-hidden max-h-[90vh]">
+    <div className="fixed inset-0 z-[100] md:flex md:justify-center md:items-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-white md:rounded-lg shadow-xl w-full h-full md:h-auto max-w-3xl flex flex-col overflow-hidden md:max-h-[90vh]">
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
           <h2 className="text-xl font-semibold text-primary">Request Leave</h2>
@@ -506,7 +508,9 @@ const BulkLeaveModal: React.FC<BulkLeaveModalProps> = ({
               className="flex items-center gap-2 text-sm text-primary border-gray-200 hover:bg-primary/5"
             >
               <Copy className="w-4 h-4" />
-              Apply First Row to All
+              {isDesktop ? <span>Apply First Row to All</span> : <span className="hidden md:block">Apply First Row to All</span>}
+
+              <span className="md:hidden">Apply First Card to All</span>
             </Button>
           </div>
 
@@ -538,7 +542,7 @@ const BulkLeaveModal: React.FC<BulkLeaveModalProps> = ({
                 now.
               </div>
             ) : (
-              <div className="w-[1600px] hide-add-row-btn">
+              <div className="w-full md:w-[1600px] hide-add-row-btn bulk-leave-request-form">
                 <Form
                   form={leaveForm}
                   onFormReady={(instance: FormioInstance) => {
@@ -560,6 +564,11 @@ const BulkLeaveModal: React.FC<BulkLeaveModalProps> = ({
                     validateOnInit: false,
                     validateOnBlur: true,
                     validateOnChange: false,
+                    formClass: "space-y-6",
+                    rowClass: "flex flex-col md:flex-row md:space-x-4",
+                    labelClass: "mb-1 font-medium text-gray-700",
+                    inputClass:
+                      "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200 px-2 py-1",
                   }}
                 />
               </div>
