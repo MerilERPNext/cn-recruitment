@@ -55,7 +55,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
       >
         {value}
       </Typography>
-      <Typography variant="label" color="body2" className="block break-words leading-tight text-xs md:text-sm mt-0.5">
+      <Typography variant="label" color="body2" className="block break-words leading-tight text-xs mt-0.5">
         {label}
       </Typography>
     </div>
