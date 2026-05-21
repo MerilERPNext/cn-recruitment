@@ -147,116 +147,18 @@ chatnext-app.field-required::after {
 
 @media (max-width: 768px) {
 
-  /* Scoped to the overtime form specifically */
-  .overtime-request-form .formio-component-overtime_details table {
-    display: block;
-  }
-
-  .overtime-request-form .formio-component-overtime_details table thead {
-    display: none;
-  }
-
-  .overtime-request-form .formio-component-overtime_details table tbody {
-    display: block;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #6b7280;
-    display: block;
-    margin-bottom: 4px;
-  }
-
-  .overtime-request-form .formio-component-overtime_details table tbody tr {
-    display: flex;
-    flex-direction: column;
-    background: white;
-    margin-bottom: 16px;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 8px;
-    padding: 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    position: relative;
-    width: 100%;
-  }
-
-  .overtime-request-form .formio-component-overtime_details table tbody td {
-    display: block;
-    width: 100%;
-    border: none !important;
-    padding: 8px 0 !important;
-  }
-
-  /* Add labels via pseudo-elements matching schema order */
-  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(1)::before {
-    content: "Start Date";
-  }
-
-  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(2)::before {
-    content: "Start Time";
-  }
-
-  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(3)::before {
-    content: "End Date";
-  }
-
-  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(4)::before {
-    content: "End Time";
-  }
-
-  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(5)::before {
-    content: "Message";
-  }
-
-  /* Position the remove button (last column) to top-right */
-  .overtime-request-form .formio-component-overtime_details table tbody td:last-child {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: auto;
-    padding: 0 !important;
-  }
-
-  /* Remove border from New Row container */
-  .overtime-request-form .formio-component-overtime_details table tfoot td {
-    border: none !important;
-    padding-top: 10px !important;
-  }
-
-  /* Enhance Remove Row button with text */
-  .overtime-request-form .formio-button-remove-row {
-    width: auto !important;
-    display: flex !important;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 8px !important;
-    text-decoration: none !important;
-    border: 1px solid rgba(255, 0, 0, 0.514) !important;
-  }
-
-  .overtime-request-form .formio-button-remove-row::after {
-    content: "Remove Row";
-    font-family:
-      ui-sans-serif,
-      system-ui,
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Roboto,
-      "Helvetica Neue",
-      Arial,
-      sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-  }
-
-  /* Scoped to the bulk leave request form specifically */
+  /* Mobile stacked layout for datagrids */
+  .overtime-request-form .formio-component-overtime_details table,
   .bulk-leave-request-form .formio-component-leaveRequests table {
     display: block;
   }
 
+  .overtime-request-form .formio-component-overtime_details table thead,
   .bulk-leave-request-form .formio-component-leaveRequests table thead {
     display: none;
   }
 
+  .overtime-request-form .formio-component-overtime_details table tbody,
   .bulk-leave-request-form .formio-component-leaveRequests table tbody {
     display: block;
     font-size: 0.85rem;
@@ -265,6 +167,7 @@ chatnext-app.field-required::after {
     margin-bottom: 4px;
   }
 
+  .overtime-request-form .formio-component-overtime_details table tbody tr,
   .bulk-leave-request-form .formio-component-leaveRequests table tbody tr {
     display: flex;
     flex-direction: column;
@@ -278,6 +181,7 @@ chatnext-app.field-required::after {
     width: 100%;
   }
 
+  .overtime-request-form .formio-component-overtime_details table tbody td,
   .bulk-leave-request-form .formio-component-leaveRequests table tbody td {
     display: block;
     width: 100%;
@@ -285,32 +189,45 @@ chatnext-app.field-required::after {
     padding: 8px 0 !important;
   }
 
-  /* Add labels via pseudo-elements matching schema order */
-  .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(1)::before {
-    content: "Leave Type";
+  /* Overtime specific labels */
+  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(1)::before {
+    content: "Start Date";
   }
-
-  .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(2)::before {
-    content: "Reason";
+  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(2)::before {
+    content: "Start Time";
   }
-
-  .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(3)::before {
+  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(3)::before {
+    content: "End Date";
+  }
+  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(4)::before {
+    content: "End Time";
+  }
+  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(5)::before {
     content: "Message";
   }
 
+  /* Bulk Leave specific labels */
+  .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(1)::before {
+    content: "Leave Type";
+  }
+  .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(2)::before {
+    content: "Reason";
+  }
+  .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(3)::before {
+    content: "Message";
+  }
   .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(4)::before {
     content: "From Date";
   }
-
   .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(5)::before {
     content: "To Date";
   }
-
   .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(6)::before {
     content: "File";
   }
 
   /* Position the remove button (last column) to top-right */
+  .overtime-request-form .formio-component-overtime_details table tbody td:last-child,
   .bulk-leave-request-form .formio-component-leaveRequests table tbody td:last-child {
     position: absolute;
     top: 8px;
@@ -320,12 +237,14 @@ chatnext-app.field-required::after {
   }
 
   /* Remove border from New Row container */
+  .overtime-request-form .formio-component-overtime_details table tfoot td,
   .bulk-leave-request-form .formio-component-leaveRequests table tfoot td {
     border: none !important;
     padding-top: 10px !important;
   }
 
   /* Enhance Remove Row button with text */
+  .overtime-request-form .formio-button-remove-row,
   .bulk-leave-request-form .formio-button-remove-row {
     width: auto !important;
     display: flex !important;
@@ -336,6 +255,7 @@ chatnext-app.field-required::after {
     border: 1px solid rgba(255, 0, 0, 0.514) !important;
   }
 
+  .overtime-request-form .formio-button-remove-row::after,
   .bulk-leave-request-form .formio-button-remove-row::after {
     content: "Remove Row";
     font-family:

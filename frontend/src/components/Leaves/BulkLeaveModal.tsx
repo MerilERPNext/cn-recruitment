@@ -23,7 +23,6 @@ import {
   resolveLeaveApplicationTargets,
 } from "./requestLeaveHelper";
 import type { LeaveReason } from "../../types/leaves";
-import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface FormioSubmission {
   data: {
@@ -61,7 +60,6 @@ const BulkLeaveModal: React.FC<BulkLeaveModalProps> = ({
   prefilledDates,
 }) => {
   const formRef = useRef<FormioInstance | null>(null);
-  const { isDesktop } = useScreenSize();
   const [previewFile, setPreviewFile] = React.useState<{
     url: string;
     name: string;
@@ -508,9 +506,7 @@ const BulkLeaveModal: React.FC<BulkLeaveModalProps> = ({
               className="flex items-center gap-2 text-sm text-primary border-gray-200 hover:bg-primary/5"
             >
               <Copy className="w-4 h-4" />
-              {isDesktop ? <span>Apply First Row to All</span> : <span className="hidden md:block">Apply First Row to All</span>}
-
-              <span className="md:hidden">Apply First Card to All</span>
+              <span>Apply to all</span>
             </Button>
           </div>
 
