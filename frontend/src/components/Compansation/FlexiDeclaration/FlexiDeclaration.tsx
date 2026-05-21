@@ -1,156 +1,251 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useGetYearFilterOptions } from "../../../hooks/useBenefit";
+import {
+  useFlexiComponents,
+  useUpdateFlexiComponents,
+  useIndividualEmployeeFlexiLockingPeriod
+} from "../../../hooks/payroll/useFlexiDeclaration";
+import { FlexiComponent, ComponentPartOfCTC } from "../../../types/flexiDeclaration";
+import { IoIosArrowDown } from "react-icons/io";
+import { EditFlexiLockingPeriod } from "./Component/EditFlexiLockingPeriod";
+import { SquarePen } from "lucide-react";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import toast from "react-hot-toast";
+import { getCurrentPeriod } from "../../Benefits/shared/logic";
 
-const earningsData = [
-  { label: "Basic", monthly: 562500, annually: 6749998 },
-  { label: "HRA", monthly: 112500, annually: 1350000 },
-  { label: "Provident Fund", monthly: 67500, annually: 810000 },
-  { label: "Car Lease Rental", monthly: 102715, annually: 1232580 },
-  { label: "Driver Salary", monthly: 25000, annually: 300000 },
-  { label: "Car Repair and Maintenance Reimbursement", monthly: 4167, annually: 50000 },
-  { label: "Special Allowance", monthly: 132600, annually: 1591218, info: true },
-  { label: "Asset Reimbursement", monthly: 16667, annually: 200000 },
-  { label: "Professional Development Course", monthly: 16667, annually: 200000 },
-  { label: "Meal Card", monthly: 9600, annually: 115200 },
-  { label: "Attire wallet", monthly: 1500, annually: 18000 },
-  { label: "Telecom wallet", monthly: 12000, annually: 144000 },
-  { label: "Reimbursement of Fuel Expense", monthly: 16667, annually: 200000 },
-  { label: "Fitness & Wellbeing Reimbursement", monthly: 12000, annually: 144000 },
-  { label: "Gift wallet", monthly: 1250, annually: 15000 },
-];
-
-const flexiComponents = [
-  { label: "Car Lease Rental", range: "0 - 60,00,000", value: "1232580" },
-  { label: "Driver Salary", range: "0 - 3,00,000", value: "300000" },
-  { label: "Car Repair And Maintenance Reimbursement", range: "0 - 50,000", value: "50000" },
-  { label: "NPS", range: "0 - 9,45,000", isNPS: true },
-  { label: "Asset Reimbursement", range: "0 - 2,00,000", value: "200000" },
-  { label: "Professional Development Course", range: "0 - 2,00,000", value: "200000" },
-  { label: "Meal Card", range: "0 - 1,35,200", value: "115200" },
-  { label: "Attire Wallet", range: "0 - 18,000", value: "18000" },
-  { label: "Telecom Wallet", range: "0 - 1,44,000", value: "144000" },
-];
-
-
-
-function formatINR(num: number) {
-  if (!num && num !== 0) return "";
-  return Number(num).toLocaleString("en-IN");
+function formatINR(num: string | number | undefined | null) {
+  if (num === undefined || num === null || num === "") return "";
+  const val = typeof num === "string" ? parseFloat(num) : num;
+  if (isNaN(val)) return "";
+  return val.toLocaleString("en-IN");
 }
 
 export default function FlexiDeclaration() {
-  const [activeTab, setActiveTab] = useState("Flexi Components");
-  const [showValues, setShowValues] = useState(true);
-  const [npsType, setNpsType] = useState("amount");
-  const [npsAmount, setNpsAmount] = useState("");
-  const [flexi, setFlexi] = useState(
-    flexiComponents.reduce((acc, c) => {
-      acc[c.label] = c.value || "";
-      return acc;
-    }, {})
+  const [showValues, setShowValues] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState("");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const { isDesktop } = useScreenSize();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: yearOptions } = useGetYearFilterOptions(currentEmployee?.company || "");
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (yearOptions && yearOptions.length > 0 && !selectedPeriod) {
+      const optionYears = yearOptions.map(opt => ({ label: opt.name, value: opt.name }));
+      const defaultYear = getCurrentPeriod(optionYears);
+      setSelectedPeriod(defaultYear || yearOptions[0].name);
+    }
+  }, [yearOptions, selectedPeriod]);
+
+  const { data: flexiData, isLoading } = useFlexiComponents(
+    currentEmployee?.name || "",
+    selectedPeriod || "",
+    currentEmployee?.company || ""
   );
+
+  const { data: lockingPeriodData, refetch: refetchLockingPeriod } = useIndividualEmployeeFlexiLockingPeriod(
+    currentEmployee?.name || ""
+  );
+
+  const updateMutation = useUpdateFlexiComponents();
+
+  const [flexi, setFlexi] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (flexiData?.flexi_components) {
+      const initialFlexi: Record<string, string> = {};
+      flexiData.flexi_components.forEach((comp: FlexiComponent) => {
+        initialFlexi[comp.salary_component] = comp.amount?.toString() || "";
+      });
+      setFlexi(initialFlexi);
+      setErrors({});
+    }
+  }, [flexiData]);
+
+  const earningsData = flexiData?.salary_data?.component_part_of_ctc?.map((item: ComponentPartOfCTC) => ({
+    label: item.component,
+    monthly: item.amount,
+    annually: item.annual_amount,
+    info: false,
+  })) || [];
+
+  const flexiComponents = flexiData?.flexi_components || [];
+
+  const isClosed = lockingPeriodData?.status === "Closed";
+
+  const handleInputChange = (componentName: string, value: string, maxAmount: number) => {
+    const cleanValue = value.replace(/,/g, '');
+    setFlexi(f => ({ ...f, [componentName]: value }));
+
+    const numericVal = Number(cleanValue);
+    if (value.trim() !== "" && isNaN(numericVal)) {
+      setErrors(e => ({ ...e, [componentName]: "Please enter a valid number" }));
+    } else if (numericVal < 0) {
+      setErrors(e => ({ ...e, [componentName]: "Amount cannot be negative" }));
+    } else if (numericVal > maxAmount) {
+      setErrors(e => ({ ...e, [componentName]: `Amount cannot exceed ${formatINR(maxAmount)}` }));
+    } else {
+      setErrors(e => {
+        const next = { ...e };
+        delete next[componentName];
+        return next;
+      });
+    }
+  };
+
+  const handleSave = async () => {
+    if (!flexiData?.salary_data?.assignment_name) return;
+
+    // Run full validation on save
+    const newErrors: Record<string, string> = {};
+    flexiComponents.forEach((comp) => {
+      const val = flexi[comp.salary_component] || "";
+      const cleanVal = val.replace(/,/g, '');
+      const numericVal = Number(cleanVal);
+      const maxAmt = Number(comp.max_amount) || 0;
+
+      if (val.trim() !== "" && isNaN(numericVal)) {
+        newErrors[comp.salary_component] = "Please enter a valid number";
+      } else if (numericVal < 0) {
+        newErrors[comp.salary_component] = "Amount cannot be negative";
+      } else if (numericVal > maxAmt) {
+        newErrors[comp.salary_component] = `Amount cannot exceed ${formatINR(maxAmt)}`;
+      }
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error("Please resolve the validation errors before saving.");
+      return;
+    }
+
+    if (isClosed) {
+      toast.error("Cannot save changes as the locking period is closed.");
+      return;
+    }
+
+    const updatedComponents = flexiComponents.map((comp) => ({
+      ...comp,
+      amount: Number(flexi[comp.salary_component]?.replace(/,/g, '')) || 0
+    }));
+
+    try {
+      await updateMutation.mutateAsync({
+        id: flexiData.salary_data.assignment_name,
+        flexi_components: updatedComponents
+      });
+      toast.success("Flexi components updated successfully!");
+    } catch (err) {
+      toast.error(`Failed to update flexi components. ${err instanceof Error ? err.message : ""}`);
+    }
+  };
 
   return (
     <div className="bg-app min-h-screen text-text-title font-brand">
 
       {/* ── Top bar ──────────────────────────────────────────────────────────── */}
-      {/* Desktop layout preserved exactly; mobile gets a stacked layout */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
 
         {/* Desktop top bar (hidden on mobile) */}
-        {isDesktop && (<div className="sm:flex items-center justify-between h-[52px] px-7">
-          <span className="font-bold text-[17px] text-text-title tracking-tight">Flexi Declaration</span>
-          <div className="flex items-center gap-3.5">
-            <span className="text-[13px] text-text-body2 flex items-center gap-1.5">
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l.5-1h11l.5 1" stroke="currentColor" strokeWidth="1.3" /><rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" /></svg>
-              Financial Year
-            </span>
-            <div className="relative inline-block">
-              <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="font-bold text-[13px] text-text-title bg-gray-100 px-2.5 py-0.5 pr-7 rounded-md border-none outline-none cursor-pointer appearance-none"
-              >
-                {yearOptions?.map((opt: { name: string }) => (
-                  <option key={opt.name} value={opt.name}>{opt.name}</option>
-                ))}
-                {!yearOptions && <option value="25-26">2026–27</option>}
-              </select>
-              <IoIosArrowDown className="absolute right-2 top-1/2 -translate-y-1/2 text-text-title pointer-events-none text-sm" />
-            </div>
-            <span className="text-[13px] text-text-body2 ml-2">Show Values</span>
-            <div
-              onClick={() => setShowValues(v => !v)}
-              className={`w-10 h-[22px] rounded-xl relative cursor-pointer transition-colors duration-200 ${showValues ? "bg-primary" : "bg-gray-300"}`}
-            >
-              <div className={`absolute top-[3px] w-4 h-4 rounded-lg bg-white shadow-md transition-all duration-200 ${showValues ? "left-[21px]" : "left-[3px]"}`} />
-            </div>
-            <button
-              onClick={handleSave}
-              disabled={updateMutation.isPending}
-              className={`bg-primary text-white border-none rounded-md px-4 py-1.5 text-[13px] font-semibold ml-2.5 transition-all duration-200 ${updateMutation.isPending ? "opacity-70 cursor-not-allowed" : "cursor-pointer"}`}
-            >
-              {updateMutation.isPending ? "Saving..." : "Save Changes"}
-            </button>
-          </div>
-        </div>
-        )}
-
-        {/* Mobile top bar (hidden on sm+) */}
-        {!isDesktop && ( <div className="flex flex-col px-4 pt-3 pb-3 gap-2.5">
-          {/* Row 1: title */}
-<div className="flex items-center justify-between">
-<span className="font-bold text-[16px] text-text-title tracking-tight">Flexi Declaration</span>
-          <button
-            onClick={handleSave}
-            disabled={updateMutation.isPending}
-            className={`w-[150px] bg-primary text-white border-none rounded-md px-4 py-2 text-[13px] font-semibold transition-all duration-200 ${updateMutation.isPending ? "opacity-70 cursor-not-allowed" : "cursor-pointer"}`}
-          >
-            {updateMutation.isPending ? "Saving..." : "Save Changes"}
-          </button>
-          </div>
-
-          {/* Row 2: financial year selector + show values toggle */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l.5-1h11l.5 1" stroke="currentColor" strokeWidth="1.3" /><rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" /></svg>
-              <span className="text-[12px] text-text-body2">FY</span>
+        {isDesktop && (
+          <div className="sm:flex items-center justify-between h-[52px] px-7">
+            <span className="font-bold text-[17px] text-text-title tracking-tight">Flexi Declaration</span>
+            <div className="flex items-center gap-3.5">
+              <span className="text-[13px] text-text-body2 flex items-center gap-1.5">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l.5-1h11l.5 1" stroke="currentColor" strokeWidth="1.3" /><rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" /></svg>
+                Financial Year
+              </span>
               <div className="relative inline-block">
                 <select
                   value={selectedPeriod}
                   onChange={(e) => setSelectedPeriod(e.target.value)}
-                  className="font-bold text-[12px] text-text-title bg-gray-100 px-2 py-0.5 pr-6 rounded-md border-none outline-none cursor-pointer appearance-none"
+                  className="font-bold text-[13px] text-text-title bg-gray-100 px-2.5 py-0.5 pr-7 rounded-md border-none outline-none cursor-pointer appearance-none"
                 >
                   {yearOptions?.map((opt: { name: string }) => (
                     <option key={opt.name} value={opt.name}>{opt.name}</option>
                   ))}
                   {!yearOptions && <option value="25-26">2026–27</option>}
                 </select>
-                <IoIosArrowDown className="absolute right-1.5 top-1/2 -translate-y-1/2 text-text-title pointer-events-none text-xs" />
+                <IoIosArrowDown className="absolute right-2 top-1/2 -translate-y-1/2 text-text-title pointer-events-none text-sm" />
               </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-[12px] text-text-body2">Show Values</span>
+              <span className="text-[13px] text-text-body2 ml-2">Show Values</span>
               <div
                 onClick={() => setShowValues(v => !v)}
-                className={`w-9 h-[20px] rounded-xl relative cursor-pointer transition-colors duration-200 ${showValues ? "bg-primary" : "bg-gray-300"}`}
+                className={`w-10 h-[22px] rounded-xl relative cursor-pointer transition-colors duration-200 ${showValues ? "bg-primary" : "bg-gray-300"}`}
               >
-                <div className={`absolute top-[2px] w-4 h-4 rounded-lg bg-white shadow-md transition-all duration-200 ${showValues ? "left-[18px]" : "left-[2px]"}`} />
+                <div className={`absolute top-[3px] w-4 h-4 rounded-lg bg-white shadow-md transition-all duration-200 ${showValues ? "left-[21px]" : "left-[3px]"}`} />
+              </div>
+              <button
+                onClick={handleSave}
+                disabled={updateMutation.isPending || isClosed || Object.keys(errors).length > 0}
+                className={`bg-primary text-white border-none rounded-md px-4 py-1.5 text-[13px] font-semibold ml-2.5 transition-all duration-200 ${
+                  (updateMutation.isPending || isClosed || Object.keys(errors).length > 0)
+                    ? "opacity-50 cursor-not-allowed bg-gray-400"
+                    : "cursor-pointer"
+                }`}
+              >
+                {updateMutation.isPending ? "Saving..." : isClosed ? "Locked" : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile top bar (hidden on sm+) */}
+        {!isDesktop && (
+          <div className="flex flex-col px-4 pt-3 pb-3 gap-2.5">
+            {/* Row 1: title */}
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-[16px] text-text-title tracking-tight">Flexi Declaration</span>
+              <button
+                onClick={handleSave}
+                disabled={updateMutation.isPending || isClosed || Object.keys(errors).length > 0}
+                className={`w-[150px] bg-primary text-white border-none rounded-md px-4 py-2 text-[13px] font-semibold transition-all duration-200 ${
+                  (updateMutation.isPending || isClosed || Object.keys(errors).length > 0)
+                    ? "opacity-50 cursor-not-allowed bg-gray-400"
+                    : "cursor-pointer"
+                }`}
+              >
+                {updateMutation.isPending ? "Saving..." : isClosed ? "Locked" : "Save Changes"}
+              </button>
+            </div>
+
+            {/* Row 2: financial year selector + show values toggle */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4l.5-1h11l.5 1" stroke="currentColor" strokeWidth="1.3" /><rect x="1" y="4" width="14" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" /></svg>
+                <span className="text-[12px] text-text-body2">FY</span>
+                <div className="relative inline-block">
+                  <select
+                    value={selectedPeriod}
+                    onChange={(e) => setSelectedPeriod(e.target.value)}
+                    className="font-bold text-[12px] text-text-title bg-gray-100 px-2 py-0.5 pr-6 rounded-md border-none outline-none cursor-pointer appearance-none"
+                  >
+                    {yearOptions?.map((opt: { name: string }) => (
+                      <option key={opt.name} value={opt.name}>{opt.name}</option>
+                    ))}
+                    {!yearOptions && <option value="25-26">2026–27</option>}
+                  </select>
+                  <IoIosArrowDown className="absolute right-1.5 top-1/2 -translate-y-1/2 text-text-title pointer-events-none text-xs" />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-[12px] text-text-body2">Show Values</span>
+                <div
+                  onClick={() => setShowValues(v => !v)}
+                  className={`w-9 h-[20px] rounded-xl relative cursor-pointer transition-colors duration-200 ${showValues ? "bg-primary" : "bg-gray-300"}`}
+                >
+                  <div className={`absolute top-[2px] w-4 h-4 rounded-lg bg-white shadow-md transition-all duration-200 ${showValues ? "left-[18px]" : "left-[2px]"}`} />
+                </div>
               </div>
             </div>
           </div>
-
-          {/* Row 3: Save button full-width */}
-
-        </div>
         )}
       </div>
 
       {/* ── Main content ─────────────────────────────────────────────────────── */}
-      {/*
-        Desktop: 2-column grid (unchanged)
-        Mobile:  single column, stacked
-      */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 max-w-[1400px] mx-auto px-4 sm:px-7 py-5 sm:py-7 pb-10">
 
         {/* LEFT: Flexi Declaration */}
@@ -171,47 +266,44 @@ export default function FlexiDeclaration() {
           </div>
 
           <div className="flex flex-col gap-4">
-            {flexiComponents.map((comp: FlexiComponent) =>
-              comp.salary_component === "NPS" ? (
+            {flexiComponents.map((comp: FlexiComponent) => {
+              const isEditable = !isClosed && comp.visibility_type === "Editable";
+              const maxAmt = Number(comp.max_amount) || 0;
+              const hasError = !!errors[comp.salary_component];
+              return (
                 <div key={comp.salary_component}>
-                  <label className="text-[12px] text-text-body2 block mb-1.5">
+                  <label className="text-[12px] text-text-body2 block mb-1.5 font-medium">
                     {comp.salary_component} (0 - {formatINR(comp.max_amount)}) Annual
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter Amount"
+                    placeholder={comp.salary_component === "NPS" ? "Enter Amount" : undefined}
                     value={flexi[comp.salary_component] || ""}
-                    onChange={e => setFlexi(f => ({ ...f, [comp.salary_component]: e.target.value }))}
-                    className={`w-full border border-gray-100 rounded-[7px] px-3.5 py-2.5 text-[14px] text-text-title outline-none box-border transition-colors duration-150 ${comp.visibility_type !== "Editable" ? "bg-gray-10/50 cursor-not-allowed" : "bg-white"}`}
-                    readOnly={comp.visibility_type !== "Editable"}
+                    onChange={e => handleInputChange(comp.salary_component, e.target.value, maxAmt)}
+                    className={`w-full border rounded-[7px] px-3.5 py-2.5 text-[14px] text-text-title outline-none box-border transition-colors duration-150 ${
+                      hasError ? "border-error focus:border-error focus:ring-1 focus:ring-error" : "border-gray-100"
+                    } ${
+                      !isEditable ? "bg-gray-10/50 cursor-not-allowed" : "bg-white"
+                    }`}
+                    readOnly={!isEditable}
                   />
+                  {hasError && (
+                    <span className="text-[11px] text-error mt-1 block font-medium">
+                      {errors[comp.salary_component]}
+                    </span>
+                  )}
                 </div>
-              ) : (
-                <div key={comp.salary_component}>
-                  <label className="text-[12px] text-text-body2 block mb-1.5">
-                    {comp.salary_component} (0 - {formatINR(comp.max_amount)}) Annual
-                  </label>
-                  <input
-                    type="text"
-                    value={flexi[comp.salary_component] || ""}
-                    onChange={e => setFlexi(f => ({ ...f, [comp.salary_component]: e.target.value }))}
-                    className={`w-full border border-gray-100 rounded-[7px] px-3.5 py-2.5 text-[14px] text-text-title outline-none box-border transition-colors duration-150 ${comp.visibility_type !== "Editable" ? "bg-gray-10/50 cursor-not-allowed" : "bg-white"}`}
-                    readOnly={comp.visibility_type !== "Editable"}
-                  />
-                </div>
-              )
-            )}
+              );
+            })}
             {flexiComponents.length === 0 && !isLoading && (
               <div className="text-[14px] text-text-body2 text-center py-5">
-<div className="flex items-center justify-center py-10">
-  <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
-</div>
+                No flexi components found.
               </div>
             )}
             {isLoading && (
               <div className="flex justify-center py-10">
-  <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
-</div>
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent"></div>
+              </div>
             )}
           </div>
         </div>
