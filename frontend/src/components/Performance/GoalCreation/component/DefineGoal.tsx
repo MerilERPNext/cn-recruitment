@@ -3,9 +3,11 @@ import { Check, Plus, Sparkles, X } from 'lucide-react';
 import Badge from '../../../shared/Badge';
 import Button from '../../../shared/atoms/Button';
 import { Card } from '../../../shared/atoms/Card';
+import { Select } from '../../../shared/atoms/Select';
 import { Typography } from '../../../shared/atoms/Typography';
 
 type MetricType = 'Count' | 'Number' | '%';
+type MetricSelectOption = { label: string; value: MetricType };
 
 interface KeyResult {
     id: string;
@@ -22,6 +24,8 @@ interface KeyResult {
 const tags = ['product', 'oxygen', 'rollout', 'fy26-q3'];
 const metricTypeOptions: MetricType[] = ['Count', 'Number', '%'];
 const categoryOptions = ['Individual', 'Team', 'Company'];
+const metricSelectOptions = metricTypeOptions.map((option) => ({ label: option, value: option }));
+const categorySelectOptions = categoryOptions.map((option) => ({ label: option, value: option }));
 
 const keyResults: KeyResult[] = [
     {
@@ -62,6 +66,21 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-gray-600';
 
 const DefineGoal = () => {
     const [weightage, setWeightage] = useState(30);
+    const [selectedCategory, setSelectedCategory] = useState(categorySelectOptions[0]);
+    const [keyResultMetricTypes, setKeyResultMetricTypes] = useState<Record<string, MetricSelectOption>>(
+        () =>
+            keyResults.reduce<Record<string, MetricSelectOption>>((acc, result) => {
+                acc[result.id] = { label: result.metricType, value: result.metricType };
+                return acc;
+            }, {}),
+    );
+
+    const handleMetricTypeChange = (resultId: string, option: MetricSelectOption) => {
+        setKeyResultMetricTypes((current) => ({
+            ...current,
+            [resultId]: option,
+        }));
+    };
 
     return (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -114,11 +133,12 @@ const DefineGoal = () => {
 
                         <div>
                             <label className={labelClass}>Category</label>
-                            <select className={fieldClass} defaultValue="Individual">
-                                {categoryOptions.map((option) => (
-                                    <option key={option}>{option}</option>
-                                ))}
-                            </select>
+                            <Select
+                                options={categorySelectOptions}
+                                value={selectedCategory}
+                                onChange={setSelectedCategory}
+                                className="relative w-full"
+                            />
                         </div>
 
                         <div>
@@ -201,11 +221,12 @@ const DefineGoal = () => {
                                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-[1fr_1fr_1fr_1fr_1.45fr_72px]">
                                     <div>
                                         <label className={labelClass}>Metric type</label>
-                                        <select className={fieldClass} defaultValue={result.metricType}>
-                                            {metricTypeOptions.map((option) => (
-                                                <option key={option}>{option}</option>
-                                            ))}
-                                        </select>
+                                        <Select
+                                            options={metricSelectOptions}
+                                            value={keyResultMetricTypes[result.id]}
+                                            onChange={(option) => handleMetricTypeChange(result.id, option)}
+                                            className="relative w-full"
+                                        />
                                     </div>
 
                                     <div>
