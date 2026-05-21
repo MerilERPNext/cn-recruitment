@@ -33,7 +33,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
     type="button"
     onClick={onClick}
     className={`
-      flex items-center gap-3 p-4 rounded-xl border transition-all duration-200 text-left
+      flex items-center gap-2 xl:gap-3 p-3 xl:p-4 rounded-xl border transition-all duration-200 text-left w-full
       ${
         isActive
           ? "border-primary-300 bg-primary-50 shadow-md"
@@ -47,15 +47,15 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
     >
       <Icon className={`${iconClass}`} size={20} />
     </div>
-    <div>
+    <div className="flex-1 min-w-0">
       <Typography
         variant="subheading"
         color={isActive ? "primary" : "title"}
-        className="text-2xl font-bold leading-tight"
+        className="text-xl md:text-2xl font-bold leading-tight"
       >
         {value}
       </Typography>
-      <Typography variant="label" color="body2" className="whitespace-nowrap">
+      <Typography variant="label" color="body2" className="block break-words leading-tight text-xs md:text-sm mt-0.5">
         {label}
       </Typography>
     </div>
