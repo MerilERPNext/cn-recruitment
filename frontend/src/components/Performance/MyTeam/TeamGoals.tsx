@@ -2,11 +2,8 @@ import React from "react";
 import {
   AlertCircle,
   ChevronRight,
-  Clock,
   CornerDownRight,
   Plus,
-  Send,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import Badge, { type BadgeVariant } from "../../shared/Badge";
@@ -165,13 +162,14 @@ const statusSummary = [
 ];
 
 const TeamGoals: React.FC = () => {
-  const { isMobile } = useScreenSize();
+  const { isMobile, isTablet } = useScreenSize();
+  const isCompact = isMobile || isTablet;
 
   return (
-    <main className={`min-h-full overflow-y-auto bg-[#f8fafc] font-sans ${isMobile ? "p-4" : "p-6"}`}>
-      <div className="mx-auto max-w-screen space-y-5">
-        <header className={`flex ${isMobile ? "flex-col gap-4" : "items-center justify-between"}`}>
-          <div>
+    <main className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] font-sans ${isMobile ? "p-4" : "p-6"}`}>
+      <div className="mx-auto w-full max-w-screen space-y-5">
+        <header className={`flex min-w-0 ${isCompact ? "flex-col gap-4" : "items-center justify-between gap-4"}`}>
+          <div className="min-w-0">
             <Typography variant="h3" className="text-gray-900">
               Team Goals
             </Typography>
@@ -179,8 +177,8 @@ const TeamGoals: React.FC = () => {
               32 goals across 8 reportees - 5 pending your approval
             </Typography>
           </div>
-          <div className={`flex ${isMobile ? "w-full flex-col" : "items-center"} gap-3`}>
-            <Button variant="outline" bgColor="text" size="sm" className={isMobile ? "w-full" : ""}>
+          <div className={`flex ${isCompact ? "w-full flex-col sm:flex-row" : "shrink-0 items-center"} gap-3`}>
+            <Button variant="outline" bgColor="text" size="sm" className={isCompact ? "w-full sm:w-fit" : ""}>
               Cascade from Org
             </Button>
             <Button
@@ -188,7 +186,7 @@ const TeamGoals: React.FC = () => {
               bgColor="primary"
               size="sm"
               icon={<Plus className="h-4 w-4" />}
-              className={isMobile ? "w-full" : ""}
+              className={isCompact ? "w-full sm:w-fit" : ""}
             >
               Assign Goal
             </Button>
@@ -198,25 +196,25 @@ const TeamGoals: React.FC = () => {
         <section className="overflow-hidden rounded-xl border border-amber-100 bg-white shadow-sm">
           <div
             className={`flex ${
-              isMobile ? "flex-col gap-3" : "items-center justify-between"
+              isCompact ? "flex-col gap-3" : "items-center justify-between"
             } border-b border-amber-100 bg-amber-50 px-5 py-4`}
           >
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-4 w-4 text-amber-700" />
-              <Typography variant="bodySmall" className="font-semibold text-amber-900">
+            <div className="flex min-w-0 items-start gap-3 sm:items-center">
+              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 sm:mt-0" />
+              <Typography variant="bodySmall" className="min-w-0 font-semibold text-amber-900">
                 Approval Queue - 5 goals awaiting you
               </Typography>
               {!isMobile && (
-                <Typography variant="caption" className="text-amber-800">
+                <Typography variant="caption" className="shrink-0 text-amber-800">
                   auto-approve in 2 days if no action
                 </Typography>
               )}
             </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" bgColor="text" size="sm" className="bg-white">
+            <div className={`flex gap-3 ${isCompact ? "w-full flex-col sm:w-auto sm:flex-row" : "items-center"}`}>
+              <Button variant="outline" bgColor="text" size="sm" className={isCompact ? "w-full bg-white sm:w-fit" : "bg-white"}>
                 Reject all
               </Button>
-              <Button variant="contain" bgColor="success" size="sm">
+              <Button variant="contain" bgColor="text" size="sm" className={isCompact ? "w-full sm:w-fit" : ""}>
                 Approve all
               </Button>
             </div>
@@ -227,17 +225,17 @@ const TeamGoals: React.FC = () => {
               <article
                 key={goal.id}
                 className={`grid gap-4 px-5 py-4 ${
-                  isMobile
+                  isCompact
                     ? "grid-cols-[auto_1fr]"
                     : "grid-cols-[auto_minmax(0,1fr)_120px_110px_260px] items-center"
                 }`}
               >
-                <label className="mt-5 flex h-4 w-4 items-center justify-center">
+                <label className={`flex h-4 w-4 items-center justify-center ${isCompact ? "mt-1" : "mt-5"}`}>
                   <input
                     type="checkbox"
                     defaultChecked={goal.selected}
                     aria-label={`Select ${goal.title}`}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-gray-300 text-primary-500 accent-primary-500 focus:ring-primary-500"
                   />
                 </label>
 
@@ -260,7 +258,10 @@ const TeamGoals: React.FC = () => {
                       </span>
                     ))}
                   </div>
-                  <Typography variant="bodySmall" className="truncate font-semibold text-gray-900">
+                  <Typography
+                    variant="bodySmall"
+                    className={`font-semibold text-gray-900 ${isCompact ? "break-words" : "truncate"}`}
+                  >
                     {goal.title}
                   </Typography>
                   <Typography variant="caption" className="text-gray-500">
@@ -268,7 +269,7 @@ const TeamGoals: React.FC = () => {
                   </Typography>
                 </div>
 
-                <div className={isMobile ? "col-start-2" : ""}>
+                <div className={isCompact ? "col-start-2" : ""}>
                   <Typography variant="label" className="text-gray-500">
                     Weightage
                   </Typography>
@@ -280,20 +281,20 @@ const TeamGoals: React.FC = () => {
                   </Typography>
                 </div>
 
-                <div className={isMobile ? "col-start-2" : ""}>
+                <div className={isCompact ? "col-start-2" : ""}>
                   <span className="inline-flex items-center rounded-md bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
                     Submitted
                   </span>
                 </div>
 
-                <div className={`flex flex-wrap gap-2 ${isMobile ? "col-span-2" : "justify-end"}`}>
-                  <Button variant="outline" bgColor="text" size="sm" className="bg-white">
+                <div className={`flex flex-wrap gap-2 ${isCompact ? "col-span-2 sm:col-start-2" : "justify-end"}`}>
+                  <Button variant="outline" bgColor="text" size="sm" className={isCompact ? "min-w-24 flex-1 bg-white sm:flex-none" : "bg-white"}>
                     Send back
                   </Button>
-                  <Button variant="outline" bgColor="error" size="sm" className="bg-white">
+                  <Button variant="outline" bgColor="error" size="sm" className={isCompact ? "min-w-24 flex-1 bg-white sm:flex-none" : "bg-white"}>
                     Reject
                   </Button>
-                  <Button className="text-white" variant="contain" bgColor="primary" size="sm">
+                  <Button className={isCompact ? "min-w-24 flex-1 text-white sm:flex-none" : "text-white"} variant="contain" bgColor="primary" size="sm">
                     Approve
                   </Button>
                 </div>
@@ -303,9 +304,9 @@ const TeamGoals: React.FC = () => {
         </section>
 
         <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-          <header className={`mb-4 flex ${isMobile ? "flex-col gap-3" : "items-start justify-between"}`}>
-            <div>
-              <div className="flex items-center gap-3">
+          <header className={`mb-4 flex min-w-0 ${isCompact ? "flex-col gap-3" : "items-start justify-between gap-4"}`}>
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-center gap-3">
                 <Typography variant="h4" className="font-bold text-gray-900">
                   All Team Goals
                 </Typography>
@@ -315,7 +316,7 @@ const TeamGoals: React.FC = () => {
                 Approved & in progress - grouped by reportee
               </Typography>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className={`flex flex-wrap gap-2 ${isCompact ? "w-full" : "shrink-0 justify-end"}`}>
               {statusSummary.map((item) => (
                 <Badge key={item.label} label={item.label} variant={item.variant} size="sm" />
               ))}
@@ -327,9 +328,9 @@ const TeamGoals: React.FC = () => {
               <article key={reportee.id} className="overflow-hidden rounded-xl border border-gray-100">
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between bg-blue-50/60 px-4 py-3 text-left transition-colors hover:bg-blue-50"
+                  className="flex w-full items-start justify-between gap-3 bg-blue-50/60 px-4 py-3 text-left transition-colors hover:bg-blue-50 sm:items-center"
                 >
-                  <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700">
                       {reportee.initials}
                     </span>
@@ -344,7 +345,7 @@ const TeamGoals: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <ChevronRight className={`h-4 w-4 text-gray-500 ${reportee.expanded ? "rotate-90" : ""}`} />
+                  <ChevronRight className={`mt-2 h-4 w-4 shrink-0 text-gray-500 sm:mt-0 ${reportee.expanded ? "rotate-90" : ""}`} />
                 </button>
 
                 {reportee.expanded && (
@@ -353,20 +354,23 @@ const TeamGoals: React.FC = () => {
                       <div
                         key={goal.id}
                         className={`grid gap-3 py-3 ${
-                          isMobile ? "grid-cols-1" : "grid-cols-[minmax(0,1fr)_220px] items-center"
+                          isCompact ? "grid-cols-1" : "grid-cols-[minmax(0,1fr)_220px] items-center"
                         }`}
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <CornerDownRight className="h-4 w-4 shrink-0 text-gray-300" />
                           <Badge label={goal.type} variant="purple" size="sm" />
-                          <Typography variant="bodySmall" className="truncate text-gray-700">
+                          <Typography
+                            variant="bodySmall"
+                            className={`min-w-0 text-gray-700 ${isCompact ? "break-words" : "truncate"}`}
+                          >
                             {goal.title}
                           </Typography>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+                        <div className="flex min-w-0 items-center gap-4">
+                          <div className="h-1.5 flex-1 overflow-hidden rounded-md bg-gray-100">
                             <div
-                              className={`h-full rounded-full ${statusBarColor[goal.status]}`}
+                              className={`h-full rounded-md ${statusBarColor[goal.status]}`}
                               style={{ width: `${goal.progress}%` }}
                             />
                           </div>
@@ -381,41 +385,7 @@ const TeamGoals: React.FC = () => {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-green-50 text-green-600">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <Typography variant="bodyMedium" className="font-semibold text-gray-900">
-              14 approved this cycle
-            </Typography>
-            <Typography variant="caption" className="text-gray-500">
-              Most submissions are aligned with org-level OKRs.
-            </Typography>
-          </div>
-          <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-              <Clock className="h-5 w-5" />
-            </div>
-            <Typography variant="bodyMedium" className="font-semibold text-gray-900">
-              2 need manager follow-up
-            </Typography>
-            <Typography variant="caption" className="text-gray-500">
-              Weightage and edit-history exceptions are highlighted.
-            </Typography>
-          </div>
-          <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-              <Send className="h-5 w-5" />
-            </div>
-            <Typography variant="bodyMedium" className="font-semibold text-gray-900">
-              Cascading ready
-            </Typography>
-            <Typography variant="caption" className="text-gray-500">
-              Assign org-derived goals to reportees from the header action.
-            </Typography>
-          </div>
-        </section>
+       
       </div>
     </main>
   );
