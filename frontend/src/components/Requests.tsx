@@ -51,44 +51,44 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const canRequestOvertime = isActionEnabled(
     userUiPermission,
     "create_overtime_request",
-    "Planned Overtime"
+    "requests",
   );
 
   const canLeaveRequest = isActionEnabled(
     userUiPermission,
     "request_leave",
-    "My Requests"
+    "requests",
   );
   const canAttendaneRequest = isActionEnabled(
     userUiPermission,
     "create_attendance_request",
-    "Attendance Summary"
+    "requests",
   );
   const canShiftChangeRequest = isActionEnabled(
     userUiPermission,
     "request_shift_change",
-    "All Shift"
+    "requests",
   );
   const canLoanRequest = isActionEnabled(
     userUiPermission,
     "create_loan",
-    "My Loan Requests"
+    "requests",
   );
   const canEmployeeAdvanceRequest = isActionEnabled(
     userUiPermission,
     "create_advance",
-    "My Advances"
+    "requests",
   );
   const canExpenseRequest = isActionEnabled(
     userUiPermission,
     "expense_claim_request",
-    "Expense Claims"
+    "requests",
   );
 
   const canExpenseAdvanceRequest = isActionEnabled(
     userUiPermission,
     "request_expense_advance",
-    "My Advances"
+    "requests",
   );
 
   const { isDesktop } = useScreenSize();
