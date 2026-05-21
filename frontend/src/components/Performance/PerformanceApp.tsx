@@ -8,6 +8,7 @@ import { GoalModelProvider } from './GoalModelContext';
 type TabName =
     "Overview"
     | "My Goals"
+    | "My Team"
     | "Self Review" | "Peer Nomination" | "Skill And Proficiency"
     | "Feedback"
     | "New Goal Plan"
@@ -17,6 +18,7 @@ type TabName =
 const tabRoutes: Record<TabName, string> = {
     Overview: "/webapp/performance-app/overview",
     "My Goals": "/webapp/performance-app/my-goals",
+    "My Team": "/webapp/performance-app/my-team",
     "Self Review": "/webapp/performance-app/review",
     "Skill And Proficiency":"/webapp/performance-app/skills",
     "Peer Nomination": "/webapp/performance-app/review/peer-nomination",

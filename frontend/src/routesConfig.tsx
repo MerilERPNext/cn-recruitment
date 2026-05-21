@@ -32,6 +32,7 @@ import {
   ExpenseNavigationState,
   buildExpenseNavigationState,
 } from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
+import TeamOverview from "./components/Performance/MyTeam/TeamOverview";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -87,6 +88,10 @@ const ReferralList = lazyWithRetry(
 const MyGoals = lazyWithRetry(
   () => import("./components/Performance/MyGoals/MyGoals"),
   "MyGoals",
+);
+const TeamGoals = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/TeamGoals"),
+  "TeamGoals",
 );
 const GoalDetails = lazyWithRetry(
   () => import("./components/Performance/MyGoals/components/GoalDetails"),
@@ -1188,6 +1193,22 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "My Goals",
       },
       {
+        path: "my-team",
+        element: <TeamOverview />,
+        permissionKey: "My Team",
+      
+      },
+      {
+        path: "team-overview",
+        element: <TeamOverview />,
+        permissionKey: "My Team"
+      },
+      {
+        path: "team-goals",
+        element: <TeamGoals />,
+        permissionKey: "Team Goals"
+      },
+      {
         path: "my-goals/:id",
         element: <GoalDetails />,
         permissionKey: "My Goals",
@@ -1207,7 +1228,7 @@ export const routesConfig: AppRoute[] = [
         element: <Feedback />,
         permissionKey: "Feedback",
       },
-      
+
       {
         path: "new-goal-plan",
         element: <NewGoalPlan />,
@@ -1230,6 +1251,7 @@ export const routesConfig: AppRoute[] = [
       },
     ],
   },
+
   {
     path: "/webapp/organizational-chart",
     element: <OrganizationChart />,

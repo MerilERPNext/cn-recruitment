@@ -413,11 +413,31 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "My Goals",
         },
         {
+          name: "My Team",
+          icon: Goal,
+          href: "/webapp/performance-app/my-team",
+          permissionKey: "My Team",
+          subItems: [
+            {
+              name: "Team Dashboard",
+              icon: Goal,
+              href: "/webapp/performance-app/team-overview",
+              
+            },
+            {
+              name: "Team Goals",
+              icon: Goal,
+              href: "/webapp/performance-app/team-goals",
+              
+            }
+          ]
+        },
+        {
           name: "Review",
           icon: Goal,
           href: "/webapp/performance-app",
           permissionKey: "Review",
-          subItems:[
+          subItems: [
             {
               name: "Self Review",
               icon: Goal,
@@ -436,20 +456,34 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/performance-app/feedback",
           permissionKey: "Feedback",
         },
-        
+
         {
           name: "Skills And Proficiency",
           icon: Goal,
           href: "/webapp/performance-app/skills",
           permissionKey: "Skills And Proficiency",
         },
-        
+
         {
           name: "New Goal Plan",
           icon: Goal,
           href: "/webapp/performance-app/new-goal-plan",
           permissionKey: "New Goal Plan",
         },
+        {
+          name: "Performance Review",
+          icon: ChartNoAxesCombined,
+          href: "/webapp/performance-app/performance-review",
+          permissionKey: "Performance Review",
+        },
+      ],
+    },
+    {
+      icon: ChartNoAxesCombined,
+      label: "Performance",
+      path: "/webapp/performance-app",
+      permissionKey: "Performance",
+      subItems: [
         {
           name: "Performance Review",
           icon: ChartNoAxesCombined,
@@ -564,7 +598,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     if (location.pathname === subSubItem.href) {
       return true;
     }
-    
+
     if (subSubItem.href === "/webapp/performance-app/review" && location.pathname.startsWith("/webapp/performance-app/review/peer-nomination")) {
       return false;
     }
