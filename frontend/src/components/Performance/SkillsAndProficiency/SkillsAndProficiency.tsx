@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { ChevronRight, Download, Plus, Sparkles, TrendingUp } from "lucide-react";
 import Badge from "../../shared/Badge";
 import { Typography } from "../../shared/atoms/Typography";
+import EditSkillPopup from "./EditSkillPopup";
 
 type ProjectTone = "primary" | "secondary" | "success" | "warning" | "error" | "info";
 
@@ -146,74 +147,19 @@ const getLevelLabel = (level: number) => {
   return "Beginner";
 };
 
-const SkillLevelBar = ({ current, target }: { current: number; target: number }) => (
-  <div className="flex min-w-[230px] items-center gap-1.5">
-    {levelLabels.map((label, index) => {
-      const level = index + 1;
-      const isCurrent = level <= current;
-      const isTargetOnly = level > current && level <= target;
-      const levelClass = isCurrent
-        ? `${getLevelTone(level)} text-white`
-        : isTargetOnly
-          ? "border border-dashed border-primary-500 bg-white text-primary-700"
-          : "bg-gray-100 text-gray-500";
-
-      return (
-        <div
-          key={label}
-          className={`flex h-6 w-12 items-center justify-center rounded text-[11px] font-semibold ${levelClass}`}
-        >
-          {label}
-        </div>
-      );
-    })}
-  </div>
-);
-
-const ProficiencyPill = ({ level, tone }: { level: number; tone: ProjectTone }) => (
-  <div className={`min-w-[96px] rounded-md px-3 py-1.5 text-center text-[11px] font-semibold ${PROJECT_TONES[tone].soft}`}>
-    L{level} · {getLevelLabel(level)}
-  </div>
-);
-
-const RadarChart = () => {
-  const rings = [28, 48, 68, 88];
-
-  return (
-    <div className="relative mx-auto h-48 w-48">
-      <svg viewBox="0 0 200 200" className="h-full w-full">
-        {rings.map((size) => (
-          <polygon
-            key={size}
-            points={`100,${100 - size} ${100 + size * 0.86},${100 - size / 2} ${100 + size * 0.86},${100 + size / 2} 100,${100 + size} ${100 - size * 0.86},${100 + size / 2} ${100 - size * 0.86},${100 - size / 2}`}
-            fill="none"
-            stroke="#C7D7FE"
-            strokeWidth="1"
-          />
-        ))}
-        <polygon points="100,16 173,58 173,142 100,184 27,142 27,58" fill="#EEF4FF" stroke="#6172F3" strokeDasharray="4 4" strokeWidth="2" />
-        <polygon points="100,34 159,68 145,134 100,152 43,137 57,70" fill="#0EA5E9" fillOpacity="0.26" stroke="#0EA5E9" strokeWidth="4" />
-      </svg>
-      {["Design", "Systems", "Research", "Technical", "Soft", "Tools"].map((label, index) => {
-        const positions = [
-          "left-[86px] top-0",
-          "right-0 top-[50px]",
-          "right-0 bottom-[50px]",
-          "left-[78px] bottom-0",
-          "left-1 bottom-[50px]",
-          "left-1 top-[50px]",
-        ];
-        return (
-          <div key={label} className={`absolute text-[10px] font-medium text-gray-700 ${positions[index]}`}>
-            {label}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
 const SkillsAndProficiency: React.FC = () => {
+  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+  const radarRings = [28, 48, 68, 88];
+  const radarLabels = ["Design", "Systems", "Research", "Technical", "Soft", "Tools"];
+  const radarLabelPositions = [
+    "left-[86px] top-0",
+    "right-0 top-[50px]",
+    "right-0 bottom-[50px]",
+    "left-[78px] bottom-0",
+    "left-1 bottom-[50px]",
+    "left-1 top-[50px]",
+  ];
+
   return (
     <div className="min-h-full overflow-y-auto bg-surface p-4 font-brand text-text-title lg:p-6">
       <div className="mx-auto max-w-screen space-y-5">
@@ -304,7 +250,27 @@ const SkillsAndProficiency: React.FC = () => {
                         </Typography>
                       </div>
 
-                      <SkillLevelBar current={skill.current} target={skill.target} />
+                      <div className="flex min-w-[230px] items-center gap-1.5">
+                        {levelLabels.map((label, index) => {
+                          const level = index + 1;
+                          const isCurrent = level <= skill.current;
+                          const isTargetOnly = level > skill.current && level <= skill.target;
+                          const levelClass = isCurrent
+                            ? `${getLevelTone(level)} text-white`
+                            : isTargetOnly
+                              ? "border border-dashed border-primary-500 bg-white text-primary-700"
+                              : "bg-gray-100 text-gray-500";
+
+                          return (
+                            <div
+                              key={label}
+                              className={`flex h-6 w-12 items-center justify-center rounded text-[11px] font-semibold ${levelClass}`}
+                            >
+                              {label}
+                            </div>
+                          );
+                        })}
+                      </div>
 
                       <Badge
                         label={skill.delta}
@@ -313,11 +279,28 @@ const SkillsAndProficiency: React.FC = () => {
                         size="sm"
                       />
 
-                      <ProficiencyPill level={skill.current} tone={skill.current >= 5 ? "success" : skill.current >= 4 ? "primary" : "info"} />
+                      <div
+                        className={`min-w-[96px] rounded-md px-3 py-1.5 text-center text-[11px] font-semibold ${
+                          PROJECT_TONES[skill.current >= 5 ? "success" : skill.current >= 4 ? "primary" : "info"].soft
+                        }`}
+                      >
+                        L{skill.current} · {getLevelLabel(skill.current)}
+                      </div>
                       <span className=" text-center text-text-body2 lg:block">→</span>
-                      <ProficiencyPill level={skill.target} tone={skill.target >= 5 ? "success" : "primary"} />
+                      <div
+                        className={`min-w-[96px] rounded-md px-3 py-1.5 text-center text-[11px] font-semibold ${
+                          PROJECT_TONES[skill.target >= 5 ? "success" : "primary"].soft
+                        }`}
+                      >
+                        L{skill.target} · {getLevelLabel(skill.target)}
+                      </div>
 
-                      <button className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-100 text-gray-500 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700">
+                      <button
+                        type="button"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-100 text-gray-500 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700"
+                        onClick={() => setSelectedSkill(skill)}
+                        aria-label={`Edit ${skill.name}`}
+                      >
                         <ChevronRight className="h-4 w-4" />
                       </button>
                     </div>
@@ -335,7 +318,26 @@ const SkillsAndProficiency: React.FC = () => {
               <Typography variant="caption" className="mt-1 block text-text-body2">
                 Current (filled) vs Target (outline)
               </Typography>
-              <RadarChart />
+              <div className="relative mx-auto h-48 w-48">
+                <svg viewBox="0 0 200 200" className="h-full w-full">
+                  {radarRings.map((size) => (
+                    <polygon
+                      key={size}
+                      points={`100,${100 - size} ${100 + size * 0.86},${100 - size / 2} ${100 + size * 0.86},${100 + size / 2} 100,${100 + size} ${100 - size * 0.86},${100 + size / 2} ${100 - size * 0.86},${100 - size / 2}`}
+                      fill="none"
+                      stroke="#C7D7FE"
+                      strokeWidth="1"
+                    />
+                  ))}
+                  <polygon points="100,16 173,58 173,142 100,184 27,142 27,58" fill="#EEF4FF" stroke="#6172F3" strokeDasharray="4 4" strokeWidth="2" />
+                  <polygon points="100,34 159,68 145,134 100,152 43,137 57,70" fill="#0EA5E9" fillOpacity="0.26" stroke="#0EA5E9" strokeWidth="4" />
+                </svg>
+                {radarLabels.map((label, index) => (
+                  <div key={label} className={`absolute text-[10px] font-medium text-gray-700 ${radarLabelPositions[index]}`}>
+                    {label}
+                  </div>
+                ))}
+              </div>
               <div className="mt-2 flex justify-center gap-5 text-xs text-text-body2">
                 <span className="flex items-center gap-1.5">
                   <span className="h-3 w-3 rounded-sm bg-info-50 ring-1 ring-info-200" />
@@ -380,6 +382,8 @@ const SkillsAndProficiency: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {selectedSkill ? <EditSkillPopup skill={selectedSkill} onClose={() => setSelectedSkill(null)} /> : null}
     </div>
   );
 };
