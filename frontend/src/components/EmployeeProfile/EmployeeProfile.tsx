@@ -14,10 +14,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import EmploymentHistory from "../MyProfile/EmploymentHistory";
-import SideDrawer from "../shared/SideDrawer";
-import FutureTransactionsTable from "./FutureTransactionsTable";
 import { Tab } from "../NavigationTab";
 import Button from "../shared/atoms/Button";
+import SideDrawer from "../shared/SideDrawer";
+import FutureTransactionsTable from "./FutureTransactionsTable";
 // import AttendanceAssignments from "../Attendance/AttendanceAssignments";
 // import ShowHolidays from "./ShowHolidays";
 
@@ -53,7 +53,6 @@ const EMPLOYEMENT_STATUS = {
   "on notice period": "On Notice",
 };
 
-
 const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const { targetEmployeeId, isViewingOtherUser, clearTargetEmployee } =
@@ -74,6 +73,13 @@ const EmployeeProfile: React.FC = () => {
     "can_appreciate",
     "Employee Profile",
   );
+
+  const canShowFutureTransform = isActionEnabled(
+    userUiPermission,
+    "show_future_transform",
+    "Employee Profile",
+  );
+
   const { data: currentUser, isLoading: isCurrentUserLoading } =
     useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
@@ -97,7 +103,8 @@ const EmployeeProfile: React.FC = () => {
   //   useState(false);
   const navigate = useNavigate();
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [isFutureTransactionsOpen, setIsFutureTransactionsOpen] = useState(false);
+  const [isFutureTransactionsOpen, setIsFutureTransactionsOpen] =
+    useState(false);
 
   const uploadMutation = useFileUpload();
   const updateDocMutation = useUpdateFrappeDocument();
@@ -410,7 +417,7 @@ const EmployeeProfile: React.FC = () => {
                     <Badge
                       label={
                         EMPLOYEMENT_STATUS[
-                        user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
+                          user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
                         ] || user?.custom_employment_status
                       }
                       size="sm"
@@ -450,17 +457,17 @@ const EmployeeProfile: React.FC = () => {
                     Attendance Assignment
                   </Button>
                 )} */}
-              <Button
-                icon={<History size={14} />}
-                size="sm"
-                variant="soft"
-                onClick={() =>
-                  setIsFutureTransactionsOpen(true)
-                }
-                className="text-[10px] font-bold uppercase tracking-wider h-full px-4 py-2"
-              >
-                Future Transactions
-              </Button>
+              {canShowFutureTransform && (
+                <Button
+                  icon={<History size={14} />}
+                  size="sm"
+                  variant="soft"
+                  onClick={() => setIsFutureTransactionsOpen(true)}
+                  className="text-[10px] font-bold uppercase tracking-wider h-full px-4 py-2"
+                >
+                  Future Transactions
+                </Button>
+              )}
             </div>
             <AwardsSection isDesktop={false} />
           </div>
@@ -473,10 +480,11 @@ const EmployeeProfile: React.FC = () => {
                 key={tab.key}
                 variant="subtle"
                 onClick={() => scrollToSection(tab.key)}
-                className={`whitespace-nowrap px-4 py-2 rounded-none text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                  ? "border-primary-600 text-primary-600"
-                  : "border-transparent text-gray-600 hover:text-primary-600"
-                  }`}
+                className={`whitespace-nowrap px-4 py-2 rounded-none text-sm font-medium transition-all duration-200 border-b-2 ${
+                  activeTab === tab.key
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-gray-600 hover:text-primary-600"
+                }`}
               >
                 {tab.label}
               </Button>
@@ -544,7 +552,7 @@ const EmployeeProfile: React.FC = () => {
                       aria-label="Upload new avatar"
                     >
                       {updateDocMutation.isPending ||
-                        uploadMutation.isPending ? (
+                      uploadMutation.isPending ? (
                         <CircularLoader size="sm" color="white" />
                       ) : (
                         <Pencil size={18} />
@@ -577,7 +585,7 @@ const EmployeeProfile: React.FC = () => {
                             <Badge
                               label={
                                 EMPLOYEMENT_STATUS[
-                                user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
+                                  user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
                                 ] || user?.custom_employment_status
                               }
                               size="md"
@@ -679,26 +687,27 @@ const EmployeeProfile: React.FC = () => {
                     <button
                       key={tab.key}
                       onClick={() => scrollToSection(tab.key)}
-                      className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                        ? "border-primary text-primary"
-                        : "border-transparent text-gray-600 hover:text-primary"
-                        }`}
+                      className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
+                        activeTab === tab.key
+                          ? "border-primary text-primary"
+                          : "border-transparent text-gray-600 hover:text-primary"
+                      }`}
                     >
                       {tab.label}
                     </button>
                   ))}
                 </div>
-                <Button
-                  icon={<History size={14} />}
-                  size="sm"
-                  variant="soft"
-                  onClick={() =>
-                    setIsFutureTransactionsOpen(true)
-                  }
-                  className="uppercase tracking-wider shrink-0 px-4 py-2 font-medium"
-                >
-                  Future Transactions
-                </Button>
+                {canShowFutureTransform && (
+                  <Button
+                    icon={<History size={14} />}
+                    size="sm"
+                    variant="soft"
+                    onClick={() => setIsFutureTransactionsOpen(true)}
+                    className="uppercase tracking-wider shrink-0 px-4 py-2 font-medium"
+                  >
+                    Future Transactions
+                  </Button>
+                )}
               </div>
             </div>
 
