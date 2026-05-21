@@ -727,16 +727,17 @@ const EmployeeProfile: React.FC = () => {
   return (
     <>
       {isDesktop ? desktopLayout : mobileLayout}
-
-      <SideDrawer
-        open={isFutureTransactionsOpen}
-        onClose={() => setIsFutureTransactionsOpen(false)}
-        size={isDesktop ? "xxl" : "full"}
-        title="Future Transactions"
-        className="p-0"
-      >
-        <FutureTransactionsTable />
-      </SideDrawer>
+      {isFutureTransactionsOpen &&
+        <SideDrawer
+          open={isFutureTransactionsOpen}
+          onClose={() => setIsFutureTransactionsOpen(false)}
+          size={isDesktop ? "xxl" : "full"}
+          title="Future Transactions"
+          className="p-0"
+        >
+          <FutureTransactionsTable />
+        </SideDrawer>
+      }
     </>
   );
 };
