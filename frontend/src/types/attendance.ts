@@ -278,6 +278,7 @@ export type AttendanceRecord = {
   end: string;
   title: string;
   status: string;
+  attendance_request_allowed: boolean;
   docstatus: string;
   employee: string;
   half_day_status_second_half?: string;
@@ -537,4 +538,22 @@ export interface OvertimeJournalData {
   overtime_details?: KeyValueItem[];
   comp_off_details?: KeyValueItem[];
   policy_details?: PolicyItem[];
+}
+
+export interface BulkAttendanceAdjustmentResponse {
+  success: boolean;
+  message: string;
+  attendance_requests: [
+    {
+      name: string,
+      employee: string,
+      employee_name: string,
+      custom_request_type: string,
+      from_date: string,
+      to_date: string,
+      status: 0,
+      custom_status: string
+    }
+  ],
+  "total_requests": number
 }

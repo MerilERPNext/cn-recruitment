@@ -224,7 +224,7 @@ const AttendanceLayoutContent: React.FC = () => {
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
     return (
-      <div className="relative" ref={actionsDropdownRef}>
+      <div className="relative right-2" ref={actionsDropdownRef}>
         {canRequestAttendance && (
           <Button
             // onClick={() => setShowActionsDropdown(!showActionsDropdown)}

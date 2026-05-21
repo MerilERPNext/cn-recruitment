@@ -1,7 +1,90 @@
 import FrappeAPI from "../../utils/frappeAPI";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const resolveAttachmentFile = (fileCandidate: any) => {
+type AttachmentMessage = {
+  file_url?: string;
+  file_name?: string;
+};
+
+type AttachmentData = {
+  message?: AttachmentMessage;
+};
+
+type AttachmentRecord = Record<string, unknown> & {
+  data?: unknown;
+  file?: unknown;
+  file_url?: unknown;
+  name?: unknown;
+  originalName?: unknown;
+  url?: unknown;
+};
+
+export type NormalizedAttachment = AttachmentRecord & {
+  data?: AttachmentData;
+  file?: File | Blob;
+  file_url?: string;
+  name: string;
+  originalName: string;
+  url?: string;
+};
+
+export type LeaveApplicationTarget = {
+  doctype: string;
+  docname: string;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const getStringValue = (value: unknown): string | undefined =>
+  typeof value === "string" && value.length > 0 ? value : undefined;
+
+const getNestedRecord = (
+  value: unknown,
+  key: string,
+): Record<string, unknown> | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const nestedValue = value[key];
+  return isRecord(nestedValue) ? nestedValue : undefined;
+};
+
+const getNestedString = (value: unknown, path: string[]): string | undefined => {
+  let current: unknown = value;
+
+  for (const key of path) {
+    if (!isRecord(current)) {
+      return undefined;
+    }
+
+    current = current[key];
+  }
+
+  return getStringValue(current);
+};
+
+const getAttachmentMessage = (value: unknown): AttachmentMessage | undefined => {
+  const message = getNestedRecord(value, "message");
+
+  if (!message) {
+    return undefined;
+  }
+
+  const fileUrl = getStringValue(message.file_url);
+  const fileName = getStringValue(message.file_name);
+
+  if (!fileUrl && !fileName) {
+    return undefined;
+  }
+
+  return {
+    file_url: fileUrl,
+    file_name: fileName,
+  };
+};
+
+const resolveAttachmentFile = (fileCandidate: unknown) => {
   if (
     fileCandidate &&
     (fileCandidate instanceof File || fileCandidate instanceof Blob)
@@ -12,8 +95,7 @@ const resolveAttachmentFile = (fileCandidate: any) => {
   return undefined;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const expandAttachmentGroup = (group: any) => {
+const expandAttachmentGroup = (group: unknown): unknown[] => {
   if (Array.isArray(group)) {
     return group;
   }
@@ -48,8 +130,9 @@ const expandAttachmentGroup = (group: any) => {
   return [group];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const normalizeAttachmentEntry = (attachment: any) => {
+const normalizeAttachmentEntry = (
+  attachment: unknown,
+): NormalizedAttachment | null => {
   if (!attachment) {
     return null;
   }
@@ -75,38 +158,41 @@ const normalizeAttachmentEntry = (attachment: any) => {
     return null;
   }
 
-  const actualFile = resolveAttachmentFile(attachment.file);
+  const attachmentRecord = attachment as AttachmentRecord;
+  const actualFile = resolveAttachmentFile(attachmentRecord.file);
+  const message = getAttachmentMessage(attachmentRecord.data);
   const resolvedUrl =
-    typeof attachment.url === "string" && attachment.url
-      ? attachment.url
-      : typeof attachment.file_url === "string" && attachment.file_url
-        ? attachment.file_url
-        : typeof attachment.data?.message?.file_url === "string" &&
-            attachment.data.message.file_url
-          ? attachment.data.message.file_url
-          : "";
+    getStringValue(attachmentRecord.url) ||
+    getStringValue(attachmentRecord.file_url) ||
+    message?.file_url ||
+    "";
   const resolvedName =
-    typeof attachment.originalName === "string" && attachment.originalName
-      ? attachment.originalName
-      : typeof attachment.name === "string" && attachment.name
-        ? attachment.name
-        : typeof attachment.data?.message?.file_name === "string" &&
-            attachment.data.message.file_name
-          ? attachment.data.message.file_name
-          : (actualFile instanceof File ? actualFile.name : undefined) || resolvedUrl.split("/").pop() || "attachment";
+    getStringValue(attachmentRecord.originalName) ||
+    getStringValue(attachmentRecord.name) ||
+    message?.file_name ||
+    (actualFile instanceof File ? actualFile.name : undefined) ||
+    resolvedUrl.split("/").pop() ||
+    "attachment";
 
-  return {
-    ...attachment,
+  const normalizedAttachment = {
+    ...attachmentRecord,
     file: actualFile,
     name: resolvedName,
     originalName: resolvedName,
     url: resolvedUrl || undefined,
     file_url: resolvedUrl || undefined,
-  };
+  } as NormalizedAttachment;
+
+  if (message) {
+    normalizedAttachment.data = { message };
+  }
+
+  return normalizedAttachment;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const normalizeAttachments = (...attachmentGroups: any[]) => {
+export const normalizeAttachments = (
+  ...attachmentGroups: unknown[]
+): NormalizedAttachment[] => {
   const seen = new Set<string>();
 
   return attachmentGroups
@@ -118,7 +204,7 @@ export const normalizeAttachments = (...attachmentGroups: any[]) => {
       }
 
       const identity = [
-        attachment.file?.name || "",
+        (attachment.file instanceof File ? attachment.file.name : ""),
         attachment.file?.size !== undefined ? String(attachment.file.size) : "",
         attachment.file instanceof File
           ? String(attachment.file.lastModified)
@@ -137,8 +223,9 @@ export const normalizeAttachments = (...attachmentGroups: any[]) => {
     });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const getPendingAttachmentUploads = (attachments: any[]) =>
+export const getPendingAttachmentUploads = (
+  attachments: NormalizedAttachment[],
+) =>
   attachments.filter(
     (attachment) =>
       Boolean(attachment.file) &&
@@ -147,8 +234,7 @@ export const getPendingAttachmentUploads = (attachments: any[]) =>
       !attachment.data?.message?.file_url,
   );
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const getExistingAttachmentUrls = (attachments: any[]) =>
+export const getExistingAttachmentUrls = (attachments: NormalizedAttachment[]) =>
   attachments
     .map(
       (attachment) =>
@@ -159,24 +245,66 @@ export const getExistingAttachmentUrls = (attachments: any[]) =>
     )
     .filter((url): url is string => typeof url === "string" && url.length > 0);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const resolveLeaveApplicationTarget = (response: any) => {
+export const resolveLeaveApplicationTarget = (
+  response: unknown,
+): LeaveApplicationTarget | null => {
   const docname =
-    response?.leave_application?.name ||
-    response?.leave_application ||
-    response?.name ||
-    response?.data?.name ||
-    response?.message?.name ||
-    response?.message?.leave_application ||
+    getNestedString(response, ["leave_application", "name"]) ||
+    getNestedString(response, ["leave_application"]) ||
+    getNestedString(response, ["name"]) ||
+    getNestedString(response, ["data", "name"]) ||
+    getNestedString(response, ["message", "name"]) ||
+    getNestedString(response, ["message", "leave_application"]) ||
     "";
   const doctype =
-    response?.leave_application?.doctype ||
-    response?.doctype ||
-    response?.data?.doctype ||
-    response?.message?.doctype ||
+    getNestedString(response, ["leave_application", "doctype"]) ||
+    getNestedString(response, ["doctype"]) ||
+    getNestedString(response, ["data", "doctype"]) ||
+    getNestedString(response, ["message", "doctype"]) ||
     "Leave Application";
 
   return docname ? { doctype, docname } : null;
+};
+
+const getNestedArray = (value: unknown, path: string[]): unknown[] | undefined => {
+  let current: unknown = value;
+
+  for (const key of path) {
+    if (!isRecord(current)) {
+      return undefined;
+    }
+
+    current = current[key];
+  }
+
+  return Array.isArray(current) ? current : undefined;
+};
+
+export const resolveLeaveApplicationTargets = (
+  response: unknown,
+): Array<LeaveApplicationTarget | null> => {
+  const targetCollections = [
+    getNestedArray(response, ["leave_applications"]),
+    getNestedArray(response, ["leave_application"]),
+    getNestedArray(response, ["applications"]),
+    getNestedArray(response, ["data", "leave_applications"]),
+    getNestedArray(response, ["data", "leave_application"]),
+    getNestedArray(response, ["data", "applications"]),
+    getNestedArray(response, ["message", "leave_applications"]),
+    getNestedArray(response, ["message", "leave_application"]),
+    getNestedArray(response, ["message", "applications"]),
+    getNestedArray(response, ["data"]),
+    getNestedArray(response, ["message"]),
+  ];
+
+  for (const collection of targetCollections) {
+    if (Array.isArray(collection)) {
+      return collection.map((item) => resolveLeaveApplicationTarget(item));
+    }
+  }
+
+  const singleTarget = resolveLeaveApplicationTarget(response);
+  return singleTarget ? [singleTarget] : [];
 };
 
 export const findRecentLeaveApplicationTarget = async ({
