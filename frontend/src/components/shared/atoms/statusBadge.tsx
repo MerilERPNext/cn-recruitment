@@ -90,6 +90,39 @@ function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         icon: <Check className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
+    /* ---------- Import statuses ---------- */
+    case "processing":
+      return {
+        label: "Processing",
+        bgClass: "bg-blue-100",
+        textClass: "text-blue-700",
+        icon: <RotateCcw className="w-3 h-3 md:w-4 md:h-4 animate-spin-slow" />,
+      };
+
+    case "scheduled":
+      return {
+        label: "Scheduled",
+        bgClass: "bg-purple-100",
+        textClass: "text-purple-700",
+        icon: <Calendar className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+
+    case "failed":
+      return {
+        label: "Failed",
+        bgClass: "bg-red-100",
+        textClass: "text-red-700",
+        icon: <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+
+    case "processed":
+      return {
+        label: "Processed",
+        bgClass: "bg-green-100",
+        textClass: "text-green-700",
+        icon: <Check className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+
     /* ---------- Timeline statuses ---------- */
     case "current":
       return {

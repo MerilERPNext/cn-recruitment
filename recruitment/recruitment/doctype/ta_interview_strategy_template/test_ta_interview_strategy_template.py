@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestDraftApplication(FrappeTestCase):
+class TestTAInterviewStrategyTemplate(FrappeTestCase):
 	pass

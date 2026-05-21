@@ -1,13 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, ReactNode, useCallback, useEffect } from "react";
 import DataListView, { FilterField } from "../DataListView";
-import { BulkActionBar } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
+import { BulkActionFooter } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useLoadingOverlay } from "../../context/OverlayContext";
+import { useBulkSelectContext } from "./BulkSelectContext";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import RejectionReasonModal from "./RejectionReasonModal";
+import { useBulkUpdateRejectionReason, useIsRejectionReasonMandatory } from "../../hooks/useLeaves";
 
 type ApprovalListProps = {
   doctype: string;
@@ -89,7 +93,6 @@ const ApprovalList = ({
   onBulkSelectVisibilityChange,
   bulkSelectVisible,
   defaultFilters,
-  columnWidths,
   noRecordsScreen,
   SkeletonComponent,
   orderBy,
@@ -121,9 +124,14 @@ const ApprovalList = ({
     isLoading: boolean;
   } | null>(null);
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<any[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
   const [actedIds, setActedIds] = useState<Set<string>>(new Set());
+
+  const { data: isRejectionMandatory } = useIsRejectionReasonMandatory();
+  const bulkUpdateMutation = useBulkUpdateRejectionReason();
+  const [showBulkCommentModal, setShowBulkCommentModal] = useState(false);
+  const [pendingBulkAction, setPendingBulkAction] = useState<"Approve" | "Reject" | null>(null);
 
   const addActedId = useCallback((id: string) => {
     setActedIds((prev) => new Set(prev).add(id));
@@ -157,11 +165,12 @@ const ApprovalList = ({
   }, [finalBulkSelectVisible, onBulkSelectVisibilityChange]);
 
   const triggerRefetch = useCallback(() => {
-    if (setRefetch) {
-      setRefetch(true);
-    }
+    // Only fire one trigger. setRefetch is for the parent to push a refetch
+    // inward — using both setters causes two separate renders (React state vs
+    // Zustand store are different update systems), which makes refetchTrigger
+    // flip to true twice and fires two API calls.
     setRefetchAttendance(true);
-  }, [setRefetch, setRefetchAttendance]);
+  }, [setRefetchAttendance]);
 
   useEffect(() => {
     const handleChatClose = () => {
@@ -189,6 +198,7 @@ const ApprovalList = ({
       document.removeEventListener("approval:acted", handleActed);
     };
   }, [addActedId]);
+
   // Toggle single
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -197,7 +207,7 @@ const ApprovalList = ({
   };
 
   // Toggle all
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     if (selectedIds.length === allRequests.length) {
       setSelectedIds([]);
     } else {
@@ -219,7 +229,7 @@ const ApprovalList = ({
         }),
       );
     }
-  };
+  }, [selectedIds, allRequests]);
 
   const handleAction = useCallback(
     async (
@@ -305,7 +315,48 @@ const ApprovalList = ({
   );
 
   const batchActionMutation = useActionOnAttendanceRequest();
-  const handleBulkAction = async (action: "Approve" | "Reject") => {
+
+  const handleBulkActionClick = (action: "Approve" | "Reject") => {
+    if (action === "Reject" && doctype === "Leave Application") {
+      const isMandatory = isRejectionMandatory?.message ?? true;
+      if (isMandatory) {
+        setPendingBulkAction(action);
+        setShowBulkCommentModal(true);
+        return;
+      }
+    }
+    handleBulkAction(action);
+  };
+
+  const handleSaveBulkComment = async (reason: string) => {
+    try {
+      const docnames = selectedIds.map(id => {
+        const req = allRequests.find(r => r.todo_id === id);
+        return req?.reference_name || req?.reference_document?.name;
+      }).filter(Boolean);
+
+      if (docnames.length > 0) {
+        await bulkUpdateMutation.mutateAsync({
+          doctype,
+          docnames,
+          comment: reason,
+        });
+      }
+      setShowBulkCommentModal(false);
+      if (pendingBulkAction) {
+        handleBulkAction(pendingBulkAction);
+      }
+    } catch (error) {
+      console.error("Failed to save bulk comment", error);
+    }
+  };
+
+  const handleCancelBulkComment = () => {
+    setShowBulkCommentModal(false);
+    setPendingBulkAction(null);
+  };
+
+  const handleBulkAction = useCallback(async (action: "Approve" | "Reject") => {
     await loading?.wrap(async () => {
       try {
         setBulkLoading({ action, isLoading: true });
@@ -346,95 +397,146 @@ const ApprovalList = ({
       } finally {
         setBulkLoading(null);
       }
-    }, `${action}ing selected requests…`);
-  };
+    }, `${action} selected requests…`);
+  }, [loading, batchActionMutation, selectedIds, triggerRefetch]);
+
+  // ── BulkSelectContext sync ───────────────────────────────────────────────
+  // CardTable is a parent of ApprovalList so it can't receive a provider from
+  // us — instead we write upward into the BulkSelectProvider that wraps both.
+  //
+  // Rule: only plain DATA goes into context STATE (to avoid re-render loops).
+  // Function callbacks go into callbacksRef — ref writes are synchronous and
+  // never trigger re-renders, so they can't cause infinite loops.
+  const bulkCtx = useBulkSelectContext();
+  const bulkSetState = bulkCtx?.setState; // stable Dispatch — safe as dep
+
+  // Keep callbacks current in the ref on every render (cheap, no side-effects).
+  if (bulkCtx?.callbacksRef) {
+    bulkCtx.callbacksRef.current = {
+      onSelectAll: handleSelectAll,
+      onBulkAction: handleBulkAction,
+    };
+  }
+
+  // Sync plain data into context state. No function refs in deps → no loop.
+  useEffect(() => {
+    if (!bulkSetState) return;
+    bulkSetState({
+      selectedIds,
+      allRequests,
+      isEnabled: finalBulkSelectVisible,
+      bulkLoading,
+    });
+  }, [bulkSetState, selectedIds, allRequests, finalBulkSelectVisible, bulkLoading]);
+
+  useEffect(() => {
+    return () => { bulkSetState?.(null); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Stable callback — prevents DataListView's onDataLoad effect from firing
+  // on every ApprovalList re-render (which would call setAllRequests → loop).
+  const handleDataLoad = useCallback((data: any[]) => {
+    setAllRequests(data);
+    onDataLoad?.(data);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const { isDesktop } = useScreenSize();
+
+  const allSelected =
+    allRequests.length > 0 && selectedIds.length === allRequests.length;
 
   return (
-    <div>
-      <DataListView
-        queryKey={["todo-approvals", doctype]}
-        defaultFilters={defaultFilters || { status }}
-        customAPI={{
-          method: "cn_leave_shift_managment.api.get_open_approval_todos",
-          params: {
-            doctype: doctype,
-            include_allocated_todos: true,
-            fields: ["*"],
-            // status: status,
-            ...activeFilters,
-          },
-        }}
-        // onFiltersChange={(filters) => {
-        //   setActiveFilters(filters);
-        // }}
-        noRecordsScreen={
-          typeof noRecordsScreen === "function"
-            ? (filters: Record<string, any>) =>
-              noRecordsScreen({ ...filters, ...activeFilters })
-            : noRecordsScreen
-        }
-        onFiltersChange={handleFiltersChange}
-        isSearch={isSearch}
-        isFilter={isFilter}
-        filterFields={filterFields}
-        pageSize={pageSize}
-        showPagination={showPagination}
-        showRefreshButton={false}
-        infiniteScroll={infiniteScroll}
-        loadMorePagination={loadMorePagination}
-        onDataLoad={(data) => {
-          setAllRequests(data);
-          onDataLoad?.(data);
-        }}
-        SkeletonComponent={SkeletonComponent}
-        orderBy={orderBy}
-        PreListComponent={() => (
-          <div className="mb-2 lg:mb-0 lg:mt-[-8px] sm:p-0">
-            {finalBulkSelectVisible && (
-              <BulkActionBar
-                selectedIds={selectedIds}
-                pendingRequests={allRequests}
-                onSelectAll={handleSelectAll}
-                onBulkAction={handleBulkAction}
-                loadingAction={bulkLoading}
-                columnWidths={columnWidths}
-              />
-            )}
-          </div>
-        )}
-        renderItem={(item: any) => {
-          const todoId = item?.todo_id;
-          const isActed = actedIds.has(todoId);
-          return (
-            <div className={isActed ? "pointer-events-none opacity-50" : ""}>
-              {renderCardContent({
-                todoId: todoId,
-                isSelected: selectedIds.includes(todoId),
-                onToggleSelect: handleToggleSelect,
-                data: item,
-                onAction: handleAction,
-                loadingAction: loadingAction,
-                isActed,
-                onActed: addActedId,
-              })}
+    <><DataListView
+      queryKey={["todo-approvals", doctype]}
+      defaultFilters={defaultFilters || { status }}
+      customAPI={{
+        method: "cn_leave_shift_managment.api.get_open_approval_todos",
+        params: {
+          doctype: doctype,
+          include_allocated_todos: true,
+          fields: ["*"],
+          ...activeFilters,
+        },
+      }}
+      noRecordsScreen={typeof noRecordsScreen === "function"
+        ? (filters: Record<string, any>) => noRecordsScreen({ ...filters, ...activeFilters })
+        : noRecordsScreen}
+      onFiltersChange={handleFiltersChange}
+      isSearch={isSearch}
+      isFilter={isFilter}
+      filterFields={filterFields}
+      pageSize={pageSize}
+      showPagination={showPagination}
+      showRefreshButton={false}
+      infiniteScroll={infiniteScroll}
+      loadMorePagination={loadMorePagination}
+      onDataLoad={handleDataLoad}
+      SkeletonComponent={SkeletonComponent}
+      orderBy={orderBy}
+      PreListComponent={
+        // On mobile the CardTable header is hidden, so we show a compact
+        // select-all row. On desktop the checkbox lives in the CardTable
+        // header via BulkSelectContext — nothing needed here.
+        !isDesktop && finalBulkSelectVisible && allRequests.length > 0
+          ? () => (
+            <div className="flex items-center gap-3 px-4 py-2 bg-primary/20  mb-1">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={handleSelectAll}
+                className="cursor-pointer w-4 h-4" />
+              <span className="text-sm">Select all pending requests</span>
             </div>
-          );
-        }}
-        refetchTrigger={refetch || refetchAttendance}
-        onRefetchComplete={() => {
-          setActedIds(new Set());
-          setRefetchAttendance(false);
+          )
+          : undefined}
+      PostListComponent={
+        // Renders between the last list item and the pagination row.
+        // Only visible when at least one item is selected.
+        finalBulkSelectVisible
+          ? () => (
+            <BulkActionFooter
+              selectedIds={selectedIds}
+              onBulkAction={handleBulkActionClick}
+              loadingAction={bulkLoading} />
+          )
+          : undefined}
+      renderItem={(item: any) => {
+        const todoId = item?.todo_id;
+        const isActed = actedIds.has(todoId);
+        return (
+          <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+            {renderCardContent({
+              todoId: todoId,
+              isSelected: selectedIds.includes(todoId),
+              onToggleSelect: handleToggleSelect,
+              data: item,
+              onAction: handleAction,
+              loadingAction: loadingAction,
+              isActed,
+              onActed: addActedId,
+            })}
+          </div>
+        );
+      }}
+      refetchTrigger={refetch || refetchAttendance}
+      onRefetchComplete={() => {
+        setActedIds(new Set());
+        setRefetchAttendance(false);
 
-          if (setRefetch) {
-            setRefetch(false);
-          }
+        if (setRefetch) {
+          setRefetch(false);
+        }
 
-          if (onApprovalRefetchComplete) {
-            onApprovalRefetchComplete();
-          }
-        }}
-      />
-    </div>
+        if (onApprovalRefetchComplete) {
+          onApprovalRefetchComplete();
+        }
+      }} /><RejectionReasonModal
+        isOpen={showBulkCommentModal}
+        isPending={bulkUpdateMutation.isPending}
+        onCancel={handleCancelBulkComment}
+        onSave={handleSaveBulkComment} /></>
   );
 };
 

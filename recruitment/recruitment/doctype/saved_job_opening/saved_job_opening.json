@@ -1,0 +1,40 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-05-18 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "candidate_email",
+  "column_break_1",
+  "saved_on",
+  "job_openings_section",
+  "job_openings"
+ ],
+ "fields": [
+  {"fieldname": "candidate_email", "fieldtype": "Data", "options": "Email", "label": "Candidate Email", "in_list_view": 1, "in_standard_filter": 1, "reqd": 1, "unique": 1, "search_index": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "saved_on", "fieldtype": "Datetime", "label": "Last Updated", "in_list_view": 1, "read_only": 1},
+  {"fieldname": "job_openings_section", "fieldtype": "Section Break", "label": "Saved Job Openings"},
+  {"fieldname": "job_openings", "fieldtype": "Table MultiSelect", "options": "Saved Job Opening Item", "label": "Job Openings"}
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-05-18 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Saved Job Opening",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1},
+  {"export": 1, "read": 1, "report": 1, "role": "HR Manager"}
+ ],
+ "quick_entry": 0,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "candidate_email",
+ "track_changes": 1
+}

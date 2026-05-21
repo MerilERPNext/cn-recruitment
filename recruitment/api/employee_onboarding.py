@@ -1,6 +1,11 @@
 import frappe
 import re
-from recruitment.api.candidate_portal import _get_onboarding_portal_rows, _read_onboarding_meta
+from recruitment.api.candidate_portal import (
+    _get_active_pre_release,
+    _get_onboarding_portal_rows,
+    _read_onboarding_meta,
+)
+from recruitment.api.candidate_auth import candidate_required, enforce_candidate_identity
 
 DOCTYPENAME = "Employee Onboarding"
 MAX_PAGE_LENGTH = 100
@@ -67,13 +72,14 @@ def _sanitize_order_by(order_by, allowed_fields, default_field):
     return f"{fieldname} {direction}"
 
 
-@frappe.whitelist(allow_guest=True)
+@candidate_required
 def update_onboarding_details(email, data):
     """
     Updates an Employee Onboarding record identified by the job_applicant email.
     Only fields configured in the candidate portal form AND in Pending/Rejected status are accepted.
     After save, marks each updated field as Filled and snapshots current_value.
     """
+    enforce_candidate_identity(email=email)
     frappe.local.response["http_status_code"] = 200
 
     if isinstance(data, str):
@@ -87,16 +93,30 @@ def update_onboarding_details(email, data):
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "code": 400, "message": "Data must be a valid dictionary of fields to update."}
 
+    applicant_name = frappe.db.get_value(
+        "Job Applicant",
+        {"email_id": email},
+        "name",
+        order_by="modified desc",
+    )
+    if not applicant_name:
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "code": 404, "message": f"No Job Applicant found for {email}"}
+
     onboarding_name = frappe.db.get_value(
         "Employee Onboarding",
-        {"job_applicant": email, "docstatus": ("<", 2)},
+        {"job_applicant": applicant_name, "docstatus": ("<", 2)},
         "name",
         order_by="creation desc",
     )
 
     if not onboarding_name:
-        frappe.local.response["http_status_code"] = 404
-        return {"status": "error", "code": 404, "message": f"No Employee Onboarding record found for {email}"}
+        pre_release = _get_active_pre_release(applicant_name)
+        if not pre_release:
+            frappe.local.response["http_status_code"] = 404
+            return {"status": "error", "code": 404, "message": f"No Employee Onboarding record or pending release found for {email}"}
+        from recruitment.api.candidate_portal import materialize_onboarding_from_applicant
+        onboarding_name = materialize_onboarding_from_applicant(applicant_name, prefill=data)
 
     try:
         doc = frappe.get_doc("Employee Onboarding", onboarding_name)
@@ -359,12 +379,13 @@ def get_employee_onboarding_list(
         frappe.log_error(frappe.get_traceback(), "Employee Onboarding List API Error")
         return _error_response("Unable to fetch Employee Onboarding list right now.", 500)
 
-@frappe.whitelist(allow_guest=True)
+@candidate_required
 def get_applicant_status(email):
     """
     Full journey for a candidate: every Job Applicant record under this email,
     with per-job details and a status timeline (transition dates) for each.
     """
+    enforce_candidate_identity(email=email)
     import json as _json
     from frappe.utils import getdate
 

@@ -8,6 +8,7 @@ import { useGetAllExpenseCategories } from "../../../hooks/useExpense";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable from "../../shared/CardTable";
+import { BulkSelectProvider } from "../../shared/BulkSelectContext";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ExpenseApprovalCard from "./ExpenseApprovalCard";
 import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
@@ -220,6 +221,7 @@ const TeamExpense = () => {
         </div>
       )}
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        <BulkSelectProvider>
         <CardTable titles={tableTitles} columnWidths={tableColumnWidths}
           columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_CLAIM(isBulkSelectEnabled, activeStatus === "Approved")}
         >
@@ -298,6 +300,7 @@ const TeamExpense = () => {
             />
           ) : null}
         </CardTable>
+        </BulkSelectProvider>
       </div>
       {(requestId || referenceName) && (
         <TeamExpenseDetailView

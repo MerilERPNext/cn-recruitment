@@ -1,26 +1,27 @@
 import {
-  useQuery,
   useInfiniteQuery,
-  type UseQueryOptions,
+  useMutation,
+  useQuery,
   type UseInfiniteQueryOptions,
+  type UseMutationOptions,
+  type UseQueryOptions,
 } from "@tanstack/react-query";
-import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
 import { frappeService } from "../services/frappeService";
-import { PermissionError } from "../types/frappe";
-import type {
-  DoctypeSchema,
-  GetDocumentsParams,
-  FrappePageResponse,
-  FrappeDocumentsResponse,
-  GetCountParams,
-  CreateDocumentParams,
-  UpdateDocumentParams,
-  DeleteDocumentParams,
-  CreateDocumentResult,
-  UpdateDocumentResult,
-  DeleteDocumentResult,
-} from "../types/frappe";
 import { profileService } from "../services/profileService";
+import type {
+  CreateDocumentParams,
+  CreateDocumentResult,
+  DeleteDocumentParams,
+  DeleteDocumentResult,
+  DoctypeSchema,
+  FrappeDocumentsResponse,
+  FrappePageResponse,
+  GetCountParams,
+  GetDocumentsParams,
+  UpdateDocumentParams,
+  UpdateDocumentResult,
+} from "../types/frappe";
+import { PermissionError } from "../types/frappe";
 
 // Utility to check if error is permission-related
 const isPermissionError = (error: unknown): error is PermissionError => {
@@ -48,7 +49,7 @@ const defaultRetry = (failureCount: number, error: unknown) => {
 // Hook for fetching doctype schema
 export const useDoctypeSchema = (
   doctype: string,
-  options?: Omit<UseQueryOptions<DoctypeSchema>, "queryKey" | "queryFn">
+  options?: Omit<UseQueryOptions<DoctypeSchema>, "queryKey" | "queryFn">,
 ) => {
   return useQuery({
     queryKey: ["doctype-schema", doctype],
@@ -66,7 +67,7 @@ export const useFrappeInfiniteQuery = (
   options?: Omit<
     UseInfiniteQueryOptions<FrappePageResponse>,
     "queryKey" | "queryFn" | "getNextPageParam" | "initialPageParam"
-  >
+  >,
 ) => {
   return useInfiniteQuery({
     queryKey: [
@@ -75,6 +76,7 @@ export const useFrappeInfiniteQuery = (
       params.searchTerm,
       params.filters,
       params.fields,
+      params.orderBy,
     ],
     queryFn: ({ pageParam = 0 }) =>
       frappeService.getDocumentsPage({
@@ -98,7 +100,7 @@ export const useFrappeMethodInfiniteQuery = (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     UseInfiniteQueryOptions<any>,
     "queryKey" | "queryFn" | "getNextPageParam" | "initialPageParam"
-  >
+  >,
 ) => {
   return useInfiniteQuery({
     queryKey: ["method", method, params],
@@ -122,7 +124,7 @@ export const useFrappeDocuments = (
   options?: Omit<
     UseQueryOptions<FrappeDocumentsResponse>,
     "queryKey" | "queryFn"
-  >
+  >,
 ) => {
   return useQuery({
     queryKey: [
@@ -132,6 +134,7 @@ export const useFrappeDocuments = (
       params.searchTerm,
       params.filters,
       params.fields,
+      params.orderBy,
     ],
     queryFn: () => frappeService.getDocumentsPage(params),
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -147,7 +150,7 @@ export const useFrappeMethodMutation = (
   options?: Omit<
     UseMutationOptions<unknown, unknown, Record<string, unknown>>,
     "mutationFn"
-  >
+  >,
 ) => {
   return useMutation<unknown, unknown, Record<string, unknown>>({
     mutationKey: ["method", method],
@@ -161,7 +164,7 @@ export const useFrappeMethodMutation = (
 export const useFrappeDocument = (
   doctype: string,
   name: string,
-  fields?: string[]
+  fields?: string[],
 ) => {
   return useQuery({
     queryKey: ["document", doctype, name, fields],
@@ -171,7 +174,7 @@ export const useFrappeDocument = (
 };
 export const useFrappeDocumentList = (
   doctype: string,
-  options?: Record<string, unknown>
+  options?: Record<string, unknown>,
 ) => {
   return useQuery({
     queryKey: ["document", doctype, options],
@@ -183,7 +186,7 @@ export const useFrappeDocumentList = (
 // Hook for document count
 export const useFrappeDocumentCount = (
   params: GetCountParams,
-  options?: Omit<UseQueryOptions<number>, "queryKey" | "queryFn">
+  options?: Omit<UseQueryOptions<number>, "queryKey" | "queryFn">,
 ) => {
   return useQuery({
     queryKey: ["document-count", params.doctype, params.filters],
@@ -204,7 +207,7 @@ export const useCreateFrappeDocument = (
     CreateDocumentResult,
     unknown,
     CreateDocumentParams
-  >
+  >,
 ) => {
   return useMutation<CreateDocumentResult, unknown, CreateDocumentParams>({
     mutationFn: ({ doctype, data }) =>
@@ -219,7 +222,7 @@ export const useUpdateFrappeDocument = (
     UpdateDocumentResult,
     unknown,
     UpdateDocumentParams
-  >
+  >,
 ) => {
   return useMutation<UpdateDocumentResult, unknown, UpdateDocumentParams>({
     mutationFn: ({ doctype, name, data }) =>
@@ -234,7 +237,7 @@ export const useDeleteFrappeDocument = (
     DeleteDocumentResult,
     unknown,
     DeleteDocumentParams
-  >
+  >,
 ) => {
   return useMutation<DeleteDocumentResult, unknown, DeleteDocumentParams>({
     mutationFn: ({ doctype, name }) =>

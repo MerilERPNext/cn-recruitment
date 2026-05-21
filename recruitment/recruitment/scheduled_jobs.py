@@ -426,6 +426,22 @@ def should_show_confirmation_button():
     user_employee = frappe.db.get_value("Employee", {"user_id": user}, "name")
     user_roles = frappe.get_roles(user)
 
+    target_employee_header = None
+    try:
+        target_employee_header = frappe.request.headers.get("X-Target-Employee-Id")
+    except Exception:
+        target_employee_header = None
+
+    if target_employee_header:
+        if not frappe.db.exists("Employee", target_employee_header):
+            return {"show_button": False, "error": "Target employee not found"}
+        scope_employee = target_employee_header
+    else:
+        scope_employee = user_employee
+
+    if not scope_employee:
+        return {"show_button": False}
+
     policies = frappe.get_all(
         "Confirmation Policy",
         fields=["name", "triggered_number_of_days_before_confirmation", "initiator"]
@@ -439,6 +455,8 @@ def should_show_confirmation_button():
         if not applicable_employees:
             continue
 
+        if scope_employee not in applicable_employees:
+            continue
         initiator_cfg = {}
         try:
             initiator_cfg = json.loads(policy_doc.initiator or "{}")
@@ -476,6 +494,11 @@ def should_show_confirmation_button():
                         target_employees.append(emp_id)
 
         target_employees = list(set(target_employees))
+        if scope_employee in target_employees:
+            target_employees = [scope_employee]
+        else:
+            target_employees = []
+
         if not target_employees:
             continue
 

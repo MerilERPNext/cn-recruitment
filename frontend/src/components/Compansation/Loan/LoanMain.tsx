@@ -18,10 +18,12 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 const titles = [
   "",
   "Loan Name",
+  "Assigned To",
   "Loan Type",
   "Loan Amount",
   "Rate of Interest",
   "Standard Interest",
+  "Created At",
   "EMI Type",
   "Tenure",
   "Start Date",
@@ -32,6 +34,8 @@ const titles = [
 
 const columnWidths = [
   "0.1rem",
+  "1fr",
+  "1fr",
   "1fr",
   "1fr",
   "1fr",

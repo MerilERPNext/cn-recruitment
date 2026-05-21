@@ -33,6 +33,7 @@ import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV
 import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
 import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
 import Cardtable from "./EmployeeAttendence/CardTable";
+import DesktopAttendanceCalendar from "./EmployeeAttendence/DesktopAttendanceCalendar";
 
 const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
   {
@@ -314,14 +315,22 @@ const EmployeeAttendance = () => {
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
-        <Card className="pb-2 rounded-tl-lg rounded-tr-lg sm:rounded-lg lg:rounded-lg">
-          <ListView />
-          <AttendanceCalendar
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            getAttendanceStatus={getAttendanceStatus}
-            setShowDetailsFor={setShowDetailsFor}
-          />
+        <ListView />
+        <Card className="pb-2 rounded-tl-lg rounded-tr-lg sm:rounded-lg lg:rounded-lg mt-0 pt-0">
+          {
+            isDesktop ? <DesktopAttendanceCalendar
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              getAttendanceStatus={getAttendanceStatus}
+              setShowDetailsFor={setShowDetailsFor}
+            /> :
+              <AttendanceCalendar
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                getAttendanceStatus={getAttendanceStatus}
+                setShowDetailsFor={setShowDetailsFor}
+              />
+          }
 
           {/* Legends - Only show for mobile since desktop shows at top */}
           {!isDesktop && <AttendanceLegend isCompact={true} />}

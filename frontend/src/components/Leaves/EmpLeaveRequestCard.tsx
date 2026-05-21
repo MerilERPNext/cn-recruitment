@@ -13,6 +13,7 @@ import {
   truncateByChars,
 } from "../../utils/sanitizeToPlainText";
 import { isActionEnabled } from "../../utils/uiPermission";
+import Modal from "../shared/Modal";
 import Button from "../shared/atoms/Button";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../shared/atoms/statusBadge";
@@ -20,6 +21,7 @@ import { Typography } from "../shared/atoms/Typography";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
 import Tooltip from "../shared/Tooltip";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
+import { getAssignedUsersCell } from "../../utils/getAssignedUsersCell";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -32,10 +34,13 @@ const EmpLeaveRequestCard = ({
   buttonStatus,
   onOpenReplaceModal,
   showRejectReason,
+  onRevokeApproved,
 }: EmpLeaveRequestCardProps) => {
   const { isDesktop } = useScreenSize();
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [isActed, setIsActed] = useState(false);
+  const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
+  const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation ?? "");
 
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
@@ -58,14 +63,31 @@ const EmpLeaveRequestCard = ({
   const isPending = data?.reference_document?.status === "Open";
   const isApproved = data?.reference_document?.status === "Approved";
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const fromDate = data?.reference_document?.from_date ? new Date(data.reference_document.from_date) : new Date();
+  fromDate.setHours(0, 0, 0, 0);
+  const isFutureLeave = fromDate > today;
+
   const isResubmit =
     isPending &&
     data?.can_edit &&
     data?.send_back_user === currentUser?.name;
   const allowEdit = leaveButtonConfig?.show_edit_button || isResubmit;
   const allowReplace = leaveButtonConfig?.show_replace_button;
+  const allowRevoke = leaveButtonConfig?.show_revoke_button;
 
   const handleRevokeClick = () => {
+    setShowRevokeConfirm(true);
+  };
+
+  const executeRevoke = () => {
+    if (isApproved && onRevokeApproved) {
+      onRevokeApproved();
+      setIsActed(true);
+      setShowRevokeConfirm(false);
+      return;
+    }
     if (data?.todo_id) {
       revokeEventMutation.mutate(
         {
@@ -77,11 +99,19 @@ const EmpLeaveRequestCard = ({
           onSuccess: () => {
             setIsActed(true);
             queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
+            queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+            queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
+            queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+            queryClient.invalidateQueries({ queryKey: ["custom-api"] });
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 2000);
             toast.success("Leave revoked successfully");
+            setShowRevokeConfirm(false);
           },
+          onError: () => {
+            setShowRevokeConfirm(false);
+          }
         },
       );
     }
@@ -94,6 +124,11 @@ const EmpLeaveRequestCard = ({
   };
 
   const handleEditClick = () => {
+    const existingAttachments =
+      data?.attachments && data.attachments.length > 0
+        ? data.attachments
+        : data?.reference_document?.custom_attachment;
+
     openModal({
       fromDate: data?.reference_document?.from_date,
       toDate: data?.reference_document?.to_date,
@@ -101,7 +136,7 @@ const EmpLeaveRequestCard = ({
       description: data?.reference_document?.description,
       custom_reason: data?.reference_document?.custom_reason,
       halfDay: data?.reference_document?.half_day,
-      custom_attachment: data?.reference_document?.custom_attachment,
+      custom_attachment: existingAttachments,
       half_day_date: data?.reference_document?.half_day_date,
       custom_second_half_day_date:
         data?.reference_document?.custom_second_half_day_date,
@@ -124,7 +159,7 @@ const EmpLeaveRequestCard = ({
     <>
       {isDesktop ? (
         <div
-          style={{ gridTemplateColumns: showRejectReason ? "1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr" : "1fr 1.5fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr" }}
+          style={{ gridTemplateColumns: showRejectReason ? "1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr  1fr 1fr 1.5fr 1fr" : "1fr 1.5fr 1fr   1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr" }}
           className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         >
           <Tooltip
@@ -138,6 +173,11 @@ const EmpLeaveRequestCard = ({
               {data?.reference_document?.name}
             </Typography>
           </Tooltip>
+
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {getAssignedUsersCell(data)}
+          </Typography>
+
           <Tooltip
             content={`${data?.reference_document?.custom_leave_type_name}`}
             triggerClassName="w-full truncate min-w-0 block"
@@ -155,7 +195,9 @@ const EmpLeaveRequestCard = ({
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document.to_date)}
           </Typography>
-
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formattedCreationDate}
+          </Typography>
           <Tooltip
             content={cleanDescription}
             triggerClassName="w-full truncate min-w-0 block"
@@ -219,7 +261,7 @@ const EmpLeaveRequestCard = ({
             <MyApprovalActionPill
               isPending={isPending}
               canRevoke={
-                isPending && data?.custom_allow_revoke && canRequestLeave && !isActed
+                ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && canRequestLeave && !isActed
               }
               canEdit={allowEdit && !isActed}
               isResubmit={isResubmit}
@@ -257,6 +299,7 @@ const EmpLeaveRequestCard = ({
                   {data?.reference_document?.custom_leave_type_name}
                 </Typography>
               </div>
+
               <div className="flex flex-col gap-1 text-right">
                 <Typography variant="mobileCardLabel">Leave Days</Typography>
                 <Typography variant="mobileCardValue">
@@ -320,13 +363,19 @@ const EmpLeaveRequestCard = ({
                 </Typography>
               </div>
             )}
+            <div>
+              <Typography variant="mobileCardLabel">Assigned To</Typography>
+              <Typography variant="mobileCardValue">
+                {getAssignedUsersCell(data)}
+              </Typography>
+            </div>
 
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
                 variant="buttons"
                 isPending={isPending}
                 canRevoke={
-                  isPending && data?.custom_allow_revoke && canRequestLeave && !isActed
+                  ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && canRequestLeave && !isActed
                 }
                 canEdit={allowEdit && !isActed}
                 isResubmit={isResubmit}
@@ -361,6 +410,36 @@ const EmpLeaveRequestCard = ({
           )}
         </div>
       )}
+
+      <Modal
+        isOpen={showRevokeConfirm}
+        onClose={() => setShowRevokeConfirm(false)}
+        size="sm"
+      >
+        <div className="p-6">
+          <Typography variant="h4" className="mb-4">
+            Confirm Revocation
+          </Typography>
+          <Typography variant="bodyMedium" className="mb-6 text-gray-600">
+            Are you sure you want to revoke this leave request? This action cannot be undone.
+          </Typography>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowRevokeConfirm(false)}
+              disabled={revokeEventMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={executeRevoke}
+              loading={revokeEventMutation.isPending}
+            >
+              Confirm
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

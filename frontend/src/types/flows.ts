@@ -108,6 +108,7 @@ export type FlowRequestStage = {
   stage_name: string;
   allocated_to: Array<allocatedToType>;
   user_id: string;
+  form_data_display: Record<string, unknown>;
   user: string;
   role: string | null;
   status: string;
@@ -165,7 +166,9 @@ export type FlowRequestItem = {
   request_id: string;
   flow_name: string;
   category: string;
+  effective_date: string | null;
   initiated_on: string;
+  can_edit_initiator_form: boolean;
   initiated_by: string;
   initiated_for: string;
   initiated_by_emp_id: string;
@@ -178,6 +181,7 @@ export type FlowRequestItem = {
   approval_stages: FlowRequestStage[];
   workflow_stages: WorkflowStage[];
   initiator_forms: {
+    conversation_doc: string;
     form_data: string;
     form_data_display?: string;
     status: string;
@@ -196,6 +200,7 @@ export type WorkflowStage = {
   target_name: string;
   action_options: string;
   form_data: string;
+  form_data_display: string;
   trigger_title: string;
   can_act: boolean;
   role?: string | null;

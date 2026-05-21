@@ -2,10 +2,10 @@
 import { ReactElement, Suspense } from "react";
 import { Navigate } from "react-router";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useFrappeDocument } from "./hooks/useFrappeQuery";
-import { ExpenseClaim, Expense } from "./types/expenseAdvance";
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
+import { useFrappeDocument } from "./hooks/useFrappeQuery";
 import { useScreenSize } from "./hooks/useScreenSize";
+import { Expense, ExpenseClaim } from "./types/expenseAdvance";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
 
 // Keep critical components as static imports for better UX
@@ -20,18 +20,18 @@ import IncomeTaxSheet from "./components/Compansation/TaxSheet/TaxSheet";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 //import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
 import AddExpenseFormV2 from "./components/Expenses-App/ExpenseClaim/AddExpenseFormV2";
-import IdCard from "./components/IdCard";
-import NotificationList from "./components/Notification/Notification";
-import Requests from "./components/Requests";
-import PasswordReset from "./components/ResetPassword/ResetPassword";
-import SearchMembers from "./components/SearchMembers";
-import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
-import Onboarding from "./components/Onboarding/Onboarding";
-import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
 import {
   ExpenseNavigationState,
   buildExpenseNavigationState,
 } from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
+import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
+import IdCard from "./components/IdCard";
+import NotificationList from "./components/Notification/Notification";
+import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
+import Onboarding from "./components/Onboarding/Onboarding";
+import Requests from "./components/Requests";
+import PasswordReset from "./components/ResetPassword/ResetPassword";
+import SearchMembers from "./components/SearchMembers";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -45,8 +45,8 @@ const Expenses = lazyWithRetry(
   "Expenses",
 );
 const FlexiDeclaration = lazyWithRetry(
-  () => import("./components/Compansation/FlexiDeclaration/FlexiDeclaration"),
-)
+  () => import("./components/Compansation/fl/FlexiDeclaration"),
+);
 const RecruitmentApp = lazyWithRetry(
   () => import("./components/RecruitmentApp"),
   "RecruitmentApp",
@@ -218,6 +218,10 @@ const Policies = lazyWithRetry(
 const PoliciesEnforced = lazyWithRetry(
   () => import("./components/PoliciesEnforced"),
   "PoliciesEnforced",
+);
+const MandatoryHrProcessEnforced = lazyWithRetry(
+  () => import("./components/MandatoryHrProcessEnforced"),
+  "MandatoryHrProcessEnforced",
 );
 const PolicySignOff = lazyWithRetry(
   () => import("./components/PolicySignOff"),
@@ -483,6 +487,10 @@ const LeaderboardPage = lazyWithRetry(
   () => import("./components/Recognition/LeaderboardPage"),
   "LeaderboardPage",
 );
+const ScheduledImportsPage = lazyWithRetry(
+  () => import("./components/ScheduledImports/ScheduledImportsPage"),
+  "ScheduledImportsPage",
+);
 
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
@@ -557,9 +565,7 @@ const AddExpensePage = () => {
       initialExpense={resolvedExpense}
       expense_claim_name={resolvedClaimName}
       draft_document_name={draft_document_name}
-      isEditingFromDetailsPage={
-        Boolean(resolvedExpense) && !isEditingFromDraft
-      }
+      isEditingFromDetailsPage={Boolean(resolvedExpense) && !isEditingFromDraft}
       isResubmit={resolvedIsResubmit}
     />
   );
@@ -663,6 +669,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/policies-enforced/view/:policyId",
     element: <PolicySignOff />,
     permissionKey: "Policies",
+  },
+  {
+    path: "/webapp/hr-process-mandatory",
+    element: <MandatoryHrProcessEnforced />,
+    permissionKey: "HR Process Mandatory",
   },
   {
     path: "/webapp/recruitment-app/job-applicant-detail/:id",
@@ -1080,7 +1091,7 @@ export const routesConfig: AppRoute[] = [
         path: "request",
         element: <></>, // important: render nothing
         permissionKey: "request-leave",
-      }
+      },
     ],
   },
 
@@ -1214,7 +1225,8 @@ export const routesConfig: AppRoute[] = [
         path: "separation",
         element: <Separation />,
         permissionKey: "Separation",
-      }, {
+      },
+      {
         path: "rejected-separation-request",
         element: <RejectedSeparationRequest />,
         permissionKey: "Rejected Separation Request",
@@ -1310,13 +1322,22 @@ export const routesConfig: AppRoute[] = [
     element: <Onboarding />,
     permissionKey: "Employee Onboarding",
     children: [
-      { path: "onboarding-field-approval/:onboardingId", element: <OnboardingFieldApproval />, permissionKey: "Employee Onboarding" },
+      {
+        path: "onboarding-field-approval/:onboardingId",
+        element: <OnboardingFieldApproval />,
+        permissionKey: "Employee Onboarding",
+      },
     ],
   },
   {
     path: "/webapp/todo-app",
     element: <TodoPage />,
     permissionKey: "Todo",
+  },
+  {
+    path: "/webapp/scheduled-imports",
+    element: <ScheduledImportsPage />,
+    permissionKey: "Scheduled Imports",
   },
   {
     path: "/webapp/recognition",

@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Attachment } from "../../../../types/flows";
 import HeaderBar from "../../../HeaderBar";
 
-import { Eye } from "lucide-react";
+import { ChevronDown, Eye, Pencil, Save } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
-import { useGetFlowRequestById } from "../../../../hooks/useFlows";
+import { useGetFlowRequestById, useUpdateInitiatorFormSubmission } from "../../../../hooks/useFlows";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { FormIOComponent } from "../../../../types/formio";
 import { FormIOForm } from "../../../../utils/flowUtils";
@@ -23,8 +23,8 @@ import WorkflowTable from "./WorkflowTable";
 
 import { useQueryClient } from "@tanstack/react-query";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
+import toast from "react-hot-toast";
 
-type FlowStatusType = "Approval Flow Status" | "Workflow Status";
 type JsonToFormData = {
   form?: { components?: FormIOComponent[] };
   submission_data?: Record<string, unknown>;
@@ -35,37 +35,94 @@ const RequestDetails: React.FC = () => {
   const { data: flowResponse, isLoading } = useGetFlowRequestById(id || "");
   const data = flowResponse?.data;
   const { isDesktop } = useScreenSize();
-  const [flowStatusType, setFlowStatusType] = useState<FlowStatusType>(
-    "Approval Flow Status",
-  );
+  const [approvalExpanded, setApprovalExpanded] = useState(false);
+  const [workflowExpanded, setWorkflowExpanded] = useState(false);
   const [showSelfForm, setShowSelfForm] = useState(false);
+  const [isEditingForm, setIsEditingForm] = useState(false);
   const [responseData, setResponseData] = useState<{
     addAttachment?: Attachment[];
   } | null>(null);
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
+  const [isFormValid, setIsFormValid] = useState(true);
+  const editedSubmissionDataRef = useRef<Record<string, unknown>>({});
+
+  const updateInitiatorMutation = useUpdateInitiatorFormSubmission();
 
   const haveInitiatorForm =
     data?.initiator_forms && data.initiator_forms.length > 0;
 
   const handleShowSelfForm = () => {
-    let formData: JsonToFormData;
+    let displayData: JsonToFormData;
+    let rawData: JsonToFormData;
     try {
-      formData = JSON.parse(
+      displayData = JSON.parse(
         data?.initiator_forms?.[0]?.form_data_display || "{}",
       );
+      rawData = JSON.parse(
+        data?.initiator_forms?.[0]?.form_data || "{}",
+      );
     } catch (error) {
-      console.error("Invalid initiator_forms form_data_display JSON:", error);
+      console.error("Invalid initiator_forms JSON:", error);
       return;
     }
-    const schema = formData?.form?.components ?? [];
-    const answer = formData?.submission_data ?? {};
+    const answer = displayData?.submission_data ?? rawData?.submission_data ?? {};
 
-    if (!schema) return;
-    setFormSchema({ display: "form", components: schema });
+    if (Object.keys(answer).length === 0 && !rawData?.form?.components && !displayData?.form?.components) return;
     setFormAnswer(answer);
+    editedSubmissionDataRef.current = { ...answer };
     setResponseData(answer);
+    setIsEditingForm(false);
     setShowSelfForm(true);
+  };
+
+  const handleFormChange = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (submission: any) => {
+      if (submission?.data) {
+        editedSubmissionDataRef.current = { ...submission.data };
+      }
+      if (typeof submission?.isValid === "boolean") {
+        setIsFormValid(submission.isValid);
+      }
+    },
+    [],
+  );
+
+  const handleSaveForm = () => {
+    if (!isFormValid) {
+      toast.error("Please fill all required fields correctly.");
+      return;
+    }
+
+    const conversationDoc = data?.initiator_forms?.[0]?.conversation_doc;
+    if (!conversationDoc) {
+      toast.error("Unable to save: missing conversation document reference.");
+      return;
+    }
+
+    updateInitiatorMutation.mutate(
+      {
+        conversation_doc: conversationDoc,
+        submission_data: editedSubmissionDataRef.current,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Initiator form updated successfully.");
+          setIsEditingForm(false);
+          setFormAnswer({ ...editedSubmissionDataRef.current });
+          queryClient.invalidateQueries({
+            queryKey: ["employee-flow-request-details"],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["employee-flow-requests"],
+          });
+        },
+        onError: () => {
+          toast.error("Failed to update initiator form. Please try again.");
+        },
+      },
+    );
   };
 
   const queryClient = useQueryClient();
@@ -87,6 +144,46 @@ const RequestDetails: React.FC = () => {
     };
   }, [queryClient]);
 
+  useEffect(() => {
+    if (!haveInitiatorForm || !data?.initiator_forms) return;
+
+    let displayData: JsonToFormData;
+    let rawData: JsonToFormData;
+    try {
+      displayData = JSON.parse(
+        data?.initiator_forms?.[0]?.form_data_display || "{}",
+      );
+      rawData = JSON.parse(
+        data?.initiator_forms?.[0]?.form_data || "{}",
+      );
+    } catch (e: unknown) {
+      console.error("Failed to parse form data", (e as Error)?.message);
+      return;
+    }
+
+    const rawSchema = isEditingForm
+      ? (rawData?.form?.components ?? displayData?.form?.components ?? [])
+      : (displayData?.form?.components ?? rawData?.form?.components ?? []);
+
+    // Filter out the native Form.io submit button since we have our own sticky footer
+    const schemaToUse = rawSchema.filter(
+      (comp) => !(comp.type === "button" && comp.action === "submit")
+    );
+
+    const answerToUse = displayData?.submission_data ?? rawData?.submission_data ?? {};
+
+    setFormSchema({ display: "form", components: schemaToUse });
+
+    // Only update the answers from backend if we are not currently editing,
+    // to avoid overwriting user input during background refetches.
+    if (!isEditingForm) {
+      setFormAnswer(answerToUse);
+      setResponseData(answerToUse);
+      // Also update the ref so if they click edit again, it starts from the latest backend state
+      editedSubmissionDataRef.current = { ...answerToUse };
+    }
+  }, [isEditingForm, data, haveInitiatorForm]);
+
   const navigate = useNavigate();
   const handleNavigateBack = () => {
     if (window.history.length > 1) {
@@ -96,12 +193,36 @@ const RequestDetails: React.FC = () => {
     }
   };
 
-  const tabs = [
-    { label: "Approval Flow Status", value: "Approval Flow Status" },
-    ...(data?.workflow_stages
-      ? [{ label: "Workflow Status", value: "Workflow Status" }]
-      : []),
-  ];
+  const hasWorkflowStages = !!data?.workflow_stages;
+
+  const approvalCounts = useMemo(() => {
+    const stages = data?.approval_stages ?? [];
+    const completed = stages.filter(
+      (s) => s.status === "Approved" || s.status === "Completed",
+    ).length;
+    const pending = stages.filter((s) => s.status === "Pending").length;
+    const rejected = stages.filter((s) => s.status === "Rejected").length;
+    return { completed, pending, rejected, total: stages.length };
+  }, [data?.approval_stages]);
+
+  const workflowCounts = useMemo(() => {
+    const stages = data?.workflow_stages ?? [];
+    const completed = stages.filter(
+      (s) => s.status === "Approved" || s.status === "Completed",
+    ).length;
+    const pending = stages.filter((s) => s.status === "Pending").length;
+    const rejected = stages.filter((s) => s.status === "Rejected").length;
+    return { completed, pending, rejected, total: stages.length };
+  }, [data?.workflow_stages]);
+
+  const overallStats = useMemo(() => {
+    const total = approvalCounts.total + workflowCounts.total;
+    const completed = approvalCounts.completed + workflowCounts.completed;
+    const pending = approvalCounts.pending + workflowCounts.pending;
+    const rejected = approvalCounts.rejected + workflowCounts.rejected;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { total, completed, pending, rejected, percentage };
+  }, [approvalCounts, workflowCounts]);
 
   if (isLoading) {
     return (
@@ -115,20 +236,14 @@ const RequestDetails: React.FC = () => {
             <div className="h-8 w-24 sm:w-32 bg-gray-200 rounded-md" />
           </div>
           <div className="px-4 sm:px-8 flex items-center justify-between mt-2 mb-4 flex-wrap gap-4">
-            <div className="flex w-full sm:w-fit border border-gray-200 rounded-sm overflow-hidden shadow-sm">
-              <div className="flex-1 sm:flex-none sm:w-44 h-10 bg-gray-200 border-r border-gray-200" />
-              <div className="flex-1 sm:flex-none sm:w-44 h-10 bg-gray-100" />
+            <div className="flex flex-col w-full gap-3">
+              <div className="h-11 w-full bg-gray-200 rounded-lg" />
+              <div className="h-11 w-full bg-gray-100 rounded-lg" />
             </div>
 
-            <div className="flex flex-row sm:items-center justify-between w-full sm:w-auto gap-4 sm:gap-6 text-sm py-1">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 min-w-0">
-                <div className="h-3 w-16 sm:w-20 bg-gray-200 rounded" />
-                <div className="h-5 sm:h-6 w-24 sm:w-32 bg-gray-100 rounded border border-gray-100" />
-              </div>
-              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2 min-w-0">
-                <div className="h-3 w-16 sm:w-20 bg-gray-200 rounded" />
-                <div className="h-5 sm:h-6 w-24 sm:w-28 bg-gray-100 rounded border border-gray-100" />
-              </div>
+            <div className="flex flex-row flex-wrap items-center gap-3 w-full py-1">
+              <div className="h-8 w-44 bg-gray-200 rounded-lg border border-gray-100" />
+              <div className="h-8 w-36 bg-gray-100 rounded-lg border border-gray-100" />
             </div>
           </div>
         </div>
@@ -175,77 +290,289 @@ const RequestDetails: React.FC = () => {
             }
           />
         </div>
-        <div className="px-8 flex items-center justify-between mb-4 flex-wrap gap-4">
-          <div className="flex w-full sm:w-fit border border-gray-200 rounded-sm overflow-hidden shadow-sm">
-            {tabs.map((btn, index) => {
-              const isActive = flowStatusType === btn.value;
-              return (
-                <button
-                  key={btn.value}
-                  onClick={() => setFlowStatusType(btn.value as FlowStatusType)}
-                  disabled={isActive}
-                  className={`flex-1 sm:flex-none px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all duration-200 
-          ${
-            isActive
-              ? "bg-primary-600 text-white font-semibold shadow-inner"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
-          }
-          ${index === 0 ? "rounded-l-sm" : "rounded-r-sm"}`}
-                >
-                  {btn.label}
-                </button>
-              );
-            })}
+        <div className="px-4 sm:px-8 flex flex-row flex-wrap items-center gap-3 mb-5 mt-1">
+          <div className="flex items-center gap-2.5 min-w-0 bg-white border border-gray-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] rounded-lg px-3 py-1.5 transition-all hover:shadow-md hover:border-gray-300/80">
+            <span className="font-medium text-gray-500 text-[10px] sm:text-[11px] uppercase tracking-wider whitespace-nowrap">
+              Initiated By
+            </span>
+            <div className="w-px h-3.5 bg-gray-200"></div>
+            <span className="text-gray-900 font-semibold text-[13px] sm:text-sm truncate hover:text-primary-600 cursor-pointer transition-colors duration-200">
+              <WrapperHoverCard employeeId={data?.initiated_by_employee_id}>
+                {data?.initiated_by}{" "}
+                {data?.initiated_by_employee_id
+                  ? `(${data?.initiated_by_employee_id})`
+                  : ""}
+              </WrapperHoverCard>
+            </span>
           </div>
 
-          <div className="flex flex-row sm:items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6 text-sm py-1">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 min-w-0">
-              <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px] whitespace-nowrap">
-                Initiated By
-              </span>
-              <span className="text-gray-900 font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-100 truncate max-w-[140px] sm:max-w-none hover:text-primary cursor-pointer transition-colors duration-200">
-                <WrapperHoverCard employeeId={data?.initiated_by_employee_id}>
-                  {data?.initiated_by}{" "}
-                  {data?.initiated_by_employee_id
-                    ? `(${data?.initiated_by_employee_id})`
-                    : ""}
-                </WrapperHoverCard>
-              </span>
-            </div>
-            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2 min-w-0">
-              <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px] whitespace-nowrap">
-                Initiated On
-              </span>
-              <span className="text-gray-900 font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-100 whitespace-nowrap">
-                {formatToIndianDate(data?.initiated_on)}
-              </span>
-            </div>
+          <div className="flex items-center gap-2.5 min-w-0 bg-white border border-gray-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] rounded-lg px-3 py-1.5 transition-all hover:shadow-md hover:border-gray-300/80">
+            <span className="font-medium text-gray-500 text-[10px] sm:text-[11px] uppercase tracking-wider whitespace-nowrap">
+              Initiated On
+            </span>
+            <div className="w-px h-3.5 bg-gray-200"></div>
+            <span className="text-gray-900 font-semibold text-[13px] sm:text-sm whitespace-nowrap">
+              {formatToIndianDate(data?.initiated_on)}
+            </span>
           </div>
+
+          {data?.effective_date && (
+            <div className="flex items-center gap-2.5 min-w-0 bg-white border border-gray-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] rounded-lg px-3 py-1.5 transition-all hover:shadow-md hover:border-gray-300/80">
+              <span className="font-medium text-gray-500 text-[10px] sm:text-[11px] uppercase tracking-wider whitespace-nowrap">
+                Effective Date
+              </span>
+              <div className="w-px h-3.5 bg-gray-200"></div>
+              <span className="text-gray-900 font-semibold text-[13px] sm:text-sm whitespace-nowrap">
+                {formatToIndianDate(data.effective_date)}
+              </span>
+            </div>
+          )}
         </div>
       </div>
       <div className="overflow-y-auto flex-1">
-        {flowStatusType === "Approval Flow Status" ? (
-          <FlowTable data={data} />
-        ) : (
-          <WorkflowTable data={data} />
-        )}
+        <div className="flex flex-col gap-3 px-4 sm:px-7 py-4 pb-8">
+          {/* Overall Stats Card */}
+          <div className="rounded-xl border border-gray-200/80 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)] px-5 sm:px-6 py-4">
+            <div className="flex items-center gap-4 sm:gap-5">
+              {/* Circular Progress Ring */}
+              <div className="relative w-12 h-12 sm:w-14 sm:h-14 shrink-0">
+                {(() => {
+                  const r = 20;
+                  const circumference = 2 * Math.PI * r;
+                  const offset = circumference * (1 - overallStats.percentage / 100);
+                  const strokeColor = overallStats.percentage === 100 ? "#22c55e" : "#6172F3";
+                  return (
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 48 48">
+                      <circle
+                        cx="24" cy="24" r={r}
+                        fill="none"
+                        stroke="#e5e7eb"
+                        strokeWidth="4"
+                      />
+                      <circle
+                        cx="24" cy="24" r={r}
+                        fill="none"
+                        stroke={strokeColor}
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        strokeDasharray={circumference}
+                        strokeDashoffset={offset}
+                        style={{ transition: "stroke-dashoffset 0.7s ease-out" }}
+                      />
+                    </svg>
+                  );
+                })()}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-[11px] sm:text-xs font-bold text-gray-700">
+                    {overallStats.percentage}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Stats Text */}
+              <div className="flex flex-col gap-1 min-w-0">
+                <span className="text-sm sm:text-[15px] font-semibold text-gray-800">
+                  {overallStats.completed}/{overallStats.total} Tasks Completed
+                </span>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  {overallStats.pending > 0 && (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-700">
+                      <span className="w-2 h-2 rounded-full bg-amber-400" />
+                      {overallStats.pending} Pending
+                    </span>
+                  )}
+                  {overallStats.rejected > 0 && (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-red-600">
+                      <span className="w-2 h-2 rounded-full bg-red-500" />
+                      {overallStats.rejected} Rejected
+                    </span>
+                  )}
+                  {overallStats.pending === 0 && overallStats.rejected === 0 && overallStats.completed === overallStats.total && overallStats.total > 0 && (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-green-600">
+                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                      All tasks done
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Approval Flow Status - Accordion */}
+          <div className="rounded-xl border border-gray-200/80 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] bg-white">
+            <button
+              onClick={() => setApprovalExpanded((prev) => !prev)}
+              className="w-full flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-primary-50/60 to-white hover:from-primary-50 hover:to-primary-50/30 transition-all duration-200 group border-l-[3px] border-l-primary-500"
+            >
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-[13px] sm:text-[15px] font-semibold text-gray-800">
+                  Approval Flow Status
+                </span>
+                <div className="flex items-center gap-2">
+                  {approvalCounts.completed > 0 && (
+                    <span className="text-[11px] font-semibold text-green-700 bg-green-50 border border-green-200/60 px-2.5 py-0.5 rounded-xl inline-flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                      {approvalCounts.completed} completed
+                    </span>
+                  )}
+                  {approvalCounts.pending > 0 && (
+                    <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 px-2.5 py-0.5 rounded-xl inline-flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      {approvalCounts.pending} pending
+                    </span>
+                  )}
+                  {approvalCounts.rejected > 0 && (
+                    <span className="text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200/60 px-2.5 py-0.5 rounded-xl inline-flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                      {approvalCounts.rejected} rejected
+                    </span>
+                  )}
+                  {approvalCounts.completed === 0 && approvalCounts.pending === 0 && approvalCounts.rejected === 0 && (
+                    <span className="text-[11px] font-medium text-gray-500 bg-gray-100 border border-gray-200/60 px-2.5 py-0.5 rounded-xl">
+                      {data.approval_stages?.length ?? 0} stages
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-primary-100 flex items-center justify-center transition-colors duration-200 shrink-0 ml-3">
+                <ChevronDown
+                  size={16}
+                  className={`text-gray-500 group-hover:text-primary-600 transition-all duration-300 ${approvalExpanded ? "rotate-180" : "rotate-0"
+                    }`}
+                />
+              </div>
+            </button>
+            <div
+              className={`transition-all duration-300 ease-in-out overflow-hidden ${approvalExpanded
+                ? "max-h-[2000px] opacity-100"
+                : "max-h-0 opacity-0"
+                }`}
+            >
+              <div className="border-t border-gray-100">
+                <FlowTable data={data} noPadding={true} />
+              </div>
+            </div>
+          </div>
+
+          {/* Workflow Status - Accordion (only if workflow stages exist) */}
+          {hasWorkflowStages && (
+            <div className="rounded-xl border border-gray-200/80 overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.04)] bg-white">
+              <button
+                onClick={() => setWorkflowExpanded((prev) => !prev)}
+                className="w-full flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 bg-gradient-to-r from-amber-50/60 to-white hover:from-amber-50 hover:to-amber-50/30 transition-all duration-200 group border-l-[3px] border-l-amber-500"
+              >
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-[13px] sm:text-[15px] font-semibold text-gray-800">
+                    Workflow Status
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {workflowCounts.completed > 0 && (
+                      <span className="text-[11px] font-semibold text-green-700 bg-green-50 border border-green-200/60 px-2.5 py-0.5 rounded-xl inline-flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                        {workflowCounts.completed} completed
+                      </span>
+                    )}
+                    {workflowCounts.pending > 0 && (
+                      <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60 px-2.5 py-0.5 rounded-xl inline-flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        {workflowCounts.pending} pending
+                      </span>
+                    )}
+                    {workflowCounts.rejected > 0 && (
+                      <span className="text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200/60 px-2.5 py-0.5 rounded-xl inline-flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                        {workflowCounts.rejected} rejected
+                      </span>
+                    )}
+                    {workflowCounts.completed === 0 && workflowCounts.pending === 0 && workflowCounts.rejected === 0 && (
+                      <span className="text-[11px] font-medium text-gray-500 bg-gray-100 border border-gray-200/60 px-2.5 py-0.5 rounded-xl">
+                        {data.workflow_stages?.length ?? 0} stages
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="w-7 h-7 rounded-lg bg-gray-100 group-hover:bg-amber-100 flex items-center justify-center transition-colors duration-200 shrink-0 ml-3">
+                  <ChevronDown
+                    size={16}
+                    className={`text-gray-500 group-hover:text-amber-600 transition-all duration-300 ${workflowExpanded ? "rotate-180" : "rotate-0"
+                      }`}
+                  />
+                </div>
+              </button>
+              <div
+                className={`transition-all duration-300 ease-in-out overflow-hidden ${workflowExpanded
+                  ? "max-h-[2000px] opacity-100"
+                  : "max-h-0 opacity-0"
+                  }`}
+              >
+                <div className="border-t border-gray-200">
+                  <WorkflowTable data={data} noPadding={true} />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       {formSchema &&
         showSelfForm &&
         createPortal(
           <ReviewForm
-            onClose={() => setShowSelfForm(false)}
-            title="Initiation Form"
+            onClose={() => {
+              setShowSelfForm(false);
+              setIsEditingForm(false);
+            }}
+            showReqFormio={isEditingForm}
+            title={isEditingForm ? "Edit Initiation Form" : "Initiation Form"}
+            headerAction={
+              !!data?.can_edit_initiator_form && <Button
+                variant={isEditingForm ? "soft" : "outline"}
+                size="sm"
+                onClick={() => setIsEditingForm((prev) => !prev)}
+                className={`flex items-center gap-1.5 py-1 px-2.5 transition-all rounded-md ${isEditingForm
+                  ? "border-primary-300 text-primary-700 bg-primary-50"
+                  : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                  }`}
+              >
+                <Pencil size={13} className={isEditingForm ? "text-primary-600" : "text-gray-500"} />
+                <span className="text-xs font-medium">{isEditingForm ? "Editing" : "Edit"}</span>
+              </Button>
+            }
+            footerAction={
+              isEditingForm ? (
+                <div className="flex items-center justify-end gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditingForm(false)}
+                    className="px-4 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contain"
+                    onClick={handleSaveForm}
+                    loading={updateInitiatorMutation.isPending}
+                    disabled={updateInitiatorMutation.isPending}
+                    className="px-4 py-2 rounded-lg flex items-center gap-2"
+                  >
+                    <Save size={15} />
+                    Save Changes
+                  </Button>
+                </div>
+              ) : undefined
+            }
           >
             <FormPreview
               containerId="initiation-form-preview"
               schema={formSchema}
               submissionData={formAnswer}
-              readOnly={true}
+              readOnly={!isEditingForm}
+              onChange={(s) => { if (isEditingForm) handleFormChange(s); }}
             />
-            <AttachmentPreview
-              attachments={responseData?.addAttachment || []}
-            />
+            {!isEditingForm && (
+              <AttachmentPreview
+                attachments={responseData?.addAttachment || []}
+              />
+            )}
           </ReviewForm>,
           document.body,
         )}
@@ -254,3 +581,4 @@ const RequestDetails: React.FC = () => {
 };
 
 export default RequestDetails;
+

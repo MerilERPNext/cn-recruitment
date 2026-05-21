@@ -30,6 +30,7 @@ import toast from "react-hot-toast";
 import { queryClient } from "../../../providers/QueryProvider";
 import DataListView from "../../DataListView"; // ← adjust path as needed
 import { createPortal } from "react-dom";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 // ─── mapAdvanceData helper ────────────────────────────────────────────────────
 const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
@@ -179,13 +180,16 @@ const AdvancesList: React.FC = () => {
 
   const titles = [
     "Advance Name",
+    "Assigned To",
+
     "Amount",
     "Start Date",
     "End Date",
+    "Created At",
     "Status",
     "Actions",
   ];
-  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   // ── customAPI config — only build when employeeId is ready ──────────────────
   const customAPI = employeeId
@@ -240,6 +244,7 @@ const AdvancesList: React.FC = () => {
                     <CardSkeleton />
                   ) : (
                     <DataListView<UiAdvance>
+
                       queryKey={["advances", employeeId]}
                       customAPI={customAPI}
                       isSearch={true}
@@ -382,6 +387,7 @@ const AdvanceDesktopRow = ({
   const { data: currentUser } = useCurrentUser();
   const todo = advance.todo ?? null;
   const canRevoke = todo?.custom_allow_revoke === 1 && !isActed;
+  const formattedCreationDate = formatToIndianDate(advance?.todo?.reference_document?.creation as string);
   const canEdit =
     todo?.can_edit === true &&
     currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase() &&
@@ -389,7 +395,6 @@ const AdvanceDesktopRow = ({
 
   const loading = useLoadingOverlay();
   const revokeEventMutation = useRevokeEvent();
-
   const handleRevokeClick = () => {
     if (!todo?.todo_id) return;
     loading?.show("Revoking Request...");
@@ -416,13 +421,17 @@ const AdvanceDesktopRow = ({
   return (
     <div
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
       onClick={() => handleViewInstallments(advance)}
     >
       <Typography variant="bodySmall" className="font-medium text-center">
         {advance.name}
       </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
 
+        {getAssignedUsersCell(advance.todo)}
+
+      </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {maskAmounts ? (
           <span className="blur-sm select-none text-gray-400">
@@ -439,6 +448,9 @@ const AdvanceDesktopRow = ({
 
       <Typography variant="bodySmall" className="font-medium text-center">
         {formatToIndianDate(advance.endDate)}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formattedCreationDate}
       </Typography>
 
       <div className="flex items-center justify-center">
@@ -549,7 +561,12 @@ const AdvanceMobileRow = ({
             </Typography>
           </div>
         </div>
-
+        <div>
+          <Typography variant="mobileCardLabel">Assigned To</Typography>
+          <Typography variant="mobileCardValue">
+            {getAssignedUsersCell(advance.todo)}
+          </Typography>
+        </div>
         <MobileAllocatedTo
           users={advance.allocated_to}
           roles={advance.allocated_to_roles}
