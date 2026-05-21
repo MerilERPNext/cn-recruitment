@@ -1,94 +1,53 @@
-import { useState, useEffect } from "react";
-import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
-import { useGetYearFilterOptions } from "../../../hooks/useBenefit";
-import {
-  useFlexiComponents,
-  useUpdateFlexiComponents,
-  // useFlexiLockingPeriodVisibility,
-  useIndividualEmployeeFlexiLockingPeriod
-} from "../../../hooks/payroll/useFlexiDeclaration";
-import { FlexiComponent, ComponentPartOfCTC } from "../../../types/flexiDeclaration";
-import { IoIosArrowDown } from "react-icons/io";
-import { EditFlexiLockingPeriod } from "./Component/EditFlexiLockingPeriod";
-import { SquarePen } from "lucide-react";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import toast from "react-hot-toast";
-// import { format } from "date-fns";
+import { useState } from "react";
 
-function formatINR(num: string | number | undefined | null) {
-  if (num === undefined || num === null || num === "") return "";
-  const val = typeof num === "string" ? parseFloat(num) : num;
-  if (isNaN(val)) return "";
-  return val.toLocaleString("en-IN");
+const earningsData = [
+  { label: "Basic", monthly: 562500, annually: 6749998 },
+  { label: "HRA", monthly: 112500, annually: 1350000 },
+  { label: "Provident Fund", monthly: 67500, annually: 810000 },
+  { label: "Car Lease Rental", monthly: 102715, annually: 1232580 },
+  { label: "Driver Salary", monthly: 25000, annually: 300000 },
+  { label: "Car Repair and Maintenance Reimbursement", monthly: 4167, annually: 50000 },
+  { label: "Special Allowance", monthly: 132600, annually: 1591218, info: true },
+  { label: "Asset Reimbursement", monthly: 16667, annually: 200000 },
+  { label: "Professional Development Course", monthly: 16667, annually: 200000 },
+  { label: "Meal Card", monthly: 9600, annually: 115200 },
+  { label: "Attire wallet", monthly: 1500, annually: 18000 },
+  { label: "Telecom wallet", monthly: 12000, annually: 144000 },
+  { label: "Reimbursement of Fuel Expense", monthly: 16667, annually: 200000 },
+  { label: "Fitness & Wellbeing Reimbursement", monthly: 12000, annually: 144000 },
+  { label: "Gift wallet", monthly: 1250, annually: 15000 },
+];
+
+const flexiComponents = [
+  { label: "Car Lease Rental", range: "0 - 60,00,000", value: "1232580" },
+  { label: "Driver Salary", range: "0 - 3,00,000", value: "300000" },
+  { label: "Car Repair And Maintenance Reimbursement", range: "0 - 50,000", value: "50000" },
+  { label: "NPS", range: "0 - 9,45,000", isNPS: true },
+  { label: "Asset Reimbursement", range: "0 - 2,00,000", value: "200000" },
+  { label: "Professional Development Course", range: "0 - 2,00,000", value: "200000" },
+  { label: "Meal Card", range: "0 - 1,35,200", value: "115200" },
+  { label: "Attire Wallet", range: "0 - 18,000", value: "18000" },
+  { label: "Telecom Wallet", range: "0 - 1,44,000", value: "144000" },
+];
+
+
+
+function formatINR(num: number) {
+  if (!num && num !== 0) return "";
+  return Number(num).toLocaleString("en-IN");
 }
 
 export default function FlexiDeclaration() {
-  const [showValues, setShowValues] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState("");
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const { isDesktop } = useScreenSize();
-  const { data: currentEmployee, } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
-  const { data: yearOptions } = useGetYearFilterOptions(currentEmployee?.company || "");
-
-  useEffect(() => {
-    if (yearOptions && yearOptions.length > 0 && !selectedPeriod) {
-      setSelectedPeriod(yearOptions[0].name);
-    }
-  }, [yearOptions, selectedPeriod]);
-
-  const { data: flexiData, isLoading } = useFlexiComponents(
-    currentEmployee?.name || "",
-    selectedPeriod || "",
-    currentEmployee?.company || ""
+  const [activeTab, setActiveTab] = useState("Flexi Components");
+  const [showValues, setShowValues] = useState(true);
+  const [npsType, setNpsType] = useState("amount");
+  const [npsAmount, setNpsAmount] = useState("");
+  const [flexi, setFlexi] = useState(
+    flexiComponents.reduce((acc, c) => {
+      acc[c.label] = c.value || "";
+      return acc;
+    }, {})
   );
-
-  const { data: lockingPeriodData, refetch: refetchLockingPeriod } = useIndividualEmployeeFlexiLockingPeriod(
-    currentEmployee?.name || ""
-  );
-
-  const updateMutation = useUpdateFlexiComponents();
-
-  const [flexi, setFlexi] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (flexiData?.flexi_components) {
-      const initialFlexi: Record<string, string> = {};
-      flexiData.flexi_components.forEach((comp: FlexiComponent) => {
-        initialFlexi[comp.salary_component] = comp.amount?.toString() || "";
-      });
-      setFlexi(initialFlexi);
-    }
-  }, [flexiData]);
-
-  const earningsData = flexiData?.salary_data?.component_part_of_ctc?.map((item: ComponentPartOfCTC) => ({
-    label: item.component,
-    monthly: item.amount,
-    annually: item.annual_amount,
-    info: false,
-  })) || [];
-
-  const flexiComponents = flexiData?.flexi_components || [];
-
-  const handleSave = async () => {
-    if (!flexiData?.salary_data?.assignment_name) return;
-
-    const updatedComponents = flexiComponents.map((comp) => ({
-      ...comp,
-      amount: Number(flexi[comp.salary_component]?.replace(/,/g, '')) || 0
-    }));
-
-    try {
-      await updateMutation.mutateAsync({
-        id: flexiData.salary_data.assignment_name,
-        flexi_components: updatedComponents
-      });
-      toast.success("Flexi components updated successfully!");
-    } catch (err) {
-      toast.error(`Failed to update flexi components. ${err instanceof Error ? err.message : ""}`);
-    }
-  };
-
-  const isClosed = lockingPeriodData?.status === "Closed";
 
   return (
     <div className="bg-app min-h-screen text-text-title font-brand">
