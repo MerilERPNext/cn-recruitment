@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { BookOpen, Check, Search, Sparkles, Trash2, UserRound, X } from "lucide-react";
 import Badge from "../../shared/Badge";
 import { Typography } from "../../shared/atoms/Typography";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 interface EditableSkill {
   name: string;
@@ -46,6 +47,8 @@ const getLevelLabel = (level: number) => proficiencyLevels.find((item) => item.l
 
 const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
   const gap = Math.max(skill.target - skill.current, 0);
+  const { isMobile, isTablet } = useScreenSize();
+  const isCompact = isMobile || isTablet;
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -57,26 +60,35 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-gray-950/45 p-4 font-brand animate-fadeIn" onClick={onClose}>
+    <div
+      className={`fixed inset-0 z-[70] flex bg-gray-950/45 font-brand animate-fadeIn ${
+        isCompact ? "items-stretch justify-stretch p-0" : "items-center justify-center p-4"
+      }`}
+      onClick={onClose}
+    >
       <div
-        className="animate-slideUp flex max-h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+        className={`animate-slideUp flex w-full flex-col overflow-hidden bg-white shadow-2xl ${
+          isCompact ? "h-[100dvh] max-h-none rounded-none" : "max-h-[92vh] max-w-7xl rounded-xl"
+        }`}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="edit-skill-title"
       >
-        <div className="relative border-b border-gray-100 px-6 py-5">
+        <div className={`relative shrink-0 border-b border-gray-100 ${isCompact ? "px-4 py-4 pr-14" : "px-6 py-5"}`}>
           <Badge label="Edit Skill" backgroundColor="bg-primary-50" textColor="text-primary-700" size="sm" />
-          <Typography id="edit-skill-title" variant="h3" className="mt-3 text-text-title">
+          <Typography id="edit-skill-title" variant={isCompact ? "h4" : "h3"} className="mt-3 break-words text-text-title">
             {skill.name}
           </Typography>
-          <Typography variant="caption" className="mt-1 block text-text-body2">
+          <Typography variant="caption" className="mt-1 block leading-5 text-text-body2">
             Research & Insight - Required for Sr. Designer career path - Last assessed {skill.lastAssessed}
           </Typography>
 
           <button
             type="button"
-            className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50 hover:text-gray-700"
+            className={`absolute flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 ${
+              isCompact ? "right-4 top-4" : "right-5 top-5"
+            }`}
             onClick={onClose}
             aria-label="Close edit skill popup"
           >
@@ -84,8 +96,8 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
           </button>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[330px_minmax(0,1fr)]">
-          <aside className="min-h-0 overflow-y-auto border-b border-gray-100 bg-white px-6 py-4 pb-6 lg:border-b-0 lg:border-r">
+        <div className={`${isCompact ? "block flex-1 overflow-y-auto" : "grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[330px_minmax(0,1fr)]"}`}>
+          <aside className={`${isCompact ? "border-b px-4 py-4" : "min-h-0 overflow-y-auto border-b px-6 py-4 pb-6 lg:border-b-0 lg:border-r"} border-gray-100 bg-white`}>
             <Typography variant="caption" className="font-bold uppercase tracking-wide text-gray-500">
               Skill Library
             </Typography>
@@ -98,7 +110,7 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
               />
             </div>
 
-            <div className="mt-3 space-y-1.5">
+            <div className={isCompact ? "mt-3 flex gap-2 overflow-x-auto pb-1" : "mt-3 space-y-1.5"}>
               {skillsLibrary.map((item) => {
                 const isSelected = item.name === "User Research";
 
@@ -106,7 +118,9 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
                   <button
                     key={item.name}
                     type="button"
-                    className={`flex h-10 w-full items-center justify-between rounded-md border px-3 text-left text-xs transition ${
+                    className={`flex h-10 items-center justify-between rounded-md border px-3 text-left text-xs transition ${
+                      isCompact ? "w-auto min-w-[150px] shrink-0" : "w-full"
+                    } ${
                       isSelected
                         ? "border-success-500 bg-success-50 text-text-title shadow-sm"
                         : "border-gray-100 bg-white text-gray-700 hover:border-success-100 hover:bg-success-50/30"
@@ -131,19 +145,19 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
             </button>
           </aside>
 
-          <div className="min-h-0 overflow-y-auto p-5 pb-28">
+          <div className={isCompact ? "px-4 py-4 pb-6" : "min-h-0 overflow-y-auto p-5 pb-28"}>
             <section>
               <Typography variant="bodySmall" className="font-bold text-text-title">
                 Current proficiency
               </Typography>
-              <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4">
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                 {proficiencyLevels.map((item) => {
                   const isCurrent = item.level === skill.current;
 
                   return (
                     <div
                       key={item.level}
-                      className={`min-h-[150px] rounded-lg border p-4 transition ${
+                      className={`${isCompact ? "min-h-0 p-3" : "min-h-[150px] p-4"} rounded-lg border transition ${
                         isCurrent ? "border-warning-500 bg-warning-50/60 shadow-sm" : "border-gray-200 bg-white"
                       }`}
                     >
@@ -175,7 +189,7 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
               <Typography variant="bodySmall" className="font-bold text-text-title">
                 Target proficiency for FY26
               </Typography>
-              <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-5">
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {proficiencyLevels.map((item) => {
                   const isTarget = item.level === skill.target;
                   const isBelowCurrent = item.level < skill.current;
@@ -183,7 +197,7 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
                   return (
                     <div
                       key={item.level}
-                      className={`min-h-[150px] rounded-lg border p-4 transition ${
+                      className={`${isCompact ? "min-h-0 p-3" : "min-h-[150px] p-4"} rounded-lg border transition ${
                         isTarget
                           ? "border-primary-500 bg-primary-50/70 shadow-sm"
                           : isBelowCurrent
@@ -215,7 +229,7 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
               </div>
             </section>
 
-            <div className="mt-5 flex flex-wrap items-center gap-3 rounded-lg border border-secondary-100 bg-secondary-50 px-5 py-4">
+            <div className={`mt-5 flex flex-wrap items-center gap-3 rounded-lg border border-secondary-100 bg-secondary-50 ${isCompact ? "px-3 py-3" : "px-5 py-4"}`}>
               <span className="text-base font-bold text-secondary-700">
                 {getLevelLabel(skill.current)} &gt; {getLevelLabel(skill.target)}
               </span>
@@ -233,7 +247,7 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
             </label>
 
             <section className="mt-6 rounded-lg border border-gray-200 bg-primary-50/50 p-4">
-              <div className="flex items-center justify-between gap-4">
+              <div className={`flex gap-2 ${isCompact ? "flex-col" : "items-center justify-between"}`}>
                 <Typography variant="bodySmall" className="font-bold text-text-title">
                   Learning plan
                 </Typography>
@@ -243,10 +257,10 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
               </div>
               <div className="mt-3 space-y-2">
                 {learningPlan.map(({ icon: Icon, title, action }) => (
-                  <div key={title} className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 shadow-sm">
+                  <div key={title} className={`flex gap-3 rounded-lg bg-white px-3 py-2 shadow-sm ${isCompact ? "flex-col" : "items-center justify-between"}`}>
                     <span className="flex min-w-0 items-center gap-3">
                       <Icon className="h-4 w-4 shrink-0 text-primary-600" />
-                      <span className="truncate text-sm font-medium text-gray-700">{title}</span>
+                      <span className={`${isCompact ? "whitespace-normal" : "truncate"} text-sm font-medium text-gray-700`}>{title}</span>
                     </span>
                     <div className="shrink-0">
                       <Badge label={action} backgroundColor="bg-primary-50" textColor="text-primary-700" size="sm" />
@@ -258,13 +272,14 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-gray-100 bg-primary-50/70 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className={`shrink-0 border-t border-gray-100 bg-primary-50/70 ${isCompact ? "px-4 py-3" : "px-6 py-4"}`}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button type="button" className="inline-flex items-center gap-2 text-sm font-bold text-error-600 hover:text-error-700">
             <Trash2 className="h-4 w-4" />
             Remove skill
           </button>
 
-          <div className="flex justify-end gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:flex sm:justify-end">
             <button
               type="button"
               className="h-10 rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
@@ -275,6 +290,7 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
             <button type="button" className="h-10 rounded-lg bg-primary-500 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-600" onClick={onClose}>
               Save Skill
             </button>
+          </div>
           </div>
         </div>
       </div>

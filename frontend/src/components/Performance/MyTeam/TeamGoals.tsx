@@ -230,7 +230,7 @@ const TeamGoals: React.FC = () => {
                     : "grid-cols-[auto_minmax(0,1fr)_120px_110px_260px] items-center"
                 }`}
               >
-                <label className={`flex h-4 w-4 items-center justify-center ${isCompact ? "mt-1" : "mt-5"}`}>
+                <label className={`flex h-4 w-4 items-start  justify-center `}>
                   <input
                     type="checkbox"
                     defaultChecked={goal.selected}
@@ -287,7 +287,7 @@ const TeamGoals: React.FC = () => {
                   </span>
                 </div>
 
-                <div className={`flex flex-wrap gap-2 ${isCompact ? "col-span-2 sm:col-start-2" : "justify-end"}`}>
+                <div className={`flex flex-wrap gap-2 ${isCompact ? "col-span-2 justify-center sm:col-start-2" : "justify-end"}`}>
                   <Button variant="outline" bgColor="text" size="sm" className={isCompact ? "min-w-24 flex-1 bg-white sm:flex-none" : "bg-white"}>
                     Send back
                   </Button>
