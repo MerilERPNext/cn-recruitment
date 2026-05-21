@@ -477,6 +477,25 @@ export function useCreateNewAttendanceRequest() {
     },
   });
 }
+export function useCreateNewAttendanceRequestBatch() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      attendanceService.createAttendanceRequestBatchWithCustomAPI(body),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-requests"] });
+    },
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}
 
 export function useUpdateAttendanceRequest() {
   const queryClient = useQueryClient();

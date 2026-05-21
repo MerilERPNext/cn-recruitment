@@ -41,7 +41,8 @@ import OvertimeLog from "../Employee/EmployeeAttendence/OvertimeLog";
 import RegularizeDrawer from "../Employee/EmployeeAttendence/RegularizeDrawer";
 import ViewPolicies from "../Employee/EmployeeAttendence/ViewPolicies";
 import { EditAttendance } from "../Team/EditAttendance";
-
+import { AttendanceAdjustmentForm } from "./AttendanceAdjustments/AttendanceAdjustmentForm";
+import BulkLeaveModal from "../../Leaves/BulkLeaveModal";
 /* -------------------- Helpers -------------------- */
 const formatTimeSafe = (timeStr?: string) => {
   if (!timeStr) return "--:--";
@@ -69,6 +70,8 @@ const AllEmpAttendance = () => {
 
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [editAttendance, setEditAttendance] = useState(false);
+  const [showAttendanceAdjustmentForm, setShowAttendanceAdjustmentForm] = useState(false);
+  const [showBulkLeaveModal, setShowBulkLeaveModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(
     null,
   );
@@ -78,6 +81,10 @@ const AllEmpAttendance = () => {
     data: AttendanceRecord;
     events?: AttendanceRecord[];
   } | null>(null);
+
+  const [selectedDateKeys, setSelectedDateKeys] = useState<Set<string>>(
+    new Set(),
+  );
 
   const onRefetchData = useCallback(() => {
     queryClient.invalidateQueries({
@@ -305,6 +312,49 @@ const AllEmpAttendance = () => {
     return items;
   }, [getAttendanceStatus, currentMonth]);
 
+  const selectedRows = useMemo(
+    () => completeMonthData.filter((item) =>
+      selectedDateKeys.has(format(item.date, "yyyy-MM-dd")),
+    ),
+    [completeMonthData, selectedDateKeys],
+  );
+
+  const selectableItems = useMemo(
+    () => completeMonthData.filter(
+      ({ statusInfo }) => statusInfo.record?.attendance_request_allowed !== false,
+    ),
+    [completeMonthData],
+  );
+
+  const allSelected =
+    selectableItems.length > 0 &&
+    selectableItems.every((item) =>
+      selectedDateKeys.has(format(item.date, "yyyy-MM-dd")),
+    );
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedDateKeys(new Set());
+    } else {
+      setSelectedDateKeys(
+        new Set(selectableItems.map((item) => format(item.date, "yyyy-MM-dd"))),
+      );
+    }
+  };
+
+  const toggleRow = (dateKey: string, selectable: boolean) => {
+    if (!selectable) return;
+    setSelectedDateKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(dateKey)) {
+        next.delete(dateKey);
+      } else {
+        next.add(dateKey);
+      }
+      return next;
+    });
+  };
+  console.log(selectedRows, "-----------")
   /* Error state */
   if (isError) {
     return (
@@ -459,10 +509,21 @@ const AllEmpAttendance = () => {
 
       {/* Attendance List */}
       <div className="px-4 pb-4">
+
         <div className="overflow-x-auto rounded-lg border border-gray-200">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase"
+                >
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th
                   scope="col"
                   className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
@@ -640,6 +701,22 @@ const AllEmpAttendance = () => {
                     }}
                     className={`hover:bg-primary-50 transition-colors cursor-pointer`}
                   >
+                    <td className="w-px px-4 py-3">
+                      {(() => {
+                        const dateKey = format(date, "yyyy-MM-dd");
+                        const selectable = statusInfo.record?.attendance_request_allowed !== false;
+                        return (
+                          <input
+                            type="checkbox"
+                            disabled={!selectable}
+                            checked={selectedDateKeys.has(dateKey)}
+                            onChange={() => toggleRow(dateKey, selectable)}
+                            onClick={(e) => e.stopPropagation()}
+                            className={!selectable ? "cursor-not-allowed opacity-40" : "cursor-pointer"}
+                          />
+                        );
+                      })()}
+                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                       {format(date, "dd MMM yyyy, EEE")}
                     </td>
@@ -656,7 +733,7 @@ const AllEmpAttendance = () => {
                           {statusInfo.events.map((event, i) => {
                             const eventType =
                               event.doctype === "Attendance Request" &&
-                              event.request_type === "Out Duty"
+                                event.request_type === "Out Duty"
                                 ? event.request_type
                                 : event.doctype;
                             const eventLabel =
@@ -718,6 +795,61 @@ const AllEmpAttendance = () => {
             </tbody>
           </table>
         </div>
+        {selectedRows?.length > 0 && (
+          <div className=" w-full sticky bottom-6 left-0 right-0 flex justify-center items-center z-50">
+            <div className="px-4 py-3 w-[100%] flex justify-between bg-white items-center shadow-lg rounded-md gap-2">
+
+              {selectedRows.length > 0 && isDesktop && <Typography variant="bodySmall" className="text-primary-600 font-medium">
+                {selectedRows.length} row{selectedRows.length > 1 ? "s" : ""} selected
+              </Typography>}
+
+
+              <div className={`flex items-center gap-2 ${!isDesktop ? "flex-wrap" : ""}`}>
+                <Button
+                  variant="soft"
+                  onClick={() => setSelectedDateKeys(new Set())}
+                >
+                  Clear
+                </Button>
+                <div className="flex gap-2 w-full">
+                  <Button
+                    variant="contain"
+                    bgColor="primary"
+                    size="md"
+                    onClick={() => setShowAttendanceAdjustmentForm(true)}
+                  >
+                    Attendance Adjustment
+                  </Button>
+                  <Button
+                    variant="contain"
+                    bgColor="primary"
+                    size="md"
+                    onClick={() => setShowBulkLeaveModal(true)}
+                  >
+                    Bulk Leave
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {showAttendanceAdjustmentForm &&
+          <AttendanceAdjustmentForm
+            selectedRows={selectedRows || []}
+            onCancel={() => {
+              setShowAttendanceAdjustmentForm(false);
+            }}
+            onSuccess={() => {
+              setShowAttendanceAdjustmentForm(false);
+              onRefetchData();
+              setSelectedDateKeys(new Set());
+            }}
+          />}
+        <BulkLeaveModal
+          isOpen={showBulkLeaveModal}
+          onClose={() => setShowBulkLeaveModal(false)}
+          prefilledDates={selectedRows.map((row) => ({ date: format(row.date, "yyyy-MM-dd") }))}
+        />
         <EditAttendance
           employeeId={selectedRecord?.employee || ""}
           employeeName={selectedRecord?.employee_name || ""}

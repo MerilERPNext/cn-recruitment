@@ -46,7 +46,6 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const currentEmployee = currentEmployeeByList ?? currentEmployeeByMethod;
   const currentEmpIsLoading = currentEmpListIsLoading || currentEmpMethodIsLoading;
   const { clearTargetEmployee } = useTargetUser();
-
   const { data: currentUser } = useCurrentUser();
   const canRedirectToDesk = currentUser?.roles?.some((role) =>
     ["System User", "Payroll Manager", "System Manager"].includes(role.role),
