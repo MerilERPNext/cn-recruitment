@@ -140,7 +140,7 @@ export const AttendanceAdjustmentForm = ({
     const { data: attendanceRequestAttachmentsMandatory } =
         useAttendanceRequestAttachments(
             currentEmployee?.employee as string,
-            format(selectedRows[0].date, "yyyy-MM-dd"),
+            selectedRows?.[0]?.date ? format(selectedRows[0].date, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
             "Attendance Adjustment",
         );
     /**

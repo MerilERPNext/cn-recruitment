@@ -818,7 +818,7 @@ const AllEmpAttendance = () => {
                     size="md"
                     onClick={() => setShowAttendanceAdjustmentForm(true)}
                   >
-                    Adjustment Adjustment
+                    Attendance Adjustment
                   </Button>
                   <Button
                     variant="contain"
@@ -848,8 +848,7 @@ const AllEmpAttendance = () => {
         <BulkLeaveModal
           isOpen={showBulkLeaveModal}
           onClose={() => setShowBulkLeaveModal(false)}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          prefilledDates={selectedRecord as any}
+          prefilledDates={selectedRows.map((row) => ({ date: format(row.date, "yyyy-MM-dd") }))}
         />
         <EditAttendance
           employeeId={selectedRecord?.employee || ""}
