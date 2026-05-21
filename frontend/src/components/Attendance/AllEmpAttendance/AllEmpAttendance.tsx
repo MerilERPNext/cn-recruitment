@@ -42,6 +42,7 @@ import RegularizeDrawer from "../Employee/EmployeeAttendence/RegularizeDrawer";
 import ViewPolicies from "../Employee/EmployeeAttendence/ViewPolicies";
 import { EditAttendance } from "../Team/EditAttendance";
 import { AttendanceAdjustmentForm } from "./AttendanceAdjustments/AttendanceAdjustmentForm";
+import BulkLeaveModal from "../../Leaves/BulkLeaveModal";
 /* -------------------- Helpers -------------------- */
 const formatTimeSafe = (timeStr?: string) => {
   if (!timeStr) return "--:--";
@@ -70,6 +71,7 @@ const AllEmpAttendance = () => {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [editAttendance, setEditAttendance] = useState(false);
   const [showAttendanceAdjustmentForm, setShowAttendanceAdjustmentForm] = useState(false);
+  const [showBulkLeaveModal, setShowBulkLeaveModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(
     null,
   );
@@ -796,13 +798,32 @@ const AllEmpAttendance = () => {
                   variant="contain"
                   bgColor="primary"
                   size="md"
+                  onClick={() => setShowBulkLeaveModal(true)}
+                >
+                  Request Leave
+                </Button>
+                <Button
+                  variant="contain"
+                  bgColor="primary"
+                  size="md"
                   onClick={() => setShowAttendanceAdjustmentForm(true)}
                 >
-                  Adjustment Adjustment
+                  Attendance Adjustment
                 </Button>
               </div>
             </div>
           </div>
+        )}
+        {showBulkLeaveModal && (
+          <BulkLeaveModal
+            isOpen={showBulkLeaveModal}
+            onClose={() => {
+              setShowBulkLeaveModal(false);
+              setSelectedDateKeys(new Set());
+              onRefetchData();
+            }}
+            prefilledDates={selectedRows.map(row => ({ date: format(new Date(row.date), 'yyyy-MM-dd') }))}
+          />
         )}
         {showAttendanceAdjustmentForm &&
           <AttendanceAdjustmentForm

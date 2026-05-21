@@ -13,6 +13,7 @@ import Tooltip from "../../shared/Tooltip";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import { RoleAssignedUsersType } from "../../../types/flows";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 export type CompensatoryRequestItem = {
   name: string;
   leave_type: string;
@@ -50,9 +51,7 @@ const CompensatoryRequestCard = ({
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onError: (error: any) => {
-        toast.error(
-          `Payment request failed: ${error.message || "Unknown error"}`,
-        );
+        toast.error(errorResponseFormater(error) as any);
       },
     });
   };

@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestPreOnboardingRelease(FrappeTestCase):
+class TestTAInterviewStrategyTemplate(FrappeTestCase):
 	pass

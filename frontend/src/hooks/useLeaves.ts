@@ -461,6 +461,36 @@ export function useCreateLeaveApplication() {
   });
 }
 
+export function useCreateLeaveApplicationBatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mutationFn: (leaveData: any) =>
+      leaveService.createLeaveApplicationBatch(leaveData),
+
+    onSuccess: () => {
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+        queryClient.invalidateQueries({
+          queryKey: ["todo-approvals", "Leave Application"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["custom-api"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["custom-api-infinite"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["leave-buttons-status"],
+        });
+        queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+        queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+        queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
+      }, 1500);
+    },
+  });
+}
+
 export const useGetAttendanceStatus = (
   employeeId: string | undefined,
   fromDate: string,
