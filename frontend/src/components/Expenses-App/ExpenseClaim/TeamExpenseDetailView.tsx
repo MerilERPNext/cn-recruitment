@@ -781,6 +781,36 @@ export function TeamExpenseDetailView({
                             </div>
                           )}
 
+                          {(item?.custom_claim_type_name?.toLowerCase() === "travel" ||
+                            item?.expense_type?.toLowerCase() === "travel") && (
+                            <>
+                              <div className="flex flex-col gap-1">
+                                <Typography variant="mobileCardLabel">
+                                  ODOMETER FROM
+                                </Typography>
+                                <Typography variant="mobileCardValue">
+                                  {item.custom_odometer_from !== undefined &&
+                                  item.custom_odometer_from !== null &&
+                                  item.custom_odometer_from !== ""
+                                    ? String(item.custom_odometer_from)
+                                    : "--"}
+                                </Typography>
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <Typography variant="mobileCardLabel">
+                                  ODOMETER TO
+                                </Typography>
+                                <Typography variant="mobileCardValue">
+                                  {item.custom_odometer_to !== undefined &&
+                                  item.custom_odometer_to !== null &&
+                                  item.custom_odometer_to !== ""
+                                    ? String(item.custom_odometer_to)
+                                    : "--"}
+                                </Typography>
+                              </div>
+                            </>
+                          )}
+
                           {item.custom_start_datetime && (
                             <div className="flex flex-col gap-1">
                               <Typography variant="mobileCardLabel">
