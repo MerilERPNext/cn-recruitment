@@ -1,5 +1,4 @@
 import { ArrowRight, Search, X } from 'lucide-react';
-import Badge from '../../../shared/Badge';
 import Button from '../../../shared/atoms/Button';
 import { Typography } from '../../../shared/atoms/Typography';
 
@@ -87,8 +86,8 @@ const selectClass = 'h-11 w-full rounded-lg border border-gray-200 bg-white px-4
 
 const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => {
     return (
-        <div className="animate-slideUp flex min-h-[690px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
-            <div className="relative border-b border-gray-100 px-5 py-4">
+        <div className="animate-slideUp flex h-full min-h-0 flex-col overflow-hidden bg-white shadow-2xl sm:min-h-[690px] sm:rounded-xl">
+            <div className="relative shrink-0 border-b border-gray-100 px-5 py-4">
                 
 
                 <Typography variant="h4" className="mt-2 text-2xl font-semibold text-gray-900">
@@ -105,7 +104,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                 </button>
             </div>
 
-            <div className="border-b border-gray-100 px-5 py-4">
+            <div className="shrink-0 border-b border-gray-100 px-5 py-4">
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-[180px_minmax(0,1fr)_minmax(180px,380px)]">
                     <div className="relative">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -132,7 +131,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                 </div>
             </div>
 
-            <div className="flex gap-6 overflow-x-auto border-b border-gray-100 px-5">
+            <div className="flex shrink-0 gap-6 overflow-x-auto border-b border-gray-100 px-5">
                 {tabs.map((tab) => (
                     <button
                         key={tab.label}
@@ -150,7 +149,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                 ))}
             </div>
 
-            <div className="flex-1 px-4 py-4">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {templates.map((template) => (
                         <div
@@ -194,7 +193,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                 </div>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-gray-100 bg-blue-50/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="shrink-0 flex flex-col gap-3 border-t border-gray-100 bg-blue-50/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <Typography variant="caption" className="text-gray-500">
                     Can't find what you need?{' '}
                     <button type="button" className="font-semibold text-blue-600 hover:text-blue-700">

@@ -8,6 +8,7 @@ import GoalAlignment from './component/GoalAlignment';
 import GoalLibraryPopup from './component/GoalLibraryPopup';
 import StartGoalSelection from './component/StartGoalSelection';
 import VisibilityAndSubmit from './component/VisibilityAndSubmit';
+import { useScreenSize } from '../../../hooks/useScreenSize';
 
 type GoalWizardStep = 'start' | 'define' | 'alignment' | 'visibility';
 
@@ -54,6 +55,7 @@ const stepDefinitions: {
     ];
 
 const NewGoal = () => {
+    const { isMobile } = useScreenSize();
     const [activeStepIndex, setActiveStepIndex] = useState(0);
     const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
 
@@ -163,7 +165,7 @@ const NewGoal = () => {
             <Modal
                 isOpen={isGoalLibraryOpen}
                 onClose={() => setIsGoalLibraryOpen(false)}
-                size="xl"
+                size={isMobile ? 'full' : 'xl'}
                 className="max-w-[1300px] p-0"
             >
                 <GoalLibraryPopup onClose={() => setIsGoalLibraryOpen(false)} />
