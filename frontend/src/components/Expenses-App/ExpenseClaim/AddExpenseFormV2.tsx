@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.form.css";
 import { useNavigate } from "react-router-dom";
@@ -184,6 +184,9 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     linkedDocumentName,
     deleteExpenseAttachment,
     refetchClaimAttachments,
+    onAttachmentsChanged: () => {
+      setDataVersion((v) => v + 1);
+    },
   });
 
   useEffect(() => {
@@ -210,6 +213,36 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
       ? dynamicFormData.vehicle_type
       : dynamicFormData?.vehicle_type?.name || "";
 
+  // ── Odometer → Units pure computation helper ──
+  const computeUnitsFromOdometer = useCallback(
+    (formData: Record<string, any>): number | null => {
+      const rawFrom = formData?.odometer_from;
+      const rawTo = formData?.odometer_to;
+      const numFrom = rawFrom !== undefined && rawFrom !== null && rawFrom !== "" ? Number(rawFrom) : NaN;
+      const numTo = rawTo !== undefined && rawTo !== null && rawTo !== "" ? Number(rawTo) : NaN;
+      if (Number.isFinite(numFrom) && Number.isFinite(numTo) && numTo >= numFrom) {
+        return numTo - numFrom;
+      }
+      return null;
+    },
+    [],
+  );
+
+  /**
+   * dataVersion: drives dynamicSubmission recalculation (in-place update, no remount).
+   * dynamicFormRevision: drives Form key change (full remount — only for structural resets).
+   * Separating these eliminates flicker from computed-value updates.
+   */
+  const [dataVersion, setDataVersion] = useState(0);
+
+  // Whether odometer fields drive units (makes units field readonly)
+  const isUnitsFromOdometer = useMemo(() => {
+    const fields = expenseTypePayload?.fields;
+    if (!Array.isArray(fields)) return false;
+    return fields.some((f: any) => f?.fieldname === "odometer_from") &&
+           fields.some((f: any) => f?.fieldname === "odometer_to");
+  }, [expenseTypePayload]);
+
   const rawUnits = dynamicFormData?.units ?? dynamicFormData?.no_of_units;
   const unitsValue =
     rawUnits !== undefined && rawUnits !== null && rawUnits !== ""
@@ -233,12 +266,15 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     return Number.isFinite(numeric) ? numeric : null;
   }, [calculatedAmountData]);
 
+  // When amount comes from API, update React state and bump dataVersion for in-place resync
   useEffect(() => {
     if (calculatedAmount === null) return;
     setDynamicFormData((prev) => {
       if (prev?.amount === calculatedAmount) return prev;
       return { ...prev, amount: calculatedAmount };
     });
+    // Bump dataVersion so dynamicSubmission recalculates → Form.io updates in-place (no remount)
+    setDataVersion((v) => v + 1);
   }, [calculatedAmount, setDynamicFormData]);
 
   const isAmountReadonly = useMemo(() => {
@@ -277,8 +313,9 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
         expenseType: selectedExpenseType,
         isAmountReadonly,
         unitFieldLabel,
+        isUnitsReadonly: isUnitsFromOdometer,
       }),
-    [expenseTypePayload, currentEmployee?.name, selectedExpenseType, isAmountReadonly, unitFieldLabel],
+    [expenseTypePayload, currentEmployee?.name, selectedExpenseType, isAmountReadonly, unitFieldLabel, isUnitsFromOdometer],
   );
 
   const mainSubmission = useMemo(() => {
@@ -291,14 +328,24 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     return { data: nextData };
   }, [mainFormData, currentEmployee?.name, isEditingExistingExpense, initialExpense]);
 
+  /**
+   * CRITICAL: dynamicSubmission must NOT depend on dynamicFormData.
+   * If it does, every onChange → setDynamicFormData → new submission object → Form.io
+   * re-renders ALL fields → flicker. Instead, we snapshot the data only when
+   * dynamicFormRevision changes (explicit resets like amount from API or expense type switch).
+   */
+  const dynamicFormDataRef = useRef(dynamicFormData);
+  dynamicFormDataRef.current = dynamicFormData;
+
   const dynamicSubmission = useMemo(
     () => ({
       data: {
         ...buildInitialDynamicFormData(initialExpense),
-        ...dynamicFormData,
+        ...dynamicFormDataRef.current,
       },
     }),
-    [initialExpense, dynamicFormData],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [initialExpense, dynamicFormRevision, dataVersion],
   );
 
   const displayParticipants = useMemo(
@@ -491,24 +538,43 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
 
                     if (!changedKey) {
                       if (hasFileFieldDelta(nextData)) {
-                        setDynamicFormData({ ...nextData });
+                        setDynamicFormData((prev) => ({ ...prev, ...nextData }));
+                      }
+                      return;
+                    }
+
+                    // ── Odometer → Units: inline computation for instant feedback ──
+                    if (
+                      isUnitsFromOdometer &&
+                      (changedKey === "odometer_from" || changedKey === "odometer_to")
+                    ) {
+                      const computed = computeUnitsFromOdometer(nextData);
+                      // Functional merge: preserves existing computed values (amount) that Form.io may not have yet
+                      setDynamicFormData((prev) => ({
+                        ...prev,
+                        ...nextData,
+                        ...(computed !== null ? { units: computed } : {}),
+                      }));
+                      // Bump dataVersion for in-place submission update (no remount)
+                      if (computed !== null) {
+                        setDataVersion((v) => v + 1);
                       }
                       return;
                     }
 
                     if (changedKey === "shareExpenseCheckbox" && isShareAllowed) {
                       const isChecked = Boolean(nextData?.shareExpenseCheckbox);
-                      const currentAmount = Number(nextData?.amount ?? 0);
+                      const currentAmount = Number(nextData?.amount ?? dynamicFormDataRef.current?.amount ?? 0);
 
                       if (isChecked && !(currentAmount > 0)) {
                         toast.error("Please enter an amount before sharing the expense.");
-                        setDynamicFormData({ ...nextData, shareExpenseCheckbox: false });
+                        setDynamicFormData((prev) => ({ ...prev, ...nextData, shareExpenseCheckbox: false }));
                         setIsSharePanelOpen(false);
                         return;
                       }
 
                       if (!isChecked && displayParticipants.length > 0) {
-                        setDynamicFormData({ ...nextData, shareExpenseCheckbox: true });
+                        setDynamicFormData((prev) => ({ ...prev, ...nextData, shareExpenseCheckbox: true }));
                         setIsDeleteShareConfirmOpen(true);
                         return;
                       }
@@ -516,7 +582,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
                       setIsSharePanelOpen(isChecked);
                     }
 
-                    setDynamicFormData({ ...nextData });
+                    setDynamicFormData((prev) => ({ ...prev, ...nextData }));
                   }}
                 />
               </>
