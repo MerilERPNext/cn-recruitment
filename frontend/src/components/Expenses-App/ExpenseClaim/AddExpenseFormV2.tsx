@@ -300,8 +300,16 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
   const maxAllowedParticipants = Number(expenseTypePayload?.shared_expense_limit || 0);
   const isShareAllowed = Boolean(expenseTypePayload?.shared_expense_allowed);
 
+  const isPerMileage = useMemo(() => {
+    const expenseTypeObj = mainFormData?.expenseType;
+    if (expenseTypeObj && typeof expenseTypeObj === "object") {
+      return expenseTypeObj.claim_type_based_on === "Per Mileage";
+    }
+    return false;
+  }, [mainFormData?.expenseType]);
+
   const shouldShowDynamicForm =
-    isEditingExistingExpense || ocrDeps.isManualMode || ocrDeps.ocrStatus === "completed" || ocrDeps.ocrStatus === "failed";
+    isEditingExistingExpense || isPerMileage || ocrDeps.isManualMode || ocrDeps.ocrStatus === "completed" || ocrDeps.ocrStatus === "failed";
 
   const handleActionFlow = async (forSubmit: boolean, approvalStatus?: string) => {
     await submitExpenseFlow({
@@ -362,6 +370,12 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
             const nextData = change?.data || {};
             const changedKey = change?.changed?.component?.key;
             const rawExpenseType = change?.data?.expenseType;
+            
+            // DEMONSTRATION: Logging the claim_type_based_on property if available
+            if (rawExpenseType && typeof rawExpenseType === "object" && rawExpenseType.claim_type_based_on) {
+              console.log("Found claim_type_based_on:", rawExpenseType.claim_type_based_on);
+            }
+
             const nextExpenseType =
               typeof rawExpenseType === "string" ? rawExpenseType : rawExpenseType?.name || rawExpenseType?.value || "";
             const nextExpenseCategory =
@@ -392,18 +406,20 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
           }}
         />
 
-        <ReceiptUploadSection
-          visibleAttachments={visibleAttachments}
-          ocrStatus={ocrDeps.ocrStatus}
-          ocrSummary={ocrDeps.ocrSummary}
-          ocrParsingSteps={ocrParsingSteps}
-          isEditingExistingExpense={isEditingExistingExpense}
-          isManualMode={ocrDeps.isManualMode}
-          selectedExpenseType={selectedExpenseType}
-          isFetchingExpenseFields={isFetchingExpenseFields}
-          onUpload={handleReceiptUploadOverride}
-          onProceedManually={ocrDeps.handleProceedManually}
-        />
+        {!isPerMileage && (
+          <ReceiptUploadSection
+            visibleAttachments={visibleAttachments}
+            ocrStatus={ocrDeps.ocrStatus}
+            ocrSummary={ocrDeps.ocrSummary}
+            ocrParsingSteps={ocrParsingSteps}
+            isEditingExistingExpense={isEditingExistingExpense}
+            isManualMode={ocrDeps.isManualMode}
+            selectedExpenseType={selectedExpenseType}
+            isFetchingExpenseFields={isFetchingExpenseFields}
+            onUpload={handleReceiptUploadOverride}
+            onProceedManually={ocrDeps.handleProceedManually}
+          />
+        )}
 
         {selectedExpenseType && shouldShowDynamicForm && (
           <div
