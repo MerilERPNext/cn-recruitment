@@ -31,7 +31,7 @@ const CompensatoryRequest: React.FC = () => {
     isLoading: isEmployeeLoading,
     error: employeeError,
   } = useEmployeeByUserId(userId);
-  const [selectedStatus, setSelectedStatus] = useState("Pending");
+  const [selectedStatus, setSelectedStatus] = useState("Issued");
 
   const [selectedRequest, setSelectedRequest] =
     useState<CompensatoryRequestItem | null>(null);

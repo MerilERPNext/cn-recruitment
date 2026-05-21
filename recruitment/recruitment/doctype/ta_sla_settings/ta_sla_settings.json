@@ -1,0 +1,194 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-05-19 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "sla_settings_section",
+  "sla_settings_description",
+  "sla_tasks",
+  "tat_settings_section",
+  "tat_settings_description",
+  "tat_fill_section",
+  "tat_fill_start_point",
+  "column_break_fill",
+  "tat_fill_end_point",
+  "tat_hire_section",
+  "tat_hire_start_point",
+  "column_break_hire_1",
+  "tat_hire_end_point",
+  "column_break_hire_2",
+  "enable_time_to_hire",
+  "tat_first_action_section",
+  "tat_first_action_start_point",
+  "column_break_first_action_1",
+  "tat_first_action_end_point",
+  "column_break_first_action_2",
+  "enable_time_to_first_action",
+  "target_tat_section",
+  "target_tat_description",
+  "target_tat_assignments"
+ ],
+ "fields": [
+  {
+   "fieldname": "sla_settings_section",
+   "fieldtype": "Section Break",
+   "label": "SLA Settings"
+  },
+  {
+   "fieldname": "sla_settings_description",
+   "fieldtype": "HTML",
+   "options": "<p style='color:#6c757d;font-size:12px;margin-bottom:10px;'>Configure the SLA Duration and Task Archival Duration (in days) for each recruitment task. Task names are pre-populated and read-only; only durations are editable.</p>"
+  },
+  {
+   "fieldname": "sla_tasks",
+   "fieldtype": "Table",
+   "label": "SLA Tasks",
+   "options": "TA SLA Task"
+  },
+  {
+   "fieldname": "tat_settings_section",
+   "fieldtype": "Section Break",
+   "label": "TAT Settings"
+  },
+  {
+   "fieldname": "tat_settings_description",
+   "fieldtype": "HTML",
+   "options": "<p style='color:#6c757d;font-size:12px;margin-bottom:10px;'>Define the Start and End points used to measure Time To Fill, Time To Hire and Time To First Action.</p>"
+  },
+  {
+   "fieldname": "tat_fill_section",
+   "fieldtype": "Section Break",
+   "label": "Configure Time To Fill"
+  },
+  {
+   "fieldname": "tat_fill_start_point",
+   "fieldtype": "Select",
+   "label": "Select Start Point",
+   "options": "\nPosition Opened Date (First)\nPosition Opened Date (Latest)\nCandidate Application Date\nCandidate Screening\nShortlisting\nInterview Scheduling\nInterview Completion\nAssessment Scheduling\nAssessment Completion\nPre-BGV Initiation\nPre-BGV Completion\nPre-Offer Stage\nOffer Proposal Stage\nOffer Letter Stage\nOffer Acceptance by Candidate Date (First)\nOffer Acceptance by Candidate Date (Latest)\nDate of Joining",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_fill",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tat_fill_end_point",
+   "fieldtype": "Select",
+   "label": "Select End Point",
+   "options": "\nPosition Opened Date (First)\nPosition Opened Date (Latest)\nCandidate Application Date\nCandidate Screening\nShortlisting\nInterview Scheduling\nInterview Completion\nAssessment Scheduling\nAssessment Completion\nPre-BGV Initiation\nPre-BGV Completion\nPre-Offer Stage\nOffer Proposal Stage\nOffer Letter Stage\nOffer Acceptance by Candidate Date (First)\nOffer Acceptance by Candidate Date (Latest)\nDate of Joining",
+   "reqd": 1
+  },
+  {
+   "fieldname": "tat_hire_section",
+   "fieldtype": "Section Break",
+   "label": "Configure Time To Hire"
+  },
+  {
+   "fieldname": "tat_hire_start_point",
+   "fieldtype": "Select",
+   "label": "Select Start Point",
+   "options": "\nPosition Opened Date (First)\nPosition Opened Date (Latest)\nCandidate Application Date\nCandidate Screening\nShortlisting\nInterview Scheduling\nInterview Completion\nAssessment Scheduling\nAssessment Completion\nPre-BGV Initiation\nPre-BGV Completion\nPre-Offer Stage\nOffer Proposal Stage\nOffer Letter Stage\nOffer Acceptance by Candidate Date (First)\nOffer Acceptance by Candidate Date (Latest)\nDate of Joining"
+  },
+  {
+   "fieldname": "column_break_hire_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tat_hire_end_point",
+   "fieldtype": "Select",
+   "label": "Select End Point",
+   "options": "\nPosition Opened Date (First)\nPosition Opened Date (Latest)\nCandidate Application Date\nCandidate Screening\nShortlisting\nInterview Scheduling\nInterview Completion\nAssessment Scheduling\nAssessment Completion\nPre-BGV Initiation\nPre-BGV Completion\nPre-Offer Stage\nOffer Proposal Stage\nOffer Letter Stage\nOffer Acceptance by Candidate Date (First)\nOffer Acceptance by Candidate Date (Latest)\nDate of Joining"
+  },
+  {
+   "fieldname": "column_break_hire_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "enable_time_to_hire",
+   "fieldtype": "Check",
+   "label": "Enable Time To Hire"
+  },
+  {
+   "fieldname": "tat_first_action_section",
+   "fieldtype": "Section Break",
+   "label": "Configure Time To First Action"
+  },
+  {
+   "fieldname": "tat_first_action_start_point",
+   "fieldtype": "Select",
+   "label": "Select Start Point",
+   "options": "\nPosition Opened Date (First)\nPosition Opened Date (Latest)\nCandidate Application Date\nCandidate Screening\nShortlisting\nInterview Scheduling\nInterview Completion\nAssessment Scheduling\nAssessment Completion\nPre-BGV Initiation\nPre-BGV Completion\nPre-Offer Stage\nOffer Proposal Stage\nOffer Letter Stage\nOffer Acceptance by Candidate Date (First)\nOffer Acceptance by Candidate Date (Latest)\nDate of Joining"
+  },
+  {
+   "fieldname": "column_break_first_action_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tat_first_action_end_point",
+   "fieldtype": "Select",
+   "label": "Select End Point",
+   "options": "\nPosition Opened Date (First)\nPosition Opened Date (Latest)\nCandidate Application Date\nCandidate Screening\nShortlisting\nInterview Scheduling\nInterview Completion\nAssessment Scheduling\nAssessment Completion\nPre-BGV Initiation\nPre-BGV Completion\nPre-Offer Stage\nOffer Proposal Stage\nOffer Letter Stage\nOffer Acceptance by Candidate Date (First)\nOffer Acceptance by Candidate Date (Latest)\nDate of Joining"
+  },
+  {
+   "fieldname": "column_break_first_action_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "enable_time_to_first_action",
+   "fieldtype": "Check",
+   "label": "Enable Time To First Action"
+  },
+  {
+   "fieldname": "target_tat_section",
+   "fieldtype": "Section Break",
+   "label": "Configure Target TAT by Designation / User Assignments"
+  },
+  {
+   "fieldname": "target_tat_description",
+   "fieldtype": "HTML",
+   "options": "<p style='color:#6c757d;font-size:12px;margin-bottom:10px;'>Set custom Target TAT values (in days) per Designation or User. Pick the assignment type, the specific designation or user, then enter the target days.</p>"
+  },
+  {
+   "fieldname": "target_tat_assignments",
+   "fieldtype": "Table",
+   "label": "Target TAT Assignments",
+   "options": "TA Target TAT Assignment"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-05-19 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "TA SLA Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "HR Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "HR User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

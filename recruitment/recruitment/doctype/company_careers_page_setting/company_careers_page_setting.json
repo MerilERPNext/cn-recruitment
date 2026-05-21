@@ -1,0 +1,261 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-05-19 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "basic_info_section",
+  "careers_page_setting_name",
+  "applicable_to",
+  "column_break_basic_info",
+  "created_on",
+  "banner_section",
+  "banner_text",
+  "open_jobs_list_banner_text",
+  "column_break_banner",
+  "custom_button_hyperlink_color",
+  "banner_carousel_section",
+  "banner_carousel_description",
+  "banner_image_1",
+  "banner_image_2",
+  "banner_image_3",
+  "header_image_section",
+  "header_image_description",
+  "open_jobs_header_image",
+  "social_media_section",
+  "linkedin_url",
+  "twitter_url",
+  "column_break_social",
+  "instagram_url",
+  "facebook_url",
+  "contact_links_section",
+  "help_email",
+  "column_break_contact",
+  "custom_weblink",
+  "custom_weblink_alias",
+  "employer_benefits_section",
+  "employer_benefits_content",
+  "enable_visibility_on_job_details",
+  "additional_settings_section",
+  "group_company_site",
+  "column_break_additional",
+  "terms_and_conditions"
+ ],
+ "fields": [
+  {
+   "fieldname": "basic_info_section",
+   "fieldtype": "Section Break",
+   "label": "Basic Information"
+  },
+  {
+   "fieldname": "careers_page_setting_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Careers Page Setting Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "applicable_to",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Applicable To",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_basic_info",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "created_on",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Created On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "banner_section",
+   "fieldtype": "Section Break",
+   "label": "Banner Configuration"
+  },
+  {
+   "fieldname": "banner_text",
+   "fieldtype": "Data",
+   "label": "Banner Text",
+   "reqd": 1
+  },
+  {
+   "fieldname": "open_jobs_list_banner_text",
+   "fieldtype": "Data",
+   "label": "Open Jobs List Banner Text",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_banner",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "custom_button_hyperlink_color",
+   "fieldtype": "Color",
+   "label": "Custom Button and Hyperlink Color"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "banner_carousel_section",
+   "fieldtype": "Section Break",
+   "label": "Banner Image Carousel"
+  },
+  {
+   "fieldname": "banner_carousel_description",
+   "fieldtype": "HTML",
+   "options": "<p style='color:#6c757d;font-size:12px;margin-bottom:10px;'>Please ensure the images you upload here are of <b>800 (width) x 520 (height)</b> pixel dimensions. Add multiple images to create a carousel.<br>Allowed image format: <b>png, jpeg, jpg</b> &nbsp;|&nbsp; Allowed image size: <b>&le; 1MB each</b></p>"
+  },
+  {
+   "fieldname": "banner_image_1",
+   "fieldtype": "Attach Image",
+   "label": "Banner Image 1"
+  },
+  {
+   "fieldname": "banner_image_2",
+   "fieldtype": "Attach Image",
+   "label": "Banner Image 2"
+  },
+  {
+   "fieldname": "banner_image_3",
+   "fieldtype": "Attach Image",
+   "label": "Banner Image 3"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "header_image_section",
+   "fieldtype": "Section Break",
+   "label": "Open Jobs Page Header Image"
+  },
+  {
+   "fieldname": "header_image_description",
+   "fieldtype": "HTML",
+   "options": "<p style='color:#6c757d;font-size:12px;margin-bottom:10px;'>Please ensure the image you upload here is of <b>1366 (width) x 170 (height)</b> pixel dimensions.<br>Allowed image format: <b>png, jpeg, jpg</b> &nbsp;|&nbsp; Allowed image size: <b>&le; 1MB</b></p>"
+  },
+  {
+   "fieldname": "open_jobs_header_image",
+   "fieldtype": "Attach Image",
+   "label": "Open Jobs Page Header Image"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "social_media_section",
+   "fieldtype": "Section Break",
+   "label": "Company's Social Media Links"
+  },
+  {
+   "fieldname": "linkedin_url",
+   "fieldtype": "Data",
+   "label": "LinkedIn",
+   "options": "URL"
+  },
+  {
+   "fieldname": "twitter_url",
+   "fieldtype": "Data",
+   "label": "Twitter",
+   "options": "URL"
+  },
+  {
+   "fieldname": "column_break_social",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "instagram_url",
+   "fieldtype": "Data",
+   "label": "Instagram",
+   "options": "URL"
+  },
+  {
+   "fieldname": "facebook_url",
+   "fieldtype": "Data",
+   "label": "Facebook",
+   "options": "URL"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "contact_links_section",
+   "fieldtype": "Section Break",
+   "label": "Contact & Custom Links"
+  },
+  {
+   "fieldname": "help_email",
+   "fieldtype": "Data",
+   "label": "Help Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "column_break_contact",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "custom_weblink",
+   "fieldtype": "Data",
+   "label": "Custom Weblink on Careers Page",
+   "options": "URL"
+  },
+  {
+   "fieldname": "custom_weblink_alias",
+   "fieldtype": "Data",
+   "label": "Custom Weblink Alias"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "employer_benefits_section",
+   "fieldtype": "Section Break",
+   "label": "Employer Benefits Section on Careers Page"
+  },
+  {
+   "fieldname": "employer_benefits_content",
+   "fieldtype": "Text Editor",
+   "label": "Employer Benefits Content"
+  },
+  {
+   "fieldname": "enable_visibility_on_job_details",
+   "fieldtype": "Check",
+   "label": "Enable visibility on job details page"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "additional_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Additional Settings"
+  },
+  {
+   "fieldname": "group_company_site",
+   "fieldtype": "Data",
+   "label": "Group Company Site"
+   },
+  {
+   "fieldname": "column_break_additional",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "PDF only",
+   "fieldname": "terms_and_conditions",
+   "fieldtype": "Attach",
+   "label": "Terms and Conditions"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-19 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Company Careers Page Setting",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 0,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
