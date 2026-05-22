@@ -73,6 +73,26 @@ def get_review_urls(name: str) -> dict:
     }
 
 
+@frappe.whitelist()
+def get_reviewer_employees():
+    """Active employees whose linked user holds the 'Job Approver' role.
+    """
+    users = frappe.get_all(
+        "Has Role",
+        filters={"role": "Job Approver", "parenttype": "User"},
+        pluck="parent",
+    )
+    if not users:
+        return []
+    return frappe.get_all(
+        "Employee",
+        filters={"status": "Active", "user_id": ["in", users]},
+        fields=["name", "employee_name", "user_id"],
+        order_by="employee_name asc",
+        limit_page_length=0,
+    )
+
+
 @frappe.whitelist(allow_guest=True)
 def review_decision(name: str, action: str, **kwargs):
     if action not in ("approve", "reject"):
