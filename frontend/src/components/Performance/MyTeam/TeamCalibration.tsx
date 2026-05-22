@@ -1,18 +1,24 @@
-import React from 'react';
-import { useScreenSize } from '../../../hooks/useScreenSize';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown } from "lucide-react";
+import React from "react";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
 const DISTRIBUTION = [
-  { label: 'Outstanding', target: 5, actual: 13, isRed: true },
-  { label: 'Exceeds', target: 15, actual: 25, isRed: true },
-  { label: 'Meets', target: 60, actual: 37, isRed: true },
-  { label: 'Below', target: 15, actual: 13, isRed: false },
-  { label: 'Unsatisfactory', target: 5, actual: 12, isRed: true },
+  { label: "Outstanding", target: 5, actual: 13, isRed: true },
+  { label: "Exceeds", target: 15, actual: 25, isRed: true },
+  { label: "Meets", target: 60, actual: 37, isRed: true },
+  { label: "Below", target: 15, actual: 13, isRed: false },
+  { label: "Unsatisfactory", target: 5, actual: 12, isRed: true },
 ];
 
-type PerfRating = 'Outstanding' | 'Exceeds' | 'Meets' | 'Below' | 'Unsatisfactory' | '-';
+type PerfRating =
+  | "Outstanding"
+  | "Exceeds"
+  | "Meets"
+  | "Below"
+  | "Unsatisfactory"
+  | "-";
 
 interface Employee {
   id: string;
@@ -28,39 +34,111 @@ interface Employee {
 }
 
 const EMPLOYEES: Employee[] = [
-  { id: '1', initials: 'PM', name: 'Pallavi Mahar', role: 'Sr. Product Designer', fy24: 'Meets', fy25: 'Exceeds', self: 'Outstanding', peerAvg: 'Exceeds', myProposal: 'Exceeds', gridHighlight: [0, 2] },
-  { id: '2', initials: 'KI', name: 'Karthik Iyer', role: 'Sr. Designer', fy24: 'Meets', fy25: 'Exceeds', self: 'Outstanding', peerAvg: 'Outstanding', myProposal: 'Exceeds', gridHighlight: [0, 2] },
-  { id: '3', initials: 'MS', name: 'Mohit Sinha', role: 'Sr. Designer', fy24: 'Below', fy25: 'Meets', self: 'Exceeds', peerAvg: 'Meets', myProposal: 'Meets', gridHighlight: [1, 2] },
-  { id: '4', initials: 'RB', name: 'Riya Banerjee', role: 'Designer II', fy24: 'Meets', fy25: 'Exceeds', self: 'Outstanding', peerAvg: 'Outstanding', myProposal: 'Outstanding', gridHighlight: [0, 2] },
-  { id: '5', initials: 'AB', name: 'Aman Bhatt', role: 'Designer II', fy24: 'Below', fy25: 'Meets', self: '-', peerAvg: 'Meets', myProposal: 'Meets', gridHighlight: [1, 2] },
-  { id: '6', initials: 'SD', name: 'Shreya Das', role: 'Designer I', fy24: '-', fy25: '-', self: 'Outstanding', peerAvg: 'Exceeds', myProposal: 'Exceeds', gridHighlight: [2, 2] },
+  {
+    id: "1",
+    initials: "PM",
+    name: "Pallavi Mahar",
+    role: "Sr. Product Designer",
+    fy24: "Meets",
+    fy25: "Exceeds",
+    self: "Outstanding",
+    peerAvg: "Exceeds",
+    myProposal: "Exceeds",
+    gridHighlight: [0, 2],
+  },
+  {
+    id: "2",
+    initials: "KI",
+    name: "Karthik Iyer",
+    role: "Sr. Designer",
+    fy24: "Meets",
+    fy25: "Exceeds",
+    self: "Outstanding",
+    peerAvg: "Outstanding",
+    myProposal: "Exceeds",
+    gridHighlight: [0, 2],
+  },
+  {
+    id: "3",
+    initials: "MS",
+    name: "Mohit Sinha",
+    role: "Sr. Designer",
+    fy24: "Below",
+    fy25: "Meets",
+    self: "Exceeds",
+    peerAvg: "Meets",
+    myProposal: "Meets",
+    gridHighlight: [1, 2],
+  },
+  {
+    id: "4",
+    initials: "RB",
+    name: "Riya Banerjee",
+    role: "Designer II",
+    fy24: "Meets",
+    fy25: "Exceeds",
+    self: "Outstanding",
+    peerAvg: "Outstanding",
+    myProposal: "Outstanding",
+    gridHighlight: [0, 2],
+  },
+  {
+    id: "5",
+    initials: "AB",
+    name: "Aman Bhatt",
+    role: "Designer II",
+    fy24: "Below",
+    fy25: "Meets",
+    self: "-",
+    peerAvg: "Meets",
+    myProposal: "Meets",
+    gridHighlight: [1, 2],
+  },
+  {
+    id: "6",
+    initials: "SD",
+    name: "Shreya Das",
+    role: "Designer I",
+    fy24: "-",
+    fy25: "-",
+    self: "Outstanding",
+    peerAvg: "Exceeds",
+    myProposal: "Exceeds",
+    gridHighlight: [2, 2],
+  },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const getRatingColor = (rating: PerfRating) => {
   switch (rating) {
-    case 'Outstanding':
-    case 'Exceeds':
-      return { text: 'text-green-700', dot: 'bg-green-500', bg: 'bg-green-50' };
-    case 'Meets':
-      return { text: 'text-blue-600', dot: 'bg-blue-500', bg: 'bg-blue-50' };
-    case 'Below':
-      return { text: 'text-amber-600', dot: 'bg-amber-500', bg: 'bg-amber-50' };
-    case 'Unsatisfactory':
-      return { text: 'text-red-600', dot: 'bg-red-500', bg: 'bg-red-50' };
+    case "Outstanding":
+    case "Exceeds":
+      return { text: "text-green-700", dot: "bg-green-500", bg: "bg-green-50" };
+    case "Meets":
+      return { text: "text-blue-600", dot: "bg-blue-500", bg: "bg-blue-50" };
+    case "Below":
+      return { text: "text-amber-600", dot: "bg-amber-500", bg: "bg-amber-50" };
+    case "Unsatisfactory":
+      return { text: "text-red-600", dot: "bg-red-500", bg: "bg-red-50" };
     default:
-      return { text: 'text-gray-400', dot: 'bg-transparent', bg: 'bg-transparent' };
+      return {
+        text: "text-gray-400",
+        dot: "bg-transparent",
+        bg: "bg-transparent",
+      };
   }
 };
 
 const RatingCell = ({ rating }: { rating: PerfRating }) => {
-  if (rating === '-') return <span className="text-gray-400 font-bold">—</span>;
-  
+  if (rating === "-") return <span className="text-gray-400 font-bold">—</span>;
+
   const { text, dot, bg } = getRatingColor(rating);
 
   return (
-    <div className={`flex items-center gap-1.5 ${text} ${bg} font-bold text-[10px] px-2 py-0.5 rounded-xl w-fit`}>
+    <div
+      className={`flex items-center gap-1.5 ${text} ${bg} font-bold text-[10px] px-2 py-0.5 rounded-xl w-fit`}
+    >
       <div className={`w-1.5 h-1.5 rounded-xl ${dot}`} />
       {rating}
     </div>
@@ -69,15 +147,20 @@ const RatingCell = ({ rating }: { rating: PerfRating }) => {
 
 const NineBox = ({ highlight }: { highlight: [number, number] }) => (
   <div className="grid grid-cols-3 gap-[2px] w-[28px] h-[28px]">
-    {[0, 1, 2].map(r => 
-      [0, 1, 2].map(c => {
+    {[0, 1, 2].map((r) =>
+      [0, 1, 2].map((c) => {
         const isHighlighted = r === highlight[0] && c === highlight[1];
         return (
-          <div key={`${r}-${c}`} className={`w-[8px] h-[8px] rounded-[1px] flex items-center justify-center ${isHighlighted ? 'bg-[#1a73e8]' : 'bg-gray-100'}`}>
-            {isHighlighted && <div className="w-[3px] h-[3px] bg-white rounded-full" />}
+          <div
+            key={`${r}-${c}`}
+            className={`w-[8px] h-[8px] rounded-[1px] flex items-center justify-center ${isHighlighted ? "bg-[#1a73e8]" : "bg-gray-100"}`}
+          >
+            {isHighlighted && (
+              <div className="w-[3px] h-[3px] bg-white rounded-full" />
+            )}
           </div>
         );
-      })
+      }),
     )}
   </div>
 );
@@ -92,11 +175,14 @@ const TeamCalibration: React.FC = () => {
   const maxScale = 60;
 
   return (
-    <main className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] font-sans ${isMobile ? 'p-4' : 'p-8 pb-32'}`}>
+    <main
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] font-sans ${isMobile ? "p-4" : "p-8 pb-32"}`}
+    >
       <div className="mx-auto w-full max-w-screen space-y-5">
-
         {/* ── Header ──────────────────────────────────────────────────── */}
-        <div className={`flex ${isCompact ? 'flex-col gap-4' : 'items-end justify-between'} mb-6`}>
+        <div
+          className={`flex ${isCompact ? "flex-col gap-4" : "items-end justify-between"} mb-6`}
+        >
           <div className="space-y-1">
             <span className="inline-block px-2.5 py-0.5 rounded-xl text-[10px] font-bold text-amber-800 bg-amber-100 mb-1">
               Pre-calibration - Manager view
@@ -105,13 +191,16 @@ const TeamCalibration: React.FC = () => {
               Calibration Prep · Design Oxygen Team
             </h1>
             <span className="text-[12px] text-gray-500 font-medium block">
-              Aditi Sharma's session · 5 Jun 2026 - 14:00 IST · Soft target distribution
+              Aditi Sharma's session · 5 Jun 2026 - 14:00 IST · Soft target
+              distribution
             </span>
           </div>
           <div className="flex items-center gap-2">
             <button className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 bg-white rounded-md text-[11px] font-bold text-[#1a73e8] hover:bg-gray-50 transition-colors shadow-sm">
               <div className="grid grid-cols-3 gap-[1px] w-3 h-3">
-                {[...Array(9)].map((_, i) => <div key={i} className="bg-[#1a73e8] rounded-[1px]" />)}
+                {[...Array(9)].map((_, i) => (
+                  <div key={i} className="bg-[#1a73e8] rounded-[1px]" />
+                ))}
               </div>
               View team on 9-Box
             </button>
@@ -125,8 +214,12 @@ const TeamCalibration: React.FC = () => {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.02)] p-6">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h3 className="text-[15px] font-bold text-gray-900">Your team's distribution</h3>
-              <span className="text-[11px] text-gray-500">vs target (soft curve)</span>
+              <h3 className="text-[15px] font-bold text-gray-900">
+                Your team's distribution
+              </h3>
+              <span className="text-[11px] text-gray-500">
+                vs target (soft curve)
+              </span>
             </div>
             <div className="flex items-center gap-1.5 text-green-700 font-bold text-[11px]">
               <Check className="w-3.5 h-3.5" /> Within ±5% of target
@@ -137,24 +230,29 @@ const TeamCalibration: React.FC = () => {
             {DISTRIBUTION.map((bucket) => {
               const targetHeight = (bucket.target / maxScale) * 100;
               const actualHeight = (bucket.actual / maxScale) * 100;
-              
+
               return (
-                <div key={bucket.label} className="flex flex-col items-center gap-2.5 w-32 h-full">
+                <div
+                  key={bucket.label}
+                  className="flex flex-col items-center gap-2.5 w-32 h-full"
+                >
                   {/* Bars */}
                   <div className="flex items-end gap-1.5 h-full w-full justify-center">
-                    <div 
-                      className="w-[12px] bg-gray-200 rounded-t-[2px]" 
+                    <div
+                      className="w-[12px] bg-gray-200 rounded-t-[2px]"
                       style={{ height: `${targetHeight}%` }}
                     />
-                    <div 
-                      className={`w-[12px] rounded-t-[2px] ${bucket.isRed ? 'bg-[#e11d48]' : 'bg-[#1a73e8]'}`} 
+                    <div
+                      className={`w-[12px] rounded-t-[2px] ${bucket.isRed ? "bg-[#e11d48]" : "bg-[#1a73e8]"}`}
                       style={{ height: `${actualHeight}%` }}
                     />
                   </div>
-                  
+
                   {/* Labels */}
                   <div className="text-center shrink-0">
-                    <div className="text-[10px] font-bold text-gray-900 leading-tight">{bucket.label}</div>
+                    <div className="text-[10px] font-bold text-gray-900 leading-tight">
+                      {bucket.label}
+                    </div>
                     <div className="text-[9px] font-semibold text-gray-400 mt-[1px]">
                       Target {bucket.target}% / Actual {bucket.actual}%
                     </div>
@@ -167,20 +265,21 @@ const TeamCalibration: React.FC = () => {
           {/* Legend */}
           <div className="flex justify-center items-center gap-6 text-[11px] font-bold text-gray-500">
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-gray-200 rounded-sm" /> Target distribution
+              <div className="w-2.5 h-2.5 bg-gray-200 rounded-sm" /> Target
+              distribution
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 bg-[#1a73e8] rounded-sm" /> Actual
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-[#e11d48] rounded-sm" /> Outside band
+              <div className="w-2.5 h-2.5 bg-[#e11d48] rounded-sm" /> Outside
+              band
             </div>
           </div>
         </div>
 
         {/* ── Employee Table ──────────────────────────────────────────── */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
-          
           {/* Table Header */}
           <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50/50 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
             <div className="col-span-3">Employee</div>
@@ -195,8 +294,10 @@ const TeamCalibration: React.FC = () => {
           {/* Table Body */}
           <div className="divide-y divide-gray-100">
             {EMPLOYEES.map((emp) => (
-              <div key={emp.id} className="grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-gray-50/50 transition-colors">
-                
+              <div
+                key={emp.id}
+                className="grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-gray-50/50 transition-colors"
+              >
                 {/* Employee Info */}
                 <div className="col-span-3 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 bg-blue-50 text-blue-600">
@@ -213,14 +314,22 @@ const TeamCalibration: React.FC = () => {
                 </div>
 
                 {/* Ratings Columns */}
-                <div className="col-span-1"><RatingCell rating={emp.fy24} /></div>
-                <div className="col-span-2"><RatingCell rating={emp.fy25} /></div>
-                <div className="col-span-2"><RatingCell rating={emp.self} /></div>
-                <div className="col-span-2"><RatingCell rating={emp.peerAvg} /></div>
+                <div className="col-span-1">
+                  <RatingCell rating={emp.fy24} />
+                </div>
+                <div className="col-span-2">
+                  <RatingCell rating={emp.fy25} />
+                </div>
+                <div className="col-span-2">
+                  <RatingCell rating={emp.self} />
+                </div>
+                <div className="col-span-2">
+                  <RatingCell rating={emp.peerAvg} />
+                </div>
 
                 {/* My Proposal Dropdown */}
                 <div className="col-span-1 relative">
-                  <select 
+                  <select
                     className="appearance-none w-24 bg-white border border-gray-200 text-gray-900 text-[11px] font-bold rounded-md px-2.5 py-1.5 pr-6 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-shadow cursor-pointer"
                     defaultValue={emp.myProposal}
                   >
@@ -237,13 +346,10 @@ const TeamCalibration: React.FC = () => {
                 <div className="col-span-1 flex justify-end">
                   <NineBox highlight={emp.gridHighlight} />
                 </div>
-
               </div>
             ))}
           </div>
-
         </div>
-
       </div>
     </main>
   );
