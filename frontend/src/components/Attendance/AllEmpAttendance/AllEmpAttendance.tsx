@@ -41,7 +41,8 @@ import OvertimeLog from "../Employee/EmployeeAttendence/OvertimeLog";
 import RegularizeDrawer from "../Employee/EmployeeAttendence/RegularizeDrawer";
 import ViewPolicies from "../Employee/EmployeeAttendence/ViewPolicies";
 import { EditAttendance } from "../Team/EditAttendance";
-
+import { AttendanceAdjustmentForm } from "./AttendanceAdjustments/AttendanceAdjustmentForm";
+import BulkLeaveModal from "../../Leaves/BulkLeaveModal";
 /* -------------------- Helpers -------------------- */
 const formatTimeSafe = (timeStr?: string) => {
   if (!timeStr) return "--:--";
@@ -69,6 +70,8 @@ const AllEmpAttendance = () => {
 
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [editAttendance, setEditAttendance] = useState(false);
+  const [showAttendanceAdjustmentForm, setShowAttendanceAdjustmentForm] = useState(false);
+  const [showBulkLeaveModal, setShowBulkLeaveModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(
     null,
   );
@@ -78,6 +81,10 @@ const AllEmpAttendance = () => {
     data: AttendanceRecord;
     events?: AttendanceRecord[];
   } | null>(null);
+
+  const [selectedDateKeys, setSelectedDateKeys] = useState<Set<string>>(
+    new Set(),
+  );
 
   const onRefetchData = useCallback(() => {
     queryClient.invalidateQueries({
@@ -305,6 +312,49 @@ const AllEmpAttendance = () => {
     return items;
   }, [getAttendanceStatus, currentMonth]);
 
+  const selectedRows = useMemo(
+    () => completeMonthData.filter((item) =>
+      selectedDateKeys.has(format(item.date, "yyyy-MM-dd")),
+    ),
+    [completeMonthData, selectedDateKeys],
+  );
+
+  const selectableItems = useMemo(
+    () => completeMonthData.filter(
+      ({ statusInfo }) => statusInfo.record?.attendance_request_allowed !== false,
+    ),
+    [completeMonthData],
+  );
+
+  const allSelected =
+    selectableItems.length > 0 &&
+    selectableItems.every((item) =>
+      selectedDateKeys.has(format(item.date, "yyyy-MM-dd")),
+    );
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedDateKeys(new Set());
+    } else {
+      setSelectedDateKeys(
+        new Set(selectableItems.map((item) => format(item.date, "yyyy-MM-dd"))),
+      );
+    }
+  };
+
+  const toggleRow = (dateKey: string, selectable: boolean) => {
+    if (!selectable) return;
+    setSelectedDateKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(dateKey)) {
+        next.delete(dateKey);
+      } else {
+        next.add(dateKey);
+      }
+      return next;
+    });
+  };
+  console.log(selectedRows, "-----------")
   /* Error state */
   if (isError) {
     return (
@@ -459,10 +509,190 @@ const AllEmpAttendance = () => {
 
       {/* Attendance List */}
       <div className="px-4 pb-4">
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
+
+        {/* ── Mobile card list ── */}
+        {!isDesktop && <div className="flex flex-col gap-2">
+          {/* Select-all bar */}
+          <div className="flex items-center gap-2 px-1 py-2">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+              className="cursor-pointer"
+            />
+            <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+              Select all
+            </span>
+          </div>
+
+          {completeMonthData.map((item, index) => {
+            const { date, statusInfo } = item;
+            const record = statusInfo.record;
+            const dateKey = format(date, "yyyy-MM-dd");
+            const selectable = statusInfo.record?.attendance_request_allowed !== false;
+            const isChecked = selectedDateKeys.has(dateKey);
+
+            const getStatusDisplay = (status: Status): string => {
+              switch (status) {
+                case "present": return "Present";
+                case "absent": return "Absent";
+                case "on-leave": return "On Leave";
+                case "half-day": return "Half Day";
+                case "work-from-home": return "Work From Home";
+                case "holiday": return "Holiday";
+                case "week-off": return "Weekly Off";
+                case "unpaid": return "On Leave";
+                case "default": return "Not Marked";
+                default: return status;
+              }
+            };
+
+            const getStatusColor = (status: Status): string => {
+              switch (status) {
+                case "present": return "bg-green-100 text-green-700";
+                case "absent": return "bg-red-100 text-red-700";
+                case "on-leave":
+                case "unpaid":
+                case "half-day": return "bg-orange-100 text-orange-700";
+                case "week-off":
+                case "holiday": return "bg-blue-100 text-blue-700";
+                default: return "bg-gray-100 text-gray-700";
+              }
+            };
+
+            const getEventColor = (doctype: string, statusLabel?: string): string => {
+              const s = statusLabel?.toLowerCase().trim();
+              if (s === "leave approval" || s === "leave approval pending") return "bg-yellow-50 text-yellow-700 border border-yellow-200";
+              if (s === "approved" || s === "leave approved") return "bg-green-50 text-green-700 border border-green-200";
+              if (s === "rejected") return "bg-red-50 text-red-700 border border-red-200";
+              if (s === "revoked") return "bg-gray-50 text-gray-700 border border-gray-200";
+              if (s === "out duty") return "bg-purple-50 text-purple-700 border border-purple-200";
+              if (s === "attendance adjustment") return "bg-blue-50 text-blue-700 border border-blue-200";
+              switch (doctype) {
+                case "Attendance Request": return "bg-blue-50 text-blue-700 border border-blue-200";
+                case "Leave Request": return "bg-pink-50 text-pink-700 border border-pink-200";
+                case "Overtime Request": return "bg-orange-50 text-orange-700 border border-orange-200";
+                case "Out Duty": return "bg-purple-50 text-purple-700 border border-purple-200";
+                default: return "bg-blue-50 text-blue-700 border border-blue-200";
+              }
+            };
+
+            return (
+              <div
+                key={`card-${dateKey}-${index}`}
+                onClick={() => {
+                  setShowDetailsFor({
+                    date,
+                    data: record || ({
+                      name: `placeholder-${dateKey}`,
+                      doctype: "Attendance",
+                      start: dateKey,
+                      end: dateKey,
+                      title: "No Data",
+                      status: getStatusDisplay(statusInfo.status),
+                      docstatus: "",
+                      employee: "",
+                    } as AttendanceRecord),
+                    status: statusInfo.status.replace(/-/g, " "),
+                    events: statusInfo.events,
+                  });
+                }}
+                className={`rounded-lg border cursor-pointer transition-colors ${isChecked ? "border-primary-400 bg-primary-50" : "border-gray-200 bg-white"
+                  }`}
+              >
+                {/* Card header row */}
+                <div className="flex items-center justify-between px-3 pt-3 pb-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      disabled={!selectable}
+                      checked={isChecked}
+                      onChange={() => toggleRow(dateKey, selectable)}
+                      onClick={(e) => e.stopPropagation()}
+                      className={`mt-0.5 ${!selectable ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}
+                    />
+                    <div className="flex gap-2 items-center justify-center">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {format(date, "dd MMM yyyy, EEE")}
+                      </p>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(statusInfo.status)}`}>
+                        {getStatusDisplay(statusInfo.status)}
+                      </span>
+                    </div>
+                  </div>
+                  {canEditAttendance && (
+                    <Button
+                      variant="subtle"
+                      size="sm"
+                      disabled={record?.doctype !== "Attendance"}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (record?.doctype === "Attendance") {
+                          setSelectedRecord(record);
+                          setEditAttendance(true);
+                        }
+                      }}
+                    >
+                      <Edit size={15} />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Card body */}
+                <div className="px-3 pb-3 space-y-1.5 pl-9">
+                  {/* Events */}
+                  {statusInfo.events.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {statusInfo.events.map((event, i) => {
+                        const eventType =
+                          event.doctype === "Attendance Request" && event.request_type === "Out Duty"
+                            ? event.request_type
+                            : event.doctype;
+                        const eventLabel = event?.custom_status || event?.status;
+                        return (
+                          <Tooltip key={i} content={eventType}>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getEventColor(eventType, eventLabel)}`}>
+                              {eventLabel}
+                            </span>
+                          </Tooltip>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Shift / times row */}
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                    {record?.shift && (
+                      <span><span className="font-medium text-gray-700">Shift:</span> {record.shift}</span>
+                    )}
+                    {record?.doctype === "Attendance" && (
+                      <>
+                        <span><span className="font-medium text-gray-700">In:</span> {formatTimeSafe(record.in_time)}</span>
+                        <span><span className="font-medium text-gray-700">Out:</span> {formatTimeSafe(record.out_time)}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>}
+
+        {/* ── Desktop table ── */}
+        {isDesktop && <div className="overflow-x-auto rounded-lg border border-gray-200">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase"
+                >
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th
                   scope="col"
                   className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
@@ -640,6 +870,22 @@ const AllEmpAttendance = () => {
                     }}
                     className={`hover:bg-primary-50 transition-colors cursor-pointer`}
                   >
+                    <td className="w-px px-4 py-3">
+                      {(() => {
+                        const dateKey = format(date, "yyyy-MM-dd");
+                        const selectable = statusInfo.record?.attendance_request_allowed !== false;
+                        return (
+                          <input
+                            type="checkbox"
+                            disabled={!selectable}
+                            checked={selectedDateKeys.has(dateKey)}
+                            onChange={() => toggleRow(dateKey, selectable)}
+                            onClick={(e) => e.stopPropagation()}
+                            className={!selectable ? "cursor-not-allowed opacity-40" : "cursor-pointer"}
+                          />
+                        );
+                      })()}
+                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                       {format(date, "dd MMM yyyy, EEE")}
                     </td>
@@ -656,7 +902,7 @@ const AllEmpAttendance = () => {
                           {statusInfo.events.map((event, i) => {
                             const eventType =
                               event.doctype === "Attendance Request" &&
-                              event.request_type === "Out Duty"
+                                event.request_type === "Out Duty"
                                 ? event.request_type
                                 : event.doctype;
                             const eventLabel =
@@ -717,7 +963,63 @@ const AllEmpAttendance = () => {
               })}
             </tbody>
           </table>
-        </div>
+        </div>}
+
+        {selectedRows?.length > 0 && (
+          <div className=" w-full sticky bottom-6 left-0 right-0 flex justify-center items-center z-50">
+            <div className="px-4 py-3 w-[100%] flex justify-between bg-white items-center shadow-lg rounded-md gap-2">
+
+              {selectedRows.length > 0 && isDesktop && <Typography variant="bodySmall" className="text-primary-600 font-medium">
+                {selectedRows.length} row{selectedRows.length > 1 ? "s" : ""} selected
+              </Typography>}
+
+
+              <div className={`flex items-center gap-2 ${!isDesktop ? "flex-wrap" : ""}`}>
+                <Button
+                  variant="soft"
+                  onClick={() => setSelectedDateKeys(new Set())}
+                >
+                  Clear
+                </Button>
+                <div className="flex gap-2 w-full">
+                  <Button
+                    variant="contain"
+                    bgColor="primary"
+                    size="md"
+                    onClick={() => setShowAttendanceAdjustmentForm(true)}
+                  >
+                    Attendance Adjustment
+                  </Button>
+                  <Button
+                    variant="contain"
+                    bgColor="primary"
+                    size="md"
+                    onClick={() => setShowBulkLeaveModal(true)}
+                  >
+                    Bulk Leave
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {showAttendanceAdjustmentForm &&
+          <AttendanceAdjustmentForm
+            selectedRows={selectedRows || []}
+            onCancel={() => {
+              setShowAttendanceAdjustmentForm(false);
+            }}
+            onSuccess={() => {
+              setShowAttendanceAdjustmentForm(false);
+              onRefetchData();
+              setSelectedDateKeys(new Set());
+            }}
+          />}
+        <BulkLeaveModal
+          isOpen={showBulkLeaveModal}
+          onClose={() => setShowBulkLeaveModal(false)}
+          prefilledDates={selectedRows.map((row) => ({ date: format(row.date, "yyyy-MM-dd") }))}
+        />
         <EditAttendance
           employeeId={selectedRecord?.employee || ""}
           employeeName={selectedRecord?.employee_name || ""}

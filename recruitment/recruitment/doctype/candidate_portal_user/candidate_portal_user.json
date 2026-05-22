@@ -54,7 +54,7 @@
   {"fieldname": "last_session", "fieldtype": "Link", "label": "Last Session", "options": "Candidate Portal Session", "read_only": 1},
   {"fieldname": "security_tab", "fieldtype": "Tab Break", "label": "Security"},
   {"fieldname": "password_section", "fieldtype": "Section Break", "label": "Password"},
-  {"fieldname": "password_hash", "fieldtype": "Password", "label": "Password Hash", "reqd": 1},
+  {"description": "Empty for invited candidates who have not yet set a password.", "fieldname": "password_hash", "fieldtype": "Password", "label": "Password Hash"},
   {"fieldname": "password_updated_at", "fieldtype": "Datetime", "label": "Password Updated At", "read_only": 1},
   {"default": "0", "fieldname": "require_password_reset", "fieldtype": "Check", "label": "Require Password Reset"},
   {"fieldname": "lockout_section", "fieldtype": "Section Break", "label": "Lockout"},

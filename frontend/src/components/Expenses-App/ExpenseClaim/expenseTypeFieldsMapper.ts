@@ -21,6 +21,7 @@ type MapperContext = {
   isAmountReadonly?: boolean;
   unitFieldLabel?: string;
   hasParticipants?: boolean;
+  isUnitsReadonly?: boolean;
 };
 
 const buildLabel = (label?: string) => {
@@ -197,6 +198,21 @@ const mapFieldToFormio = (field: FieldConfig, ctx: MapperContext) => {
       };
 
     case "Data":
+      if (field.fieldname === "odometer_from" || field.fieldname === "odometer_to") {
+        return {
+          type: "number",
+          key: field.fieldname,
+          label,
+          input: true,
+          delimiter: false,
+          validate: {
+            ...buildValidation(field.label, required),
+            min: 0,
+          },
+          validateOn: "blur",
+          html: true,
+        };
+      }
       if (field.fieldname === "units" || field.fieldname === "no_of_units") {
         if (!required) return null;
         const resolvedUnitLabel =
@@ -211,6 +227,7 @@ const mapFieldToFormio = (field: FieldConfig, ctx: MapperContext) => {
           validate: buildValidation(field.label, required),
           validateOn: "blur",
           html: true,
+          ...(ctx.isUnitsReadonly ? { attributes: { readonly: true } } : {}),
         };
       }
       return {

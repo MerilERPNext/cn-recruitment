@@ -142,6 +142,14 @@ export const buildInitialDynamicFormData = (
 
   delete nextData.custom_form_data;
 
+  // Map backend custom_odometer_* fields to Form.io fields for hydration during edit/draft
+  if (nextData.custom_odometer_from !== undefined && nextData.custom_odometer_from !== null) {
+    nextData.odometer_from = nextData.custom_odometer_from;
+  }
+  if (nextData.custom_odometer_to !== undefined && nextData.custom_odometer_to !== null) {
+    nextData.odometer_to = nextData.custom_odometer_to;
+  }
+
   const categoryType =
     typeof nextData.category_type === "string" && nextData.category_type
       ? nextData.category_type

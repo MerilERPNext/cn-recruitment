@@ -69,7 +69,7 @@ export const expenseSchema = {
                 headers: [{ key: "Accept", value: "application/json" }],
               },
               selectValues: "message",
-              valueProperty: "name",
+              valueProperty: "",
               template: "<span>{{ item.expense_type }}</span>",
               refreshOn: "expenseCategory",
               clearOnRefresh: true,
