@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useCallback } from "react";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -193,13 +194,13 @@ const S = {
   sectionTitle: { fontSize: 15, fontWeight: 600, marginBottom: "1.25rem", paddingBottom: 10, borderBottom: "1px solid #f3f4f6", color: "#1a1a2e" },
 
   // Stepper
-  step: (active: any, done: any) => ({
+  step: (active: boolean, done: boolean) => ({
     display: "flex", alignItems: "center", gap: 8, padding: "8px 6px",
     borderRadius: 7, cursor: "pointer", fontSize: 13,
     color: active ? "#c0392b" : done ? "#065f46" : "#6b7280",
     fontWeight: active ? 600 : 400,
   }),
-  stepIcon: (active: any, done: any) => ({
+  stepIcon: (active: boolean, done: boolean) => ({
     width: 22, height: 22, borderRadius: "50%",
     border: `1.5px solid ${active ? "#c0392b" : done ? "#27ae60" : "#d1d5db"}`,
     display: "flex", alignItems: "center", justifyContent: "center",
@@ -255,6 +256,7 @@ interface propContactStep {
   onBack: () => void;
   onNext: () => void;
 }
+type JobType = (typeof JOBS)[0];
 
 interface propWorkExperienceStepComponent {
   onBack: () => void;
@@ -274,7 +276,7 @@ interface propsLastSalaryStepComponent {
 interface propsListViewComponents {
   jobs: typeof JOBS;
   appliedIds: string[];
-  onSelectJob: (job: any) => void;
+  onSelectJob: (job: (typeof JOBS)[0]) => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
 }
@@ -295,7 +297,7 @@ interface propscomponent {
 // ─── Step Forms ───────────────────────────────────────────────────────────────
 
 function ResumeStep({ uploadedFile, onUpload, onNext }: propsResumeComponent) {
-  const inputRef = React.useRef(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
   return (
     <div>
       <div style={S.sectionTitle}>Resume</div>
@@ -303,7 +305,7 @@ function ResumeStep({ uploadedFile, onUpload, onNext }: propsResumeComponent) {
         <label style={S.formLabel}>
           Resume&nbsp;<span style={{ fontSize: 12, color: "#9ca3af" }}>ⓘ</span>
         </label>
-        <div style={S.uploadZone} onClick={() => inputRef.current?.click()}>
+        <div style={S.uploadZone as React.CSSProperties} onClick={() => inputRef.current?.click()}>
           {uploadedFile ? (
             <div style={S.uploadedFile}>
               <span style={S.fileIcon}>📄</span>
@@ -342,17 +344,17 @@ function BiographicalStep({ onBack, onNext }: propsBiographicalStepComponent) {
     <div>
       <div style={S.sectionTitle}>Biographical</div>
       <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>First Name</label><input style={S.formInput} placeholder="First name" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>Last Name</label><input style={S.formInput} placeholder="Last name" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>First Name</label><input style={S.formInput as React.CSSProperties} placeholder="First name" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>Last Name</label><input style={S.formInput as React.CSSProperties} placeholder="Last name" /></div>
       </div>
       <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>Date of Birth</label><input style={S.formInput} type="date" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>Date of Birth</label><input style={S.formInput as React.CSSProperties} type="date" /></div>
         <div style={S.formGroup}>
           <label style={S.formLabel}>Gender</label>
-          <select style={S.formInput}><option>Select</option><option>Male</option><option>Female</option><option>Other</option></select>
+          <select style={S.formInput as React.CSSProperties}><option>Select</option><option>Male</option><option>Female</option><option>Other</option></select>
         </div>
       </div>
-      <div style={S.formGroup}><label style={S.formLabel}>Nationality</label><input style={S.formInput} placeholder="e.g. Indian" /></div>
+      <div style={S.formGroup}><label style={S.formLabel}>Nationality</label><input style={S.formInput as React.CSSProperties} placeholder="e.g. Indian" /></div>
       <div style={S.stepNav}>
         <button style={S.btnCancel} onClick={onBack}>Back</button>
         <button style={S.btnNext} onClick={onNext}>Save &amp; Next</button>
@@ -365,10 +367,10 @@ function ContactStep({ onBack, onNext }: propContactStep) {
   return (
     <div>
       <div style={S.sectionTitle}>Contact</div>
-      <div style={S.formGroup}><label style={S.formLabel}>Personal Email</label><input style={S.formInput} type="email" placeholder="you@example.com" /></div>
+      <div style={S.formGroup}><label style={S.formLabel}>Personal Email</label><input style={S.formInput as React.CSSProperties} type="email" placeholder="you@example.com" /></div>
       <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>Mobile</label><input style={S.formInput} placeholder="+91 XXXXXXXXXX" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>Alternate Phone</label><input style={S.formInput} placeholder="Optional" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>Mobile</label><input style={S.formInput as React.CSSProperties} placeholder="+91 XXXXXXXXXX" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>Alternate Phone</label><input style={S.formInput as React.CSSProperties} placeholder="Optional" /></div>
       </div>
       <div style={S.stepNav}>
         <button style={S.btnCancel} onClick={onBack}>Back</button>
@@ -378,19 +380,24 @@ function ContactStep({ onBack, onNext }: propContactStep) {
   );
 }
 
-function AddressStep({ onBack, onNext }) {
+interface propsAddressStepComponent {
+  onBack: () => void;
+  onNext: () => void;
+}
+
+function AddressStep({ onBack, onNext }: propsAddressStepComponent) {
   return (
     <div>
       <div style={S.sectionTitle}>Address</div>
-      <div style={S.formGroup}><label style={S.formLabel}>Address Line 1</label><input style={S.formInput} placeholder="Street address" /></div>
-      <div style={S.formGroup}><label style={S.formLabel}>Address Line 2</label><input style={S.formInput} placeholder="Apartment, suite, etc." /></div>
+      <div style={S.formGroup}><label style={S.formLabel}>Address Line 1</label><input style={S.formInput as React.CSSProperties} placeholder="Street address" /></div>
+      <div style={S.formGroup}><label style={S.formLabel}>Address Line 2</label><input style={S.formInput as React.CSSProperties} placeholder="Apartment, suite, etc." /></div>
       <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>City</label><input style={S.formInput} placeholder="City" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>State</label><input style={S.formInput} placeholder="State" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>City</label><input style={S.formInput as React.CSSProperties} placeholder="City" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>State</label><input style={S.formInput as React.CSSProperties} placeholder="State" /></div>
       </div>
       <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>Pin Code</label><input style={S.formInput} placeholder="000000" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>Country</label><input style={S.formInput} defaultValue="India" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>Pin Code</label><input style={S.formInput as React.CSSProperties} placeholder="000000" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>Country</label><input style={S.formInput as React.CSSProperties} defaultValue="India" /></div>
       </div>
       <div style={S.stepNav}>
         <button style={S.btnCancel} onClick={onBack}>Back</button>
@@ -404,16 +411,16 @@ function WorkExperienceStep({ onBack, onNext }: propWorkExperienceStepComponent)
   return (
     <div>
       <div style={S.sectionTitle}>Work Experience</div>
-      <div style={S.formGroup}><label style={S.formLabel}>Current / Last Employer</label><input style={S.formInput} placeholder="Company name" /></div>
-      <div style={S.formGroup}><label style={S.formLabel}>Designation</label><input style={S.formInput} placeholder="Your role title" /></div>
+      <div style={S.formGroup}><label style={S.formLabel}>Current / Last Employer</label><input style={S.formInput as React.CSSProperties} placeholder="Company name" /></div>
+      <div style={S.formGroup}><label style={S.formLabel}>Designation</label><input style={S.formInput as React.CSSProperties} placeholder="Your role title" /></div>
       <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>From</label><input style={S.formInput} type="date" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>To (or present)</label><input style={S.formInput} type="date" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>From</label><input style={S.formInput as React.CSSProperties} type="date" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>To (or present)</label><input style={S.formInput as React.CSSProperties} type="date" /></div>
       </div>
-      <div style={S.formGroup}><label style={S.formLabel}>Total Relevant Experience (years)</label><input style={S.formInput} type="number" min="0" max="40" step="0.5" placeholder="e.g. 3.5" /></div>
+      <div style={S.formGroup}><label style={S.formLabel}>Total Relevant Experience (years)</label><input style={S.formInput as React.CSSProperties} type="number" min="0" max="40" step="0.5" placeholder="e.g. 3.5" /></div>
       <div style={S.formGroup}>
         <label style={S.formLabel}>Statement of Purpose</label>
-        <textarea style={{ ...S.formInput, resize: "vertical", minHeight: 80 }} placeholder="Why are you a good fit for this role?" />
+        <textarea style={{ ...S.formInput, resize: "vertical", minHeight: 80 } as React.CSSProperties} placeholder="Why are you a good fit for this role?" />
       </div>
       <div style={S.stepNav}>
         <button style={S.btnCancel} onClick={onBack}>Back</button>
@@ -429,17 +436,17 @@ function EducationStep({ onBack, onNext }: propsEducationStepComponent) {
       <div style={S.sectionTitle}>Education</div>
       <div style={S.formGroup}>
         <label style={S.formLabel}>Highest Qualification</label>
-        <select style={S.formInput}>
+        <select style={S.formInput as React.CSSProperties}>
           <option>Select</option>
           <option>10th</option><option>12th</option><option>Diploma</option>
           <option>B.Tech / B.E.</option><option>B.Sc</option>
           <option>MBA</option><option>M.Tech</option><option>PhD</option>
         </select>
       </div>
-      <div style={S.formGroup}><label style={S.formLabel}>Institution Name</label><input style={S.formInput} placeholder="University / College" /></div>
+      <div style={S.formGroup}><label style={S.formLabel}>Institution Name</label><input style={S.formInput as React.CSSProperties} placeholder="University / College" /></div>
       <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>Year of Passing</label><input style={S.formInput} type="number" placeholder="e.g. 2019" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>Percentage / CGPA</label><input style={S.formInput} placeholder="e.g. 8.5 or 78%" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>Year of Passing</label><input style={S.formInput as React.CSSProperties} type="number" placeholder="e.g. 2019" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>Percentage / CGPA</label><input style={S.formInput as React.CSSProperties} placeholder="e.g. 8.5 or 78%" /></div>
       </div>
       <div style={S.stepNav}>
         <button style={S.btnCancel} onClick={onBack}>Back</button>
@@ -454,10 +461,10 @@ function LastSalaryStep({ onBack, onSubmit }: propsLastSalaryStepComponent) {
     <div>
       <div style={S.sectionTitle}>Last Salary</div>
       <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>Current / Last CTC (LPA)</label><input style={S.formInput} type="number" step="0.1" placeholder="e.g. 12.5" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>Expected CTC (LPA)</label><input style={S.formInput} type="number" step="0.1" placeholder="e.g. 18" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>Current / Last CTC (LPA)</label><input style={S.formInput as React.CSSProperties} type="number" step="0.1" placeholder="e.g. 12.5" /></div>
+        <div style={S.formGroup}><label style={S.formLabel}>Expected CTC (LPA)</label><input style={S.formInput as React.CSSProperties} type="number" step="0.1" placeholder="e.g. 18" /></div>
       </div>
-      <div style={S.formGroup}><label style={S.formLabel}>Notice Period (days)</label><input style={S.formInput} type="number" placeholder="e.g. 30 or 60" /></div>
+      <div style={S.formGroup}><label style={S.formLabel}>Notice Period (days)</label><input style={S.formInput as React.CSSProperties} type="number" placeholder="e.g. 30 or 60" /></div>
       <div style={S.stepNav}>
         <button style={S.btnCancel} onClick={onBack}>Back</button>
         <button style={S.btnNext} onClick={onSubmit}>Submit Application</button>
@@ -472,7 +479,7 @@ function ListView({ jobs, appliedIds, onSelectJob, searchQuery, setSearchQuery }
   return (
     <div style={S.page}>
       <div style={S.pageTitle}>IJP Openings</div>
-      <div style={S.toolbar}>
+      <div style={S.toolbar as React.CSSProperties}>
         <div style={S.toolbarLeft}>
           <button style={{ ...S.btnBack, padding: "4px 8px", opacity: 0.4 }} disabled>‹</button>
           <button style={{ ...S.btnBack, padding: "4px 8px" }}>›</button>
@@ -495,27 +502,27 @@ function ListView({ jobs, appliedIds, onSelectJob, searchQuery, setSearchQuery }
         </div>
       </div>
       <div style={S.tableWrap}>
-        <table style={S.table}>
+        <table style={S.table as React.CSSProperties}>
           <thead>
             <tr>
-              <th style={S.th}>Job Title &amp; Job Code <SortIcon /></th>
-              <th style={S.th}>Remote Job <SortIcon /></th>
-              <th style={S.th}>Company Name <SortIcon /></th>
-              <th style={S.th}>Location <SortIcon /></th>
-              <th style={S.th}>Department And Business Unit <SortIcon /></th>
-              <th style={S.th}>Employee Type <SortIcon /></th>
-              <th style={S.th}>Expires on <SortIcon /></th>
+              <th style={S.th as React.CSSProperties}>Job Title &amp; Job Code <SortIcon /></th>
+              <th style={S.th as React.CSSProperties}>Remote Job <SortIcon /></th>
+              <th style={S.th as React.CSSProperties}>Company Name <SortIcon /></th>
+              <th style={S.th as React.CSSProperties}>Location <SortIcon /></th>
+              <th style={S.th as React.CSSProperties}>Department And Business Unit <SortIcon /></th>
+              <th style={S.th as React.CSSProperties}>Employee Type <SortIcon /></th>
+              <th style={S.th as React.CSSProperties}>Expires on <SortIcon /></th>
             </tr>
           </thead>
           <tbody>
-            {jobs.map((job: { id: React.Key | null | undefined; title: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; code: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; remote: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; company: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; loc: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; dept: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; type: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; expires: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }) => {
-              const applied = appliedIds.includes(job.id);
+          {jobs.map((job) =>  {
+              const applied = job.id ? appliedIds.includes(job.id as string) : false;
               return (
                 <tr key={job.id} style={{ background: "#fff" }}>
                   <td style={S.td}>
                     <span
                       style={S.jobLink}
-                      onClick={() => onSelectJob(job)}
+                      onClick={() => onSelectJob(job )}
                     >
                       {job.title}
                       {applied && <span style={S.appliedBadge}>Applied</span>}
@@ -554,7 +561,7 @@ function DetailView({ job, appliedIds, onBack, onApply }: propsDetailViewCompone
         <span style={S.breadSep}>/</span>
         <strong>{job.title} ({job.code})</strong>
       </div>
-      <div style={S.jobHeader}>
+      <div style={S.jobHeader as React.CSSProperties }>
         <div>
           <span style={S.jobHeaderTitle}>{job.title} ({job.code})</span>
           <span style={S.jobHeaderDate}>(Open since {job.openSince})</span>
@@ -603,7 +610,7 @@ function DetailView({ job, appliedIds, onBack, onApply }: propsDetailViewCompone
 
 function ApplyView({ job, onCancel, onSubmitDone }: propscomponent) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   const goNext = () => setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -617,7 +624,7 @@ function ApplyView({ job, onCancel, onSubmitDone }: propscomponent) {
   const renderStepContent = () => {
     if (submitted) {
       return (
-        <div style={S.successState}>
+        <div style={S.successState as React.CSSProperties}>
           <div style={S.successIcon}>✓</div>
           <div style={{ fontSize: 18, fontWeight: 600, color: "#1a1a2e" }}>Congratulations!</div>
           <p style={{ fontSize: 13, color: "#6b7280", maxWidth: 360, lineHeight: 1.7 }}>
@@ -629,7 +636,7 @@ function ApplyView({ job, onCancel, onSubmitDone }: propscomponent) {
       );
     }
     switch (STEPS[currentStep]) {
-      case "Resume": return <ResumeStep uploadedFile={uploadedFile} onUpload={setUploadedFile} onNext={goNext} />;
+      case "Resume": return <ResumeStep uploadedFile={uploadedFile} onUpload={(fileName) => setUploadedFile(fileName)} onNext={goNext} />;
       case "Biographical": return <BiographicalStep onBack={goBack} onNext={goNext} />;
       case "Contact": return <ContactStep onBack={goBack} onNext={goNext} />;
       case "Address": return <AddressStep onBack={goBack} onNext={goNext} />;
@@ -647,7 +654,7 @@ function ApplyView({ job, onCancel, onSubmitDone }: propscomponent) {
         <span style={S.breadSep}>/</span>
         <strong>{job.title} ({job.code})</strong>
       </div>
-      <div style={S.jobHeader}>
+      <div style={S.jobHeader as React.CSSProperties}>
         <div>
           <span style={S.jobHeaderTitle}>{job.title} ({job.code})</span>
           <span style={S.jobHeaderDate}>(Open since {job.openSince})</span>
@@ -691,7 +698,7 @@ function ApplyView({ job, onCancel, onSubmitDone }: propscomponent) {
 
 export default function IJPOpenings() {
   const [view, setView] = useState("list"); // "list" | "detail" | "apply"
-  const [selectedJob, setSelectedJob] = useState(null);
+  const [selectedJob, setSelectedJob] = useState<JobType | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedIds, setAppliedIds] = useState(() => {
     try {
@@ -706,8 +713,10 @@ export default function IJPOpenings() {
     const q = searchQuery.toLowerCase();
     return job.title.toLowerCase().includes(q) || job.code.toLowerCase().includes(q);
   });
-
-  const handleSelectJob = (job: React.SetStateAction<null>) => { setSelectedJob(job); setView("detail"); };
+  const handleSelectJob = (job: JobType) => {
+    setSelectedJob(job);
+    setView("detail");
+  };
   const handleApply = () => setView("apply");
   const handleBack = () => setView("list");
   const handleBackToDetail = () => setView("detail");
@@ -715,7 +724,7 @@ export default function IJPOpenings() {
   const handleSubmitDone = useCallback((jobId: any) => {
     setAppliedIds((prev: any) => {
       const next = [...prev, jobId];
-      try { localStorage.setItem("ijp_applied_ids", JSON.stringify(next)); } catch { }
+      try { localStorage.setItem("ijp_applied_ids", JSON.stringify(next)); } catch { /* empty */ }
       return next;
     });
   }, []);

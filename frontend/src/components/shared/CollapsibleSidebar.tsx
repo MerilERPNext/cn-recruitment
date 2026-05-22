@@ -444,7 +444,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       icon: UserSearch,
       label: "Recruitment",
       path: "/webapp/recruitment",
-      permissionKey: "Recruitment",
+      permissionKey: "Recruitments",
       subItems: [
         {
           name: "Overview",

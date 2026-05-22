@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";

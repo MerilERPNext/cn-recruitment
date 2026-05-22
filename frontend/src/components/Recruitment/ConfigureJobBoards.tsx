@@ -20,8 +20,8 @@ interface JobBoardConfig {
   id: string;
   name: string;
   isActive: boolean;
-  clientId: string;
-  clientSecret: string;
+  configured: boolean;
+  clientIdMasked?: string;
   apiEndpoint: string;
   lastSynced?: string;
   logoColor: string;
@@ -32,8 +32,8 @@ const INITIAL_BOARDS: JobBoardConfig[] = [
     id: "board-linkedin",
     name: "LinkedIn Jobs Integration",
     isActive: true,
-    clientId: "hffc_ln_prod_9021",
-    clientSecret: "sec_88921_lkjadsf_992384a_2634",
+    configured: true,
+    clientIdMasked: "hffc_ln_prod_****",
     apiEndpoint: "https://api.linkedin.com/v2/simpleJobPostings",
     lastSynced: "May 20, 2026 at 06:12 PM",
     logoColor: "bg-blue-600"
@@ -42,8 +42,8 @@ const INITIAL_BOARDS: JobBoardConfig[] = [
     id: "board-indeed",
     name: "Indeed Jobs Publisher API",
     isActive: false,
-    clientId: "indeed_pub_82310",
-    clientSecret: "sec_indeed_kjasd99112_aa8810",
+    configured: false,
+    clientIdMasked: "",
     apiEndpoint: "https://api.indeed.com/v2/jobpush",
     logoColor: "bg-blue-800"
   },
@@ -51,8 +51,8 @@ const INITIAL_BOARDS: JobBoardConfig[] = [
     id: "board-ziprecruiter",
     name: "ZipRecruiter Partner Feed",
     isActive: false,
-    clientId: "zip_partner_hffc",
-    clientSecret: "sec_zip_91823_kkadfa_81239",
+    configured: false,
+    clientIdMasked: "",
     apiEndpoint: "https://api.ziprecruiter.com/v1/jobs",
     logoColor: "bg-green-600"
   }
@@ -61,72 +61,73 @@ const INITIAL_BOARDS: JobBoardConfig[] = [
 export default function ConfigureJobBoards() {
   const [boards, setBoards] = useState<JobBoardConfig[]>([]);
   const [selectedBoardId, setSelectedBoardId] = useState("board-linkedin");
-  
+
   // Form values (controlled per selected board)
   const [isActive, setIsActive] = useState(false);
   const [clientId, setClientId] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [apiEndpoint, setApiEndpoint] = useState("");
   const [showSecret, setShowSecret] = useState(false);
-  
+
   // Loading animations
   const [isSaving, setIsSaving] = useState(false);
   const [isTestingSync, setIsTestingSync] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("cn_job_boards");
-    if (saved) {
-      try {
-        setBoards(JSON.parse(saved));
-      } catch (e) {
-        setBoards(INITIAL_BOARDS);
-      }
-    } else {
-      localStorage.setItem("cn_job_boards", JSON.stringify(INITIAL_BOARDS));
-      setBoards(INITIAL_BOARDS);
-    }
+    // TODO: Replace with secure backend API integration
+    setBoards(INITIAL_BOARDS);
   }, []);
 
   // Update controlled fields when selecting a different board
-  const activeBoard = boards.find((b) => b.id === selectedBoardId) || boards[0];
+  const activeBoard =
+    boards.find((b) => b.id === selectedBoardId) || boards[0];
 
   useEffect(() => {
     if (activeBoard) {
       setIsActive(activeBoard.isActive);
-      setClientId(activeBoard.clientId);
-      setClientSecret(activeBoard.clientSecret);
       setApiEndpoint(activeBoard.apiEndpoint);
+
+      // Never preload sensitive credentials from frontend storage
+      setClientId("");
+      setClientSecret("");
       setShowSecret(false);
     }
-  }, [selectedBoardId, boards, activeBoard]);
+  }, [selectedBoardId, boards]);
 
   // Save Settings Form
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!clientId.trim() || !clientSecret.trim() || !apiEndpoint.trim()) {
       toast.error("Please fill in all API credentials.");
       return;
     }
 
     setIsSaving(true);
-    
+
     setTimeout(() => {
       const updated = boards.map((b) => {
         if (b.id === selectedBoardId) {
           return {
             ...b,
             isActive,
-            clientId,
-            clientSecret,
+            configured: true,
+            clientIdMasked: `${clientId.slice(0, 10)}****`,
             apiEndpoint
           };
         }
+
         return b;
       });
 
-      localStorage.setItem("cn_job_boards", JSON.stringify(updated));
       setBoards(updated);
+
+      // Clear sensitive credentials after save
+      setClientId("");
+      setClientSecret("");
+
       setIsSaving(false);
+
       toast.success(`Saved configuration for ${activeBoard.name}.`);
     }, 1200);
   };
@@ -134,35 +135,48 @@ export default function ConfigureJobBoards() {
   // Sync / Test Connection simulator
   const handleSyncNow = () => {
     if (!activeBoard.isActive) {
-      toast.error("Please enable the job board integration before running a sync.");
+      toast.error(
+        "Please enable the job board integration before running a sync."
+      );
+
       return;
     }
 
     setIsTestingSync(true);
-    toast.success("Initiating API authentication and job sync query...");
+
+    toast.success(
+      "Initiating API authentication and job sync query..."
+    );
 
     setTimeout(() => {
       const updated = boards.map((b) => {
         if (b.id === selectedBoardId) {
           return {
             ...b,
-            lastSynced: new Date().toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric"
-            }) + " at " + new Date().toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit"
-            })
+            lastSynced:
+              new Date().toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric"
+              }) +
+              " at " +
+              new Date().toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit"
+              })
           };
         }
+
         return b;
       });
 
-      localStorage.setItem("cn_job_boards", JSON.stringify(updated));
       setBoards(updated);
+
       setIsTestingSync(false);
-      toast.success(`Sync successful. Active postings pushed to ${activeBoard.name}.`);
+
+      toast.success(
+        `Sync successful. Active postings pushed to ${activeBoard.name}.`
+      );
     }, 2000);
   };
 
@@ -177,20 +191,28 @@ export default function ConfigureJobBoards() {
               Configure External Job Boards
             </h1>
           </div>
+
           <p className="text-slate-500 text-xs md:text-sm font-light">
-            Set up credentials and endpoints to push recruitment openings directly to LinkedIn, Indeed, and ZipRecruiter.
+            Set up credentials and endpoints to push recruitment openings
+            directly to LinkedIn, Indeed, and ZipRecruiter.
           </p>
         </div>
 
         <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2 text-amber-800 shrink-0 text-xs font-light">
           <ShieldCheck className="size-4 shrink-0 text-amber-600" />
-          <span>Credentials are stored securely using corporate encryption vault standards.</span>
+          <span>
+            Credentials are stored securely using corporate encryption vault
+            standards.
+          </span>
         </div>
       </div>
 
       {/* Boards List Sidebar */}
       <div className="lg:col-span-1 space-y-3">
-        <Typography variant="bodyMedium" className="font-bold text-slate-800 text-sm">
+        <Typography
+          variant="bodyMedium"
+          className="font-bold text-slate-800 text-sm"
+        >
           Integrations ({boards.length})
         </Typography>
 
@@ -206,22 +228,31 @@ export default function ConfigureJobBoards() {
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className={`size-8 rounded-lg shrink-0 flex items-center justify-center text-white ${board.logoColor}`}>
+                <div
+                  className={`size-8 rounded-lg shrink-0 flex items-center justify-center text-white ${board.logoColor}`}
+                >
                   <Globe className="size-4" />
                 </div>
+
                 <div>
-                  <Typography variant="bodyMedium" className="font-bold text-slate-900 text-xs md:text-sm truncate max-w-[140px] md:max-w-none">
+                  <Typography
+                    variant="bodyMedium"
+                    className="font-bold text-slate-900 text-xs md:text-sm truncate max-w-[140px] md:max-w-none"
+                  >
                     {board.name.split(" ")[0]}
                   </Typography>
+
                   <p className="text-[10px] text-slate-400 font-light">
                     {board.isActive ? "Active" : "Inactive"}
                   </p>
                 </div>
               </div>
-              
+
               <span
                 className={`size-2.5 rounded-full shrink-0 ${
-                  board.isActive ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
+                  board.isActive
+                    ? "bg-emerald-500 animate-pulse"
+                    : "bg-slate-300"
                 }`}
               />
             </button>
@@ -232,20 +263,37 @@ export default function ConfigureJobBoards() {
       {/* Configuration Detail Panel */}
       <div className="lg:col-span-3">
         {activeBoard ? (
-          <Card radius="xl" className="border shadow-sm p-6 bg-white space-y-6">
+          <Card
+            radius="xl"
+            className="border shadow-sm p-6 bg-white space-y-6"
+          >
             {/* Header: Name and Status Switch */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100">
               <div className="space-y-1">
-                <Typography variant="bodyMedium" className="font-bold text-slate-900 text-base md:text-lg">
+                <Typography
+                  variant="bodyMedium"
+                  className="font-bold text-slate-900 text-base md:text-lg"
+                >
                   {activeBoard.name} Settings
                 </Typography>
-                <p className="text-xs text-slate-400 font-light">Configure API keys and credentials for direct integration.</p>
+
+                <p className="text-xs text-slate-400 font-light">
+                  Configure API keys and credentials for direct integration.
+                </p>
               </div>
 
               {/* Status Toggle control */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 px-4 py-2 rounded-xl">
-                <Power className={`size-4 ${isActive ? "text-emerald-500" : "text-slate-400"}`} />
-                <span className="text-xs font-semibold text-slate-700 select-none">Integration Status:</span>
+                <Power
+                  className={`size-4 ${
+                    isActive ? "text-emerald-500" : "text-slate-400"
+                  }`}
+                />
+
+                <span className="text-xs font-semibold text-slate-700 select-none">
+                  Integration Status:
+                </span>
+
                 <button
                   type="button"
                   onClick={() => setIsActive(!isActive)}
@@ -270,11 +318,16 @@ export default function ConfigureJobBoards() {
                   <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
                     Client ID / Application ID
                   </label>
+
                   <input
                     type="text"
                     required
                     value={clientId}
                     onChange={(e) => setClientId(e.target.value)}
+                    placeholder={
+                      activeBoard.clientIdMasked ||
+                      "Enter secure client ID"
+                    }
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-light"
                   />
                 </div>
@@ -284,29 +337,37 @@ export default function ConfigureJobBoards() {
                   <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
                     Client Secret / Security Token
                   </label>
+
                   <div className="relative">
                     <input
                       type={showSecret ? "text" : "password"}
                       required
                       value={clientSecret}
                       onChange={(e) => setClientSecret(e.target.value)}
+                      placeholder="Enter secure client secret"
                       className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-light"
                     />
+
                     <button
                       type="button"
                       onClick={() => setShowSecret(!showSecret)}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                     >
-                      {showSecret ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      {showSecret ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
                     </button>
                   </div>
                 </div>
 
-                {/* API Endpoint Endpoint */}
+                {/* API Endpoint */}
                 <div className="space-y-1.5 md:col-span-2">
                   <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
                     Integration API Endpoint URL
                   </label>
+
                   <input
                     type="url"
                     required
@@ -328,7 +389,8 @@ export default function ConfigureJobBoards() {
                   ) : (
                     <span className="flex items-center gap-1">
                       <AlertTriangle className="size-4 text-slate-400 shrink-0" />
-                      Never synchronized. Save credentials and sync to push openings.
+                      Never synchronized. Save credentials and sync to push
+                      openings.
                     </span>
                   )}
                 </div>
@@ -336,22 +398,26 @@ export default function ConfigureJobBoards() {
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                   <Button
                     variant="outline"
-                    type="button"
                     disabled={isTestingSync || !isActive}
                     onClick={handleSyncNow}
                     className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-white"
                   >
-                    <RefreshCw className={`size-4 ${isTestingSync ? "animate-spin" : ""}`} />
+                    <RefreshCw
+                      className={`size-4 ${
+                        isTestingSync ? "animate-spin" : ""
+                      }`}
+                    />
+
                     {isTestingSync ? "Syncing..." : "Sync Now"}
                   </Button>
-                  
+
                   <Button
                     variant="contain"
-                    type="submit"
                     disabled={isSaving}
                     className="w-full sm:w-auto flex items-center justify-center gap-1.5"
                   >
                     <Save className="size-4" />
+
                     {isSaving ? "Saving..." : "Save Settings"}
                   </Button>
                 </div>
@@ -361,7 +427,11 @@ export default function ConfigureJobBoards() {
         ) : (
           <div className="py-20 flex flex-col items-center justify-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center p-6">
             <Settings2 className="size-12 text-slate-300 mb-3" />
-            <Typography variant="bodyMedium" className="font-semibold text-slate-700">
+
+            <Typography
+              variant="bodyMedium"
+              className="font-semibold text-slate-700"
+            >
               Select an Integration Board
             </Typography>
           </div>

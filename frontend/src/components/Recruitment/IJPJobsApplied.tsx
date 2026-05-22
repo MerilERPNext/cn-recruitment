@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
@@ -7,12 +7,9 @@ import {
   MapPin,
   Building2,
   AlertTriangle,
-  X,
   CheckCircle2,
   Clock,
-  ArrowRight,
   ShieldAlert,
-  ChevronRight,
   ClipboardList,
   Sparkles
 } from "lucide-react";
