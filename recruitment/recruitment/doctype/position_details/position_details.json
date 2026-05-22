@@ -6,32 +6,41 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "location",
-  "functional_area",
+  "position_no",
+  "vacancy_type",
   "replacement_for",
   "reporting_manager",
+  "location",
+  "functional_area",
   "employee_type"
  ],
  "fields": [
   {
-   "fieldname": "location",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
+   "fieldname": "position_no",
+   "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Location",
-   "options": "Branch",
+   "label": "Position",
+   "read_only": 1
+  },
+  {
+   "default": "New",
+   "fieldname": "vacancy_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Vacancy Type",
+   "options": "New\nReplacement",
    "reqd": 1
   },
   {
-   "depends_on": "doc.custom_type_of_position===\"Replacement\"",
+   "depends_on": "eval:doc.vacancy_type==\"Replacement\"",
    "fieldname": "replacement_for",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "in_list_view": 1,
-   "label": "Replacement For",
-   "mandatory_depends_on": "doc.custom_type_of_position===\"Replacement\"",
+   "label": "Employee Being Replaced",
+   "mandatory_depends_on": "eval:doc.vacancy_type==\"Replacement\"",
    "options": "Employee",
-   "read_only_depends_on": "doc.custom_type_of_position===\"New\""
+   "read_only_depends_on": "eval:doc.vacancy_type==\"New\""
   },
   {
    "fieldname": "reporting_manager",
@@ -43,15 +52,12 @@
    "reqd": 1
   },
   {
-   "depends_on": "doc.custom_type_of_position==\"Replacement\"",
-   "fieldname": "employee_type",
+   "fieldname": "location",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "in_list_view": 1,
-   "label": "Employee Type",
-   "options": "Employment Type",
-   "read_only_depends_on": "doc.custom_type_of_position==\"New\"",
-   "reqd": 1
+   "label": "Location",
+   "options": "Branch"
   },
   {
    "fieldname": "functional_area",
@@ -59,13 +65,24 @@
    "ignore_user_permissions": 1,
    "label": "Functional Area",
    "options": "Functional Area"
+  },
+  {
+   "depends_on": "eval:doc.vacancy_type==\"Replacement\"",
+   "fieldname": "employee_type",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_list_view": 1,
+   "label": "Employee Type",
+   "mandatory_depends_on": "eval:doc.vacancy_type==\"Replacement\"",
+   "options": "Employment Type",
+   "read_only_depends_on": "eval:doc.vacancy_type==\"New\""
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-01-16 12:17:44.898806",
+ "modified": "2026-05-21 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Position Details",
