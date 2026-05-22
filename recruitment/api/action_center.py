@@ -469,6 +469,8 @@ def sync_job_offer_action_item(doc, method=None):
 
     if is_closed:
         _delete_minimal_item(candidate_email, doc.doctype, doc.name, commit=False)
+        if offer_status == "accepted" and candidate_id:
+            _sync_onboarding_action_for_applicant(candidate_id, candidate_email)
         return
 
     _upsert_minimal_item(
@@ -480,6 +482,107 @@ def sync_job_offer_action_item(doc, method=None):
         attachment="",
         commit=False,
     )
+
+
+def _sync_onboarding_action_for_applicant(job_applicant_id, candidate_email):
+    # On Job Offer Accepted, guarantee the candidate has a working Employee
+    # Onboarding to land on, then upsert the action item against it.
+    #   1. EO already exists for this applicant -> use it.
+    #   2. No EO -> auto-run the same flow as the HR "Release Pre Onboarding"
+    #      button (default portal form + resolve buddies) and materialize a draft EO.
+    eo_name = frappe.db.get_value(
+        "Employee Onboarding",
+        {"job_applicant": job_applicant_id, "docstatus": ["<", 2]},
+        "name",
+        order_by="modified desc",
+    )
+
+    if not eo_name:
+        eo_name = _auto_release_and_materialize_onboarding(job_applicant_id)
+
+    if not eo_name:
+        return
+
+    eo = frappe.get_doc("Employee Onboarding", eo_name)
+    is_completed = (eo.docstatus == 2) or ((eo.boarding_status or "").strip().lower() == "completed")
+    if is_completed:
+        return
+
+    try:
+        approval_list = frappe.parse_json(eo.custom_field_approval_json) or []
+    except Exception:
+        approval_list = []
+    if any((row.get("status") or "") == "Rejected" for row in approval_list):
+        return
+
+    _upsert_minimal_item(
+        candidate_email=candidate_email,
+        reference_doctype="Employee Onboarding",
+        reference_docname=eo.name,
+        redirect_url=build_onboarding_redirect(job_applicant_id, eo.name),
+        description="Onboarding pending. Open portal to complete required details.",
+        attachment="",
+        commit=False,
+    )
+
+
+def _auto_release_and_materialize_onboarding(job_applicant_id):
+    """Mirror the HR 'Release Pre Onboarding' flow, triggered automatically from
+    Job Offer acceptance. Reuses the applicant's already-selected Onboarding
+    Portal Form when present; otherwise picks the form flagged `default=1`.
+    Returns the materialized Employee Onboarding name, or None if no default form
+    is configured or the flow fails (the failure is logged, never raised — a
+    Job Offer save must not break because of action-item bookkeeping)."""
+    try:
+        applicant = frappe.get_doc("Job Applicant", job_applicant_id)
+
+        portal_form = applicant.get("custom_onboarding_portal_form")
+        if not portal_form:
+            portal_form = frappe.db.get_value(
+                "Onboarding Portal Forms",
+                {"default": 1},
+                "name",
+                order_by="modified desc",
+            )
+            if not portal_form:
+                frappe.log_error(
+                    "No default Onboarding Portal Form configured; cannot auto-release pre-onboarding on Job Offer Accepted.",
+                    "sync_job_offer_action_item: auto-release skipped",
+                )
+                return None
+            applicant.custom_onboarding_portal_form = portal_form
+
+        try:
+            from recruitment.recruitment.doctype.onboarding_buddy_assignment_rule.onboarding_buddy_assignment_rule import (
+                resolve_buddies,
+            )
+            suggested = resolve_buddies(job_applicant_id) or {}
+            if not applicant.custom_onboarding_buddy and suggested.get("Onboarding Buddy"):
+                applicant.custom_onboarding_buddy = suggested["Onboarding Buddy"]
+            if not applicant.custom_joining_buddy and suggested.get("Joining Buddy"):
+                applicant.custom_joining_buddy = suggested["Joining Buddy"]
+            if not applicant.custom_manager and suggested.get("Manager"):
+                applicant.custom_manager = suggested["Manager"]
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "auto_release_pre_onboarding: resolve_buddies failed")
+
+        applicant.custom_pre_onboarding_status = "Released"
+        if not applicant.get("custom_pre_onboarding_released_at"):
+            applicant.custom_pre_onboarding_released_at = now_datetime()
+        if not applicant.get("custom_substatus"):
+            applicant.custom_substatus = "Pre Onboarding Released"
+
+        applicant.save(ignore_permissions=True)
+
+        from recruitment.api.candidate_portal import materialize_onboarding_from_applicant
+        return materialize_onboarding_from_applicant(job_applicant_id)
+
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            "sync_job_offer_action_item: auto-release + materialize onboarding failed",
+        )
+        return None
 
 
 def sync_onboarding_field_rejection_action(onboarding_doc, approval_list=None):
