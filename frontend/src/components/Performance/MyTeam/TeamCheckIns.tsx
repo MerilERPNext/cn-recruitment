@@ -1,7 +1,6 @@
 import React from 'react';
-import { ArrowLeft, Clock, TrendingUp, AlertCircle, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Clock, TrendingUp, AlertCircle, CheckCircle2, ChevronLeft } from 'lucide-react';
 import { Typography } from '../../shared/atoms/Typography';
-import Button from '../../shared/atoms/Button';
 import { useScreenSize } from '../../../hooks/useScreenSize';
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
@@ -101,9 +100,7 @@ const CHECK_INS: CheckIn[] = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const getInitialsBg = (initials: string) => {
-  return 'bg-blue-50 text-blue-600'; // Mock has all blue avatars
-};
+
 
 const getFeelingColor = (feeling?: string) => {
   if (!feeling) return 'text-gray-900';
@@ -175,7 +172,7 @@ const TeamCheckIns: React.FC = () => {
 
                 {/* User Column */}
                 <div className={`flex items-start gap-3 shrink-0 ${isCompact ? 'w-full' : 'w-[250px]'}`}>
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 ${getInitialsBg(checkin.initials)}`}>
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 bg-blue-50 text-blue-600`}>
                     {checkin.initials}
                   </div>
                   <div className="flex flex-col gap-1 mt-0.5">
