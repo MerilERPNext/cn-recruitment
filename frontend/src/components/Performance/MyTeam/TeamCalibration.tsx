@@ -42,28 +42,26 @@ const getRatingColor = (rating: PerfRating) => {
   switch (rating) {
     case 'Outstanding':
     case 'Exceeds':
-      return 'text-green-600 bg-green-500';
+      return { text: 'text-green-700', dot: 'bg-green-500', bg: 'bg-green-50' };
     case 'Meets':
-      return 'text-blue-500 bg-blue-500';
+      return { text: 'text-blue-600', dot: 'bg-blue-500', bg: 'bg-blue-50' };
     case 'Below':
-      return 'text-amber-500 bg-amber-500';
+      return { text: 'text-amber-600', dot: 'bg-amber-500', bg: 'bg-amber-50' };
     case 'Unsatisfactory':
-      return 'text-red-500 bg-red-500';
+      return { text: 'text-red-600', dot: 'bg-red-500', bg: 'bg-red-50' };
     default:
-      return 'text-gray-400 bg-transparent';
+      return { text: 'text-gray-400', dot: 'bg-transparent', bg: 'bg-transparent' };
   }
 };
 
 const RatingCell = ({ rating }: { rating: PerfRating }) => {
   if (rating === '-') return <span className="text-gray-400 font-bold">—</span>;
   
-  const colorClass = getRatingColor(rating);
-  const textColor = colorClass.split(' ')[0];
-  const bgColor = colorClass.split(' ')[1];
+  const { text, dot, bg } = getRatingColor(rating);
 
   return (
-    <div className={`flex items-center gap-1.5 ${textColor} font-bold text-[11px]`}>
-      <div className={`w-1.5 h-1.5 rounded-full ${bgColor}`} />
+    <div className={`flex items-center gap-1.5 ${text} ${bg} font-bold text-[10px] px-2 py-0.5 rounded-xl w-fit`}>
+      <div className={`w-1.5 h-1.5 rounded-xl ${dot}`} />
       {rating}
     </div>
   );
@@ -100,7 +98,7 @@ const TeamCalibration: React.FC = () => {
         {/* ── Header ──────────────────────────────────────────────────── */}
         <div className={`flex ${isCompact ? 'flex-col gap-4' : 'items-end justify-between'} mb-6`}>
           <div className="space-y-1">
-            <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold text-amber-800 bg-amber-100 mb-1">
+            <span className="inline-block px-2.5 py-0.5 rounded-xl text-[10px] font-bold text-amber-800 bg-amber-100 mb-1">
               Pre-calibration - Manager view
             </span>
             <h1 className="text-[22px] font-bold text-gray-900 tracking-tight leading-tight">
