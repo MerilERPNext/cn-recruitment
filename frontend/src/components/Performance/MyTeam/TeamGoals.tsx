@@ -12,6 +12,7 @@ import Badge, { type BadgeVariant } from '../../shared/Badge';
 import Button from '../../shared/atoms/Button';
 import Modal from '../../shared/Modal';
 import { useScreenSize } from '../../../hooks/useScreenSize';
+import AssignGoal from './AssignGoal';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -288,6 +289,7 @@ const TeamGoals: React.FC = () => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
 
+  const [isAssigningGoal, setIsAssigningGoal] = useState(false);
   const [checkedGoals, setCheckedGoals] = useState<Set<string>>(
     new Set(APPROVAL_GOALS.filter((g) => g.checked).map((g) => g.id))
   );
@@ -314,6 +316,10 @@ const TeamGoals: React.FC = () => {
     });
   };
 
+  if (isAssigningGoal) {
+    return <AssignGoal onBack={() => setIsAssigningGoal(false)} />;
+  }
+
   return (
     <main className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] font-sans ${isMobile ? "p-4" : "p-6"}`}>
       <div className="mx-auto w-full max-w-screen space-y-5">
@@ -338,6 +344,7 @@ const TeamGoals: React.FC = () => {
               size="sm"
               icon={<Plus className="h-4 w-4" />}
               className={isCompact ? "w-full sm:w-fit" : ""}
+              onClick={() => setIsAssigningGoal(true)}
             >
               Assign Goal
             </Button>
