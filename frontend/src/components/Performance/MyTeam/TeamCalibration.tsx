@@ -34,7 +34,7 @@ const RatingCell = ({ rating }: { rating: any }) => {
 
   return (
     <div
-      className={`flex items-center gap-1.5 ${text} ${bg} font-bold text-[10px] px-2 py-0.5 rounded-xl w-fit`}
+      className={`flex items-center gap-1.5 ${text} ${bg} font-bold text-xs px-2 py-0.5 rounded-xl w-fit`}
     >
       <div className={`w-1.5 h-1.5 rounded-xl ${dot}`} />
       {rating}
@@ -81,13 +81,13 @@ const TeamCalibration: React.FC = () => {
           className={`flex ${isCompact ? "flex-col gap-4" : "items-end justify-between"} mb-6`}
         >
           <div className="space-y-1">
-            <span className="inline-block px-2.5 py-0.5 rounded-xl text-[10px] font-bold text-amber-800 bg-amber-100 mb-1">
+            <span className="inline-block px-2.5 py-0.5 rounded-xl text-xs font-bold text-amber-800 bg-amber-100 mb-1">
               Pre-calibration - Manager view
             </span>
-            <h1 className="text-[22px] font-bold text-gray-900 tracking-tight leading-tight">
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-tight">
               Calibration Prep · Design Oxygen Team
             </h1>
-            <span className="text-[12px] text-gray-500 font-medium block">
+            <span className="text-sm text-gray-500 font-medium block">
               Aditi Sharma's session · 5 Jun 2026 - 14:00 IST · Soft target
               distribution
             </span>
@@ -117,14 +117,14 @@ const TeamCalibration: React.FC = () => {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.02)] p-6">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h3 className="text-[15px] font-bold text-gray-900">
+              <h3 className="text-base font-bold text-gray-900">
                 Your team's distribution
               </h3>
-              <span className="text-[11px] text-gray-500">
+              <span className="text-xs text-gray-500">
                 vs target (soft curve)
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-green-700 font-bold text-[11px]">
+            <div className="flex items-center gap-1.5 text-green-700 font-bold text-xs">
               <Check className="w-3.5 h-3.5" /> Within ±5% of target
             </div>
           </div>
@@ -153,10 +153,10 @@ const TeamCalibration: React.FC = () => {
 
                   {/* Labels */}
                   <div className="text-center shrink-0">
-                    <div className="text-[10px] font-bold text-gray-900 leading-tight">
+                    <div className="text-xs font-bold text-gray-900 leading-tight">
                       {bucket.label}
                     </div>
-                    <div className="text-[9px] font-semibold text-gray-400 mt-[1px]">
+                    <div className="text-xs font-semibold text-gray-400 mt-[1px]">
                       Target {bucket.target}% / Actual {bucket.actual}%
                     </div>
                   </div>
@@ -166,7 +166,7 @@ const TeamCalibration: React.FC = () => {
           </div>
 
           {/* Legend */}
-          <div className="flex justify-center items-center gap-6 text-[11px] font-bold text-gray-500">
+          <div className="flex justify-center items-center gap-6 text-xs font-bold text-gray-500">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 bg-gray-200 rounded-sm" /> Target
               distribution
@@ -184,14 +184,14 @@ const TeamCalibration: React.FC = () => {
         {/* ── Employee Table ──────────────────────────────────────────── */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
           {/* Table Header */}
-          <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50/50 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-            <div className="col-span-3">Employee</div>
+          <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-widest text-center items-center">
+            <div className="col-span-3 text-left">Employee</div>
             <div className="col-span-1">FY24</div>
             <div className="col-span-2">FY25</div>
             <div className="col-span-2">Self</div>
             <div className="col-span-2">Peer Avg</div>
             <div className="col-span-1">My Proposal</div>
-            <div className="col-span-1 flex justify-end">9-Box</div>
+            <div className="col-span-1 flex justify-center">9-Box</div>
           </div>
 
           {/* Table Body */}
@@ -211,33 +211,33 @@ const TeamCalibration: React.FC = () => {
                     avatarTextColor="text-blue-600"
                   />
                   <div className="flex flex-col">
-                    <span className="text-[12px] font-bold text-gray-900 leading-tight">
+                    <span className="text-sm font-bold text-gray-900 leading-tight">
                       {emp.name}
                     </span>
-                    <span className="text-[10px] text-gray-500 mt-[1px]">
+                    <span className="text-xs text-gray-500 mt-[1px]">
                       {emp.role}
                     </span>
                   </div>
                 </div>
 
                 {/* Ratings Columns */}
-                <div className="col-span-1">
+                <div className="col-span-1 flex justify-center">
                   <RatingCell rating={emp.fy24} />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-2 flex justify-center">
                   <RatingCell rating={emp.fy25} />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-2 flex justify-center">
                   <RatingCell rating={emp.self} />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-2 flex justify-center">
                   <RatingCell rating={emp.peerAvg} />
                 </div>
 
                 {/* My Proposal Dropdown */}
-                <div className="col-span-1 relative">
+                <div className="col-span-1 relative flex justify-center">
                   <select
-                    className="appearance-none w-24 bg-white border border-gray-200 text-gray-900 text-[11px] font-bold rounded-md px-2.5 py-1.5 pr-6 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-shadow cursor-pointer"
+                    className="appearance-none w-24 bg-white border border-gray-200 text-gray-900 text-xs font-bold rounded-md px-2.5 py-1.5 pr-6 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-shadow cursor-pointer"
                     defaultValue={emp.myProposal}
                   >
                     <option value="Outstanding">Outstanding</option>
@@ -246,11 +246,11 @@ const TeamCalibration: React.FC = () => {
                     <option value="Below">Below</option>
                     <option value="Unsatisfactory">Unsatisfactory</option>
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-6 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                 </div>
 
                 {/* 9-Box Grid */}
-                <div className="col-span-1 flex justify-end">
+                <div className="col-span-1 flex justify-center">
                   <NineBox highlight={emp.gridHighlight} />
                 </div>
               </div>
