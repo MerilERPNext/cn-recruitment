@@ -1,5 +1,5 @@
 import React, { useState, Suspense, lazy } from 'react';
-import { Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Plus, Sparkles } from 'lucide-react';
 import { Typography } from '../../shared/atoms/Typography';
 import Button from '../../shared/atoms/Button';
 
@@ -61,6 +61,49 @@ const Review = () => {
            {achievements.map((achievement) => (
              <AchievementCard key={achievement.id} achievement={achievement} />
            ))}
+
+           <div className="flex flex-col gap-4">
+              <Button
+                variant="outline"
+                bgColor="primary"
+                size="md"
+                icon={<Plus className="w-4 h-4" />}
+                className="w-fit border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100"
+              >
+                Add another achievement (3 of 5)
+              </Button>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <Button
+                  variant="outline"
+                  bgColor="text"
+                  size="md"
+                  icon={<ArrowLeft className="w-4 h-4" />}
+                  className="h-10 w-full justify-center border-gray-200 bg-white px-4 text-gray-700 hover:bg-gray-50 sm:w-auto"
+                >
+                  Back: Goals &amp; KRs
+                </Button>
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+                  <Button
+                    variant="outline"
+                    bgColor="text"
+                    size="md"
+                    className="h-10 w-full justify-center border-gray-200 bg-white px-4 text-gray-700 hover:bg-gray-50 sm:w-auto"
+                  >
+                    Save Draft
+                  </Button>
+                  <Button
+                    variant="contain"
+                    bgColor="primary"
+                    size="md"
+                    className="h-10 w-full justify-center bg-blue-600 px-4 text-white hover:bg-blue-700 sm:w-auto"
+                  >
+                    Next: Development Plan <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+           </div>
         </div>
 
         {/* Right Sidebar */}

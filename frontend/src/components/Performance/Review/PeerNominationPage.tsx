@@ -1,5 +1,7 @@
 import React, { useState, Suspense, lazy } from 'react';
+import { CircleHelp } from 'lucide-react';
 import { Typography } from '../../shared/atoms/Typography';
+import Button from '../../shared/atoms/Button';
 
 const PeerNominationHeader = lazy(() => import('./components/PeerNominationHeader').then(m => ({ default: m.PeerNominationHeader })));
 const PeerNominationFilterBar = lazy(() => import('./components/PeerNominationFilterBar').then(m => ({ default: m.PeerNominationFilterBar })));
@@ -113,6 +115,30 @@ const PeerNominationPage = () => {
                 onToggleSelection={toggleSelection} 
               />
             ))}
+          </div>
+
+          <div className="border-t border-gray-100 p-4">
+            <div className="flex flex-col gap-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <CircleHelp className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                <div>
+                  <Typography variant="bodySmall" className="font-semibold text-amber-900">
+                    What happens next?
+                  </Typography>
+                  <Typography variant="caption" className="mt-1 block text-amber-900/80">
+                    Your nominations go to Rohit Khanna for approval. He can replace anyone he disagrees with (HR is notified). Peer feedback is aggregated — individual answers are never attributed.
+                  </Typography>
+                </div>
+              </div>
+              <Button
+                variant="contain"
+                bgColor="primary"
+                size="md"
+                className="h-10 w-full shrink-0 justify-center bg-blue-600 px-5 text-white hover:bg-blue-700 sm:w-auto"
+              >
+                Submit to Manager
+              </Button>
+            </div>
           </div>
           </Suspense>
         </div>
