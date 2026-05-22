@@ -227,8 +227,7 @@ const TeamOverview: React.FC = () => {
           {/* Table */}
           <div className="overflow-x-auto">
             <table
-              className="w-full text-left border-collapse"
-              style={{ minWidth: 900 }}
+              className="w-full text-left border-collapse min-w-[900px]"
             >
               <thead>
                 <tr className="border-y border-gray-100">

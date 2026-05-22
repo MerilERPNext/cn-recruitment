@@ -30,7 +30,7 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
   };
 
   const handleWeightageChange = (id: string, value: string) => {
-    const num = parseInt(value) || 0;
+    const num = parseInt(value, 10) || 0;
     setReportees((prev) =>
       prev.map((r) => (r.id === id ? { ...r, weightage: num } : r)),
     );
@@ -237,7 +237,7 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
                 <div className="col-span-1">
                   <div className="flex items-center border border-gray-200 rounded-md overflow-hidden bg-white focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-300 transition-shadow">
                     <input
-                      type="text"
+                      type="number"
                       value={r.weightage}
                       onChange={(e) =>
                         handleWeightageChange(r.id, e.target.value)
@@ -258,7 +258,7 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
                     max="100"
                     value={r.contribution}
                     onChange={(e) =>
-                      handleSliderChange(r.id, parseInt(e.target.value))
+                      handleSliderChange(r.id, parseInt(e.target.value, 10))
                     }
                     className="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer accent-blue-500"
                     style={{

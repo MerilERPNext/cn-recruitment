@@ -99,7 +99,7 @@ const TeamGoals = lazyWithRetry(
 );
 
 const TeamReviews = lazyWithRetry(
-  () => import("./components/Performance/MyTeam/TeamReviews.tsx"),
+  () => import("./components/Performance/MyTeam/TeamReviews"),
   "TeamReviews",
 );
 

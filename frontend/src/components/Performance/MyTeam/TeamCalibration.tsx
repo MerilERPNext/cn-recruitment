@@ -69,7 +69,7 @@ const TeamCalibration: React.FC = () => {
   const isCompact = isMobile || isTablet;
 
   // Max value in distribution to scale heights (60 is the max target)
-  const maxScale = 60;
+  const maxScale = Math.max(...DISTRIBUTION.flatMap(b => [b.target, b.actual]), 100);
 
   return (
     <main
