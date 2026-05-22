@@ -29,6 +29,7 @@ SAFE_SETTINGS_FIELDS = (
     "enable_email_otp",
     "enable_mobile_otp",
     "mobile_delivery_mode",
+    "redirect_to",
 )
 
 
