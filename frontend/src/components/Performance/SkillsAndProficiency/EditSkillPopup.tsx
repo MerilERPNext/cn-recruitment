@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { BookOpen, Check, Search, Sparkles, Trash2, UserRound, X } from "lucide-react";
 import Badge from "../../shared/Badge";
 import { Typography } from "../../shared/atoms/Typography";
@@ -47,6 +47,7 @@ const getLevelLabel = (level: number) => proficiencyLevels.find((item) => item.l
 
 const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
   const gap = Math.max(skill.target - skill.current, 0);
+  const [isFocusSkill, setIsFocusSkill] = useState(false);
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
 
@@ -268,7 +269,30 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
                   </div>
                 ))}
               </div>
+              <button
+                type="button"
+                className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-primary-100 bg-white text-xs font-semibold text-primary-700 transition hover:border-primary-200 hover:bg-primary-50"
+              >
+                + Add resource or action
+              </button>
             </section>
+
+            <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-warning-200 bg-warning-50 px-4 py-3">
+              <input
+                type="checkbox"
+                checked={isFocusSkill}
+                onChange={(event) => setIsFocusSkill(event.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-warning-300 text-warning-600 accent-warning-600"
+              />
+              <span>
+                <Typography variant="bodySmall" className="font-bold text-warning-900">
+                  Mark as FY26 focus skill
+                </Typography>
+                <Typography variant="caption" className="mt-1 block leading-5 text-warning-900/80">
+                  Appears in Development Plan and weekly check-in nudges. Max 3 focus skills at a time.
+                </Typography>
+              </span>
+            </label>
           </div>
         </div>
 

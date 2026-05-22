@@ -308,6 +308,16 @@ const SkillsAndProficiency: React.FC = () => {
                 </div>
               ))}
             </div>
+
+            <div className="border-t border-gray-50 p-4">
+              <button
+                type="button"
+                className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-200 bg-white text-sm font-medium text-primary-700 transition-colors hover:border-primary-200 hover:bg-primary-50"
+              >
+                <Plus className="h-4 w-4" />
+                Add a skill from the library (200+ available)
+              </button>
+            </div>
           </div>
 
           <div className="space-y-5">
