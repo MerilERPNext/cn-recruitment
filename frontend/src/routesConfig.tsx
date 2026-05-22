@@ -2,10 +2,10 @@
 import { ReactElement, Suspense } from "react";
 import { Navigate } from "react-router";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useFrappeDocument } from "./hooks/useFrappeQuery";
-import { ExpenseClaim, Expense } from "./types/expenseAdvance";
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
+import { useFrappeDocument } from "./hooks/useFrappeQuery";
 import { useScreenSize } from "./hooks/useScreenSize";
+import { Expense, ExpenseClaim } from "./types/expenseAdvance";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
 
 // Keep critical components as static imports for better UX
@@ -20,19 +20,18 @@ import IncomeTaxSheet from "./components/Compansation/TaxSheet/TaxSheet";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 //import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
 import AddExpenseFormV2 from "./components/Expenses-App/ExpenseClaim/AddExpenseFormV2";
-import IdCard from "./components/IdCard";
-import NotificationList from "./components/Notification/Notification";
-import Requests from "./components/Requests";
-import PasswordReset from "./components/ResetPassword/ResetPassword";
-import SearchMembers from "./components/SearchMembers";
-import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
-import Onboarding from "./components/Onboarding/Onboarding";
-import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
 import {
   ExpenseNavigationState,
   buildExpenseNavigationState,
 } from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
-import TeamOverview from "./components/Performance/MyTeam/TeamOverview";
+import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
+import IdCard from "./components/IdCard";
+import NotificationList from "./components/Notification/Notification";
+import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
+import Onboarding from "./components/Onboarding/Onboarding";
+import Requests from "./components/Requests";
+import PasswordReset from "./components/ResetPassword/ResetPassword";
+import SearchMembers from "./components/SearchMembers";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -89,10 +88,36 @@ const MyGoals = lazyWithRetry(
   () => import("./components/Performance/MyGoals/MyGoals"),
   "MyGoals",
 );
+
+const TeamOverview = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/TeamOverview"),
+  "TeamOverview",
+);
 const TeamGoals = lazyWithRetry(
   () => import("./components/Performance/MyTeam/TeamGoals"),
   "TeamGoals",
 );
+
+const TeamReviews = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/TeamReviews.tsx"),
+  "TeamReviews",
+);
+
+const TeamCalibration = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/TeamCalibration"),
+  "TeamCalibration",
+);
+
+const TeamCheckIns = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/TeamCheckIns.tsx"),
+  "TeamCheckIns",
+);
+
+const TeamNotes = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/TeamNotes"),
+  "TeamNotes",
+);
+
 const GoalDetails = lazyWithRetry(
   () => import("./components/Performance/MyGoals/components/GoalDetails"),
   "GoalDetails",
@@ -114,7 +139,8 @@ const NewGoal = lazyWithRetry(
   "NewGoal",
 );
 const SkillsAndProficiency = lazyWithRetry(
-  () => import("./components/Performance/SkillsAndProficiency/SkillsAndProficiency"),
+  () =>
+    import("./components/Performance/SkillsAndProficiency/SkillsAndProficiency"),
   "SkillsAndProficiency",
 );
 const JobOpeningsUI = lazyWithRetry(
@@ -567,9 +593,7 @@ const AddExpensePage = () => {
       initialExpense={resolvedExpense}
       expense_claim_name={resolvedClaimName}
       draft_document_name={draft_document_name}
-      isEditingFromDetailsPage={
-        Boolean(resolvedExpense) && !isEditingFromDraft
-      }
+      isEditingFromDetailsPage={Boolean(resolvedExpense) && !isEditingFromDraft}
       isResubmit={resolvedIsResubmit}
     />
   );
@@ -1085,7 +1109,7 @@ export const routesConfig: AppRoute[] = [
         path: "request",
         element: <></>, // important: render nothing
         permissionKey: "request-leave",
-      }
+      },
     ],
   },
 
@@ -1154,7 +1178,8 @@ export const routesConfig: AppRoute[] = [
         path: "separation",
         element: <Separation />,
         permissionKey: "Separation",
-      }, {
+      },
+      {
         path: "rejected-separation-request",
         element: <RejectedSeparationRequest />,
         permissionKey: "Rejected Separation Request",
@@ -1193,20 +1218,34 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "My Goals",
       },
       {
-        path: "my-team",
-        element: <TeamOverview />,
-        permissionKey: "My Team",
-      
-      },
-      {
         path: "team-overview",
         element: <TeamOverview />,
-        permissionKey: "My Team"
+        permissionKey: "Team Overview",
       },
       {
         path: "team-goals",
         element: <TeamGoals />,
-        permissionKey: "Team Goals"
+        permissionKey: "Team Goals",
+      },
+      {
+        path: "team-reviews",
+        element: <TeamReviews />,
+        permissionKey: "Team Reviews",
+      },
+      {
+        path: "team-calibration",
+        element: <TeamCalibration />,
+        permissionKey: "Team Calibration",
+      },
+      {
+        path: "team-check-ins",
+        element: <TeamCheckIns />,
+        permissionKey: "Team Check-Ins",
+      },
+      {
+        path: "team-notes",
+        element: <TeamNotes />,
+        permissionKey: "Team Notes",
       },
       {
         path: "my-goals/:id",
@@ -1303,7 +1342,11 @@ export const routesConfig: AppRoute[] = [
     element: <Onboarding />,
     permissionKey: "Employee Onboarding",
     children: [
-      { path: "onboarding-field-approval/:onboardingId", element: <OnboardingFieldApproval />, permissionKey: "Employee Onboarding" },
+      {
+        path: "onboarding-field-approval/:onboardingId",
+        element: <OnboardingFieldApproval />,
+        permissionKey: "Employee Onboarding",
+      },
     ],
   },
   {
