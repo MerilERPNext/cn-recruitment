@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Plus, Sparkles, X } from 'lucide-react';
+import { Check, FileText, GitBranch, Plus, Sparkles, X, type LucideIcon } from 'lucide-react';
 import Badge from '../../../shared/Badge';
 import Button from '../../../shared/atoms/Button';
 import { Card } from '../../../shared/atoms/Card';
@@ -26,6 +26,42 @@ const metricTypeOptions: MetricType[] = ['Count', 'Number', '%'];
 const categoryOptions = ['Individual', 'Team', 'Company'];
 const metricSelectOptions = metricTypeOptions.map((option) => ({ label: option, value: option }));
 const categorySelectOptions = categoryOptions.map((option) => ({ label: option, value: option }));
+const autoPullSources: Array<{
+    id: string;
+    label: string;
+    description: string;
+    enabled: boolean;
+    icon: LucideIcon;
+}> = [
+    {
+        id: 'jira',
+        label: 'Jira',
+        description: 'OXY-2.0 epic · 48/76 issues',
+        enabled: true,
+        icon: FileText,
+    },
+    {
+        id: 'github',
+        label: 'GitHub',
+        description: 'oxygen-web · 142 PRs merged',
+        enabled: true,
+        icon: GitBranch,
+    },
+    {
+        id: 'figma',
+        label: 'Figma',
+        description: 'Not connected',
+        enabled: false,
+        icon: Sparkles,
+    },
+    {
+        id: 'salesforce',
+        label: 'Salesforce',
+        description: 'Not applicable',
+        enabled: false,
+        icon: FileText,
+    },
+];
 
 const keyResults: KeyResult[] = [
     {
@@ -67,6 +103,13 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-gray-600';
 const DefineGoal = () => {
     const [weightage, setWeightage] = useState(30);
     const [selectedCategory, setSelectedCategory] = useState(categorySelectOptions[0]);
+    const [sourceStates, setSourceStates] = useState<Record<string, boolean>>(
+        () =>
+            autoPullSources.reduce<Record<string, boolean>>((acc, source) => {
+                acc[source.id] = source.enabled;
+                return acc;
+            }, {}),
+    );
     const [keyResultMetricTypes, setKeyResultMetricTypes] = useState<Record<string, MetricSelectOption>>(
         () =>
             keyResults.reduce<Record<string, MetricSelectOption>>((acc, result) => {
@@ -79,6 +122,13 @@ const DefineGoal = () => {
         setKeyResultMetricTypes((current) => ({
             ...current,
             [resultId]: option,
+        }));
+    };
+
+    const toggleSource = (sourceId: string) => {
+        setSourceStates((current) => ({
+            ...current,
+            [sourceId]: !current[sourceId],
         }));
     };
 
@@ -283,6 +333,58 @@ const DefineGoal = () => {
                         <Plus className="h-4 w-4" />
                         Add Key Result (3 of 5)
                     </button>
+
+                    <div className="mt-4 flex items-center justify-between rounded-lg bg-emerald-50 px-4 py-3 text-sm">
+                        <span className="font-medium text-emerald-900">KR weightage sum</span>
+                        <span className="font-semibold text-emerald-700">100% → valid</span>
+                    </div>
+                </Card>
+
+                <Card className="border border-gray-200 bg-white p-5 shadow-sm" radius="xl" padding="none">
+                    <div className="mb-4">
+                        <Typography variant="subheading" className="text-gray-900">
+                            Auto-pull progress
+                        </Typography>
+                        <Typography variant="caption" className="text-gray-500">
+                            Connect a source-of-record to auto-update Current values
+                        </Typography>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        {autoPullSources.map((source) => {
+                            const Icon = source.icon;
+                            const isEnabled = sourceStates[source.id];
+
+                            return (
+                                <div key={source.id} className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2">
+                                    <div className="flex min-w-0 items-center gap-3">
+                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-500">
+                                            <Icon className="h-4 w-4" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <Typography variant="bodySmall" className="truncate font-semibold text-gray-900">
+                                                {source.label}
+                                            </Typography>
+                                            <Typography variant="caption" className="block truncate text-gray-500">
+                                                {source.description}
+                                            </Typography>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        aria-pressed={isEnabled}
+                                        aria-label={`${isEnabled ? 'Disable' : 'Enable'} ${source.label} auto-pull`}
+                                        onClick={() => toggleSource(source.id)}
+                                        className={`relative h-5 w-9 shrink-0 rounded-md transition-colors ${isEnabled ? 'bg-blue-500' : 'bg-gray-200'}`}
+                                    >
+                                        <span
+                                            className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${isEnabled ? '-translate-x-4' : 'translate-x-0.5'}`}
+                                        />
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </Card>
             </div>
 
