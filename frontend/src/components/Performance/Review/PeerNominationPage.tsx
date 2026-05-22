@@ -142,49 +142,6 @@ const PeerNominationPage = () => {
           </div>
           </Suspense>
         </div>
-
-        <div className="flex flex-col gap-5">
-          <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
-            <Typography variant="subheading" className="mb-4 text-gray-900">
-              One thing Karthik should keep doing
-            </Typography>
-            <textarea
-              rows={4}
-              placeholder="A behaviour you'd want to see more of..."
-              className="min-h-[112px] w-full resize-none rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm leading-5 text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-
-          <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
-            <Typography variant="subheading" className="mb-4 text-gray-900">
-              One thing Karthik could improve
-            </Typography>
-            <textarea
-              rows={4}
-              placeholder="Constructive — focus on impact, not blame..."
-              className="min-h-[112px] w-full resize-none rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm leading-5 text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-
-          <div className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
-            <Button
-              variant="outline"
-              bgColor="text"
-              size="md"
-              className="h-11 w-full justify-center border-gray-200 bg-white px-5 text-gray-700 hover:bg-gray-50 sm:w-auto"
-            >
-              Save Draft
-            </Button>
-            <Button
-              variant="contain"
-              bgColor="primary"
-              size="md"
-              className="h-11 w-full justify-center bg-blue-600 px-6 text-white hover:bg-blue-700 sm:w-auto"
-            >
-              Submit Feedback
-            </Button>
-          </div>
-        </div>
       </div>
     </div>
   );
