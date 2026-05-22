@@ -43,6 +43,7 @@
   "debug_allowed_for_system_manager_only",
   "portal_site_section",
   "allowed_origin",
+  "redirect_to",
   "cookie_same_site",
   "cookie_secure"
  ],
@@ -85,6 +86,7 @@
   {"default": "1", "fieldname": "debug_allowed_for_system_manager_only", "fieldtype": "Check", "label": "Debug Allowed For System Manager Only"},
   {"fieldname": "portal_site_section", "fieldtype": "Section Break", "label": "Portal Site"},
   {"description": "Optional browser origin allowed to use this site's candidate auth APIs.", "fieldname": "allowed_origin", "fieldtype": "Data", "label": "Allowed Origin"},
+  {"description": "Path or URL where candidates are sent after a successful login. Defaults to the portal landing page if empty.", "fieldname": "redirect_to", "fieldtype": "Data", "label": "Redirect To"},
   {"default": "Lax", "fieldname": "cookie_same_site", "fieldtype": "Select", "label": "Cookie SameSite", "options": "Lax\nStrict\nNone"},
   {"default": "0", "fieldname": "cookie_secure", "fieldtype": "Check", "label": "Cookie Secure"}
  ],
