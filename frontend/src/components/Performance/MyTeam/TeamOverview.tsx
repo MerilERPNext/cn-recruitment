@@ -4,153 +4,10 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const STATS = [
-  {
-    label: "REVIEWS TO COMPLETE",
-    value: "6",
-    sub: "2 of 8 done",
-    valueColor: "text-blue-600",
-  },
-  {
-    label: "GOALS PENDING APPROVAL",
-    value: "3",
-    sub: "submitted this week",
-    valueColor: "text-orange-500",
-  },
-  {
-    label: "SELF-REVIEWS SUBMITTED",
-    value: "6 / 8",
-    sub: "2 overdue",
-    valueColor: "text-blue-600",
-  },
-  {
-    label: "OFF-TRACK GOALS",
-    value: "4",
-    sub: "across 3 reportees",
-    valueColor: "text-red-500",
-  },
-  {
-    label: "TEAM AVG PROGRESS",
-    value: "63%",
-    sub: (
-      <>
-        <ArrowUp className="w-3 h-3 inline mr-0.5 text-green-500" />
-        8% vs Q4
-      </>
-    ),
-    valueColor: "text-green-600",
-  },
-];
-
-const TEAM_MEMBERS = [
-  {
-    id: "1",
-    initials: "PM",
-    name: "Pallavi Mahar",
-    role: "Sr. Product Designer",
-    tenure: "3.2y",
-    goals: 5,
-    progress: 64,
-    self: "Done",
-    review: "Not started",
-    lastRating: "Exceeds",
-    ratingColor: "bg-green-500",
-    ratingText: "text-green-600",
-    action: "Review",
-  },
-  {
-    id: "2",
-    initials: "KI",
-    name: "Karthik Iyer",
-    role: "Sr. Designer",
-    tenure: "4.1y",
-    goals: 5,
-    progress: 78,
-    self: "Done",
-    review: "Done",
-    lastRating: "Exceeds",
-    ratingColor: "bg-green-500",
-    ratingText: "text-green-600",
-    action: "View",
-  },
-  {
-    id: "3",
-    initials: "MS",
-    name: "Mohit Sinha",
-    role: "Sr. Designer",
-    tenure: "2y",
-    goals: 4,
-    progress: 52,
-    self: "Done",
-    review: "Not started",
-    lastRating: "Meets",
-    ratingColor: "bg-blue-500",
-    ratingText: "text-blue-600",
-    action: "Review",
-  },
-  {
-    id: "4",
-    initials: "RB",
-    name: "Riya Banerjee",
-    role: "Designer II",
-    tenure: "1.8y",
-    goals: 4,
-    progress: 88,
-    self: "Done",
-    review: "Done",
-    lastRating: "Exceeds",
-    ratingColor: "bg-green-500",
-    ratingText: "text-green-600",
-    action: "View",
-  },
-  {
-    id: "5",
-    initials: "AB",
-    name: "Aman Bhatt",
-    role: "Designer II",
-    tenure: "1.5y",
-    goals: 4,
-    progress: 45,
-    self: "Pending",
-    review: "Not started",
-    lastRating: "Meets",
-    ratingColor: "bg-blue-500",
-    ratingText: "text-blue-600",
-    action: "Nudge",
-  },
-  {
-    id: "6",
-    initials: "SD",
-    name: "Shreya Das",
-    role: "Designer I",
-    tenure: "0.6y",
-    goals: 4,
-    progress: 71,
-    self: "Done",
-    review: "Not started",
-    lastRating: null,
-    ratingColor: "",
-    ratingText: "",
-    action: "Review",
-  },
-  {
-    id: "7",
-    initials: "VR",
-    name: "Vikram Rao",
-    role: "Designer II",
-    tenure: "2.4y",
-    goals: 4,
-    progress: 30,
-    self: "Overdue",
-    review: "Not started",
-    lastRating: "Below",
-    ratingColor: "bg-yellow-500",
-    ratingText: "text-yellow-600",
-    action: "Nudge",
-  },
-];
+import Avatar from "../../shared/Avatar";
+import Badge from "../../shared/Badge";
+import { OVERVIEW_STATS, OVERVIEW_TEAM_MEMBERS } from "./mockData";
+import { OverviewTeamMember } from "./types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -163,38 +20,37 @@ const getProgressColor = (progress: number) => {
 const SelfBadge = ({ status }: { status: string }) => {
   if (status === "Done")
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded">
-        <Check className="w-3 h-3" />
-        Done
-      </span>
+      <Badge
+        label="Done"
+        variant="success"
+        size="sm"
+        icon={<Check className="w-3 h-3" />}
+      />
     );
   if (status === "Pending")
-    return (
-      <span className="inline-flex items-center text-[11px] font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
-        Pending
-      </span>
-    );
+    return <Badge label="Pending" variant="warning" size="sm" />;
   if (status === "Overdue")
-    return (
-      <span className="inline-flex items-center text-[11px] font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded">
-        Overdue
-      </span>
-    );
+    return <Badge label="Overdue" variant="danger" size="sm" />;
   return null;
 };
 
 const ReviewBadge = ({ status }: { status: string }) => {
   if (status === "Done")
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded">
-        <Check className="w-3 h-3" />
-        Done
-      </span>
+      <Badge
+        label="Done"
+        variant="success"
+        size="sm"
+        icon={<Check className="w-3 h-3" />}
+      />
     );
   return (
-    <span className="inline-flex items-center text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-      Not started
-    </span>
+    <Badge
+      label="Not started"
+      backgroundColor="bg-gray-100"
+      textColor="text-gray-500"
+      size="sm"
+    />
   );
 };
 
@@ -311,7 +167,7 @@ const TeamOverview: React.FC = () => {
         <section
           className={`grid ${isCompact ? "grid-cols-2" : "grid-cols-5"} gap-4`}
         >
-          {STATS.map((stat, idx) => (
+          {OVERVIEW_STATS.map((stat, idx) => (
             <div
               key={idx}
               className="bg-white rounded-xl border border-gray-200 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between min-h-[100px]"
@@ -400,7 +256,7 @@ const TeamOverview: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {TEAM_MEMBERS.map((m) => (
+                {OVERVIEW_TEAM_MEMBERS.map((m: OverviewTeamMember) => (
                   <tr
                     key={m.id}
                     className="hover:bg-gray-50/50 transition-colors"
@@ -408,9 +264,13 @@ const TeamOverview: React.FC = () => {
                     {/* Employee */}
                     <td className="py-3 px-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[11px] font-bold shrink-0">
-                          {m.initials}
-                        </div>
+                        <Avatar
+                          name={m.name}
+                          fontSize="text-xs"
+                          size="h-8 w-8"
+                          avatarBgColor="bg-blue-50"
+                          avatarTextColor="text-blue-600"
+                        />
                         <div>
                           <span className="font-semibold text-[13px] text-gray-900 block">
                             {m.name}
@@ -472,19 +332,34 @@ const TeamOverview: React.FC = () => {
                     {/* Action */}
                     <td className="py-3 px-6 whitespace-nowrap text-center">
                       {m.action === "Review" && (
-                        <button className="bg-[#1a73e8] hover:bg-blue-600 text-white px-3 py-1.5 text-[11px] font-semibold rounded-md w-24 inline-flex items-center justify-center transition-colors">
+                        <Button
+                          variant="contain"
+                          bgColor="primary"
+                          size="sm"
+                          className="w-24 justify-center"
+                        >
                           Review <ArrowRight className="w-3 h-3 ml-1" />
-                        </button>
+                        </Button>
                       )}
                       {m.action === "Nudge" && (
-                        <button className="bg-[#1a73e8] hover:bg-blue-600 text-white px-3 py-1.5 text-[11px] font-semibold rounded-md w-24 inline-flex items-center justify-center transition-colors">
+                        <Button
+                          variant="contain"
+                          bgColor="primary"
+                          size="sm"
+                          className="w-24 justify-center"
+                        >
                           Nudge
-                        </button>
+                        </Button>
                       )}
                       {m.action === "View" && (
-                        <button className="border border-blue-200 text-[#1a73e8] bg-white hover:bg-blue-50 px-3 py-1.5 text-[11px] font-semibold rounded-md w-24 inline-flex items-center justify-center transition-colors">
+                        <Button
+                          variant="outline"
+                          bgColor="primary"
+                          size="sm"
+                          className="w-24 justify-center border-blue-200"
+                        >
                           View
-                        </button>
+                        </Button>
                       )}
                     </td>
                   </tr>

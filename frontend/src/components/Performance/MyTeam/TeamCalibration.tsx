@@ -1,116 +1,13 @@
 import { Check, ChevronDown } from "lucide-react";
 import React from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const DISTRIBUTION = [
-  { label: "Outstanding", target: 5, actual: 13, isRed: true },
-  { label: "Exceeds", target: 15, actual: 25, isRed: true },
-  { label: "Meets", target: 60, actual: 37, isRed: true },
-  { label: "Below", target: 15, actual: 13, isRed: false },
-  { label: "Unsatisfactory", target: 5, actual: 12, isRed: true },
-];
-
-type PerfRating =
-  | "Outstanding"
-  | "Exceeds"
-  | "Meets"
-  | "Below"
-  | "Unsatisfactory"
-  | "-";
-
-interface Employee {
-  id: string;
-  initials: string;
-  name: string;
-  role: string;
-  fy24: PerfRating;
-  fy25: PerfRating;
-  self: PerfRating;
-  peerAvg: PerfRating;
-  myProposal: PerfRating;
-  gridHighlight: [number, number];
-}
-
-const EMPLOYEES: Employee[] = [
-  {
-    id: "1",
-    initials: "PM",
-    name: "Pallavi Mahar",
-    role: "Sr. Product Designer",
-    fy24: "Meets",
-    fy25: "Exceeds",
-    self: "Outstanding",
-    peerAvg: "Exceeds",
-    myProposal: "Exceeds",
-    gridHighlight: [0, 2],
-  },
-  {
-    id: "2",
-    initials: "KI",
-    name: "Karthik Iyer",
-    role: "Sr. Designer",
-    fy24: "Meets",
-    fy25: "Exceeds",
-    self: "Outstanding",
-    peerAvg: "Outstanding",
-    myProposal: "Exceeds",
-    gridHighlight: [0, 2],
-  },
-  {
-    id: "3",
-    initials: "MS",
-    name: "Mohit Sinha",
-    role: "Sr. Designer",
-    fy24: "Below",
-    fy25: "Meets",
-    self: "Exceeds",
-    peerAvg: "Meets",
-    myProposal: "Meets",
-    gridHighlight: [1, 2],
-  },
-  {
-    id: "4",
-    initials: "RB",
-    name: "Riya Banerjee",
-    role: "Designer II",
-    fy24: "Meets",
-    fy25: "Exceeds",
-    self: "Outstanding",
-    peerAvg: "Outstanding",
-    myProposal: "Outstanding",
-    gridHighlight: [0, 2],
-  },
-  {
-    id: "5",
-    initials: "AB",
-    name: "Aman Bhatt",
-    role: "Designer II",
-    fy24: "Below",
-    fy25: "Meets",
-    self: "-",
-    peerAvg: "Meets",
-    myProposal: "Meets",
-    gridHighlight: [1, 2],
-  },
-  {
-    id: "6",
-    initials: "SD",
-    name: "Shreya Das",
-    role: "Designer I",
-    fy24: "-",
-    fy25: "-",
-    self: "Outstanding",
-    peerAvg: "Exceeds",
-    myProposal: "Exceeds",
-    gridHighlight: [2, 2],
-  },
-];
+import Avatar from "../../shared/Avatar";
+import Button from "../../shared/atoms/Button";
+import { CALIBRATION_EMPLOYEES, DISTRIBUTION } from "./mockData";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const getRatingColor = (rating: PerfRating) => {
+const getRatingColor = (rating: any) => {
   switch (rating) {
     case "Outstanding":
     case "Exceeds":
@@ -130,7 +27,7 @@ const getRatingColor = (rating: PerfRating) => {
   }
 };
 
-const RatingCell = ({ rating }: { rating: PerfRating }) => {
+const RatingCell = ({ rating }: { rating: any }) => {
   if (rating === "-") return <span className="text-gray-400 font-bold">—</span>;
 
   const { text, dot, bg } = getRatingColor(rating);
@@ -196,17 +93,23 @@ const TeamCalibration: React.FC = () => {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 bg-white rounded-md text-[11px] font-bold text-[#1a73e8] hover:bg-gray-50 transition-colors shadow-sm">
-              <div className="grid grid-cols-3 gap-[1px] w-3 h-3">
-                {[...Array(9)].map((_, i) => (
-                  <div key={i} className="bg-[#1a73e8] rounded-[1px]" />
-                ))}
-              </div>
+            <Button
+              variant="outline"
+              bgColor="primary"
+              size="sm"
+              icon={
+                <div className="grid grid-cols-3 gap-[1px] w-3 h-3">
+                  {[...Array(9)].map((_, i) => (
+                    <div key={i} className="bg-[#1a73e8] rounded-[1px]" />
+                  ))}
+                </div>
+              }
+            >
               View team on 9-Box
-            </button>
-            <button className="px-4 py-1.5 bg-[#1a73e8] hover:bg-blue-600 text-white rounded-md text-[11px] font-bold transition-colors shadow-sm">
+            </Button>
+            <Button variant="contain" bgColor="primary" size="sm">
               Submit my proposals
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -293,16 +196,20 @@ const TeamCalibration: React.FC = () => {
 
           {/* Table Body */}
           <div className="divide-y divide-gray-100">
-            {EMPLOYEES.map((emp) => (
+            {CALIBRATION_EMPLOYEES.map((emp) => (
               <div
                 key={emp.id}
                 className="grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-gray-50/50 transition-colors"
               >
                 {/* Employee Info */}
                 <div className="col-span-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 bg-blue-50 text-blue-600">
-                    {emp.initials}
-                  </div>
+                  <Avatar
+                    name={emp.name}
+                    fontSize="text-xs"
+                    size="h-8 w-8"
+                    avatarBgColor="bg-blue-50"
+                    avatarTextColor="text-blue-600"
+                  />
                   <div className="flex flex-col">
                     <span className="text-[12px] font-bold text-gray-900 leading-tight">
                       {emp.name}

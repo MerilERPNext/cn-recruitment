@@ -14,248 +14,9 @@ import Badge, { type BadgeVariant } from "../../shared/Badge";
 import Modal from "../../shared/Modal";
 import AssignGoal from "./AssignGoal";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-type GoalStatus = "On-track" | "At-risk" | "Off-track";
-
-interface KeyResult {
-  id: string;
-  title: string;
-  target: number | string;
-}
-
-interface ApprovalGoal {
-  id: string;
-  type: "OKR" | "KI";
-  employeeInitials: string;
-  employeeName: string;
-  warning?: string;
-  title: string;
-  submittedAgo: string;
-  weightage: number;
-  checked: boolean;
-}
-
-interface TeamMemberGoal {
-  id: string;
-  type: "OKR" | "KI";
-  title: string;
-  progress: number;
-  status: GoalStatus;
-}
-
-interface TeamMember {
-  id: string;
-  initials: string;
-  name: string;
-  designation: string;
-  goalCount: number;
-  avgProgress: number;
-  goals: TeamMemberGoal[];
-  expanded: boolean;
-}
-
-interface GoalDetailData {
-  id: string;
-  type: "OKR" | "KI";
-  label: string;
-  status: "Submitted";
-  approvalStatus: "Pending Approval";
-  title: string;
-  employeeInitials: string;
-  employeeName: string;
-  designation: string;
-  submittedAgo: string;
-  weightage: number;
-  start: string;
-  end: string;
-  metric: string;
-  alignedTo: string;
-  contribution: string;
-  visibility: string;
-  autoPull: string;
-  description: string;
-  keyResults: KeyResult[];
-  managerComment: string;
-  autoApprovesInDays: number;
-}
-
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-const APPROVAL_GOALS: ApprovalGoal[] = [
-  {
-    id: "a1",
-    type: "OKR",
-    employeeInitials: "PM",
-    employeeName: "Pallavi Mahar",
-    title: "Ship Oxygen 2.0 dashboard to 100% of PW employees",
-    submittedAgo: "2 days ago",
-    weightage: 30,
-    checked: true,
-  },
-  {
-    id: "a2",
-    type: "OKR",
-    employeeInitials: "PM",
-    employeeName: "Pallavi Mahar",
-    title: "Reduce design → eng handoff time by 40%",
-    submittedAgo: "2 days ago",
-    weightage: 20,
-    checked: true,
-  },
-  {
-    id: "a3",
-    type: "OKR",
-    employeeInitials: "KI",
-    employeeName: "Karthik Iyer",
-    warning: "Weightage exceeds 25% template",
-    title: "Migrate auth service to v3 with zero-downtime cutover",
-    submittedAgo: "1 day ago",
-    weightage: 35,
-    checked: false,
-  },
-  {
-    id: "a4",
-    type: "OKR",
-    employeeInitials: "AB",
-    employeeName: "Aman Bhatt",
-    warning: "Edited after first approval",
-    title: "Onboard 4 new engineers to platform team",
-    submittedAgo: "4 hours ago",
-    weightage: 25,
-    checked: false,
-  },
-  {
-    id: "a5",
-    type: "OKR",
-    employeeInitials: "MS",
-    employeeName: "Mohit Sinha",
-    title: "Maintain design CSAT ≥ 4.5",
-    submittedAgo: "5 hours ago",
-    weightage: 20,
-    checked: false,
-  },
-];
-
-const TEAM_MEMBERS: TeamMember[] = [
-  {
-    id: "m1",
-    initials: "PM",
-    name: "Pallavi Mahar",
-    designation: "Sr. Product Designer",
-    goalCount: 5,
-    avgProgress: 64,
-    expanded: true,
-    goals: [
-      {
-        id: "g1",
-        type: "OKR",
-        title: "Ship Oxygen 2.0 dashboard to 100% of PW employees",
-        progress: 64,
-        status: "On-track",
-      },
-      {
-        id: "g2",
-        type: "OKR",
-        title: "Reduce design → engineering handoff time by 40%",
-        progress: 42,
-        status: "At-risk",
-      },
-      {
-        id: "g3",
-        type: "OKR",
-        title: "Mentor 2 junior designers to mid-level promotion",
-        progress: 80,
-        status: "On-track",
-      },
-    ],
-  },
-  {
-    id: "m2",
-    initials: "KI",
-    name: "Karthik Iyer",
-    designation: "Sr. Designer",
-    goalCount: 5,
-    avgProgress: 78,
-    expanded: false,
-    goals: [
-      {
-        id: "g4",
-        type: "OKR",
-        title: "Migrate auth service to v3 with zero-downtime cutover",
-        progress: 55,
-        status: "At-risk",
-      },
-      {
-        id: "g5",
-        type: "KI",
-        title: "Design system contribution — 10 components",
-        progress: 90,
-        status: "On-track",
-      },
-    ],
-  },
-  {
-    id: "m3",
-    initials: "MS",
-    name: "Mohit Sinha",
-    designation: "Sr. Designer",
-    goalCount: 4,
-    avgProgress: 52,
-    expanded: false,
-    goals: [
-      {
-        id: "g6",
-        type: "OKR",
-        title: "Maintain design CSAT ≥ 4.5",
-        progress: 91,
-        status: "On-track",
-      },
-      {
-        id: "g7",
-        type: "OKR",
-        title: "Launch design-thinking workshop series",
-        progress: 18,
-        status: "Off-track",
-      },
-    ],
-  },
-];
-
-const GOAL_DETAIL: GoalDetailData = {
-  id: "a1",
-  type: "OKR",
-  label: "Individual",
-  status: "Submitted",
-  approvalStatus: "Pending Approval",
-  title: "Ship Oxygen 2.0 dashboard to 100% of PW employees",
-  employeeInitials: "PM",
-  employeeName: "Pallavi Mahar",
-  designation: "Sr. Product Designer",
-  submittedAgo: "2 days ago",
-  weightage: 30,
-  start: "1 Apr 2026",
-  end: "31 Mar 2027",
-  metric: "% rollout · target 100",
-  alignedTo: "Alakh Pandey · Org OKR",
-  contribution: "12% of parent",
-  visibility: "Team",
-  autoPull: "Jira · OXY-2.0",
-  description:
-    "Lead the design + research for the redesigned dashboard. Drive adoption past 80% WAU. Coordinate with PMM and CS for rollout comms. Quarterly progress reviews with Aditi.",
-  keyResults: [
-    {
-      id: "KR 1",
-      title: "Design system v2 components shipped (24 of 32)",
-      target: 32,
-    },
-    { id: "KR 2", title: "Dashboard usability score ≥ 4.4 / 5", target: 4.4 },
-    { id: "KR 3", title: "WAU adoption ≥ 80% by Q3", target: 80 },
-  ],
-  managerComment:
-    "Looks good. Make sure KR3 has weekly check-ins — this is the riskiest one.",
-  autoApprovesInDays: 2,
-};
+import Avatar from "../../shared/Avatar";
+import { APPROVAL_GOALS, GOAL_DETAIL, TEAM_MEMBERS } from "./mockData";
+import { GoalDetailData, GoalStatus } from "./types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -336,11 +97,17 @@ const GoalDetailModal: React.FC<GoalDetailModalProps> = ({ goal, onClose }) => {
               {goal.title}
             </Typography>
             <div className="flex items-center gap-2">
-              <div
-                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${getInitialsBg(goal.employeeInitials)}`}
-              >
-                {goal.employeeInitials}
-              </div>
+              <Avatar
+                name={goal.employeeName}
+                fontSize="text-xs"
+                size="h-8 w-8"
+                avatarBgColor={
+                  getInitialsBg(goal.employeeInitials).split(" ")[0]
+                }
+                avatarTextColor={
+                  getInitialsBg(goal.employeeInitials).split(" ")[1]
+                }
+              />
               <Typography variant="bodySmall" className="text-gray-500">
                 {goal.employeeName} · {goal.designation} · submitted{" "}
                 {goal.submittedAgo}
@@ -448,12 +215,15 @@ const GoalDetailModal: React.FC<GoalDetailModalProps> = ({ goal, onClose }) => {
           </div>
 
           {/* Audit */}
-          <div className="border-t border-gray-100 pt-4 pb-2">
+          <div className="bg-slate-50 rounded-xl p-4 mb-2">
             <Typography
               variant="caption"
-              className="uppercase tracking-wider text-gray-400 font-semibold"
+              className="uppercase tracking-wider text-gray-500 font-bold block mb-1.5"
             >
               AUDIT
+            </Typography>
+            <Typography variant="bodySmall" className="text-gray-500">
+              {goal.auditLog}
             </Typography>
           </div>
         </div>
@@ -473,12 +243,12 @@ const GoalDetailModal: React.FC<GoalDetailModalProps> = ({ goal, onClose }) => {
             >
               Send back
             </Button>
-            <button className="text-sm font-medium border border-red-200 text-red-600 bg-white hover:bg-red-50 px-4 py-1.5 rounded-lg transition-colors">
+            <Button variant="outline" bgColor="error" size="sm">
               Reject
-            </button>
-            <button className="text-sm font-medium bg-[#0f8c5a] hover:bg-[#0d7a4e] text-white px-4 py-1.5 rounded-lg transition-colors shadow-sm">
+            </Button>
+            <Button variant="contain" bgColor="success" size="sm">
               Approve goal
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -500,6 +270,18 @@ const TeamGoals: React.FC = () => {
     new Set(["m1"]),
   );
   const [selectedGoal, setSelectedGoal] = useState<GoalDetailData | null>(null);
+
+  const handleGoalClick = (baseGoal: any) => {
+    setSelectedGoal({
+      ...GOAL_DETAIL,
+      id: baseGoal.id,
+      title: baseGoal.title,
+      status: baseGoal.status || "Submitted",
+      employeeName: baseGoal.employeeName,
+      employeeInitials: baseGoal.employeeInitials,
+      weightage: baseGoal.weightage || GOAL_DETAIL.weightage,
+    });
+  };
 
   const totalGoals = 32;
   const totalReportees = 8;
@@ -594,16 +376,22 @@ const TeamGoals: React.FC = () => {
             <div
               className={`flex gap-3 ${isCompact ? "w-full flex-col sm:w-auto sm:flex-row" : "items-center"}`}
             >
-              <button
-                className={`text-sm font-medium border border-red-200 text-red-600 bg-white hover:bg-red-50 px-4 py-1.5 rounded-lg transition-colors ${isCompact ? "w-full sm:w-fit" : ""}`}
+              <Button
+                variant="outline"
+                bgColor="error"
+                size="sm"
+                className={isCompact ? "w-full sm:w-fit" : ""}
               >
                 Reject all
-              </button>
-              <button
-                className={`text-sm font-medium bg-[#0f8c5a] hover:bg-[#0d7a4e] text-white px-4 py-1.5 rounded-lg transition-colors shadow-sm ${isCompact ? "w-full sm:w-fit" : ""}`}
+              </Button>
+              <Button
+                variant="contain"
+                bgColor="success"
+                size="sm"
+                className={isCompact ? "w-full sm:w-fit" : ""}
               >
                 Approve all
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -611,7 +399,7 @@ const TeamGoals: React.FC = () => {
             {APPROVAL_GOALS.map((goal) => (
               <article
                 key={goal.id}
-                onClick={() => setSelectedGoal(GOAL_DETAIL)}
+                onClick={() => handleGoalClick(goal)}
                 className={`grid gap-4 px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors ${
                   isCompact
                     ? "grid-cols-[auto_1fr]"
@@ -634,11 +422,17 @@ const TeamGoals: React.FC = () => {
                 <div className="min-w-0">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
                     <Badge label={goal.type} variant="purple" size="sm" />
-                    <span
-                      className={`flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-semibold ${getInitialsBg(goal.employeeInitials)}`}
-                    >
-                      {goal.employeeInitials}
-                    </span>
+                    <Avatar
+                      name={goal.employeeName}
+                      fontSize="text-xs"
+                      size="h-8 w-8"
+                      avatarBgColor={
+                        getInitialsBg(goal.employeeInitials).split(" ")[0]
+                      }
+                      avatarTextColor={
+                        getInitialsBg(goal.employeeInitials).split(" ")[1]
+                      }
+                    />
                     <Typography variant="caption" className="text-gray-600">
                       {goal.employeeName}
                     </Typography>
@@ -697,16 +491,22 @@ const TeamGoals: React.FC = () => {
                   >
                     Send back
                   </Button>
-                  <button
-                    className={`text-sm font-medium border border-red-200 text-red-600 bg-white hover:bg-red-50 px-4 py-1.5 rounded-lg transition-colors ${isCompact ? "min-w-24 flex-1 sm:flex-none" : ""}`}
+                  <Button
+                    variant="outline"
+                    bgColor="error"
+                    size="sm"
+                    className={isCompact ? "min-w-24 flex-1 sm:flex-none" : ""}
                   >
                     Reject
-                  </button>
-                  <button
-                    className={`text-sm font-medium bg-[#0f8c5a] hover:bg-[#0d7a4e] text-white px-4 py-1.5 rounded-lg transition-colors shadow-sm ${isCompact ? "min-w-24 flex-1 sm:flex-none" : ""}`}
+                  </Button>
+                  <Button
+                    variant="contain"
+                    bgColor="success"
+                    size="sm"
+                    className={isCompact ? "min-w-24 flex-1 sm:flex-none" : ""}
                   >
                     Approve
-                  </button>
+                  </Button>
                 </div>
               </article>
             ))}
@@ -759,11 +559,17 @@ const TeamGoals: React.FC = () => {
                     className="flex w-full items-start justify-between gap-3 bg-blue-50/60 px-4 py-3 text-left transition-colors hover:bg-blue-50 sm:items-center"
                   >
                     <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
-                      <span
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${getInitialsBg(member.initials)}`}
-                      >
-                        {member.initials}
-                      </span>
+                      <Avatar
+                        name={member.name}
+                        size="h-8 w-8"
+                        fontSize="text-xs"
+                        avatarBgColor={
+                          getInitialsBg(member.initials).split(" ")[0]
+                        }
+                        avatarTextColor={
+                          getInitialsBg(member.initials).split(" ")[1]
+                        }
+                      />
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                           <Typography
@@ -792,7 +598,13 @@ const TeamGoals: React.FC = () => {
                       {member.goals.map((goal) => (
                         <div
                           key={goal.id}
-                          onClick={() => setSelectedGoal(GOAL_DETAIL)}
+                          onClick={() =>
+                            handleGoalClick({
+                              ...goal,
+                              employeeName: member.name,
+                              employeeInitials: member.initials,
+                            })
+                          }
                           className={`grid gap-3 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${
                             isCompact
                               ? "grid-cols-1"

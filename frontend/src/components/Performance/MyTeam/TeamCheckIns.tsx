@@ -9,7 +9,9 @@ import React from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { Typography } from "../../shared/atoms/Typography";
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
+import Avatar from "../../shared/Avatar";
+import Button from "../../shared/atoms/Button";
+import { CHECK_INS } from "./mockData";
 
 const STATS = [
   {
@@ -41,111 +43,6 @@ const STATS = [
     icon: <Clock className="w-4 h-4 text-purple-600" />,
     iconBg: "bg-purple-50",
     sub: <span className="text-gray-500">Aman, Vikram missing</span>,
-  },
-];
-
-type CheckInStatus = "Submitted" | "Missing";
-
-interface CheckIn {
-  id: string;
-  initials: string;
-  name: string;
-  status: CheckInStatus;
-  feeling?: string;
-  hours?: string;
-  accomplished?: string;
-  nextWeek?: string;
-  blockers?: number;
-  missingMessage?: string;
-}
-
-const CHECK_INS: CheckIn[] = [
-  {
-    id: "1",
-    initials: "PM",
-    name: "Pallavi Mahar",
-    status: "Submitted",
-    feeling: "4/5",
-    hours: "42h",
-    accomplished:
-      "Shipped goals list + tree view. Calibration screen blocked on data model.",
-    nextWeek:
-      "Unblock data model with Karthik: build calibrator session screen.",
-    blockers: 1,
-  },
-  {
-    id: "2",
-    initials: "KI",
-    name: "Karthik Iyer",
-    status: "Submitted",
-    feeling: "5/5",
-    hours: "45h",
-    accomplished:
-      "Auth v3 cutover successful — 0 incidents. Pair-programmed with Aman.",
-    nextWeek: "Start on token system refactor.",
-    blockers: 0,
-  },
-  {
-    id: "3",
-    initials: "MS",
-    name: "Mohit Sinha",
-    status: "Submitted",
-    feeling: "3/5",
-    hours: "40h",
-    accomplished:
-      "Recruitment redesign — 3 of 6 screens done. Blocked on PM availability.",
-    nextWeek: "Sync with Neha on remaining 3 screens.",
-    blockers: 2,
-  },
-  {
-    id: "4",
-    initials: "RB",
-    name: "Riya Banerjee",
-    status: "Submitted",
-    feeling: "5/5",
-    hours: "38h",
-    accomplished: "Ran usability sessions with 8 students; v2 NPS at 72.",
-    nextWeek: "Synthesize findings; share with team.",
-    blockers: 0,
-  },
-  {
-    id: "5",
-    initials: "AB",
-    name: "Aman Bhatt",
-    status: "Missing",
-    missingMessage:
-      "No check-in submitted for week of 11 May · 4-day streak broken",
-  },
-  {
-    id: "6",
-    initials: "SD",
-    name: "Shreya Das",
-    status: "Submitted",
-    feeling: "4/5",
-    hours: "41h",
-    accomplished: "Onboarding complete; first ticket merged.",
-    nextWeek: "Pair with Mohit on Recruitment v2.",
-    blockers: 0,
-  },
-  {
-    id: "7",
-    initials: "VR",
-    name: "Vikram Rao",
-    status: "Missing",
-    missingMessage:
-      "No check-in submitted for week of 11 May · 4-day streak broken",
-  },
-  {
-    id: "8",
-    initials: "PM",
-    name: "Priya Menon",
-    status: "Submitted",
-    feeling: "3/5",
-    hours: "39h",
-    accomplished:
-      "Q2 research plan signed off; recruiting blocked on agency contract.",
-    nextWeek: "Push procurement to close contract this week.",
-    blockers: 1,
   },
 ];
 
@@ -239,11 +136,13 @@ const TeamCheckIns: React.FC = () => {
                 <div
                   className={`flex items-start gap-3 shrink-0 ${isCompact ? "w-full" : "w-[250px]"}`}
                 >
-                  <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 bg-blue-50 text-blue-600`}
-                  >
-                    {checkin.initials}
-                  </div>
+                  <Avatar
+                    name={checkin.name}
+                    size="h-8 w-8"
+                    fontSize="text-xs"
+                    avatarBgColor="bg-blue-50"
+                    avatarTextColor="text-blue-600"
+                  />
                   <div className="flex flex-col gap-1 mt-0.5">
                     <span className="font-bold text-[13px] text-gray-900 leading-none">
                       {checkin.name}
@@ -322,12 +221,22 @@ const TeamCheckIns: React.FC = () => {
                     <div
                       className={`flex flex-col gap-2 shrink-0 ${isCompact ? "w-full mt-4" : "w-[100px]"}`}
                     >
-                      <button className="bg-[#1a73e8] hover:bg-blue-600 text-white w-full py-1.5 rounded-md text-[11px] font-semibold transition-colors">
+                      <Button
+                        variant="contain"
+                        bgColor="primary"
+                        size="sm"
+                        className="w-full justify-center py-1.5"
+                      >
                         Reply
-                      </button>
-                      <button className="border border-blue-200 text-[#1a73e8] bg-white hover:bg-blue-50 w-full py-1.5 rounded-md text-[11px] font-semibold transition-colors">
+                      </Button>
+                      <Button
+                        variant="outline"
+                        bgColor="primary"
+                        size="sm"
+                        className="w-full justify-center py-1.5 border-blue-200"
+                      >
                         Add to 1:1
-                      </button>
+                      </Button>
                     </div>
                   </>
                 ) : (
@@ -344,9 +253,14 @@ const TeamCheckIns: React.FC = () => {
                     <div
                       className={`flex flex-col justify-center shrink-0 ${isCompact ? "w-full mt-4" : "w-[100px]"}`}
                     >
-                      <button className="bg-[#1a73e8] hover:bg-blue-600 text-white w-full py-1.5 rounded-md text-[11px] font-semibold transition-colors">
+                      <Button
+                        variant="contain"
+                        bgColor="primary"
+                        size="sm"
+                        className="w-full justify-center py-1.5"
+                      >
                         Nudge
-                      </button>
+                      </Button>
                     </div>
                   </>
                 )}

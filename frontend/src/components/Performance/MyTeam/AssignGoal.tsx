@@ -3,65 +3,10 @@ import React, { useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { Typography } from "../../shared/atoms/Typography";
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-
-interface ReporteeAssign {
-  id: string;
-  initials: string;
-  name: string;
-  subGoalTitle: string;
-  weightage: number;
-  contribution: number;
-  status: "Submitted" | "Approved" | "Draft";
-}
-
-const INITIAL_REPORTEES: ReporteeAssign[] = [
-  {
-    id: "1",
-    initials: "PM",
-    name: "Pallavi Mahar",
-    subGoalTitle: "Adopt v2 in Oxygen dashboard (24 components)",
-    weightage: 30,
-    contribution: 35,
-    status: "Submitted",
-  },
-  {
-    id: "2",
-    initials: "KI",
-    name: "Karthik Iyer",
-    subGoalTitle: "Token + theming infra in v2",
-    weightage: 25,
-    contribution: 25,
-    status: "Approved",
-  },
-  {
-    id: "3",
-    initials: "MS",
-    name: "Mohit Sinha",
-    subGoalTitle: "Adopt v2 in Recruitment surface",
-    weightage: 20,
-    contribution: 20,
-    status: "Submitted",
-  },
-  {
-    id: "4",
-    initials: "VR",
-    name: "Vikram Rao",
-    subGoalTitle: "Adopt v2 in LMS surface",
-    weightage: 20,
-    contribution: 15,
-    status: "Draft",
-  },
-  {
-    id: "5",
-    initials: "RB",
-    name: "Riya Banerjee",
-    subGoalTitle: "Usability + telemetry for v2 components",
-    weightage: 15,
-    contribution: 10,
-    status: "Submitted",
-  },
-];
+import Avatar from "../../shared/Avatar";
+import Button from "../../shared/atoms/Button";
+import { INITIAL_REPORTEES } from "./mockData";
+import { ReporteeAssign } from "./types";
 
 interface AssignGoalProps {
   onBack: () => void;
@@ -266,9 +211,13 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
               >
                 {/* User Column */}
                 <div className="col-span-3 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 bg-blue-50 text-blue-600">
-                    {r.initials}
-                  </div>
+                  <Avatar
+                    name={r.name}
+                    size="h-8 w-8"
+                    fontSize="text-xs"
+                    avatarBgColor="bg-blue-50"
+                    avatarTextColor="text-blue-600"
+                  />
                   <span className="text-[13px] font-bold text-gray-900 truncate">
                     {r.name}
                   </span>
@@ -338,19 +287,22 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
       <div
         className={`mx-auto w-full max-w-screen flex items-center justify-between pt-2 pb-8 ${isMobile ? "px-4" : "px-8"}`}
       >
-        <button
+        <Button
+          variant="outline"
+          bgColor="text"
           onClick={onBack}
-          className="flex items-center gap-2 px-4 py-2 border border-gray-200 bg-white rounded-lg text-[13px] font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+          icon={<ArrowLeft className="w-4 h-4" />}
+          className="border-gray-200"
         >
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
+          Back
+        </Button>
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 border border-gray-200 bg-white rounded-lg text-[13px] font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+          <Button variant="outline" bgColor="text" className="border-gray-200">
             Save Draft
-          </button>
-          <button className="px-5 py-2 bg-[#1a73e8] hover:bg-blue-600 text-white rounded-lg text-[13px] font-semibold transition-colors shadow-sm">
+          </Button>
+          <Button variant="contain" bgColor="primary">
             Cascade & Send for approval
-          </button>
+          </Button>
         </div>
       </div>
     </div>
