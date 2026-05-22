@@ -3,11 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useFrappeDocuments } from '../hooks/useFrappeQuery';
 import {
   Search,
-  User,
   Mail,
   Briefcase,
   Calendar,
-  ChevronRight,
   Plus,
   RefreshCw,
   AlertCircle,
@@ -15,12 +13,8 @@ import {
   CheckCircle,
   XCircle,
   Users,
-  Award,
-  Sparkles,
   Inbox,
   ArrowRight,
-  TrendingUp,
-  MapPin
 } from 'lucide-react';
 import "../index.css";
 

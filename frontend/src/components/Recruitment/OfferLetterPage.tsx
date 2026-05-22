@@ -10,11 +10,6 @@ import {
   Download,
   PenTool,
   Clock,
-  Briefcase,
-  DollarSign,
-  Info,
-  ChevronRight,
-  Smile,
   AlertCircle,
   Check
 } from "lucide-react";
