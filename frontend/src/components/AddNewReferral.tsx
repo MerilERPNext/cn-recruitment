@@ -5,6 +5,7 @@ import Select from "react-select";
 import { useDesignations } from "../hooks/useReferralDetails";
 import type { SelectOption } from "../types/referral";
 import { useScreenSize } from "../hooks/useScreenSize";
+import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
 import HeaderBar from "./HeaderBar";
 import Modal from "./shared/Modal";
 
@@ -447,50 +448,52 @@ const AddNewReferral: React.FC = () => {
   );
 
   const renderDesktopLayout = () => (
-    <div className="h-full overflow-y-auto p-8 bg-gray-50">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <div className="mb-8">
-            <button
-              onClick={handleBackInterview}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              <MdArrowBackIosNew className="text-lg" />
-              Back
-            </button>
-          </div>
-
-          <div className="space-y-8">
-            {renderFormContent()}
-
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-4 pt-8 border-t border-gray-200">
+    <DesktopLayoutWrapper title="Add New Referral">
+      <div className="h-full overflow-y-auto p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+            <div className="mb-8">
               <button
-                type="button"
-                className="bg-gray-100 text-black font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition"
+                onClick={handleBackInterview}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
               >
-                Save as Draft
+                <MdArrowBackIosNew className="text-lg" />
+                Back
               </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={uploading}
-                className="bg-blue-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-blue-700 transition"
-              >
-                {uploading ? "Submitting..." : "Submit Referral"}
-              </button>
+            </div>
+
+            <div className="space-y-8">
+              {renderFormContent()}
+              
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-4 pt-8 border-t border-gray-200">
+                <button
+                  type="button"
+                  className="bg-gray-100 text-black font-medium py-3 px-6 rounded-lg hover:bg-gray-200 transition"
+                >
+                  Save as Draft
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={uploading}
+                  className="bg-blue-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-blue-700 transition"
+                >
+                  {uploading ? "Submitting..." : "Submit Referral"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
+        
+        <StatusModal
+          show={showModal}
+          title={modalTitle}
+          message={modalMessage}
+          onClose={handleCloseModal}
+        />
       </div>
-
-      <StatusModal
-        show={showModal}
-        title={modalTitle}
-        message={modalMessage}
-        onClose={handleCloseModal}
-      />
-    </div>
+    </DesktopLayoutWrapper>
   );
 
   return isDesktop ? renderDesktopLayout() : renderMobileLayout();
