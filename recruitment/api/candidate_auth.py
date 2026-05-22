@@ -167,10 +167,11 @@ def login(email, password):
 
 @frappe.whitelist(allow_guest=True)
 def request_email_signup_otp(email, full_name=None, mobile_no=None):
-    """Email-only signup: create CPU if needed and send a Signup OTP.
+    """Email-only signup: create CPU and send a Signup OTP.
 
-    Gated by `enable_email_signup`. Idempotent — if the email already maps to
-    a CPU, the existing record is reused and a fresh OTP is issued.
+    Gated by `enable_email_signup`. Rejects the request if a candidate
+    already exists for this email — callers should use the login flow instead.
+    Re-issuing an OTP for an unverified candidate is allowed.
     """
     settings = get_settings()
     _require_enabled(settings)
@@ -183,6 +184,8 @@ def request_email_signup_otp(email, full_name=None, mobile_no=None):
 
     if frappe.db.exists("Candidate Portal User", email):
         candidate = frappe.get_doc("Candidate Portal User", email)
+        if candidate.status != "Pending Verification" or cint(candidate.email_verified):
+            frappe.throw(_("Candidate already registered."), frappe.DuplicateEntryError)
         _assert_candidate_can_login(candidate, allow_pending=True)
     else:
         first_name, last_name = _split_name(full_name or email.split("@")[0])
