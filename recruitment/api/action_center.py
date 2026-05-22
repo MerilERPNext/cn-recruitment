@@ -468,7 +468,12 @@ def sync_job_offer_action_item(doc, method=None):
     is_closed = doc.docstatus == 2 or offer_status in {"accepted", "cancelled", "rejected"}
 
     if is_closed:
-        _delete_minimal_item(candidate_email, doc.doctype, doc.name, commit=False)
+        mark_item_completed(
+            reference_doctype=doc.doctype,
+            reference_docname=doc.name,
+            candidate_email=candidate_email,
+            commit=False,
+        )
         if offer_status == "accepted" and candidate_id:
             _sync_onboarding_action_for_applicant(candidate_id, candidate_email)
         return
