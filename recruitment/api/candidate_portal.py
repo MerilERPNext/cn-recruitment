@@ -1,8 +1,6 @@
 import frappe
 from frappe import _
 
-from recruitment.api.candidate_auth import candidate_required, enforce_candidate_identity, get_current_candidate
-
 _LAYOUT_TYPES = frozenset({
     "Column Break", "Tab Break", "Section Break", "HTML", "HTML Editor",
     "Button", "Fold", "Heading", "Break", "Image", "Attach Image",
@@ -600,8 +598,8 @@ def get_all_onboarding_fields_for_onboarding():
     return {"status": "success", "total": len(fields), "fields": fields}
 
 
-@candidate_required
-def get_all_job_applicant_fields(job_opening=None, form_name=None):
+@frappe.whitelist()
+def get_all_job_applicant_fields(candidate_email=None, job_opening=None, form_name=None):
     portal_rows, resolved_form = _get_job_applicant_portal_settings(
         job_opening=job_opening or None,
         form_name=form_name or None,
@@ -622,7 +620,7 @@ def get_all_job_applicant_fields(job_opening=None, form_name=None):
 
     applicant_doc = None
     applicant_name = None
-    session_email = (get_current_candidate() or "").strip().lower()
+    session_email = (candidate_email or "").strip().lower()
     if session_email and job_opening:
         applicant_name = frappe.db.get_value(
             "Job Applicant",
@@ -684,24 +682,14 @@ def get_available_job_applicant_fields():
 
 
 def _resolve_candidate_applicant(provided, prefer_field=None):
-    """Resolves an email or HR-APP-... id to a Job Applicant `name` for the
-    authenticated candidate. Emails must match the session; HR-APP-... ids
-    are enforced via Candidate Portal User link. When `prefer_field` is given
-    and the input is an email, the latest applicant with that field set wins
-    the tiebreak (falls back to most-recently-modified)."""
-    session_email = get_current_candidate()
-    if not session_email:
-        frappe.local.response["http_status_code"] = 401
-        frappe.throw(_("Authentication required."), frappe.AuthenticationError)
-
+    """Resolves an email or HR-APP-... id to a Job Applicant `name`.
+    When `prefer_field` is given and the input is an email, the latest applicant
+    with that field set wins the tiebreak (falls back to most-recently-modified)."""
     provided = (provided or "").strip()
     if not provided:
         return None
 
     if "@" in provided:
-        if provided.lower() != session_email.lower():
-            frappe.local.response["http_status_code"] = 403
-            frappe.throw(_("Not allowed to access this resource."), frappe.PermissionError)
         name = None
         if prefer_field:
             name = frappe.db.get_value(
@@ -717,7 +705,6 @@ def _resolve_candidate_applicant(provided, prefer_field=None):
             order_by="modified desc",
         )
 
-    enforce_candidate_identity(job_applicant_id=provided)
     return provided
 
 
@@ -759,7 +746,7 @@ def _resolve_pre_offer_target(applicant_name, requested_form):
     return rows[0], rows
 
 
-@candidate_required
+@frappe.whitelist()
 def get_pre_offer_form(job_applicant_id, form_name=None):
     """Returns a pre-offer form for the candidate to fill.
 
@@ -863,7 +850,7 @@ def get_pre_offer_form(job_applicant_id, form_name=None):
     }
 
 
-@candidate_required
+@frappe.whitelist()
 def save_pre_offer_form_data(job_applicant_id, data, form_name=None):
     """Persist a candidate's pre-offer form submission.
 
@@ -1015,7 +1002,7 @@ def save_pre_offer_form_data(job_applicant_id, data, form_name=None):
 
 
 
-@candidate_required
+@frappe.whitelist()
 def get_candidate_portal_form(job_applicant_id):
     """
     Returns the structured portal form for a given job applicant.
@@ -1060,7 +1047,7 @@ def get_candidate_portal_form(job_applicant_id):
     }
 
 
-@candidate_required
+@frappe.whitelist()
 def save_candidate_portal_data(job_applicant_id, data):
     if isinstance(data, str):
         try:
@@ -1206,9 +1193,8 @@ def save_candidate_portal_data(job_applicant_id, data):
         return {"status": "error", "message": str(e)}
 
 
-@candidate_required
+@frappe.whitelist()
 def get_portal_field_names(job_applicant_id=None):
-    enforce_candidate_identity(job_applicant_id=job_applicant_id)
     onboarding_doc = None
     if job_applicant_id:
         onboarding_name = _get_onboarding_name_by_job_applicant(job_applicant_id)
@@ -1222,13 +1208,11 @@ def get_portal_field_names(job_applicant_id=None):
     }
 
 
-@candidate_required
+@frappe.whitelist()
 def get_job_applicant_portal_form(job_applicant_id):
     if not job_applicant_id:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Job Applicant ID is required.")}
-
-    enforce_candidate_identity(job_applicant_id=job_applicant_id)
 
     if not frappe.db.exists("Job Applicant", job_applicant_id):
         frappe.local.response["http_status_code"] = 404
@@ -1299,7 +1283,7 @@ def get_job_applicant_portal_form(job_applicant_id):
     }
 
 
-@candidate_required
+@frappe.whitelist()
 def save_job_applicant_portal_data(job_applicant_id, data):
     if isinstance(data, str):
         try:
@@ -1315,8 +1299,6 @@ def save_job_applicant_portal_data(job_applicant_id, data):
     if not job_applicant_id:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Job Applicant ID is required.")}
-
-    enforce_candidate_identity(job_applicant_id=job_applicant_id)
 
     if not frappe.db.exists("Job Applicant", job_applicant_id):
         frappe.local.response["http_status_code"] = 404
@@ -1380,9 +1362,8 @@ def save_job_applicant_portal_data(job_applicant_id, data):
         return {"status": "error", "message": str(e)}
 
 
-@candidate_required
+@frappe.whitelist()
 def get_job_applicant_portal_field_names(job_applicant_id=None):
-    enforce_candidate_identity(job_applicant_id=job_applicant_id)
     return {
         "status": "success",
         "fields": [r.fieldname for r in _get_job_applicant_portal_settings(job_applicant_id)[0]],
@@ -1401,10 +1382,12 @@ def get_candidate_feature_flags():
     return result
 
 
-@candidate_required
+@frappe.whitelist()
 def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20):
     """Returns [{id, label}] for a doctype; label uses title_field when set.
-    Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins)."""
+    Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins).
+    Accessible to any authenticated Frappe user (desk session or API key/secret) — the
+    candidate portal frontend authenticates via the candidate user's API key+secret."""
     if not doctype:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Doctype is required.")}
@@ -1437,7 +1420,7 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
     return {"status": "success", "doctype": doctype, "title_field": title_field, "total": len(results), "results": results}
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_website_branding():
     settings = frappe.get_single("Website Settings")
     return {
