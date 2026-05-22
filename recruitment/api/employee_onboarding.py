@@ -5,6 +5,7 @@ from recruitment.api.candidate_portal import (
     _get_onboarding_portal_rows,
     _read_onboarding_meta,
 )
+from recruitment.api.candidate_auth import candidate_required, enforce_candidate_identity
 
 DOCTYPENAME = "Employee Onboarding"
 MAX_PAGE_LENGTH = 100
@@ -71,13 +72,14 @@ def _sanitize_order_by(order_by, allowed_fields, default_field):
     return f"{fieldname} {direction}"
 
 
-@frappe.whitelist()
+@candidate_required
 def update_onboarding_details(email, data):
     """
     Updates an Employee Onboarding record identified by the job_applicant email.
     Only fields configured in the candidate portal form AND in Pending/Rejected status are accepted.
     After save, marks each updated field as Filled and snapshots current_value.
     """
+    enforce_candidate_identity(email=email)
     frappe.local.response["http_status_code"] = 200
 
     if isinstance(data, str):
@@ -377,12 +379,13 @@ def get_employee_onboarding_list(
         frappe.log_error(frappe.get_traceback(), "Employee Onboarding List API Error")
         return _error_response("Unable to fetch Employee Onboarding list right now.", 500)
 
-@frappe.whitelist()
+@candidate_required
 def get_applicant_status(email):
     """
     Full journey for a candidate: every Job Applicant record under this email,
     with per-job details and a status timeline (transition dates) for each.
     """
+    enforce_candidate_identity(email=email)
     import json as _json
     from frappe.utils import getdate
 
