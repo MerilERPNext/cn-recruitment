@@ -30,9 +30,9 @@ const Review = () => {
   ]);
 
   return (
-    <div className="min-h-full bg-[#f8fafc] overflow-y-scroll p-4 sm:p-6 font-sans">
+    <div className="min-h-full bg-[#f8fafc] overflow-y-auto p-3 sm:p-6 font-sans">
       <Suspense fallback={<div className="p-6 text-center text-gray-500">Loading...</div>}>
-      <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row gap-6">
+      <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row gap-4 sm:gap-6">
         
         {/* Left Sidebar */}
         <SelfReviewSidebar />
@@ -40,10 +40,10 @@ const Review = () => {
         {/* Main Content */}
         <div className="flex-1 flex flex-col gap-4 min-w-0">
            {/* Header Card */}
-           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
+           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <div className="min-w-0">
                  <Typography variant="caption" className="text-gray-500 font-semibold tracking-wider mb-1 block">SECTION 2 OF 5</Typography>
-                 <Typography variant="h3" className="mb-2">Achievements</Typography>
+                 <Typography variant="h3" className="mb-2 text-xl leading-tight sm:text-2xl">Achievements</Typography>
                  <Typography variant="bodyMedium" className="text-gray-600 max-w-xl">Capture 2-3 of your most impactful accomplishments this cycle. Focus on outcome, not activity.</Typography>
               </div>
               <Button 
@@ -68,7 +68,7 @@ const Review = () => {
                 bgColor="primary"
                 size="md"
                 icon={<Plus className="w-4 h-4" />}
-                className="w-fit border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100"
+                className="w-full justify-center border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100 sm:w-fit"
               >
                 Add another achievement (3 of 5)
               </Button>

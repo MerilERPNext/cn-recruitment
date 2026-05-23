@@ -5,9 +5,9 @@ import Badge from '../../../shared/Badge';
 
 export const SelfReviewRightSidebar = () => {
   return (
-    <div className="w-full xl:w-80 shrink-0 flex flex-col gap-4">
+    <div className="w-full xl:w-80 shrink-0 grid gap-4 md:grid-cols-2 xl:flex xl:flex-col">
       {/* AI Highlight */}
-      <div className="bg-purple-50/50 rounded-xl border border-purple-100 p-5">
+      <div className="bg-purple-50/50 rounded-xl border border-purple-100 p-4 sm:p-5 md:col-span-2 xl:col-span-1">
         <div className="flex items-center gap-2 mb-3 text-purple-700 font-semibold text-sm tracking-wide">
           <Sparkles className="w-4 h-4" /> AI HIGHLIGHT
         </div>
@@ -17,10 +17,10 @@ export const SelfReviewRightSidebar = () => {
       </div>
 
       {/* Reviewer Visibility */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
         <Typography variant="caption" className="text-gray-500 font-semibold tracking-wider mb-4 block">REVIEWER VISIBILITY</Typography>
         
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4 sm:gap-5">
           <div>
             <Typography variant="bodyMedium" className="font-semibold text-gray-900">Rohit Khanna &middot; Manager</Typography>
             <Typography variant="caption" className="text-gray-500 mt-0.5 block">Sees: All sections</Typography>
@@ -37,10 +37,10 @@ export const SelfReviewRightSidebar = () => {
       </div>
 
       {/* Last Cycle */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
         <Typography variant="caption" className="text-gray-500 font-semibold tracking-wider mb-4 block">LAST CYCLE (FY25)</Typography>
         
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex flex-wrap items-center gap-3 mb-4">
           <Badge label="Exceeds · 4/5" variant="success" size="md" />
           <Typography variant="caption" className="text-gray-500 leading-tight">Final &middot; Released 12 Apr<br/>2025</Typography>
         </div>

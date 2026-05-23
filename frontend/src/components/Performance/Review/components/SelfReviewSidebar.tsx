@@ -4,13 +4,13 @@ import { Typography } from '../../../shared/atoms/Typography';
 
 export const SelfReviewSidebar = () => {
   return (
-    <div className={`w-full xl:w-64 shrink-0 flex flex-col gap-6`}>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+    <div className="w-full shrink-0 xl:w-64">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
         <Typography variant="caption" className="text-gray-500 font-semibold tracking-wider mb-4 block">SELF-REVIEW</Typography>
         
-        <div className="flex flex-col gap-1">
+        <div className="flex gap-2 overflow-x-auto pb-1 xl:flex-col xl:overflow-visible xl:pb-0 xl:gap-1">
           {/* Step 1 */}
-          <div className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+          <div className="flex min-w-[150px] items-center justify-between rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors xl:min-w-0">
             <div className="flex items-center gap-3">
                <CheckCircle className="w-5 h-5 text-green-500" />
                <Typography variant="bodyMedium" className="text-gray-700">Goals & KRs</Typography>
@@ -19,7 +19,7 @@ export const SelfReviewSidebar = () => {
           </div>
           
           {/* Step 2 (Active) */}
-          <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50 cursor-pointer">
+          <div className="flex min-w-[165px] items-center justify-between rounded-lg bg-blue-50 p-2 cursor-pointer xl:min-w-0">
             <div className="flex items-center gap-3">
                <div className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">2</div>
                <Typography variant="bodyMedium" className="text-blue-700 font-semibold">Achievements</Typography>
@@ -28,7 +28,7 @@ export const SelfReviewSidebar = () => {
           </div>
 
           {/* Step 3 */}
-          <div className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+          <div className="flex min-w-[190px] items-center justify-between rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors xl:min-w-0">
             <div className="flex items-center gap-3">
                <div className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">3</div>
                <Typography variant="bodyMedium" className="text-gray-600">Development Plan</Typography>
@@ -37,7 +37,7 @@ export const SelfReviewSidebar = () => {
           </div>
 
           {/* Step 4 */}
-          <div className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+          <div className="flex min-w-[190px] items-center justify-between rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors xl:min-w-0">
             <div className="flex items-center gap-3">
                <div className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">4</div>
                <Typography variant="bodyMedium" className="text-gray-600">Career Aspirations</Typography>
@@ -46,7 +46,7 @@ export const SelfReviewSidebar = () => {
           </div>
 
           {/* Step 5 */}
-          <div className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+          <div className="flex min-w-[180px] items-center justify-between rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors xl:min-w-0">
             <div className="flex items-center gap-3">
                <div className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">5</div>
                <Typography variant="bodyMedium" className="text-gray-600">Overall Comments</Typography>
@@ -55,7 +55,7 @@ export const SelfReviewSidebar = () => {
           </div>
         </div>
 
-        <div className="mt-8 pt-4 border-t border-gray-100">
+        <div className="mt-4 pt-4 border-t border-gray-100 xl:mt-8">
           <div className="flex justify-between items-center mb-2">
             <Typography variant="caption" className="text-gray-600">Progress</Typography>
             <Typography variant="caption" className="text-gray-900 font-semibold">1 of 5 done</Typography>
