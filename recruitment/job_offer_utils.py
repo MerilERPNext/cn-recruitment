@@ -17,7 +17,7 @@ def download_job_offer_pdf(appl):
         jo_id = frappe.db.get_value("Job Offer", {
             "job_applicant": appl,
             "docstatus": ["!=", 2],
-            "status": "Awaiting Response"
+            "status": ["in", ["Awaiting Response", "Accepted", "Rejected"]]
         })
         if not jo_id:
             frappe.throw("No active Job Offer found")
@@ -53,7 +53,7 @@ def preview_job_offer_html(appl):
         jo_id = frappe.db.get_value("Job Offer", {
             "job_applicant": appl,
             "docstatus": ["!=", 2],
-            "status": "Awaiting Response"
+            "status": ["in", ["Awaiting Response", "Accepted", "Rejected"]]
         })
         if not jo_id:
             frappe.throw("No active Job Offer found")
