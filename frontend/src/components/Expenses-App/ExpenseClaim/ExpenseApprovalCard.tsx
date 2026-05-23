@@ -54,12 +54,24 @@ const ExpenseApprovalCard = ({
     data: any;
   } | null>(null);
 
-  const actions = data?.custom_doctype_actions
-    ? JSON.parse(data?.custom_doctype_actions)
-    : [];
-  const actionsWithForm = data?.custom_doctype_actions_with_form
-    ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
-    : [];
+  const actions = (() => {
+    if (!data?.custom_doctype_actions) return [];
+    try {
+      return JSON.parse(data.custom_doctype_actions);
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions:", e);
+      return [];
+    }
+  })();
+  const actionsWithForm = (() => {
+    if (!data?.custom_doctype_actions_with_form) return [];
+    try {
+      return JSON.parse(data.custom_doctype_actions_with_form.replace(/'/g, '"'));
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions_with_form:", e);
+      return [];
+    }
+  })();
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? activeStatus === "Approved"
@@ -232,7 +244,7 @@ const ExpenseApprovalCard = ({
               <StatusBadge
                 status={
                   data?.todo_status === "Closed" &&
-                  data?.reference_document?.approval_status !== "Rejected"
+                    data?.reference_document?.approval_status !== "Rejected"
                     ? "Approved"
                     : data?.reference_document?.approval_status
                 }
@@ -309,7 +321,7 @@ const ExpenseApprovalCard = ({
                 <StatusBadge
                   status={
                     data?.todo_status === "Closed" &&
-                    data?.reference_document?.approval_status !== "Rejected"
+                      data?.reference_document?.approval_status !== "Rejected"
                       ? "Approved"
                       : data?.reference_document?.approval_status
                   }

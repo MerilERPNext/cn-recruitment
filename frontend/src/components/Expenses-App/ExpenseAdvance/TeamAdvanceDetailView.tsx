@@ -47,7 +47,7 @@ export default function TeamAdvanceDetailView({
     documentName,
     referenceName,
   );
-  console.log("data", data);
+
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [isActed, setIsActed] = useState(false);
 

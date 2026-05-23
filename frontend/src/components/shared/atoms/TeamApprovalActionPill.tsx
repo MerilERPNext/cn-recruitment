@@ -70,7 +70,7 @@ const TeamApprovalActionPill = ({
 }: TeamApprovalActionPillProps) => {
   const normalizedStatus = status?.toLowerCase();
   const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
-  const areactionsEnabled =
+  const areActionsEnabled =
     actionsEnabled ||
     isActionEnabled(
       uiPermissionData,
@@ -80,7 +80,7 @@ const TeamApprovalActionPill = ({
 
   const isActionable =
     actionsEnabled &&
-    (!uiPermission?.actionKey || areactionsEnabled) &&
+    (!uiPermission?.actionKey || areActionsEnabled) &&
     (normalizedStatus === "open" ||
       normalizedStatus === "pending" ||
       normalizedStatus === "draft") &&
