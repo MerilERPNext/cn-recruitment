@@ -121,13 +121,13 @@ const MyGoals: React.FC = () => {
   const { isMobile, isDesktop } = useScreenSize();
 
   return (
-    <div className={`min-h-full bg-[#f8fafc] overflow-y-scroll ${isMobile ? 'p-4' : 'p-6'} font-sans`}>
-      <div className="max-w-screen mx-auto space-y-6">
+    <div className={`min-h-full bg-[#f8fafc] overflow-y-auto ${isMobile ? 'p-3' : 'p-6'} font-sans`}>
+      <div className="mx-auto max-w-screen space-y-4 sm:space-y-6">
         
         {/* Header Section */}
-        <div className={`flex ${isMobile ? 'flex-col gap-4' : 'flex-row justify-between items-center'} mb-6`}>
+        <div className={`flex ${isMobile ? 'flex-col gap-4' : 'flex-row justify-between items-center'} mb-4 sm:mb-6`}>
           <div>
-            <Typography variant="h3">My Goals &middot; FY26</Typography>
+            <Typography variant="h3" className="text-xl leading-tight sm:text-2xl">My Goals &middot; FY26</Typography>
             <Typography variant="bodySmall" className="text-gray-500">5 goals &middot; 100% weightage &middot; Goal lock 21 May 2026</Typography>
           </div>
           <div className={`flex ${isMobile ? 'flex-col w-full gap-3' : 'flex-wrap items-center gap-3'}`}>
@@ -148,35 +148,35 @@ const MyGoals: React.FC = () => {
             </div>
             {isMobile && (
               <div className="flex w-full items-center border border-gray-200 rounded-lg overflow-hidden bg-white text-sm h-10 mt-1">
-                <button className="flex-1 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors">List</button>
-                <button className="flex-1 h-full bg-blue-500 text-white font-medium transition-colors">Tree</button>
-                <button className="flex-1 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors">Alignment</button>
+                <button className="min-w-0 flex-1 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors">List</button>
+                <button className="min-w-0 flex-1 h-full bg-blue-500 text-white font-medium transition-colors">Tree</button>
+                <button className="min-w-0 flex-1 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors">Align</button>
               </div>
             )}
           </div>
         </div>
 
         {/* Main Card */}
-        <div className={`bg-white rounded-xl shadow-sm border border-gray-100 ${isMobile ? 'p-4' : 'p-6'} min-h-[70vh]`}>
+        <div className={`bg-white rounded-xl shadow-sm border border-gray-100 ${isMobile ? 'p-3' : 'p-6'} min-h-[70vh]`}>
           
           {/* Parent Goal Box */}
-          <div className={`bg-[#f0f7ff] border border-blue-100 rounded-xl p-4 flex ${isMobile ? 'flex-col gap-3' : 'flex-row items-center justify-between'} mb-6 z-10 relative`}>
-             <div className="flex items-start gap-3">
+          <div className={`bg-[#f0f7ff] border border-blue-100 rounded-xl p-3 sm:p-4 flex ${isMobile ? 'flex-col gap-3' : 'flex-row items-center justify-between'} mb-4 sm:mb-6 z-10 relative`}>
+             <div className="flex min-w-0 items-start gap-3">
                <div className="shrink-0 mt-1">
                  <Badge label="ORG" variant="blue" size="md" />
                </div>
-               <div>
+               <div className="min-w-0">
                  <Typography variant="bodyMedium" className="font-semibold text-gray-900 mb-0.5">PW FY26 &middot; Become the #1 EdTech platform in India by Q4</Typography>
                  <Typography variant="caption" className="text-gray-500">Cascaded from Alakh Pandey &middot; OKR &middot; 8 org-level KRs</Typography>
                </div>
              </div>
-             <div className={isMobile ? "self-start ml-11" : ""}>
+             <div className={isMobile ? "self-start ml-10" : ""}>
                <Badge label="Aligned" variant="white" size="sm" />
              </div>
           </div>
 
           {/* Tree Section */}
-          <div className={`relative ${isMobile ? '' : 'pl-10'} space-y-6`}>
+          <div className={`relative ${isMobile ? '' : 'pl-10'} space-y-4 sm:space-y-6`}>
              {/* Main Vertical Tree Line */}
              {!isMobile && <div className="absolute left-[20px] top-[0px] bottom-[40px] w-px bg-gray-200 z-0"></div>}
 
@@ -190,36 +190,36 @@ const MyGoals: React.FC = () => {
                    {!isMobile && <div className="absolute left-[-20px] top-[40px] w-[20px] h-px bg-gray-200 z-0"></div>}
                    
                    {/* OKR Row */}
-                   <div className={`p-4 flex ${isDesktop ? 'flex-row items-center justify-between' : 'flex-col'} bg-white relative z-10 gap-4`}>
+                   <div className={`p-3 sm:p-4 flex ${isDesktop ? 'flex-row items-center justify-between' : 'flex-col'} bg-white relative z-10 gap-4`}>
                       {/* Left Side: Info */}
-                      <div className="flex items-start md:flex-row flex-col gap-3 flex-1">
-                         <div className={`flex flex-col gap-1 ${isMobile ? 'w-16' : 'w-[100px]'} shrink-0 mt-0.5`}>
+                      <div className="flex min-w-0 flex-1 items-start gap-3">
+                         <div className={`flex flex-col gap-1 ${isMobile ? 'w-20' : 'w-[100px]'} shrink-0 mt-0.5`}>
                             <div className="self-start">
                                <Badge label={goal.type} variant="purple" size="sm" />
                             </div>
                             <Typography variant="caption" className="text-gray-500 ml-1">{goal.label}</Typography>
                          </div>
-                         <div className="flex-1 pr-2">
+                         <div className="min-w-0 flex-1">
                             <Typography variant="bodyMedium" className="font-semibold text-gray-900 mb-1">{goal.title}</Typography>
                             <Typography variant="caption" className="text-gray-500">{goal.subtitle}</Typography>
                          </div>
                       </div>
 
                       {/* Right Side: Progress & Badges */}
-                      <div className={`${isDesktop ? 'w-[400px]' : 'w-full'} shrink-0 flex ${isMobile ? 'flex-col gap-4' : 'flex-row items-center justify-end'} mt-2`}>
-                         <div className={`flex items-center gap-4 ${isDesktop ? 'border-r border-gray-100 pr-6 mr-6' : isMobile ? 'justify-between w-full' : 'mr-4'}`}>
-                            <div className={isMobile ? "" : "w-[90px] text-right"}>
+                      <div className={`${isDesktop ? 'w-[400px]' : 'w-full'} shrink-0 flex ${isMobile ? 'flex-col gap-3' : 'flex-row items-center justify-end'} mt-1 sm:mt-2`}>
+                         <div className={`flex items-center gap-3 ${isDesktop ? 'border-r border-gray-100 pr-6 mr-6' : isMobile ? 'w-full' : 'mr-4'}`}>
+                            <div className={isMobile ? "w-24 shrink-0" : "w-[90px] text-right"}>
                                <Typography variant="bodyMedium" className="font-bold text-gray-900 whitespace-nowrap">{goal.current} <span className="font-normal text-gray-500">/ {goal.target}</span></Typography>
                                <Typography variant="caption" className="text-gray-500 whitespace-nowrap block mt-0.5">{goal.unit}</Typography>
                             </div>
-                            <div className={`${isMobile ? 'flex-1 ml-4' : 'w-[128px]'} shrink-0 flex flex-col gap-1.5`}>
+                            <div className={`${isMobile ? 'min-w-0 flex-1' : 'w-[128px]'} shrink-0 flex flex-col gap-1.5`}>
                                <Typography variant="caption" className="text-gray-500 text-right">{goal.percentage}% - {goal.weight}w</Typography>
                                <div className="w-full bg-gray-100 rounded-md h-1.5 overflow-hidden">
                                   <div className={`h-1.5 rounded-md ${goal.barColor}`} style={{ width: `${goal.percentage}%` }} />
                                </div>
                             </div>
                          </div>
-                         <div className={`min-w-fit shrink-0 flex ${isMobile ? 'flex-row w-full justify-start' : 'flex-col items-end'} gap-2 mt-2 md:mt-0`}>
+                         <div className={`min-w-fit shrink-0 flex ${isMobile ? 'flex-row w-full justify-start' : 'flex-col items-end'} gap-2 md:mt-0`}>
                             <Badge label={goal.status} variant={getStatusVariant(goal.status)} size="sm" pulse={{ show: true }} />
                             <Badge label={goal.state} variant="info" size="sm" />
                          </div>
@@ -228,12 +228,12 @@ const MyGoals: React.FC = () => {
 
                    {/* KRs Row (if any) */}
                    {goal.krs && (
-                      <div className="bg-gray-50/50 border-t border-gray-100 p-4 relative z-10">
-                         <div className={`relative ${isMobile ? 'pl-2' : 'pl-12'} space-y-4`}>
+                      <div className="bg-gray-50/50 border-t border-gray-100 p-3 sm:p-4 relative z-10">
+                         <div className={`relative ${isMobile ? 'pl-0' : 'pl-12'} space-y-3 sm:space-y-4`}>
                             {/* Vertical line for KRs */}
                             {!isMobile && <div className="absolute left-[24px] top-[-16px] bottom-4 w-px bg-gray-200 z-0" />}
                             {goal.krs.map((kr: GoalKeyResult, kIdx: number) => (
-                               <div key={kIdx} className={`relative flex ${!isDesktop ? 'flex-col gap-2' : 'flex-row items-center'} `}>
+                               <div key={kIdx} className={`relative flex ${!isDesktop ? 'flex-col gap-2 rounded-lg bg-white p-3' : 'flex-row items-center'} `}>
                                   {/* Horizontal line to KR */}
                                   {!isMobile && <div className="absolute left-[-24px] top-[14px] w-[24px] h-px bg-gray-200 z-0" />}
                                   
@@ -241,10 +241,10 @@ const MyGoals: React.FC = () => {
                                      <div className="mt-0.5 flex-shrink-0">
                                         <Badge label={kr.id} variant="purple-outline" size="sm" />
                                      </div>
-                                     <Typography variant="caption" className="text-gray-600">{kr.title}</Typography>
+                                     <Typography variant="caption" className="min-w-0 text-gray-600">{kr.title}</Typography>
                                   </div>
                                   
-                                  <div className={`${isDesktop ? 'w-[400px]' : 'w-full'} shrink-0 flex items-center justify-start xl:justify-end ${!isDesktop ? 'pl-11' : 'xl:pl-0'}`}>
+                                  <div className={`${isDesktop ? 'w-[400px]' : 'w-full'} shrink-0 flex items-center justify-start xl:justify-end ${!isDesktop ? 'pl-0' : 'xl:pl-0'}`}>
                                      <div className={`flex items-center gap-4 ${isDesktop ? 'pr-6 mr-6' : 'w-full'}`}>
                                         <div className="w-[90px] hidden xl:block"></div>
                                         <div className={`${!isDesktop ? 'flex-1' : 'w-[128px]'} shrink-0 mt-1 flex flex-col gap-1`}>
