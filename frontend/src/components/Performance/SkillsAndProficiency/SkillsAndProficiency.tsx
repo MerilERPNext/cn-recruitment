@@ -161,25 +161,25 @@ const SkillsAndProficiency: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-full overflow-y-auto bg-surface p-4 font-brand text-text-title lg:p-6">
-      <div className="mx-auto max-w-screen space-y-5">
-        <div className="rounded-lg border border-primary-100 bg-white p-5 shadow-sm">
+    <div className="min-h-full overflow-y-auto bg-surface p-3 font-brand text-text-title sm:p-4 lg:p-6">
+      <div className="mx-auto max-w-screen space-y-4 lg:space-y-5">
+        <div className="rounded-lg border border-primary-100 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
             
-              <Typography variant="h3" className="text-text-title">
+              <Typography variant="h3" className="text-xl leading-tight text-text-title sm:text-2xl">
                 16 tracked skills across 6 categories
               </Typography>
               <Typography variant="bodySmall" className="mt-1 text-text-body2">
                 Last full re-assessment: Apr 2026 · Next due: Jul 2026
               </Typography>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-100 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-primary-50">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
+              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-100 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-primary-50 sm:px-4">
                 <Download className="h-4 w-4" />
                 Export PDF
               </button>
-              <button className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary-500 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600">
+              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600 sm:px-4">
                 <Plus className="h-4 w-4" />
                 Add Skill
               </button>
@@ -207,15 +207,16 @@ const SkillsAndProficiency: React.FC = () => {
               <Typography variant="bodyMedium" className="font-bold text-text-title">
                 My Skills
               </Typography>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible lg:pb-0">
                 {categoryFilters.map((filter) => (
-                  <Badge
-                    key={filter.label}
-                    label={filter.label}
-                    backgroundColor={PROJECT_TONES[filter.tone].badgeBg}
-                    textColor={PROJECT_TONES[filter.tone].badgeText}
-                    size="sm"
-                  />
+                  <div key={filter.label} className="shrink-0">
+                    <Badge
+                      label={filter.label}
+                      backgroundColor={PROJECT_TONES[filter.tone].badgeBg}
+                      textColor={PROJECT_TONES[filter.tone].badgeText}
+                      size="sm"
+                    />
+                  </div>
                 ))}
               </div>
             </div>
@@ -234,9 +235,9 @@ const SkillsAndProficiency: React.FC = () => {
                   </div>
 
                   {category.skills.map((skill) => (
-                    <div key={skill.name} className="grid gap-4 px-4 py-4 lg:grid-cols-[minmax(190px,1fr)_230px_72px_96px_20px_96px_32px] lg:items-center">
-                      <div>
-                        <div className="flex items-center gap-2">
+                    <div key={skill.name} className="grid gap-3 px-4 py-4 lg:grid-cols-[minmax(190px,1fr)_230px_72px_96px_20px_96px_32px] lg:items-center lg:gap-4">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Typography variant="bodySmall" className="font-semibold text-text-title">
                             {skill.name}
                           </Typography>
@@ -250,7 +251,7 @@ const SkillsAndProficiency: React.FC = () => {
                         </Typography>
                       </div>
 
-                      <div className="flex min-w-[230px] items-center gap-1.5">
+                      <div className="grid grid-cols-5 gap-1.5 lg:flex lg:min-w-[230px] lg:items-center">
                         {levelLabels.map((label, index) => {
                           const level = index + 1;
                           const isCurrent = level <= skill.current;
@@ -264,7 +265,7 @@ const SkillsAndProficiency: React.FC = () => {
                           return (
                             <div
                               key={label}
-                              className={`flex h-6 w-12 items-center justify-center rounded text-[11px] font-semibold ${levelClass}`}
+                              className={`flex h-7 min-w-0 items-center justify-center rounded text-[11px] font-semibold lg:h-6 lg:w-12 ${levelClass}`}
                             >
                               {label}
                             </div>
@@ -272,37 +273,42 @@ const SkillsAndProficiency: React.FC = () => {
                         })}
                       </div>
 
-                      <Badge
-                        label={skill.delta}
-                        backgroundColor={skill.delta === "Met" ? "bg-success-50 border border-success-100" : "bg-warning-50 border border-warning-100"}
-                        textColor={skill.delta === "Met" ? "text-success-800" : "text-warning-800"}
-                        size="sm"
-                      />
-
-                      <div
-                        className={`min-w-[96px] rounded-md px-3 py-1.5 text-center text-[11px] font-semibold ${
-                          PROJECT_TONES[skill.current >= 5 ? "success" : skill.current >= 4 ? "primary" : "info"].soft
-                        }`}
-                      >
-                        L{skill.current} · {getLevelLabel(skill.current)}
-                      </div>
-                      <span className=" text-center text-text-body2 lg:block">→</span>
-                      <div
-                        className={`min-w-[96px] rounded-md px-3 py-1.5 text-center text-[11px] font-semibold ${
-                          PROJECT_TONES[skill.target >= 5 ? "success" : "primary"].soft
-                        }`}
-                      >
-                        L{skill.target} · {getLevelLabel(skill.target)}
+                      <div className="flex items-center justify-between gap-2 lg:block">
+                        <span className="text-xs font-medium text-text-body2 lg:hidden">Gap</span>
+                        <Badge
+                          label={skill.delta}
+                          backgroundColor={skill.delta === "Met" ? "bg-success-50 border border-success-100" : "bg-warning-50 border border-warning-100"}
+                          textColor={skill.delta === "Met" ? "text-success-800" : "text-warning-800"}
+                          size="sm"
+                        />
                       </div>
 
-                      <button
-                        type="button"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-100 text-gray-500 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700"
-                        onClick={() => setSelectedSkill(skill)}
-                        aria-label={`Edit ${skill.name}`}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
+                      <div className="grid grid-cols-[minmax(0,1fr)_20px_minmax(0,1fr)_32px] items-center gap-2 lg:contents">
+                        <div
+                          className={`rounded-md px-2 py-1.5 text-center text-[11px] font-semibold lg:min-w-[96px] lg:px-3 ${
+                            PROJECT_TONES[skill.current >= 5 ? "success" : skill.current >= 4 ? "primary" : "info"].soft
+                          }`}
+                        >
+                          L{skill.current} · {getLevelLabel(skill.current)}
+                        </div>
+                        <span className="text-center text-text-body2 lg:block">→</span>
+                        <div
+                          className={`rounded-md px-2 py-1.5 text-center text-[11px] font-semibold lg:min-w-[96px] lg:px-3 ${
+                            PROJECT_TONES[skill.target >= 5 ? "success" : "primary"].soft
+                          }`}
+                        >
+                          L{skill.target} · {getLevelLabel(skill.target)}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-100 text-gray-500 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700"
+                          onClick={() => setSelectedSkill(skill)}
+                          aria-label={`Edit ${skill.name}`}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -320,15 +326,15 @@ const SkillsAndProficiency: React.FC = () => {
             </div>
           </div>
 
-          <div className="space-y-5">
-            <div className="rounded-lg border border-primary-100 bg-white p-5 shadow-sm">
+          <div className="space-y-4 lg:space-y-5">
+            <div className="rounded-lg border border-primary-100 bg-white p-4 shadow-sm sm:p-5">
               <Typography variant="bodyMedium" className="font-bold text-text-title">
                 Proficiency by category
               </Typography>
               <Typography variant="caption" className="mt-1 block text-text-body2">
                 Current (filled) vs Target (outline)
               </Typography>
-              <div className="relative mx-auto h-48 w-48">
+              <div className="relative mx-auto h-44 w-44 sm:h-48 sm:w-48">
                 <svg viewBox="0 0 200 200" className="h-full w-full">
                   {radarRings.map((size) => (
                     <polygon
@@ -360,7 +366,7 @@ const SkillsAndProficiency: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-primary-100 bg-white p-5 shadow-sm">
+            <div className="rounded-lg border border-primary-100 bg-white p-4 shadow-sm sm:p-5">
               <Typography variant="bodyMedium" className="font-bold text-text-title">
                 Focus areas · FY26
               </Typography>
@@ -381,7 +387,7 @@ const SkillsAndProficiency: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-lg border border-secondary-100 bg-secondary-50 p-5">
+            <div className="rounded-lg border border-secondary-100 bg-secondary-50 p-4 sm:p-5">
               <Typography variant="bodyMedium" className="font-bold text-secondary-800">
                 Independent track
               </Typography>
