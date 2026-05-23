@@ -50,7 +50,7 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
                         ) : null}
                     </div>
                     {steps ? (
-                        <div className="flex items-center gap-2 overflow-x-auto text-sm font-medium">
+                        <div className="flex w-full items-center gap-1 text-xs font-medium md:w-auto md:gap-2 md:overflow-x-auto md:text-sm">
                             {steps.map((step, index) => {
                                 const isActive = index === activeStepIndex;
                                 const isCompleted = activeStepIndex > index;
@@ -68,13 +68,13 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
 
                                 return (
                                     <React.Fragment key={step.label}>
-                                        <div className={`flex shrink-0 items-center ${stepTextClass}`}>
-                                            <div className={`mr-2 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${circleClass}`}>
+                                        <div className={`flex min-w-0 shrink items-center md:shrink-0 ${stepTextClass}`}>
+                                            <div className={`mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold md:mr-2 ${circleClass}`}>
                                                 {isCompleted ? <Check className="h-3.5 w-3.5" /> : index + 1}
                                             </div>
-                                            <span>{step.label}</span>
+                                            <span className="truncate">{step.label}</span>
                                         </div>
-                                        {index < steps.length - 1 ? <div className={`h-px w-10 shrink-0 ${connectorClass}`}></div> : null}
+                                        {index < steps.length - 1 ? <div className={`h-px min-w-4 flex-1 md:w-10 md:flex-none ${connectorClass}`}></div> : null}
                                     </React.Fragment>
                                 );
                             })}
