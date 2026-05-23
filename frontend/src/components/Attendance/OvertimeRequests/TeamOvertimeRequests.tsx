@@ -19,7 +19,7 @@ const TeamOvertimeRequests = () => {
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const uiPermission = {
     app: "Attendance",
-    page: "Planned Overtime",
+    page: "Team Overtime",
     actionKey: "actions_enabled",
   };
   const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
@@ -65,22 +65,22 @@ const TeamOvertimeRequests = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Description",
-        "Assigned To",
-        "Due Date",
-        "Status",
-        "Actions",
-      ]
+      "Select",
+      "Employee",
+      "Description",
+      "Assigned To",
+      "Due Date",
+      "Status",
+      "Actions",
+    ]
     : [
-        "Employee",
-        "Description",
-        "Assigned To",
-        "Due Date",
-        "Status",
-        "Actions",
-      ];
+      "Employee",
+      "Description",
+      "Assigned To",
+      "Due Date",
+      "Status",
+      "Actions",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1.5fr", "1fr", "1fr", "1fr"]
