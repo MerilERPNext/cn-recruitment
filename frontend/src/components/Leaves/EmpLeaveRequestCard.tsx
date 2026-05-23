@@ -11,7 +11,7 @@ import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../utils/sanitizeToPlainText";
-import Modal from "../shared/Modal";
+
 import Button from "../shared/atoms/Button";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../shared/atoms/statusBadge";
@@ -37,7 +37,6 @@ const EmpLeaveRequestCard = ({
   const { isDesktop } = useScreenSize();
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [isActed, setIsActed] = useState(false);
-  const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
   const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation ?? "");
 
   const revokeEventMutation = useRevokeEvent();
@@ -69,15 +68,10 @@ const EmpLeaveRequestCard = ({
   const allowReplace = leaveButtonConfig?.show_replace_button;
   const allowRevoke = leaveButtonConfig?.show_revoke_button;
 
-  const handleRevokeClick = () => {
-    setShowRevokeConfirm(true);
-  };
-
   const executeRevoke = () => {
     if (isApproved && onRevokeApproved) {
       onRevokeApproved();
       setIsActed(true);
-      setShowRevokeConfirm(false);
       return;
     }
     if (data?.todo_id) {
@@ -99,11 +93,7 @@ const EmpLeaveRequestCard = ({
               setRefetchAttendance(true);
             }, 2000);
             toast.success("Leave revoked successfully");
-            setShowRevokeConfirm(false);
           },
-          onError: () => {
-            setShowRevokeConfirm(false);
-          }
         },
       );
     }
@@ -267,7 +257,7 @@ const EmpLeaveRequestCard = ({
               isResubmit={isResubmit}
               canReplace={allowReplace && (isPending || isApproved) && !isActed}
               revokeLoading={revokeEventMutation.isPending}
-              onRevoke={handleRevokeClick}
+              onRevoke={executeRevoke}
               onEdit={handleEditClick}
               onReplace={handleReplaceClick}
             />
@@ -389,7 +379,7 @@ const EmpLeaveRequestCard = ({
                 isResubmit={isResubmit}
                 canReplace={allowReplace && (isPending || isApproved) && !isActed}
                 revokeLoading={revokeEventMutation.isPending}
-                onRevoke={handleRevokeClick}
+                onRevoke={executeRevoke}
                 onEdit={handleEditClick}
                 onReplace={handleReplaceClick}
               />
@@ -419,35 +409,6 @@ const EmpLeaveRequestCard = ({
         </div>
       )}
 
-      <Modal
-        isOpen={showRevokeConfirm}
-        onClose={() => setShowRevokeConfirm(false)}
-        size="sm"
-      >
-        <div className="p-6">
-          <Typography variant="h4" className="mb-4">
-            Confirm Revocation
-          </Typography>
-          <Typography variant="bodyMedium" className="mb-6 text-gray-600">
-            Are you sure you want to revoke this leave request? This action cannot be undone.
-          </Typography>
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowRevokeConfirm(false)}
-              disabled={revokeEventMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={executeRevoke}
-              loading={revokeEventMutation.isPending}
-            >
-              Confirm
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </>
   );
 };
