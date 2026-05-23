@@ -18,6 +18,7 @@ import {
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 
 type TeamAdvanceDetailViewProps = {
+  actionsEdnabled?: boolean;
   documentName?: string;
   referenceName?: string;
   onClose: () => void;
@@ -32,6 +33,7 @@ const formatINR = (amount: number | undefined | null) =>
   );
 
 export default function TeamAdvanceDetailView({
+  actionsEdnabled,
   documentName,
   referenceName,
   onClose,
@@ -223,9 +225,11 @@ export default function TeamAdvanceDetailView({
 
   const ActionButtons =
     actions?.length &&
-    ["Open", "Pending", "Draft"].includes(ref.custom_final_status) && !isActed ? (
+    ["Open", "Pending", "Draft"].includes(ref.custom_final_status) &&
+    !isActed ? (
       <div className="border-t bg-white p-4">
         <TeamApprovalActionPill
+          actionsEdnabled={actionsEdnabled}
           variant={isDesktop ? "modal" : "buttons"}
           actions={actions}
           status={data?.status}
@@ -345,8 +349,8 @@ export default function TeamAdvanceDetailView({
                   users={data?.allocated_to}
                   roles={data?.allocated_roles}
                   username={data?.username}
-                RoleAssignedUsers={data?.role_assigned_users}
-              />
+                  RoleAssignedUsers={data?.role_assigned_users}
+                />
               </div>
             </div>
             {ref.purpose && (

@@ -1,23 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NoDataFound } from "../../shared/atoms/NoDataFound";
+import { Download } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import { useNavigate, useSearchParams } from "react-router";
+import * as XLSX from "xlsx";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetAllExpenseCategories } from "../../../hooks/useExpense";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_CLAIM } from "../../../utils/tableSortConfig";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import ApprovalList from "../../shared/ApprovalList";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { Typography } from "../../shared/atoms/Typography";
-import CardTable from "../../shared/CardTable";
 import { BulkSelectProvider } from "../../shared/BulkSelectContext";
+import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import Tooltip from "../../shared/Tooltip";
 import ExpenseApprovalCard from "./ExpenseApprovalCard";
 import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
-import { getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_CLAIM } from "../../../utils/tableSortConfig";
-import Tooltip from "../../shared/Tooltip";
-import * as XLSX from "xlsx";
-import { Download } from "lucide-react";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
-import toast from "react-hot-toast";
 
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
@@ -27,6 +29,18 @@ const TeamExpense = () => {
   const navigate = useNavigate();
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const [currentListData, setCurrentListData] = useState<any[]>([]);
+
+  const uiPermission = {
+    app: "Expenses",
+    page: "Team Requests",
+    actionKey: "actions_enabled",
+  };
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEdnabled = isActionEnabled(
+    uiPermissionData,
+    uiPermission?.actionKey ?? "",
+    uiPermission?.page,
+  );
 
   const expenseCategoryOptions = useMemo(() => {
     if (!expenseCategories || !Array.isArray(expenseCategories)) {
@@ -127,41 +141,90 @@ const TeamExpense = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-      "Select",
-      "Expense Id",
-      "Employee",
-      "Expense Category",
-      "Expense Type",
-      "Expense Date",
-      "Claimed Amount",
-      "Claimed Date",
-      "Due Date",
-      "Status",
-      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
-      "Actions",
-    ]
+        "Select",
+        "Expense Id",
+        "Employee",
+        "Expense Category",
+        "Expense Type",
+        "Expense Date",
+        "Claimed Amount",
+        "Claimed Date",
+        "Due Date",
+        "Status",
+        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+        "Actions",
+      ]
     : [
-      "Expense Id",
-      "Employee",
-      "Expense Category",
-      "Expense Type",
-      "Expense Date",
-      "Claimed Amount",
-      "Claimed Date",
-      "Due Date",
-      "Status",
-      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
-      "Actions",
-    ];
+        "Expense Id",
+        "Employee",
+        "Expense Category",
+        "Expense Type",
+        "Expense Date",
+        "Claimed Amount",
+        "Claimed Date",
+        "Due Date",
+        "Status",
+        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+        "Actions",
+      ];
 
   const { isDesktop } = useScreenSize();
   const tableColumnWidths = isBulkSelectEnabled
-    ? (activeStatus === "Approved"
-      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-      : ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"])
-    : (activeStatus === "Approved"
-      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-      : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]);
+    ? activeStatus === "Approved"
+      ? [
+          "0.5fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+        ]
+      : [
+          "0.5fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+        ]
+    : activeStatus === "Approved"
+      ? [
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+        ]
+      : [
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+        ];
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;
@@ -194,9 +257,7 @@ const TeamExpense = () => {
 
     const message = getEmptyStateMessage();
 
-    return (
-      <NoDataFound title={message.title} subtitle={message.description} />
-    );
+    return <NoDataFound title={message.title} subtitle={message.description} />;
   };
   return (
     <div className="flex flex-col h-full">
@@ -222,88 +283,100 @@ const TeamExpense = () => {
       )}
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <BulkSelectProvider>
-        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}
-          columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_CLAIM(isBulkSelectEnabled, activeStatus === "Approved")}
-        >
-          {currentUser?.name ? (
-            <ApprovalList
-              doctype={"Expense Claim"}
-              refetch={refetchApprovalList}
-              onApprovalRefetchComplete={handleApprovalRefetchComplete}
-              pageSize={10}
-              isSearch={true}
-              isFilter={true}
-              infiniteScroll={false}
-              loadMorePagination={false}
-              showPagination={true}
-              columnWidths={tableColumnWidths}
-              onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-              filterFields={[
-                {
-                  fieldname: "approval_status",
-                  label: "Status",
-                  fieldtype: "Select",
-                  options: [
-                    { label: "Pending", value: "Pending", },
-                    {
-                      label: "Approved",
-                      key: "Approved",
-                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                      customAPIParams: { todo_status: "Closed" }
+          <CardTable
+            titles={tableTitles}
+            columnWidths={tableColumnWidths}
+            columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_CLAIM(
+              isBulkSelectEnabled,
+              activeStatus === "Approved",
+            )}
+          >
+            {currentUser?.name ? (
+              <ApprovalList
+                doctype={"Expense Claim"}
+                refetch={refetchApprovalList}
+                onApprovalRefetchComplete={handleApprovalRefetchComplete}
+                pageSize={10}
+                isSearch={true}
+                isFilter={true}
+                infiniteScroll={false}
+                loadMorePagination={false}
+                showPagination={true}
+                columnWidths={tableColumnWidths}
+                onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+                filterFields={[
+                  {
+                    fieldname: "approval_status",
+                    label: "Status",
+                    fieldtype: "Select",
+                    options: [
+                      { label: "Pending", value: "Pending" },
+                      {
+                        label: "Approved",
+                        key: "Approved",
+                        value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                        customAPIParams: { todo_status: "Closed" },
+                      },
+                      { label: "Rejected", value: "Rejected" },
+                    ],
+                    emptyValueConfig: {
+                      filterValue: ["!=", "Cancelled"],
                     },
-                    { label: "Rejected", value: "Rejected" },
-                  ],
-                  emptyValueConfig: {
-                    filterValue: ["!=", "Cancelled"],
                   },
-                },
-                {
-                  fieldname: "custom_expense_category_name",
-                  label: "Expense Category",
-                  fieldtype: "Select",
-                  options: expenseCategoryOptions,
-                },
-                {
-                  fieldname: "creation_start",
-                  label: "Start Date",
-                  fieldtype: "Date",
-                },
-                {
-                  fieldname: "creation_end",
-                  label: "End Date",
-                  fieldtype: "Date",
-                },
-              ]}
-              noRecordsScreen={noRecordsScreen}
-              defaultFilters={{ approval_status: "Pending" }}
-              SkeletonComponent={CardSkeleton}
-              onActiveFiltersChange={(filters) => {
-                setActiveStatus(filters?.approval_status || "Pending");
-              }}
-              renderCardContent={(item) => {
-                if (item?.data?.custom_selected_doctype_action === "Send Back") {
-                  return null;
-                }
-                return <ExpenseApprovalCard
-                  isSelected={item?.isSelected}
-                  onToggleSelect={item?.onToggleSelect}
-                  data={item?.data}
-                  onAction={item?.onAction}
-                  onClick={(request: any) => handleRequestClick(request)}
-                  loadingAction={item?.loadingAction}
-                  isBulkSelectEnabled={isBulkSelectEnabled}
-                  activeStatus={activeStatus}
-                  isActed={item?.isActed}
-                />
-              }}
-              onDataLoad={setCurrentListData}
-            />
-          ) : null}
-        </CardTable>
+                  {
+                    fieldname: "custom_expense_category_name",
+                    label: "Expense Category",
+                    fieldtype: "Select",
+                    options: expenseCategoryOptions,
+                  },
+                  {
+                    fieldname: "creation_start",
+                    label: "Start Date",
+                    fieldtype: "Date",
+                  },
+                  {
+                    fieldname: "creation_end",
+                    label: "End Date",
+                    fieldtype: "Date",
+                  },
+                ]}
+                noRecordsScreen={noRecordsScreen}
+                defaultFilters={{ approval_status: "Pending" }}
+                SkeletonComponent={CardSkeleton}
+                bulkSelectVisible={actionsEdnabled}
+                onActiveFiltersChange={(filters) => {
+                  setActiveStatus(filters?.approval_status || "Pending");
+                }}
+                renderCardContent={(item) => {
+                  if (
+                    item?.data?.custom_selected_doctype_action === "Send Back"
+                  ) {
+                    return null;
+                  }
+                  return (
+                    <ExpenseApprovalCard
+                      actionsEdnabled={actionsEdnabled}
+                      isSelected={item?.isSelected}
+                      onToggleSelect={item?.onToggleSelect}
+                      data={item?.data}
+                      onAction={item?.onAction}
+                      onClick={(request: any) => handleRequestClick(request)}
+                      loadingAction={item?.loadingAction}
+                      isBulkSelectEnabled={isBulkSelectEnabled}
+                      activeStatus={activeStatus}
+                      isActed={item?.isActed}
+                    />
+                  );
+                }}
+                onDataLoad={setCurrentListData}
+              />
+            ) : null}
+          </CardTable>
         </BulkSelectProvider>
       </div>
       {(requestId || referenceName) && (
         <TeamExpenseDetailView
+          actionsEdnabled={actionsEdnabled}
           documentName={requestId || undefined}
           referenceName={referenceName || undefined}
           label="Expense Claim"

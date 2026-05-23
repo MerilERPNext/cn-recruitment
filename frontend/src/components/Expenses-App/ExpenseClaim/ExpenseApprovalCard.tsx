@@ -16,6 +16,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 
 type ApprovalCardProps = {
+  actionsEdnabled?: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -30,6 +31,7 @@ type ApprovalCardProps = {
 };
 
 const ExpenseApprovalCard = ({
+  actionsEdnabled,
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -251,6 +253,7 @@ const ExpenseApprovalCard = ({
           <div className="flex items-center justify-center">
             {activeStatus === "Pending" && !isActed ? (
               <TeamApprovalActionPill
+                actionsEdnabled={actionsEdnabled}
                 actions={actions}
                 status={data?.status}
                 recordId={data?.todo_id}
@@ -394,8 +397,8 @@ const ExpenseApprovalCard = ({
                 roles={data?.allocated_roles}
                 username={data?.username}
                 role={data?.role}
-              RoleAssignedUsers={data?.role_assigned_users}
-            />
+                RoleAssignedUsers={data?.role_assigned_users}
+              />
               {activeStatus === "Approved" && (
                 <div className="flex justify-between w-full">
                   <div className="flex flex-col gap-1">
@@ -414,6 +417,7 @@ const ExpenseApprovalCard = ({
 
               {activeStatus === "Pending" && !isActed ? (
                 <TeamApprovalActionPill
+                  actionsEdnabled={actionsEdnabled}
                   variant="buttons"
                   actions={actions}
                   status={data?.status}

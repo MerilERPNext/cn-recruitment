@@ -13,6 +13,7 @@ import { ApprovalStage } from "../../../types/expenseAdvance";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { COLUMN_SORT_CONFIG_EXPENSE_ADVANCE } from "../../../utils/tableSortConfig";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import CardTable from "../../shared/CardTable";
@@ -24,7 +25,6 @@ import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailModal from "./AdvanceDetailModal";
-import { COLUMN_SORT_CONFIG_EXPENSE_ADVANCE } from "../../../utils/tableSortConfig";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvance, setSelectedAdvance] = useState<{
@@ -35,7 +35,9 @@ const MyAdvanceExpenseList = () => {
   const [isActed, setIsActed] = useState(false);
 
   const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: currentEmployee } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
   const { data: currentUser } = useCurrentUser();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const navigate = useNavigate();
@@ -169,8 +171,8 @@ const MyAdvanceExpenseList = () => {
             <StatusBadge
               status={
                 item?.custom_allow_revoke === 1 &&
-                  item?.todo_status?.toLowerCase() === "cancelled" &&
-                  item?.reference_document?.docstatus === 2
+                item?.todo_status?.toLowerCase() === "cancelled" &&
+                item?.reference_document?.docstatus === 2
                   ? "Revoked"
                   : item?.reference_document?.custom_final_status
               }
@@ -183,6 +185,14 @@ const MyAdvanceExpenseList = () => {
           onClick={(e) => e.stopPropagation()}
         >
           <MyApprovalActionPill
+            uiPermission={{
+              app: "Expenses",
+              page: "My Advances",
+              actionKeysMap: {
+                edit: "edit",
+                revoke: "revoke",
+              },
+            }}
             canEdit={canEdit && !isActed}
             onEdit={() => handleEditClick(item)}
             canRevoke={canRevoke && !isActed}
@@ -219,8 +229,8 @@ const MyAdvanceExpenseList = () => {
                 <StatusBadge
                   status={
                     item?.custom_allow_revoke === 1 &&
-                      item?.todo_status?.toLowerCase() === "cancelled" &&
-                      item?.reference_document?.docstatus === 2
+                    item?.todo_status?.toLowerCase() === "cancelled" &&
+                    item?.reference_document?.docstatus === 2
                       ? "Revoked"
                       : item?.reference_document?.custom_final_status
                   }
@@ -239,8 +249,8 @@ const MyAdvanceExpenseList = () => {
                 <StatusBadge
                   status={
                     item?.custom_allow_revoke === 1 &&
-                      item?.todo_status?.toLowerCase() === "cancelled" &&
-                      item?.reference_document?.docstatus === 2
+                    item?.todo_status?.toLowerCase() === "cancelled" &&
+                    item?.reference_document?.docstatus === 2
                       ? "Revoked"
                       : item?.reference_document?.custom_final_status
                   }
@@ -285,8 +295,19 @@ const MyAdvanceExpenseList = () => {
 
           {/* Action Buttons — stop propagation to prevent opening detail modal */}
           {(canEdit || canRevoke) && (
-            <div onClick={(e) => e.stopPropagation()} className={isActed ? "pointer-events-none opacity-50" : ""}>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className={isActed ? "pointer-events-none opacity-50" : ""}
+            >
               <MyApprovalActionPill
+                uiPermission={{
+                  app: "Expenses",
+                  page: "My Advances",
+                  actionKeysMap: {
+                    edit: "edit",
+                    revoke: "revoke",
+                  },
+                }}
                 variant="buttons"
                 canEdit={canEdit && !isActed}
                 onEdit={() => handleEditClick(item)}
@@ -308,8 +329,8 @@ const MyAdvanceExpenseList = () => {
 
     const status =
       item?.custom_allow_revoke === 1 &&
-        item?.todo_status?.toLowerCase() === "cancelled" &&
-        item?.reference_document?.docstatus === 2
+      item?.todo_status?.toLowerCase() === "cancelled" &&
+      item?.reference_document?.docstatus === 2
         ? "Revoked"
         : item?.reference_document?.custom_final_status;
 
@@ -381,9 +402,18 @@ const MyAdvanceExpenseList = () => {
             "Status",
             "Actions",
           ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={[
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+          ]}
           columnSortConfig={COLUMN_SORT_CONFIG_EXPENSE_ADVANCE}
-
         >
           <DataListView
             queryKey={["employee-advance"]}

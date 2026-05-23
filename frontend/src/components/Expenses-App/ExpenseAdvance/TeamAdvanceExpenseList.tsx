@@ -2,8 +2,10 @@
 import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_ADVANCE } from "../../../utils/tableSortConfig";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import ApprovalList from "../../shared/ApprovalList";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { Typography } from "../../shared/atoms/Typography";
@@ -18,6 +20,18 @@ const TeamAdvanceExpenseList = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const [activeStatus, setActiveStatus] = useState("Pending");
+
+  const uiPermission = {
+    app: "Expenses",
+    page: "Team Advances",
+    actionKey: "actions_enabled",
+  };
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEdnabled = isActionEnabled(
+    uiPermissionData,
+    uiPermission?.actionKey ?? "",
+    uiPermission?.page,
+  );
 
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -190,6 +204,7 @@ const TeamAdvanceExpenseList = () => {
                   custom_final_status: "Pending",
                   custom_type: "Reimbursement / Expense Advance",
                 }}
+                bulkSelectVisible={actionsEdnabled}
                 SkeletonComponent={CardSkeleton}
                 onActiveFiltersChange={(filters) => {
                   setActiveStatus(filters?.custom_final_status || "Pending");
@@ -203,6 +218,7 @@ const TeamAdvanceExpenseList = () => {
                   }
                   return (
                     <AdvanceApprovalCard
+                      actionsEdnabled={actionsEdnabled}
                       data={item?.data}
                       isSelected={item?.isSelected}
                       onToggleSelect={item?.onToggleSelect}
@@ -222,6 +238,7 @@ const TeamAdvanceExpenseList = () => {
       </div>
       {(requestId || referenceName) && (
         <TeamAdvanceDetailView
+          actionsEdnabled={actionsEdnabled}
           documentName={requestId || undefined}
           referenceName={referenceName || undefined}
           label="Employee Advance"

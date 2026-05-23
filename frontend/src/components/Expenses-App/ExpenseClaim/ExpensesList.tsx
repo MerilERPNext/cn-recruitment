@@ -21,17 +21,16 @@ import {
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
-import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { expenseService } from "../../../services/expenseService";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 import {
   COLUMN_SORT_CONFIG_EXPENSE_CLAIM,
   COLUMN_SORT_CONFIG_EXPENSE_CLAIM_DRAFT,
   COLUMN_SORT_CONFIG_SHARED_EXPENSE,
 } from "../../../utils/tableSortConfig";
-import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import CardTable from "../../shared/CardTable";
@@ -48,10 +47,9 @@ import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { SharedExpenseCard, SharedExpensesRow } from "./SharedExpenses";
 import {
-  buildExpenseNavigationState,
   buildExpenseEditUrl,
+  buildExpenseNavigationState,
 } from "./expenseNavigationHelper";
-import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -74,7 +72,6 @@ const getStatusBadgeClasses = (status: string) => {
 const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
   const expense = item?.reference_document;
   const { data: currentUser } = useCurrentUser();
-  const { data: userUiPermission } = useGetUiPermission("Expenses");
   const { setRefetchAttendance } = useGlobalStore();
   const navigate = useNavigate();
   const revokeEventMutation = useRevokeEvent();
@@ -110,15 +107,8 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     }
   };
 
-  const canEditExpense = isActionEnabled(
-    userUiPermission,
-    "edit_expense",
-    "Expense Claims",
-  );
-
   const canEdit =
     currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase() &&
-    canEditExpense &&
     item?.can_edit;
 
   const expenseClaim = item?.reference_document;
@@ -133,7 +123,11 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
       canEdit,
     );
 
-    const editUrl = buildExpenseEditUrl(expenseClaim.name, expenseItem.name, canEdit);
+    const editUrl = buildExpenseEditUrl(
+      expenseClaim.name,
+      expenseItem.name,
+      canEdit,
+    );
     navigate(editUrl, {
       state: navigationState,
     });
@@ -150,7 +144,9 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
 
   const showSanctionedAmount =
     Array.isArray(item?.approval_stages_status) &&
-    item.approval_stages_status.some((stage: any) => stage.status === "Approved");
+    item.approval_stages_status.some(
+      (stage: any) => stage.status === "Approved",
+    );
 
   return (
     <div
@@ -245,6 +241,14 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
 
         <div className={isActed ? "pointer-events-none opacity-50" : ""}>
           <MyApprovalActionPill
+            uiPermission={{
+              app: "Expenses",
+              page: "Expense Claims",
+              actionKeysMap: {
+                edit: "edit",
+                revoke: "revoke",
+              },
+            }}
             variant="buttons"
             canEdit={canEdit && !isActed}
             onEdit={handleEditClick}
@@ -318,23 +322,17 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
 
   const showSanctionedAmount =
     Array.isArray(item?.approval_stages_status) &&
-    item.approval_stages_status.some((stage: any) => stage.status === "Approved");
+    item.approval_stages_status.some(
+      (stage: any) => stage.status === "Approved",
+    );
 
   const formattedPaidAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
   }).format(item?.reference_document?.total_amount_reimbursed ?? 0);
 
-  const { data: userUiPermission } = useGetUiPermission("Expenses");
-  const canEditExpense = isActionEnabled(
-    userUiPermission,
-    "edit_expense",
-    "Expense Claims",
-  );
-
   const canEdit =
     currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase() &&
-    canEditExpense &&
     item?.can_edit;
 
   const expenseClaim = item?.reference_document;
@@ -348,7 +346,11 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       expenseItem,
       canEdit,
     );
-    const editUrl = buildExpenseEditUrl(expenseClaim.name, expenseItem.name, canEdit);
+    const editUrl = buildExpenseEditUrl(
+      expenseClaim.name,
+      expenseItem.name,
+      canEdit,
+    );
     navigate(editUrl, { state: navigationState });
   };
 
@@ -441,10 +443,17 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}
       >
         <MyApprovalActionPill
+          uiPermission={{
+            app: "Expenses",
+            page: "Expense Claims",
+            actionKeysMap: {
+              edit: "edit",
+              revoke: "revoke",
+            },
+          }}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-            item?.send_back_user?.toLowerCase() &&
-            canEditExpense &&
+              item?.send_back_user?.toLowerCase() &&
             item?.can_edit &&
             !isActed
           }
@@ -726,7 +735,9 @@ const ExpensesList: React.FC = () => {
 
         const sanctioned =
           Array.isArray(item?.approval_stages_status) &&
-            item.approval_stages_status.some((stage: any) => stage.status === "Approved")
+          item.approval_stages_status.some(
+            (stage: any) => stage.status === "Approved",
+          )
             ? doc?.total_sanctioned_amount
             : "--";
 
@@ -962,39 +973,39 @@ const ExpensesList: React.FC = () => {
 
   const tableTitles = isDraftFilter
     ? [
-      <div className="flex items-center justify-center" key="select-all">
-        <input
-          type="checkbox"
-          checked={
-            selectedMyExpensesDraftIds.size ===
-            currentListData.length && currentListData.length > 0
-          }
-          onChange={(e) => {
-            if (e.target.checked) {
-              setSelectedMyExpensesDraftIds(
-                new Set(
-                  currentListData
-                    .map((d: any) => d?.reference_document?.name)
-                    .filter(Boolean),
-                ),
-              );
-            } else {
-              setSelectedMyExpensesDraftIds(new Set());
+        <div className="flex items-center justify-center" key="select-all">
+          <input
+            type="checkbox"
+            checked={
+              selectedMyExpensesDraftIds.size === currentListData.length &&
+              currentListData.length > 0
             }
-          }}
-          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-        />
-      </div>,
-      "Expense Id",
-      "Expense Category",
-      "Expense Type",
-      "Claimed Amount",
-      "Sanctioned Amount",
-      "Expense Date",
-      "Claimed Date",
-      "Status",
-      "Actions",
-    ]
+            onChange={(e) => {
+              if (e.target.checked) {
+                setSelectedMyExpensesDraftIds(
+                  new Set(
+                    currentListData
+                      .map((d: any) => d?.reference_document?.name)
+                      .filter(Boolean),
+                  ),
+                );
+              } else {
+                setSelectedMyExpensesDraftIds(new Set());
+              }
+            }}
+            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+          />
+        </div>,
+        "Expense Id",
+        "Expense Category",
+        "Expense Type",
+        "Claimed Amount",
+        "Sanctioned Amount",
+        "Expense Date",
+        "Claimed Date",
+        "Status",
+        "Actions",
+      ]
     : [
       "Expense Id",
       "Expense Category",
@@ -1242,11 +1253,11 @@ const ExpensesList: React.FC = () => {
                   : COLUMN_SORT_CONFIG_EXPENSE_CLAIM
               }
             >
-
               <DataListView
                 queryKey={["expense-claims-all"]}
                 customAPI={{
-                  method: "cn_leave_shift_managment.api.get_open_approval_todos",
+                  method:
+                    "cn_leave_shift_managment.api.get_open_approval_todos",
                   params: {
                     doctype: "Expense Claim",
                     employee: currentEmployee?.name,
@@ -1270,7 +1281,8 @@ const ExpensesList: React.FC = () => {
                     const stages = item?.approval_stages_status || [];
                     const sendBackUser = item?.send_back_user || null;
                     const canEdit = item?.can_edit || false;
-                    const todoStatus = item?.todo_status || item?.status || null;
+                    const todoStatus =
+                      item?.todo_status || item?.status || null;
                     const approvalStatus = expenseClaim?.approval_status;
                     const isDraft = approvalStatus === "Draft";
                     return (
@@ -1337,8 +1349,8 @@ const ExpensesList: React.FC = () => {
                         </Tooltip>
                         <Tooltip
                           content={
-                            expenseClaim?.expenses?.[0]?.custom_claim_type_name ||
-                            ""
+                            expenseClaim?.expenses?.[0]
+                              ?.custom_claim_type_name || ""
                           }
                           triggerClassName="w-full truncate min-w-0 block"
                         >
@@ -1383,11 +1395,12 @@ const ExpensesList: React.FC = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              const navigationState = buildExpenseNavigationState(
-                                expenseClaim,
-                                expenseClaim?.expenses?.[0],
-                                false,
-                              );
+                              const navigationState =
+                                buildExpenseNavigationState(
+                                  expenseClaim,
+                                  expenseClaim?.expenses?.[0],
+                                  false,
+                                );
                               const editUrl = buildExpenseEditUrl(
                                 expenseClaim.name,
                                 expenseClaim?.expenses?.[0].name,
@@ -1416,7 +1429,7 @@ const ExpensesList: React.FC = () => {
                                   setDeleteConfirmModal({
                                     isOpen: false,
                                     message: "",
-                                    onConfirm: () => { },
+                                    onConfirm: () => {},
                                   });
                                 },
                               });
@@ -1441,7 +1454,8 @@ const ExpensesList: React.FC = () => {
                     const stages = item?.approval_stages_status || [];
                     const sendBackUser = item?.send_back_user || null;
                     const canEdit = item?.can_edit || false;
-                    const todoStatus = item?.todo_status || item?.status || null;
+                    const todoStatus =
+                      item?.todo_status || item?.status || null;
                     const approvalStatus = expenseClaim?.approval_status;
                     const isDraft = approvalStatus === "Draft";
                     return (
@@ -1521,7 +1535,7 @@ const ExpensesList: React.FC = () => {
                                       setDeleteConfirmModal({
                                         isOpen: false,
                                         message: "",
-                                        onConfirm: () => { },
+                                        onConfirm: () => {},
                                       });
                                     },
                                   });
@@ -1675,7 +1689,9 @@ const ExpensesList: React.FC = () => {
                 showPagination={true}
                 noRecordsScreen={noRecordsScreen}
                 PostListComponent={() =>
-                  isDraftFilter && isDesktop && selectedMyExpensesDraftIds.size > 0 ? (
+                  isDraftFilter &&
+                  isDesktop &&
+                  selectedMyExpensesDraftIds.size > 0 ? (
                     <div className="border-t border-gray-100 bg-gray-50/30 px-6 py-2 flex items-center justify-end gap-3 animate-in slide-in-from-bottom-1">
                       <span className="text-sm font-medium text-gray-500 mr-2">
                         {selectedMyExpensesDraftIds.size} selected
@@ -1722,14 +1738,15 @@ const ExpensesList: React.FC = () => {
                             isOpen: true,
                             message: `Are you sure you want to delete ${selectedMyExpensesDraftIds.size} selected draft expense(s)? This cannot be undone.`,
                             onConfirm: () => {
-                              Array.from(selectedMyExpensesDraftIds).forEach((name) =>
-                                deleteExpenseClaimMutation.mutate(name),
+                              Array.from(selectedMyExpensesDraftIds).forEach(
+                                (name) =>
+                                  deleteExpenseClaimMutation.mutate(name),
                               );
                               setSelectedMyExpensesDraftIds(new Set());
                               setDeleteConfirmModal({
                                 isOpen: false,
                                 message: "",
-                                onConfirm: () => { },
+                                onConfirm: () => {},
                               });
                             },
                           });
