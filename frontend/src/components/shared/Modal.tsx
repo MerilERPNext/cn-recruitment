@@ -1,4 +1,5 @@
 import { FC, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 
 type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
@@ -35,16 +36,17 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, children, size = 'md', classNa
     const isFullScreenMobile = size === 'full' && !isDesktop;
 
     if (isFullScreenMobile) {
-        return (
+        return createPortal(
             <div className="fixed inset-0 z-50 bg-white">
                 <div className={`w-full h-full overflow-auto ${className}`}>
                     {children}
                 </div>
-            </div>
+            </div>,
+            document.body
         );
     }
 
-    return (
+    return createPortal(
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
             onClick={onClose}
@@ -55,7 +57,8 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, children, size = 'md', classNa
             >
                 {children}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
