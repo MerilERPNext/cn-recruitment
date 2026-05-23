@@ -22,6 +22,13 @@ export const buildExpenseRecord = (
       ? rawExpenseType.name || rawExpenseType.value || ""
       : rawExpenseType || "";
 
+  // Resolve custom_location: Form.io may return the full City object; extract name as the value.
+  const rawLocation = combinedData.custom_location;
+  const resolvedLocation =
+    rawLocation && typeof rawLocation === "object"
+      ? rawLocation.name || ""
+      : rawLocation || "";
+
   const record: Record<string, any> = {
     ...combinedData,
     expense_type: expenseTypeName,
@@ -30,6 +37,7 @@ export const buildExpenseRecord = (
     custom_expense_category_name: combinedData.expenseCategory,
     custom_expense_type: expenseTypeName,
     amount: combinedData.amount,
+    ...(rawLocation !== undefined ? { custom_location: resolvedLocation } : {}),
   };
 
   const files = Array.isArray(combinedData.attach_receipt)
@@ -308,7 +316,9 @@ export const submitExpenseFlow = async ({
         const dbName = match?.name || p.name;
 
         return {
-          name: dbName,
+          // Omit `name` for brand-new participants so the backend creates them;
+          // include it for existing ones so the backend updates in place.
+          ...(dbName ? { name: dbName } : {}),
           employee_type: p.employee_type,
           employee: p.employee,
           employee_name: p.employee_name,
@@ -320,9 +330,13 @@ export const submitExpenseFlow = async ({
         };
       });
 
-      const participantsData = dynamicFormData?.shareExpenseCheckbox
-        ? activeMapped
-        : [];
+      // Use activeParticipants.length as fallback: when the expense was originally
+      // created with no participants, shareExpenseCheckbox is never set during
+      // hydration, so we must also check whether participants were actually added.
+      const participantsData =
+        (dynamicFormData?.shareExpenseCheckbox || activeParticipants.length > 0)
+          ? activeMapped
+          : [];
 
       const updatePayload = isDraftExpenseEdit
         ? {
