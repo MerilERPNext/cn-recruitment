@@ -147,6 +147,14 @@ const EmpAttendanceRequestCard = ({
           </div>
           <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
+              uiPermission={{
+                app: "Attendance",
+                page: "My Attendance",
+                actionKeysMap: {
+                  edit: "edit",
+                  revoke: "revoke",
+                }
+              }}
               isPending={type === "pending"}
               canRevoke={!!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}
               canEdit={!!data?.can_edit && !isActed}
@@ -216,6 +224,14 @@ const EmpAttendanceRequestCard = ({
             {/* Actions */}
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
+                uiPermission={{
+                  app: "Attendance",
+                  page: "My Attendance",
+                  actionKeysMap: {
+                    edit: "edit",
+                    revoke: "revoke",
+                  }
+                }}
                 variant="buttons"
                 isPending={type === "pending"}
                 canRevoke={type === "pending" && !!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}

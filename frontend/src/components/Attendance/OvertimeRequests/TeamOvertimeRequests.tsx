@@ -11,10 +11,20 @@ import { ColumnSortConfig } from "../../shared/CardTableContext";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import OvertimeApprovalCard from "./OvertimeApprovalCard";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 const TeamOvertimeRequests = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
+  const uiPermission = {
+    app: "Attendance",
+    page: "Planned Overtime",
+    actionKey: "actions_enabled"
+  }
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEdnabled = isActionEnabled(uiPermissionData, uiPermission?.actionKey ?? "", uiPermission?.page);
+
 
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
@@ -127,6 +137,7 @@ const TeamOvertimeRequests = () => {
                 isFilter={true}
                 columnWidths={tableColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+                bulkSelectVisible={actionsEdnabled}
                 filterFields={[
                   {
                     fieldname: "status",
@@ -165,6 +176,7 @@ const TeamOvertimeRequests = () => {
                   }
                   return (
                     <OvertimeApprovalCard
+                      actionsEdnabled={actionsEdnabled}
                       isSelected={item?.isSelected}
                       onToggleSelect={item?.onToggleSelect}
                       data={item?.data}
@@ -185,6 +197,7 @@ const TeamOvertimeRequests = () => {
       </div>
       {(requestId || referenceName) && (
         <MyOvertimeDetails
+          actionsEdnabled={actionsEdnabled}
           documentName={requestId || ""}
           referenceName={referenceName || ""}
           onClose={handleCloseModal}

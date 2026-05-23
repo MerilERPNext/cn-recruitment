@@ -12,6 +12,7 @@ import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useShiftRequestConfig } from "../../hooks/useShift";
 import Button from "../shared/atoms/Button";
 import ShiftRequestFormModal from "./ShiftRequestFormModal";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 type TabName =
   | "My Shift Assignment"
@@ -42,38 +43,16 @@ const ShiftRequestApp: React.FC = () => {
     label: key,
   }));
 
-  const { data: attendnacePermission, isLoading: attendancePermissionLoading } =
+  const { data: attendnacePermission } =
     useGetUiPermission("Attendance");
-  const { data: ShiftAppPermission, isLoading: ShiftAppPermissionLoading } =
-    useGetUiPermission("My Shift Assignment");
+
+  const canRequestShiftChange = isActionEnabled(attendnacePermission, "request_shift_change", "All Shifts");
+  const canRequestShiftChangeMobile = isActionEnabled(attendnacePermission, "request_shift_change", "My Shift Assignment");
 
   const showShiftChangeButton = useMemo(() => {
     const For = { Desktop: false, Mobile: false };
-    if (!attendancePermissionLoading) {
-      For.Desktop = Boolean(
-        attendnacePermission?.[0]?.pages?.find(
-          (page) =>
-            page.page_name === "All Shifts" &&
-            page?.actions?.find(
-              (action) =>
-                action.action_name === "request_shift_change" && action.enabled,
-            ),
-        ) ?? false,
-      );
-    }
-
-    if (!ShiftAppPermissionLoading) {
-      For.Mobile = Boolean(
-        ShiftAppPermission?.[0]?.pages?.find(
-          (page) =>
-            page.page_name === "My Shift Assignment" &&
-            page?.actions?.find(
-              (action) =>
-                action.action_name === "request_shift_change" && action.enabled,
-            ),
-        ) ?? false,
-      );
-    }
+    For.Desktop = canRequestShiftChange;
+    For.Mobile = canRequestShiftChangeMobile;
 
     const isShiftConfigEnabled =
       shiftRequestConfig?.shift_change_requests ||
@@ -85,14 +64,7 @@ const ShiftRequestApp: React.FC = () => {
     }
 
     return For;
-  }, [
-    attendnacePermission,
-    ShiftAppPermission,
-    ShiftAppPermissionLoading,
-    attendancePermissionLoading,
-    shiftRequestConfig,
-    isShiftConfigLoading,
-  ]);
+  }, [canRequestShiftChange, canRequestShiftChangeMobile, shiftRequestConfig, isShiftConfigLoading]);
 
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>

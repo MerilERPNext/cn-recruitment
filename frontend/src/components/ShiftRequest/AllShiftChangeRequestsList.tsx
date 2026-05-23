@@ -11,6 +11,8 @@ import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 import { ShiftDetailView } from "./ShiftDetailView";
 import { MyShiftRequest } from "../../types/shift";
 import { BulkSelectProvider } from "../shared/BulkSelectContext";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 const BASE_COLUMN_SORT_CONFIG_TEAM: ColumnSortConfig[] = [
   { sortable: false },
@@ -54,6 +56,17 @@ const AllShiftChangeRequestsList: React.FC = () => {
 
   const requestId = searchParams.get("requestId");
   const referenceName = searchParams.get("reference_name");
+
+  const uiPermission = {
+    app: "Attendance",
+    page: "All Shifts",
+    actionKey: "team_actions_enabled"
+  }
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEnabled = isActionEnabled(uiPermissionData, uiPermission?.actionKey ?? "", uiPermission?.page);
+
+
+
 
   const handleRequestClick = useCallback(
     (request: any) => {
@@ -137,6 +150,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
             columnSortConfig={columnSortConfig}
           >
             <ApprovalList
+              bulkSelectVisible={actionsEnabled}
               doctype={"Shift Request"}
               refetch={refetchApprovalList}
               setRefetch={setRefetchApprovalList}
@@ -185,6 +199,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
                 }
                 return (
                   <ApprovalRejectionQueue
+                    actionsEnabled={actionsEnabled}
                     isSelected={item?.isSelected}
                     onToggleSelect={item?.onToggleSelect}
                     data={item?.data}

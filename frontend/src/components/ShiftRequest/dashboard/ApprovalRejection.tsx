@@ -11,6 +11,7 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 // Props type
 type ApprovalRejectionQueueProps = {
+  actionsEnabled?: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -24,6 +25,7 @@ type ApprovalRejectionQueueProps = {
 };
 
 const ApprovalRejectionQueue = ({
+  actionsEnabled = true,
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -128,6 +130,7 @@ const ApprovalRejectionQueue = ({
           <div className="flex items-center justify-center">
             {data?.todo_status === "Open" && !isActed ? (
               <TeamApprovalActionPill
+                actionsEdnabled={actionsEnabled}
                 actions={actions}
                 status={data?.reference_document?.status}
                 recordId={data?.todo_id}
@@ -240,13 +243,14 @@ const ApprovalRejectionQueue = ({
                     username={data?.username}
                     role={data?.role}
                     align="left"
-                  RoleAssignedUsers={data?.role_assigned_users}
-                />
+                    RoleAssignedUsers={data?.role_assigned_users}
+                  />
                 </div>
               </div>
 
               {data?.todo_status === "Open" && !isActed ? (
                 <TeamApprovalActionPill
+                  actionsEdnabled={actionsEnabled}
                   variant="buttons"
                   actions={actions}
                   status={data?.reference_document?.status}

@@ -3,8 +3,22 @@
 import { Repeat1, SquarePen, Trash2, Wallet } from "lucide-react";
 import type { JSX } from "react";
 import Tooltip from "../Tooltip";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { getActionsEnabled } from "../../../utils/uiPermission";
 
 type MyApprovalActionPillProps = {
+  /** to inforce ui permission to show hide action buttons
+   */
+  uiPermission?: {
+    app: string;
+    page: string;
+    actionKeysMap: {
+      edit?: string;
+      revoke?: string;
+      replace?: string;
+      pay?: string;
+    }
+  };
   canRevoke?: boolean;
   canEdit?: boolean;
   canReplace?: boolean;
@@ -31,6 +45,7 @@ type ActionItem = {
 };
 
 const MyApprovalActionPill = ({
+  uiPermission,
   canRevoke,
   canEdit,
   canReplace,
@@ -44,8 +59,31 @@ const MyApprovalActionPill = ({
   payLoading = false,
   isResubmit = false,
 }: MyApprovalActionPillProps) => {
-  const hasActions = canRevoke || canEdit || canReplace || canPay;
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEnabledFromKeys = Object.values(uiPermission?.actionKeysMap ?? []);
+  const actionsEnabled = getActionsEnabled(uiPermissionData, actionsEnabledFromKeys, uiPermission?.page);
 
+  const revokeAllowed =
+    !!canRevoke &&
+    (!uiPermission?.actionKeysMap?.revoke ||
+      actionsEnabled[uiPermission?.actionKeysMap?.revoke]);
+
+  const editAllowed =
+    !!canEdit &&
+    (!uiPermission?.actionKeysMap?.edit ||
+      actionsEnabled[uiPermission?.actionKeysMap?.edit]);
+
+  const replaceAllowed =
+    !!canReplace &&
+    (!uiPermission?.actionKeysMap?.replace ||
+      actionsEnabled[uiPermission?.actionKeysMap?.replace]);
+
+  const payAllowed =
+    !!canPay &&
+    (!uiPermission?.actionKeysMap?.pay ||
+      actionsEnabled[uiPermission?.actionKeysMap?.pay]);
+
+  const hasActions = revokeAllowed || editAllowed || replaceAllowed || payAllowed;
   if (!hasActions) {
     if (variant === "buttons") return null;
 
@@ -58,7 +96,7 @@ const MyApprovalActionPill = ({
 
   const actions: ActionItem[] = [];
 
-  if (canRevoke && onRevoke) {
+  if (revokeAllowed && onRevoke) {
     actions.push({
       key: "revoke",
       tooltip: "Revoke",
@@ -68,7 +106,7 @@ const MyApprovalActionPill = ({
     });
   }
 
-  if (canEdit && onEdit) {
+  if (editAllowed && onEdit) {
     actions.push({
       key: "edit",
       tooltip: isResubmit ? "Resubmit" : "Edit",
@@ -77,7 +115,7 @@ const MyApprovalActionPill = ({
     });
   }
 
-  if (canReplace && onReplace) {
+  if (replaceAllowed && onReplace) {
     actions.push({
       key: "replace",
       tooltip: "Replace",
@@ -86,7 +124,7 @@ const MyApprovalActionPill = ({
     });
   }
 
-  if (canPay && onPay) {
+  if (payAllowed && onPay) {
     actions.push({
       key: "pay",
       tooltip: "Pay",

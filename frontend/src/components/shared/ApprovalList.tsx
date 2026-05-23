@@ -12,8 +12,15 @@ import { useBulkSelectContext } from "./BulkSelectContext";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import RejectionReasonModal from "./RejectionReasonModal";
 import { useBulkUpdateRejectionReason, useIsRejectionReasonMandatory } from "../../hooks/useLeaves";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 type ApprovalListProps = {
+  uiPermission?: {
+    app: string;
+    page: string;
+    actionKey: string;
+  };
   doctype: string;
   renderCardContent: ({
     todoId,
@@ -77,6 +84,7 @@ const normalizeFilters = (filters: Record<string, any>) => {
 };
 
 const ApprovalList = ({
+  uiPermission,
   doctype,
   status,
   renderCardContent,
@@ -103,6 +111,10 @@ const ApprovalList = ({
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>(() =>
     normalizeFilters(defaultFilters || {}),
   );
+
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEdnabled = isActionEnabled(uiPermissionData, uiPermission?.actionKey ?? "", uiPermission?.page);
+
 
   const handleFiltersChange = useCallback((filters: Record<string, any>) => {
     const normalized = normalizeFilters(filters);
@@ -154,10 +166,11 @@ const ApprovalList = ({
     currentStatus === "Draft";
 
   // parent prop + internal logic combine
-  const finalBulkSelectVisible =
-    typeof bulkSelectVisible === "boolean"
-      ? bulkSelectVisible
-      : statusBasedBulkEnable;
+  // If a uiPermission actionKey is set but the action is disabled, always hide bulk select.
+  const bulkAllowedByPermission = !uiPermission?.actionKey || actionsEdnabled;
+  const finalBulkSelectVisible = bulkAllowedByPermission
+    ? (typeof bulkSelectVisible === "boolean" ? bulkSelectVisible : statusBasedBulkEnable)
+    : false;
 
 
   useEffect(() => {

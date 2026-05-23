@@ -5,8 +5,16 @@ import type { JSX } from "react";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
 import Tooltip from "../Tooltip";
 import Button from "./Button";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
 
 type TeamApprovalActionPillProps = {
+  uiPermission?: {
+    app?: string;
+    page?: string;
+    actionKey?: string;
+  }
+  actionsEdnabled?: boolean;
   actions: string[];
   status: string;
   recordId: string;
@@ -51,6 +59,9 @@ const normalizeAction = (action: string) =>
   action.toLowerCase().replace(/\s+/g, "");
 
 const TeamApprovalActionPill = ({
+
+  uiPermission,
+  actionsEdnabled = true,
   actions,
   status,
   recordId,
@@ -59,8 +70,11 @@ const TeamApprovalActionPill = ({
   variant = "pill",
 }: TeamApprovalActionPillProps) => {
   const normalizedStatus = status?.toLowerCase();
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const areActionsEdnabled = actionsEdnabled || isActionEnabled(uiPermissionData, uiPermission?.actionKey ?? "", uiPermission?.page);
 
-  const isActionable =
+  const isActionable = actionsEdnabled &&
+    (!uiPermission?.actionKey || areActionsEdnabled) &&
     (normalizedStatus === "open" ||
       normalizedStatus === "pending" ||
       normalizedStatus === "draft") &&

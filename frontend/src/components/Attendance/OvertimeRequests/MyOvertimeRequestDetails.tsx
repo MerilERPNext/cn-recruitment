@@ -27,6 +27,7 @@ import RejectionReasonModal from "../../shared/RejectionReasonModal";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 export function MyOvertimeDetails({
+  actionsEdnabled,
   documentName,
   referenceName,
   data: propData,
@@ -35,6 +36,7 @@ export function MyOvertimeDetails({
   label = "Overtime Request",
   type = "my"
 }: {
+  actionsEdnabled: boolean;
   documentName?: string;
   referenceName?: string;
   data?: MyPlannedAttendanceRequest;
@@ -360,6 +362,7 @@ export function MyOvertimeDetails({
           data?.reference_document?.status === "Open" && !isActed) ? (
           <div className="w-full bg-white border-t shadow-md p-4 z-20">
             {typeof data?.allocated_to === "string" && type !== "my" && <TeamApprovalActionPill
+              actionsEdnabled={actionsEdnabled}
               variant="modal"
               actions={actions}
               status={data?.reference_document?.status}

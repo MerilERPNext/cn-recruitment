@@ -19,6 +19,7 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 type ApprovalCardProps = {
+  actionsEdnabled: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -31,6 +32,7 @@ type ApprovalCardProps = {
   isActed?: boolean;
 };
 const OvertimeApprovalCard = ({
+  actionsEdnabled,
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -160,6 +162,7 @@ const OvertimeApprovalCard = ({
           </div>
           <div className="flex items-center justify-center">
             {data?.reference_document?.status === "Open" && !isActed ? <TeamApprovalActionPill
+              actionsEdnabled={actionsEdnabled}
               actions={actions}
               status={data?.reference_document?.status}
               recordId={data?.todo_id}
@@ -254,6 +257,7 @@ const OvertimeApprovalCard = ({
                 </Typography>
               </div>
               {data?.reference_document?.status === "Open" && !isActed ? <TeamApprovalActionPill
+                actionsEdnabled={actionsEdnabled}
                 variant="buttons"
                 actions={actions}
                 status={data?.reference_document?.status}
