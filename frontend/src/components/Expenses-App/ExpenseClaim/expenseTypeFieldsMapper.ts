@@ -180,6 +180,28 @@ const mapFieldToFormio = (field: FieldConfig, ctx: MapperContext) => {
         };
       }
 
+      if (
+        field.fieldname === "custom_location"
+      ) {
+        return {
+          type: "select",
+          key: field.fieldname,
+          label,
+          input: true,
+          dataSrc: "url",
+          data: {
+            url: `/api/resource/City?fields="*"`,
+          },
+          selectValues: "data",
+          valueProperty: "name",
+          template: "<span>{{ item.city }}</span>",
+          searchEnabled: true,
+          validate: buildValidation(field.label, required),
+          validateOn: "blur",
+          html: true,
+        };
+      }
+
       return {
         type: "select",
         key: field.fieldname,

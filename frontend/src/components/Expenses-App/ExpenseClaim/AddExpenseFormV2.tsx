@@ -574,7 +574,11 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
                         return;
                       }
 
-                      setIsSharePanelOpen(isChecked);
+                      // In edit mode the drawer must NOT auto-open on initial hydration.
+                      // The user opens it manually via the edit button on the participants list.
+                      if (!isEditingExistingExpense) {
+                        setIsSharePanelOpen(isChecked);
+                      }
                     }
 
                     setDynamicFormData((prev) => ({ ...prev, ...nextData }));
