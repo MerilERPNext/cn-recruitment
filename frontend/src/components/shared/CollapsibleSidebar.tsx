@@ -497,9 +497,24 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/performance-app/performance-review",
           permissionKey: "Performance Review",
         },
+        {
+          name: "Hr Admin",
+          icon: ChartNoAxesCombined,
+          href: "/webapp/performance-app",
+          permissionKey: "Appraisal Cycle Wizard",
+          subItems:[
+            {
+              name: "Cycle Details",
+              icon: Award,
+              href: "/webapp/performance-app/appraisal-cycle-wizard",
+            },
+          ]
+        },
+      
+
       ],
     },
-
+  
     {
       icon: Users,
       label: "Employee Directory",

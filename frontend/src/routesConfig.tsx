@@ -1288,6 +1288,11 @@ export const routesConfig: AppRoute[] = [
         element: <PerformanceReviewApp />,
         permissionKey: "Performance Review",
       },
+      {
+        path: "appraisal-cycle-wizard",
+        element: <PerformanceReviewApp />,
+        permissionKey: "Performance Admin",
+      },
     ],
   },
 
