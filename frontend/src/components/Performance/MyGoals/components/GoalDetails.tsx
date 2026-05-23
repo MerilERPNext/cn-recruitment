@@ -76,8 +76,8 @@ const GoalDetails: React.FC = () => {
   }
 
   return (
-    <div ref={topRef} id="goal-details-container" className="min-h-full bg-[#f8fafc] overflow-y-scroll p-6 font-sans">
-      <div className="max-w-screen mx-auto space-y-6">
+    <div ref={topRef} id="goal-details-container" className="min-h-full bg-[#f8fafc] overflow-y-auto p-3 font-sans sm:p-6">
+      <div className="mx-auto max-w-screen space-y-4 sm:space-y-6">
         
         {/* Back Button */}
         <button 
@@ -89,9 +89,9 @@ const GoalDetails: React.FC = () => {
         </button>
 
         {/* Top Header Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
           <div className="flex flex-col lg:flex-row justify-between gap-6">
-            <div className=" max-w-xl   space-y-4">
+            <div className="min-w-0 space-y-4 lg:max-w-xl">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge label={goal.type} variant="purple" size="sm" />
                 <Badge label={goal.label} variant="default" size="sm" />
@@ -105,35 +105,35 @@ const GoalDetails: React.FC = () => {
               </div>
               
               <div>
-                <Typography variant="h3" className="mb-2">{goal.title}</Typography>
+                <Typography variant="h3" className="mb-2 text-xl leading-tight sm:text-2xl">{goal.title}</Typography>
                 <Typography variant="bodySmall" className="text-gray-500">{goal.subtitle}</Typography>
               </div>
 
-              <div className="grid  grid-cols-2 md:grid-cols-5 gap-1 pt-4 border-t border-gray-100">
-                <div>
+              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100 sm:grid-cols-3 lg:grid-cols-5">
+                <div className="rounded-lg bg-gray-50 p-3 lg:bg-transparent lg:p-0">
                   <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">Weightage</Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">{goal.weight}%</Typography>
                 </div>
-                <div>
+                <div className="rounded-lg bg-gray-50 p-3 lg:bg-transparent lg:p-0">
                   <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">Start</Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">1 Apr 2026</Typography>
                 </div>
-                <div>
+                <div className="rounded-lg bg-gray-50 p-3 lg:bg-transparent lg:p-0">
                   <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">End</Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">31 Mar 2027</Typography>
                 </div>
-                <div>
+                <div className="rounded-lg bg-gray-50 p-3 lg:bg-transparent lg:p-0">
                   <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">Owner</Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">Pallavi Mahar</Typography>
                 </div>
-                <div>
+                <div className="col-span-2 rounded-lg bg-gray-50 p-3 sm:col-span-1 lg:bg-transparent lg:p-0">
                   <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">Aligned To</Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">Alakh Pandey · Org OKR</Typography>
                 </div>
               </div>
             </div>
 
-            <div className="shrink-0 flex flex-col items-center justify-center bg-gray-50 rounded-xl p-6 lg:w-[200px]">
+            <div className="shrink-0 flex flex-col items-center justify-center bg-gray-50 rounded-xl p-4 sm:p-6 lg:w-[200px]">
               <CircularProgress percentage={goal.percentage} />
               <Typography variant="caption" className="text-gray-500 mt-3 text-center">
                 {goal.current} / {goal.target} {goal.unit}
@@ -143,32 +143,32 @@ const GoalDetails: React.FC = () => {
         </div>
 
         {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           
           {/* Left Column (2/3) */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             
             {/* Key Results */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <div className="flex items-center justify-between mb-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+              <div className="flex items-center justify-between gap-3 mb-4 sm:mb-6">
                 <div className="flex items-center gap-2">
                   <Typography variant="h4">Key Results</Typography>
                   <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs font-semibold">{goal.krs?.length || 0}</span>
                 </div>
-                <Button variant="outline" bgColor="primary" size="sm" icon={<Plus className="w-4 h-4" />}>
+                <Button variant="outline" bgColor="primary" size="sm" icon={<Plus className="w-4 h-4" />} className="shrink-0">
                   Add KR
                 </Button>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {goal.krs?.map((kr: GoalKeyResult, idx: number, krs: GoalKeyResult[]) => (
                   <div key={idx} className="relative">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
+                    <div className="flex flex-col gap-2 mb-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex min-w-0 items-start gap-3 sm:items-center">
                         <Badge label={kr.id} variant="purple" size="sm" />
-                        <Typography variant="bodyMedium" className="font-medium text-gray-900">{kr.title}</Typography>
+                        <Typography variant="bodyMedium" className="font-medium leading-snug text-gray-900">{kr.title}</Typography>
                       </div>
-                      <Typography variant="bodyMedium" className="font-bold text-gray-900">{kr.percentage}%</Typography>
+                      <Typography variant="bodyMedium" className="font-bold text-gray-900 sm:text-right">{kr.percentage}%</Typography>
                     </div>
                     <Typography variant="caption" className="text-gray-500 mb-2 block">
                       Current {Math.round((kr.percentage / 100) * 32)} / Target 32
@@ -190,11 +190,11 @@ const GoalDetails: React.FC = () => {
 
             {/* Quick Check-in */}
             <div className="bg-white rounded-xl shadow-sm border border-blue-200 overflow-hidden">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <Typography variant="h4" className="mb-1">Quick Check-in</Typography>
                 <Typography variant="bodySmall" className="text-gray-500 mb-6">Update your progress · Last check-in 12 days ago</Typography>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div className="grid grid-cols-1 gap-4 mb-4 sm:mb-6 md:grid-cols-3 md:gap-6">
                   <div>
                     <Typography variant="caption" className="text-gray-700 font-medium block mb-2">New Value</Typography>
                     <div className="flex items-center">
@@ -211,7 +211,7 @@ const GoalDetails: React.FC = () => {
                   
                   <div>
                     <Typography variant="caption" className="text-gray-700 font-medium block mb-2">Auto Progress</Typography>
-                    <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 flex items-center">
+                    <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 flex min-h-[38px] items-center">
                       <span className="text-blue-600 font-bold text-sm mr-2">{goal.percentage}%</span>
                       <span className="text-gray-400 text-sm">+4 from 64%</span>
                     </div>
@@ -219,7 +219,7 @@ const GoalDetails: React.FC = () => {
 
                   <div>
                     <Typography variant="caption" className="text-gray-700 font-medium block mb-2">Self-declared Health</Typography>
-                    <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       
                         <Badge label="On-track" backgroundColor="bg-green-50  w-full" textColor="text-green-700" size="sm"  />
                       
@@ -234,13 +234,13 @@ const GoalDetails: React.FC = () => {
                 </div>
 
                 <textarea 
-                  className="w-full  rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[100px] mb-4"
+                  className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[100px] mb-4"
                   placeholder="Add details about your progress..."
                   defaultValue="Shipped Goals list + tree view. Calibration screen blocked on data model — coordinating with backend."
                 ></textarea>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
                     <Button variant="outline" bgColor="text" size="sm" icon={<Paperclip className="w-4 h-4" />}>
                       Attach
                     </Button>
@@ -248,7 +248,7 @@ const GoalDetails: React.FC = () => {
                       Voice note
                     </Button>
                   </div>
-                  <Button variant="contain" bgColor="primary" size="sm">
+                  <Button variant="contain" bgColor="primary" size="sm" className="justify-center">
                     Submit Check-in
                   </Button>
                 </div>
@@ -258,10 +258,10 @@ const GoalDetails: React.FC = () => {
           </div>
 
           {/* Right Column (1/3) */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             
             {/* Activity */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
               <Typography variant="h4" className="mb-1">Activity</Typography>
               <Typography variant="bodySmall" className="text-gray-500 mb-6">Last 30 days</Typography>
 
@@ -295,18 +295,18 @@ const GoalDetails: React.FC = () => {
             </div>
 
             {/* Auto-pull source */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
               <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-4 font-semibold">Auto-pull source</Typography>
               
-              <div className="border border-gray-100 rounded-lg p-3 flex items-center justify-between shadow-sm">
-                <div className="flex items-center gap-3">
+              <div className="border border-gray-100 rounded-lg p-3 flex flex-col gap-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
                   <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded flex items-center justify-center font-bold text-xs">JR</div>
-                  <div>
+                  <div className="min-w-0">
                     <Typography variant="bodySmall" className="font-medium text-gray-900 block">Jira · OXY-2.0</Typography>
                     <Typography variant="caption" className="text-gray-500 block">Synced 4h ago · 48/76 issues done</Typography>
                   </div>
                 </div>
-                <div className="px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded">Connected</div>
+                <div className="w-fit px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded">Connected</div>
               </div>
             </div>
 
