@@ -155,7 +155,6 @@ const EmpAttendanceRequestCard = ({
                   revoke: "revoke",
                 }
               }}
-              isPending={type === "pending"}
               canRevoke={!!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}
               canEdit={!!data?.can_edit && !isActed}
               revokeLoading={revokeEventMutation.isPending}
@@ -233,7 +232,6 @@ const EmpAttendanceRequestCard = ({
                   }
                 }}
                 variant="buttons"
-                isPending={type === "pending"}
                 canRevoke={type === "pending" && !!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}
                 canEdit={type === "pending" && !!data?.can_edit && !isActed}
                 revokeLoading={revokeEventMutation.isPending}

@@ -87,10 +87,10 @@ export const LoantItem: React.FC<{
             <Typography variant="mobileCardValue">
               {item.loan_type}
             </Typography>
-             <Typography variant="bodySmall" className="font-medium text-center">
-                      {getAssignedUsersCell(item?.todo_list?.[0])}
-                    </Typography>
-                    
+            <Typography variant="bodySmall" className="font-medium text-center">
+              {getAssignedUsersCell(item?.todo_list?.[0])}
+            </Typography>
+
           </div>
         </div>
 
@@ -132,12 +132,11 @@ export const LoantItem: React.FC<{
           roles={todo?.allocated_roles}
           role={todo?.role ?? ""}
           allocated_to={todo?.username}
-        RoleAssignedUsers={todo?.role_assigned_users}
-      />
+          RoleAssignedUsers={todo?.role_assigned_users}
+        />
 
         <MyApprovalActionPill
           variant="buttons"
-          isPending={item.status === "Open"}
           canRevoke={canRevoke}
           canEdit={canEdit}
           onRevoke={handleRevokeClick}

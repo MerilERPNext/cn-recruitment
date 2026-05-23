@@ -124,7 +124,6 @@ export function MyRequestCard({
           <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
               uiPermission={uiPermission}
-              isPending={request?.status === "Open" && !isActed}
               canEdit={canEdit && !isActed}
               canRevoke={canRevoke && !isActed}
               onEdit={() => {
@@ -218,7 +217,6 @@ export function MyRequestCard({
                 <MyApprovalActionPill
                   uiPermission={uiPermission}
                   variant="buttons"
-                  isPending={request?.status === "Open" && !isActed}
                   canEdit={canEdit && !isActed}
                   canRevoke={canRevoke && !isActed}
                   onEdit={() => {

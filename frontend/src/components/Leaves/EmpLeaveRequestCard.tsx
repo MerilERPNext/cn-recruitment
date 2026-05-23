@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useRevokeEvent } from "../../hooks/userApprovalList";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
-import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { queryClient } from "../../providers/QueryProvider";
 import { LeaveCardProps } from "../../types/leaves";
@@ -12,7 +11,6 @@ import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../utils/sanitizeToPlainText";
-import { isActionEnabled } from "../../utils/uiPermission";
 import Modal from "../shared/Modal";
 import Button from "../shared/atoms/Button";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
@@ -48,12 +46,6 @@ const EmpLeaveRequestCard = ({
   const { openModal } = useRequestLeaveModal();
   const { data: currentUser } = useCurrentUser();
 
-  const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
-  const canRequestLeave = isActionEnabled(
-    userUiPermission,
-    "revoke_replace_edit",
-    "My Requests",
-  );
 
   const leaveButtonConfig = buttonStatus?.leave_applications?.find(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -259,9 +251,17 @@ const EmpLeaveRequestCard = ({
           )}
           <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
-              isPending={isPending}
+              uiPermission={{
+                app: "Leaves and Holidays",
+                page: "My Requests",
+                actionKeysMap: {
+                  revoke: "revoke",
+                  replace: "replace",
+                  edit: "edit",
+                }
+              }}
               canRevoke={
-                ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && canRequestLeave && !isActed
+                ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && !isActed
               }
               canEdit={allowEdit && !isActed}
               isResubmit={isResubmit}
@@ -372,10 +372,18 @@ const EmpLeaveRequestCard = ({
 
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
+                uiPermission={{
+                  app: "Leaves and Holidays",
+                  page: "My Requests",
+                  actionKeysMap: {
+                    revoke: "revoke",
+                    replace: "replace",
+                    edit: "edit",
+                  }
+                }}
                 variant="buttons"
-                isPending={isPending}
                 canRevoke={
-                  ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && canRequestLeave && !isActed
+                  ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && !isActed
                 }
                 canEdit={allowEdit && !isActed}
                 isResubmit={isResubmit}

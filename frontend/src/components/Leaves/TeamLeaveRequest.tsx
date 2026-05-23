@@ -13,6 +13,8 @@ import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import LeaveApprovalCard from "./LeaveApprovalCard";
 import { LeaveDetailView } from "./LeaveDetails";
 import { getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST } from "../../utils/tableSortConfig";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 const TeamLeaveRequest = () => {
   const { data: currentUser } = useCurrentUser();
@@ -26,6 +28,15 @@ const TeamLeaveRequest = () => {
     currentEmployee?.name,
     today,
   );
+
+  const uiPermission = {
+    app: "Leaves and Holidays",
+    page: "Team Requests",
+    actionKey: "team_leave_request_actions"
+  }
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEdnabled = isActionEnabled(uiPermissionData, uiPermission?.actionKey ?? "", uiPermission?.page);
+
 
   // Build filter fields dynamically to include leave type options from balance API
   const dynamicFilterFields: FilterField[] = useMemo(() => {
@@ -57,8 +68,8 @@ const TeamLeaveRequest = () => {
           { label: "Rejected", value: "Rejected" },
         ],
         emptyValueConfig: {
-                    filterValue: ["!=", "Cancelled"],
-                  },
+          filterValue: ["!=", "Cancelled"],
+        },
       },
       {
         fieldname: "leave_type",
@@ -214,60 +225,63 @@ const TeamLeaveRequest = () => {
       )}
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <BulkSelectProvider>
-        <CardTable titles={tableTitles} columnWidths={finalColumnWidths}
-          columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST(
-            isBulkSelectEnabled,
-            isRejectedFilter
-          )}
-        >
-          {currentUser?.name ? (
-            <ApprovalList
-              doctype={"Leave Application"}
-              refetch={refetchApprovalList}
-              setRefetch={setRefetchApprovalList}
-              onApprovalRefetchComplete={handleApprovalRefetchComplete}
-              pageSize={10}
-              infiniteScroll={false}
-              loadMorePagination={false}
-              showPagination={true}
-              isSearch={true}
-              isFilter={true}
-              columnWidths={finalColumnWidths}
-              onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-              filterFields={dynamicFilterFields}
-              defaultFilters={{ status: "Open" }}
-              SkeletonComponent={CardSkeleton}
-              renderCardContent={(item) => {
-                if (
-                  item?.data?.custom_selected_doctype_action === "Send Back"
-                ) {
-                  return null;
-                }
-                return (
-                  <LeaveApprovalCard
-                    isSelected={item?.isSelected}
-                    onToggleSelect={item?.onToggleSelect}
-                    data={item?.data}
-                    onAction={item?.onAction}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onClick={(request: any) => handleRequestClick(request)}
-                    loadingAction={item?.loadingAction}
-                    isBulkSelectEnabled={isBulkSelectEnabled}
-                    showRejectReason={isRejectedFilter}
-                    isActed={item?.isActed}
-                  />
-                );
-              }}
-              onActiveFiltersChange={(filters) => {
-                setActiveStatus(filters.status || "Open");
-              }}
-            />
-          ) : null}
-        </CardTable>
+          <CardTable titles={tableTitles} columnWidths={finalColumnWidths}
+            columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST(
+              isBulkSelectEnabled,
+              isRejectedFilter
+            )}
+          >
+            {currentUser?.name ? (
+              <ApprovalList
+                bulkSelectVisible={actionsEdnabled}
+                doctype={"Leave Application"}
+                refetch={refetchApprovalList}
+                setRefetch={setRefetchApprovalList}
+                onApprovalRefetchComplete={handleApprovalRefetchComplete}
+                pageSize={10}
+                infiniteScroll={false}
+                loadMorePagination={false}
+                showPagination={true}
+                isSearch={true}
+                isFilter={true}
+                columnWidths={finalColumnWidths}
+                onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+                filterFields={dynamicFilterFields}
+                defaultFilters={{ status: "Open" }}
+                SkeletonComponent={CardSkeleton}
+                renderCardContent={(item) => {
+                  if (
+                    item?.data?.custom_selected_doctype_action === "Send Back"
+                  ) {
+                    return null;
+                  }
+                  return (
+                    <LeaveApprovalCard
+                      actionsEdnabled={actionsEdnabled}
+                      isSelected={item?.isSelected}
+                      onToggleSelect={item?.onToggleSelect}
+                      data={item?.data}
+                      onAction={item?.onAction}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      onClick={(request: any) => handleRequestClick(request)}
+                      loadingAction={item?.loadingAction}
+                      isBulkSelectEnabled={isBulkSelectEnabled}
+                      showRejectReason={isRejectedFilter}
+                      isActed={item?.isActed}
+                    />
+                  );
+                }}
+                onActiveFiltersChange={(filters) => {
+                  setActiveStatus(filters.status || "Open");
+                }}
+              />
+            ) : null}
+          </CardTable>
         </BulkSelectProvider>
       </div>
       {(requestId || referenceName) && (
         <LeaveDetailView
+          actionsEdnabled={actionsEdnabled}
           documentName={requestId || undefined}
           referenceName={referenceName || undefined}
           label="Leave Application"

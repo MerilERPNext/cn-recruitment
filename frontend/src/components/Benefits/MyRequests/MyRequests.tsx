@@ -332,8 +332,8 @@ const MyRequests: React.FC = () => {
                   },
                 ],
                 emptyValueConfig: {
-                    filterValue: ["!=", "Cancelled"],
-                  },
+                  filterValue: ["!=", "Cancelled"],
+                },
               },
             ]}
             onFiltersChange={(filter) => setCustomStatus(filterStatusMap[filter.custom_status as "Open" | "Approved" | "Rejected" | "Cancelled"])}
@@ -514,7 +514,6 @@ const BenefitSlipItem = ({
 
       <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
         <MyApprovalActionPill
-          isPending={item.custom_status === "Pending"}
           canEdit={canEdit}
           canRevoke={canRevoke}
           onRevoke={handleRevokeClick}
@@ -595,8 +594,8 @@ const BenefitSlipItem = ({
                 variant="mobileCardValue"
                 className={maskAmounts ? "blur-[3px]" : ""}
               >
-                  {getAssignedUsersCell(item?.todo_list?.[0])}
-            
+                {getAssignedUsersCell(item?.todo_list?.[0])}
+
               </Typography>
             </div>
           </div>
@@ -634,7 +633,6 @@ const BenefitSlipItem = ({
           {/* Actions */}
           <div className={`mt-4 ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
-              isPending={item.custom_status === "Pending"}
               canEdit={canEdit}
               canRevoke={canRevoke}
               onRevoke={handleRevokeClick}

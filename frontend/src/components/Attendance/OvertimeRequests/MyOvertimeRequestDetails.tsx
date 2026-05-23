@@ -27,7 +27,7 @@ import RejectionReasonModal from "../../shared/RejectionReasonModal";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 export function MyOvertimeDetails({
-  actionsEdnabled,
+  actionsEdnabled = false,
   documentName,
   referenceName,
   data: propData,
@@ -36,7 +36,7 @@ export function MyOvertimeDetails({
   label = "Overtime Request",
   type = "my"
 }: {
-  actionsEdnabled: boolean;
+  actionsEdnabled?: boolean;
   documentName?: string;
   referenceName?: string;
   data?: MyPlannedAttendanceRequest;

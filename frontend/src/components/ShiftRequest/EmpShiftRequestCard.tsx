@@ -146,7 +146,6 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
               }}
               canEdit={canEdit}
               canRevoke={canRevoke}
-              isPending={false}
               revokeLoading={revokeEventMutation.isPending}
               onEdit={handleEditClick}
               onRevoke={handleRevokeClick}
@@ -227,7 +226,6 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
                 variant="buttons"
                 canEdit={canEdit}
                 canRevoke={canRevoke}
-                isPending={false}
                 revokeLoading={revokeEventMutation.isPending}
                 onEdit={handleEditClick}
                 onRevoke={handleRevokeClick}

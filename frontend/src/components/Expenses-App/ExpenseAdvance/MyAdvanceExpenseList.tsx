@@ -145,16 +145,16 @@ const MyAdvanceExpenseList = () => {
             {doc.name}
           </Typography>
         </Tooltip>
-       
+
         <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.custom_advance_type} 
+          {doc.custom_advance_type}
         </Typography>
         <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.custom_advance_policy} 
+          {doc.custom_advance_policy}
         </Typography>
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatToIndianDate(doc.posting_date)}
-        </Typography> 
+        </Typography>
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatCurrency(doc.advance_amount)}
         </Typography>
@@ -183,7 +183,6 @@ const MyAdvanceExpenseList = () => {
           onClick={(e) => e.stopPropagation()}
         >
           <MyApprovalActionPill
-            isPending={doc?.custom_final_status === "Pending"}
             canEdit={canEdit && !isActed}
             onEdit={() => handleEditClick(item)}
             canRevoke={canRevoke && !isActed}
@@ -235,8 +234,8 @@ const MyAdvanceExpenseList = () => {
                   username={item?.username}
                   role={item?.role}
                   align="left"
-                RoleAssignedUsers={item?.role_assigned_users}
-              />
+                  RoleAssignedUsers={item?.role_assigned_users}
+                />
                 <StatusBadge
                   status={
                     item?.custom_allow_revoke === 1 &&
@@ -289,7 +288,6 @@ const MyAdvanceExpenseList = () => {
             <div onClick={(e) => e.stopPropagation()} className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
                 variant="buttons"
-                isPending={doc?.custom_final_status === "Pending"}
                 canEdit={canEdit && !isActed}
                 onEdit={() => handleEditClick(item)}
                 canRevoke={canRevoke && !isActed}
@@ -383,7 +381,7 @@ const MyAdvanceExpenseList = () => {
             "Status",
             "Actions",
           ]}
-          columnWidths={["1fr","1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
           columnSortConfig={COLUMN_SORT_CONFIG_EXPENSE_ADVANCE}
 
         >

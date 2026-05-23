@@ -25,6 +25,7 @@ import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 export function LeaveDetailView({
+  actionsEdnabled,
   documentName,
   referenceName,
   data: propsData,
@@ -33,6 +34,7 @@ export function LeaveDetailView({
   label = "Leave Request",
   reasonName,
 }: {
+  actionsEdnabled?: boolean
   documentName?: string;
   referenceName?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -304,6 +306,7 @@ export function LeaveDetailView({
         {actions?.length > 0 && data?.status === "Open" && !isActed ? (
           <div className="w-full bg-white border-t shadow-md p-4 z-20">
             <TeamApprovalActionPill
+              actionsEdnabled={actionsEdnabled}
               variant={isDesktop ? "modal" : "buttons"}
               actions={actions}
               status={data?.status}

@@ -23,7 +23,6 @@ type MyApprovalActionPillProps = {
   canEdit?: boolean;
   canReplace?: boolean;
   canPay?: boolean;
-  isPending: boolean;
 
   onRevoke?: () => void;
   onEdit?: () => void;
