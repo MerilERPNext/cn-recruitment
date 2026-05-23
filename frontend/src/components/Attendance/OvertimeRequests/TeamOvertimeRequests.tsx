@@ -1,12 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { MyPlannedAttendanceRequest } from "../../../types/attendance";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
-import CardTable from "../../shared/CardTable";
 import { BulkSelectProvider } from "../../shared/BulkSelectContext";
+import CardTable from "../../shared/CardTable";
 import { ColumnSortConfig } from "../../shared/CardTableContext";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
@@ -15,6 +17,17 @@ import OvertimeApprovalCard from "./OvertimeApprovalCard";
 const TeamOvertimeRequests = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
+  const uiPermission = {
+    app: "Attendance",
+    page: "Planned Overtime",
+    actionKey: "actions_enabled",
+  };
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEnabled = isActionEnabled(
+    uiPermissionData,
+    uiPermission?.actionKey ?? "",
+    uiPermission?.page,
+  );
 
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
@@ -51,12 +64,27 @@ const TeamOvertimeRequests = () => {
   }, [setSearchParams]);
 
   const tableTitles = isBulkSelectEnabled
-    ? ["Select", "Employee", "Description", "Assigned To", "Due Date", "Status", "Actions"]
-    : ["Employee", "Description", "Assigned To", "Due Date", "Status", "Actions"];
+    ? [
+        "Select",
+        "Employee",
+        "Description",
+        "Assigned To",
+        "Due Date",
+        "Status",
+        "Actions",
+      ]
+    : [
+        "Employee",
+        "Description",
+        "Assigned To",
+        "Due Date",
+        "Status",
+        "Actions",
+      ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1.5fr", "1fr", "1fr", "1fr"]
-    : ["1fr", "1.5fr", '1fr', "1fr", "1fr", "1fr"];
+    : ["1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"];
 
   const sortableColumns: ColumnSortConfig[] = [
     {
@@ -78,7 +106,8 @@ const TeamOvertimeRequests = () => {
       sortable: true,
       type: "date",
       field: "due_date",
-      getValue: (item: MyPlannedAttendanceRequest) => String(item.due_date ?? ""),
+      getValue: (item: MyPlannedAttendanceRequest) =>
+        String(item.due_date ?? ""),
     },
     {
       sortable: false,
@@ -111,8 +140,11 @@ const TeamOvertimeRequests = () => {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <BulkSelectProvider>
-
-          <CardTable titles={tableTitles} columnWidths={tableColumnWidths} columnSortConfig={columnSortConfig}>
+          <CardTable
+            titles={tableTitles}
+            columnWidths={tableColumnWidths}
+            columnSortConfig={columnSortConfig}
+          >
             {currentUser?.name && (
               <ApprovalList
                 doctype="Planned Overtime Request"
@@ -127,6 +159,7 @@ const TeamOvertimeRequests = () => {
                 isFilter={true}
                 columnWidths={tableColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+                bulkSelectVisible={actionsEnabled}
                 filterFields={[
                   {
                     fieldname: "status",
@@ -165,6 +198,7 @@ const TeamOvertimeRequests = () => {
                   }
                   return (
                     <OvertimeApprovalCard
+                      actionsEnabled={actionsEnabled}
                       isSelected={item?.isSelected}
                       onToggleSelect={item?.onToggleSelect}
                       data={item?.data}
@@ -185,6 +219,7 @@ const TeamOvertimeRequests = () => {
       </div>
       {(requestId || referenceName) && (
         <MyOvertimeDetails
+          actionsEnabled={actionsEnabled}
           documentName={requestId || ""}
           referenceName={referenceName || ""}
           onClose={handleCloseModal}

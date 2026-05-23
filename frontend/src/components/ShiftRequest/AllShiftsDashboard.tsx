@@ -20,6 +20,8 @@ import { ShiftDetailView } from "./ShiftDetailView";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 import NoDataFound from "../shared/atoms/NoDataFound";
 import { BulkSelectProvider } from "../shared/BulkSelectContext";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
   {
@@ -219,6 +221,7 @@ const TeamShiftList = () => {
   );
 };
 
+
 const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
@@ -290,6 +293,16 @@ export default function AllShiftsDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
   const referenceName = searchParams.get("reference_name");
+
+
+  const uiPermission = {
+    app: "Attendance",
+    page: "All Shifts",
+    actionKey: "team_actions_enabled"
+  }
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEnabled = isActionEnabled(uiPermissionData, uiPermission?.actionKey ?? "", uiPermission?.page);
+
 
   const handleRequestClick = useCallback(
     (request: any) => {
@@ -371,6 +384,7 @@ export default function AllShiftsDashboard() {
                     columnSortConfig={columnSortConfig}
                   >
                     <ApprovalList
+                      bulkSelectVisible={actionsEnabled}
                       status="Draft"
                       doctype={"Shift Request"}
                       pageSize={4}
@@ -383,6 +397,7 @@ export default function AllShiftsDashboard() {
                       onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                       renderCardContent={(item) => (
                         <ApprovalRejectionQueue
+                          actionsEnabled={actionsEnabled}
                           isSelected={item?.isSelected}
                           onToggleSelect={item?.onToggleSelect}
                           data={item?.data}

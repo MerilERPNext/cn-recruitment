@@ -16,6 +16,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 
 type ApprovalCardProps = {
+  actionsEnabled?: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -30,6 +31,7 @@ type ApprovalCardProps = {
 };
 
 const ExpenseApprovalCard = ({
+  actionsEnabled,
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -52,12 +54,24 @@ const ExpenseApprovalCard = ({
     data: any;
   } | null>(null);
 
-  const actions = data?.custom_doctype_actions
-    ? JSON.parse(data?.custom_doctype_actions)
-    : [];
-  const actionsWithForm = data?.custom_doctype_actions_with_form
-    ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
-    : [];
+  const actions = (() => {
+    if (!data?.custom_doctype_actions) return [];
+    try {
+      return JSON.parse(data.custom_doctype_actions);
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions:", e);
+      return [];
+    }
+  })();
+  const actionsWithForm = (() => {
+    if (!data?.custom_doctype_actions_with_form) return [];
+    try {
+      return JSON.parse(data.custom_doctype_actions_with_form.replace(/'/g, '"'));
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions_with_form:", e);
+      return [];
+    }
+  })();
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? activeStatus === "Approved"
@@ -230,7 +244,7 @@ const ExpenseApprovalCard = ({
               <StatusBadge
                 status={
                   data?.todo_status === "Closed" &&
-                  data?.reference_document?.approval_status !== "Rejected"
+                    data?.reference_document?.approval_status !== "Rejected"
                     ? "Approved"
                     : data?.reference_document?.approval_status
                 }
@@ -251,6 +265,7 @@ const ExpenseApprovalCard = ({
           <div className="flex items-center justify-center">
             {activeStatus === "Pending" && !isActed ? (
               <TeamApprovalActionPill
+                actionsEnabled={actionsEnabled}
                 actions={actions}
                 status={data?.status}
                 recordId={data?.todo_id}
@@ -306,7 +321,7 @@ const ExpenseApprovalCard = ({
                 <StatusBadge
                   status={
                     data?.todo_status === "Closed" &&
-                    data?.reference_document?.approval_status !== "Rejected"
+                      data?.reference_document?.approval_status !== "Rejected"
                       ? "Approved"
                       : data?.reference_document?.approval_status
                   }
@@ -394,8 +409,8 @@ const ExpenseApprovalCard = ({
                 roles={data?.allocated_roles}
                 username={data?.username}
                 role={data?.role}
-              RoleAssignedUsers={data?.role_assigned_users}
-            />
+                RoleAssignedUsers={data?.role_assigned_users}
+              />
               {activeStatus === "Approved" && (
                 <div className="flex justify-between w-full">
                   <div className="flex flex-col gap-1">
@@ -414,6 +429,7 @@ const ExpenseApprovalCard = ({
 
               {activeStatus === "Pending" && !isActed ? (
                 <TeamApprovalActionPill
+                  actionsEnabled={actionsEnabled}
                   variant="buttons"
                   actions={actions}
                   status={data?.status}

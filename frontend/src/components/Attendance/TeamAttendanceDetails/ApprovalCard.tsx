@@ -18,6 +18,11 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 type ApprovalCardProps = {
+  uiPermission?: {
+    app: string;
+    page: string;
+    actionKey: string;
+  };
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -33,6 +38,7 @@ type ApprovalCardProps = {
   isActed?: boolean;
 };
 const ApprovalCard = ({
+  uiPermission,
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -179,6 +185,7 @@ const ApprovalCard = ({
           <div className="flex items-center justify-center">
             {data?.todo_status === "Open" && !isActed ? (
               <TeamApprovalActionPill
+                uiPermission={uiPermission}
                 actions={actions}
                 status={data?.reference_document?.custom_status || data?.reference_document?.status}
                 recordId={data?.todo_id}
@@ -287,6 +294,7 @@ const ApprovalCard = ({
               {/* Actions */}
               {data?.todo_status === "Open" && !isActed ? (
                 <TeamApprovalActionPill
+                  uiPermission={uiPermission}
                   variant="buttons"
                   actions={actions}
                   status={data?.reference_document?.custom_status || data?.reference_document?.status}

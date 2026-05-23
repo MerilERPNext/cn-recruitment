@@ -17,24 +17,26 @@ import {
   ErrorView,
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
+import RejectionReasonModal from "../../shared/RejectionReasonModal";
 import Button from "../../shared/atoms/Button";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
-import RejectionReasonModal from "../../shared/RejectionReasonModal";
 
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 export function MyOvertimeDetails({
+  actionsEnabled = false,
   documentName,
   referenceName,
   data: propData,
   onClose,
   onAction,
   label = "Overtime Request",
-  type = "my"
+  type = "my",
 }: {
+  actionsEnabled?: boolean;
   documentName?: string;
   referenceName?: string;
   data?: MyPlannedAttendanceRequest;
@@ -42,14 +44,13 @@ export function MyOvertimeDetails({
   label?: string;
   onAction?: () => void;
   loadingAction?: { id: string; action: string } | null;
-  type?: 'my' | 'team'
+  type?: "my" | "team";
 }) {
   const {
     data: fetchedData,
     isLoading,
     error,
   } = useGetToDoWithReferenceDoc(documentName || "", referenceName || "");
-
 
   const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();
@@ -165,7 +166,7 @@ export function MyOvertimeDetails({
   if (error && (documentName || referenceName)) {
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
-  console.log(data.allocated_to, typeof data.allocated_to)
+  console.log(data.allocated_to, typeof data.allocated_to);
   return data?.todo_id ? (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
@@ -206,8 +207,13 @@ export function MyOvertimeDetails({
                     : "Employee ID"}
                 </Typography>
 
-                <Typography variant="mobileCardValue" className="hover:text-primary cursor-pointer">
-                  <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+                <Typography
+                  variant="mobileCardValue"
+                  className="hover:text-primary cursor-pointer"
+                >
+                  <WrapperHoverCard
+                    employeeId={data?.reference_document?.employee}
+                  >
                     {data?.reference_document?.employee_name ||
                       data?.reference_document?.employee}
                   </WrapperHoverCard>
@@ -215,7 +221,14 @@ export function MyOvertimeDetails({
               </div>
             </div>
             <div>
-              <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.status !== "Rejected" ? "Approved" : data?.reference_document?.status} />
+              <StatusBadge
+                status={
+                  data?.todo_status === "Closed" &&
+                  data?.reference_document?.status !== "Rejected"
+                    ? "Approved"
+                    : data?.reference_document?.status
+                }
+              />
             </div>
           </div>
 
@@ -339,38 +352,36 @@ export function MyOvertimeDetails({
           {/* Attachments */}
           {data?.attachments && data?.attachments?.length > 0 && (
             <div>
-              <Typography
-                variant="bodySmall"
-                className="mb-2 font-bold block"
-              >
+              <Typography variant="bodySmall" className="mb-2 font-bold block">
                 Attachments
               </Typography>
               <div className="space-y-2">
                 {data.attachments.map((item) => (
-                  <AttachmentCard
-                    key={item.file_url}
-                    fileUrl={item.file_url}
-                  />
+                  <AttachmentCard key={item.file_url} fileUrl={item.file_url} />
                 ))}
               </div>
             </div>
           )}
         </div>
-        {(actions?.length > 0 &&
-          data?.reference_document?.status === "Open" && !isActed) ? (
+        {actions?.length > 0 &&
+        data?.reference_document?.status === "Open" &&
+        !isActed ? (
           <div className="w-full bg-white border-t shadow-md p-4 z-20">
-            {typeof data?.allocated_to === "string" && type !== "my" && <TeamApprovalActionPill
-              variant="modal"
-              actions={actions}
-              status={data?.reference_document?.status}
-              recordId={data?.todo_id}
-              loadingAction={
-                currentAction
-                  ? { id: data?.todo_id, action: currentAction }
-                  : null
-              }
-              onAction={(action) => handleActionClick(action)}
-            />}
+            {typeof data?.allocated_to === "string" && type !== "my" && (
+              <TeamApprovalActionPill
+                actionsEnabled={actionsEnabled}
+                variant="modal"
+                actions={actions}
+                status={data?.reference_document?.status}
+                recordId={data?.todo_id}
+                loadingAction={
+                  currentAction
+                    ? { id: data?.todo_id, action: currentAction }
+                    : null
+                }
+                onAction={(action) => handleActionClick(action)}
+              />
+            )}
           </div>
         ) : (
           <div className="w-full bg-white border-t shadow-md p-4 z-20">

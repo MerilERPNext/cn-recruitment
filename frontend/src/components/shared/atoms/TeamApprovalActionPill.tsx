@@ -2,11 +2,19 @@
 
 import { Check, SendToBack, X } from "lucide-react";
 import type { JSX } from "react";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import Tooltip from "../Tooltip";
 import Button from "./Button";
 
 type TeamApprovalActionPillProps = {
+  uiPermission?: {
+    app?: string;
+    page?: string;
+    actionKey?: string;
+  };
+  actionsEnabled?: boolean;
   actions: string[];
   status: string;
   recordId: string;
@@ -51,6 +59,8 @@ const normalizeAction = (action: string) =>
   action.toLowerCase().replace(/\s+/g, "");
 
 const TeamApprovalActionPill = ({
+  uiPermission,
+  actionsEnabled = true,
   actions,
   status,
   recordId,
@@ -59,8 +69,18 @@ const TeamApprovalActionPill = ({
   variant = "pill",
 }: TeamApprovalActionPillProps) => {
   const normalizedStatus = status?.toLowerCase();
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const areActionsEnabled =
+    actionsEnabled ||
+    isActionEnabled(
+      uiPermissionData,
+      uiPermission?.actionKey ?? "",
+      uiPermission?.page,
+    );
 
   const isActionable =
+    actionsEnabled &&
+    (!uiPermission?.actionKey || areActionsEnabled) &&
     (normalizedStatus === "open" ||
       normalizedStatus === "pending" ||
       normalizedStatus === "draft") &&

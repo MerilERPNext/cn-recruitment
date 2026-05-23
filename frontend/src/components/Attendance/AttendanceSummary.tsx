@@ -75,7 +75,7 @@ const AttendanceSummary = () => {
   const canCreateOvertimeRequest = isActionEnabled(
     userUiPermission,
     "create_overtime_request",
-    "My Overtime",
+    "Attendance Summary",
   );
   const canCreateAttendanceRequest = isActionEnabled(
     userUiPermission,

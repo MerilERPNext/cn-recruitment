@@ -2,15 +2,16 @@
 import { Link } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
-import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 // Props type
 type ApprovalRejectionQueueProps = {
+  actionsEnabled?: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -24,6 +25,7 @@ type ApprovalRejectionQueueProps = {
 };
 
 const ApprovalRejectionQueue = ({
+  actionsEnabled = true,
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -90,7 +92,7 @@ const ApprovalRejectionQueue = ({
             {data.reference_document.shift_name}
             <Typography variant="bodySmall" className="font-medium text-center">
               {data.reference_document.custom_start_time &&
-                data.reference_document.custom_end_time
+              data.reference_document.custom_end_time
                 ? `${data.reference_document.custom_start_time} - ${data.reference_document.custom_end_time}`
                 : ""}
             </Typography>
@@ -118,7 +120,7 @@ const ApprovalRejectionQueue = ({
               <StatusBadge
                 status={
                   data.todo_status === "Closed" &&
-                    data.reference_document.status !== "Rejected"
+                  data.reference_document.status !== "Rejected"
                     ? "Approved"
                     : data.reference_document.status
                 }
@@ -128,6 +130,7 @@ const ApprovalRejectionQueue = ({
           <div className="flex items-center justify-center">
             {data?.todo_status === "Open" && !isActed ? (
               <TeamApprovalActionPill
+                actionsEnabled={actionsEnabled}
                 actions={actions}
                 status={data?.reference_document?.status}
                 recordId={data?.todo_id}
@@ -183,7 +186,7 @@ const ApprovalRejectionQueue = ({
                 <StatusBadge
                   status={
                     data.todo_status === "Closed" &&
-                      data.reference_document.status !== "Rejected"
+                    data.reference_document.status !== "Rejected"
                       ? "Approved"
                       : data.reference_document.status
                   }
@@ -240,13 +243,14 @@ const ApprovalRejectionQueue = ({
                     username={data?.username}
                     role={data?.role}
                     align="left"
-                  RoleAssignedUsers={data?.role_assigned_users}
-                />
+                    RoleAssignedUsers={data?.role_assigned_users}
+                  />
                 </div>
               </div>
 
               {data?.todo_status === "Open" && !isActed ? (
                 <TeamApprovalActionPill
+                  actionsEnabled={actionsEnabled}
                   variant="buttons"
                   actions={actions}
                   status={data?.reference_document?.status}

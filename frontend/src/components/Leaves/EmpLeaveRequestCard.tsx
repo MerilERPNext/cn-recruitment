@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useRevokeEvent } from "../../hooks/userApprovalList";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
-import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { queryClient } from "../../providers/QueryProvider";
 import { LeaveCardProps } from "../../types/leaves";
@@ -12,8 +11,7 @@ import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../utils/sanitizeToPlainText";
-import { isActionEnabled } from "../../utils/uiPermission";
-import Modal from "../shared/Modal";
+
 import Button from "../shared/atoms/Button";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../shared/atoms/statusBadge";
@@ -39,7 +37,6 @@ const EmpLeaveRequestCard = ({
   const { isDesktop } = useScreenSize();
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [isActed, setIsActed] = useState(false);
-  const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
   const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation ?? "");
 
   const revokeEventMutation = useRevokeEvent();
@@ -48,12 +45,6 @@ const EmpLeaveRequestCard = ({
   const { openModal } = useRequestLeaveModal();
   const { data: currentUser } = useCurrentUser();
 
-  const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
-  const canRequestLeave = isActionEnabled(
-    userUiPermission,
-    "revoke_replace_edit",
-    "My Requests",
-  );
 
   const leaveButtonConfig = buttonStatus?.leave_applications?.find(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -77,15 +68,10 @@ const EmpLeaveRequestCard = ({
   const allowReplace = leaveButtonConfig?.show_replace_button;
   const allowRevoke = leaveButtonConfig?.show_revoke_button;
 
-  const handleRevokeClick = () => {
-    setShowRevokeConfirm(true);
-  };
-
   const executeRevoke = () => {
     if (isApproved && onRevokeApproved) {
       onRevokeApproved();
       setIsActed(true);
-      setShowRevokeConfirm(false);
       return;
     }
     if (data?.todo_id) {
@@ -107,11 +93,7 @@ const EmpLeaveRequestCard = ({
               setRefetchAttendance(true);
             }, 2000);
             toast.success("Leave revoked successfully");
-            setShowRevokeConfirm(false);
           },
-          onError: () => {
-            setShowRevokeConfirm(false);
-          }
         },
       );
     }
@@ -259,15 +241,23 @@ const EmpLeaveRequestCard = ({
           )}
           <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
-              isPending={isPending}
+              uiPermission={{
+                app: "Leaves and Holidays",
+                page: "My Requests",
+                actionKeysMap: {
+                  revoke: "revoke",
+                  replace: "replace",
+                  edit: "edit",
+                }
+              }}
               canRevoke={
-                ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && canRequestLeave && !isActed
+                ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && !isActed
               }
               canEdit={allowEdit && !isActed}
               isResubmit={isResubmit}
               canReplace={allowReplace && (isPending || isApproved) && !isActed}
               revokeLoading={revokeEventMutation.isPending}
-              onRevoke={handleRevokeClick}
+              onRevoke={executeRevoke}
               onEdit={handleEditClick}
               onReplace={handleReplaceClick}
             />
@@ -372,16 +362,24 @@ const EmpLeaveRequestCard = ({
 
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
+                uiPermission={{
+                  app: "Leaves and Holidays",
+                  page: "My Requests",
+                  actionKeysMap: {
+                    revoke: "revoke",
+                    replace: "replace",
+                    edit: "edit",
+                  }
+                }}
                 variant="buttons"
-                isPending={isPending}
                 canRevoke={
-                  ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && canRequestLeave && !isActed
+                  ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && !isActed
                 }
                 canEdit={allowEdit && !isActed}
                 isResubmit={isResubmit}
                 canReplace={allowReplace && (isPending || isApproved) && !isActed}
                 revokeLoading={revokeEventMutation.isPending}
-                onRevoke={handleRevokeClick}
+                onRevoke={executeRevoke}
                 onEdit={handleEditClick}
                 onReplace={handleReplaceClick}
               />
@@ -411,35 +409,6 @@ const EmpLeaveRequestCard = ({
         </div>
       )}
 
-      <Modal
-        isOpen={showRevokeConfirm}
-        onClose={() => setShowRevokeConfirm(false)}
-        size="sm"
-      >
-        <div className="p-6">
-          <Typography variant="h4" className="mb-4">
-            Confirm Revocation
-          </Typography>
-          <Typography variant="bodyMedium" className="mb-6 text-gray-600">
-            Are you sure you want to revoke this leave request? This action cannot be undone.
-          </Typography>
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowRevokeConfirm(false)}
-              disabled={revokeEventMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={executeRevoke}
-              loading={revokeEventMutation.isPending}
-            >
-              Confirm
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </>
   );
 };

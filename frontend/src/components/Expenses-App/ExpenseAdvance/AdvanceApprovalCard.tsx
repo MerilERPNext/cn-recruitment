@@ -7,10 +7,11 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import Tooltip from "../../shared/Tooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 type ApprovalCardProps = {
+  actionsEnabled?: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -25,6 +26,7 @@ type ApprovalCardProps = {
 };
 
 const AdvanceApprovalCard = ({
+  actionsEnabled,
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -138,9 +140,11 @@ const AdvanceApprovalCard = ({
                   ? data?.allocated_to
                   : undefined
               }
-              RoleAssignedUsers={data?.reference_document?.custom_final_status === "Pending"
-                ? data?.role_assigned_users
-                : undefined}
+              RoleAssignedUsers={
+                data?.reference_document?.custom_final_status === "Pending"
+                  ? data?.role_assigned_users
+                  : undefined
+              }
               roles={
                 data?.reference_document?.custom_final_status === "Pending"
                   ? data?.allocated_roles
@@ -151,7 +155,7 @@ const AdvanceApprovalCard = ({
               <StatusBadge
                 status={
                   data.todo_status === "Closed" &&
-                    data.reference_document.custom_final_status !== "Rejected"
+                  data.reference_document.custom_final_status !== "Rejected"
                     ? "Approved"
                     : data.reference_document.custom_final_status
                 }
@@ -175,6 +179,7 @@ const AdvanceApprovalCard = ({
           <div className="flex items-center justify-center">
             {activeStatus === "Pending" && !isActed ? (
               <TeamApprovalActionPill
+                actionsEnabled={actionsEnabled}
                 actions={actions}
                 status={data?.reference_document?.custom_final_status}
                 recordId={data?.todo_id}
@@ -240,7 +245,7 @@ const AdvanceApprovalCard = ({
                 <StatusBadge
                   status={
                     data.todo_status === "Closed" &&
-                      data.reference_document.custom_final_status !== "Rejected"
+                    data.reference_document.custom_final_status !== "Rejected"
                       ? "Approved"
                       : data.reference_document.custom_final_status
                   }
@@ -270,8 +275,8 @@ const AdvanceApprovalCard = ({
                 users={data?.allocated_to}
                 roles={data?.allocated_roles}
                 username={data?.username}
-              RoleAssignedUsers={data?.role_assigned_users}
-            />
+                RoleAssignedUsers={data?.role_assigned_users}
+              />
 
               {activeStatus === "Approved" && (
                 <div className="flex justify-between w-full">
@@ -295,6 +300,7 @@ const AdvanceApprovalCard = ({
 
               {activeStatus === "Draft" && !isActed ? (
                 <TeamApprovalActionPill
+                  actionsEnabled={actionsEnabled}
                   variant="buttons"
                   actions={actions}
                   status={data?.reference_document?.custom_final_status}

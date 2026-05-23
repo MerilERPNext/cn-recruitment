@@ -467,7 +467,6 @@ const AdvanceDesktopRow = ({
 
       <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
         <MyApprovalActionPill
-          isPending={advance.advanceStatus === "Pending"}
           canRevoke={canRevoke}
           canEdit={canEdit}
           onRevoke={handleRevokeClick}
@@ -576,7 +575,6 @@ const AdvanceMobileRow = ({
         <div className={isActed ? "pointer-events-none opacity-50" : ""}>
           <MyApprovalActionPill
             variant="buttons"
-            isPending={advance.advanceStatus === "Pending"}
             canRevoke={canRevoke}
             canEdit={canEdit}
             onRevoke={handleRevokeClick}
