@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import { useApprovalListActions } from "../../../hooks/userApprovalList";
+import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
@@ -22,7 +22,7 @@ type TeamAdvanceDetailViewProps = {
   documentName?: string;
   referenceName?: string;
   onClose: () => void;
-  onAction?: () => void;
+  onActionComplete?: () => void;
   label?: string;
   status?: string;
 };
@@ -37,7 +37,7 @@ export default function TeamAdvanceDetailView({
   documentName,
   referenceName,
   onClose,
-  onAction,
+  onActionComplete,
   label = "Employee Advance",
   status,
 }: TeamAdvanceDetailViewProps) {
@@ -47,26 +47,59 @@ export default function TeamAdvanceDetailView({
     documentName,
     referenceName,
   );
-  const mutation = useApprovalListActions();
+  console.log("data", data);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [isActed, setIsActed] = useState(false);
 
+  const { handleAction: handleApprovalAction } = useApprovalAction();
+
+  const actions = (() => {
+    if (!data?.custom_doctype_actions) return [];
+    try {
+      return JSON.parse(data?.custom_doctype_actions);
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions:", e);
+      return [];
+    }
+  })();
+
+
+  const actionsWithForm = (() => {
+    if (!data?.custom_doctype_actions_with_form) return [];
+    try {
+      return JSON.parse(data?.custom_doctype_actions_with_form);
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions:", e);
+      return [];
+    }
+  })();
+
+
+
+
   const handleAction = useCallback(
     async (action: string) => {
+
+      const onAction = async (action: string, data: any) => {
+        handleApprovalAction(action, {
+          todo_id: data?.todo_id,
+          custom_approval_type: data?.custom_approval_type,
+          custom_open_chatnext_assistant_on_action:
+            actionsWithForm.includes(action),
+        });
+      };
+
       setCurrentAction(action);
       try {
-        await mutation.mutateAsync({
-          action,
-          name: data.todo_id,
-        });
+        await onAction(action, data);
 
         setRefetchAttendance(true);
         setIsActed(true);
         document.dispatchEvent(
           new CustomEvent("approval:acted", { detail: { id: data.todo_id } }),
         );
-        if (onAction) {
-          onAction();
+        if (onActionComplete) {
+          onActionComplete();
         } else {
           onClose();
         }
@@ -78,7 +111,7 @@ export default function TeamAdvanceDetailView({
         setCurrentAction(null);
       }
     },
-    [data, mutation, onAction, onClose, setRefetchAttendance],
+    [data, onActionComplete, onClose, setRefetchAttendance, actionsWithForm, handleApprovalAction],
   );
 
   if (isLoading) return <LoadingView onClose={onClose} label={label} />;
@@ -87,15 +120,6 @@ export default function TeamAdvanceDetailView({
     return null;
 
   const ref = data.reference_document;
-  const actions = (() => {
-    if (!data.custom_doctype_actions) return [];
-    try {
-      return JSON.parse(data.custom_doctype_actions);
-    } catch (e) {
-      console.error("Failed to parse custom_doctype_actions:", e);
-      return [];
-    }
-  })();
 
   const finalStatus =
     status ||
@@ -225,8 +249,8 @@ export default function TeamAdvanceDetailView({
 
   const ActionButtons =
     actions?.length &&
-    ["Open", "Pending", "Draft"].includes(ref.custom_final_status) &&
-    !isActed ? (
+      ["Open", "Pending", "Draft"].includes(ref.custom_final_status) &&
+      !isActed ? (
       <div className="border-t bg-white p-4">
         <TeamApprovalActionPill
           actionsEnabled={actionsEnabled}
