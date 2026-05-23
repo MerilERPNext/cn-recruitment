@@ -50,7 +50,7 @@ import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 export function TeamExpenseDetailView({
-  actionsEdnabled,
+  actionsEnabled,
   documentName,
   referenceName,
   data: propsData,
@@ -58,7 +58,7 @@ export function TeamExpenseDetailView({
   onAction,
   label = "Expense Claim",
 }: {
-  actionsEdnabled?: boolean;
+  actionsEnabled?: boolean;
   documentName?: string;
   referenceName?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1064,7 +1064,7 @@ export function TeamExpenseDetailView({
           !isActed ? (
             <div className="w-full bg-white border-t shadow-md p-4 z-20">
               <TeamApprovalActionPill
-                actionsEdnabled={actionsEdnabled}
+                actionsEnabled={actionsEnabled}
                 variant={isDesktop ? "modal" : "buttons"}
                 actions={actions}
                 status={data?.status || ref?.approval_status || ""}

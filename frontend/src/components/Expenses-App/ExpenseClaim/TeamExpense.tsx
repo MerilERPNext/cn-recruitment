@@ -36,7 +36,7 @@ const TeamExpense = () => {
     actionKey: "actions_enabled",
   };
   const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
-  const actionsEdnabled = isActionEnabled(
+  const actionsEnabled = isActionEnabled(
     uiPermissionData,
     uiPermission?.actionKey ?? "",
     uiPermission?.page,
@@ -343,7 +343,7 @@ const TeamExpense = () => {
                 noRecordsScreen={noRecordsScreen}
                 defaultFilters={{ approval_status: "Pending" }}
                 SkeletonComponent={CardSkeleton}
-                bulkSelectVisible={actionsEdnabled}
+                bulkSelectVisible={actionsEnabled}
                 onActiveFiltersChange={(filters) => {
                   setActiveStatus(filters?.approval_status || "Pending");
                 }}
@@ -355,7 +355,7 @@ const TeamExpense = () => {
                   }
                   return (
                     <ExpenseApprovalCard
-                      actionsEdnabled={actionsEdnabled}
+                      actionsEnabled={actionsEnabled}
                       isSelected={item?.isSelected}
                       onToggleSelect={item?.onToggleSelect}
                       data={item?.data}
@@ -376,7 +376,7 @@ const TeamExpense = () => {
       </div>
       {(requestId || referenceName) && (
         <TeamExpenseDetailView
-          actionsEdnabled={actionsEdnabled}
+          actionsEnabled={actionsEnabled}
           documentName={requestId || undefined}
           referenceName={referenceName || undefined}
           label="Expense Claim"

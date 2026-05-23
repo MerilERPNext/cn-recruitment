@@ -1,20 +1,20 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import useCurrentUser from "../../hooks/useCurrentUser";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetLeaveBalance } from "../../hooks/useLeaves";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import ApprovalList from "../shared/ApprovalList";
+import { getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST } from "../../utils/tableSortConfig";
+import { isActionEnabled } from "../../utils/uiPermission";
 import { FilterField } from "../DataListView";
+import ApprovalList from "../shared/ApprovalList";
 import { Typography } from "../shared/atoms/Typography";
-import CardTable from "../shared/CardTable";
 import { BulkSelectProvider } from "../shared/BulkSelectContext";
+import CardTable from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import LeaveApprovalCard from "./LeaveApprovalCard";
 import { LeaveDetailView } from "./LeaveDetails";
-import { getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST } from "../../utils/tableSortConfig";
-import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { isActionEnabled } from "../../utils/uiPermission";
 
 const TeamLeaveRequest = () => {
   const { data: currentUser } = useCurrentUser();
@@ -22,7 +22,9 @@ const TeamLeaveRequest = () => {
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const [activeStatus, setActiveStatus] = useState("Open");
 
-  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: currentEmployee } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
   const today = new Date().toISOString().split("T")[0];
   const { data: leaveBalanceData } = useGetLeaveBalance(
     currentEmployee?.name,
@@ -32,11 +34,14 @@ const TeamLeaveRequest = () => {
   const uiPermission = {
     app: "Leaves and Holidays",
     page: "Team Requests",
-    actionKey: "team_leave_request_actions"
-  }
+    actionKey: "team_leave_request_actions",
+  };
   const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
-  const actionsEdnabled = isActionEnabled(uiPermissionData, uiPermission?.actionKey ?? "", uiPermission?.page);
-
+  const actionsEnabled = isActionEnabled(
+    uiPermissionData,
+    uiPermission?.actionKey ?? "",
+    uiPermission?.page,
+  );
 
   // Build filter fields dynamically to include leave type options from balance API
   const dynamicFilterFields: FilterField[] = useMemo(() => {
@@ -131,82 +136,82 @@ const TeamLeaveRequest = () => {
   const tableTitles = isBulkSelectEnabled
     ? isRejectedFilter
       ? [
-        "Select",
-        "Request Id",
-        "Employee",
-        "Leave Type",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Leave Days",
-        "Status",
-        "Reject Reason",
-        "Actions",
-      ]
+          "Select",
+          "Request Id",
+          "Employee",
+          "Leave Type",
+          "From Date",
+          "To Date",
+          "Due Date",
+          "Leave Days",
+          "Status",
+          "Reject Reason",
+          "Actions",
+        ]
       : [
-        "Select",
-        "Request Id",
-        "Employee",
-        "Leave Type",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Leave Days",
-        "Status",
-        "Actions",
-      ]
+          "Select",
+          "Request Id",
+          "Employee",
+          "Leave Type",
+          "From Date",
+          "To Date",
+          "Due Date",
+          "Leave Days",
+          "Status",
+          "Actions",
+        ]
     : isRejectedFilter
       ? [
-        "Request Id",
-        "Employee",
-        "Leave Type",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Leave Days",
-        "Status",
-        "Reject Reason",
-        "Actions",
-      ]
+          "Request Id",
+          "Employee",
+          "Leave Type",
+          "From Date",
+          "To Date",
+          "Due Date",
+          "Leave Days",
+          "Status",
+          "Reject Reason",
+          "Actions",
+        ]
       : [
-        "Request Id",
-        "Employee",
-        "Leave Type",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Leave Days",
-        "Status",
-        "Actions",
-      ];
+          "Request Id",
+          "Employee",
+          "Leave Type",
+          "From Date",
+          "To Date",
+          "Due Date",
+          "Leave Days",
+          "Status",
+          "Actions",
+        ];
 
   const finalColumnWidths = isBulkSelectEnabled
     ? isRejectedFilter
       ? [
-        "0.5fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        "1.5fr",
-        "1fr",
-      ]
+          "0.5fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1.5fr",
+          "1fr",
+        ]
       : [
-        "0.5fr",
-        "1fr",
-        "1.5fr",
-        "1.5fr",
-        "1.5fr",
-        "1.5fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-      ]
+          "0.5fr",
+          "1fr",
+          "1.5fr",
+          "1.5fr",
+          "1.5fr",
+          "1.5fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+        ]
     : isRejectedFilter
       ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr", "1fr"]
       : ["1fr", "1.5fr", "1.5fr", "1.5fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"];
@@ -225,15 +230,17 @@ const TeamLeaveRequest = () => {
       )}
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <BulkSelectProvider>
-          <CardTable titles={tableTitles} columnWidths={finalColumnWidths}
+          <CardTable
+            titles={tableTitles}
+            columnWidths={finalColumnWidths}
             columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST(
               isBulkSelectEnabled,
-              isRejectedFilter
+              isRejectedFilter,
             )}
           >
             {currentUser?.name ? (
               <ApprovalList
-                bulkSelectVisible={actionsEdnabled}
+                bulkSelectVisible={actionsEnabled}
                 doctype={"Leave Application"}
                 refetch={refetchApprovalList}
                 setRefetch={setRefetchApprovalList}
@@ -257,7 +264,7 @@ const TeamLeaveRequest = () => {
                   }
                   return (
                     <LeaveApprovalCard
-                      actionsEdnabled={actionsEdnabled}
+                      actionsEnabled={actionsEnabled}
                       isSelected={item?.isSelected}
                       onToggleSelect={item?.onToggleSelect}
                       data={item?.data}
@@ -281,7 +288,7 @@ const TeamLeaveRequest = () => {
       </div>
       {(requestId || referenceName) && (
         <LeaveDetailView
-          actionsEdnabled={actionsEdnabled}
+          actionsEnabled={actionsEnabled}
           documentName={requestId || undefined}
           referenceName={referenceName || undefined}
           label="Leave Application"

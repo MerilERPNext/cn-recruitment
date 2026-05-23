@@ -25,7 +25,7 @@ import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 export function LeaveDetailView({
-  actionsEdnabled,
+  actionsEnabled,
   documentName,
   referenceName,
   data: propsData,
@@ -34,7 +34,7 @@ export function LeaveDetailView({
   label = "Leave Request",
   reasonName,
 }: {
-  actionsEdnabled?: boolean
+  actionsEnabled?: boolean;
   documentName?: string;
   referenceName?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,11 +55,13 @@ export function LeaveDetailView({
     error,
   } = useGetToDoWithReferenceDoc(documentName, referenceName);
 
-  const data = (documentName || referenceName) ? fetchedData : propsData;
-  console.log(data)
+  const data = documentName || referenceName ? fetchedData : propsData;
+  console.log(data);
   const { isDesktop } = useScreenSize();
 
-  const cleanDescription = DOMPurify.sanitize(data?.reference_document?.description || "");
+  const cleanDescription = DOMPurify.sanitize(
+    data?.reference_document?.description || "",
+  );
 
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [isActed, setIsActed] = useState(false);
@@ -183,7 +185,7 @@ export function LeaveDetailView({
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
 
-  return (data?.todo_id || data?.name || data?.reference_document?.name) ? (
+  return data?.todo_id || data?.name || data?.reference_document?.name ? (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}
@@ -222,8 +224,13 @@ export function LeaveDetailView({
                     : "Employee ID"}
                 </Typography>
 
-                <Typography variant="mobileCardValue" className="hover:text-primary cursor-pointer">
-                  <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+                <Typography
+                  variant="mobileCardValue"
+                  className="hover:text-primary cursor-pointer"
+                >
+                  <WrapperHoverCard
+                    employeeId={data?.reference_document?.employee}
+                  >
                     {data?.reference_document?.employee_name ||
                       data?.reference_document?.employee}
                   </WrapperHoverCard>
@@ -278,14 +285,20 @@ export function LeaveDetailView({
                 {cleanDescription}
               </Typography>
             </div>
-            {data?.reference_document?.status === "Rejected" && data?.reference_document?.custom_rejection_reason && (
-              <div className="flex flex-col gap-2">
-                <Typography variant="mobileCardLabel">Reject Reason</Typography>
-                <Typography variant="mobileCardValue" className="text-red-500 text-sm whitespace-normal">
-                  {data?.reference_document?.custom_rejection_reason}
-                </Typography>
-              </div>
-            )}
+            {data?.reference_document?.status === "Rejected" &&
+              data?.reference_document?.custom_rejection_reason && (
+                <div className="flex flex-col gap-2">
+                  <Typography variant="mobileCardLabel">
+                    Reject Reason
+                  </Typography>
+                  <Typography
+                    variant="mobileCardValue"
+                    className="text-red-500 text-sm whitespace-normal"
+                  >
+                    {data?.reference_document?.custom_rejection_reason}
+                  </Typography>
+                </div>
+              )}
           </div>
 
           {data?.attachments && data?.attachments?.length > 0 ? (
@@ -306,7 +319,7 @@ export function LeaveDetailView({
         {actions?.length > 0 && data?.status === "Open" && !isActed ? (
           <div className="w-full bg-white border-t shadow-md p-4 z-20">
             <TeamApprovalActionPill
-              actionsEdnabled={actionsEdnabled}
+              actionsEnabled={actionsEnabled}
               variant={isDesktop ? "modal" : "buttons"}
               actions={actions}
               status={data?.status}

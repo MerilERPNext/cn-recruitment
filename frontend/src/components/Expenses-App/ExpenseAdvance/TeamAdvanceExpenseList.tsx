@@ -27,7 +27,7 @@ const TeamAdvanceExpenseList = () => {
     actionKey: "actions_enabled",
   };
   const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
-  const actionsEdnabled = isActionEnabled(
+  const actionsEnabled = isActionEnabled(
     uiPermissionData,
     uiPermission?.actionKey ?? "",
     uiPermission?.page,
@@ -204,7 +204,7 @@ const TeamAdvanceExpenseList = () => {
                   custom_final_status: "Pending",
                   custom_type: "Reimbursement / Expense Advance",
                 }}
-                bulkSelectVisible={actionsEdnabled}
+                bulkSelectVisible={actionsEnabled}
                 SkeletonComponent={CardSkeleton}
                 onActiveFiltersChange={(filters) => {
                   setActiveStatus(filters?.custom_final_status || "Pending");
@@ -218,7 +218,7 @@ const TeamAdvanceExpenseList = () => {
                   }
                   return (
                     <AdvanceApprovalCard
-                      actionsEdnabled={actionsEdnabled}
+                      actionsEnabled={actionsEnabled}
                       data={item?.data}
                       isSelected={item?.isSelected}
                       onToggleSelect={item?.onToggleSelect}
@@ -238,7 +238,7 @@ const TeamAdvanceExpenseList = () => {
       </div>
       {(requestId || referenceName) && (
         <TeamAdvanceDetailView
-          actionsEdnabled={actionsEdnabled}
+          actionsEnabled={actionsEnabled}
           documentName={requestId || undefined}
           referenceName={referenceName || undefined}
           label="Employee Advance"

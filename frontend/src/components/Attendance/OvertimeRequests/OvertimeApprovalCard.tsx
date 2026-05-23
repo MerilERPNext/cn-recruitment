@@ -4,22 +4,22 @@ import { Link } from "react-router-dom";
 import { useUpdateOvertimeRejectionReason } from "../../../hooks/useAttendance";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
-import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import RejectionReasonModal from "../../shared/RejectionReasonModal";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 type ApprovalCardProps = {
-  actionsEdnabled: boolean;
+  actionsEnabled: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -32,7 +32,7 @@ type ApprovalCardProps = {
   isActed?: boolean;
 };
 const OvertimeApprovalCard = ({
-  actionsEdnabled,
+  actionsEnabled,
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -157,22 +157,33 @@ const OvertimeApprovalCard = ({
               RoleAssignedUsers={data?.role_assigned_users}
               position="left"
             >
-              <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.status !== "Rejected" ? "Approved" : data?.reference_document?.status} />
+              <StatusBadge
+                status={
+                  data?.todo_status === "Closed" &&
+                  data?.reference_document?.status !== "Rejected"
+                    ? "Approved"
+                    : data?.reference_document?.status
+                }
+              />
             </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
-            {data?.reference_document?.status === "Open" && !isActed ? <TeamApprovalActionPill
-              actionsEdnabled={actionsEdnabled}
-              actions={actions}
-              status={data?.reference_document?.status}
-              recordId={data?.todo_id}
-              loadingAction={loadingAction}
-              onAction={(action) => handleActionClick(action, data)}
-            /> : <div className="flex items-center justify-center">
-              <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
-                Action Taken
+            {data?.reference_document?.status === "Open" && !isActed ? (
+              <TeamApprovalActionPill
+                actionsEnabled={actionsEnabled}
+                actions={actions}
+                status={data?.reference_document?.status}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={(action) => handleActionClick(action, data)}
+              />
+            ) : (
+              <div className="flex items-center justify-center">
+                <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                  Action Taken
+                </div>
               </div>
-            </div>}
+            )}
           </div>
         </div>
       ) : (
@@ -221,7 +232,14 @@ const OvertimeApprovalCard = ({
                     </Typography>
                   </div>
                 </div>
-                <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.status !== "Rejected" ? "Approved" : data?.reference_document?.status} />
+                <StatusBadge
+                  status={
+                    data?.todo_status === "Closed" &&
+                    data?.reference_document?.status !== "Rejected"
+                      ? "Approved"
+                      : data?.reference_document?.status
+                  }
+                />
               </div>
 
               <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
@@ -250,25 +268,29 @@ const OvertimeApprovalCard = ({
                   </Typography>
                 </div>
               </div>
-              <div >
+              <div>
                 <Typography variant="mobileCardLabel">Assigned To</Typography>
                 <Typography variant="mobileCardValue">
                   {getAssignedUsersCell(data)}
                 </Typography>
               </div>
-              {data?.reference_document?.status === "Open" && !isActed ? <TeamApprovalActionPill
-                actionsEdnabled={actionsEdnabled}
-                variant="buttons"
-                actions={actions}
-                status={data?.reference_document?.status}
-                recordId={data?.todo_id}
-                loadingAction={loadingAction}
-                onAction={(action) => handleActionClick(action, data)}
-              /> : <div className="flex items-center justify-center">
-                <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
-                  Action Taken
+              {data?.reference_document?.status === "Open" && !isActed ? (
+                <TeamApprovalActionPill
+                  actionsEnabled={actionsEnabled}
+                  variant="buttons"
+                  actions={actions}
+                  status={data?.reference_document?.status}
+                  recordId={data?.todo_id}
+                  loadingAction={loadingAction}
+                  onAction={(action) => handleActionClick(action, data)}
+                />
+              ) : (
+                <div className="flex items-center justify-center">
+                  <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                    Action Taken
+                  </div>
                 </div>
-              </div>}
+              )}
             </div>
           </div>
         </div>

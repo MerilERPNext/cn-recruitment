@@ -11,7 +11,7 @@ import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 type ApprovalCardProps = {
-  actionsEdnabled?: boolean;
+  actionsEnabled?: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -26,7 +26,7 @@ type ApprovalCardProps = {
 };
 
 const AdvanceApprovalCard = ({
-  actionsEdnabled,
+  actionsEnabled,
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -179,7 +179,7 @@ const AdvanceApprovalCard = ({
           <div className="flex items-center justify-center">
             {activeStatus === "Pending" && !isActed ? (
               <TeamApprovalActionPill
-                actionsEdnabled={actionsEdnabled}
+                actionsEnabled={actionsEnabled}
                 actions={actions}
                 status={data?.reference_document?.custom_final_status}
                 recordId={data?.todo_id}
@@ -300,7 +300,7 @@ const AdvanceApprovalCard = ({
 
               {activeStatus === "Draft" && !isActed ? (
                 <TeamApprovalActionPill
-                  actionsEdnabled={actionsEdnabled}
+                  actionsEnabled={actionsEnabled}
                   variant="buttons"
                   actions={actions}
                   status={data?.reference_document?.custom_final_status}
