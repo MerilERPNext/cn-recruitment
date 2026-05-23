@@ -190,7 +190,7 @@ const mapFieldToFormio = (field: FieldConfig, ctx: MapperContext) => {
           input: true,
           dataSrc: "url",
           data: {
-            url: `/api/resource/City?fields="*"`,
+            url: `/api/resource/City?fields=["name","city"]`,
           },
           selectValues: "data",
           valueProperty: "name",
