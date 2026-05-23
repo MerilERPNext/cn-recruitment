@@ -83,6 +83,17 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     initialExpense &&
     (expense_claim_name || draft_document_name || isEditingFromDetailsPage),
   );
+
+  // Form.io fires an initial onChange for shareExpenseCheckbox ONLY when the submission
+  // already contains it as `true` (i.e., the expense has existing participants).
+  // The ref absorbs that single hydration fire so the drawer doesn't auto-open.
+  // For all other cases (no participants, new expense) the ref starts as `true` so
+  // the user's first manual toggle is never accidentally swallowed.
+  const hasInitialParticipants =
+    isEditingExistingExpense &&
+    Array.isArray(initialExpense?.participants) &&
+    (initialExpense?.participants as any[]).length > 0;
+  const shareCheckboxHydratedRef = useRef(!hasInitialParticipants);
   const isDraftExpenseEdit = Boolean(
     draft_document_name || initialExpense?.approval_status === "Draft",
   );
@@ -558,6 +569,14 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
                     }
 
                     if (changedKey === "shareExpenseCheckbox" && isShareAllowed) {
+                      // Skip only the very first fire in edit mode — that is always
+                      // Form.io's initial hydration event, not a real user interaction.
+                      if (!shareCheckboxHydratedRef.current) {
+                        shareCheckboxHydratedRef.current = true;
+                        setDynamicFormData((prev) => ({ ...prev, ...nextData }));
+                        return;
+                      }
+
                       const isChecked = Boolean(nextData?.shareExpenseCheckbox);
                       const currentAmount = Number(nextData?.amount ?? dynamicFormDataRef.current?.amount ?? 0);
 
