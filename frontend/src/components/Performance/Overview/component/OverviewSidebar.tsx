@@ -88,9 +88,9 @@ const feedbackData: FeedbackItem[] = [
 
 const OverviewSidebar: React.FC = () => {
   return (
-    <div aria-label="Sidebar Content" className="space-y-6">
-      <section aria-label="Tasks Section" className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-        <header className="flex items-center gap-3 mb-6">
+    <div aria-label="Sidebar Content" className="space-y-4 sm:space-y-6">
+      <section aria-label="Tasks Section" className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm sm:p-6">
+        <header className="flex items-center gap-3 mb-4 sm:mb-6">
           <Typography variant="h4" className="font-bold text-gray-900">Tasks Awaiting You</Typography>
           <div className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">{tasksData.length}</div>
         </header>
@@ -99,15 +99,15 @@ const OverviewSidebar: React.FC = () => {
           {tasksData.map((task) => {
             const Icon = task.icon;
             return (
-              <article key={task.id} aria-label={`Task: ${task.title}`} className="flex items-center lg:flex-row flex-col text-center lg:text-left flex-wrap gap-4">
+              <article key={task.id} aria-label={`Task: ${task.title}`} className="flex items-center gap-3 rounded-xl border border-gray-100 p-3 text-left lg:flex-row lg:border-0 lg:p-0">
                 <div className={`w-10 h-10 rounded-lg ${task.iconBgColor} ${task.iconTextColor} flex items-center justify-center shrink-0`}>
                   <Icon className="w-5 h-5" />
                 </div>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <Typography variant="bodySmall" className="font-medium text-gray-900 mb-1">{task.title}</Typography>
                   <Typography variant="caption" className="text-gray-500">{task.dueDate}</Typography>
                 </div>
-                <button className="px-4 py-1.5 border border-blue-200 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors">
+                <button className="shrink-0 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 sm:px-4">
                   {task.buttonText}
                 </button>
               </article>
@@ -116,33 +116,35 @@ const OverviewSidebar: React.FC = () => {
         </div>
       </section>
 
-      <section aria-label="Feedback Section" className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+      <section aria-label="Feedback Section" className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm sm:p-6">
         <header className="flex items-center gap-3 mb-2">
           <Typography variant="h4" className="font-bold text-gray-900">Recent Feedback</Typography>
           <div className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">{feedbackData.length + 2 /* keeping original count */}</div>
         </header>
         <Typography variant="bodySmall" className="text-gray-500 mb-6">Last 30 days</Typography>
 
-        <div aria-label="Feedback List" className="space-y-6">
+        <div aria-label="Feedback List" className="space-y-5 sm:space-y-6">
           {feedbackData.map((feedback, index) => (
             <React.Fragment key={feedback.id}>
               <article aria-label={`Feedback from ${feedback.authorName}`}>
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-medium text-sm">{feedback.authorInitials}</div>
-                    <div>
-                      <Typography variant="bodyMedium" className="font-medium text-gray-900">{feedback.authorName} <Typography component="span" variant="caption" className="font-normal ml-1">&middot; {feedback.authorRole}</Typography></Typography>
+                <div className="mb-2 flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="w-8 h-8 shrink-0 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-medium text-sm">{feedback.authorInitials}</div>
+                    <div className="min-w-0">
+                      <Typography variant="bodyMedium" className="font-medium leading-snug text-gray-900">{feedback.authorName} <Typography component="span" variant="caption" className="font-normal sm:ml-1">&middot; {feedback.authorRole}</Typography></Typography>
                     </div>
                   </div>
-                  <Badge label={feedback.type} backgroundColor={feedback.typeBgColor} textColor={feedback.typeTextColor} size="sm" />
+                  <div className="shrink-0">
+                    <Badge label={feedback.type} backgroundColor={feedback.typeBgColor} textColor={feedback.typeTextColor} size="sm" />
+                  </div>
                 </div>
                 {feedback.quote && (
-                  <Typography variant="bodySmall" className="text-gray-600 pl-11">
+                  <Typography variant="bodySmall" className="pl-11 text-gray-600">
                     {feedback.quote}
                   </Typography>
                 )}
               </article>
-              {index < feedbackData.length - 1 && <div className="h-px bg-gray-100 ml-11"></div>}
+              {index < feedbackData.length - 1 && <div className="ml-11 h-px bg-gray-100"></div>}
             </React.Fragment>
           ))}
         </div>

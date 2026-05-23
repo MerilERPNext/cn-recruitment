@@ -9,8 +9,8 @@ const Overview: React.FC = () => {
   const { isMobile, isDesktop } = useScreenSize();
 
   return (
-    <main aria-label="Performance Overview" className={`min-h-full bg-[#f8fafc] overflow-y-scroll ${isMobile ? 'p-4' : 'p-6'} font-sans`}>
-      <div className="max-w-screen mx-auto space-y-6">
+    <main aria-label="Performance Overview" className={`min-h-full bg-[#f8fafc] overflow-y-auto ${isMobile ? 'p-3' : 'p-6'} font-sans`}>
+      <div className="mx-auto max-w-screen space-y-4 sm:space-y-6">
 
         {/* Header Section */}
         <header aria-label="Overview Header">
@@ -23,7 +23,7 @@ const Overview: React.FC = () => {
         </section>
 
         {/* Main Content Grid */}
-        <div aria-label="Main Content Grid" className={`grid ${!isDesktop ? 'grid-cols-1' : 'grid-cols-[1fr,0.6fr]'} gap-6`}>
+        <div aria-label="Main Content Grid" className={`grid ${!isDesktop ? 'grid-cols-1' : 'grid-cols-[minmax(0,1fr),minmax(320px,0.6fr)]'} gap-4 sm:gap-6`}>
           <section aria-label="Overview Goals">
             <OverviewGoals />
           </section>

@@ -8,14 +8,14 @@ const OverviewHeader:React.FC = () => {
     const { isMobile } = useScreenSize();
 
   return (
-     <article aria-label="Cycle Information" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <div aria-label="Cycle Details" className={`flex ${isMobile ? 'flex-col' : 'flex-row'} justify-between ${isMobile ? 'items-start' : 'items-end'} gap-4 mb-8`}>
+     <article aria-label="Cycle Information" className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+              <div aria-label="Cycle Details" className={`flex ${isMobile ? 'flex-col' : 'flex-row'} justify-between ${isMobile ? 'items-start' : 'items-end'} gap-4 mb-5 sm:mb-8`}>
                 <div>
-                  <div className="flex items-center gap-2 mb-3">
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
                     <Badge label="CYCLE LIVE" backgroundColor="bg-blue-100 ring-1 ring-inset ring-blue-300" textColor="text-blue-700" size="sm" pulse={{ show: true, color: "bg-blue-600" }} />
                     <Typography variant="bodySmall" className="text-gray-500">Apr 2026 &rarr; Mar 2027 &middot; India Tech</Typography>
                   </div>
-                  <Typography variant="h3" >FY26 Annual Performance Cycle</Typography>
+                  <Typography variant="h3" className="text-xl leading-tight sm:text-2xl">FY26 Annual Performance Cycle</Typography>
                   <Typography variant="bodySmall" className="text-gray-500">Configured by HR &middot; India Tech BU &middot; 2,140 participants</Typography>
                 </div>
                 <div className={`flex flex-col ${isMobile ? 'items-start w-full' : 'items-end'}`}>
@@ -30,48 +30,48 @@ const OverviewHeader:React.FC = () => {
               </div>
     
               {/* Stepper */}
-              <div className={`flex items-center w-full max-w-xl gap-3 ${isMobile ? 'overflow-x-auto hide-scrollbar pb-2' : ''}`}>
+              <div className={`flex items-start w-full max-w-xl gap-2 sm:items-center sm:gap-3 ${isMobile ? 'overflow-x-auto hide-scrollbar pb-2' : ''}`}>
                 <div className="flex items-center gap-2 shrink-0">
-                  <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center">
+                  <div className="w-6 h-6 shrink-0 rounded-full bg-green-500 text-white flex items-center justify-center">
                     <Check className="w-4 h-4" />
                   </div>
-                  <Typography variant="bodySmall" className="font-medium text-green-600">Goal Setting</Typography>
+                  <Typography variant="bodySmall" className="whitespace-nowrap font-medium text-green-600">Goal Setting</Typography>
                 </div>
                 
-                <div className="flex-1 h-[2px] bg-green-400 rounded-md"></div>
+                <div className="mt-3 h-[2px] min-w-5 flex-1 rounded-md bg-green-400 sm:mt-0"></div>
                 
                 <div className="flex items-center gap-2 shrink-0">
-                  <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">
+                  <div className="w-6 h-6 shrink-0 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">
                     2
                   </div>
-                  <Typography variant="bodySmall" className="font-medium text-gray-900">Self-Review</Typography>
+                  <Typography variant="bodySmall" className="whitespace-nowrap font-medium text-gray-900">Self-Review</Typography>
                 </div>
                 
-                <div className="flex-1 h-px bg-gray-200"></div>
+                <div className="mt-3 h-px min-w-5 flex-1 bg-gray-200 sm:mt-0"></div>
                 
                 <div className="flex items-center gap-2 shrink-0">
-                  <div className="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">
+                  <div className="w-6 h-6 shrink-0 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">
                     3
                   </div>
-                  <Typography variant="bodySmall" className="font-medium text-gray-500">Manager Review</Typography>
+                  <Typography variant="bodySmall" className="whitespace-nowrap font-medium text-gray-500">Manager Review</Typography>
                 </div>
     
-                <div className="flex-1 h-px bg-gray-200"></div>
+                <div className="mt-3 h-px min-w-5 flex-1 bg-gray-200 sm:mt-0"></div>
     
                 <div className="flex items-center gap-2 shrink-0">
-                  <div className="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">
+                  <div className="w-6 h-6 shrink-0 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">
                     4
                   </div>
-                  <Typography variant="bodySmall" className="font-medium text-gray-500">Calibration</Typography>
+                  <Typography variant="bodySmall" className="whitespace-nowrap font-medium text-gray-500">Calibration</Typography>
                 </div>
     
-                <div className="flex-1 h-px bg-gray-200"></div>
+                <div className="mt-3 h-px min-w-5 flex-1 bg-gray-200 sm:mt-0"></div>
     
                 <div className="flex items-center gap-2 shrink-0">
-                  <div className="w-6 h-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">
+                  <div className="w-6 h-6 shrink-0 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">
                     5
                   </div>
-                  <Typography variant="bodySmall" className="font-medium text-gray-500">Released</Typography>
+                  <Typography variant="bodySmall" className="whitespace-nowrap font-medium text-gray-500">Released</Typography>
                 </div>
               </div>
             </article>

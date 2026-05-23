@@ -110,42 +110,42 @@ const OverviewGoals: React.FC = () => {
 
   return (
     <article aria-label="My Goals Container" className=" space-y-6">
-      <section aria-label="Goals List Area" className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-        <header className={`flex ${isMobile ? 'flex-col items-start gap-4' : 'justify-between items-center'} mb-6`}>
+      <section aria-label="Goals List Area" className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm sm:p-6">
+        <header className={`flex ${isMobile ? 'flex-col items-start gap-3' : 'justify-between items-center'} mb-4 sm:mb-6`}>
           <div className="flex items-center gap-3">
             <Typography variant="h4" className="font-bold text-gray-900">My Goals</Typography>
             <div className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">{goalsData.length}</div>
           </div>
           <div className={`flex ${isMobile ? 'justify-between w-full' : 'items-center'} gap-3 text-sm`}>
             <Typography variant="bodySmall" className="text-gray-500">Sum of weightage: <span className="font-semibold text-gray-900">100%</span></Typography>
-            <button className="text-blue-600 font-medium hover:text-blue-700 flex items-center gap-1">
+            <button className="flex shrink-0 items-center gap-1 font-medium text-blue-600 hover:text-blue-700">
               Open all <ArrowRight className="w-3 h-3" />
             </button>
           </div>
         </header>
 
-        <div aria-label="Goals Cards" className="space-y-4">
+        <div aria-label="Goals Cards" className="space-y-3 sm:space-y-4">
           {goalsData.map((goal) => (
-            <article key={goal.id} aria-label={`Goal: ${goal.title}`} className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center gap-4'} p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors`}>
-              <div className="flex items-start gap-3 flex-1 w-full">
+            <article key={goal.id} aria-label={`Goal: ${goal.title}`} className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center gap-4'} p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors sm:p-4`}>
+              <div className="flex w-full flex-1 items-start gap-3">
                 <div className="self-start mt-1">
                   <Badge label={goal.type} backgroundColor={goal.typeBgColor} textColor={goal.typeTextColor} size="sm" />
                 </div>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <Typography variant="bodySmall" className="font-semibold text-gray-900 mb-1">{goal.title}</Typography>
-                  <Typography variant="caption" className="text-gray-500">Weightage <span className="font-semibold text-gray-700">{goal.weightage}</span> &middot; {goal.category} &middot; {goal.progressText}</Typography>
+                  <Typography variant="caption" className="block leading-5 text-gray-500">Weightage <span className="font-semibold text-gray-700">{goal.weightage}</span> &middot; {goal.category} &middot; {goal.progressText}</Typography>
                 </div>
               </div>
-              <div className={`flex ${isMobile ? 'w-full justify-between items-center mt-2' : 'items-center gap-4'}`}>
-                <div className={`${isMobile ? 'w-1/2' : 'w-32'} flex flex-col items-end gap-2`}>
+              <div className={`flex ${isMobile ? 'w-full flex-col gap-3 mt-1' : 'items-center gap-4'}`}>
+                <div className={`${isMobile ? 'w-full' : 'w-32'} flex flex-col items-end gap-2`}>
                   <div className="w-full flex items-center gap-3">
-                    <Typography variant="caption" className="font-medium text-gray-500">{goal.progressPercentage}%</Typography>
+                    <Typography variant="caption" className="w-8 shrink-0 font-medium text-gray-500">{goal.progressPercentage}%</Typography>
                     <div className="w-full bg-gray-100 rounded-md h-1.5 overflow-hidden">
                       <div className={`h-1.5 rounded-md ${goal.progressColor}`} style={{ width: `${goal.progressPercentage}%` }}></div>
                     </div>
                   </div>
                 </div>
-                <div className={`${isMobile ? 'w-auto' : 'w-24 flex justify-end'}`}>
+                <div className={`${isMobile ? 'w-full' : 'w-24 flex justify-end'}`}>
                   <Badge label={goal.status} backgroundColor={goal.statusBgColor} textColor={goal.statusTextColor} size="sm" pulse={{ show: true, color: goal.statusPulse }} />
                 </div>
               </div>
