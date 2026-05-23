@@ -687,7 +687,7 @@ export function TeamExpenseDetailView({
                   Due in{" "}
                   {Math.ceil(
                     (new Date(data.due_date).getTime() - Date.now()) /
-                      (1000 * 60 * 60 * 24),
+                    (1000 * 60 * 60 * 24),
                   )}{" "}
                   days
                 </span>
@@ -850,36 +850,32 @@ export function TeamExpenseDetailView({
                             </div>
                           )}
 
-                          {(item?.custom_claim_type_name?.toLowerCase() ===
-                            "travel" ||
-                            item?.expense_type?.toLowerCase() === "travel") && (
-                            <>
+                          {item.custom_odometer_from !== undefined &&
+                            item.custom_odometer_from !== null &&
+                            item.custom_odometer_from !== "" && (
                               <div className="flex flex-col gap-1">
                                 <Typography variant="mobileCardLabel">
                                   ODOMETER FROM
                                 </Typography>
                                 <Typography variant="mobileCardValue">
-                                  {item.custom_odometer_from !== undefined &&
-                                  item.custom_odometer_from !== null &&
-                                  item.custom_odometer_from !== ""
-                                    ? String(item.custom_odometer_from)
-                                    : "--"}
+                                  {String(item.custom_odometer_from)}
                                 </Typography>
                               </div>
+                            )}
+
+                          {item.custom_odometer_to !== undefined &&
+                            item.custom_odometer_to !== null &&
+                            item.custom_odometer_to !== "" && (
                               <div className="flex flex-col gap-1">
                                 <Typography variant="mobileCardLabel">
                                   ODOMETER TO
                                 </Typography>
                                 <Typography variant="mobileCardValue">
-                                  {item.custom_odometer_to !== undefined &&
-                                  item.custom_odometer_to !== null &&
-                                  item.custom_odometer_to !== ""
-                                    ? String(item.custom_odometer_to)
-                                    : "--"}
+                                  {String(item.custom_odometer_to)}
                                 </Typography>
                               </div>
-                            </>
-                          )}
+                            )}
+
 
                           {item.custom_start_datetime && (
                             <div className="flex flex-col gap-1">
@@ -1059,9 +1055,9 @@ export function TeamExpenseDetailView({
           </div>
 
           {actions?.length > 0 &&
-          status?.label === "Pending" &&
-          data?.todo_status !== "Closed" &&
-          !isActed ? (
+            status?.label === "Pending" &&
+            data?.todo_status !== "Closed" &&
+            !isActed ? (
             <div className="w-full bg-white border-t shadow-md p-4 z-20">
               <TeamApprovalActionPill
                 actionsEnabled={actionsEnabled}
