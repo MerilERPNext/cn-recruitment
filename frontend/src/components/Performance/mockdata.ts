@@ -8,7 +8,7 @@ import type {
   ProjectTone,
   ProjectToneClasses,
   SkillsLibraryItem,
-} from "./Types";
+} from "./types";
 
 export const PROJECT_TONES: Record<ProjectTone, ProjectToneClasses> = {
   primary: {

@@ -3,8 +3,8 @@ import { Check, Search, Sparkles, Trash2, X } from "lucide-react";
 import Badge from "../../shared/Badge";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { learningPlan, proficiencyLevels, skillsLibrary } from "./mockData";
-import type { Skill } from "./Types";
+import { learningPlan, proficiencyLevels, skillsLibrary } from "../mockdata";
+import type { Skill } from "../types";
 
 interface EditSkillPopupProps {
   skill: Skill;

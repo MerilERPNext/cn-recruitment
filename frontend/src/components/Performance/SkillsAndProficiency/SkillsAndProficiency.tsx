@@ -3,8 +3,8 @@ import { ChevronRight, Download, Plus, Sparkles, TrendingUp } from "lucide-react
 import Badge from "../../shared/Badge";
 import { Typography } from "../../shared/atoms/Typography";
 import EditSkillPopup from "./EditSkillPopup";
-import { categories, categoryFilters, focusAreas, levelLabels, metricCards, PROJECT_TONES } from "./mockData";
-import type { Skill } from "./Types";
+import { categories, categoryFilters, focusAreas, levelLabels, metricCards, PROJECT_TONES } from "../mockdata";
+import type { Skill } from "../types";
 
 const getLevelTone = (level: number) => {
   if (level === 5) return PROJECT_TONES.success.bar;
