@@ -1,14 +1,15 @@
-import { type MouseEvent, useState } from 'react';
+import { lazy, Suspense, type MouseEvent, useState } from 'react';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import Button from '../../shared/atoms/Button';
 import Modal from '../../shared/Modal';
 import PageLayoutWrapper from '../../shared/PageLayoutWrapper';
-import DefineGoal from './component/DefineGoal';
-import GoalAlignment from './component/GoalAlignment';
-import GoalLibraryPopup from './component/GoalLibraryPopup';
-import StartGoalSelection from './component/StartGoalSelection';
-import VisibilityAndSubmit from './component/VisibilityAndSubmit';
 import { useScreenSize } from '../../../hooks/useScreenSize';
+
+const DefineGoal = lazy(() => import('./component/DefineGoal'));
+const GoalAlignment = lazy(() => import('./component/GoalAlignment'));
+const GoalLibraryPopup = lazy(() => import('./component/GoalLibraryPopup'));
+const StartGoalSelection = lazy(() => import('./component/StartGoalSelection'));
+const VisibilityAndSubmit = lazy(() => import('./component/VisibilityAndSubmit'));
 
 type GoalWizardStep = 'start' | 'define' | 'alignment' | 'visibility';
 
@@ -53,6 +54,17 @@ const stepDefinitions: {
             backLabel: 'Back to Alignment',
         },
     ];
+
+const LazySectionFallback = () => (
+    <div className="min-h-[240px] rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="h-5 w-40 animate-pulse rounded bg-gray-100" />
+        <div className="mt-5 space-y-3">
+            <div className="h-20 animate-pulse rounded-lg bg-gray-100" />
+            <div className="h-20 animate-pulse rounded-lg bg-gray-100" />
+            <div className="h-20 animate-pulse rounded-lg bg-gray-100" />
+        </div>
+    </div>
+);
 
 const NewGoal = () => {
     const { isMobile } = useScreenSize();
@@ -159,7 +171,9 @@ const NewGoal = () => {
                     </div>
                 }
             >
-                {renderStepContent()}
+                <Suspense fallback={<LazySectionFallback />}>
+                    {renderStepContent()}
+                </Suspense>
             </PageLayoutWrapper>
 
             <Modal
@@ -168,7 +182,9 @@ const NewGoal = () => {
                 size={isMobile ? 'full' : 'xl'}
                 className="max-w-[1300px] p-0"
             >
-                <GoalLibraryPopup onClose={() => setIsGoalLibraryOpen(false)} />
+                <Suspense fallback={<LazySectionFallback />}>
+                    <GoalLibraryPopup onClose={() => setIsGoalLibraryOpen(false)} />
+                </Suspense>
             </Modal>
         </>
     );

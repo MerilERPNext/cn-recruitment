@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import  { useState } from 'react';
 import Badge from '../../shared/Badge';
 import { Typography } from '../../shared/atoms/Typography';
 import { useScreenSize } from '../../../hooks/useScreenSize';
