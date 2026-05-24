@@ -1,47 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { BookOpen, Check, Search, Sparkles, Trash2, UserRound, X } from "lucide-react";
+import { Check, Search, Sparkles, Trash2, X } from "lucide-react";
 import Badge from "../../shared/Badge";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-
-interface EditableSkill {
-  name: string;
-  lastAssessed: string;
-  mentor: string;
-  current: number;
-  target: number;
-  delta: string;
-}
+import { learningPlan, proficiencyLevels, skillsLibrary } from "./mockData";
+import type { Skill } from "./Types";
 
 interface EditSkillPopupProps {
-  skill: EditableSkill;
+  skill: Skill;
   onClose: () => void;
 }
-
-const skillsLibrary = [
-  { name: "User Research", hot: true },
-  { name: "Usability Testing", featured: true },
-  { name: "Survey Design" },
-  { name: "Quant Research" },
-  { name: "Generative Research", hot: true },
-  { name: "Diary Studies" },
-  { name: "Card Sorting" },
-  { name: "A/B Testing & Experimentation", hot: true },
-];
-
-const proficiencyLevels = [
-  { level: 1, label: "Novice", description: "Aware of the concept. Needs heavy guidance. Can't deliver independently." },
-  { level: 2, label: "Beginner", description: "Performs basic tasks with supervision. Recognises common patterns." },
-  { level: 3, label: "Intermediate", description: "Independent on standard work. Asks for help on ambiguous problems." },
-  { level: 4, label: "Advanced", description: "Can teach others. Handles complex cases. Mentors mid-level peers." },
-  { level: 5, label: "Expert", description: "Industry-level authority. Sets the standard for the team / function." },
-];
-
-const learningPlan = [
-  { icon: UserRound, title: "Riya Banerjee - weekly research craft 1:1", action: "Mentor" },
-  { icon: Sparkles, title: "Just Enough Research - Erika Hall", action: "Book - LMS" },
-  { icon: BookOpen, title: "Shadow 4 usability sessions this quarter", action: "Action" },
-];
 
 const getLevelLabel = (level: number) => proficiencyLevels.find((item) => item.level === level)?.label ?? "Beginner";
 
