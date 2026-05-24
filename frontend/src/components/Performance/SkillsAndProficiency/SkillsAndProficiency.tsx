@@ -49,11 +49,11 @@ const SkillsAndProficiency: React.FC = () => {
               </Typography>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
-              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-100 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-primary-50 sm:px-4">
+              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-gray-100 bg-white px-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-primary-50 sm:px-4" aria-label="Export skills PDF">
                 <Download className="h-4 w-4" />
                 Export PDF
               </button>
-              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600 sm:px-4">
+              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary-500 px-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-600 sm:px-4" aria-label="Add skill">
                 <Plus className="h-4 w-4" />
                 Add Skill
               </button>
@@ -175,10 +175,10 @@ const SkillsAndProficiency: React.FC = () => {
                         </div>
 
                         <button
+                          aria-label={`Edit ${skill.name}`}
                           type="button"
                           className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-100 text-gray-500 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700"
                           onClick={() => setSelectedSkill(skill)}
-                          aria-label={`Edit ${skill.name}`}
                         >
                           <ChevronRight className="h-4 w-4" />
                         </button>
@@ -193,6 +193,7 @@ const SkillsAndProficiency: React.FC = () => {
               <button
                 type="button"
                 className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-200 bg-white text-sm font-medium text-primary-700 transition-colors hover:border-primary-200 hover:bg-primary-50"
+                aria-label="Add a skill from the library"
               >
                 <Plus className="h-4 w-4" />
                 Add a skill from the library (200+ available)

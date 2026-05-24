@@ -207,10 +207,10 @@ const TeamOverview: React.FC = () => {
             <div
               className={`flex items-center gap-3 ${isCompact ? "flex-wrap w-full" : ""}`}
             >
-              <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-700 font-medium hover:bg-gray-50 transition-colors bg-white">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-700 font-medium hover:bg-gray-50 transition-colors bg-white" aria-label="Filter team by status">
                 All status <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
               </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-700 font-medium hover:bg-gray-50 transition-colors bg-white">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-700 font-medium hover:bg-gray-50 transition-colors bg-white" aria-label="Sort team by progress">
                 Sort: progress{" "}
                 <ArrowUp className="w-3 h-3 text-gray-400 rotate-180" />
               </button>

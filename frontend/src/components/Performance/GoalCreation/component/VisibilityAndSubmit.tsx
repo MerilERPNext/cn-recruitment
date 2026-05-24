@@ -146,6 +146,7 @@ const VisibilityAndSubmit = ({ onSubmitForApproval }: VisibilityAndSubmitProps) 
                                         }`}
                                 >
                                     <input
+                                        aria-label={`Set goal visibility to ${setting.label}`}
                                         checked={isSelected}
                                         className="mt-1 h-4 w-4 accent-blue-600"
                                         name="goal-visibility"

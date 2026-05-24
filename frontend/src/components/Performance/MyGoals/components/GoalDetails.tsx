@@ -81,6 +81,7 @@ const GoalDetails: React.FC = () => {
         
         {/* Back Button */}
         <button 
+          aria-label="Back to goals"
           onClick={() => navigate(-1)}
           className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors mb-2"
         >
@@ -202,6 +203,7 @@ const GoalDetails: React.FC = () => {
                         type="text" 
                         defaultValue={goal.current}
                         className="w-full border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        aria-label="New goal progress value"
                       />
                       <span className="bg-gray-50 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
                         {goal.unit.split(' ')[0]}
@@ -237,6 +239,7 @@ const GoalDetails: React.FC = () => {
                   className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[100px] mb-4"
                   placeholder="Add details about your progress..."
                   defaultValue="Shipped Goals list + tree view. Calibration screen blocked on data model — coordinating with backend."
+                  aria-label="Goal progress details"
                 ></textarea>
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

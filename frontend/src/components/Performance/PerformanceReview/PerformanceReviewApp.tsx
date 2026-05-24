@@ -121,6 +121,7 @@ const PerformanceReviewApp = () => {
           </div>
 
           <textarea
+            aria-label="Optional comment for manager"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Optional comment for your manager..."
@@ -131,6 +132,7 @@ const PerformanceReviewApp = () => {
             <label className="flex items-center gap-3 cursor-pointer group">
               <div className="relative flex items-center justify-center w-5 h-5 border rounded border-gray-300 bg-white group-hover:border-blue-500 transition-colors">
                 <input 
+                  aria-label="Confirm rating acknowledgement"
                   type="checkbox" 
                   className="peer sr-only"
                   checked={agreed}
@@ -145,10 +147,10 @@ const PerformanceReviewApp = () => {
             </label>
 
             <div className={`flex ${isMobile ? 'flex-col' : 'flex-row items-center'} items-stretch gap-3 w-full sm:w-auto`}>
-              <button className="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-red-200 text-red-600 font-medium text-sm hover:bg-red-50 transition-colors">
+              <button className="w-full sm:w-auto px-5 py-2.5 rounded-lg border border-red-200 text-red-600 font-medium text-sm hover:bg-red-50 transition-colors" aria-label="Raise a concern">
                 Raise a Concern
               </button>
-              <button className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${agreed ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm' : 'bg-blue-300 text-white cursor-not-allowed'}`}>
+              <button className={`w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg font-medium text-sm transition-colors ${agreed ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm' : 'bg-blue-300 text-white cursor-not-allowed'}`} aria-label="Acknowledge and e-sign performance review">
                 Acknowledge & e-Sign <ArrowRight className="w-4 h-4" />
               </button>
             </div>

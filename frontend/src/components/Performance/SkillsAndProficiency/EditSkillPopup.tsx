@@ -87,6 +87,7 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
                   <button
                     key={item.name}
                     type="button"
+                    aria-label={`Select ${item.name} skill`}
                     className={`flex h-10 items-center justify-between rounded-md border px-3 text-left text-xs transition ${
                       isCompact ? "w-auto min-w-[150px] shrink-0" : "w-full"
                     } ${
@@ -109,6 +110,7 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
             <button
               type="button"
               className="mt-3 h-9 w-full rounded-md border border-dashed border-gray-200 text-[11px] font-bold text-primary-700 transition hover:border-primary-200 hover:bg-primary-50"
+              aria-label="Suggest a new skill"
             >
               + Suggest a new skill
             </button>
@@ -212,6 +214,7 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
               <textarea
                 className="mt-2 min-h-[86px] w-full resize-none rounded-lg border border-gray-200 px-4 py-3 text-sm leading-6 text-gray-800 outline-none transition focus:border-primary-300 focus:ring-2 focus:ring-primary-50"
                 defaultValue={`Oxygen 2.0 rollout needs deeper ${skill.name.toLowerCase()} craft - I've been leaning on ${skill.mentor.split(" ")[0]} for every study. Closing this gap unlocks independence on H2 product bets.`}
+                aria-label={`Why upskill in ${skill.name}`}
               />
             </label>
 
@@ -240,6 +243,7 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
               <button
                 type="button"
                 className="mt-3 flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-primary-100 bg-white text-xs font-semibold text-primary-700 transition hover:border-primary-200 hover:bg-primary-50"
+                aria-label="Add learning resource or action"
               >
                 + Add resource or action
               </button>
@@ -247,6 +251,7 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
 
             <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-warning-200 bg-warning-50 px-4 py-3">
               <input
+                aria-label={`Mark ${skill.name} as FY26 focus skill`}
                 type="checkbox"
                 checked={isFocusSkill}
                 onChange={(event) => setIsFocusSkill(event.target.checked)}
@@ -266,7 +271,7 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
 
         <div className={`shrink-0 border-t border-gray-100 bg-primary-50/70 ${isCompact ? "px-4 py-3" : "px-6 py-4"}`}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <button type="button" className="inline-flex items-center gap-2 text-sm font-bold text-error-600 hover:text-error-700">
+          <button type="button" className="inline-flex items-center gap-2 text-sm font-bold text-error-600 hover:text-error-700" aria-label={`Remove ${skill.name}`}>
             <Trash2 className="h-4 w-4" />
             Remove skill
           </button>
@@ -276,10 +281,11 @@ const EditSkillPopup: React.FC<EditSkillPopupProps> = ({ skill, onClose }) => {
               type="button"
               className="h-10 rounded-lg border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
               onClick={onClose}
+              aria-label="Cancel editing skill"
             >
               Cancel
             </button>
-            <button type="button" className="h-10 rounded-lg bg-primary-500 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-600" onClick={onClose}>
+            <button type="button" className="h-10 rounded-lg bg-primary-500 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-600" onClick={onClose} aria-label={`Save ${skill.name}`}>
               Save Skill
             </button>
           </div>

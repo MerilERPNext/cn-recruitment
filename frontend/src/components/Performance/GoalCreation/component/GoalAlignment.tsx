@@ -228,6 +228,7 @@ const GoalAlignment = () => {
                             <span className="text-3xl font-bold text-violet-600">{contribution}%</span>
                         </div>
                         <input
+                            aria-label="Your contribution percentage"
                             className="h-2 w-full accent-violet-600"
                             type="range"
                             min="0"
@@ -339,6 +340,7 @@ const GoalAlignment = () => {
                                 className={`flex cursor-pointer gap-3 rounded-xl p-4 transition-colors ${selectedOptions.includes(option.label) ? 'bg-blue-50' : 'bg-white hover:bg-gray-50'}`}
                             >
                                 <input
+                                    aria-label={`Toggle ${option.label} alignment option`}
                                     checked={selectedOptions.includes(option.label)}
                                     className="mt-1 h-4 w-4 accent-blue-600"
                                     type="checkbox"

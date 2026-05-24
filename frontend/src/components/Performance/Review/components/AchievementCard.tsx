@@ -24,9 +24,10 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement })
         <label className="block text-sm font-medium text-gray-700">
           Achievement title <span className="text-red-500">*</span>
         </label>
-        <Button variant="outline" bgColor="text" size="sm" className="text-gray-600 h-8">Remove</Button>
+        <Button variant="outline" bgColor="text" size="sm" className="text-gray-600 h-8" aria-label="Remove achievement">Remove</Button>
       </div>
       <input 
+        aria-label="Achievement title"
         type="text" 
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -37,6 +38,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement })
         Impact & evidence <span className="text-red-500">*</span>
       </label>
       <textarea 
+        aria-label="Achievement impact and evidence"
         value={impact}
         onChange={(e) => setImpact(e.target.value)}
         rows={4}
@@ -45,7 +47,7 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({ achievement })
       />
       
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <button className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 transition-colors text-sm font-medium text-left">
+        <button className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 transition-colors text-sm font-medium text-left" aria-label="Attach achievement evidence">
           <Plus className="w-4 h-4 shrink-0" /> <span className="whitespace-normal sm:whitespace-nowrap">Attach evidence (Figma, doc, dashboard)</span>
         </button>
         <Typography variant="caption" className="text-gray-400 self-end sm:self-auto">{impact.length} / 1000</Typography>

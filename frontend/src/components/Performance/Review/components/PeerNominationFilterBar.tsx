@@ -21,6 +21,7 @@ export const PeerNominationFilterBar: React.FC<PeerNominationFilterBarProps> = (
           <Search className="w-4 h-4" />
         </div>
         <input 
+          aria-label="Search peer nominees"
           type="text" 
           placeholder="Search PW employees by name, team or BU..." 
           className="flex-1 h-full outline-none text-sm text-gray-900 placeholder:text-gray-400 bg-transparent w-full"

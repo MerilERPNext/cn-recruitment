@@ -158,11 +158,13 @@ const DefineGoal = () => {
                     <input
                         className="mb-3 h-12 w-full rounded-lg border border-violet-200 bg-white px-4 text-base font-semibold text-gray-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
                         defaultValue="Ship Oxygen 2.0 dashboard to 100% of PW employees"
+                        aria-label="Goal objective title"
                     />
 
                     <textarea
                         className="mb-5 min-h-[76px] w-full resize-none rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm leading-5 text-gray-600 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                         defaultValue="Lead the design + research for the redesigned dashboard. Drive adoption past 80% WAU. Coordinate with PMM and CS for rollout comms. Quarterly progress reviews with Aditi."
+                        aria-label="Goal objective description"
                     />
 
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr_1fr_1fr]">
@@ -170,6 +172,7 @@ const DefineGoal = () => {
                             <label className={labelClass}>Weightage</label>
                             <div className="flex items-center gap-3">
                                 <input
+                                    aria-label="Goal weightage"
                                     className="h-2 w-full accent-blue-600"
                                     type="range"
                                     min="0"
@@ -193,12 +196,12 @@ const DefineGoal = () => {
 
                         <div>
                             <label className={labelClass}>Start Date</label>
-                            <input className={fieldClass} defaultValue="2026-04-01" type="date" />
+                            <input className={fieldClass} defaultValue="2026-04-01" type="date" aria-label="Goal start date" />
                         </div>
 
                         <div>
                             <label className={labelClass}>End Date</label>
-                            <input className={fieldClass} defaultValue="2026-12-31" type="date" />
+                            <input className={fieldClass} defaultValue="2026-12-31" type="date" aria-label="Goal end date" />
                         </div>
                     </div>
 
@@ -255,6 +258,7 @@ const DefineGoal = () => {
                                     <input
                                         className="h-10 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                                         defaultValue={result.title}
+                                        aria-label={`${result.id} key result title`}
                                     />
 
                                     {result.suggested ? (
@@ -263,7 +267,7 @@ const DefineGoal = () => {
                                         </div>
                                     ) : null}
 
-                                    <button type="button" className="shrink-0 text-gray-400 hover:text-gray-600">
+                                    <button type="button" className="shrink-0 text-gray-400 hover:text-gray-600" aria-label={`Remove ${result.id} key result`}>
                                         <X className="h-4 w-4" />
                                     </button>
                                 </div>
@@ -281,28 +285,28 @@ const DefineGoal = () => {
 
                                     <div>
                                         <label className={labelClass}>Start</label>
-                                        <input className={fieldClass} defaultValue={result.start} />
+                                        <input className={fieldClass} defaultValue={result.start} aria-label={`${result.id} start value`} />
                                     </div>
 
                                     <div>
                                         <label className={labelClass}>Current</label>
-                                        <input className={fieldClass} defaultValue={result.current} />
+                                        <input className={fieldClass} defaultValue={result.current} aria-label={`${result.id} current value`} />
                                     </div>
 
                                     <div>
                                         <label className={labelClass}>Target</label>
-                                        <input className={fieldClass} defaultValue={result.target} />
+                                        <input className={fieldClass} defaultValue={result.target} aria-label={`${result.id} target value`} />
                                     </div>
 
                                     <div>
                                         <label className={labelClass}>Unit</label>
-                                        <input className={fieldClass} defaultValue={result.unit} />
+                                        <input className={fieldClass} defaultValue={result.unit} aria-label={`${result.id} unit`} />
                                     </div>
 
                                     <div>
                                         <label className={labelClass}>Weight</label>
                                         <div className="flex items-center gap-1">
-                                            <input className={fieldClass} defaultValue={result.weight} />
+                                            <input className={fieldClass} defaultValue={result.weight} aria-label={`${result.id} weight`} />
                                             <span className="text-xs text-gray-500">%</span>
                                         </div>
                                     </div>
@@ -329,6 +333,7 @@ const DefineGoal = () => {
                     <button
                         type="button"
                         className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 text-sm font-medium text-violet-700 hover:border-violet-200 hover:bg-violet-50"
+                        aria-label="Add key result"
                     >
                         <Plus className="h-4 w-4" />
                         Add Key Result (3 of 5)

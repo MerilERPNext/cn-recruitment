@@ -239,6 +239,7 @@ const TeamCalibration: React.FC = () => {
                   <select
                     className="appearance-none w-24 bg-white border border-gray-200 text-gray-900 text-xs font-bold rounded-md px-2.5 py-1.5 pr-6 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-shadow cursor-pointer"
                     defaultValue={emp.myProposal}
+                    aria-label={`Select proposal rating for ${emp.name}`}
                   >
                     <option value="Outstanding">Outstanding</option>
                     <option value="Exceeds">Exceeds</option>

@@ -118,7 +118,7 @@ const OverviewGoals: React.FC = () => {
           </div>
           <div className={`flex ${isMobile ? 'justify-between w-full' : 'items-center'} gap-3 text-sm`}>
             <Typography variant="bodySmall" className="text-gray-500">Sum of weightage: <span className="font-semibold text-gray-900">100%</span></Typography>
-            <button className="flex shrink-0 items-center gap-1 font-medium text-blue-600 hover:text-blue-700">
+            <button className="flex shrink-0 items-center gap-1 font-medium text-blue-600 hover:text-blue-700" aria-label="Open all goals">
               Open all <ArrowRight className="w-3 h-3" />
             </button>
           </div>

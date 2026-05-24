@@ -226,6 +226,7 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
                 {/* Sub-goal Title */}
                 <div className="col-span-4">
                   <input
+                    aria-label={`${r.name} sub-goal title`}
                     type="text"
                     value={r.subGoalTitle}
                     onChange={(e) => handleTitleChange(r.id, e.target.value)}
@@ -237,6 +238,7 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
                 <div className="col-span-1">
                   <div className="flex items-center border border-gray-200 rounded-md overflow-hidden bg-white focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-300 transition-shadow">
                     <input
+                      aria-label={`${r.name} weightage`}
                       type="number"
                       value={r.weightage}
                       onChange={(e) =>
@@ -253,6 +255,7 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
                 {/* Contribution Slider */}
                 <div className="col-span-2 flex items-center gap-3 pr-4">
                   <input
+                    aria-label={`${r.name} contribution`}
                     type="range"
                     min="0"
                     max="100"
@@ -273,7 +276,7 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
                 {/* Status & Action */}
                 <div className="col-span-2 flex items-center justify-between pl-4">
                   {getStatusBadge(r.status)}
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                  <button className="text-gray-400 hover:text-gray-600 transition-colors" aria-label={`Open branch details for ${r.name}`}>
                     <GitBranch className="w-4 h-4" />
                   </button>
                 </div>

@@ -45,6 +45,7 @@ export const RatingCard: React.FC<RatingCardProps> = ({ title, description, requ
           return (
             <button
               key={opt.value}
+              aria-label={`Select ${opt.label} rating`}
               onClick={() => onChange(opt.value)}
               className={`flex flex-col items-center justify-center p-3 rounded-lg border transition-all ${
                 isSelected 
@@ -66,6 +67,7 @@ export const RatingCard: React.FC<RatingCardProps> = ({ title, description, requ
       <div className="flex flex-col gap-2">
         <Typography variant="caption" className="text-gray-700 font-medium tracking-wide">Comment (optional)</Typography>
         <textarea
+          aria-label="Rating comment"
           value={comment}
           onChange={(e) => onCommentChange(e.target.value)}
           placeholder="A specific example that supports your rating..."

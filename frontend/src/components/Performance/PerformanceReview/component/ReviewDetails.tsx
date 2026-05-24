@@ -127,7 +127,7 @@ export function ReviewDetails() {
           </div>
 
           <div className="flex items-center justify-start">
-            <button className="bg-blue-600 p-2 hover:bg-blue-700 text-white rounded-lg font-medium text-sm flex items-center gap-2">
+            <button className="bg-blue-600 p-2 hover:bg-blue-700 text-white rounded-lg font-medium text-sm flex items-center gap-2" aria-label={`Go to ${item.name}`}>
               <Typography variant="bodySmall" component="span" className="font-medium text-white">
                 Go To Review
               </Typography>

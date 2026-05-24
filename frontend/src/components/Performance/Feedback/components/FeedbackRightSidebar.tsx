@@ -43,6 +43,7 @@ export const FeedbackRightSidebar: React.FC<FeedbackRightSidebarProps> = ({
             return (
             <button 
               key={review.id} 
+              aria-label={`Open peer review ${review.id}`}
               onClick={() => onSelectReview(review.id)}
               className={`w-full flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
             >

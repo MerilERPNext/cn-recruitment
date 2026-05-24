@@ -133,9 +133,9 @@ const MyGoals: React.FC = () => {
           <div className={`flex ${isMobile ? 'flex-col w-full gap-3' : 'flex-wrap items-center gap-3'}`}>
             {!isMobile && (
               <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-white text-sm h-9">
-                <button className="px-4 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors">List</button>
-                <button className="px-4 h-full bg-blue-500 text-white font-medium transition-colors">Tree</button>
-                <button className="px-4 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors">Alignment</button>
+                <button className="px-4 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors" aria-label="Show goals as list">List</button>
+                <button className="px-4 h-full bg-blue-500 text-white font-medium transition-colors" aria-label="Show goals as tree">Tree</button>
+                <button className="px-4 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors" aria-label="Show goal alignment">Alignment</button>
               </div>
             )}
             <div className={`flex items-center gap-3 ${isMobile ? 'w-full' : ''}`}>
@@ -148,9 +148,9 @@ const MyGoals: React.FC = () => {
             </div>
             {isMobile && (
               <div className="flex w-full items-center border border-gray-200 rounded-lg overflow-hidden bg-white text-sm h-10 mt-1">
-                <button className="min-w-0 flex-1 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors">List</button>
-                <button className="min-w-0 flex-1 h-full bg-blue-500 text-white font-medium transition-colors">Tree</button>
-                <button className="min-w-0 flex-1 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors">Align</button>
+                <button className="min-w-0 flex-1 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors" aria-label="Show goals as list">List</button>
+                <button className="min-w-0 flex-1 h-full bg-blue-500 text-white font-medium transition-colors" aria-label="Show goals as tree">Tree</button>
+                <button className="min-w-0 flex-1 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors" aria-label="Show goal alignment">Align</button>
               </div>
             )}
           </div>

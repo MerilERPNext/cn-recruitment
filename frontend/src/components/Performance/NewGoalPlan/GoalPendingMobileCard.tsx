@@ -59,12 +59,13 @@ const GoalPendingMobileCard: React.FC<{ data: GroupGoalItem }> = ({ data }) => {
           />
         )}
         <button
+          aria-label={`Edit ${data.goal}`}
           className="ml-auto text-gray-500 font-medium bg-gray-500/20 rounded-lg px-2 py-1"
           onClick={() => setShowEditModel(true)}
         >
           Edit
         </button>
-        <button className="text-red-500 font-medium bg-red-500/20 rounded-lg px-2 py-1">
+        <button className="text-red-500 font-medium bg-red-500/20 rounded-lg px-2 py-1" aria-label={`Delete ${data.goal}`}>
           Delete
         </button>
       </div>

@@ -73,6 +73,7 @@ const Feedback = () => {
                 rows={4}
                 placeholder="A behaviour you'd want to see more of..."
                 className="min-h-[112px] w-full resize-none rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm leading-5 text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                aria-label="One thing Karthik should keep doing"
               />
             </div>
 
@@ -84,6 +85,7 @@ const Feedback = () => {
                 rows={4}
                 placeholder="Constructive — focus on impact, not blame..."
                 className="min-h-[112px] w-full resize-none rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm leading-5 text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                aria-label="One thing Karthik could improve"
               />
             </div>
 

@@ -128,6 +128,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                             className="h-11 w-full rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
                             defaultValue=""
                             placeholder="Search templates · 'design'"
+                            aria-label="Search goal templates"
                         />
                     </div>
 
@@ -152,6 +153,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                     <button
                         key={tab.label}
                         type="button"
+                        aria-label={`Show ${tab.label} templates`}
                         className={`flex h-11 shrink-0 items-center gap-2 border-b-2 text-sm font-semibold transition ${tab.active
                             ? 'border-blue-500 text-blue-600'
                             : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -212,7 +214,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             <div className="shrink-0 flex flex-col gap-3 border-t border-gray-100 bg-blue-50/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
                 <Typography variant="caption" className="text-gray-500">
                     Can't find what you need?{' '}
-                    <button type="button" className="font-semibold text-blue-600 hover:text-blue-700">
+                    <button type="button" className="font-semibold text-blue-600 hover:text-blue-700" aria-label="Suggest a goal template">
                         Suggest a template <ArrowRight className="inline h-3.5 w-3.5" />
                     </button>
                 </Typography>

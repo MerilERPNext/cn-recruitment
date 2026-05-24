@@ -84,6 +84,7 @@ const GoalDetailModal: React.FC<GoalDetailModalProps> = ({ goal, onClose }) => {
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors ml-2 p-1 border border-gray-200 rounded-lg"
+            aria-label="Close goal detail"
           >
             <X className="w-4 h-4" />
           </button>
@@ -207,6 +208,7 @@ const GoalDetailModal: React.FC<GoalDetailModalProps> = ({ goal, onClose }) => {
               </span>
             </Typography>
             <textarea
+              aria-label={`Add comment for ${goal.employeeName}`}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={3}
@@ -411,10 +413,10 @@ const TeamGoals: React.FC = () => {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <input
+                    aria-label={`Select ${goal.title}`}
                     type="checkbox"
                     checked={checkedGoals.has(goal.id)}
                     onChange={() => toggleCheck(goal.id)}
-                    aria-label={`Select ${goal.title}`}
                     className="h-4 w-4 rounded border-gray-300 text-blue-500 accent-blue-500 focus:ring-blue-500 cursor-pointer"
                   />
                 </label>
@@ -555,6 +557,7 @@ const TeamGoals: React.FC = () => {
                 >
                   <button
                     type="button"
+                    aria-label={`${isExpanded ? "Collapse" : "Expand"} ${member.name} goals`}
                     onClick={() => toggleMember(member.id)}
                     className="flex w-full items-start justify-between gap-3 bg-blue-50/60 px-4 py-3 text-left transition-colors hover:bg-blue-50 sm:items-center"
                   >

@@ -340,6 +340,7 @@ const modifiedSchema = React.useMemo(() => {
           <button
             onClick={handleSubmit}
             className="w-full py-3 rounded-lg bg-blue-700 text-white font-medium hover:bg-blue-800 transition-colors"
+            aria-label={`${actionType} goal`}
           >
             {actionType}
           </button>

@@ -84,10 +84,10 @@ const TeamCheckIns: React.FC = () => {
             </Typography>
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-md text-[11px] font-semibold text-gray-700 hover:bg-gray-50 bg-white transition-colors">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-md text-[11px] font-semibold text-gray-700 hover:bg-gray-50 bg-white transition-colors" aria-label="Previous week">
               <ChevronLeft className="w-3.5 h-3.5" /> Prev week
             </button>
-            <button className="flex items-center px-4 py-1.5 border border-gray-200 rounded-md text-[11px] font-semibold text-gray-700 hover:bg-gray-50 bg-white transition-colors">
+            <button className="flex items-center px-4 py-1.5 border border-gray-200 rounded-md text-[11px] font-semibold text-gray-700 hover:bg-gray-50 bg-white transition-colors" aria-label="Go to this week">
               This week
             </button>
           </div>

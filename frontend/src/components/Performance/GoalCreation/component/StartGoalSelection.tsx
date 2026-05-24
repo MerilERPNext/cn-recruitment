@@ -67,15 +67,15 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             <div className="text-sm font-medium text-gray-700">Used by 18% of PW employees</div>
                             <div className="text-xs text-gray-500">Median time: ~ 4 minutes</div>
                         </div>
-                        <Button variant="contain" bgColor="primary" className="w-full sm:w-auto justify-center bg-blue-500 hover:bg-blue-600" onClick={onContinue}>
+                        <Button variant="contain" bgColor="primary" className="w-full sm:w-auto justify-center bg-blue-500 hover:bg-blue-600" onClick={onContinue} aria-label="Use start from blank">
                             Use this <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
                     </div>
                     <textarea
+                        aria-label="Start from blank description"
                         className="min-h-[92px] w-full resize-none rounded-lg border border-gray-100 bg-blue-50 p-4 text-sm leading-6 text-gray-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
                         value={blankGoalDescription}
                         onChange={(event) => setBlankGoalDescription(event.target.value)}
-                        aria-label="Start from blank description"
                     />
                 </div>
             </div>
@@ -96,7 +96,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             <div className="text-sm font-medium text-gray-700">Most popular · 142 templates for Design</div>
                             <div className="text-xs text-gray-500">Median time: ~ 90 seconds</div>
                         </div>
-                        <Button variant="contain" className="w-full sm:w-auto justify-center bg-indigo-500 hover:bg-indigo-600 text-white" onClick={onContinue}>
+                        <Button variant="contain" className="w-full sm:w-auto justify-center bg-indigo-500 hover:bg-indigo-600 text-white" onClick={onContinue} aria-label="Use goal library">
                             Use this <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
                     </div>
@@ -141,6 +141,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                         <button
                             onClick={onContinue}
                             className="h-9 w-full sm:w-auto rounded-lg flex justify-center items-center gap-2 bg-amber-400 px-4 text-sm font-medium text-slate-900 "
+                            aria-label="Use AI suggested goal"
                         >
                             Use this
                             <ArrowRight className="ml-1 h-4 w-4" />

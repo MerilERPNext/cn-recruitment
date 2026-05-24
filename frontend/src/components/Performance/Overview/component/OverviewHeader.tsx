@@ -22,7 +22,7 @@ const OverviewHeader:React.FC = () => {
                   <Typography variant="label" className="text-gray-400 font-semibold tracking-wider uppercase mb-2">Next Deadline</Typography>
                   <div className={`flex ${isMobile ? 'flex-col w-full' : 'items-center'} gap-4`}>
                     <Typography variant="bodySmall" className="text-blue-600 font-medium">Self-Review due 21 May</Typography>
-                    <button className={`bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`}>
+                    <button className={`bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${isMobile ? 'w-full justify-center' : ''}`} aria-label="Continue self review">
                       Continue Self-Review <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>

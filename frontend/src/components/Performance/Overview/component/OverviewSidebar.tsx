@@ -107,7 +107,7 @@ const OverviewSidebar: React.FC = () => {
                   <Typography variant="bodySmall" className="font-medium text-gray-900 mb-1">{task.title}</Typography>
                   <Typography variant="caption" className="text-gray-500">{task.dueDate}</Typography>
                 </div>
-                <button className="shrink-0 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 sm:px-4">
+                <button className="shrink-0 rounded-lg border border-blue-200 px-3 py-1.5 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-50 sm:px-4" aria-label={task.buttonText}>
                   {task.buttonText}
                 </button>
               </article>
