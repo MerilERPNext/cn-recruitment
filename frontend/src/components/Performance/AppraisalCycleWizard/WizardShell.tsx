@@ -75,8 +75,8 @@ const WizardShell = ({ children, contentClassName = "", data, title }: WizardShe
   const cycleTitle = title || data.title;
 
   return (
-    <div className="h-full min-h-0 overflow-x-hidden bg-[#f3f7ff] font-sans text-gray-900">
-      <div className="grid h-full min-h-0 grid-cols-1 md:grid-cols-[292px_minmax(0,1fr)]">
+    <div className="min-h-dvh overflow-x-hidden bg-[#f3f7ff] font-sans text-gray-900 md:h-full md:min-h-0 md:overflow-hidden">
+      <div className="grid min-h-dvh grid-cols-1 md:h-full md:min-h-0 md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[292px_minmax(0,1fr)]">
         <aside className="min-w-0 border-b border-gray-200 bg-white md:sticky md:top-0 md:flex md:h-full md:min-h-0 md:flex-col md:overflow-hidden md:border-b-0 md:border-r">
           <div className="p-3 md:px-4 md:pb-4 md:pt-3">
             <Typography
@@ -143,7 +143,7 @@ const WizardShell = ({ children, contentClassName = "", data, title }: WizardShe
             })}
           </div>
 
-          <div className="hidden border-t border-gray-200 p-4 lg:block">
+          <div className="border-t border-gray-200 p-3 md:p-4">
             <Typography variant="caption" className="block text-gray-500">
               {data.lastSavedLabel}
             </Typography>
@@ -154,8 +154,8 @@ const WizardShell = ({ children, contentClassName = "", data, title }: WizardShe
           </div>
         </aside>
 
-        <main className="flex min-w-0 flex-col">
-          <header className="flex min-w-0 flex-col gap-4 border-b border-gray-200 bg-white px-3 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+        <main className="flex min-w-0 flex-col md:min-h-0 md:overflow-hidden">
+          <header className="flex shrink-0 min-w-0 flex-col gap-4 border-b border-gray-200 bg-white px-3 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <Typography
                 variant="caption"
@@ -177,22 +177,22 @@ const WizardShell = ({ children, contentClassName = "", data, title }: WizardShe
               </Typography>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center">
-              <button className="min-h-[44px] rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm">
+              <button className="min-h-[44px] whitespace-nowrap rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm">
                 Save Draft
               </button>
-              <button className="min-h-[44px] rounded-lg bg-purple-50 px-4 py-2.5 text-sm font-bold text-purple-600">
+              <button className="min-h-[44px] whitespace-nowrap rounded-lg bg-purple-50 px-4 py-2.5 text-sm font-bold text-purple-600">
                 Dry-run
               </button>
             </div>
           </header>
 
           <div
-            className={`min-h-0 flex-1 overflow-y-auto p-3 sm:p-6 ${contentClassName}`}
+            className={`p-3 sm:p-6 md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain ${contentClassName}`}
           >
             {children}
           </div>
 
-          <footer className="sticky bottom-0 flex flex-col gap-3 border-t border-gray-200 bg-white px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <footer className="shrink-0 flex flex-col gap-3 border-t border-gray-200 bg-white px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <button className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 sm:w-auto">
               <span className="text-lg leading-none">←</span>
               Back
@@ -202,7 +202,7 @@ const WizardShell = ({ children, contentClassName = "", data, title }: WizardShe
                 <Check className="h-4 w-4" />
                 {data.validationStatus}
               </div>
-              <button className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-600 sm:w-auto">
+              <button  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-600 sm:w-auto">
                 Next: {data.nextStepLabel}
                 <ArrowRight className="h-4 w-4" />
               </button>

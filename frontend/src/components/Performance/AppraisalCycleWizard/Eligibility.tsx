@@ -84,14 +84,14 @@ const Eligibility = () => {
   return (
     <WizardShell
       data={eligibilityData}
-      contentClassName="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]"
+      contentClassName="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_360px]"
     >
-      <div className="min-w-0 space-y-5">
-        <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-5 inline-flex rounded-lg bg-gray-50 p-1">
+      <div className="min-w-0 space-y-4 sm:space-y-5">
+        <section className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-5">
+          <div className="mb-5 grid grid-cols-2 rounded-lg bg-gray-50 p-1 sm:inline-flex">
             <button
               onClick={() => setActiveMode("rules")}
-              className={`rounded-md px-4 py-2 text-sm font-bold ${
+              className={`min-h-[40px] rounded-md px-3 py-2 text-sm font-bold sm:px-4 ${
                 activeMode === "rules" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
               }`}
             >
@@ -99,7 +99,7 @@ const Eligibility = () => {
             </button>
             <button
               onClick={() => setActiveMode("csv")}
-              className={`rounded-md px-4 py-2 text-sm font-bold ${
+              className={`min-h-[40px] rounded-md px-3 py-2 text-sm font-bold sm:px-4 ${
                 activeMode === "csv" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
               }`}
             >
@@ -118,34 +118,34 @@ const Eligibility = () => {
             {ruleRows.map((rule) => (
               <div
                 key={rule.id}
-                className="grid grid-cols-1 gap-2 md:grid-cols-[70px_minmax(0,1fr)_110px_minmax(0,1.15fr)_32px]"
+                className="grid grid-cols-1 gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3 sm:grid-cols-[72px_minmax(0,1fr)] xl:grid-cols-[70px_minmax(0,1fr)_110px_minmax(0,1.15fr)_32px] xl:border-0 xl:bg-transparent xl:p-0"
               >
-                <div className="flex min-h-[38px] items-center">
+                <div className="flex min-h-[38px] items-center sm:row-span-3 xl:row-span-1">
                   <span
                     className={`rounded-md px-3 py-1.5 text-xs font-bold ${
                       rule.joiner === "WHERE"
-                        ? "bg-white text-gray-500"
+                        ? "bg-white text-gray-500 xl:bg-white"
                         : "bg-blue-50 text-blue-600"
                     }`}
                   >
                     {rule.joiner}
                   </span>
                 </div>
-                <select className={inputClass} defaultValue={rule.field}>
+                <select className={`${inputClass} bg-white`} defaultValue={rule.field}>
                   <option>{rule.field}</option>
                   <option>Business Unit</option>
                   <option>Department</option>
                   <option>Employee Type</option>
                   <option>Tenure</option>
                 </select>
-                <select className={inputClass} defaultValue={rule.operator}>
+                <select className={`${inputClass} bg-white`} defaultValue={rule.operator}>
                   <option>is</option>
                   <option>is in</option>
                   <option>&gt;</option>
                   <option>is not</option>
                 </select>
-                <input className={inputClass} defaultValue={rule.value} />
-                <button className="flex h-[38px] w-8 items-center justify-center rounded-md text-gray-400 hover:bg-gray-50 hover:text-gray-700">
+                <input className={`${inputClass} bg-white`} defaultValue={rule.value} />
+                <button className="flex h-[38px] w-full items-center justify-center rounded-md border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 hover:text-gray-700 sm:col-start-2 xl:col-start-auto xl:w-8 xl:border-0 xl:bg-transparent">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -158,7 +158,7 @@ const Eligibility = () => {
           </button>
         </section>
 
-        <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+        <section className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-5">
           <Typography variant="h3" className="text-base font-bold text-gray-900">
             Exclusions & Overrides
           </Typography>
@@ -170,7 +170,7 @@ const Eligibility = () => {
             {exclusions.map((item) => (
               <label
                 key={item.label}
-                className="flex min-h-[42px] items-center justify-between gap-3 rounded-md bg-gray-50 px-3 text-sm text-gray-700"
+                className="flex min-h-[42px] flex-col items-start justify-between gap-2 rounded-md bg-gray-50 px-3 py-3 text-sm text-gray-700 sm:flex-row sm:items-center"
               >
                 <span className="flex min-w-0 items-center gap-3">
                   <input
@@ -184,9 +184,11 @@ const Eligibility = () => {
                     }
                     className="h-4 w-4 rounded border-gray-300 accent-blue-500"
                   />
-                  <span className="truncate">{item.label}</span>
+                  <span className="min-w-0 break-words">{item.label}</span>
                 </span>
-                <span className="shrink-0 text-xs font-semibold text-gray-500">{item.count}</span>
+                <span className="pl-7 text-xs font-semibold text-gray-500 sm:pl-0">
+                  {item.count}
+                </span>
               </label>
             ))}
           </div>
@@ -196,18 +198,20 @@ const Eligibility = () => {
           </button>
         </section>
 
-        <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
-          <div className="flex items-center justify-between gap-3">
+        <section className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <Typography variant="h3" className="text-base font-bold text-gray-900">
               Sample matching employees
             </Typography>
-            <button className="text-sm font-bold text-blue-600">View all 2,140 →</button>
+            <button className="self-start text-sm font-bold text-blue-600 sm:self-auto">
+              View all 2,140 →
+            </button>
           </div>
           <div className="mt-4 overflow-hidden rounded-lg border border-gray-100">
             {employees.map((employee) => (
               <div
                 key={employee.name}
-                className="grid grid-cols-1 gap-1 border-b border-gray-100 px-3 py-3 text-sm last:border-b-0 md:grid-cols-[1fr_130px_130px_100px]"
+                className="grid grid-cols-1 gap-1 border-b border-gray-100 px-3 py-3 text-sm last:border-b-0 sm:grid-cols-2 md:grid-cols-[1fr_130px_130px_100px]"
               >
                 <span className="font-bold text-gray-900">{employee.name}</span>
                 <span className="text-gray-500">{employee.team}</span>
@@ -220,18 +224,18 @@ const Eligibility = () => {
       </div>
 
       <aside className="min-w-0 space-y-4">
-        <section className="overflow-hidden rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 p-5 text-white shadow-sm">
+        <section className="overflow-hidden rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 p-4 text-white shadow-sm sm:p-5">
           <Typography
             variant="caption"
             className="block font-bold uppercase tracking-wider text-white"
           >
             Matching employees
           </Typography>
-          <div className="mt-2 text-6xl font-bold leading-none">2,140</div>
+          <div className="mt-2 text-5xl font-bold leading-none sm:text-6xl">2,140</div>
           <Typography variant="bodyMedium" className="mt-2 text-sm font-semibold text-blue-50">
             ↑ 86 since you last viewed
           </Typography>
-          <div className="mt-6 grid grid-cols-2 gap-3 rounded-lg bg-white/15 p-3">
+          <div className="mt-5 grid grid-cols-1 gap-3 rounded-lg bg-white/15 p-3 min-[380px]:grid-cols-2 sm:mt-6">
             <div>
               <div className="text-xl font-bold">2,183</div>
               <div className="text-xs font-semibold text-blue-50">Matched rule</div>
