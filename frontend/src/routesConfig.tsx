@@ -32,6 +32,7 @@ import Onboarding from "./components/Onboarding/Onboarding";
 import Requests from "./components/Requests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import SearchMembers from "./components/SearchMembers";
+import AppraisalCycleWizard from "./components/Performance/AppraisalCycleWizard/AppraisalCycleWizard.tsx";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -1290,7 +1291,7 @@ export const routesConfig: AppRoute[] = [
       },
       {
         path: "appraisal-cycle-wizard",
-        element: <PerformanceReviewApp />,
+        element: <AppraisalCycleWizard />,
         permissionKey: "Performance Admin",
       },
     ],
