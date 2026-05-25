@@ -21,6 +21,7 @@ import StatusBadge from "../shared/atoms/statusBadge";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 
 export function BenefitRequestDetailModal({
+  actionsEnabled,
   documentName,
   referenceName,
   data: propsData,
@@ -29,6 +30,7 @@ export function BenefitRequestDetailModal({
   label = "Benefit Request",
   maskAmounts = false,
 }: {
+  actionsEnabled: boolean;
   documentName?: string;
   referenceName?: string;
   data?: any;
@@ -329,6 +331,7 @@ export function BenefitRequestDetailModal({
         {actions?.length > 0 && isPending && !isActed ? (
           <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
             <TeamApprovalActionPill
+              actionsEnabled={actionsEnabled}
               variant={isDesktop ? "modal" : "buttons"}
               actions={actions}
               status={data?.todo_status === "Closed" && refDoc?.custom_status !== "Rejected"
