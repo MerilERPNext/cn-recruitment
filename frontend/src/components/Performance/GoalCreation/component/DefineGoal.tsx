@@ -6,8 +6,16 @@ import { Card } from '../../../shared/atoms/Card';
 import { Select } from '../../../shared/atoms/Select';
 import { Typography } from '../../../shared/atoms/Typography';
 
-type MetricType = 'Count' | 'Number' | '%';
+type MetricType = '%' | 'Number' | 'Count' | 'Currency' | 'Boolean' | 'Milestone';
+type CategoryType =
+    | 'Organisational'
+    | 'Business'
+    | 'Functional'
+    | 'Team'
+    | 'Individual'
+    | 'Development';
 type MetricSelectOption = { label: string; value: MetricType };
+type CategorySelectOption = { label: string; value: CategoryType };
 
 interface KeyResult {
     id: string;
@@ -22,8 +30,15 @@ interface KeyResult {
 }
 
 const tags = ['product', 'oxygen', 'rollout', 'fy26-q3'];
-const metricTypeOptions: MetricType[] = ['Count', 'Number', '%'];
-const categoryOptions = ['Individual', 'Team', 'Company'];
+const metricTypeOptions: MetricType[] = ['%', 'Number', 'Count', 'Currency', 'Boolean', 'Milestone'];
+const categoryOptions: CategoryType[] = [
+    'Organisational',
+    'Business',
+    'Functional',
+    'Team',
+    'Individual',
+    'Development',
+];
 const metricSelectOptions = metricTypeOptions.map((option) => ({ label: option, value: option }));
 const categorySelectOptions = categoryOptions.map((option) => ({ label: option, value: option }));
 const autoPullSources: Array<{
@@ -102,7 +117,9 @@ const labelClass = 'mb-1.5 block text-xs font-medium text-gray-600';
 
 const DefineGoal = () => {
     const [weightage, setWeightage] = useState(30);
-    const [selectedCategory, setSelectedCategory] = useState(categorySelectOptions[0]);
+    const [selectedCategory, setSelectedCategory] = useState<CategorySelectOption>(
+        categorySelectOptions.find((option) => option.value === 'Individual') ?? categorySelectOptions[0],
+    );
     const [sourceStates, setSourceStates] = useState<Record<string, boolean>>(
         () =>
             autoPullSources.reduce<Record<string, boolean>>((acc, source) => {

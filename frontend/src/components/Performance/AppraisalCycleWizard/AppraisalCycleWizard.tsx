@@ -1,6 +1,6 @@
 import {
   CalendarDays,
-  ChevronRight,
+  ChevronDown,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -54,7 +54,15 @@ export const mockWizardData: AppraisalCycleWizardData = {
     tags: ["annual", "india", "tech", "fy26"],
   },
   options: {
-    cycleTypes: [{ label: "Annual", value: "Annual" }],
+    cycleTypes: [
+      { label: "Annual", value: "Annual" },
+      { label: "Half-yearly", value: "Half-yearly" },
+      { label: "Quarterly", value: "Quarterly" },
+      { label: "Monthly", value: "Monthly" },
+      { label: "Project-based", value: "Project-based" },
+      { label: "Probation", value: "Probation" },
+      { label: "Trigger", value: "Trigger" },
+    ],
     fiscalYears: [{ label: "FY26 (Apr 26 – Mar 27)", value: "FY26 (Apr 26 – Mar 27)" }],
     owners: [
       {
@@ -97,6 +105,7 @@ export const mockWizardData: AppraisalCycleWizardData = {
 const AppraisalCycleWizard = ({ data = mockWizardData }: AppraisalCycleWizardProps) => {
   const [basics, setBasics] = useState(data.basics);
   const [ownership, setOwnership] = useState(data.ownership);
+  const [ownerDropdownOpen, setOwnerDropdownOpen] = useState(false);
   const cycleTypeOptions = data.options?.cycleTypes?.length
     ? data.options.cycleTypes
     : [{ label: basics.cycleType || "--", value: basics.cycleType || "" }];
@@ -278,33 +287,75 @@ const AppraisalCycleWizard = ({ data = mockWizardData }: AppraisalCycleWizardPro
                         Cycle Owner <span className="text-red-500">*</span>
                       </Typography>
                     </label>
-                    <Select
-                      options={ownerOptions}
-                      value={selectedOwner}
-                      onChange={(option) =>
-                        setOwnership((current) => ({
-                          ...current,
-                          ownerInitials: option.initials,
-                          ownerName: option.value,
-                          ownerMeta: option.meta,
-                        }))
-                      }
-                      className="relative w-full [&>button>span]:hidden [&>button>svg]:hidden [&>button]:min-h-[44px] [&>button]:rounded-lg [&>button]:border-gray-200 [&>button]:px-3 [&>button]:py-2 [&>button]:text-left [&>button]:shadow-sm [&>div]:w-full"
-                    />
-                    <div className="pointer-events-none -mt-[44px] flex min-h-[44px] items-center justify-between gap-3 rounded-lg border border-transparent px-3 py-2">
-                      <div className="flex min-w-0 items-center gap-3 pr-7">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-600">
-                          {ownership.ownerInitials || "--"}
+                    <div
+                      className="relative"
+                      onBlur={(event) => {
+                        if (!event.currentTarget.contains(event.relatedTarget)) {
+                          setOwnerDropdownOpen(false);
+                        }
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setOwnerDropdownOpen((open) => !open)}
+                        className="flex min-h-[44px] w-full items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left shadow-sm transition hover:border-gray-300 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                      >
+                        <span className="flex min-w-0 items-center gap-3">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-600">
+                            {selectedOwner.initials || "--"}
+                          </span>
+                          <span className="min-w-0 truncate text-sm font-normal text-gray-700">
+                            {selectedOwner.value}
+                            {selectedOwner.meta ? ` — ${selectedOwner.meta}` : ""}
+                          </span>
                         </span>
-                        <Typography
-                          variant="bodyMedium"
-                          className="min-w-0 truncate text-sm font-normal text-gray-700"
-                        >
-                          {ownership.ownerName}
-                          {ownership.ownerMeta ? ` — ${ownership.ownerMeta}` : ""}
-                        </Typography>
-                      </div>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-gray-500" />
+                        <ChevronDown
+                          className={`h-4 w-4 shrink-0 text-gray-500 transition-transform ${
+                            ownerDropdownOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+
+                      {ownerDropdownOpen && (
+                        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+                          <ul className="max-h-60 overflow-auto p-1">
+                            {ownerOptions.map((option) => {
+                              const selected = option.value === selectedOwner.value;
+
+                              return (
+                                <li key={option.value}>
+                                  <button
+                                    type="button"
+                                    onMouseDown={(event) => event.preventDefault()}
+                                    onClick={() => {
+                                      setOwnership((current) => ({
+                                        ...current,
+                                        ownerInitials: option.initials,
+                                        ownerName: option.value,
+                                        ownerMeta: option.meta,
+                                      }));
+                                      setOwnerDropdownOpen(false);
+                                    }}
+                                    className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition ${
+                                      selected
+                                        ? "bg-blue-50 text-blue-700"
+                                        : "text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                  >
+                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-600">
+                                      {option.initials || "--"}
+                                    </span>
+                                    <span className="min-w-0 truncate">
+                                      {option.value}
+                                      {option.meta ? ` — ${option.meta}` : ""}
+                                    </span>
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </div>
 

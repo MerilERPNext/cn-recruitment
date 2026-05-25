@@ -64,12 +64,24 @@ const employees: EligibilityEmployee[] = [
   { name: "Rohan Iyer", team: "Product", location: "India Tech", type: "Full-time" },
 ];
 
-const fieldOptions = ["Business Unit", "Department", "Employee Type", "Tenure"].map((value) => ({
+const fieldOptions = [
+  "Business Unit",
+  "Department",
+  "Location",
+  "Country",
+  "Grade",
+  "Job Family",
+  "Job Title",
+  "Employee Type",
+  "Manager",
+  "Tenure",
+  "Date of Joining",
+].map((value) => ({
   label: value,
   value,
 }));
 
-const operatorOptions = ["is", "is in", ">", "is not"].map((value) => ({
+const operatorOptions = ["is", "is not", "is in", "is not in", "≥", "≤", "contains"].map((value) => ({
   label: value,
   value,
 }));
