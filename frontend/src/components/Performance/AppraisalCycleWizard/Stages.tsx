@@ -59,24 +59,22 @@ const stageRows: StageRow[] = [
 ];
 
 const visibilityOptions: StageOption[] = [
-  { label: "Aggregated", value: "Aggregated" },
   { label: "Visible to manager", value: "Visible to manager" },
-  { label: "Visible to employee", value: "Visible to employee" },
-  { label: "Private until release", value: "Private until release" },
+  { label: "Aggregated", value: "Aggregated" },
+  { label: "Fully anonymous", value: "Fully anonymous" },
+  { label: "—", value: "—" },
 ];
 
 const formOptions: StageOption[] = [
   { label: "Form template A", value: "Form template A" },
-  { label: "Form template B", value: "Form template B" },
-  { label: "Manager review form", value: "Manager review form" },
-  { label: "Peer feedback form", value: "Peer feedback form" },
+  { label: "Probation form", value: "Probation form" },
+  { label: "—", value: "—" },
 ];
 
 const ratingOptions: StageOption[] = [
   { label: "5-pt descriptive", value: "5-pt descriptive" },
-  { label: "3-pt scale", value: "3-pt scale" },
-  { label: "Numeric 1-10", value: "Numeric 1-10" },
-  { label: "No rating", value: "No rating" },
+  { label: "1–10 numeric", value: "1–10 numeric" },
+  { label: "—", value: "—" },
 ];
 
 const availableStages = [
