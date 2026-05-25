@@ -22,18 +22,27 @@ const EligibilityEmployeesCard = ({ employees }: EligibilityEmployeesCardProps) 
           View all 2,140 →
         </button>
       </div>
-      <div className="mt-4 overflow-hidden rounded-lg border border-gray-100">
-        {employees.map((employee) => (
-          <div
-            key={employee.name}
-            className="grid grid-cols-1 gap-1 border-b border-gray-100 px-3 py-3 text-sm last:border-b-0 sm:grid-cols-2 md:grid-cols-[1fr_130px_130px_100px]"
-          >
-            <span className="font-bold text-gray-900">{employee.name}</span>
-            <span className="text-gray-500">{employee.team}</span>
-            <span className="text-gray-500">{employee.location}</span>
-            <span className="text-gray-500">{employee.type}</span>
-          </div>
-        ))}
+      <div className="mt-4 overflow-x-auto rounded-lg border border-gray-100">
+        <table className="w-full text-left text-sm min-w-[500px]">
+          <thead className="bg-gray-50 border-b border-gray-100 text-xs text-gray-500 uppercase tracking-widest font-bold">
+            <tr>
+              <th className="px-4 py-3 font-bold">Employee Name</th>
+              <th className="px-4 py-3 font-bold">Team</th>
+              <th className="px-4 py-3 font-bold">Location</th>
+              <th className="px-4 py-3 font-bold">Type</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {employees.map((employee) => (
+              <tr key={employee.name} className="hover:bg-gray-50/50 transition-colors">
+                <td className="px-4 py-3 font-bold text-gray-900">{employee.name}</td>
+                <td className="px-4 py-3 text-gray-500">{employee.team}</td>
+                <td className="px-4 py-3 text-gray-500">{employee.location}</td>
+                <td className="px-4 py-3 text-gray-500">{employee.type}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </section>
   );

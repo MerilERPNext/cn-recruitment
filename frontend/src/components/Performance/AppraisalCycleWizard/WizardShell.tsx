@@ -80,6 +80,30 @@ const WizardShell = ({ children, contentClassName = "", data, title }: WizardShe
   const stepLabel = `Step ${activeStepIndex + 1} of ${totalSteps}`;
   const cycleTitle = title || data.title;
 
+  const handleNavigateStep = (stepId: string) => {
+    if (stepId === "cycle-details") {
+      navigate("/webapp/performance-app/appraisal-cycle-wizard");
+    } else if (stepId === "eligibility") {
+      navigate("/webapp/performance-app/appraisal-cycle-wizard/eligibility");
+    } else if (stepId === "stages") {
+      navigate("/webapp/performance-app/appraisal-cycle-wizard/stages");
+    }
+  };
+
+  const handleNext = () => {
+    if (activeStepIndex < totalSteps - 1) {
+      handleNavigateStep(data.steps[activeStepIndex + 1].id);
+    }
+  };
+
+  const handleBack = () => {
+    if (activeStepIndex > 0) {
+      handleNavigateStep(data.steps[activeStepIndex - 1].id);
+    } else {
+      navigate("/webapp/performance-app");
+    }
+  };
+
   return (
     <div className="min-h-dvh overflow-x-hidden bg-[#f3f7ff] font-sans text-gray-900 md:h-full md:min-h-0 md:overflow-hidden">
       <div className="grid min-h-dvh grid-cols-1 md:h-full md:min-h-0 md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[292px_minmax(0,1fr)]">
@@ -113,17 +137,7 @@ const WizardShell = ({ children, contentClassName = "", data, title }: WizardShe
               return (
                 <button
                   key={step.id}
-                  onClick={() => {
-                    if (step.id === "cycle-details") {
-                      navigate("/webapp/performance-app/appraisal-cycle-wizard");
-                    }
-                    if (step.id === "eligibility") {
-                      navigate("/webapp/performance-app/appraisal-cycle-wizard/eligibility");
-                    }
-                    if (step.id === "stages") {
-                      navigate("/webapp/performance-app/appraisal-cycle-wizard/stages");
-                    }
-                  }}
+                  onClick={() => handleNavigateStep(step.id)}
                   className={`flex min-w-[9.5rem] max-w-[13rem] snap-start items-center gap-2 rounded-lg px-3 py-2.5 text-left transition-colors sm:min-w-[11rem] md:w-full md:min-w-0 md:max-w-none md:gap-3 ${
                     active ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50"
                   }`}
@@ -202,16 +216,22 @@ const WizardShell = ({ children, contentClassName = "", data, title }: WizardShe
           </div>
 
           <footer className="shrink-0 flex flex-col gap-3 border-t border-gray-200 bg-white px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <button className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 sm:w-auto">
+            <button 
+              onClick={handleBack}
+              className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 sm:w-auto hover:bg-gray-50 transition-colors"
+            >
               <span className="text-lg leading-none">←</span>
               Back
             </button>
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
               <div className="flex items-center justify-center gap-2 text-sm font-semibold text-gray-600 sm:justify-start">
-                <Check className="h-4 w-4" />
+                <Check className="h-4 w-4 text-emerald-500" />
                 {data.validationStatus}
               </div>
-              <button  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-600 sm:w-auto">
+              <button 
+                onClick={handleNext}
+                className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-600 sm:w-auto"
+              >
                 Next: {data.nextStepLabel}
                 <ArrowRight className="h-4 w-4" />
               </button>

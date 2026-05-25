@@ -1,7 +1,8 @@
-import { Plus, X } from "lucide-react";
-import type { Dispatch, SetStateAction } from "react";
+import type { KeyboardEvent } from "react";
+import { useState } from "react";
 import { Select } from "../../../../shared/atoms/Select";
 import { Typography } from "../../../../shared/atoms/Typography";
+import { Plus, X } from "lucide-react";
 
 export type EligibilityRule = {
   id: number;
@@ -16,6 +17,75 @@ type SelectOption = {
   value: string;
 };
 
+const TagsInput = ({
+  value,
+  onChange,
+  className,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  className: string;
+}) => {
+  const tags = value ? value.split(",").map((t) => t.trim()).filter(Boolean) : [];
+  const [inputValue, setInputValue] = useState("");
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      if (inputValue.trim()) {
+        const newTags = [...tags, inputValue.trim()];
+        onChange(newTags.join(", "));
+        setInputValue("");
+      }
+    } else if (e.key === "Backspace" && !inputValue && tags.length > 0) {
+      e.preventDefault();
+      const newTags = tags.slice(0, -1);
+      onChange(newTags.join(", "));
+    }
+  };
+
+  const removeTag = (indexToRemove: number) => {
+    const newTags = tags.filter((_, index) => index !== indexToRemove);
+    onChange(newTags.join(", "));
+  };
+
+  return (
+    <div className={`flex flex-wrap items-center gap-1.5 p-1.5 ${className}`}>
+      {tags.map((tag, index) => (
+        <span
+          key={index}
+          className="flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700"
+        >
+          {tag}
+          <button
+            type="button"
+            onClick={() => removeTag(index)}
+            className="text-blue-400 hover:text-blue-600"
+            aria-label={`Remove ${tag}`}
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        type="text"
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={() => {
+          if (inputValue.trim()) {
+            const newTags = [...tags, inputValue.trim()];
+            onChange(newTags.join(", "));
+            setInputValue("");
+          }
+        }}
+        className="flex-1 min-w-[100px] bg-transparent text-sm outline-none placeholder-gray-400 py-1 px-1.5"
+        placeholder={tags.length === 0 ? "Type and press Enter..." : ""}
+      />
+    </div>
+  );
+};
+
 type EligibilityRulesCardProps = {
   activeMode: "rules" | "csv";
   fieldOptions: SelectOption[];
@@ -24,7 +94,7 @@ type EligibilityRulesCardProps = {
   rules: EligibilityRule[];
   selectClass: string;
   setActiveMode: (mode: "rules" | "csv") => void;
-  setRules: Dispatch<SetStateAction<EligibilityRule[]>>;
+  setRules: React.Dispatch<React.SetStateAction<EligibilityRule[]>>;
 };
 
 const EligibilityRulesCard = ({
@@ -106,25 +176,43 @@ const EligibilityRulesCard = ({
               }
               className={selectClass}
             />
-            <input
-              className={`${inputClass} bg-white`}
+            <TagsInput
+              className={`${inputClass.replace("px-3", "")} bg-white h-auto focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400`}
               value={rule.value}
-              onChange={(event) =>
+              onChange={(newValue) =>
                 setRules((current) =>
                   current.map((item) =>
-                    item.id === rule.id ? { ...item, value: event.target.value } : item,
+                    item.id === rule.id ? { ...item, value: newValue } : item,
                   ),
                 )
               }
             />
-            <button className="flex h-[38px] w-full items-center justify-center rounded-md border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 hover:text-gray-700 sm:col-start-2 xl:col-start-auto xl:w-8 xl:border-0 xl:bg-transparent">
+            <button 
+              onClick={() => setRules((current) => current.filter((r) => r.id !== rule.id))}
+              className="flex h-[38px] w-full items-center justify-center rounded-md border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 hover:text-gray-700 sm:col-start-2 xl:col-start-auto xl:w-8 xl:border-0 xl:bg-transparent"
+              aria-label="Remove condition"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
         ))}
       </div>
 
-      <button className="mt-4 inline-flex min-h-[38px] items-center gap-2 rounded-md border border-blue-100 bg-white px-3 text-sm font-bold text-blue-600 hover:bg-blue-50">
+      <button 
+        onClick={() => {
+          setRules((current) => [
+            ...current,
+            {
+              id: Math.max(0, ...current.map((r) => r.id)) + 1,
+              joiner: current.length === 0 ? "WHERE" : "AND",
+              field: fieldOptions[0]?.value || "",
+              operator: operatorOptions[0]?.value || "",
+              value: "",
+            },
+          ]);
+        }}
+        className="mt-4 inline-flex min-h-[38px] items-center gap-2 rounded-md border border-blue-100 bg-white px-3 text-sm font-bold text-blue-600 hover:bg-blue-50"
+      >
         <Plus className="h-4 w-4" />
         Add condition
       </button>
