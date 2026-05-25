@@ -37,6 +37,7 @@ import Eligibility from "./components/Performance/AppraisalCycleWizard/Eligibili
 import Stages from "./components/Performance/AppraisalCycleWizard/Stages.tsx";
 import FormBuilder from "./components/Performance/AppraisalCycleWizard/FormBuilder.tsx";
 import GoalPullIn from "./components/Performance/AppraisalCycleWizard/GoalPullIn.tsx";
+import Normalisation from "./components/Performance/AppraisalCycleWizard/Normalisation.tsx";
 import LettersRelease from "./components/Performance/AppraisalCycleWizard/LettersRelease.tsx";
 import ReviewLaunch from "./components/Performance/AppraisalCycleWizard/ReviewLaunch.tsx";
 
@@ -1319,6 +1320,11 @@ export const routesConfig: AppRoute[] = [
       {
         path: "appraisal-cycle-wizard/goal-pull-in",
         element: <GoalPullIn />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "appraisal-cycle-wizard/normalisation-calibration",
+        element: <Normalisation />,
         permissionKey: "Performance Admin",
       },
       {
