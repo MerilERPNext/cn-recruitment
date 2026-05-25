@@ -37,6 +37,7 @@ import Eligibility from "./components/Performance/AppraisalCycleWizard/Eligibili
 import Stages from "./components/Performance/AppraisalCycleWizard/Stages.tsx";
 import FormBuilder from "./components/Performance/AppraisalCycleWizard/FormBuilder.tsx";
 import GoalPullIn from "./components/Performance/AppraisalCycleWizard/GoalPullIn.tsx";
+import ReviewLaunch from "./components/Performance/AppraisalCycleWizard/ReviewLaunch.tsx";
 
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
@@ -1317,6 +1318,11 @@ export const routesConfig: AppRoute[] = [
       {
         path: "appraisal-cycle-wizard/goal-pull-in",
         element: <GoalPullIn />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "appraisal-cycle-wizard/review-launch",
+        element: <ReviewLaunch />,
         permissionKey: "Performance Admin",
       },
     ],

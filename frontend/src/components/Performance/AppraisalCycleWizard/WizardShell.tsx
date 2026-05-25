@@ -67,9 +67,10 @@ type WizardShellProps = {
   contentClassName?: string;
   data: AppraisalCycleWizardData;
   title?: string;
+  onNext?: () => void;
 };
 
-const WizardShell = ({ children, contentClassName = "", data, title }: WizardShellProps) => {
+const WizardShell = ({ children, contentClassName = "", data, title, onNext }: WizardShellProps) => {
   const navigate = useNavigate();
   const activeStepIndex = Math.max(
     data.steps.findIndex((step) => step.id === data.activeStepId),
@@ -89,7 +90,9 @@ const WizardShell = ({ children, contentClassName = "", data, title }: WizardShe
   };
 
   const handleNext = () => {
-    if (activeStepIndex < totalSteps - 1) {
+    if (onNext) {
+      onNext();
+    } else if (activeStepIndex < totalSteps - 1) {
       handleNavigateStep(data.steps[activeStepIndex + 1].id);
     }
   };
