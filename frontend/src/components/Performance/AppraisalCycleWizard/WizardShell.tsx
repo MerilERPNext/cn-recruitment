@@ -120,6 +120,9 @@ const WizardShell = ({ children, contentClassName = "", data, title }: WizardShe
                     if (step.id === "eligibility") {
                       navigate("/webapp/performance-app/appraisal-cycle-wizard/eligibility");
                     }
+                    if (step.id === "stages") {
+                      navigate("/webapp/performance-app/appraisal-cycle-wizard/stages");
+                    }
                   }}
                   className={`flex min-w-[9.5rem] max-w-[13rem] snap-start items-center gap-2 rounded-lg px-3 py-2.5 text-left transition-colors sm:min-w-[11rem] md:w-full md:min-w-0 md:max-w-none md:gap-3 ${
                     active ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50"
