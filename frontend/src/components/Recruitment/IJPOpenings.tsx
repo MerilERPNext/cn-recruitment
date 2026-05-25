@@ -1,5 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useCallback } from "react";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import { Card } from "../shared/atoms/Card";
+import { Typography } from "../shared/atoms/Typography";
+import Button from "../shared/atoms/Button";
+import { Form } from "@tsed/react-formio";
+import {
+  ijpApplicationSteps,
+  ijpApplicationSchemas,
+  IJPFormSchemaKeys,
+} from "./ijpApplicationFormSchemas";
+import {
+  Search,
+  SlidersHorizontal,
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  MapPin,
+  Calendar,
+  Briefcase,
+  CheckCircle2,
+  Copy,
+  Link2,
+} from "lucide-react";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -121,133 +144,9 @@ const JOBS = [
   },
 ];
 
-const STEPS = [
-  "Resume",
-  "Biographical",
-  "Contact",
-  "Address",
-  "Work Experience",
-  "Education",
-  "Last Salary",
-];
 
-// ─── Inline Styles ────────────────────────────────────────────────────────────
-
-const S = {
-  // Layout
-  page: { padding: "1.5rem", background: "#f5f6f8", minHeight: "100vh", fontFamily: "Inter, sans-serif", fontSize: 14, color: "#1a1a2e" },
-  pageTitle: { fontSize: 20, fontWeight: 600, marginBottom: "1.25rem", color: "#1a1a2e" },
-
-  // Toolbar
-  toolbar: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", gap: 12, flexWrap: "wrap" },
-  toolbarLeft: { display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#6b7280" },
-  toolbarRight: { display: "flex", alignItems: "center", gap: 8 },
-  showSelect: { border: "1px solid #e5e7eb", borderRadius: 6, padding: "4px 8px", fontSize: 13, background: "#fff", color: "#374151" },
-  searchBox: { display: "flex", alignItems: "center", border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden", background: "#fff" },
-  searchInput: { border: "none", outline: "none", padding: "7px 12px", fontSize: 13, background: "transparent", color: "#374151", width: 230 },
-  searchBtn: { background: "none", border: "none", padding: "7px 10px", cursor: "pointer", color: "#9ca3af" },
-  filterBtn: { border: "1px solid #e5e7eb", borderRadius: 8, padding: "7px 10px", background: "#fff", cursor: "pointer", color: "#6b7280" },
-
-  // Table
-  tableWrap: { background: "#fff", borderRadius: 10, border: "1px solid #e5e7eb", overflow: "hidden" },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: { padding: "10px 14px", fontSize: 12, fontWeight: 600, color: "#6b7280", textAlign: "left", whiteSpace: "nowrap", background: "#f9fafb", borderBottom: "1px solid #e5e7eb" },
-  td: { padding: "12px 14px", fontSize: 13, borderBottom: "1px solid #f3f4f6", verticalAlign: "middle", color: "#374151" },
-  jobLink: { color: "#c0392b", fontWeight: 600, cursor: "pointer", textDecoration: "none" },
-  jobCode: { fontSize: 11, color: "#9ca3af", marginTop: 2 },
-  appliedBadge: { fontSize: 10, background: "#d1fae5", color: "#065f46", padding: "2px 7px", borderRadius: 4, marginLeft: 6, fontWeight: 600 },
-
-  // Breadcrumb
-  breadcrumb: { fontSize: 13, color: "#6b7280", marginBottom: "1.25rem" },
-  breadLink: { color: "#6b7280", cursor: "pointer", textDecoration: "none" },
-  breadSep: { margin: "0 6px", opacity: 0.5 },
-
-  // Job header card
-  jobHeader: { background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "1.25rem 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: 12 },
-  jobHeaderTitle: { fontSize: 17, fontWeight: 600, color: "#1a1a2e" },
-  jobHeaderDate: { fontSize: 13, color: "#6b7280", marginLeft: 10 },
-  headerActions: { display: "flex", gap: 8 },
-
-  // Buttons
-  btnBack: { border: "1px solid #e5e7eb", background: "#fff", color: "#374151", padding: "7px 16px", borderRadius: 7, cursor: "pointer", fontSize: 13 },
-  btnApply: { background: "#c0392b", color: "#fff", border: "none", padding: "7px 20px", borderRadius: 7, cursor: "pointer", fontSize: 13, fontWeight: 600 },
-  btnApplyDisabled: { background: "#27ae60", color: "#fff", border: "none", padding: "7px 20px", borderRadius: 7, cursor: "default", fontSize: 13, fontWeight: 600 },
-  btnCancel: { border: "1px solid #e5e7eb", background: "#fff", color: "#6b7280", padding: "7px 16px", borderRadius: 7, cursor: "pointer", fontSize: 13 },
-  btnNext: { background: "#c0392b", color: "#fff", border: "none", padding: "7px 20px", borderRadius: 7, cursor: "pointer", fontSize: 13, fontWeight: 600 },
-
-  // Detail body
-  detailBody: { display: "flex", gap: "1rem" },
-  detailMain: { flex: 1, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "1.25rem" },
-  detailSidebar: { width: 240, flexShrink: 0, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "1.25rem" },
-  sidebarField: { marginBottom: "1.25rem" },
-  sidebarLabel: { fontSize: 11, color: "#9ca3af", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" },
-  sidebarValue: { fontSize: 13, color: "#374151", lineHeight: 1.6 },
-  detailDesc: { fontSize: 13, color: "#6b7280", lineHeight: 1.7, marginBottom: 14 },
-  reqList: { paddingLeft: 18 },
-  reqItem: { fontSize: 13, color: "#6b7280", marginBottom: 5, lineHeight: 1.5 },
-  reqTitle: { fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 },
-
-  // Apply layout
-  applyBody: { display: "flex", gap: "1rem" },
-  applySidebar: { width: 210, flexShrink: 0, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "1rem" },
-  applyMain: { flex: 1, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "1.5rem" },
-  sectionTitle: { fontSize: 15, fontWeight: 600, marginBottom: "1.25rem", paddingBottom: 10, borderBottom: "1px solid #f3f4f6", color: "#1a1a2e" },
-
-  // Stepper
-  step: (active: boolean, done: boolean) => ({
-    display: "flex", alignItems: "center", gap: 8, padding: "8px 6px",
-    borderRadius: 7, cursor: "pointer", fontSize: 13,
-    color: active ? "#c0392b" : done ? "#065f46" : "#6b7280",
-    fontWeight: active ? 600 : 400,
-  }),
-  stepIcon: (active: boolean, done: boolean) => ({
-    width: 22, height: 22, borderRadius: "50%",
-    border: `1.5px solid ${active ? "#c0392b" : done ? "#27ae60" : "#d1d5db"}`,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 11, flexShrink: 0,
-    background: done ? "#d1fae5" : "transparent",
-    color: active ? "#c0392b" : done ? "#065f46" : "#9ca3af",
-  }),
-
-  // Form elements
-  formGroup: { marginBottom: "1.25rem" },
-  formLabel: { fontSize: 12, color: "#6b7280", marginBottom: 5, display: "block", fontWeight: 500 },
-  formInput: { width: "100%", border: "1px solid #e5e7eb", borderRadius: 7, padding: "7px 10px", fontSize: 13, background: "#fff", color: "#374151", outline: "none", boxSizing: "border-box" },
-  formRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
-
-  // Upload
-  uploadZone: { border: "1.5px dashed #e5e7eb", borderRadius: 10, padding: "2rem", textAlign: "center", cursor: "pointer", background: "#f9fafb" },
-  uploadBtn: { display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid #e5e7eb", background: "#fff", padding: "6px 14px", borderRadius: 7, fontSize: 13, cursor: "pointer", color: "#374151" },
-  uploadNote: { fontSize: 12, color: "#9ca3af", marginTop: 6 },
-  uploadedFile: { display: "flex", alignItems: "center", gap: 8, justifyContent: "center", fontSize: 13, color: "#374151" },
-  fileIcon: { fontSize: 20, color: "#27ae60" },
-  fileBadge: { fontSize: 11, background: "#d1fae5", color: "#065f46", padding: "2px 6px", borderRadius: 4 },
-
-  // Step nav
-  stepNav: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid #f3f4f6" },
-
-  // Success
-  successState: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "3rem", textAlign: "center", gap: "1rem" },
-  successIcon: { width: 56, height: 56, borderRadius: "50%", background: "#d1fae5", color: "#27ae60", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 },
-};
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function SortIcon() {
-  return (
-    <span style={{ marginLeft: 4, opacity: 0.45, fontSize: 11 }}>⇅</span>
-  );
-}
-
-// ─── Prop Types ───────────────────────────────────────────────────────────────
-
-interface propsResumeComponent {
-  uploadedFile: string | null;
-  onUpload: (fileName: string) => void;
-  onNext: () => void;
-}
-
-interface propsBiographicalStepComponent {
+// ─── Step Forms ───────────────────────────────────────────────────────────────
+interface StepFormProps {
   onBack: () => void;
   onNext: () => void;
 }
@@ -296,258 +195,187 @@ interface propscomponent {
 
 // ─── Step Forms ───────────────────────────────────────────────────────────────
 
-function ResumeStep({ uploadedFile, onUpload, onNext }: propsResumeComponent) {
-  const inputRef = React.useRef<HTMLInputElement>(null);
-  return (
-    <div>
-      <div style={S.sectionTitle}>Resume</div>
-      <div style={S.formGroup}>
-        <label style={S.formLabel}>
-          Resume&nbsp;<span style={{ fontSize: 12, color: "#9ca3af" }}>ⓘ</span>
-        </label>
-        <div style={S.uploadZone as React.CSSProperties} onClick={() => inputRef.current?.click()}>
-          {uploadedFile ? (
-            <div style={S.uploadedFile}>
-              <span style={S.fileIcon}>📄</span>
-              <span>{uploadedFile}</span>
-              <span style={S.fileBadge}>Ready</span>
-            </div>
-          ) : (
-            <>
-              <button type="button" style={S.uploadBtn}>
-                <span style={{ color: "#c0392b" }}>⬆</span> Upload
-              </button>
-              <div style={S.uploadNote}>(Resume will be parsed)</div>
-            </>
-          )}
-        </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".pdf,.docx,.doc"
-          style={{ display: "none" }}
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) onUpload(f.name);
-          }}
-        />
-      </div>
-      <div style={S.stepNav}>
-        <button style={S.btnNext} onClick={onNext}>Save &amp; Next</button>
-      </div>
-    </div>
-  );
-}
-
-function BiographicalStep({ onBack, onNext }: propsBiographicalStepComponent) {
-  return (
-    <div>
-      <div style={S.sectionTitle}>Biographical</div>
-      <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>First Name</label><input style={S.formInput as React.CSSProperties} placeholder="First name" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>Last Name</label><input style={S.formInput as React.CSSProperties} placeholder="Last name" /></div>
-      </div>
-      <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>Date of Birth</label><input style={S.formInput as React.CSSProperties} type="date" /></div>
-        <div style={S.formGroup}>
-          <label style={S.formLabel}>Gender</label>
-          <select style={S.formInput as React.CSSProperties}><option>Select</option><option>Male</option><option>Female</option><option>Other</option></select>
-        </div>
-      </div>
-      <div style={S.formGroup}><label style={S.formLabel}>Nationality</label><input style={S.formInput as React.CSSProperties} placeholder="e.g. Indian" /></div>
-      <div style={S.stepNav}>
-        <button style={S.btnCancel} onClick={onBack}>Back</button>
-        <button style={S.btnNext} onClick={onNext}>Save &amp; Next</button>
-      </div>
-    </div>
-  );
-}
-
-function ContactStep({ onBack, onNext }: propContactStep) {
-  return (
-    <div>
-      <div style={S.sectionTitle}>Contact</div>
-      <div style={S.formGroup}><label style={S.formLabel}>Personal Email</label><input style={S.formInput as React.CSSProperties} type="email" placeholder="you@example.com" /></div>
-      <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>Mobile</label><input style={S.formInput as React.CSSProperties} placeholder="+91 XXXXXXXXXX" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>Alternate Phone</label><input style={S.formInput as React.CSSProperties} placeholder="Optional" /></div>
-      </div>
-      <div style={S.stepNav}>
-        <button style={S.btnCancel} onClick={onBack}>Back</button>
-        <button style={S.btnNext} onClick={onNext}>Save &amp; Next</button>
-      </div>
-    </div>
-  );
-}
-
-interface propsAddressStepComponent {
-  onBack: () => void;
-  onNext: () => void;
-}
-
-function AddressStep({ onBack, onNext }: propsAddressStepComponent) {
-  return (
-    <div>
-      <div style={S.sectionTitle}>Address</div>
-      <div style={S.formGroup}><label style={S.formLabel}>Address Line 1</label><input style={S.formInput as React.CSSProperties} placeholder="Street address" /></div>
-      <div style={S.formGroup}><label style={S.formLabel}>Address Line 2</label><input style={S.formInput as React.CSSProperties} placeholder="Apartment, suite, etc." /></div>
-      <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>City</label><input style={S.formInput as React.CSSProperties} placeholder="City" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>State</label><input style={S.formInput as React.CSSProperties} placeholder="State" /></div>
-      </div>
-      <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>Pin Code</label><input style={S.formInput as React.CSSProperties} placeholder="000000" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>Country</label><input style={S.formInput as React.CSSProperties} defaultValue="India" /></div>
-      </div>
-      <div style={S.stepNav}>
-        <button style={S.btnCancel} onClick={onBack}>Back</button>
-        <button style={S.btnNext} onClick={onNext}>Save &amp; Next</button>
-      </div>
-    </div>
-  );
-}
-
-function WorkExperienceStep({ onBack, onNext }: propWorkExperienceStepComponent) {
-  return (
-    <div>
-      <div style={S.sectionTitle}>Work Experience</div>
-      <div style={S.formGroup}><label style={S.formLabel}>Current / Last Employer</label><input style={S.formInput as React.CSSProperties} placeholder="Company name" /></div>
-      <div style={S.formGroup}><label style={S.formLabel}>Designation</label><input style={S.formInput as React.CSSProperties} placeholder="Your role title" /></div>
-      <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>From</label><input style={S.formInput as React.CSSProperties} type="date" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>To (or present)</label><input style={S.formInput as React.CSSProperties} type="date" /></div>
-      </div>
-      <div style={S.formGroup}><label style={S.formLabel}>Total Relevant Experience (years)</label><input style={S.formInput as React.CSSProperties} type="number" min="0" max="40" step="0.5" placeholder="e.g. 3.5" /></div>
-      <div style={S.formGroup}>
-        <label style={S.formLabel}>Statement of Purpose</label>
-        <textarea style={{ ...S.formInput, resize: "vertical", minHeight: 80 } as React.CSSProperties} placeholder="Why are you a good fit for this role?" />
-      </div>
-      <div style={S.stepNav}>
-        <button style={S.btnCancel} onClick={onBack}>Back</button>
-        <button style={S.btnNext} onClick={onNext}>Save &amp; Next</button>
-      </div>
-    </div>
-  );
-}
-
-function EducationStep({ onBack, onNext }: propsEducationStepComponent) {
-  return (
-    <div>
-      <div style={S.sectionTitle}>Education</div>
-      <div style={S.formGroup}>
-        <label style={S.formLabel}>Highest Qualification</label>
-        <select style={S.formInput as React.CSSProperties}>
-          <option>Select</option>
-          <option>10th</option><option>12th</option><option>Diploma</option>
-          <option>B.Tech / B.E.</option><option>B.Sc</option>
-          <option>MBA</option><option>M.Tech</option><option>PhD</option>
-        </select>
-      </div>
-      <div style={S.formGroup}><label style={S.formLabel}>Institution Name</label><input style={S.formInput as React.CSSProperties} placeholder="University / College" /></div>
-      <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>Year of Passing</label><input style={S.formInput as React.CSSProperties} type="number" placeholder="e.g. 2019" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>Percentage / CGPA</label><input style={S.formInput as React.CSSProperties} placeholder="e.g. 8.5 or 78%" /></div>
-      </div>
-      <div style={S.stepNav}>
-        <button style={S.btnCancel} onClick={onBack}>Back</button>
-        <button style={S.btnNext} onClick={onNext}>Save &amp; Next</button>
-      </div>
-    </div>
-  );
-}
-
-function LastSalaryStep({ onBack, onSubmit }: propsLastSalaryStepComponent) {
-  return (
-    <div>
-      <div style={S.sectionTitle}>Last Salary</div>
-      <div style={S.formRow}>
-        <div style={S.formGroup}><label style={S.formLabel}>Current / Last CTC (LPA)</label><input style={S.formInput as React.CSSProperties} type="number" step="0.1" placeholder="e.g. 12.5" /></div>
-        <div style={S.formGroup}><label style={S.formLabel}>Expected CTC (LPA)</label><input style={S.formInput as React.CSSProperties} type="number" step="0.1" placeholder="e.g. 18" /></div>
-      </div>
-      <div style={S.formGroup}><label style={S.formLabel}>Notice Period (days)</label><input style={S.formInput as React.CSSProperties} type="number" placeholder="e.g. 30 or 60" /></div>
-      <div style={S.stepNav}>
-        <button style={S.btnCancel} onClick={onBack}>Back</button>
-        <button style={S.btnNext} onClick={onSubmit}>Submit Application</button>
-      </div>
-    </div>
-  );
-}
-
 // ─── Views ────────────────────────────────────────────────────────────────────
 
-function ListView({ jobs, appliedIds, onSelectJob, searchQuery, setSearchQuery }: propsListViewComponents) {
+function ListView({
+  jobs,
+  appliedIds,
+  onSelectJob,
+  searchQuery,
+  setSearchQuery,
+}: propsListViewComponents) {
+  const { isMobile } = useScreenSize();
+
   return (
-    <div style={S.page}>
-      <div style={S.pageTitle}>IJP Openings</div>
-      <div style={S.toolbar as React.CSSProperties}>
-        <div style={S.toolbarLeft}>
-          <button style={{ ...S.btnBack, padding: "4px 8px", opacity: 0.4 }} disabled>‹</button>
-          <button style={{ ...S.btnBack, padding: "4px 8px" }}>›</button>
-          <span>Show :</span>
-          <select style={S.showSelect}><option>10</option><option>25</option><option>50</option></select>
-          <span style={{ color: "#6b7280" }}>{jobs.length} Results</span>
+    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+      {/* Header banner */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Briefcase className="size-5 text-blue-600" />
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900">
+              IJP Openings
+            </h1>
+          </div>
+          <p className="text-slate-500 text-xs md:text-sm font-light">
+            Browse and apply for internal job openings within our organizations.
+          </p>
         </div>
-        <div style={S.toolbarRight}>
-          <div style={S.searchBox}>
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200/60 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-slate-500">
+          <Button variant="outline" size="md" className="p-2 min-w-0 bg-white" disabled>
+            <ArrowLeft className="size-4" />
+          </Button>
+          <Button variant="outline" size="md" className="p-2 min-w-0 bg-white">
+            <ArrowRight className="size-4" />
+          </Button>
+          <span>Show:</span>
+          <select className="border border-slate-200 rounded-lg px-2.5 py-1 text-xs md:text-sm bg-white font-medium text-slate-700 focus:outline-none">
+            <option>10</option>
+            <option>25</option>
+            <option>50</option>
+          </select>
+          <span className="font-semibold text-slate-700">{jobs.length} Results</span>
+        </div>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-grow sm:flex-initial">
             <input
-              style={S.searchInput}
               type="text"
-              placeholder="Search by Job Code or Job Title"
+              placeholder="Search Job Code or Title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full sm:w-64 pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-light"
             />
-            <button style={S.searchBtn}>🔍</button>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
           </div>
-          <button style={S.filterBtn}>⚙</button>
+          <Button variant="outline" className="p-2.5 min-w-0 bg-white">
+            <SlidersHorizontal className="size-4 text-slate-500" />
+          </Button>
         </div>
       </div>
-      <div style={S.tableWrap}>
-        <table style={S.table as React.CSSProperties}>
-          <thead>
-            <tr>
-              <th style={S.th as React.CSSProperties}>Job Title &amp; Job Code <SortIcon /></th>
-              <th style={S.th as React.CSSProperties}>Remote Job <SortIcon /></th>
-              <th style={S.th as React.CSSProperties}>Company Name <SortIcon /></th>
-              <th style={S.th as React.CSSProperties}>Location <SortIcon /></th>
-              <th style={S.th as React.CSSProperties}>Department And Business Unit <SortIcon /></th>
-              <th style={S.th as React.CSSProperties}>Employee Type <SortIcon /></th>
-              <th style={S.th as React.CSSProperties}>Expires on <SortIcon /></th>
-            </tr>
-          </thead>
-          <tbody>
-          {jobs.map((job) =>  {
-              const applied = job.id ? appliedIds.includes(job.id as string) : false;
-              return (
-                <tr key={job.id} style={{ background: "#fff" }}>
-                  <td style={S.td}>
-                    <span
-                      style={S.jobLink}
-                      onClick={() => onSelectJob(job )}
-                    >
+
+      {/* Render Card List on mobile, Table on desktop */}
+      {isMobile ? (
+        <div className="flex flex-col gap-4">
+          {jobs.map((job) => {
+            const applied = job.id ? appliedIds.includes(job.id as string) : false;
+            return (
+              <Card
+                key={job.id}
+                radius="xl"
+                onClick={() => onSelectJob(job)}
+                className="border border-slate-200 hover:border-blue-300 p-5 bg-white space-y-4 cursor-pointer transition-all shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-slate-900 text-sm md:text-base leading-snug">
                       {job.title}
-                      {applied && <span style={S.appliedBadge}>Applied</span>}
+                    </h3>
+                    <div className="text-[10px] text-slate-400 font-mono">{job.code}</div>
+                  </div>
+                  {applied && (
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0">
+                      Applied
                     </span>
-                    <div style={S.jobCode}>{job.code}</div>
-                  </td>
-                  <td style={S.td}>{job.remote}</td>
-                  <td style={S.td}>{job.company}</td>
-                  <td style={{ ...S.td, maxWidth: 200, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{job.loc}</td>
-                  <td style={S.td}>{job.dept}</td>
-                  <td style={S.td}>{job.type}</td>
-                  <td style={S.td}>{job.expires}</td>
-                </tr>
-              );
-            })}
-            {jobs.length === 0 && (
-              <tr>
-                <td colSpan={7} style={{ ...S.td, textAlign: "center", padding: "2rem", color: "#9ca3af" }}>
-                  No jobs found matching your search.
-                </td>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs text-slate-500 font-light border-t border-slate-100 pt-3">
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className="size-3.5 text-slate-400 shrink-0" />
+                    <span className="truncate">{job.dept}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="size-3.5 text-slate-400 shrink-0" />
+                    <span className="truncate">{job.loc.split(",")[0]}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 col-span-2">
+                    <Calendar className="size-3.5 text-slate-400 shrink-0" />
+                    <span>Expires: {job.expires}</span>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm">
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Job Title &amp; Code
+                </th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Remote
+                </th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Company
+                </th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Location
+                </th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Department
+                </th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Expires
+                </th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-sm font-light text-slate-700">
+              {jobs.map((job) => {
+                const applied = job.id ? appliedIds.includes(job.id as string) : false;
+                return (
+                  <tr key={job.id} className="hover:bg-blue-50/10 transition-colors">
+                    <td className="p-4">
+                      <span
+                        onClick={() => onSelectJob(job)}
+                        className="font-bold text-blue-600 hover:text-blue-800 cursor-pointer inline-flex items-center gap-2"
+                      >
+                        {job.title}
+                        {applied && (
+                          <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                            Applied
+                          </span>
+                        )}
+                      </span>
+                      <div className="text-xs text-slate-400 font-mono mt-0.5">{job.code}</div>
+                    </td>
+                    <td className="p-4">{job.remote}</td>
+                    <td className="p-4">{job.company}</td>
+                    <td className="p-4 max-w-[200px] truncate" title={job.loc}>
+                      {job.loc}
+                    </td>
+                    <td className="p-4">{job.dept}</td>
+                    <td className="p-4">{job.type}</td>
+                    <td className="p-4">{job.expires}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {jobs.length === 0 && (
+        <div className="py-20 flex flex-col items-center justify-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center p-6">
+          <Briefcase className="size-12 text-slate-300 mb-3" />
+          <Typography variant="bodyMedium" className="font-semibold text-slate-700">
+            No Job Openings Found
+          </Typography>
+          <Typography variant="caption" className="text-slate-400 mt-1 max-w-sm">
+            Try adjusting your search keywords to find matching positions.
+          </Typography>
+        </div>
+      )}
     </div>
   );
 }
@@ -555,37 +383,78 @@ function ListView({ jobs, appliedIds, onSelectJob, searchQuery, setSearchQuery }
 function DetailView({ job, appliedIds, onBack, onApply }: propsDetailViewComponents) {
   const applied = appliedIds.includes(job.id);
   return (
-    <div style={S.page}>
-      <div style={S.breadcrumb}>
-        <span style={S.breadLink} onClick={onBack}>Internal Job Movement</span>
-        <span style={S.breadSep}>/</span>
-        <strong>{job.title} ({job.code})</strong>
+    <div className="space-y-6 max-w-5xl mx-auto pb-10">
+      {/* Breadcrumbs */}
+      <div className="text-xs text-slate-400 font-light flex items-center gap-1.5">
+        <span className="hover:text-blue-600 cursor-pointer transition-colors" onClick={onBack}>
+          IJP Openings
+        </span>
+        <span className="opacity-50">/</span>
+        <strong className="text-slate-700 font-medium">{job.title} ({job.code})</strong>
       </div>
-      <div style={S.jobHeader as React.CSSProperties }>
-        <div>
-          <span style={S.jobHeaderTitle}>{job.title} ({job.code})</span>
-          <span style={S.jobHeaderDate}>(Open since {job.openSince})</span>
+
+      {/* Header Panel */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h2 className="text-lg md:text-xl font-bold text-slate-900 leading-tight">
+            {job.title} ({job.code})
+          </h2>
+          <p className="text-xs text-slate-500 font-light">Open since {job.openSince}</p>
         </div>
-        <div style={S.headerActions}>
-          <button style={S.btnBack} onClick={onBack}>‹ Back</button>
+
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Button variant="outline" onClick={onBack} className="w-full sm:w-auto bg-white">
+            Back
+          </Button>
           {applied ? (
-            <button style={S.btnApplyDisabled} disabled>✓ Applied</button>
+            <Button
+              variant="contain"
+              className="bg-emerald-600 hover:bg-emerald-700 cursor-default w-full sm:w-auto"
+              disabled
+            >
+              ✓ Applied
+            </Button>
           ) : (
-            <button style={S.btnApply} onClick={onApply}>Apply</button>
+            <Button
+              variant="contain"
+              onClick={onApply}
+              className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+            >
+              Apply
+            </Button>
           )}
         </div>
       </div>
-      <div style={S.detailBody}>
-        <div style={S.detailMain}>
-          <p style={S.detailDesc}>{job.desc}</p>
-          <p style={S.reqTitle}>Requirements:</p>
-          <ul style={S.reqList}>
-            {job.reqs.map((r: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined, i: React.Key | null | undefined) => (
-              <li key={i} style={S.reqItem}>{r}</li>
-            ))}
-          </ul>
+
+      {/* Details Grid layout: stacks on mobile, columns on lg */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Main Details */}
+        <div className="flex-grow bg-white border border-slate-200/60 rounded-2xl p-6 shadow-sm space-y-6">
+          <div className="space-y-2">
+            <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider">
+              Job Description
+            </h3>
+            <p className="text-xs md:text-sm text-slate-500 leading-relaxed font-light">
+              {job.desc}
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider">
+              Requirements
+            </h3>
+            <ul className="list-disc pl-5 text-xs md:text-sm text-slate-500 space-y-2 font-light">
+              {job.reqs.map((req, idx) => (
+                <li key={idx} className="leading-relaxed">
+                  {req}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-        <div style={S.detailSidebar}>
+
+        {/* Sidebar Specifications */}
+        <div className="w-full lg:w-72 shrink-0 bg-white border border-slate-200/60 rounded-2xl p-6 shadow-sm divide-y divide-slate-100">
           {[
             ["Company", job.company],
             ["Department", job.dept],
@@ -597,9 +466,13 @@ function DetailView({ job, appliedIds, onBack, onApply }: propsDetailViewCompone
             ["Experience", job.exp],
             ["Expires on", job.expires],
           ].map(([label, value]) => (
-            <div key={label} style={S.sidebarField}>
-              <div style={S.sidebarLabel}>{label}</div>
-              <div style={S.sidebarValue}>{value}</div>
+            <div key={label} className="py-3 first:pt-0 last:pb-0 space-y-1">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                {label}
+              </span>
+              <span className="text-xs md:text-sm text-slate-700 font-medium leading-relaxed">
+                {value}
+              </span>
             </div>
           ))}
         </div>
@@ -610,84 +483,223 @@ function DetailView({ job, appliedIds, onBack, onApply }: propsDetailViewCompone
 
 function ApplyView({ job, onCancel, onSubmitDone }: propscomponent) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [copied, setCopied] = useState(false);
 
-  const goNext = () => setCurrentStep((s) => Math.min(s + 1, STEPS.length - 1));
-  const goBack = () => setCurrentStep((s) => Math.max(s - 1, 0));
+  const referralLink = `${window.location.origin}/jobs/jobsapply/id/${job.id}`;
 
-  const handleSubmit = () => {
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(referralLink).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleFormChange = (changed: any) => {
+    setFormData((prev) => ({ ...prev, ...changed.data }));
+  };
+
+  const handleNext = () => {
+    if (currentStep < ijpApplicationSteps.length - 1) {
+      setCurrentStep((s) => s + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep((s) => s - 1);
+    }
+  };
+
+  const handleSubmitApplication = () => {
     setSubmitted(true);
     onSubmitDone(job.id);
   };
 
-  const renderStepContent = () => {
-    if (submitted) {
-      return (
-        <div style={S.successState as React.CSSProperties}>
-          <div style={S.successIcon}>✓</div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: "#1a1a2e" }}>Congratulations!</div>
-          <p style={{ fontSize: 13, color: "#6b7280", maxWidth: 360, lineHeight: 1.7 }}>
-            Your application for <strong>{job.title}</strong> has been successfully submitted.
-            You can track its live status in the <strong>IJP Jobs Applied</strong> portal.
-          </p>
-          <button style={S.btnApply} onClick={onCancel}>Back to IJP Openings</button>
+  const currentSchema =
+    ijpApplicationSchemas[ijpApplicationSteps[currentStep].key as IJPFormSchemaKeys];
+
+  if (submitted) {
+    return (
+      <div className="max-w-2xl mx-auto py-20 flex flex-col items-center justify-center text-center space-y-5">
+        <div className="size-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
+          <CheckCircle2 className="size-9" />
         </div>
-      );
-    }
-    switch (STEPS[currentStep]) {
-      case "Resume": return <ResumeStep uploadedFile={uploadedFile} onUpload={(fileName) => setUploadedFile(fileName)} onNext={goNext} />;
-      case "Biographical": return <BiographicalStep onBack={goBack} onNext={goNext} />;
-      case "Contact": return <ContactStep onBack={goBack} onNext={goNext} />;
-      case "Address": return <AddressStep onBack={goBack} onNext={goNext} />;
-      case "Work Experience": return <WorkExperienceStep onBack={goBack} onNext={goNext} />;
-      case "Education": return <EducationStep onBack={goBack} onNext={goNext} />;
-      case "Last Salary": return <LastSalaryStep onBack={goBack} onSubmit={handleSubmit} />;
-      default: return null;
-    }
-  };
+        <h4 className="text-xl font-bold text-slate-900">Application Submitted!</h4>
+        <p className="text-sm text-slate-500 max-w-sm leading-relaxed font-light">
+          Your application for{" "}
+          <strong className="text-slate-700 font-semibold">{job.title}</strong> has been
+          successfully submitted. You can track its live status in the{" "}
+          <strong className="text-slate-700 font-semibold">IJP Jobs Applied</strong> portal.
+        </p>
+        <Button
+          variant="contain"
+          className="bg-blue-600 hover:bg-blue-700 mt-2"
+          onClick={onCancel}
+        >
+          Back to IJP Openings
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div style={S.page}>
-      <div style={S.breadcrumb}>
-        <span style={S.breadLink} onClick={onCancel}>Internal Job Movement</span>
-        <span style={S.breadSep}>/</span>
-        <strong>{job.title} ({job.code})</strong>
-      </div>
-      <div style={S.jobHeader as React.CSSProperties}>
-        <div>
-          <span style={S.jobHeaderTitle}>{job.title} ({job.code})</span>
-          <span style={S.jobHeaderDate}>(Open since {job.openSince})</span>
-        </div>
-        <div style={S.headerActions}>
-          <button style={S.btnCancel} onClick={onCancel}>Cancel</button>
-          <button style={S.btnApply} onClick={submitted ? onCancel : handleSubmit}>Apply</button>
-        </div>
-      </div>
-      <div style={S.applyBody}>
-        {!submitted && (
-          <div style={S.applySidebar}>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: "#374151" }}>Apply for IJP</div>
-            {STEPS.map((step, i) => {
-              const active = i === currentStep;
-              const done = i < currentStep;
-              return (
-                <div
-                  key={step}
-                  style={S.step(active, done)}
-                  onClick={() => setCurrentStep(i)}
-                >
-                  <div style={S.stepIcon(active, done)}>
-                    {done ? "✓" : active ? "→" : "○"}
-                  </div>
-                  <span>{step}</span>
-                </div>
-              );
-            })}
+    <div className="space-y-4 max-w-5xl mx-auto pb-10">
+      {/* ── Header ──────────────────────────────────────────── */}
+      <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-6 py-4">
+          <div className="space-y-0.5">
+            <h2 className="text-base md:text-lg font-bold text-slate-900 leading-tight">
+              {job.title}{" "}
+              <span className="text-slate-400 font-normal text-sm">({job.code})</span>
+            </h2>
+            <p className="text-xs text-slate-400 font-light">
+              Open since {job.openSince}
+            </p>
           </div>
-        )}
-        <div style={{ ...S.applyMain, flex: 1 }}>
-          {renderStepContent()}
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              className="bg-white text-slate-700 border-slate-200 text-sm"
+            >
+              CANCEL
+            </Button>
+            <Button
+              variant="contain"
+              onClick={handleSubmitApplication}
+              className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-5"
+            >
+              APPLY
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Referral Link Card ──────────────────────────────── */}
+      <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm px-6 py-5">
+        <div className="flex items-center gap-2 mb-1">
+          <Link2 className="size-4 text-slate-600" />
+          <span className="text-sm font-semibold text-slate-800">Refer a person using link</span>
+        </div>
+        <p className="text-xs text-slate-400 mb-3 font-light">
+          You can use this referral link to share it to anyone
+        </p>
+        <div className="flex items-center gap-3">
+          <input
+            readOnly
+            value={referralLink}
+            className="flex-1 text-xs px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 focus:outline-none truncate"
+          />
+          <button
+            onClick={handleCopyLink}
+            className="flex items-center gap-1.5 text-orange-500 hover:text-orange-600 font-bold text-xs uppercase tracking-wide transition-colors shrink-0"
+          >
+            <Copy className="size-3.5" />
+            {copied ? "COPIED!" : "COPY LINK"}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Steps + Form ────────────────────────────────────── */}
+      <div className="bg-white border border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
+        <div className="flex flex-col lg:flex-row min-h-[480px]">
+          {/* Left Sidebar – Steps */}
+          <div className="w-full lg:w-52 shrink-0 border-b lg:border-b-0 lg:border-r border-slate-100">
+            <div className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible gap-0 scrollbar-hide">
+              {ijpApplicationSteps.map((step, i) => {
+                const isActive = i === currentStep;
+                const isDone = i < currentStep;
+                return (
+                  <button
+                    key={step.key}
+                    onClick={() => setCurrentStep(i)}
+                    className={`flex items-center gap-3 px-4 py-3.5 text-left transition-all border-b border-slate-50 shrink-0 min-w-[140px] lg:min-w-0 ${isActive
+                        ? "text-orange-500 font-semibold bg-orange-50/30"
+                        : isDone
+                          ? "text-emerald-600"
+                          : "text-slate-500 hover:bg-slate-50"
+                      }`}
+                  >
+                    {/* Step circle icon */}
+                    <span
+                      className={`size-5 rounded-full flex items-center justify-center border-2 shrink-0 text-[10px] ${isActive
+                          ? "border-orange-400 text-orange-500"
+                          : isDone
+                            ? "border-emerald-500 bg-emerald-500 text-white"
+                            : "border-slate-300 text-slate-400"
+                        }`}
+                    >
+                      {isDone ? (
+                        <svg className="size-3" viewBox="0 0 12 12" fill="none">
+                          <path
+                            d="M2 6l3 3 5-5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      ) : isActive ? (
+                        <span className="size-2 rounded-full bg-orange-400 block" />
+                      ) : (
+                        <svg className="size-3 text-slate-400" viewBox="0 0 12 12" fill="none">
+                          <circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.5" />
+                        </svg>
+                      )}
+                    </span>
+                    <span className="text-xs truncate">{step.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right Panel – Form.io Form */}
+          <div className="flex-1 p-6">
+            {/* Section heading */}
+            <h3 className="text-base font-bold text-slate-900 mb-5">
+              {ijpApplicationSteps[currentStep].label}
+            </h3>
+
+            {/* Form.io rendered form */}
+            <Form
+              form={currentSchema}
+              submission={{ data: formData }}
+              onChange={handleFormChange}
+              onSubmit={handleSubmitApplication}
+            />
+
+            {/* Navigation Buttons */}
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100">
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentStep === 0}
+                className="bg-white"
+              >
+                Previous
+              </Button>
+              {currentStep < ijpApplicationSteps.length - 1 ? (
+                <Button
+                  variant="contain"
+                  onClick={handleNext}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  Save &amp; Next
+                </Button>
+              ) : (
+                <Button
+                  variant="contain"
+                  onClick={handleSubmitApplication}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  Submit Application
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -724,7 +736,11 @@ export default function IJPOpenings() {
   const handleSubmitDone = useCallback((jobId: any) => {
     setAppliedIds((prev: any) => {
       const next = [...prev, jobId];
-      try { localStorage.setItem("ijp_applied_ids", JSON.stringify(next)); } catch { /* empty */ }
+      try {
+        localStorage.setItem("ijp_applied_ids", JSON.stringify(next));
+      } catch {
+        /* empty */
+      }
       return next;
     });
   }, []);

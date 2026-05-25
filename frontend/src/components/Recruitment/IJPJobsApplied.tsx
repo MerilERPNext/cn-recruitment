@@ -250,7 +250,7 @@ export default function IJPJobsApplied() {
 
                             {/* Step Label */}
                             <span
-                              className={`text-[10px] md:text-xs mt-2 font-medium ${
+                              className={`hidden md:block text-[10px] md:text-xs mt-2 font-medium ${
                                 isStepOffered
                                   ? "text-emerald-600 font-bold"
                                   : isActive
@@ -265,6 +265,14 @@ export default function IJPJobsApplied() {
                           </div>
                         );
                       })}
+                    </div>
+
+                    {/* Mobile Stage Label */}
+                    <div className="md:hidden mt-4 text-center">
+                      <span className="text-xs text-slate-500">Current Stage: </span>
+                      <span className={`text-xs font-bold ${isOffered ? "text-emerald-600" : "text-blue-600"}`}>
+                        {isOffered ? "Offer Extended" : app.status}
+                      </span>
                     </div>
                   </div>
                 </div>

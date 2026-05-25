@@ -60,6 +60,26 @@ export default function OfferLetterPage() {
   const [declineReasonText, setDeclineReasonText] = useState("");
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (sigType !== "draw") return;
+    const handleResize = () => {
+      const canvas = canvasRef.current;
+      const container = containerRef.current;
+      if (canvas && container) {
+        canvas.width = container.clientWidth;
+      }
+    };
+
+    const timer = setTimeout(handleResize, 100);
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [sigType]);
 
   useEffect(() => {
     const saved = localStorage.getItem("cn_offers");
@@ -464,10 +484,9 @@ export default function OfferLetterPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="relative border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                    <div ref={containerRef} className="relative border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
                       <canvas
                         ref={canvasRef}
-                        width={400}
                         height={120}
                         onMouseDown={startDrawing}
                         onMouseMove={draw}
