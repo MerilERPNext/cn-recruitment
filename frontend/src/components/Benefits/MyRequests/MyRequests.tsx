@@ -390,6 +390,15 @@ const MyRequests: React.FC = () => {
   );
 };
 
+const MY_REQUESTS_UI_PERMISSION = {
+  app: "Benefits",
+  page: "My Requests",
+  actionKeysMap: {
+    edit: "edit",
+    revoke: "revoke"
+  }
+};
+
 const BenefitSlipItem = ({
   item,
   maskAmounts,
@@ -514,14 +523,7 @@ const BenefitSlipItem = ({
 
       <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
         <MyApprovalActionPill
-          uiPermission={{
-            app: "Benefits",
-            page: "My Requests",
-            actionKeysMap: {
-              edit: "edit",
-              revoke: "revoke"
-            }
-          }}
+          uiPermission={MY_REQUESTS_UI_PERMISSION}
           canEdit={canEdit}
           canRevoke={canRevoke}
           onRevoke={handleRevokeClick}
@@ -641,14 +643,7 @@ const BenefitSlipItem = ({
           {/* Actions */}
           <div className={`mt-4 ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
-              uiPermission={{
-                app: "Benefits",
-                page: "My Requests",
-                actionKeysMap: {
-                  edit: "edit",
-                  revoke: "revoke"
-                }
-              }}
+              uiPermission={MY_REQUESTS_UI_PERMISSION}
               canEdit={canEdit}
               canRevoke={canRevoke}
               onRevoke={handleRevokeClick}

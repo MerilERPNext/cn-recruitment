@@ -38,6 +38,18 @@ const BenefitsSlips = () => {
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
   const { isDesktop } = useScreenSize();
 
+  const uiPermission = useMemo(() => ({
+    app: "Benefits",
+    page: "Benefit Slips",
+    actionKey: "view_slip",
+  }), []);
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const viewSlipEnabled = isActionEnabled(
+    uiPermissionData,
+    uiPermission?.actionKey ?? "",
+    uiPermission?.page,
+  );
+
   const effectiveEmployee = isViewingOtherUser
     ? targetEmployee
     : employeeIdCard;
@@ -117,7 +129,9 @@ const BenefitsSlips = () => {
               },
             }}
             getItemKey={(item: any, _: number) => item.name}
-            ItemComponent={BenefitSlipItem}
+            ItemComponent={(props: { item: BenefitPayslip }) => (
+              <BenefitSlipItem item={props?.item} viewSlipEnabled={viewSlipEnabled} />
+            )}
             SkeletonComponent={CardSkeleton}
             // refetchTrigger={refetchAttendance}
             // onRefetchComplete={() => setRefetchAttendance(false)}
@@ -151,23 +165,11 @@ const BenefitsSlips = () => {
 
 export default BenefitsSlips;
 
-const BenefitSlipItem = ({ item }: { item: BenefitPayslip }) => {
+const BenefitSlipItem = ({ item, viewSlipEnabled }: { item: BenefitPayslip, viewSlipEnabled: boolean }) => {
   const { data, isLoading } = useGetBenefitSlipHTML(item.name);
   const [showPDF, setShowPDF] = useState<boolean>(false);
   const benefitSlipDate = item?.claim_date;
   const { isDesktop } = useScreenSize();
-
-  const uiPermission = {
-    app: "Benefits",
-    page: "Benefit Slips",
-    actionKey: "view_slip",
-  };
-  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
-  const viewSlipEnabled = isActionEnabled(
-    uiPermissionData,
-    uiPermission?.actionKey ?? "",
-    uiPermission?.page,
-  );
 
   return (
     <>
