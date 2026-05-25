@@ -132,7 +132,7 @@ const FlowApp: React.FC = () => {
 
   const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
-      <header className="sticky top-0 z-50 bg-white shadow-sm">
+      <header className="sticky top-0 z-20 bg-white shadow-sm">
         {!seprateRoute && (
           <>
             <HeaderBar
@@ -147,7 +147,7 @@ const FlowApp: React.FC = () => {
           </>
         )}
       </header>
-      <main className="z-10 flex-grow p-2">
+      <main className="z-100 flex-grow p-2">
         <Outlet />
       </main>
 
