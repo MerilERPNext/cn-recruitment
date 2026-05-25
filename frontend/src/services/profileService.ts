@@ -7,8 +7,9 @@ import {
   IDesignationHierarchy,
   IGetEmpDesignationHierarchyCurrentDetails,
 } from "../types/employee";
-import { GenderResponse, IField } from "../types/profile";
 import FrappeAPI from "../utils/frappeAPI";
+import { FutureTransaction } from "../components/EmployeeProfile/FutureTransactionRowItem";
+import { GenderResponse, IField } from "../types/profile";
 
 export const profileService = {
   getGenders: async (): Promise<GenderResponse> => {
@@ -305,17 +306,18 @@ export const profileService = {
     }
   },
 
-  getFutureFieldTransactions: async (employee: string): Promise<any[]> => {
+  getFutureFieldTransactions: async (
+    employee: string
+  ): Promise<FutureTransaction[]> => {
     try {
       const response = await FrappeAPI.callMethod(
         "cn_hrms_core.cn_hrms_core.apis.employee_history.get_future_field_transactions",
         {
           employee: employee,
-        },
+        }
       );
-      return (response as any[]) || [];
+      return (response as FutureTransaction[]) || [];
     } catch (error) {
-      console.error("📡 Error while fetching future transactions:", error);
       throw error;
     }
   },
