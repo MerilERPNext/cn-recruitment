@@ -228,6 +228,7 @@ const SESSION_POLICY_AUTO_OPENED_KEY = "policy_is_auto_opened";
 
 const MandatoryPoliciesHandler = () => {
   const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { isViewingOtherUser } = useTargetUser();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -279,7 +280,8 @@ const MandatoryPoliciesHandler = () => {
     if (
       isCurrentEmployeeFetching ||
       isMandatoryPoliciesCountFetching ||
-      mandatoryPoliciesCount === undefined
+      mandatoryPoliciesCount === undefined ||
+      isViewingOtherUser
     ) {
       return;
     }
@@ -323,6 +325,7 @@ const MandatoryPoliciesHandler = () => {
     isAutoOpened,
     redirectTo,
     location.pathname,
+    isViewingOtherUser,
   ]);
 
   // One-time redirect per page reload for non-mandatory policies
@@ -334,7 +337,8 @@ const MandatoryPoliciesHandler = () => {
       isMandatoryPoliciesCountFetching ||
       isNonMandatoryPoliciesCountFetching ||
       mandatoryPoliciesCount === undefined ||
-      NonMandatoryPoliciesCount === undefined
+      NonMandatoryPoliciesCount === undefined ||
+      isViewingOtherUser
     ) {
       return;
     }
@@ -363,6 +367,7 @@ const MandatoryPoliciesHandler = () => {
     isMandatoryPoliciesCountFetching,
     navigate,
     location.pathname,
+    isViewingOtherUser,
   ]);
 
   return null;

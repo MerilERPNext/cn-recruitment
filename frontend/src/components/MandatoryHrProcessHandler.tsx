@@ -4,6 +4,7 @@ import { useCurrentEmployeeDetails } from "../hooks/useEmployee";
 import { useMandatoryTasks } from "../hooks/useMandatoryTasks";
 import { ROUTES } from "../constants/routes";
 import { useFrappeDocumentCount } from "../hooks/useFrappeQuery";
+import { useTargetUser } from "../context/ViewedUserContext";
 
 const SESSION_MANDATORY_HR_SHOWN_KEY = "mandatory_hr_page_shown";
 const SESSION_MANDATORY_HR_REDIRECT_TO_KEY = "mandatory_hr_redirect_to";
@@ -13,6 +14,7 @@ const SESSION_MANDATORY_HR_CURRENT_TASK_KEY = "mandatory_hr_current_task";
 const MandatoryHrProcessHandler = () => {
   const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } =
     useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { isViewingOtherUser } = useTargetUser();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -72,7 +74,8 @@ const MandatoryHrProcessHandler = () => {
       isMandatoryTasksFetching ||
       mandatoryResponse === undefined ||
       isMandatoryPoliciesCountFetching ||
-      mandatoryPoliciesCount === undefined
+      mandatoryPoliciesCount === undefined ||
+      isViewingOtherUser
     ) {
       return;
     }
@@ -154,6 +157,7 @@ const MandatoryHrProcessHandler = () => {
     location.hash,
     mandatoryPoliciesCount,
     isMandatoryPoliciesCountFetching,
+    isViewingOtherUser,
   ]);
 
   useEffect(() => {
