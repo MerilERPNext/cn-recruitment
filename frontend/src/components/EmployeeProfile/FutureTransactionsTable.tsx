@@ -9,6 +9,7 @@ import FutureTransactionRowItem, {
   type FutureTransaction,
 } from "./FutureTransactionRowItem";
 
+
 const COLUMN_WIDTHS = [
   "1fr",
   "1fr",

@@ -5,6 +5,7 @@ import {
   useCurrentEmployeeDetails,
   useFileUpload,
   useGetEmployeeDetailsByEmpIdForProfile,
+  useGetFutureFieldTransactions,
 } from "../../hooks/useEmployee";
 import { Employee } from "../../types/employee";
 import HeaderBar from "../HeaderBar";
@@ -98,6 +99,10 @@ const EmployeeProfile: React.FC = () => {
     isLoading: userIsLoading,
   } = useGetEmployeeDetailsByEmpIdForProfile(employeeId);
   const user = empData?.employee;
+
+  const { data: futureTransactionsData } =
+    useGetFutureFieldTransactions(employeeId);
+  const hasFutureTransactions = (futureTransactionsData?.length ?? 0) > 0;
 
   // const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
   //   useState(false);
@@ -457,7 +462,7 @@ const EmployeeProfile: React.FC = () => {
                     Attendance Assignment
                   </Button>
                 )} */}
-              {canShowFutureTransactions && (
+              {canShowFutureTransactions && hasFutureTransactions && (
                 <Button
                   icon={<History size={14} />}
                   size="sm"
@@ -697,7 +702,7 @@ const EmployeeProfile: React.FC = () => {
                     </button>
                   ))}
                 </div>
-                {canShowFutureTransactions && (
+                {canShowFutureTransactions && hasFutureTransactions && (
                   <Button
                     icon={<History size={14} />}
                     size="sm"
@@ -736,7 +741,7 @@ const EmployeeProfile: React.FC = () => {
   return (
     <>
       {isDesktop ? desktopLayout : mobileLayout}
-      {isFutureTransactionsOpen &&
+      {isFutureTransactionsOpen && (
         <SideDrawer
           open={isFutureTransactionsOpen}
           onClose={() => setIsFutureTransactionsOpen(false)}
@@ -746,7 +751,7 @@ const EmployeeProfile: React.FC = () => {
         >
           <FutureTransactionsTable />
         </SideDrawer>
-      }
+      )}
     </>
   );
 };
