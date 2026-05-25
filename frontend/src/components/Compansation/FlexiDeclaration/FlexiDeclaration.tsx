@@ -370,39 +370,59 @@ export default function FlexiDeclaration() {
                   No earnings data found.
                 </div>
               )}
-            </div>
 
-            {/* Variable Pay (Included in CTC) */}
-            {flexiData?.salary_data?.variable_pay_include_ctc && flexiData.salary_data.variable_pay_include_ctc.length > 0 && (
-              <div className="mt-6">
-                <div className="mb-4">
-                  <span className="font-bold text-[14px] sm:text-[15px] text-text-title">
-                    Variable Pay (Included in CTC)
-                  </span>
-                </div>
-                <div className="bg-white rounded-[10px] border border-gray-100 overflow-hidden shadow-sm">
-                  {/* Table Header */}
-                  <div className="grid grid-cols-[1fr_90px] sm:grid-cols-[1fr_130px] bg-gray-10/30 border-b border-gray-100 px-3 sm:px-4 py-2.5">
-                    <span className="text-[11px] sm:text-[12px] font-semibold text-text-body1">Component</span>
-                    <span className="text-[11px] sm:text-[12px] font-semibold text-text-body1 text-right">Annually</span>
+              {flexiData?.salary_data && (
+                <>
+                  {/* Fixed Gross (Annual)(Eg-100000) */}
+                  <div
+                    className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center bg-primary/10 border-t border-gray-200 font-bold"
+                  >
+                    <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">
+                      Fixed Gross (Annual)(Eg-100000)
+                    </span>
+                    <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                      {showValues ? formatINR(flexiData.salary_data.fixed_gross_monthly) : "*****"}
+                    </span>
+                    <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                      {showValues ? formatINR(flexiData.salary_data.fixed_gross_annual) : "*****"}
+                    </span>
                   </div>
 
-                  {flexiData.salary_data.variable_pay_include_ctc.map((item: any, i: number) => (
+                  {/* Variable Pay Included in CTC */}
+                  {flexiData.salary_data.variable_pay_include_ctc?.map((item: any, idx: number) => (
                     <div
-                      key={item.component || i}
-                      className={`grid grid-cols-[1fr_90px] sm:grid-cols-[1fr_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center ${i % 2 === 0 ? "bg-white" : "bg-gray-10/10"} ${i < flexiData.salary_data.variable_pay_include_ctc.length - 1 ? "border-b border-gray-50" : ""}`}
+                      key={`var-${item.component || idx}`}
+                      className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center bg-white border-t border-gray-100"
                     >
-                      <span className="text-[12px] sm:text-[13px] text-text-body1 flex items-center gap-1 leading-snug">
+                      <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">
                         {item.component}
+                      </span>
+                      <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                        -
                       </span>
                       <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
                         {showValues ? formatINR(item.annual_amount) : "*****"}
                       </span>
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
+
+                  {/* Total CTC */}
+                  <div
+                    className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center bg-primary/10 border-t border-gray-200 font-bold"
+                  >
+                    <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">
+                      Total CTC
+                    </span>
+                    <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                      -
+                    </span>
+                    <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                      {showValues ? formatINR(flexiData.salary_data.total_ctc || flexiData.salary_data.annual_ctc) : "*****"}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Variable Pay (Excluded from CTC) */}
             {flexiData?.salary_data?.variable_pay_exclude_ctc && flexiData.salary_data.variable_pay_exclude_ctc.length > 0 && (
