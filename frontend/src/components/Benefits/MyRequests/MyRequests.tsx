@@ -514,6 +514,14 @@ const BenefitSlipItem = ({
 
       <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
         <MyApprovalActionPill
+          uiPermission={{
+            app: "Benefits",
+            page: "My Requests",
+            actionKeysMap: {
+              edit: "edit",
+              revoke: "revoke"
+            }
+          }}
           canEdit={canEdit}
           canRevoke={canRevoke}
           onRevoke={handleRevokeClick}
@@ -633,6 +641,14 @@ const BenefitSlipItem = ({
           {/* Actions */}
           <div className={`mt-4 ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
+              uiPermission={{
+                app: "Benefits",
+                page: "My Requests",
+                actionKeysMap: {
+                  edit: "edit",
+                  revoke: "revoke"
+                }
+              }}
               canEdit={canEdit}
               canRevoke={canRevoke}
               onRevoke={handleRevokeClick}
