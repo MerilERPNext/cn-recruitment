@@ -514,6 +514,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
               name: "Session",
               icon: ChartNoAxesCombined,
               href: "/webapp/performance-app/calibrator/session"
+            },
+            {
+              name: "9-Box Grid",
+              icon: ChartNoAxesCombined,
+              href: "/webapp/performance-app/calibrator/box-grid"
             }
           ]
         },

@@ -36,6 +36,7 @@ import AppraisalCycleWizard from "./components/Performance/AppraisalCycleWizard/
 import Eligibility from "./components/Performance/AppraisalCycleWizard/Eligibility.tsx";
 import Stages from "./components/Performance/AppraisalCycleWizard/Stages.tsx";
 import CalibratorSession from "./components/Performance/AppraisalCycleWizard/Calibrator.tsx";
+import BoxGrid from "./components/Performance/AppraisalCycleWizard/BoxGrid.tsx";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -1310,6 +1311,11 @@ export const routesConfig: AppRoute[] = [
       {
         path: "calibrator/session",
         element: <CalibratorSession />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "calibrator/box-grid",
+        element: <BoxGrid />,
         permissionKey: "Performance Admin",
       },
     ],

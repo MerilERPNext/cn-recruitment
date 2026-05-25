@@ -482,7 +482,7 @@ const CalibratorSession = () => {
                   <th rowSpan={2} className="w-[170px] border-b border-r border-gray-200 px-4 py-4">
                     FY26 Manager Suggested
                   </th>
-                  <th rowSpan={2} className="w-[130px] border-b border-x border-blue-300 bg-blue-50 px-4 py-4">
+                  <th rowSpan={2} className="w-[630px] border-b border-x border-blue-300 bg-blue-50 px-4 py-4">
                     FY26 Calibrated
                   </th>
                   <th rowSpan={2} className="w-[90px] border-b border-r border-gray-200 px-3 py-4">
@@ -576,7 +576,7 @@ const CalibratorSession = () => {
                               openOverride(employee.id);
                             }
                           }
-                          className={`relative w-[96px] [&>button]:min-h-[34px] [&>button]:rounded-md [&>button]:border-gray-200 [&>button]:px-2 [&>button]:py-1.5 [&>button]:text-xs [&>button]:font-bold [&>button]:shadow-sm [&>button_span]:font-bold [&>div]:mt-1 [&>div]:w-[130px] [&>div]:rounded-none [&>div]:p-0 [&_li]:rounded-none [&_li]:px-3 [&_li]:py-1.5 ${ratingTextColor[selectedRating.value]}`}
+                          className={`relative w-[200px] [&>button]:min-h-[34px] [&>button]:rounded-md [&>button]:border-gray-200 [&>button]:px-2 [&>button]:py-1.5 [&>button]:text-xs [&>button]:font-bold [&>button]:shadow-sm [&>button_span]:font-bold [&>div]:mt-1 [&>div]:w-[130px] [&>div]:rounded-none [&>div]:p-0 [&_li]:rounded-none [&_li]:px-3 [&_li]:py-1.5 ${ratingTextColor[selectedRating.value]}`}
                         />
                         {employee.override && (
                           <span className="mt-1 block text-[10px] font-bold uppercase text-amber-700">
