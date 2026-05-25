@@ -69,8 +69,8 @@ const FlowRequests: React.FC = () => {
         <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
           <CardTable titles={titles} columnWidths={columnWidths}>
 
-            <DataListView
-              queryKey={"flow-requests"}
+            <DataListView<FlowRequestItem>
+              queryKey={"employee-flow-requests"}
               customAPI={{
                 method: "cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_details",
                 paginationKeys: {
@@ -91,7 +91,7 @@ const FlowRequests: React.FC = () => {
               renderItem={(item) => {
                 return (
                   <FlowRequestCard
-                    request={item as FlowRequestItem}
+                    request={item}
                     handleShowDetails={handleShowDetails}
                   />
                 );

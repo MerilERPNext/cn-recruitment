@@ -56,24 +56,6 @@ function isArrayResponse<T>(
   return Array.isArray(response);
 }
 
-// Type guard to check if response is an object with expected properties
-// function isObjectResponse<T>(
-//   response: unknown
-// ): response is FrappeObjectResponse<T> {
-//   return (
-//     response !== null &&
-//     typeof response === "object" &&
-//     !Array.isArray(response) &&
-//     ("data" in response ||
-//       "results" in response ||
-//       "total_count" in response ||
-//       "totalCount" in response ||
-//       "page_length" in response ||
-//       "start" in response ||
-//       "has_next_page" in response ||
-//       "hasNextPage" in response)
-//   );
-// }
 
 export const customApiService = {
   // Pure API service function - wrapped by React Query hooks in useCustomApi.ts for reactivity
