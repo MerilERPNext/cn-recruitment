@@ -201,11 +201,10 @@ export default function FlexiDeclaration() {
               <button
                 onClick={handleSave}
                 disabled={updateMutation.isPending || isClosed}
-                className={`bg-primary text-white border-none rounded-md px-4 py-1.5 text-[13px] font-semibold ml-2.5 transition-all duration-200 ${
-                  (updateMutation.isPending || isClosed)
-                    ? "opacity-50 cursor-not-allowed bg-gray-400"
-                    : "cursor-pointer"
-                }`}
+                className={`bg-primary text-white border-none rounded-md px-4 py-1.5 text-[13px] font-semibold ml-2.5 transition-all duration-200 ${(updateMutation.isPending || isClosed)
+                  ? "opacity-50 cursor-not-allowed bg-gray-400"
+                  : "cursor-pointer"
+                  }`}
               >
                 {updateMutation.isPending ? "Saving..." : isClosed ? "Locked" : "Save Changes"}
               </button>
@@ -222,11 +221,10 @@ export default function FlexiDeclaration() {
               <button
                 onClick={handleSave}
                 disabled={updateMutation.isPending || isClosed}
-                className={`w-[150px] bg-primary text-white border-none rounded-md px-4 py-2 text-[13px] font-semibold transition-all duration-200 ${
-                  (updateMutation.isPending || isClosed)
-                    ? "opacity-50 cursor-not-allowed bg-gray-400"
-                    : "cursor-pointer"
-                }`}
+                className={`w-[150px] bg-primary text-white border-none rounded-md px-4 py-2 text-[13px] font-semibold transition-all duration-200 ${(updateMutation.isPending || isClosed)
+                  ? "opacity-50 cursor-not-allowed bg-gray-400"
+                  : "cursor-pointer"
+                  }`}
               >
                 {updateMutation.isPending ? "Saving..." : isClosed ? "Locked" : "Save Changes"}
               </button>
@@ -269,7 +267,7 @@ export default function FlexiDeclaration() {
       {/* ── Main content ─────────────────────────────────────────────────────── */}
       {isLoading ? (
         /* Single loader covers both panels */
-        <div className="flex flex-col items-center justify-center min-h-[320px] py-16">
+        <div className="flex flex-col items-center justify-center min-h-[220px] py-12">
           <div className="relative flex items-center justify-center w-16 h-16 mb-4">
             <div className="absolute w-16 h-16 rounded-full border-[3px] border-gray-100" />
             <div className="absolute w-16 h-16 rounded-full border-[3px] border-primary border-t-transparent animate-spin" />
@@ -311,11 +309,9 @@ export default function FlexiDeclaration() {
                       placeholder={comp.salary_component === "NPS" ? "Enter Amount" : undefined}
                       value={flexi[comp.salary_component] || ""}
                       onChange={e => handleInputChange(comp.salary_component, e.target.value, maxAmt)}
-                      className={`w-full border rounded-[7px] px-3.5 py-2.5 text-[14px] text-text-title outline-none box-border transition-colors duration-150 ${
-                        hasError ? "border-error focus:border-error focus:ring-1 focus:ring-error" : "border-gray-100"
-                      } ${
-                        !isEditable ? "bg-gray-10/50 cursor-not-allowed" : "bg-white"
-                      }`}
+                      className={`w-full border rounded-[7px] px-3.5 py-2.5 text-[14px] text-text-title outline-none box-border transition-colors duration-150 ${hasError ? "border-error focus:border-error focus:ring-1 focus:ring-error" : "border-gray-100"
+                        } ${!isEditable ? "bg-gray-10/50 cursor-not-allowed" : "bg-white"
+                        }`}
                       readOnly={!isEditable}
                     />
                     {hasError && (
@@ -374,7 +370,91 @@ export default function FlexiDeclaration() {
                   No earnings data found.
                 </div>
               )}
+
+              {flexiData?.salary_data && (
+                <>
+                  {/* Fixed Gross (Annual)(Eg-100000) */}
+                  <div
+                    className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center bg-primary/10 border-t border-gray-200 font-bold"
+                  >
+                    <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">
+                      Fixed Gross (Annual)(Eg-100000)
+                    </span>
+                    <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                      {showValues ? formatINR(flexiData.salary_data.fixed_gross_monthly) : "*****"}
+                    </span>
+                    <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                      {showValues ? formatINR(flexiData.salary_data.fixed_gross_annual) : "*****"}
+                    </span>
+                  </div>
+
+                  {/* Variable Pay Included in CTC */}
+                  {flexiData.salary_data.variable_pay_include_ctc?.map((item: any, idx: number) => (
+                    <div
+                      key={`var-${item.component || idx}`}
+                      className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center bg-white border-t border-gray-100"
+                    >
+                      <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">
+                        {item.component}
+                      </span>
+                      <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                        -
+                      </span>
+                      <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                        {showValues ? formatINR(item.annual_amount) : "*****"}
+                      </span>
+                    </div>
+                  ))}
+
+                  {/* Total CTC */}
+                  <div
+                    className="grid grid-cols-[1fr_90px_90px] sm:grid-cols-[1fr_130px_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center bg-primary/10 border-t border-gray-200 font-bold"
+                  >
+                    <span className="text-[12px] sm:text-[13px] text-text-body1 leading-snug">
+                      Total CTC
+                    </span>
+                    <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                      -
+                    </span>
+                    <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                      {showValues ? formatINR(flexiData.salary_data.total_ctc || flexiData.salary_data.annual_ctc) : "*****"}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
+
+            {/* Variable Pay (Excluded from CTC) */}
+            {flexiData?.salary_data?.variable_pay_exclude_ctc && flexiData.salary_data.variable_pay_exclude_ctc.length > 0 && (
+              <div className="mt-6">
+                <div className="mb-4">
+                  <span className="font-bold text-[14px] sm:text-[15px] text-text-title">
+                    Variable Pay (Excluded from CTC)
+                  </span>
+                </div>
+                <div className="bg-white rounded-[10px] border border-gray-100 overflow-hidden shadow-sm">
+                  {/* Table Header */}
+                  <div className="grid grid-cols-[1fr_90px] sm:grid-cols-[1fr_130px] bg-gray-10/30 border-b border-gray-100 px-3 sm:px-4 py-2.5">
+                    <span className="text-[11px] sm:text-[12px] font-semibold text-text-body1">Component</span>
+                    <span className="text-[11px] sm:text-[12px] font-semibold text-text-body1 text-right">Annually</span>
+                  </div>
+
+                  {flexiData.salary_data.variable_pay_exclude_ctc.map((item: any, i: number) => (
+                    <div
+                      key={item.component || i}
+                      className={`grid grid-cols-[1fr_90px] sm:grid-cols-[1fr_130px] px-3 sm:px-4 py-[10px] sm:py-[11px] items-center ${i % 2 === 0 ? "bg-white" : "bg-gray-10/10"} ${i < flexiData.salary_data.variable_pay_exclude_ctc.length - 1 ? "border-b border-gray-50" : ""}`}
+                    >
+                      <span className="text-[12px] sm:text-[13px] text-text-body1 flex items-center gap-1 leading-snug">
+                        {item.component}
+                      </span>
+                      <span className="text-[12px] sm:text-[13px] text-text-title text-right tabular-nums">
+                        {showValues ? formatINR(item.annual_amount) : "*****"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

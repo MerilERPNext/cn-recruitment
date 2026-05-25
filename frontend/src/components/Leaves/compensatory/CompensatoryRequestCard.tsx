@@ -127,7 +127,13 @@ const CompensatoryRequestCard = ({
 
       <div className="flex items-center justify-center">
         <MyApprovalActionPill
-          isPending={false}
+          uiPermission={{
+            app: "Leaves and Holidays",
+            page: "Compensatory",
+            actionKeysMap: {
+              pay: "pay"
+            }
+          }}
           canPay={item?.pay_button_required}
           onPay={handlePay}
           payLoading={isPending}
@@ -188,14 +194,20 @@ const CompensatoryRequestCard = ({
             users={item?.allocated_to}
             roles={item?.allocated_roles}
             align="right"
-          RoleAssignedUsers={item?.role_assigned_users}
-        />
+            RoleAssignedUsers={item?.role_assigned_users}
+          />
         </div>
         {/* Pay Button */}
 
         <MyApprovalActionPill
+          uiPermission={{
+            app: "Leaves and Holidays",
+            page: "Compensatory",
+            actionKeysMap: {
+              pay: "pay"
+            }
+          }}
           variant="buttons"
-          isPending={false}
           canPay={item?.pay_button_required}
           onPay={handlePay}
           payLoading={isPending}

@@ -56,7 +56,7 @@ const NotificationList = () => {
     readFilter
   );
 
-  const apiNotifications: NotificationLog[] = (data ?? []).map((item) => ({
+  const apiNotifications: NotificationLog[] = useMemo(() => (data ?? []).map((item) => ({
     email_content: item.email_content || "",
     name: item.name,
     subject: item.subject,
@@ -65,7 +65,7 @@ const NotificationList = () => {
     read: item.read,
     from_user: item.from_user,
     creation: item.creation,
-  }));
+  })), [data]);
 
   const [selectedNotification, setSelectedNotification] =
     useState<NotificationLog | null>(null);
@@ -299,20 +299,20 @@ const NotificationList = () => {
                 {new Date(selectedNotification.creation).toLocaleString()}
               </p>
               <div className="pt-4 text-gray-800">
-              <strong>Subject:</strong>{" "} {sanitizeToPlainText(selectedNotification.subject)
+                <strong>Subject:</strong>{" "} {sanitizeToPlainText(selectedNotification.subject)
                   .replace(/\s+/g, " ")
                   .trim()}
               </div>
               {selectedNotification.email_content && (
-  <div className="pt-4 text-gray-800">
-    <strong>Message:</strong>
-    <div
-      dangerouslySetInnerHTML={{
-        __html: selectedNotification.email_content,
-      }}
-    />
-  </div>
-)}
+                <div className="pt-4 text-gray-800">
+                  <strong>Message:</strong>
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: selectedNotification.email_content,
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="px-6 py-4 border-t flex justify-end gap-2">
