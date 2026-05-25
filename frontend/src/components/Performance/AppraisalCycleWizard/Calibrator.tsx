@@ -228,12 +228,20 @@ const ratingTextColor: Record<Rating, string> = {
 
 const CalibratorSession = () => {
   const [overrideOpen, setOverrideOpen] = useState(false);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [calibratedRatings, setCalibratedRatings] = useState(
     employees.reduce<Record<number, Rating>>(
       (acc, employee) => ({ ...acc, [employee.id]: employee.calibrated }),
       {},
     ),
   );
+  const selectedEmployee =
+    employees.find((employee) => employee.id === selectedEmployeeId) ?? employees[0];
+
+  const openOverride = (employeeId: number) => {
+    setSelectedEmployeeId(employeeId);
+    setOverrideOpen(true);
+  };
 
   return (
     <div className="min-h-dvh bg-[#f4f7fb] font-sans text-gray-900">
@@ -334,7 +342,7 @@ const CalibratorSession = () => {
                   <div className="min-w-0 flex-1">
                     <button
                       className="break-words text-left text-sm font-bold text-gray-900 hover:text-blue-600"
-                      onClick={() => setOverrideOpen(true)}
+                      onClick={() => openOverride(employee.id)}
                     >
                       {employee.name}
                     </button>
@@ -376,9 +384,9 @@ const CalibratorSession = () => {
                         {
                           setCalibratedRatings((current) => ({
                             ...current,
-                            [employee.id]: option.value,
-                          }));
-                          setOverrideOpen(true);
+                          [employee.id]: option.value,
+                        }));
+                          openOverride(employee.id);
                         }
                       }
                       className={`relative w-full [&>button]:min-h-[36px] [&>button]:rounded-md [&>button]:border-gray-200 [&>button]:px-2 [&>button]:py-1.5 [&>button]:text-xs [&>button]:font-bold [&>button]:shadow-sm [&>button_span]:font-bold [&>div]:mt-1 [&>div]:w-full [&>div]:rounded-none [&>div]:p-0 [&_li]:rounded-none [&_li]:px-3 [&_li]:py-1.5 ${ratingTextColor[selectedRating.value]}`}
@@ -508,7 +516,7 @@ const CalibratorSession = () => {
                           <div className="min-w-0">
                             <button
                               className="block max-w-full truncate text-left text-sm font-bold text-gray-800 hover:text-blue-600"
-                              
+                              onClick={() => openOverride(employee.id)}
                             >
                               {employee.name}
                             </button>
@@ -565,7 +573,7 @@ const CalibratorSession = () => {
                                 ...current,
                                 [employee.id]: option.value,
                               }));
-                              setOverrideOpen(true);
+                              openOverride(employee.id);
                             }
                           }
                           className={`relative w-[96px] [&>button]:min-h-[34px] [&>button]:rounded-md [&>button]:border-gray-200 [&>button]:px-2 [&>button]:py-1.5 [&>button]:text-xs [&>button]:font-bold [&>button]:shadow-sm [&>button_span]:font-bold [&>div]:mt-1 [&>div]:w-[130px] [&>div]:rounded-none [&>div]:p-0 [&_li]:rounded-none [&_li]:px-3 [&_li]:py-1.5 ${ratingTextColor[selectedRating.value]}`}
@@ -612,7 +620,18 @@ const CalibratorSession = () => {
           </div>
         </section>
       </main>
-      <ManagerOverride open={overrideOpen} onClose={() => setOverrideOpen(false)} />
+      <ManagerOverride
+        employee={selectedEmployee}
+        open={overrideOpen}
+        rating={calibratedRatings[selectedEmployee.id]}
+        onClose={() => setOverrideOpen(false)}
+        onRatingChange={(rating) =>
+          setCalibratedRatings((current) => ({
+            ...current,
+            [selectedEmployee.id]: rating,
+          }))
+        }
+      />
     </div>
   );
 };
