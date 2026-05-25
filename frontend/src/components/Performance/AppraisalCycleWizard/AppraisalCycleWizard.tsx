@@ -56,6 +56,26 @@ export const mockWizardData: AppraisalCycleWizardData = {
   options: {
     cycleTypes: [{ label: "Annual", value: "Annual" }],
     fiscalYears: [{ label: "FY26 (Apr 26 – Mar 27)", value: "FY26 (Apr 26 – Mar 27)" }],
+    owners: [
+      {
+        label: "Anjali Verma — HR Admin · India Tech",
+        value: "Anjali Verma",
+        initials: "AV",
+        meta: "HR Admin · India Tech",
+      },
+      {
+        label: "Rohit Sharma — People Partner · India Tech",
+        value: "Rohit Sharma",
+        initials: "RS",
+        meta: "People Partner · India Tech",
+      },
+      {
+        label: "Meera Iyer — HR Lead · Product",
+        value: "Meera Iyer",
+        initials: "MI",
+        meta: "HR Lead · Product",
+      },
+    ],
     linkedGoalCycles: [
       { label: "FY26 Goal Cycle (Annual)", value: "FY26 Goal Cycle (Annual)" },
     ],
@@ -76,26 +96,37 @@ export const mockWizardData: AppraisalCycleWizardData = {
 
 const AppraisalCycleWizard = ({ data = mockWizardData }: AppraisalCycleWizardProps) => {
   const [basics, setBasics] = useState(data.basics);
+  const [ownership, setOwnership] = useState(data.ownership);
   const cycleTypeOptions = data.options?.cycleTypes?.length
     ? data.options.cycleTypes
     : [{ label: basics.cycleType || "--", value: basics.cycleType || "" }];
   const fiscalYearOptions = data.options?.fiscalYears?.length
     ? data.options.fiscalYears
     : [{ label: basics.fiscalYear || "--", value: basics.fiscalYear || "" }];
+  const ownerOptions = data.options?.owners?.length
+    ? data.options.owners
+    : [
+        {
+          label: `${ownership.ownerName}${ownership.ownerMeta ? ` — ${ownership.ownerMeta}` : ""}`,
+          value: ownership.ownerName,
+          initials: ownership.ownerInitials,
+          meta: ownership.ownerMeta,
+        },
+      ];
   const linkedGoalCycleOptions = data.options?.linkedGoalCycles?.length
     ? data.options.linkedGoalCycles
     : [
         {
-          label: data.ownership.linkedGoalCycle || "--",
-          value: data.ownership.linkedGoalCycle || "",
+          label: ownership.linkedGoalCycle || "--",
+          value: ownership.linkedGoalCycle || "",
         },
       ];
   const currencyOptions = data.options?.currencies?.length
     ? data.options.currencies
     : [
         {
-          label: data.ownership.currencyForLetters || "--",
-          value: data.ownership.currencyForLetters || "",
+          label: ownership.currencyForLetters || "--",
+          value: ownership.currencyForLetters || "",
         },
       ];
   const selectedCycleType =
@@ -104,11 +135,13 @@ const AppraisalCycleWizard = ({ data = mockWizardData }: AppraisalCycleWizardPro
   const selectedFiscalYear =
     fiscalYearOptions.find((option) => option.value === basics.fiscalYear) ??
     fiscalYearOptions[0];
+  const selectedOwner =
+    ownerOptions.find((option) => option.value === ownership.ownerName) ?? ownerOptions[0];
   const selectedLinkedGoalCycle =
-    linkedGoalCycleOptions.find((option) => option.value === data.ownership.linkedGoalCycle) ??
+    linkedGoalCycleOptions.find((option) => option.value === ownership.linkedGoalCycle) ??
     linkedGoalCycleOptions[0];
   const selectedCurrency =
-    currencyOptions.find((option) => option.value === data.ownership.currencyForLetters) ??
+    currencyOptions.find((option) => option.value === ownership.currencyForLetters) ??
     currencyOptions[0];
   const cycleTitle = basics.cycleName || data.title;
 
@@ -245,17 +278,30 @@ const AppraisalCycleWizard = ({ data = mockWizardData }: AppraisalCycleWizardPro
                         Cycle Owner <span className="text-red-500">*</span>
                       </Typography>
                     </label>
-                    <div className="flex min-h-[44px] items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm">
-                      <div className="flex min-w-0 items-center gap-3">
+                    <Select
+                      options={ownerOptions}
+                      value={selectedOwner}
+                      onChange={(option) =>
+                        setOwnership((current) => ({
+                          ...current,
+                          ownerInitials: option.initials,
+                          ownerName: option.value,
+                          ownerMeta: option.meta,
+                        }))
+                      }
+                      className="relative w-full [&>button>span]:hidden [&>button>svg]:hidden [&>button]:min-h-[44px] [&>button]:rounded-lg [&>button]:border-gray-200 [&>button]:px-3 [&>button]:py-2 [&>button]:text-left [&>button]:shadow-sm [&>div]:w-full"
+                    />
+                    <div className="pointer-events-none -mt-[44px] flex min-h-[44px] items-center justify-between gap-3 rounded-lg border border-transparent px-3 py-2">
+                      <div className="flex min-w-0 items-center gap-3 pr-7">
                         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold text-blue-600">
-                          {data.ownership.ownerInitials || "--"}
+                          {ownership.ownerInitials || "--"}
                         </span>
                         <Typography
                           variant="bodyMedium"
                           className="min-w-0 truncate text-sm font-normal text-gray-700"
                         >
-                          {data.ownership.ownerName}
-                          {data.ownership.ownerMeta ? ` — ${data.ownership.ownerMeta}` : ""}
+                          {ownership.ownerName}
+                          {ownership.ownerMeta ? ` — ${ownership.ownerMeta}` : ""}
                         </Typography>
                       </div>
                       <ChevronRight className="h-4 w-4 shrink-0 text-gray-500" />
@@ -298,7 +344,7 @@ const AppraisalCycleWizard = ({ data = mockWizardData }: AppraisalCycleWizardPro
                       </Typography>
                     </label>
                     <div className="flex min-h-[48px] flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm">
-                      {data.ownership.tags.map((tag) => (
+                      {ownership.tags.map((tag) => (
                         <Badge
                           key={tag}
                           label={tag}

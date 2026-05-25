@@ -13,6 +13,11 @@ export type SelectOption = {
   value: string;
 };
 
+export type OwnerOption = SelectOption & {
+  initials: string;
+  meta: string;
+};
+
 export type AppraisalCycleWizardData = {
   title: string;
   eyebrow: string;
@@ -42,6 +47,7 @@ export type AppraisalCycleWizardData = {
   options?: {
     cycleTypes?: SelectOption[];
     fiscalYears?: SelectOption[];
+    owners?: OwnerOption[];
     linkedGoalCycles?: SelectOption[];
     currencies?: SelectOption[];
   };

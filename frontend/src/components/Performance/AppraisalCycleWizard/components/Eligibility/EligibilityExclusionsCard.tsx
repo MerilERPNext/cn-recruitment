@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import { Typography } from "../../../shared/atoms/Typography";
+import { Typography } from "../../../../shared/atoms/Typography";
 
 export type EligibilityExclusion = {
   label: string;

@@ -1,15 +1,15 @@
 import { lazy, Suspense, useState } from "react";
 import { mockWizardData } from "./AppraisalCycleWizard";
-import type { EligibilityBreakdownItem } from "./components/EligibilitySummaryAside";
-import type { EligibilityEmployee } from "./components/EligibilityEmployeesCard";
-import type { EligibilityExclusion } from "./components/EligibilityExclusionsCard";
-import type { EligibilityRule } from "./components/EligibilityRulesCard";
+import type { EligibilityBreakdownItem } from "./components/Eligibility/EligibilitySummaryAside";
+import type { EligibilityEmployee } from "./components/Eligibility/EligibilityEmployeesCard";
+import type { EligibilityExclusion } from "./components/Eligibility/EligibilityExclusionsCard";
+import type { EligibilityRule } from "./components/Eligibility/EligibilityRulesCard";
 import WizardShell from "./WizardShell";
 
-const EligibilityRulesCard = lazy(() => import("./components/EligibilityRulesCard"));
-const EligibilityExclusionsCard = lazy(() => import("./components/EligibilityExclusionsCard"));
-const EligibilityEmployeesCard = lazy(() => import("./components/EligibilityEmployeesCard"));
-const EligibilitySummaryAside = lazy(() => import("./components/EligibilitySummaryAside"));
+const EligibilityRulesCard = lazy(() => import("./components/Eligibility/EligibilityRulesCard"));
+const EligibilityExclusionsCard = lazy(() => import("./components/Eligibility/EligibilityExclusionsCard"));
+const EligibilityEmployeesCard = lazy(() => import("./components/Eligibility/EligibilityEmployeesCard"));
+const EligibilitySummaryAside = lazy(() => import("./components/Eligibility/EligibilitySummaryAside"));
 
 const ruleRows: EligibilityRule[] = [
   {

@@ -1,4 +1,4 @@
-import { Typography } from "../../../shared/atoms/Typography";
+import { Typography } from "../../../../shared/atoms/Typography";
 
 export type EligibilityBreakdownItem = {
   label: string;
