@@ -178,7 +178,7 @@ const WizardShell = ({ children, contentClassName = "", data, title, onNext }: W
           </div>
         </aside>
 
-        <main className="flex min-w-0 flex-col md:min-h-0 md:overflow-hidden">
+        <main className="flex min-w-0 flex-col md:h-full md:min-h-0 md:overflow-hidden">
           <header className="flex shrink-0 min-w-0 flex-col gap-4 border-b border-gray-200 bg-white px-3 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <Typography
@@ -210,10 +210,10 @@ const WizardShell = ({ children, contentClassName = "", data, title, onNext }: W
             </div>
           </header>
 
-          <div
-            className={`p-3 sm:p-6 md:min-h-0 md:flex-1 md:overflow-y-auto md:overscroll-contain ${contentClassName}`}
-          >
-            {children}
+          <div className="relative flex-1 overflow-y-auto p-3 sm:p-6 md:min-h-0 md:overscroll-contain">
+            <div className={`mx-auto w-full max-w-5xl ${contentClassName}`}>
+              {children}
+            </div>
           </div>
 
           <footer className="shrink-0 flex flex-col gap-3 border-t border-gray-200 bg-white px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:px-6">

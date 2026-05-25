@@ -20,13 +20,13 @@ const GoalPullIn = () => {
       description: "Map approved goals into the appraisal form and define how progress translates to ratings.",
     },
     validationStatus: "Validation passed",
-    nextStepLabel: "Review & Launch (Skip to Step 11)",
+    nextStepLabel: "Letters & Release (Skip to Step 10)",
   };
   
   return (
     <WizardShell
       data={goalPullInData}
-      onNext={() => navigate("/webapp/performance-app/appraisal-cycle-wizard/review-launch")}
+      onNext={() => navigate("/webapp/performance-app/appraisal-cycle-wizard/letters-release")}
       contentClassName="flex flex-col gap-4 sm:gap-6"
     >
       <SourceSettings
