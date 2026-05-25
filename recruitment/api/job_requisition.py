@@ -2,34 +2,26 @@
 Job Requisition API
 ===================
 
-Endpoints used by the React-based "Raise a Requisition" UI.
-
 create_job_requisition(payload)
-    Accepts a single nested payload. Positions are grouped by `location`
-    on the backend; one Job Requisition document is created per unique
-    location, and all positions for that location land in the
-    `custom_position_details` child table of that requisition.
+    Submit endpoint for the React "Raise a Requisition" form.
+    Accepts a FLAT payload using DocType field names directly.
+    Positions arrive in `custom_position_details` and are grouped by
+    `location` on the backend: one Job Requisition per unique location,
+    upserting (appending positions) when an open JR for the same
+    (designation, department, requested_by, location) already exists.
 
-get_job_requisition(name)
-    Returns the full nested view of a single Job Requisition, in the
-    same shape the create endpoint accepts (round-trip friendly).
+get_job_requisition(name=..., filters=..., limit=..., start=..., order_by=...)
+    - With `name`        →  one Job Requisition (flat shape)
+    - Without `name`     →  paginated list, each item in the same shape
 
-Response envelope (consistent with other api/ modules in this app):
+Response envelope (project convention):
     {"success": bool, "message": str, "data": <payload> | None}
 HTTP status code is set on frappe.local.response.
 
-Field-name reference for UI devs
---------------------------------
-The keys in the payload are flat, snake_case, grouped into logical
-sections. The mapping to DocType fields is handled by this module —
-the UI never needs to know the `custom_*` field names.
-
-Sections expected in the create payload:
-    basic_details, job_details, positions[], requirement,
-    job_description, other_details, pre_screened_candidates[],
-    assign_to_recruiter
-
-See _build_requisition_doc() for the full mapping if you need it.
+Required payload keys:
+    requested_by, company, department, designation, custom_position_details
+Each row in custom_position_details requires:
+    location, reporting_manager
 """
 
 import json
@@ -39,8 +31,66 @@ from frappe import _
 
 JOB_REQUISITION = "Job Requisition"
 
+REQUIRED_PARENT_KEYS = ("requested_by", "company", "department", "designation")
+
+# Writable parent fields — UI may send any subset; unknown keys are ignored.
+PARENT_WRITABLE_FIELDS = (
+	# Basic
+	"requested_by",
+	"requested_by_name",
+	"requested_by_dept",
+	"requested_by_designation",
+	"company",
+	"department",
+	"designation",
+	"custom_division",
+	"custom_functional_area",
+	"no_of_positions",
+	"expected_compensation",
+	"status",
+	# Job details
+	"custom_experience_range_from",
+	"custom_experience_range_to",
+	"custom_experience_unit",
+	"custom_salary_range_currency",
+	"custom_salary_range_min",
+	"custom_salary_range_max",
+	"custom_salary_timeframe",
+	"posting_date",
+	"expected_by",
+	"completed_on",
+	"custom_hiring_lead",
+	"custom_additional_roles__responsibilities",
+	# Requirement tab
+	"custom_employment_type",
+	"custom_employment_type_link",
+	"custom_location",
+	"custom_work_experience_range",
+	"custom_preferred_notice_period",
+	"custom_preferred_company",
+	"custom_other_preferred_companies",
+	# Job description
+	"custom_job_description_template",
+	"description",
+	"reason_for_requesting",
+	# Other details
+	"custom_comments__instructions",
+	"custom_cost_centre",
+	"custom_designation_change",
+	# Recruiter assignment
+	"custom_assign_to_recruiter",
+)
+
+# Read-only / computed parent fields — surfaced in GET, never accepted on write.
+PARENT_READONLY_FIELDS = (
+	"custom_requested_by_user_id",
+	"custom_salary_range_display",
+	"time_to_fill",
+)
+
+
 # ---------------------------------------------------------------------------
-# Response helpers (project convention)
+# Response helpers
 # ---------------------------------------------------------------------------
 
 
@@ -55,12 +105,11 @@ def _err(message, http=400, data=None):
 
 
 # ---------------------------------------------------------------------------
-# Payload normalisation
+# Payload helpers
 # ---------------------------------------------------------------------------
 
 
 def _coerce_payload(payload):
-	"""Accept either a dict or a JSON string (Frappe's whitelist passes strings)."""
 	if payload is None:
 		frappe.throw(_("Request body is required."))
 	if isinstance(payload, str):
@@ -73,15 +122,7 @@ def _coerce_payload(payload):
 	return payload
 
 
-def _section(payload, key):
-	"""Return a dict section, treating missing/None as empty."""
-	value = payload.get(key) or {}
-	if not isinstance(value, dict):
-		frappe.throw(_("`{0}` must be an object.").format(key))
-	return value
-
-
-def _list(payload, key):
+def _list_field(payload, key):
 	value = payload.get(key) or []
 	if not isinstance(value, list):
 		frappe.throw(_("`{0}` must be a list.").format(key))
@@ -92,42 +133,42 @@ def _list(payload, key):
 # Validation
 # ---------------------------------------------------------------------------
 
-REQUIRED_BASIC_KEYS = ("hiring_manager", "company", "department", "designation")
-
 
 def _validate(payload):
-	basic = _section(payload, "basic_details")
-	missing = [k for k in REQUIRED_BASIC_KEYS if not basic.get(k)]
+	missing = [k for k in REQUIRED_PARENT_KEYS if not payload.get(k)]
 	if missing:
-		frappe.throw(_("Missing required basic_details fields: {0}").format(", ".join(missing)))
+		frappe.throw(_("Missing required fields: {0}").format(", ".join(missing)))
 
-	positions = _list(payload, "positions")
+	positions = _list_field(payload, "custom_position_details")
 	if not positions:
-		frappe.throw(_("At least one position is required."))
+		frappe.throw(_("At least one position is required in `custom_position_details`."))
+
+	parent_vacancy = payload.get("custom_type_of_position")
 
 	for idx, p in enumerate(positions, start=1):
 		if not isinstance(p, dict):
-			frappe.throw(_("positions[{0}] must be an object.").format(idx))
+			frappe.throw(_("custom_position_details[{0}] must be an object.").format(idx))
 		if not p.get("location"):
-			frappe.throw(_("positions[{0}].location is required (used to group requisitions).").format(idx))
+			frappe.throw(_("custom_position_details[{0}].location is required (grouping key).").format(idx))
 		if not p.get("reporting_manager"):
-			frappe.throw(_("positions[{0}].reporting_manager is required.").format(idx))
-		vacancy = (p.get("vacancy_type") or "New").strip()
+			frappe.throw(_("custom_position_details[{0}].reporting_manager is required.").format(idx))
+		vacancy = (p.get("vacancy_type") or parent_vacancy or "New").strip()
 		if vacancy not in ("New", "Replacement"):
-			frappe.throw(_("positions[{0}].vacancy_type must be 'New' or 'Replacement'.").format(idx))
-		if vacancy == "Replacement" and not p.get("employee_being_replaced"):
-			frappe.throw(_("positions[{0}].employee_being_replaced is required for Replacement positions.").format(idx))
+			frappe.throw(_("custom_position_details[{0}].vacancy_type must be 'New' or 'Replacement'.").format(idx))
+		if vacancy == "Replacement" and not p.get("replacement_for"):
+			frappe.throw(
+				_("custom_position_details[{0}].replacement_for is required for Replacement positions.").format(idx)
+			)
 
 
 # ---------------------------------------------------------------------------
-# Build / persist
+# Grouping + upsert lookup
 # ---------------------------------------------------------------------------
 
 
 def _group_positions_by_location(positions):
-	"""Stable group: preserves first-seen location order from the payload."""
-	groups = {}
-	order = []
+	"""Stable group preserving first-seen location order."""
+	groups, order = {}, []
 	for p in positions:
 		loc = p["location"]
 		if loc not in groups:
@@ -138,8 +179,8 @@ def _group_positions_by_location(positions):
 
 
 def _find_existing_requisition(designation, department, requested_by, location):
-	"""Return the name of an open Job Requisition for this (designation, department,
-	requested_by) that already has at least one position at this `location`, or None."""
+	"""Open JR (same designation+department+requested_by) that already has a
+	position at this `location`, or None."""
 	rows = frappe.db.sql(
 		"""
 		SELECT jr.name
@@ -158,100 +199,72 @@ def _find_existing_requisition(designation, department, requested_by, location):
 
 
 def _bypass_hrms_duplicate_check(doc):
-	"""HRMS's stock validate_duplicates allows only one open JR per
-	(designation, department, requested_by). Our flow uses `location` as an
-	additional differentiator, so we shadow the method on this instance."""
+	"""HRMS rejects more than one open JR per (designation, department,
+	requested_by). Our flow uses `location` too, so shadow that method."""
 	doc.validate_duplicates = lambda: None
 
 
-def _build_requisition_doc(payload, location, positions_for_location):
-	"""Construct an unsaved Job Requisition document for one location."""
-	basic = _section(payload, "basic_details")
-	job = _section(payload, "job_details")
-	req = _section(payload, "requirement")
-	jd = _section(payload, "job_description")
-	other = _section(payload, "other_details")
+# ---------------------------------------------------------------------------
+# Payload → doc mapping
+# ---------------------------------------------------------------------------
 
-	doc = frappe.new_doc(JOB_REQUISITION)
-	_bypass_hrms_duplicate_check(doc)
 
-	# --- Basic ---
-	doc.requested_by = basic.get("hiring_manager")
-	doc.company = basic.get("company")
-	doc.department = basic.get("department")
-	doc.designation = basic.get("designation")
-	doc.custom_division = basic.get("division")
-	doc.custom_functional_area = basic.get("functional_area")
-	doc.no_of_positions = len(positions_for_location)
-	if basic.get("expected_compensation") is not None:
-		doc.expected_compensation = basic.get("expected_compensation")
-	if basic.get("status"):
-		doc.status = basic.get("status")
+def _position_row(p, position_no, parent_vacancy_default, parent_functional_area):
+	"""Build a single child row dict for `custom_position_details`."""
+	vacancy = (p.get("vacancy_type") or parent_vacancy_default or "New").strip() or "New"
+	return {
+		"position_no": position_no,
+		"vacancy_type": vacancy,
+		"replacement_for": p.get("replacement_for"),
+		"reporting_manager": p.get("reporting_manager"),
+		"location": p.get("location"),
+		"functional_area": p.get("functional_area") or parent_functional_area,
+		"employee_type": p.get("employee_type"),
+	}
 
-	# --- Job details ---
-	doc.custom_experience_range_from = job.get("experience_range_from")
-	doc.custom_experience_range_to = job.get("experience_range_to")
-	doc.custom_experience_unit = job.get("experience_unit")
-	doc.custom_salary_range_currency = job.get("salary_range_currency")
-	doc.custom_salary_range_min = job.get("salary_range_min")
-	doc.custom_salary_range_max = job.get("salary_range_max")
-	doc.custom_salary_timeframe = job.get("salary_timeframe")
-	if job.get("posting_date"):
-		doc.posting_date = job.get("posting_date")
-	if job.get("expected_by"):
-		doc.expected_by = job.get("expected_by")
-	doc.custom_hiring_lead = job.get("hiring_lead") or basic.get("hiring_manager")
-	doc.custom_additional_roles__responsibilities = job.get("additional_roles_responsibilities")
 
-	# --- Requirement tab ---
-	doc.custom_employment_type = req.get("employment_type")
-	doc.custom_employment_type_link = req.get("employment_type_link")
-	# custom_location is a Link to the Location doctype; do NOT fall back to
-	# the grouping `location` (which is a Branch name) — they're different masters.
-	if req.get("location"):
-		doc.custom_location = req.get("location")
-	doc.custom_work_experience_range = req.get("work_experience_range")
-	doc.custom_preferred_notice_period = req.get("preferred_notice_period")
-	doc.custom_preferred_company = req.get("preferred_company")
-	doc.custom_other_preferred_companies = req.get("other_preferred_companies")
+def _apply_parent_fields(doc, payload):
+	"""Copy parent-level fields from payload onto the doc.
+	Skip None and "" so optional empty inputs don't blank existing values on upsert."""
+	for field in PARENT_WRITABLE_FIELDS:
+		if field in payload and payload[field] not in (None, ""):
+			doc.set(field, payload[field])
 
-	for q in req.get("qualifications") or []:
+
+def _apply_qualifications(doc, payload):
+	doc.set("custom_qualifications", [])
+	for q in _list_field(payload, "custom_qualifications"):
 		if not isinstance(q, dict) or not q.get("qualification"):
 			continue
 		doc.append(
 			"custom_qualifications",
-			{
-				"qualification": q.get("qualification"),
-				"mandatory": q.get("mandatory") or "Required",
-			},
+			{"qualification": q["qualification"], "mandatory": q.get("mandatory") or "Required"},
 		)
 
-	# --- Job description tab ---
-	doc.custom_job_description_template = jd.get("template")
-	doc.description = jd.get("description")
-	doc.reason_for_requesting = jd.get("reason_for_requesting")
-	for skill in jd.get("skills") or []:
+
+def _apply_skills(doc, payload):
+	doc.set("custom_skills", [])
+	for skill in _list_field(payload, "custom_skills"):
 		if not skill:
 			continue
-		doc.append("custom_skills", {"skill": skill})
+		# Accept either a plain string or {"skill": "..."}
+		skill_name = skill["skill"] if isinstance(skill, dict) else skill
+		if skill_name:
+			doc.append("custom_skills", {"skill": skill_name})
 
-	# --- Other details ---
-	doc.custom_comments__instructions = other.get("comments_instructions")
-	doc.custom_cost_centre = other.get("cost_centre")
-	doc.custom_designation_change = other.get("designation_change")
 
-	# --- Assign to recruiter ---
-	if payload.get("assign_to_recruiter"):
-		doc.custom_assign_to_recruiter = payload["assign_to_recruiter"]
-
-	# --- Pre screened candidates (replicated on every per-location requisition) ---
-	for cand in _list(payload, "pre_screened_candidates"):
-		if not isinstance(cand, dict) or not cand.get("name") and not cand.get("candidate_name"):
+def _apply_pre_screened(doc, payload):
+	doc.set("custom_pre_screened_candidates", [])
+	for cand in _list_field(payload, "custom_pre_screened_candidates"):
+		if not isinstance(cand, dict):
+			continue
+		name = cand.get("candidate_name") or cand.get("name")
+		if not name:
 			continue
 		doc.append(
 			"custom_pre_screened_candidates",
 			{
-				"candidate_name": cand.get("candidate_name") or cand.get("name"),
+				"candidate_name": name,
 				"email": cand.get("email"),
 				"phone": cand.get("phone"),
 				"cv": cand.get("cv"),
@@ -259,41 +272,52 @@ def _build_requisition_doc(payload, location, positions_for_location):
 			},
 		)
 
-	# --- Positions (Vacancy Details child table) ---
+
+def _build_requisition_doc(payload, positions_for_location):
+	"""Construct an unsaved Job Requisition for one location group."""
+	doc = frappe.new_doc(JOB_REQUISITION)
+	_bypass_hrms_duplicate_check(doc)
+
+	_apply_parent_fields(doc, payload)
+
+	if not payload.get("no_of_positions"):
+		doc.no_of_positions = len(positions_for_location)
+	if not doc.get("custom_hiring_lead"):
+		doc.custom_hiring_lead = payload.get("requested_by")
+
+	_apply_qualifications(doc, payload)
+	_apply_skills(doc, payload)
+	_apply_pre_screened(doc, payload)
+
+	parent_vacancy = payload.get("custom_type_of_position")
+	parent_functional_area = payload.get("custom_functional_area")
 	for index, p in enumerate(positions_for_location, start=1):
-		doc.append(
-			"custom_position_details",
-			{
-				"position_no": index,
-				"vacancy_type": p.get("vacancy_type") or "New",
-				"replacement_for": p.get("employee_being_replaced"),
-				"reporting_manager": p.get("reporting_manager"),
-				"location": p.get("location"),
-				"functional_area": p.get("functional_area") or basic.get("functional_area"),
-				"employee_type": p.get("employee_type"),
-			},
-		)
+		doc.append("custom_position_details", _position_row(p, index, parent_vacancy, parent_functional_area))
 
 	return doc
 
 
 # ---------------------------------------------------------------------------
-# Whitelisted endpoints
+# CREATE
 # ---------------------------------------------------------------------------
 
 
 @frappe.whitelist()
 def create_job_requisition(payload=None):
 	"""
-	Create one Job Requisition per unique location found in `payload.positions`.
+	Submit a Job Requisition.
+
+	Groups `custom_position_details` rows by `location`; creates one JR per
+	unique location, OR appends positions to an open JR with the same
+	(designation, department, requested_by, location) — true upsert.
 
 	Returns:
 	    {
 	      "success": true,
-	      "message": "Created N requisition(s)",
+	      "message": "Created X, updated Y requisition(s).",
 	      "data": {
 	        "requisitions": [
-	          {"name": "HR-HIREQ-...", "location": "Bengaluru", "positions_count": 2},
+	          {"name": "HR-HIREQ-...", "location": "Pune", "positions_count": 2, "action": "created"},
 	          ...
 	        ]
 	      }
@@ -303,46 +327,37 @@ def create_job_requisition(payload=None):
 		payload = _coerce_payload(payload)
 		_validate(payload)
 
-		results = []
-		groups = _group_positions_by_location(_list(payload, "positions"))
-		basic = _section(payload, "basic_details")
+		positions = _list_field(payload, "custom_position_details")
+		groups = _group_positions_by_location(positions)
+		parent_vacancy = payload.get("custom_type_of_position")
+		parent_functional_area = payload.get("custom_functional_area")
 
-		# All-or-nothing: wrap in a savepoint so partial failures don't leave orphans.
+		results = []
 		savepoint = "create_job_requisition"
 		frappe.db.savepoint(savepoint)
 		try:
-			for location, positions in groups:
+			for location, group_positions in groups:
 				existing_name = _find_existing_requisition(
-					basic.get("designation"),
-					basic.get("department"),
-					basic.get("hiring_manager"),
+					payload.get("designation"),
+					payload.get("department"),
+					payload.get("requested_by"),
 					location,
 				)
 
 				if existing_name:
-					# UPSERT: append new positions to the existing open JR
 					doc = frappe.get_doc(JOB_REQUISITION, existing_name)
 					_bypass_hrms_duplicate_check(doc)
 					start_idx = len(doc.get("custom_position_details") or [])
-					for offset, p in enumerate(positions, start=1):
+					for offset, p in enumerate(group_positions, start=1):
 						doc.append(
 							"custom_position_details",
-							{
-								"position_no": start_idx + offset,
-								"vacancy_type": p.get("vacancy_type") or "New",
-								"replacement_for": p.get("employee_being_replaced"),
-								"reporting_manager": p.get("reporting_manager"),
-								"location": p.get("location"),
-								"functional_area": p.get("functional_area") or basic.get("functional_area"),
-								"employee_type": p.get("employee_type"),
-							},
+							_position_row(p, start_idx + offset, parent_vacancy, parent_functional_area),
 						)
-					doc.no_of_positions = (doc.no_of_positions or 0) + len(positions)
+					doc.no_of_positions = (doc.no_of_positions or 0) + len(group_positions)
 					doc.save(ignore_permissions=False)
 					action = "updated"
 				else:
-					# Brand-new JR for this location
-					doc = _build_requisition_doc(payload, location, positions)
+					doc = _build_requisition_doc(payload, group_positions)
 					doc.insert(ignore_permissions=False)
 					action = "created"
 
@@ -350,7 +365,7 @@ def create_job_requisition(payload=None):
 					{
 						"name": doc.name,
 						"location": location,
-						"positions_count": len(positions),
+						"positions_count": len(group_positions),
 						"action": action,
 					}
 				)
@@ -377,111 +392,76 @@ def create_job_requisition(payload=None):
 		return _err(_("Failed to create job requisition: {0}").format(str(exc)), http=500)
 
 
+# ---------------------------------------------------------------------------
+# GET — single + list
+# ---------------------------------------------------------------------------
+
+
 def _serialise_requisition(doc):
-	"""Convert a Job Requisition doc into the nested shape the create
-	endpoint accepts (plus metadata). Same shape is used by single-get
-	and list-get so the UI consumes one structure everywhere."""
-	return {
+	"""Flat round-trip representation of a JR.
+	All parent fields keep their DocType field names so the UI can bind
+	directly without a translation layer."""
+	out = {
 		"name": doc.name,
-		"status": doc.get("status"),
 		"workflow_state": doc.get("workflow_state"),
 		"creation": doc.get("creation"),
 		"modified": doc.get("modified"),
-		"basic_details": {
-			"hiring_manager": doc.get("requested_by"),
-			"hiring_manager_name": doc.get("requested_by_name"),
-			"company": doc.get("company"),
-			"department": doc.get("department"),
-			"designation": doc.get("designation"),
-			"division": doc.get("custom_division"),
-			"functional_area": doc.get("custom_functional_area"),
-			"no_of_positions": doc.get("no_of_positions"),
-			"expected_compensation": doc.get("expected_compensation"),
-			"status": doc.get("status"),
-		},
-		"job_details": {
-			"experience_range_from": doc.get("custom_experience_range_from"),
-			"experience_range_to": doc.get("custom_experience_range_to"),
-			"experience_unit": doc.get("custom_experience_unit"),
-			"salary_range_currency": doc.get("custom_salary_range_currency"),
-			"salary_range_min": doc.get("custom_salary_range_min"),
-			"salary_range_max": doc.get("custom_salary_range_max"),
-			"salary_timeframe": doc.get("custom_salary_timeframe"),
-			"posting_date": doc.get("posting_date"),
-			"expected_by": doc.get("expected_by"),
-			"completed_on": doc.get("completed_on"),
-			"time_to_fill": doc.get("time_to_fill"),
-			"hiring_lead": doc.get("custom_hiring_lead"),
-			"additional_roles_responsibilities": doc.get("custom_additional_roles__responsibilities"),
-		},
-		"positions": [
-			{
-				"position_no": row.get("position_no"),
-				"vacancy_type": row.get("vacancy_type"),
-				"location": row.get("location"),
-				"reporting_manager": row.get("reporting_manager"),
-				"employee_being_replaced": row.get("replacement_for"),
-				"employee_type": row.get("employee_type"),
-				"functional_area": row.get("functional_area"),
-			}
-			for row in doc.get("custom_position_details") or []
-		],
-		"position_summary": [
-			{
-				"position_no": row.get("position_no"),
-				"status": row.get("status"),
-				"job_id": row.get("job_id"),
-				"functional_area": row.get("functional_area"),
-				"designation_alias": row.get("designation_alias"),
-				"location": row.get("location"),
-				"candidate": row.get("candidate"),
-				"candidate_status": row.get("candidate_status"),
-				"hiring_lead": row.get("hiring_lead"),
-				"recruiter": row.get("recruiter"),
-				"tat_days": row.get("tat_days"),
-			}
-			for row in doc.get("custom_position_summary") or []
-		],
-		"requirement": {
-			"employment_type": doc.get("custom_employment_type"),
-			"employment_type_link": doc.get("custom_employment_type_link"),
-			"location": doc.get("custom_location"),
-			"work_experience_range": doc.get("custom_work_experience_range"),
-			"preferred_notice_period": doc.get("custom_preferred_notice_period"),
-			"preferred_company": doc.get("custom_preferred_company"),
-			"other_preferred_companies": doc.get("custom_other_preferred_companies"),
-			"salary_range_display": doc.get("custom_salary_range_display"),
-			"qualifications": [
-				{
-					"qualification": row.get("qualification"),
-					"mandatory": row.get("mandatory"),
-				}
-				for row in doc.get("custom_qualifications") or []
-			],
-		},
-		"job_description": {
-			"template": doc.get("custom_job_description_template"),
-			"description": doc.get("description"),
-			"reason_for_requesting": doc.get("reason_for_requesting"),
-			"skills": [row.get("skill") for row in doc.get("custom_skills") or [] if row.get("skill")],
-		},
-		"other_details": {
-			"comments_instructions": doc.get("custom_comments__instructions"),
-			"cost_centre": doc.get("custom_cost_centre"),
-			"designation_change": doc.get("custom_designation_change"),
-		},
-		"assign_to_recruiter": doc.get("custom_assign_to_recruiter"),
-		"pre_screened_candidates": [
-			{
-				"candidate_name": row.get("candidate_name"),
-				"email": row.get("email"),
-				"phone": row.get("phone"),
-				"cv": row.get("cv"),
-				"offer_directly": bool(row.get("offer_directly")),
-			}
-			for row in doc.get("custom_pre_screened_candidates") or []
-		],
 	}
+
+	for field in PARENT_WRITABLE_FIELDS:
+		out[field] = doc.get(field)
+	for field in PARENT_READONLY_FIELDS:
+		out[field] = doc.get(field)
+
+	out["custom_position_details"] = [
+		{
+			"position_no": row.get("position_no"),
+			"vacancy_type": row.get("vacancy_type"),
+			"location": row.get("location"),
+			"reporting_manager": row.get("reporting_manager"),
+			"replacement_for": row.get("replacement_for"),
+			"employee_type": row.get("employee_type"),
+			"functional_area": row.get("functional_area"),
+		}
+		for row in doc.get("custom_position_details") or []
+	]
+
+	out["custom_position_summary"] = [
+		{
+			"position_no": row.get("position_no"),
+			"status": row.get("status"),
+			"job_id": row.get("job_id"),
+			"functional_area": row.get("functional_area"),
+			"designation_alias": row.get("designation_alias"),
+			"location": row.get("location"),
+			"candidate": row.get("candidate"),
+			"candidate_status": row.get("candidate_status"),
+			"hiring_lead": row.get("hiring_lead"),
+			"recruiter": row.get("recruiter"),
+			"tat_days": row.get("tat_days"),
+		}
+		for row in doc.get("custom_position_summary") or []
+	]
+
+	out["custom_qualifications"] = [
+		{"qualification": row.get("qualification"), "mandatory": row.get("mandatory")}
+		for row in doc.get("custom_qualifications") or []
+	]
+
+	out["custom_skills"] = [row.get("skill") for row in doc.get("custom_skills") or [] if row.get("skill")]
+
+	out["custom_pre_screened_candidates"] = [
+		{
+			"candidate_name": row.get("candidate_name"),
+			"email": row.get("email"),
+			"phone": row.get("phone"),
+			"cv": row.get("cv"),
+			"offer_directly": bool(row.get("offer_directly")),
+		}
+		for row in doc.get("custom_pre_screened_candidates") or []
+	]
+
+	return out
 
 
 @frappe.whitelist()
@@ -493,34 +473,31 @@ def get_job_requisition(
 	order_by="modified desc",
 ):
 	"""
-	Two modes — same endpoint, same response shape:
+	Two modes — same endpoint, same per-item shape:
 
-	  - `name` passed         →  returns ONE Job Requisition (full nested shape).
-	  - `name` omitted        →  returns a paginated LIST of Job Requisitions,
-	                             each in the same full nested shape.
+	  - `name` passed   →  ONE Job Requisition (flat shape).
+	  - `name` omitted  →  paginated LIST, every item in the same flat shape.
 
 	List-mode optional params:
-	    filters   JSON object  e.g. {"status": "Pending", "department": "Engineering - D"}
-	    limit     int   page size                    (default 20, max 100)
-	    start     int   offset for pagination        (default 0)
-	    order_by  str   any field + asc/desc         (default "modified desc")
+	    filters   JSON object  e.g. {"status": "Pending", "department": "Accounts - D"}
+	    limit     int  page size              (default 20, max 100)
+	    start     int  offset                 (default 0)
+	    order_by  str  field + asc/desc       (default "modified desc")
 	"""
 	try:
-		# --------------------------- SINGLE MODE --------------------------- #
 		if name:
 			if not frappe.db.exists(JOB_REQUISITION, name):
 				return _err(_("Job Requisition not found: {0}").format(name), http=404)
 
 			doc = frappe.get_doc(JOB_REQUISITION, name)
 			doc.check_permission("read")
-
 			return _ok(
 				message=_("Job Requisition fetched."),
 				data=_serialise_requisition(doc),
 				http=200,
 			)
 
-		# ---------------------------- LIST MODE ---------------------------- #
+		# List mode
 		if isinstance(filters, str):
 			try:
 				filters = json.loads(filters) if filters.strip() else None
@@ -534,8 +511,6 @@ def get_job_requisition(
 		except (TypeError, ValueError):
 			return _err(_("`limit` and `start` must be integers."), http=400)
 
-		# Pull only the names with filtering / paging applied; then load each
-		# doc fully so the response is the same shape as single-get.
 		names = frappe.get_list(
 			JOB_REQUISITION,
 			filters=filters,
@@ -546,7 +521,6 @@ def get_job_requisition(
 			pluck="name",
 		)
 		total = frappe.db.count(JOB_REQUISITION, filters=filters)
-
 		items = [_serialise_requisition(frappe.get_doc(JOB_REQUISITION, n)) for n in names]
 
 		return _ok(
