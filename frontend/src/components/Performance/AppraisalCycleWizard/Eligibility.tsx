@@ -58,10 +58,11 @@ const breakdown: EligibilityBreakdownItem[] = [
   { label: "Others", value: 382, percent: 18 },
 ];
 
-const employees: EligibilityEmployee[] = [
-  { name: "Aarav Mehta", team: "Engineering", location: "India Tech", type: "Full-time" },
-  { name: "Nisha Rao", team: "Design", location: "India Tech", type: "Full-time" },
-  { name: "Rohan Iyer", team: "Product", location: "India Tech", type: "Full-time" },
+const employees = [
+  { name: "Pallavi Mahar", department: "Design · Oxygen", grade: "L4", manager: "Rohit Khanna", tenure: "3.2y", initials: "PM" },
+  { name: "Karthik Iyer", department: "Engineering · Platform", grade: "L4", manager: "Rohit Khanna", tenure: "4.1y", initials: "KI" },
+  { name: "Riya Banerjee", department: "Design · Oxygen", grade: "L3", manager: "Rohit Khanna", tenure: "1.8y", initials: "RB" },
+  { name: "Shreya Das", department: "Design · Oxygen", grade: "L2", manager: "Rohit Khanna", tenure: "0.6y", initials: "SD" },
 ];
 
 const fieldOptions = [
