@@ -1,14 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { FlowRequestItem } from "../../../types/flows";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-import { useGetFlowRequests } from "../../../hooks/useFlows";
-import { StaticListView } from "../../ListView";
 import FlowRequestCard from "./FlowRequestCard";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import DataListView from "../../DataListView";
 
 const titles = [
   "Flow Name",
@@ -26,31 +25,11 @@ const columnWidths = ["1fr 1fr 150px 150px 150px 150px 150px"];
 const FlowRequests: React.FC = () => {
   const { isDesktop } = useScreenSize();
 
-  const [flowDetails, setFlowDetails] = useState<FlowRequestItem | null>(null);
+
   const navigate = useNavigate();
   const handleShowDetails = (data: FlowRequestItem) => {
     navigate("/webapp/flow-app/flow-request/" + data?.request_id);
   };
-
-  const {
-    data: flowRequests,
-    isLoading: flowRequestsLoading,
-    refetch: refetchFlowRequests,
-  } = useGetFlowRequests();
-
-
-  // refresh request details page after fetching new flowDetails
-  useEffect(() => {
-    if (!flowDetails || flowRequestsLoading) return;
-    const newDetails = flowRequests?.data.find(
-      (d) => d.request_id === flowDetails.request_id,
-    );
-    if (!newDetails) {
-      setFlowDetails(null);
-    } else {
-      setFlowDetails(newDetails);
-    }
-  }, [flowRequestsLoading, flowRequests, flowDetails]);
 
   const queryClient = useQueryClient();
   useEffect(() => {
@@ -67,7 +46,7 @@ const FlowRequests: React.FC = () => {
         handleChatClose,
       );
     };
-  }, [refetchFlowRequests, queryClient]);
+  }, [queryClient]);
 
   return (
     <>
@@ -89,12 +68,30 @@ const FlowRequests: React.FC = () => {
         {/*Flows List*/}
         <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
           <CardTable titles={titles} columnWidths={columnWidths}>
-            <StaticListView
-              data={flowRequests?.data || []}
-              ItemComponent={(_, item) => {
+
+            <DataListView
+              queryKey={"flow-requests"}
+              customAPI={{
+                method: "cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_details",
+                paginationKeys: {
+                  startKey: "page",
+                  pageLengthKey: "limit",
+                },
+                paginationType: "page",
+                responseKeys: {
+                  dataKey: "data",
+                  totalCountKey: "total",
+                  pageLengthKey: "limit",
+                  startKey: "page",
+                },
+                params: {
+                  doctype: "Employee"
+                }
+              }}
+              renderItem={(item) => {
                 return (
                   <FlowRequestCard
-                    request={item}
+                    request={item as FlowRequestItem}
                     handleShowDetails={handleShowDetails}
                   />
                 );
@@ -104,7 +101,6 @@ const FlowRequests: React.FC = () => {
               getItemKey={(item) => item.request_id}
               pageSize={10}
               SkeletonComponent={CardSkeleton}
-              isLoading={flowRequestsLoading}
               isFilter={true}
               filterFields={[
                 {
@@ -113,12 +109,6 @@ const FlowRequests: React.FC = () => {
                   fieldtype: "Select",
                   options: ["Pending", "Approved", "Rejected"],
                 },
-                // {
-                //   fieldname: "workflow_status",
-                //   label: "Workflow Status",
-                //   fieldtype: "Select",
-                //   options: ["Pending", "Completed"],
-                // },
                 {
                   fieldname: "overall_flow_status",
                   label: "Overall Flow Status",
@@ -126,7 +116,6 @@ const FlowRequests: React.FC = () => {
                   options: ["Pending", "Completed"],
                 },
               ]}
-            // loadMorePagination={true}
             />
           </CardTable>
         </div>
