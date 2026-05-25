@@ -112,6 +112,24 @@ export const EditFlexiLockingPeriod = ({
     };
   }, []);
 
+  const formatDate = (date: any): string => {
+    if (!date) return "";
+    if (typeof date === "string") {
+      const match = date.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (match) return match[1];
+    }
+    try {
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return "";
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    } catch {
+      return "";
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       const submission = await formInstance.current?.submit();
@@ -121,8 +139,8 @@ export const EditFlexiLockingPeriod = ({
         employee: submissionData.employee,
         status: submissionData.status,
         doctype_name: submissionData.doctype_name,
-        start_date: submissionData.individual_start_date,
-        end_date: submissionData.individual_end_date,
+        start_date: formatDate(submissionData.individual_start_date),
+        end_date: formatDate(submissionData.individual_end_date),
         individual_start_date: undefined,
         individual_end_date: undefined
       };
