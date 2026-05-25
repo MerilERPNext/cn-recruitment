@@ -79,6 +79,7 @@ const TeamAdvanceExpenseList = () => {
       "Employee",
       "Department",
       "Advance Amount",
+      "Sanctioned Amount",
       "Due Date",
       "Status",
       ...(activeStatus === "Approved" ? ["Paid Status"] : []),
@@ -90,6 +91,7 @@ const TeamAdvanceExpenseList = () => {
       "Employee",
       "Department",
       "Advance Amount",
+      "Sanctioned Amount",
       "Due Date",
       "Status",
       ...(activeStatus === "Approved" ? ["Paid Status"] : []),
@@ -99,11 +101,11 @@ const TeamAdvanceExpenseList = () => {
 
   const tableColumnWidths = isBulkSelectEnabled
     ? activeStatus === "Approved"
-      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-      : ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
     : activeStatus === "Approved"
-      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-      : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;

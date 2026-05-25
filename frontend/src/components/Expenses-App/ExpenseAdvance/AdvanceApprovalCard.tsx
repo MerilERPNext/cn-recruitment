@@ -61,13 +61,18 @@ const AdvanceApprovalCard = ({
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? activeStatus === "Approved"
-      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
     : activeStatus === "Approved"
-      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
-  const totalClaimedAmount = new Intl.NumberFormat("en-IN", {
+  const advanceAmount = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+  }).format(data?.reference_document?.custom_requested_amount ?? 0);
+
+  const sanctionedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
   }).format(data?.reference_document?.advance_amount ?? 0);
@@ -126,7 +131,10 @@ const AdvanceApprovalCard = ({
             {data?.reference_document?.department}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
-            {totalClaimedAmount}
+            {advanceAmount}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {sanctionedAmount}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.due_date)}
@@ -259,15 +267,24 @@ const AdvanceApprovalCard = ({
                     Advance Amount
                   </Typography>
                   <Typography variant="mobileCardValue">
-                    {totalClaimedAmount}
+                    {advanceAmount}
                   </Typography>
                 </div>
                 <div className="flex flex-col gap-1 text-right">
-                  <Typography variant="mobileCardLabel">Due Date</Typography>
+                  <Typography variant="mobileCardLabel">
+                    Sanctioned Amount
+                  </Typography>
                   <Typography variant="mobileCardValue">
-                    {formatToIndianDate(data?.due_date)}
+                    {sanctionedAmount}
                   </Typography>
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">Due Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.due_date)}
+                </Typography>
               </div>
 
               {/* Allocated To */}

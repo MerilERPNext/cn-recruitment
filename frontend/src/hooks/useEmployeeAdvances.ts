@@ -2,6 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createAdvance,
+  getAllowRequestsOnHold,
   getAdvances,
   getAdvancesAmount,
   getAdvancesTypes,
@@ -16,7 +17,7 @@ import {
   getProjects,
   updateEmployeeAdvance,
 } from "../services/employeeAdvances";
-import { ApiAdvance, ApiAdvanceResponse } from "../types/employeeAttendance";
+import { AllowRequestsOnHoldResponse, ApiAdvance, ApiAdvanceResponse } from "../types/employeeAttendance";
 import FrappeAPI from "../utils/frappeAPI";
 
 export const useEmployeeAdvances = (employeeId?: string) => {
@@ -165,4 +166,11 @@ export const useGetEmployeeAdvanceDoc = (
   });
 };
 
-
+export const useAllowRequestsOnHold = () => {
+  return useQuery<AllowRequestsOnHoldResponse>({
+    queryKey: ["allow-requests-on-hold"],
+    queryFn: getAllowRequestsOnHold,
+    staleTime: 10 * 60 * 1000, // cache for 10 minutes
+    retry: 1,
+  });
+};
