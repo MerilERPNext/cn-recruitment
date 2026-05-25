@@ -87,6 +87,8 @@ const WizardShell = ({ children, contentClassName = "", data, title }: WizardShe
       navigate("/webapp/performance-app/appraisal-cycle-wizard/eligibility");
     } else if (stepId === "stages") {
       navigate("/webapp/performance-app/appraisal-cycle-wizard/stages");
+    } else if (stepId === "form-builder") {
+      navigate("/webapp/performance-app/appraisal-cycle-wizard/form-builder");
     }
   };
 
