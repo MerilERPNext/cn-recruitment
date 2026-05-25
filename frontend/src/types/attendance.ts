@@ -297,6 +297,7 @@ export type AttendanceRecord = {
   request_type?: string;
   employee_name?: string;
   is_optional_leave?: boolean;
+  weekly_off?: number;
 };
 
 export type PolicyQuestion = {

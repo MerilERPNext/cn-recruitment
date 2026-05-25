@@ -1,13 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Employee, IDesignationHierarchy, IGetEmpDesignationHierarchyCurrentDetails, Award, EmployeeProfileOverview, EmployeeFieldsToTrack } from "../types/employee";
-import { GenderResponse, IField } from "../types/profile";
+import {
+  Award,
+  Employee,
+  EmployeeFieldsToTrack,
+  EmployeeProfileOverview,
+  IDesignationHierarchy,
+  IGetEmpDesignationHierarchyCurrentDetails,
+} from "../types/employee";
 import FrappeAPI from "../utils/frappeAPI";
+import { FutureTransaction } from "../components/EmployeeProfile/FutureTransactionRowItem";
+import { GenderResponse, IField } from "../types/profile";
 
 export const profileService = {
   getGenders: async (): Promise<GenderResponse> => {
     try {
-      console.log("Fetching genders list");
-
       const result = (await FrappeAPI.getDocumentList("Gender", {
         fields: ["name"],
         limit: 1000,
@@ -42,126 +48,154 @@ export const profileService = {
         include_breaks: include_breaks,
         all_fields: all_fields,
         detailed: detailed,
-      }
+      },
     );
     return response as IField[];
   },
   getEmployeeDetailsByEmpIdForProfile: async (
-    employee_id: string
+    employee_id: string,
   ): Promise<{ employee: Employee } | null> => {
     try {
-      const result = await FrappeAPI.callMethod("cn_leave_shift_managment.api.get_employee_with_formatted_links", {
-        employee_id: employee_id
-      });
+      const result = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.api.get_employee_with_formatted_links",
+        {
+          employee_id: employee_id,
+        },
+      );
       // Handle different response structures
 
       return result as { employee: Employee };
     } catch (e) {
       throw new Error(
-        `Some error occured while fetching employee details.- ${e}`
+        `Some error occured while fetching employee details.- ${e}`,
       );
     }
   },
   getEmployeeProfileOverview: async (
-    employee_id: string
+    employee_id: string,
   ): Promise<EmployeeProfileOverview[] | null> => {
     try {
-      const result = await FrappeAPI.callMethod("cn_leave_shift_managment.cn_leave_shift_managment.doctype.overview_settings.overview_settings.get_overview_details", {
-        employee_id: employee_id
-      });
+      const result = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.cn_leave_shift_managment.doctype.overview_settings.overview_settings.get_overview_details",
+        {
+          employee_id: employee_id,
+        },
+      );
       // Handle different response structures
 
       return result as EmployeeProfileOverview[];
     } catch (e) {
       throw new Error(
-        `Some error occured while fetching employee details.- ${e}`
+        `Some error occured while fetching employee details.- ${e}`,
       );
     }
   },
-  getEmployeeFieldsToTrack: async (
-  ): Promise<EmployeeFieldsToTrack[] | null> => {
+  getEmployeeFieldsToTrack: async (): Promise<
+    EmployeeFieldsToTrack[] | null
+  > => {
     try {
-      const result = await FrappeAPI.callMethod("cn_hrms_core.api.get_employee_fields_to_track");
+      const result = await FrappeAPI.callMethod(
+        "cn_hrms_core.api.get_employee_fields_to_track",
+      );
       // Handle different response structures
 
       return result as EmployeeFieldsToTrack[];
     } catch (e) {
       throw new Error(
-        `Some error occured while fetching employee details.- ${e}`
+        `Some error occured while fetching employee details.- ${e}`,
       );
     }
   },
   getEmploymentHistoryData: async (
-    employee_id: string
+    employee_id: string,
   ): Promise<Employee | null> => {
     try {
-      const result = await FrappeAPI.callMethod("cn_hrms_core.cn_hrms_core.apis.employee.get_employee_doc", {
-        employee_id: employee_id
-      });
+      const result = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee.get_employee_doc",
+        {
+          employee_id: employee_id,
+        },
+      );
       // Handle different response structures
 
       return result as Employee;
     } catch (e) {
       throw new Error(
-        `Some error occured while fetching employee details.- ${e}`
+        `Some error occured while fetching employee details.- ${e}`,
       );
     }
   },
   getEmployeeDetailsByEmpId: async (
     employee_id: string,
-    fields?: string[]
+    fields?: string[],
   ): Promise<Employee | null> => {
     try {
-      const result = await FrappeAPI.getDocument("Employee", employee_id, fields);
+      const result = await FrappeAPI.getDocument(
+        "Employee",
+        employee_id,
+        fields,
+      );
       const full = result as Employee;
       if (fields && fields.length > 0) {
         return Object.fromEntries(
-          fields.map((f) => [f, full[f as keyof Employee]])
+          fields.map((f) => [f, full[f as keyof Employee]]),
         ) as unknown as Employee;
       }
       return full;
     } catch (e) {
       throw new Error(
-        `Some error occured while fetching employee details.- ${e}`
+        `Some error occured while fetching employee details.- ${e}`,
       );
     }
   },
   getEmployeeAppreciations: async (): Promise<{ badges: Award[] } | null> => {
     try {
-      const result = await FrappeAPI.getMethod("chatnext_work_connect.chatnext_work_connect.api.badge.get_badge_types");
+      const result = await FrappeAPI.getMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.badge.get_badge_types",
+      );
       return (result as unknown as { badges: Award[] }) || null;
     } catch (e) {
       throw new Error(
-        `Some error occured while fetching employee awards.- ${e}`
+        `Some error occured while fetching employee awards.- ${e}`,
       );
     }
   },
-  getEmployeeEarnedAppreciations: async (employee: string): Promise<{ badges: Award[] } | null> => {
+  getEmployeeEarnedAppreciations: async (
+    employee: string,
+  ): Promise<{ badges: Award[] } | null> => {
     try {
-      const result = await FrappeAPI.getMethod("chatnext_work_connect.chatnext_work_connect.api.badge.get_employee_badges_awarded", {
-        employee: employee
-      });
+      const result = await FrappeAPI.getMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.badge.get_employee_badges_awarded",
+        {
+          employee: employee,
+        },
+      );
       return (result as unknown as { badges: Award[] }) || null;
     } catch (e) {
       throw new Error(
-        `Some error occured while fetching employee awards.- ${e}`
+        `Some error occured while fetching employee awards.- ${e}`,
       );
     }
   },
-  appreciateAnEmployee: async (body: Record<string, unknown>): Promise<boolean | null> => {
+  appreciateAnEmployee: async (
+    body: Record<string, unknown>,
+  ): Promise<boolean | null> => {
     try {
-      const result = await FrappeAPI.callMethod("chatnext_work_connect.chatnext_work_connect.api.badge.award_badge_directly", body);
-      return result as boolean || null;
+      const result = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.badge.award_badge_directly",
+        body,
+      );
+      return (result as boolean) || null;
     } catch (e) {
       throw new Error(
-        `Some error occured while fetching employee awards.- ${e}`
+        `Some error occured while fetching employee awards.- ${e}`,
       );
     }
   },
 
   getShowAttendanceAssignmentButton: async (
     empId: string,
-    currentUser: string
+    currentUser: string,
   ): Promise<boolean> => {
     try {
       const res = await FrappeAPI.callMethod(
@@ -169,7 +203,7 @@ export const profileService = {
         {
           employee: empId,
           user: currentUser,
-        }
+        },
       );
       return res as boolean;
     } catch (error) {
@@ -180,7 +214,7 @@ export const profileService = {
   getDesignationHierarchy: async (
     company: string,
     department: string,
-    designation: string
+    designation: string,
   ): Promise<IDesignationHierarchy> => {
     try {
       const res = await FrappeAPI.callMethod(
@@ -189,7 +223,7 @@ export const profileService = {
           company: company,
           department: department,
           designation: designation,
-        }
+        },
       );
       return res as IDesignationHierarchy;
     } catch (error) {
@@ -198,14 +232,14 @@ export const profileService = {
     }
   },
   getEmpDesignationHierarchyCurrentDetails: async (
-    employee: string
+    employee: string,
   ): Promise<IGetEmpDesignationHierarchyCurrentDetails> => {
     try {
       const res = await FrappeAPI.callMethod(
         "cn_hrms_core.cn_hrms_core.apis.employee_history.get_employee_current_details",
         {
           employee: employee,
-        }
+        },
       );
       return res as IGetEmpDesignationHierarchyCurrentDetails;
     } catch (error) {
@@ -214,12 +248,12 @@ export const profileService = {
     }
   },
   addEmployeeHistory: async (
-    body: Record<string, unknown>
+    body: Record<string, unknown>,
   ): Promise<boolean> => {
     try {
       const response = await FrappeAPI.callMethod(
         "cn_hrms_core.cn_hrms_core.apis.employee_history.update_employee_designation",
-        body
+        body,
       );
       return response as boolean;
     } catch (error) {
@@ -228,12 +262,12 @@ export const profileService = {
     }
   },
   addEmployeeReportingDetails: async (
-    body: Record<string, unknown>
+    body: Record<string, unknown>,
   ): Promise<boolean> => {
     try {
       const response = await FrappeAPI.callMethod(
         "cn_hrms_core.cn_hrms_core.apis.employee_history.update_employee_reporting",
-        body
+        body,
       );
       return response as boolean;
     } catch (error) {
@@ -242,16 +276,13 @@ export const profileService = {
     }
   },
 
-
-  getEmployeeReportingDetails: async (
-    employee: string
-  ): Promise<any> => {
+  getEmployeeReportingDetails: async (employee: string): Promise<any> => {
     try {
       const response = await FrappeAPI.callMethod(
         "cn_hrms_core.cn_hrms_core.apis.employee_history.get_employee_reporting_details",
         {
           employee: employee,
-        }
+        },
       );
       return response as any;
     } catch (error) {
@@ -260,15 +291,13 @@ export const profileService = {
     }
   },
 
-  getEmployeeHierarchyHistory: async (
-    employee: string
-  ): Promise<any> => {
+  getEmployeeHierarchyHistory: async (employee: string): Promise<any> => {
     try {
       const response = await FrappeAPI.callMethod(
         "cn_hrms_core.cn_hrms_core.apis.employee_history.get_employee_hierarchy_history",
         {
           employee: employee,
-        }
+        },
       );
       return response as any;
     } catch (error) {
@@ -277,12 +306,27 @@ export const profileService = {
     }
   },
 
+  getFutureFieldTransactions: async (
+    employee: string
+  ): Promise<FutureTransaction[]> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.get_future_field_transactions",
+        {
+          employee: employee,
+        }
+      );
+      return (response as FutureTransaction[]) || [];
+    } catch (error) {
+      throw error;
+    }
+  },
 
   uploadFile: async (
     file: File,
     doctype?: string,
-    docName?: string
-  ): Promise<{ file_url: string;[key: string]: any }> => {
+    docName?: string,
+  ): Promise<{ file_url: string; [key: string]: any }> => {
     try {
       const result = await FrappeAPI.uploadFile(file, "", docName, doctype);
       return result;

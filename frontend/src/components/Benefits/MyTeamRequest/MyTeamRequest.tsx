@@ -13,6 +13,8 @@ import { BenefitRequestDetailModal } from "../BenefitRequestDetailModal";
 import BenefitRequestItem from "./BenefitRequestItem";
 import { ColumnSortConfig } from "../../shared/CardTable";
 import { BenefitType } from "../../../types/benefit";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 const BASE_COLUMN_SORT_CONFIG_TEAM: ColumnSortConfig[] = [
   { sortable: false },
@@ -51,6 +53,18 @@ const MyTeamRequest: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  const uiPermission = {
+    app: "Benefits",
+    page: "Team Requests",
+    actionKey: "actions_enabled",
+  };
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEnabled = isActionEnabled(
+    uiPermissionData,
+    uiPermission?.actionKey ?? "",
+    uiPermission?.page,
+  );
 
   const requestId = searchParams.get("requestId");
   const referenceName = searchParams.get("reference_name");
@@ -132,73 +146,76 @@ const MyTeamRequest: React.FC = () => {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <BulkSelectProvider>
-        <CardTable titles={tableTitles} columnWidths={finalColumnWidths}
-          columnSortConfig={columnSortConfig}
-        >
-          <ApprovalList
-            doctype={"Employee Benefit Claim"}
-            refetch={refetchApprovalList}
-            setRefetch={setRefetchApprovalList}
-            onApprovalRefetchComplete={handleApprovalRefetchComplete}
-            pageSize={10}
-            infiniteScroll={false}
-            loadMorePagination={false}
-            showPagination={true}
-            isSearch={true}
-            isFilter={true}
-            columnWidths={finalColumnWidths}
-            onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-            filterFields={[
-              {
-                fieldname: "custom_status",
-                label: "Status",
-                fieldtype: "Select",
-                options: [
-                  {
-                    label: "Pending",
-                    value: "Pending",
+          <CardTable titles={tableTitles} columnWidths={finalColumnWidths}
+            columnSortConfig={columnSortConfig}
+          >
+            <ApprovalList
+              bulkSelectVisible={actionsEnabled}
+              doctype={"Employee Benefit Claim"}
+              refetch={refetchApprovalList}
+              setRefetch={setRefetchApprovalList}
+              onApprovalRefetchComplete={handleApprovalRefetchComplete}
+              pageSize={10}
+              infiniteScroll={false}
+              loadMorePagination={false}
+              showPagination={true}
+              isSearch={true}
+              isFilter={true}
+              columnWidths={finalColumnWidths}
+              onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+              filterFields={[
+                {
+                  fieldname: "custom_status",
+                  label: "Status",
+                  fieldtype: "Select",
+                  options: [
+                    {
+                      label: "Pending",
+                      value: "Pending",
+                    },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" },
+                    },
+                    {
+                      label: "Rejected",
+                      value: "Rejected",
+                    },
+                  ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
                   },
-                  {
-                    label: "Approved",
-                    key: "Approved",
-                    value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                    customAPIParams: { todo_status: "Closed" },
-                  },
-                  {
-                    label: "Rejected",
-                    value: "Rejected",
-                  },
-                ],
-                emptyValueConfig: {
-                  filterValue: ["!=", "Cancelled"],
                 },
-              },
-            ]}
-            defaultFilters={{ custom_status: "Pending" }}
-            SkeletonComponent={CardSkeleton}
-            renderCardContent={(item) => {
-              if (item?.data?.custom_selected_doctype_action === "Send Back") {
-                return null;
-              }
-              return (
-                <BenefitRequestItem
-                  isSelected={item?.isSelected}
-                  onToggleSelect={item?.onToggleSelect}
-                  data={item?.data}
-                  onAction={item?.onAction}
-                  onClick={(request) => handleRequestClick(request)}
-                  loadingAction={item?.loadingAction}
-                  isBulkSelectEnabled={isBulkSelectEnabled}
-                  isActed={item?.isActed}
-                />
-              );
-            }}
-          />
-        </CardTable>
+              ]}
+              defaultFilters={{ custom_status: "Pending" }}
+              SkeletonComponent={CardSkeleton}
+              renderCardContent={(item) => {
+                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                  return null;
+                }
+                return (
+                  <BenefitRequestItem
+                    actionsEnabled={actionsEnabled}
+                    isSelected={item?.isSelected}
+                    onToggleSelect={item?.onToggleSelect}
+                    data={item?.data}
+                    onAction={item?.onAction}
+                    onClick={(request) => handleRequestClick(request)}
+                    loadingAction={item?.loadingAction}
+                    isBulkSelectEnabled={isBulkSelectEnabled}
+                    isActed={item?.isActed}
+                  />
+                );
+              }}
+            />
+          </CardTable>
         </BulkSelectProvider>
       </div>
       {(requestId || referenceName) && (
         <BenefitRequestDetailModal
+          actionsEnabled={actionsEnabled}
           documentName={requestId || undefined}
           referenceName={referenceName || undefined}
           label="Benefit Request"

@@ -27,6 +27,7 @@ type AttendanceStatusInfo = {
     secondHalf?: string;
     events: AttendanceRecord[]; // all non-attendance-type records on the same day
     record?: AttendanceRecord; // the attendance record whose status is being used
+    isWeeklyOff?: boolean;
 };
 
 const getEventBadgeStyle = (doctype: string): { label: string; borderClass: string } => {
@@ -78,6 +79,7 @@ type ShowDetailsType = {
     status: string;
     data: AttendanceRecord;
     events?: AttendanceRecord[];
+    isWeeklyOff?: boolean;
 };
 type attendanceProps = {
     selectedDate: Date | null;
@@ -174,6 +176,11 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
     };
 
     const renderStatusIcon = (attendance: AttendanceStatusInfo) => {
+        if (attendance?.status === "week-off") {
+            return <div className="p-1 bg-gray-50 rounded-lg">
+                <CircleX className="w-4 h-4 text-gray-600 flex-shrink-0" />
+            </div>;
+        }
         if (attendance.events?.some((e) => e.status === "Approved")) {
             return <div className="p-1 bg-green-50 rounded-lg">
                 <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
@@ -201,10 +208,6 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
             case "work-from-home":
                 return <div className="p-1 bg-purple-50 rounded-lg">
                     <Home className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                </div>
-            case "week-off":
-                return <div className="p-1 bg-gray-50 rounded-lg">
-                    <CircleX className="w-4 h-4 text-gray-600 flex-shrink-0" />
                 </div>
             case "holiday":
                 return <div className="p-1 bg-blue-50 rounded-lg">
@@ -289,6 +292,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                         status: attendance?.status,
                         data: attendance?.record as AttendanceRecord,
                         events: attendance?.events as AttendanceRecord[],
+                        isWeeklyOff: attendance?.isWeeklyOff,
                     });
                 }}
                 onMonthChange={(date) => {
@@ -330,7 +334,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     const attendance = getAttendanceStatus(date);
                     const isSelected =
                         selectedDate?.toDateString() === date.toDateString();
-                    const isWeekOff = attendance?.status === "week-off";
+                    const isWeekOff = attendance?.status === "week-off" || !!attendance?.isWeeklyOff;
 
                     const cellBase =
                         "w-full h-full flex flex-col p-2 transition-all duration-200";

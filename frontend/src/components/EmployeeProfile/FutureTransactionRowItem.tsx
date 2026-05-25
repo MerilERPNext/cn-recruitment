@@ -28,6 +28,7 @@ export interface FutureTransaction {
   source_type: string;
 }
 
+
 const gridTemplateColumns = "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
 const FutureTransactionRowItem = ({ item }: { item: FutureTransaction }) => {

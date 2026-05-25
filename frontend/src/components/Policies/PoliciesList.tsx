@@ -122,7 +122,7 @@ const PoliciesList: React.FC = () => {
 
   return (
     <div className="w-full rounded-xl p-2">
-      <div className="relative z-20">
+      <div className="relative z-10">
         {isDesktop ? (
           <HeaderBar
             title="Policies List"
@@ -135,7 +135,7 @@ const PoliciesList: React.FC = () => {
           <FilterDropdown />
         )}
       </div>
-      <div className="relative z-10">
+      <div className="relative z-0">
         <FrappeListView<PolicyDoc>
           doctype="Policy Details"
           defaultFilters={{

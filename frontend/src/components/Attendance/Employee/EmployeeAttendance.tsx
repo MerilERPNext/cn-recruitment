@@ -99,6 +99,7 @@ const EmployeeAttendance = () => {
     status: string;
     data: AttendanceRecord;
     events?: AttendanceRecord[];
+    isWeeklyOff?: boolean;
   } | null>(null);
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
@@ -164,6 +165,7 @@ const EmployeeAttendance = () => {
     secondHalf?: string;
     events: AttendanceRecord[]; // all non-attendance-type records on the same day
     record?: AttendanceRecord; // the attendance record whose status is being used
+    isWeeklyOff?: boolean;
   };
 
   const parseLocalDate = (dateStr: string): Date =>
@@ -224,12 +226,17 @@ const EmployeeAttendance = () => {
       let secondHalf = "";
       const events: AttendanceRecord[] = [];
       let attendanceRecord: AttendanceRecord | undefined = undefined;
+      let isWeeklyOff = false;
 
       records.forEach((record) => {
         const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
           record.doctype,
         );
         const isHoliday = ["Holiday", "Holidays"].includes(record.doctype);
+
+        if (isHoliday && record.weekly_off === 1) {
+          isWeeklyOff = true;
+        }
 
         if (isAttendanceType) {
           // Actual Attendance record takes priority over Holiday (e.g. working on a week-off)
@@ -285,9 +292,10 @@ const EmployeeAttendance = () => {
           secondHalf,
           events,
           record: attendanceRecord,
+          isWeeklyOff,
         };
       } else {
-        statusMap[dateKey] = { status, events, record: attendanceRecord };
+        statusMap[dateKey] = { status, events, record: attendanceRecord, isWeeklyOff };
       }
     });
 
@@ -420,6 +428,7 @@ const EmployeeAttendance = () => {
             events={showDetailsFor?.events}
             date={showDetailsFor.date}
             status={showDetailsFor.status}
+            isWeeklyOff={showDetailsFor.isWeeklyOff}
             onClose={handleCloseDetails}
           />
         </div>
@@ -433,6 +442,7 @@ const EmployeeAttendance = () => {
             events={showDetailsFor?.events}
             date={showDetailsFor.date}
             status={showDetailsFor.status}
+            isWeeklyOff={showDetailsFor.isWeeklyOff}
             onClose={handleCloseDetails}
           />
         </Modal>

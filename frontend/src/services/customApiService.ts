@@ -6,6 +6,23 @@ interface CustomAPIConfig {
   params?: Record<string, unknown>;
   body?: Record<string, unknown>;
   searchFields?: string[];
+  /** Optional custom keys for pagination payload. Defaults to { startKey: 'start', pageLengthKey: 'page_length' } */
+  paginationKeys?: {
+    startKey?: string;
+    pageLengthKey?: string;
+  };
+  /** Optional custom keys for reading pagination values from the API response.
+   *  Defaults: { dataKey: 'data', totalCountKey: 'total_count', pageLengthKey: 'page_length', startKey: 'start' } */
+  responseKeys?: {
+    dataKey?: string;
+    totalCountKey?: string;
+    pageLengthKey?: string;
+    startKey?: string;
+  };
+  /** Controls how the start/page parameter is sent in the payload.
+   *  - 'offset' (default): sends record index (0, 20, 40...)
+   *  - 'page': sends page number (1, 2, 3...) */
+  paginationType?: "offset" | "page";
 }
 
 interface FetchParams {
@@ -21,16 +38,16 @@ interface FetchParams {
 // Define expected response formats from Frappe API
 type FrappeArrayResponse<T> = Array<T>;
 
-interface FrappeObjectResponse<T> {
-  data?: T[];
-  results?: T[];
-  total_count?: number;
-  totalCount?: number;
-  page_length?: number;
-  start?: number;
-  has_next_page?: boolean;
-  hasNextPage?: boolean;
-}
+// interface FrappeObjectResponse<T> {
+//   data?: T[];
+//   results?: T[];
+//   total_count?: number;
+//   totalCount?: number;
+//   page_length?: number;
+//   start?: number;
+//   has_next_page?: boolean;
+//   hasNextPage?: boolean;
+// }
 
 // Type guard to check if response is an array
 function isArrayResponse<T>(
@@ -39,24 +56,6 @@ function isArrayResponse<T>(
   return Array.isArray(response);
 }
 
-// Type guard to check if response is an object with expected properties
-function isObjectResponse<T>(
-  response: unknown
-): response is FrappeObjectResponse<T> {
-  return (
-    response !== null &&
-    typeof response === "object" &&
-    !Array.isArray(response) &&
-    ("data" in response ||
-      "results" in response ||
-      "total_count" in response ||
-      "totalCount" in response ||
-      "page_length" in response ||
-      "start" in response ||
-      "has_next_page" in response ||
-      "hasNextPage" in response)
-  );
-}
 
 export const customApiService = {
   // Pure API service function - wrapped by React Query hooks in useCustomApi.ts for reactivity
@@ -67,19 +66,30 @@ export const customApiService = {
     try {
       // Determine which searchFields to use - params takes precedence over customAPI config
       const searchFields = params.searchFields || customAPI.searchFields;
-      
+
+      // Use custom pagination keys if provided, otherwise default to Frappe standard keys
+      const startKey = customAPI.paginationKeys?.startKey ?? "start";
+      const pageLengthKey = customAPI.paginationKeys?.pageLengthKey ?? "page_length";
+      const isPageBased = customAPI.paginationType === "page";
+
+      // Convert offset-based pageParam to page number if paginationType is 'page'
+      const startValue = params.pageParam !== undefined
+        ? (isPageBased
+          ? Math.floor(params.pageParam / (params.pageSize || 20)) + 1
+          : params.pageParam)
+        : undefined;
+
       // Prepare API call parameters with correct parameter names
       const apiParams: Record<string, unknown> = {
         ...customAPI.params,
         ...(params.searchTerm && searchFields
           ? {
-              search_term: params.searchTerm,
-              search_fields: searchFields,
-            }
+            search_term: params.searchTerm,
+            search_fields: searchFields,
+          }
           : {}),
-        ...(params.pageParam !== undefined ? { start: params.pageParam } : {}),
-        // Fix: Use limit_page_length instead of page_size for Frappe compatibility
-        ...(params.pageSize ? { page_length: params.pageSize } : {}),
+        ...(startValue !== undefined ? { [startKey]: startValue } : {}),
+        ...(params.pageSize ? { [pageLengthKey]: params.pageSize } : {}),
         ...(params.orderBy ? { order_by: params.orderBy } : {}),
       };
 
@@ -100,6 +110,12 @@ export const customApiService = {
         apiBody
       );
 
+      // Response keys for reading pagination values from the response
+      const resDataKey = customAPI.responseKeys?.dataKey;
+      const resTotalCountKey = customAPI.responseKeys?.totalCountKey;
+      const resPageLengthKey = customAPI.responseKeys?.pageLengthKey;
+      const resStartKey = customAPI.responseKeys?.startKey;
+
       // Handle different response formats
       let data: T[] = [];
       let totalCount = 0;
@@ -111,16 +127,38 @@ export const customApiService = {
         totalCount = response.length;
         pageLength = response.length;
         start = 0;
-      } else if (isObjectResponse<T>(response)) {
-        data = response.data ?? response.results ?? [];
-        totalCount = response.total_count ?? response.totalCount ?? data.length;
-        pageLength = response.page_length ?? params.pageSize ?? 20;
-        start = response.start ?? params.pageParam ?? 0;
+      } else if (
+        response !== null &&
+        typeof response === "object" &&
+        !Array.isArray(response)
+      ) {
+        // eslint-disable-next-line
+        const res = response as Record<string, any>;
+
+        // Data: custom key → 'data' → 'results' → []
+        data = (resDataKey ? res[resDataKey] : undefined)
+          ?? res.data ?? res.results ?? [];
+
+        // Total count: custom key → 'total_count' → 'totalCount' → data.length
+        totalCount = (resTotalCountKey ? res[resTotalCountKey] : undefined)
+          ?? res.total_count ?? res.totalCount ?? data.length;
+
+        // Page length: custom key → 'page_length' → params.pageSize → 20
+        pageLength = (resPageLengthKey ? res[resPageLengthKey] : undefined)
+          ?? res.page_length ?? params.pageSize ?? 20;
+
+        // Start: custom key → 'start' → params.pageParam → 0
+        start = (resStartKey ? res[resStartKey] : undefined)
+          ?? res.start ?? params.pageParam ?? 0;
       }
 
       // Calculate pagination properly using the response values
-      const hasNextPage = start + pageLength < totalCount;
-      const nextCursor = hasNextPage ? start + pageLength : undefined;
+      // For page-based APIs, convert page number back to offset for consistent internal logic
+      const effectiveStart = isPageBased
+        ? ((start || 1) - 1) * (params.pageSize || 20)
+        : start;
+      const hasNextPage = effectiveStart + pageLength < totalCount;
+      const nextCursor = hasNextPage ? effectiveStart + pageLength : undefined;
 
       return {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -128,7 +166,7 @@ export const customApiService = {
         totalCount,
         hasNextPage,
         nextCursor,
-        pages: [Math.floor(start / pageLength) + 1],
+        pages: [Math.floor(effectiveStart / pageLength) + 1],
       };
     } catch (error: unknown) {
       const errorMessage =
