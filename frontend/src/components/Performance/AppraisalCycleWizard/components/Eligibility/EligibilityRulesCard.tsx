@@ -1,5 +1,3 @@
-import type { KeyboardEvent } from "react";
-import { useState } from "react";
 import { Select } from "../../../../shared/atoms/Select";
 import { Typography } from "../../../../shared/atoms/Typography";
 import { Plus, X } from "lucide-react";
@@ -15,75 +13,6 @@ export type EligibilityRule = {
 type SelectOption = {
   label: string;
   value: string;
-};
-
-const TagsInput = ({
-  value,
-  onChange,
-  className,
-}: {
-  value: string;
-  onChange: (val: string) => void;
-  className: string;
-}) => {
-  const tags = value ? value.split(",").map((t) => t.trim()).filter(Boolean) : [];
-  const [inputValue, setInputValue] = useState("");
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      if (inputValue.trim()) {
-        const newTags = [...tags, inputValue.trim()];
-        onChange(newTags.join(", "));
-        setInputValue("");
-      }
-    } else if (e.key === "Backspace" && !inputValue && tags.length > 0) {
-      e.preventDefault();
-      const newTags = tags.slice(0, -1);
-      onChange(newTags.join(", "));
-    }
-  };
-
-  const removeTag = (indexToRemove: number) => {
-    const newTags = tags.filter((_, index) => index !== indexToRemove);
-    onChange(newTags.join(", "));
-  };
-
-  return (
-    <div className={`flex flex-wrap items-center gap-1.5 p-1.5 ${className}`}>
-      {tags.map((tag, index) => (
-        <span
-          key={index}
-          className="flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700"
-        >
-          {tag}
-          <button
-            type="button"
-            onClick={() => removeTag(index)}
-            className="text-blue-400 hover:text-blue-600"
-            aria-label={`Remove ${tag}`}
-          >
-            <X className="h-3 w-3" />
-          </button>
-        </span>
-      ))}
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onBlur={() => {
-          if (inputValue.trim()) {
-            const newTags = [...tags, inputValue.trim()];
-            onChange(newTags.join(", "));
-            setInputValue("");
-          }
-        }}
-        className="flex-1 min-w-[100px] bg-transparent text-sm outline-none placeholder-gray-400 py-1 px-1.5"
-        placeholder={tags.length === 0 ? "Type and press Enter..." : ""}
-      />
-    </div>
-  );
 };
 
 type EligibilityRulesCardProps = {
@@ -176,13 +105,13 @@ const EligibilityRulesCard = ({
               }
               className={selectClass}
             />
-            <TagsInput
-              className={`${inputClass.replace("px-3", "")} bg-white h-auto focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-400`}
+            <input
+              className={`${inputClass} bg-white`}
               value={rule.value}
-              onChange={(newValue) =>
+              onChange={(event) =>
                 setRules((current) =>
                   current.map((item) =>
-                    item.id === rule.id ? { ...item, value: newValue } : item,
+                    item.id === rule.id ? { ...item, value: event.target.value } : item,
                   ),
                 )
               }

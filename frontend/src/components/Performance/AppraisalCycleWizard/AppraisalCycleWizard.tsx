@@ -1,5 +1,4 @@
 import {
-  CalendarDays,
   ChevronDown,
   X,
 } from "lucide-react";
@@ -259,6 +258,7 @@ const AppraisalCycleWizard = ({ data = mockWizardData }: AppraisalCycleWizardPro
                         </label>
                         <div className="flex min-h-[44px] items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
                           <input
+                            type="date"
                             value={field.value}
                             onChange={(event) =>
                               setBasics((current) => ({
@@ -268,7 +268,6 @@ const AppraisalCycleWizard = ({ data = mockWizardData }: AppraisalCycleWizardPro
                             }
                             className="min-w-0 flex-1 bg-transparent text-sm font-normal text-gray-700 outline-none"
                           />
-                          <CalendarDays className="h-4 w-4 text-gray-700" />
                         </div>
                       </div>
                     ))}
@@ -394,20 +393,53 @@ const AppraisalCycleWizard = ({ data = mockWizardData }: AppraisalCycleWizardPro
                         Tags
                       </Typography>
                     </label>
-                    <div className="flex min-h-[48px] flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm">
-                      {ownership.tags.map((tag) => (
+                    <div className="flex min-h-[48px] flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+                      {ownership.tags.map((tag, idx) => (
                         <Badge
                           key={tag}
                           label={tag}
                           variant="info"
                           size="sm"
                           pulse={{ show: false }}
-                          icon={<X className="h-3 w-3 text-blue-600" />}
+                          icon={
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setOwnership((curr) => ({
+                                  ...curr,
+                                  tags: curr.tags.filter((_, i) => i !== idx),
+                                }))
+                              }
+                              className="text-blue-600 hover:text-blue-800 focus:outline-none"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          }
                         />
                       ))}
-                      <Typography variant="bodyMedium" className="text-sm font-normal text-gray-400">
-                        Add tag...
-                      </Typography>
+                      <input
+                        type="text"
+                        placeholder="Add tag..."
+                        className="flex-1 min-w-[80px] bg-transparent text-sm font-normal text-gray-700 outline-none placeholder-gray-400"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === ",") {
+                            e.preventDefault();
+                            const val = e.currentTarget.value.trim();
+                            if (val && !ownership.tags.includes(val)) {
+                              setOwnership((curr) => ({
+                                ...curr,
+                                tags: [...curr.tags, val],
+                              }));
+                            }
+                            e.currentTarget.value = "";
+                          } else if (e.key === "Backspace" && !e.currentTarget.value && ownership.tags.length > 0) {
+                            setOwnership((curr) => ({
+                              ...curr,
+                              tags: curr.tags.slice(0, -1),
+                            }));
+                          }
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
