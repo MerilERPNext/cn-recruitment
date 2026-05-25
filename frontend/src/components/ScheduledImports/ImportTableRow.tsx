@@ -4,6 +4,10 @@ import { Link } from "react-router-dom";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import type { ScheduledDataImport } from "../../types/scheduledImports";
 import { formatToIndianDateWithTime } from "../../utils/formatToIndianDate";
+import {
+  sanitizeToPlainText,
+  truncateByChars,
+} from "../../utils/sanitizeToPlainText";
 import Button from "../shared/atoms/Button";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { Typography } from "../shared/atoms/Typography";
@@ -32,6 +36,9 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
   const initiatedOn = formatToIndianDateWithTime(item.creation);
   const { data: employeeData } = useEmployeeByUserId(item.owner || "");
 
+  const cleanLog = sanitizeToPlainText(item.import_log);
+  const truncatedLog = truncateByChars(cleanLog, 40);
+
   return (
     <div
       className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/30 transition-colors items-center min-w-max bg-white"
@@ -52,7 +59,7 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
         >
           <Typography
             variant="bodySmall"
-            className="font-medium text-gray-800 truncate block"
+            className="font-medium text-gray-800 truncate block cursor-pointer"
           >
             {item.import_type || "—"}
           </Typography>
@@ -71,11 +78,14 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
       </div>
 
       {/* File Name */}
-      <div className="flex items-center justify-center gap-1.5 min-w-0">
-        <Tooltip content={item.file_to_import ?? "—"}>
+      <div className="flex items-center justify-center min-w-0">
+        <Tooltip
+          content={item.file_to_import ?? "—"}
+          triggerClassName="min-w-0 w-full text-center"
+        >
           <Typography
             variant="bodySmall"
-            className="font-medium text-gray-800 truncate block"
+            className="font-medium text-gray-800 truncate block cursor-pointer"
           >
             {fileName}
           </Typography>
@@ -94,11 +104,15 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
         <Link
           to={`/webapp/employee-profile?target_user=${employeeData?.name}`}
           target="_blank"
+          className="min-w-0 w-full text-center"
         >
-          <WrapperHoverCard employeeId={employeeData?.name}>
+          <WrapperHoverCard
+            employeeId={employeeData?.name}
+            className="min-w-0 w-full"
+          >
             <Typography
               variant="bodySmall"
-              className="font-medium text-gray-800"
+              className="font-medium text-gray-800 truncate block"
             >
               {employeeData?.employee_name || employeeData?.name}
             </Typography>
@@ -107,10 +121,10 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
       </div>
 
       {/* Scheduled Time */}
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center min-w-0">
         <Typography
           variant="bodySmall"
-          className="font-medium text-gray-800 truncate"
+          className="font-medium text-gray-800 truncate block"
         >
           {item.schedule_the_import ?? "—"}
         </Typography>
@@ -123,25 +137,28 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
 
       {/* Summary */}
       <div className="flex items-center justify-center min-w-0">
-        <Tooltip content={item.import_log}>
+        <Tooltip
+          content={cleanLog}
+          triggerClassName="w-full truncate min-w-0 block"
+        >
           <Typography
             variant="bodySmall"
-            className="font-medium text-gray-800 truncate block"
+            className="font-medium text-gray-800 text-center truncate block w-full cursor-pointer"
           >
-            {item.import_log}
+            {truncatedLog}
           </Typography>
         </Tooltip>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-center gap-2 flex-shrink-0">
+      <div className="flex flex-wrap items-center justify-center gap-2 min-w-0">
         {item.failed_records_count > 0 && (
           <Button
             size="sm"
             variant="outline"
             bgColor="error"
             onClick={() => onErrorReport(item)}
-            className="text-xs flex items-center gap-1"
+            className="text-xs flex items-center gap-1 flex-shrink-0"
           >
             <AlertCircle size={12} />
             Error Report
@@ -153,7 +170,7 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
             variant="contain"
             bgColor="primary"
             onClick={() => onDownloadFile(item)}
-            className="text-xs flex items-center gap-1"
+            className="text-xs flex items-center gap-1 flex-shrink-0"
           >
             <Download size={12} />
             Download File
