@@ -377,125 +377,191 @@ def create_job_requisition(payload=None):
 		return _err(_("Failed to create job requisition: {0}").format(str(exc)), http=500)
 
 
+def _serialise_requisition(doc):
+	"""Convert a Job Requisition doc into the nested shape the create
+	endpoint accepts (plus metadata). Same shape is used by single-get
+	and list-get so the UI consumes one structure everywhere."""
+	return {
+		"name": doc.name,
+		"status": doc.get("status"),
+		"workflow_state": doc.get("workflow_state"),
+		"creation": doc.get("creation"),
+		"modified": doc.get("modified"),
+		"basic_details": {
+			"hiring_manager": doc.get("requested_by"),
+			"hiring_manager_name": doc.get("requested_by_name"),
+			"company": doc.get("company"),
+			"department": doc.get("department"),
+			"designation": doc.get("designation"),
+			"division": doc.get("custom_division"),
+			"functional_area": doc.get("custom_functional_area"),
+			"no_of_positions": doc.get("no_of_positions"),
+			"expected_compensation": doc.get("expected_compensation"),
+			"status": doc.get("status"),
+		},
+		"job_details": {
+			"experience_range_from": doc.get("custom_experience_range_from"),
+			"experience_range_to": doc.get("custom_experience_range_to"),
+			"experience_unit": doc.get("custom_experience_unit"),
+			"salary_range_currency": doc.get("custom_salary_range_currency"),
+			"salary_range_min": doc.get("custom_salary_range_min"),
+			"salary_range_max": doc.get("custom_salary_range_max"),
+			"salary_timeframe": doc.get("custom_salary_timeframe"),
+			"posting_date": doc.get("posting_date"),
+			"expected_by": doc.get("expected_by"),
+			"completed_on": doc.get("completed_on"),
+			"time_to_fill": doc.get("time_to_fill"),
+			"hiring_lead": doc.get("custom_hiring_lead"),
+			"additional_roles_responsibilities": doc.get("custom_additional_roles__responsibilities"),
+		},
+		"positions": [
+			{
+				"position_no": row.get("position_no"),
+				"vacancy_type": row.get("vacancy_type"),
+				"location": row.get("location"),
+				"reporting_manager": row.get("reporting_manager"),
+				"employee_being_replaced": row.get("replacement_for"),
+				"employee_type": row.get("employee_type"),
+				"functional_area": row.get("functional_area"),
+			}
+			for row in doc.get("custom_position_details") or []
+		],
+		"position_summary": [
+			{
+				"position_no": row.get("position_no"),
+				"status": row.get("status"),
+				"job_id": row.get("job_id"),
+				"functional_area": row.get("functional_area"),
+				"designation_alias": row.get("designation_alias"),
+				"location": row.get("location"),
+				"candidate": row.get("candidate"),
+				"candidate_status": row.get("candidate_status"),
+				"hiring_lead": row.get("hiring_lead"),
+				"recruiter": row.get("recruiter"),
+				"tat_days": row.get("tat_days"),
+			}
+			for row in doc.get("custom_position_summary") or []
+		],
+		"requirement": {
+			"employment_type": doc.get("custom_employment_type"),
+			"employment_type_link": doc.get("custom_employment_type_link"),
+			"location": doc.get("custom_location"),
+			"work_experience_range": doc.get("custom_work_experience_range"),
+			"preferred_notice_period": doc.get("custom_preferred_notice_period"),
+			"preferred_company": doc.get("custom_preferred_company"),
+			"other_preferred_companies": doc.get("custom_other_preferred_companies"),
+			"salary_range_display": doc.get("custom_salary_range_display"),
+			"qualifications": [
+				{
+					"qualification": row.get("qualification"),
+					"mandatory": row.get("mandatory"),
+				}
+				for row in doc.get("custom_qualifications") or []
+			],
+		},
+		"job_description": {
+			"template": doc.get("custom_job_description_template"),
+			"description": doc.get("description"),
+			"reason_for_requesting": doc.get("reason_for_requesting"),
+			"skills": [row.get("skill") for row in doc.get("custom_skills") or [] if row.get("skill")],
+		},
+		"other_details": {
+			"comments_instructions": doc.get("custom_comments__instructions"),
+			"cost_centre": doc.get("custom_cost_centre"),
+			"designation_change": doc.get("custom_designation_change"),
+		},
+		"assign_to_recruiter": doc.get("custom_assign_to_recruiter"),
+		"pre_screened_candidates": [
+			{
+				"candidate_name": row.get("candidate_name"),
+				"email": row.get("email"),
+				"phone": row.get("phone"),
+				"cv": row.get("cv"),
+				"offer_directly": bool(row.get("offer_directly")),
+			}
+			for row in doc.get("custom_pre_screened_candidates") or []
+		],
+	}
+
+
 @frappe.whitelist()
-def get_job_requisition(name=None):
+def get_job_requisition(
+	name=None,
+	filters=None,
+	limit=20,
+	start=0,
+	order_by="modified desc",
+):
 	"""
-	Return a single Job Requisition in the same nested shape the create
-	endpoint accepts, plus metadata (`name`, `creation`, `modified`,
-	`workflow_state`, `status`).
+	Two modes — same endpoint, same response shape:
+
+	  - `name` passed         →  returns ONE Job Requisition (full nested shape).
+	  - `name` omitted        →  returns a paginated LIST of Job Requisitions,
+	                             each in the same full nested shape.
+
+	List-mode optional params:
+	    filters   JSON object  e.g. {"status": "Pending", "department": "Engineering - D"}
+	    limit     int   page size                    (default 20, max 100)
+	    start     int   offset for pagination        (default 0)
+	    order_by  str   any field + asc/desc         (default "modified desc")
 	"""
 	try:
-		if not name:
-			frappe.throw(_("`name` is required."))
+		# --------------------------- SINGLE MODE --------------------------- #
+		if name:
+			if not frappe.db.exists(JOB_REQUISITION, name):
+				return _err(_("Job Requisition not found: {0}").format(name), http=404)
 
-		if not frappe.db.exists(JOB_REQUISITION, name):
-			return _err(_("Job Requisition not found: {0}").format(name), http=404)
+			doc = frappe.get_doc(JOB_REQUISITION, name)
+			doc.check_permission("read")
 
-		doc = frappe.get_doc(JOB_REQUISITION, name)
-		doc.check_permission("read")
+			return _ok(
+				message=_("Job Requisition fetched."),
+				data=_serialise_requisition(doc),
+				http=200,
+			)
 
-		data = {
-			"name": doc.name,
-			"status": doc.get("status"),
-			"workflow_state": doc.get("workflow_state"),
-			"creation": doc.get("creation"),
-			"modified": doc.get("modified"),
-			"basic_details": {
-				"hiring_manager": doc.get("requested_by"),
-				"hiring_manager_name": doc.get("requested_by_name"),
-				"company": doc.get("company"),
-				"department": doc.get("department"),
-				"designation": doc.get("designation"),
-				"division": doc.get("custom_division"),
-				"functional_area": doc.get("custom_functional_area"),
-				"no_of_positions": doc.get("no_of_positions"),
-				"expected_compensation": doc.get("expected_compensation"),
-				"status": doc.get("status"),
-			},
-			"job_details": {
-				"experience_range_from": doc.get("custom_experience_range_from"),
-				"experience_range_to": doc.get("custom_experience_range_to"),
-				"experience_unit": doc.get("custom_experience_unit"),
-				"salary_range_currency": doc.get("custom_salary_range_currency"),
-				"salary_range_min": doc.get("custom_salary_range_min"),
-				"salary_range_max": doc.get("custom_salary_range_max"),
-				"salary_timeframe": doc.get("custom_salary_timeframe"),
-				"posting_date": doc.get("posting_date"),
-				"expected_by": doc.get("expected_by"),
-				"completed_on": doc.get("completed_on"),
-				"hiring_lead": doc.get("custom_hiring_lead"),
-				"additional_roles_responsibilities": doc.get("custom_additional_roles__responsibilities"),
-			},
-			"positions": [
-				{
-					"position_no": row.get("position_no"),
-					"vacancy_type": row.get("vacancy_type"),
-					"location": row.get("location"),
-					"reporting_manager": row.get("reporting_manager"),
-					"employee_being_replaced": row.get("replacement_for"),
-					"employee_type": row.get("employee_type"),
-					"functional_area": row.get("functional_area"),
-				}
-				for row in doc.get("custom_position_details") or []
-			],
-			"position_summary": [
-				{
-					"position_no": row.get("position_no"),
-					"status": row.get("status"),
-					"job_id": row.get("job_id"),
-					"functional_area": row.get("functional_area"),
-					"designation_alias": row.get("designation_alias"),
-					"location": row.get("location"),
-					"candidate": row.get("candidate"),
-					"candidate_status": row.get("candidate_status"),
-					"hiring_lead": row.get("hiring_lead"),
-					"recruiter": row.get("recruiter"),
-					"tat_days": row.get("tat_days"),
-				}
-				for row in doc.get("custom_position_summary") or []
-			],
-			"requirement": {
-				"employment_type": doc.get("custom_employment_type"),
-				"employment_type_link": doc.get("custom_employment_type_link"),
-				"location": doc.get("custom_location"),
-				"work_experience_range": doc.get("custom_work_experience_range"),
-				"preferred_notice_period": doc.get("custom_preferred_notice_period"),
-				"preferred_company": doc.get("custom_preferred_company"),
-				"other_preferred_companies": doc.get("custom_other_preferred_companies"),
-				"salary_range_display": doc.get("custom_salary_range_display"),
-				"qualifications": [
-					{
-						"qualification": row.get("qualification"),
-						"mandatory": row.get("mandatory"),
-					}
-					for row in doc.get("custom_qualifications") or []
-				],
-			},
-			"job_description": {
-				"template": doc.get("custom_job_description_template"),
-				"description": doc.get("description"),
-				"reason_for_requesting": doc.get("reason_for_requesting"),
-				"skills": [row.get("skill") for row in doc.get("custom_skills") or [] if row.get("skill")],
-			},
-			"other_details": {
-				"comments_instructions": doc.get("custom_comments__instructions"),
-				"cost_centre": doc.get("custom_cost_centre"),
-				"designation_change": doc.get("custom_designation_change"),
-			},
-			"assign_to_recruiter": doc.get("custom_assign_to_recruiter"),
-			"pre_screened_candidates": [
-				{
-					"candidate_name": row.get("candidate_name"),
-					"email": row.get("email"),
-					"phone": row.get("phone"),
-					"cv": row.get("cv"),
-					"offer_directly": bool(row.get("offer_directly")),
-				}
-				for row in doc.get("custom_pre_screened_candidates") or []
-			],
-		}
+		# ---------------------------- LIST MODE ---------------------------- #
+		if isinstance(filters, str):
+			try:
+				filters = json.loads(filters) if filters.strip() else None
+			except json.JSONDecodeError:
+				return _err(_("`filters` must be valid JSON."), http=400)
+		filters = filters or {}
 
-		return _ok(message=_("Job Requisition fetched."), data=data, http=200)
+		try:
+			limit = max(1, min(int(limit), 100))
+			start = max(0, int(start))
+		except (TypeError, ValueError):
+			return _err(_("`limit` and `start` must be integers."), http=400)
+
+		# Pull only the names with filtering / paging applied; then load each
+		# doc fully so the response is the same shape as single-get.
+		names = frappe.get_list(
+			JOB_REQUISITION,
+			filters=filters,
+			fields=["name"],
+			order_by=order_by,
+			limit_page_length=limit,
+			limit_start=start,
+			pluck="name",
+		)
+		total = frappe.db.count(JOB_REQUISITION, filters=filters)
+
+		items = [_serialise_requisition(frappe.get_doc(JOB_REQUISITION, n)) for n in names]
+
+		return _ok(
+			message=_("Fetched {0} requisition(s).").format(len(items)),
+			data={
+				"requisitions": items,
+				"pagination": {
+					"total": total,
+					"limit": limit,
+					"start": start,
+					"returned": len(items),
+				},
+			},
+			http=200,
+		)
 
 	except frappe.PermissionError as exc:
 		return _err(str(exc) or _("Not permitted."), http=403)
