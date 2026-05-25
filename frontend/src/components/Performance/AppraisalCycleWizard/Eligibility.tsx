@@ -1,7 +1,6 @@
 import { lazy, Suspense, useState } from "react";
 import { mockWizardData } from "./AppraisalCycleWizard";
 import type { EligibilityBreakdownItem } from "./components/Eligibility/EligibilitySummaryAside";
-import type { EligibilityEmployee } from "./components/Eligibility/EligibilityEmployeesCard";
 import type { EligibilityExclusion } from "./components/Eligibility/EligibilityExclusionsCard";
 import type { EligibilityRule } from "./components/Eligibility/EligibilityRulesCard";
 import WizardShell from "./WizardShell";

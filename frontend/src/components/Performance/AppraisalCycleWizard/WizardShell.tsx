@@ -129,7 +129,7 @@ const WizardShell = ({ children, contentClassName = "", data, title }: WizardShe
             </Typography>
           </div>
 
-          <div className="flex snap-x gap-2 overflow-x-auto px-3 pb-3 [-webkit-overflow-scrolling:touch] md:block md:min-h-0 md:flex-1 md:space-y-2 md:overflow-y-auto md:px-3 md:pt-2">
+          <div className="flex snap-x gap-2 overflow-x-auto scrollbar-hide px-3 pb-3 [-webkit-overflow-scrolling:touch] md:block md:min-h-0 md:flex-1 md:space-y-2 md:overflow-y-auto md:px-3 md:pt-2">
             {data.steps.map((step, index) => {
               const active = step.id === data.activeStepId;
               const complete = index < activeStepIndex;

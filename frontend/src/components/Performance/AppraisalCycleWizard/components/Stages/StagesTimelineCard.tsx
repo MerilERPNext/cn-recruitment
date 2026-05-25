@@ -28,7 +28,9 @@ const StagesTimelineCard = ({
     value: StageRow[K],
   ) => {
     setStages((current) =>
-      current.map((stage) => (stage.id === id ? { ...stage, [field]: value } : stage)),
+      current.map((stage) =>
+        stage.id === id ? { ...stage, [field]: value } : stage,
+      ),
     );
   };
 
@@ -57,59 +59,73 @@ const StagesTimelineCard = ({
         {stages.map((stage) => (
           <div
             key={stage.id}
-            className="grid min-w-0 grid-cols-[34px_minmax(0,1fr)] gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-[0_1px_0_rgba(15,23,42,0.03)] lg:grid-cols-[24px_34px_minmax(140px,0.8fr)_minmax(0,1.8fr)] lg:items-center"
+            className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-[0_1px_0_rgba(15,23,42,0.03)] lg:flex-row lg:items-center"
           >
-            <button
-              className="hidden h-8 w-6 items-center justify-center text-gray-400 lg:flex"
-              aria-label={`Drag ${stage.title}`}
-            >
-              <GripVertical className="h-4 w-4" />
-            </button>
-
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
-              {stage.id}
-            </span>
-
-            <div className="min-w-0">
-              <Typography
-                variant="bodyMedium"
-                className="break-words text-sm font-bold leading-snug text-gray-900"
+            <div className="flex items-start gap-3 lg:w-[240px] lg:shrink-0 lg:items-center">
+              <button
+                className="hidden h-8 w-6 items-center justify-center text-gray-400 lg:flex"
+                aria-label={`Drag ${stage.title}`}
               >
-                {stage.title}
-              </Typography>
-              <Typography variant="caption" className="mt-1 block leading-snug text-gray-500">
-                SLA: {stage.sla} · Due {stage.dueDate}
-              </Typography>
+                <GripVertical className="h-4 w-4" />
+              </button>
+
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
+                {stage.id}
+              </span>
+
+              <div className="min-w-0 flex-1">
+                <Typography
+                  variant="bodyMedium"
+                  className="break-words text-sm font-bold leading-snug text-gray-900"
+                >
+                  {stage.title}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  className="mt-1 block leading-snug text-gray-500"
+                >
+                  SLA: {stage.sla} · Due {stage.dueDate}
+                </Typography>
+              </div>
             </div>
 
-            <div className="col-span-2 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:col-span-1 2xl:grid-cols-[minmax(130px,1fr)_minmax(130px,1fr)_minmax(130px,1fr)_minmax(130px,auto)]">
+            <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:flex-1 lg:grid-cols-4 lg:items-center">
               <Select
                 options={visibilityOptions}
                 value={
-                  visibilityOptions.find((option) => option.value === stage.visibility) ??
-                  visibilityOptions[0]
+                  visibilityOptions.find(
+                    (option) => option.value === stage.visibility,
+                  ) ?? visibilityOptions[0]
                 }
-                onChange={(option) => updateStage(stage.id, "visibility", option.value)}
+                onChange={(option) =>
+                  updateStage(stage.id, "visibility", option.value)
+                }
                 className={selectClass}
               />
 
               <Select
                 options={formOptions}
                 value={
-                  formOptions.find((option) => option.value === stage.formTemplate) ??
-                  formOptions[0]
+                  formOptions.find(
+                    (option) => option.value === stage.formTemplate,
+                  ) ?? formOptions[0]
                 }
-                onChange={(option) => updateStage(stage.id, "formTemplate", option.value)}
+                onChange={(option) =>
+                  updateStage(stage.id, "formTemplate", option.value)
+                }
                 className={selectClass}
               />
 
               <Select
                 options={ratingOptions}
                 value={
-                  ratingOptions.find((option) => option.value === stage.ratingScale) ??
-                  ratingOptions[0]
+                  ratingOptions.find(
+                    (option) => option.value === stage.ratingScale,
+                  ) ?? ratingOptions[0]
                 }
-                onChange={(option) => updateStage(stage.id, "ratingScale", option.value)}
+                onChange={(option) =>
+                  updateStage(stage.id, "ratingScale", option.value)
+                }
                 className={selectClass}
               />
 
@@ -118,7 +134,11 @@ const StagesTimelineCard = ({
                   type="checkbox"
                   checked={stage.managerVisible}
                   onChange={(event) =>
-                    updateStage(stage.id, "managerVisible", event.target.checked)
+                    updateStage(
+                      stage.id,
+                      "managerVisible",
+                      event.target.checked,
+                    )
                   }
                   className="h-4 w-4 rounded border-gray-300 accent-blue-500"
                 />
