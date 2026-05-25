@@ -102,8 +102,7 @@ const EmployeeProfile: React.FC = () => {
 
   const { data: futureTransactionsData } =
     useGetFutureFieldTransactions(employeeId);
-  const hasFutureTransactions =
-    futureTransactionsData && futureTransactionsData.length > 0;
+  const hasFutureTransactions = (futureTransactionsData?.length ?? 0) > 0;
 
   // const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
   //   useState(false);

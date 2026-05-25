@@ -36,8 +36,14 @@ const ImportTableRow: React.FC<ImportTableRowProps> = ({
   const initiatedOn = formatToIndianDateWithTime(item.creation);
   const { data: employeeData } = useEmployeeByUserId(item.owner || "");
 
-  const cleanLog = sanitizeToPlainText(item.import_log);
-  const truncatedLog = truncateByChars(cleanLog, 40);
+  const cleanLog = React.useMemo(
+    () => sanitizeToPlainText(item.import_log),
+    [item.import_log],
+  );
+  const truncatedLog = React.useMemo(
+    () => truncateByChars(cleanLog, 40),
+    [cleanLog],
+  );
 
   return (
     <div

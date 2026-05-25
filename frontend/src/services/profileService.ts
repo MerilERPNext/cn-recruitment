@@ -13,8 +13,6 @@ import FrappeAPI from "../utils/frappeAPI";
 export const profileService = {
   getGenders: async (): Promise<GenderResponse> => {
     try {
-      console.log("Fetching genders list");
-
       const result = (await FrappeAPI.getDocumentList("Gender", {
         fields: ["name"],
         limit: 1000,
