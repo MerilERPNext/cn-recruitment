@@ -35,8 +35,8 @@ import SearchMembers from "./components/SearchMembers";
 import AppraisalCycleWizard from "./components/Performance/AppraisalCycleWizard/AppraisalCycleWizard.tsx";
 import Eligibility from "./components/Performance/AppraisalCycleWizard/Eligibility.tsx";
 import Stages from "./components/Performance/AppraisalCycleWizard/Stages.tsx";
-import CalibratorSession from "./components/Performance/AppraisalCycleWizard/Calibrator.tsx";
-import BoxGrid from "./components/Performance/AppraisalCycleWizard/BoxGrid.tsx";
+import CalibratorSession from "./components/Performance/Calibrator/Calibrator.tsx";
+import BoxGrid from "./components/Performance/Calibrator/BoxGrid.tsx";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
