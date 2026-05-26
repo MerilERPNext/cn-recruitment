@@ -103,21 +103,17 @@ const goalsData: GoalItem[] = [
   }
 ];
 
-import { useScreenSize } from '../../../../hooks/useScreenSize';
-
 const OverviewGoals: React.FC = () => {
-  const { isMobile } = useScreenSize();
-
   return (
-    <article aria-label="My Goals Container" className=" space-y-6">
-      <section aria-label="Goals List Area" className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm sm:p-6">
-        <header className={`flex ${isMobile ? 'flex-col items-start gap-3' : 'justify-between items-center'} mb-4 sm:mb-6`}>
-          <div className="flex items-center gap-3">
+    <article aria-label="My Goals Container" className="min-w-0 space-y-6">
+      <section aria-label="Goals List Area" className="min-w-0 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+        <header className="mb-4 flex min-w-0 flex-col items-start gap-3 sm:mb-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
             <Typography variant="h4" className="font-bold text-gray-900">My Goals</Typography>
             <div className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">{goalsData.length}</div>
           </div>
-          <div className={`flex ${isMobile ? 'justify-between w-full' : 'items-center'} gap-3 text-sm`}>
-            <Typography variant="bodySmall" className="text-gray-500">Sum of weightage: <span className="font-semibold text-gray-900">100%</span></Typography>
+          <div className="flex w-full min-w-0 items-center justify-between gap-3 text-sm md:w-auto md:justify-end">
+            <Typography variant="bodySmall" className="min-w-0 break-words text-gray-500">Sum of weightage: <span className="font-semibold text-gray-900">100%</span></Typography>
             <button className="flex shrink-0 items-center gap-1 font-medium text-blue-600 hover:text-blue-700" aria-label="Open all goals">
               Open all <ArrowRight className="w-3 h-3" />
             </button>
@@ -126,26 +122,26 @@ const OverviewGoals: React.FC = () => {
 
         <div aria-label="Goals Cards" className="space-y-3 sm:space-y-4">
           {goalsData.map((goal) => (
-            <article key={goal.id} aria-label={`Goal: ${goal.title}`} className={`flex ${isMobile ? 'flex-col gap-3' : 'items-center gap-4'} p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors sm:p-4`}>
-              <div className="flex w-full flex-1 items-start gap-3">
+            <article key={goal.id} aria-label={`Goal: ${goal.title}`} className="flex min-w-0 flex-col gap-3 rounded-xl border border-gray-100 p-3 transition-colors hover:bg-gray-50 sm:p-4 lg:flex-row lg:items-center lg:gap-4">
+              <div className="flex w-full min-w-0 flex-1 items-start gap-3">
                 <div className="self-start mt-1">
                   <Badge label={goal.type} backgroundColor={goal.typeBgColor} textColor={goal.typeTextColor} size="sm" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <Typography variant="bodySmall" className="font-semibold text-gray-900 mb-1">{goal.title}</Typography>
-                  <Typography variant="caption" className="block leading-5 text-gray-500">Weightage <span className="font-semibold text-gray-700">{goal.weightage}</span> &middot; {goal.category} &middot; {goal.progressText}</Typography>
+                  <Typography variant="bodySmall" className="mb-1 block break-words font-semibold text-gray-900">{goal.title}</Typography>
+                  <Typography variant="caption" className="block break-words leading-5 text-gray-500">Weightage <span className="font-semibold text-gray-700">{goal.weightage}</span> &middot; {goal.category} &middot; {goal.progressText}</Typography>
                 </div>
               </div>
-              <div className={`flex ${isMobile ? 'w-full flex-col gap-3 mt-1' : 'items-center gap-4'}`}>
-                <div className={`${isMobile ? 'w-full' : 'w-32'} flex flex-col items-end gap-2`}>
-                  <div className="w-full flex items-center gap-3">
+              <div className="mt-1 flex w-full min-w-0 flex-col gap-3 lg:mt-0 lg:w-auto lg:flex-row lg:items-center lg:gap-4">
+                <div className="flex w-full min-w-0 flex-col items-end gap-2 lg:w-32">
+                  <div className="flex w-full min-w-0 items-center gap-3">
                     <Typography variant="caption" className="w-8 shrink-0 font-medium text-gray-500">{goal.progressPercentage}%</Typography>
-                    <div className="w-full bg-gray-100 rounded-md h-1.5 overflow-hidden">
+                    <div className="h-1.5 w-full min-w-0 overflow-hidden rounded-md bg-gray-100">
                       <div className={`h-1.5 rounded-md ${goal.progressColor}`} style={{ width: `${goal.progressPercentage}%` }}></div>
                     </div>
                   </div>
                 </div>
-                <div className={`${isMobile ? 'w-full' : 'w-24 flex justify-end'}`}>
+                <div className="flex w-full justify-start lg:w-24 lg:justify-end">
                   <Badge label={goal.status} backgroundColor={goal.statusBgColor} textColor={goal.statusTextColor} size="sm" pulse={{ show: true, color: goal.statusPulse }} />
                 </div>
               </div>
