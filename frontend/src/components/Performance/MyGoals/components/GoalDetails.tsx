@@ -4,7 +4,8 @@ import { ArrowLeft, Plus, Paperclip, Mic } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Badge, { type BadgeVariant } from '../../../shared/Badge';
 import Button from '../../../shared/atoms/Button';
-import { goals, type Goal, type GoalKeyResult } from '../MyGoals';
+import { goals } from '../data';
+import type { Goal, GoalKeyResult } from '../types';
 
 const getStatusVariant = (status: Goal['status']): BadgeVariant => {
   if (status === 'On-track') return 'success';
