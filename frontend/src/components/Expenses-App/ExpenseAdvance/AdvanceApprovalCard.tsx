@@ -280,20 +280,22 @@ const AdvanceApprovalCard = ({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1 text-right">
-                <Typography variant="mobileCardLabel">Due Date</Typography>
-                <Typography variant="mobileCardValue">
-                  {formatToIndianDate(data?.due_date)}
-                </Typography>
+              <div className="flex justify-between w-full">
+                <div className="flex flex-col gap-1">
+                  <MobileAllocatedTo
+                    users={data?.allocated_to}
+                    roles={data?.allocated_roles}
+                    username={data?.username}
+                    RoleAssignedUsers={data?.role_assigned_users}
+                  />
+                </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <Typography variant="mobileCardLabel">Due Date</Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatToIndianDate(data?.due_date)}
+                  </Typography>
+                </div>
               </div>
-
-              {/* Allocated To */}
-              <MobileAllocatedTo
-                users={data?.allocated_to}
-                roles={data?.allocated_roles}
-                username={data?.username}
-                RoleAssignedUsers={data?.role_assigned_users}
-              />
 
               {activeStatus === "Approved" && (
                 <div className="flex justify-between w-full">
@@ -315,7 +317,7 @@ const AdvanceApprovalCard = ({
                 </div>
               )}
 
-              {activeStatus === "Draft" && !isActed ? (
+              {activeStatus === "Pending" && !isActed ? (
                 <TeamApprovalActionPill
                   actionsEnabled={actionsEnabled}
                   variant="buttons"
@@ -329,7 +331,7 @@ const AdvanceApprovalCard = ({
                 <div className="bg-gray-50 px-3 py-1 rounded-md mt-2 w-fit mx-auto">
                   <Typography
                     variant="bodySmall"
-                    className="text-center text-gray-100"
+                    className="text-center text-gray-500"
                   >
                     <StatusBadge status={"Action taken"} />
                   </Typography>

@@ -2,12 +2,12 @@ import { X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import { useApprovalAction } from "../../../hooks/userApprovalList";
 import {
   useAllowRequestsOnHold,
   useEmployeeAdvanceUpdate,
 } from "../../../hooks/useEmployeeAdvances";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
@@ -57,7 +57,8 @@ export default function TeamAdvanceDetailView({
   const [isActed, setIsActed] = useState(false);
 
   // ── Sanctioned Amount editing state ──────────────────────────────────────
-  const [sanctionedAmountInput, setSanctionedAmountInput] = useState<string>("");
+  const [sanctionedAmountInput, setSanctionedAmountInput] =
+    useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
@@ -70,7 +71,8 @@ export default function TeamAdvanceDetailView({
     allowData?.allow_overwriting_amount_while_processing_reimbursement_advance ??
     false;
   const canExceedRequested =
-    allowData?.allow_overwriting_amount_more_than_claimed_while_approving ?? false;
+    allowData?.allow_overwriting_amount_more_than_claimed_while_approving ??
+    false;
 
   const updateAdvanceMutation = useEmployeeAdvanceUpdate();
 
@@ -156,7 +158,14 @@ export default function TeamAdvanceDetailView({
         setCurrentAction(null);
       }
     },
-    [data, onActionComplete, onClose, setRefetchAttendance, actionsWithForm, handleApprovalAction],
+    [
+      data,
+      onActionComplete,
+      onClose,
+      setRefetchAttendance,
+      actionsWithForm,
+      handleApprovalAction,
+    ],
   );
 
   const handleAction = (action: string) => {
@@ -375,8 +384,8 @@ export default function TeamAdvanceDetailView({
 
   const ActionButtons =
     actions?.length &&
-      ["Open", "Pending", "Draft"].includes(ref.custom_final_status) &&
-      !isActed ? (
+    ["Open", "Pending", "Draft"].includes(ref.custom_final_status) &&
+    !isActed ? (
       <div className="border-t bg-white p-4">
         <TeamApprovalActionPill
           actionsEnabled={actionsEnabled}
@@ -444,20 +453,8 @@ export default function TeamAdvanceDetailView({
               </div>
             </div>
 
-            {/* ── Amount Row: Advance Amount + Sanctioned Amount ──────────── */}
-            <div className="flex justify-between w-full gap-4">
-              {/* Advance Amount — always read-only (custom_requested_amount) */}
-              <div className="flex flex-col gap-2 flex-1">
-                <Typography variant="mobileCardLabel" className="block">
-                  Advance Amount
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {formatINR(ref.custom_requested_amount)}
-                </Typography>
-              </div>
-
-              {/* Sanctioned Amount — editable or read-only based on API */}
-              <div className="flex flex-col gap-2 flex-1">
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
                   Sanctioned Amount
                 </Typography>
@@ -468,10 +465,13 @@ export default function TeamAdvanceDetailView({
                     <input
                       type="number"
                       value={sanctionedAmountInput}
-                      onChange={(e) => handleSanctionedAmountChange(e.target.value)}
+                      onChange={(e) =>
+                        handleSanctionedAmountChange(e.target.value)
+                      }
                       step="1"
                       min="0"
-                      {...(!canExceedRequested && ref?.custom_requested_amount !== undefined
+                      {...(!canExceedRequested &&
+                      ref?.custom_requested_amount !== undefined
                         ? { max: ref.custom_requested_amount }
                         : {})}
                       onKeyDown={(e) => {
@@ -508,6 +508,14 @@ export default function TeamAdvanceDetailView({
                   />
                 )}
               </div>
+              <div className="flex flex-col gap-2 text-right">
+                <Typography variant="mobileCardLabel" className="block">
+                  Advance Amount
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {formatINR(ref.custom_requested_amount)}
+                </Typography>
+              </div>
             </div>
 
             <div className="flex justify-between w-full">
@@ -528,7 +536,7 @@ export default function TeamAdvanceDetailView({
             </div>
 
             <div className="flex justify-between w-full">
-              {finalStatus === "Approved" && (
+              {
                 <div className="flex flex-col gap-2">
                   <Typography variant="mobileCardLabel" className="block">
                     Paid Status
@@ -539,7 +547,7 @@ export default function TeamAdvanceDetailView({
                     />
                   </Typography>
                 </div>
-              )}
+              }
               <div className="flex flex-col gap-2 text-right ml-auto">
                 <Typography variant="mobileCardLabel" className="block">
                   Posting Date
@@ -551,7 +559,17 @@ export default function TeamAdvanceDetailView({
             </div>
 
             <div className="flex justify-between w-full">
-              <div className="flex flex-col gap-2">
+              {
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2">
+                    <Typography variant="mobileCardLabel">Purpose</Typography>
+                    <Typography variant="mobileCardValue">
+                      {ref.purpose}
+                    </Typography>
+                  </div>
+                </div>
+              }
+              <div className="flex flex-col gap-2 text-right ml-auto">
                 <MobileAllocatedTo
                   users={data?.allocated_to}
                   roles={data?.allocated_roles}
@@ -560,38 +578,21 @@ export default function TeamAdvanceDetailView({
                 />
               </div>
             </div>
-
-            {ref.purpose && (
-              <div className="flex flex-col gap-2">
-                <Typography variant="mobileCardLabel">Purpose</Typography>
-                <Typography variant="mobileCardValue">{ref.purpose}</Typography>
-              </div>
-            )}
           </div>
 
           {/* BREAKUP */}
-          <section>
-            <Typography
-              variant="bodySmall"
-              className="base-title mb-1 font-bold block"
-            >
-              Advance Breakup Items ({ref?.expenses?.length || 0})
-            </Typography>
+          {ref.expenses?.length > 0 && (
+            <section>
+              <Typography
+                variant="bodySmall"
+                className="base-title mb-1 font-bold block"
+              >
+                Advance Breakup Items ({ref?.expenses?.length || 0})
+              </Typography>
 
-            {ref.expenses?.length > 0 ? (
-              isDesktop ? (
-                DesktopBreakup
-              ) : (
-                MobileBreakup
-              )
-            ) : (
-              <div className="py-6 text-center border border-gray-200 rounded-lg bg-gray-50 mt-2">
-                <Typography variant="mobileCardValue" className="text-gray-500">
-                  No breakup items found for this advance.
-                </Typography>
-              </div>
-            )}
-          </section>
+              {isDesktop ? DesktopBreakup : MobileBreakup}
+            </section>
+          )}
         </div>
 
         {/* ACTION BUTTONS */}
@@ -616,11 +617,7 @@ export default function TeamAdvanceDetailView({
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleConfirmClose}
-                  size="sm"
-                  bgColor="error"
-                >
+                <Button onClick={handleConfirmClose} size="sm" bgColor="error">
                   Discard Changes
                 </Button>
               </div>
@@ -647,11 +644,7 @@ export default function TeamAdvanceDetailView({
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleConfirmAction}
-                  size="sm"
-                  bgColor="error"
-                >
+                <Button onClick={handleConfirmAction} size="sm" bgColor="error">
                   Discard & Proceed
                 </Button>
               </div>
