@@ -80,6 +80,9 @@ const WizardShell = ({ children, contentClassName = "", data, title, onNext }: W
   const progress = totalSteps ? `${((activeStepIndex + 1) / totalSteps) * 100}%` : "0%";
   const stepLabel = `Step ${activeStepIndex + 1} of ${totalSteps}`;
   const cycleTitle = title || data.title;
+  
+  const hasNextStep = activeStepIndex < totalSteps - 1;
+  const computedNextLabel = hasNextStep ? data.steps[activeStepIndex + 1].label : "Complete";
 
   const handleNavigateStep = (stepId: string) => {
     if (stepId === "cycle-details") {
@@ -233,7 +236,7 @@ const WizardShell = ({ children, contentClassName = "", data, title, onNext }: W
                 onClick={handleNext}
                 className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-600 sm:w-auto"
               >
-                Next: {data.nextStepLabel}
+                {hasNextStep ? `Next: ${computedNextLabel}` : "Complete"}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>

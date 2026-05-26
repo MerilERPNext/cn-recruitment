@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import WizardShell from "./WizardShell";
 import { mockWizardData } from "./AppraisalCycleWizard";
 import SourceSettings from "./components/GoalPullIn/SourceSettings";
 import AutoRating from "./components/GoalPullIn/AutoRating";
 
 const GoalPullIn = () => {
-  const navigate = useNavigate();
   const [autoPull, setAutoPull] = useState(true);
   const [carryWeightage, setCarryWeightage] = useState(true);
   const [editLock, setEditLock] = useState(true);
@@ -20,13 +18,12 @@ const GoalPullIn = () => {
       description: "Map approved goals into the appraisal form and define how progress translates to ratings.",
     },
     validationStatus: "Validation passed",
-    nextStepLabel: "Workflow (Skip to Step 7)",
+    nextStepLabel: "Competencies (Skip to Step 6)",
   };
   
   return (
     <WizardShell
       data={goalPullInData}
-      onNext={() => navigate("/webapp/performance-app/appraisal-cycle-wizard/workflow")}
       contentClassName="flex flex-col gap-4 sm:gap-6"
     >
       <SourceSettings

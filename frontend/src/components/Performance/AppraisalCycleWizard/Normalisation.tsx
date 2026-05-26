@@ -69,8 +69,7 @@ const Normalisation = () => {
   return (
     <WizardShell
       data={normalisationData}
-      onNext={() => navigate("/webapp/performance-app/appraisal-cycle-wizard/letters-release")}
-      contentClassName="flex flex-col gap-6 relative pb-8"
+      contentClassName="flex flex-col gap-6 lg:flex-row pb-8"
     >
       {/* Normalisation Mode */}
       <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm">

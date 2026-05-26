@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import WizardShell from "./WizardShell";
 import { mockWizardData } from "./AppraisalCycleWizard";
 import { Typography } from "../../shared/atoms/Typography";
@@ -27,7 +26,6 @@ const competencies = [
 const levels = ["JUNIOR", "MID", "SENIOR", "LEAD", "MANAGER"];
 
 const Competencies = () => {
-  const navigate = useNavigate();
   const [activeFramework, setActiveFramework] = useState("pw-design");
   
   // Hardcoded to match the visual mock where Design Craft x Senior is selected
@@ -48,7 +46,6 @@ const Competencies = () => {
   return (
     <WizardShell
       data={competenciesData}
-      onNext={() => navigate("/webapp/performance-app/appraisal-cycle-wizard/workflow")}
       contentClassName="flex flex-col lg:flex-row gap-6 pb-8"
     >
       

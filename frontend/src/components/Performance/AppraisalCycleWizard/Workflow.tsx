@@ -61,7 +61,6 @@ const Workflow = () => {
   return (
     <WizardShell
       data={workflowData}
-      onNext={() => navigate("/webapp/performance-app/appraisal-cycle-wizard/notifications")}
       contentClassName="flex flex-col gap-6 pb-8"
     >
       {/* Approval Pattern */}

@@ -53,7 +53,6 @@ const Notifications = () => {
   return (
     <WizardShell
       data={notificationsData}
-      onNext={() => navigate("/webapp/performance-app/appraisal-cycle-wizard/normalisation-calibration")}
       contentClassName="flex flex-col gap-6 lg:flex-row relative pb-8"
     >
       {/* Left Panel: Events Matrix */}
