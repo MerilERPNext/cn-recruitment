@@ -1,4 +1,5 @@
 import { Plus, X } from "lucide-react";
+import type { Dispatch, SetStateAction } from "react";
 import { Select } from "../../../../shared/atoms/Select";
 import { Typography } from "../../../../shared/atoms/Typography";
 
@@ -23,7 +24,7 @@ type EligibilityRulesCardProps = {
   rules: EligibilityRule[];
   selectClass: string;
   setActiveMode: (mode: "rules" | "csv") => void;
-  setRules: React.Dispatch<React.SetStateAction<EligibilityRule[]>>;
+  setRules: Dispatch<SetStateAction<EligibilityRule[]>>;
 };
 
 const EligibilityRulesCard = ({

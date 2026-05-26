@@ -117,14 +117,14 @@ const LettersRelease = () => {
   const [requireMgrEsign, setRequireMgrEsign] = useState(true);
 
   const toggleLetter = (id: string) => {
-    setLetters(
-      letters.map((l) => (l.id === id ? { ...l, active: !l.active } : l)),
+    setLetters((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, active: !l.active } : l)),
     );
   };
 
   const toggleLanguage = (id: string) => {
-    setLanguages(
-      languages.map((l) => (l.id === id ? { ...l, active: !l.active } : l)),
+    setLanguages((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, active: !l.active } : l)),
     );
   };
 

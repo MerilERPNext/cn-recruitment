@@ -70,11 +70,12 @@ const Competencies = () => {
 
           <div className="flex flex-col">
             {frameworks.map((fw) => (
-              <div
+              <button
                 key={fw.id}
+                type="button"
                 onClick={() => setActiveFramework(fw.id)}
                 className={clsx(
-                  "p-4 cursor-pointer transition-colors border-l-2",
+                  "p-4 cursor-pointer transition-colors border-l-2 w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset",
                   activeFramework === fw.id
                     ? "border-blue-500 bg-blue-50/50"
                     : "border-transparent bg-white hover:bg-gray-50",
@@ -89,7 +90,7 @@ const Competencies = () => {
                 <Typography variant="caption" className="text-gray-500">
                   {fw.count} competencies
                 </Typography>
-              </div>
+              </button>
             ))}
           </div>
 

@@ -1,12 +1,10 @@
 import { ChevronRight } from "lucide-react";
-import type { Dispatch, SetStateAction } from "react";
 import { Typography } from "../../../../shared/atoms/Typography";
 import { FormSection, FormTemplate } from "../../FormBuilder";
 
 type TemplatePreviewProps = {
   template: FormTemplate;
   sections: FormSection[];
-  setSections: Dispatch<SetStateAction<FormSection[]>>;
 };
 
 const TemplatePreview = ({ template, sections }: TemplatePreviewProps) => {

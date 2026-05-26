@@ -133,9 +133,12 @@ const Notifications = () => {
     nextStepLabel: "Next: Normalisation & Calibration",
   };
 
-  const handleToggle = (eventId: string, channel: keyof NotificationEvent) => {
-    setEvents(
-      events.map((ev) =>
+  const handleToggle = (
+    eventId: string,
+    channel: "email" | "inApp" | "slack" | "teams" | "whatsapp",
+  ) => {
+    setEvents((prev) =>
+      prev.map((ev) =>
         ev.id === eventId ? { ...ev, [channel]: !ev[channel] } : ev,
       ),
     );
