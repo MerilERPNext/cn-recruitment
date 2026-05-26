@@ -1,21 +1,21 @@
 import {
-  Calendar,
-  Clock,
-  Users,
-  Grid,
-  FileText,
-  BarChart2,
-  Target,
-  Mail,
-  Zap,
-  CheckCircle2,
   AlertCircle,
+  BarChart2,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  FileText,
+  Grid,
+  Mail,
   Play,
   Sparkles,
+  Target,
+  Users,
+  Zap,
 } from "lucide-react";
-import WizardShell from "./WizardShell";
-import { mockWizardData } from "./AppraisalCycleWizard";
 import { Typography } from "../../shared/atoms/Typography";
+import { mockWizardData } from "./AppraisalCycleWizard";
+import WizardShell from "./WizardShell";
 
 const summaryItems = [
   {
@@ -138,19 +138,31 @@ const ReviewLaunch = () => {
   };
 
   return (
-    <WizardShell data={reviewLaunchData} contentClassName="flex flex-col gap-6 relative pb-32">
+    <WizardShell
+      data={reviewLaunchData}
+      contentClassName="flex flex-col gap-6 relative pb-32"
+    >
       {/* 3x3 Summary Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {summaryItems.map((item) => (
-          <div key={item.id} className="flex items-start gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+          <div
+            key={item.id}
+            className="flex items-start gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+          >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50">
               {item.icon}
             </div>
             <div>
-              <Typography variant="caption" className="font-bold uppercase tracking-wider text-gray-500 mb-0.5 block">
+              <Typography
+                variant="caption"
+                className="font-bold uppercase tracking-wider text-gray-500 mb-0.5 block"
+              >
                 {item.label}
               </Typography>
-              <Typography variant="bodyMedium" className="font-bold text-gray-900 leading-snug">
+              <Typography
+                variant="bodyMedium"
+                className="font-bold text-gray-900 leading-snug"
+              >
                 {item.value}
               </Typography>
             </div>
@@ -172,33 +184,51 @@ const ReviewLaunch = () => {
 
         <div className="flex flex-col space-y-0">
           {checklistItems.map((item, index) => (
-            <div 
-              key={item.id} 
+            <div
+              key={item.id}
               className={`flex items-start justify-between py-4 ${
-                index !== checklistItems.length - 1 ? 'border-b border-gray-100' : ''
+                index !== checklistItems.length - 1
+                  ? "border-b border-gray-100"
+                  : ""
               }`}
             >
               <div className="flex items-start gap-4">
                 <div className="shrink-0 mt-0.5">
                   {item.status === "PASS" ? (
-                    <CheckCircle2 className="h-6 w-6 text-white" fill="#22c55e" />
+                    <CheckCircle2
+                      className="h-6 w-6 text-white"
+                      fill="#22c55e"
+                    />
                   ) : (
-                    <AlertCircle className="h-6 w-6 text-white" fill="#eab308" />
+                    <AlertCircle
+                      className="h-6 w-6 text-white"
+                      fill="#eab308"
+                    />
                   )}
                 </div>
                 <div>
-                  <Typography variant="bodyMedium" className="font-bold text-gray-900">
+                  <Typography
+                    variant="bodyMedium"
+                    className="font-bold text-gray-900"
+                  >
                     {item.title}
                   </Typography>
-                  <Typography variant="bodySmall" className="text-gray-500 mt-0.5 block">
+                  <Typography
+                    variant="bodySmall"
+                    className="text-gray-500 mt-0.5 block"
+                  >
                     {item.subtitle}
                   </Typography>
                 </div>
               </div>
               <div className="shrink-0">
-                <span className={`inline-flex items-center justify-center rounded px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${
-                  item.status === "PASS" ? "bg-green-50 text-green-700" : "bg-yellow-50 text-yellow-700"
-                }`}>
+                <span
+                  className={`inline-flex items-center justify-center rounded px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${
+                    item.status === "PASS"
+                      ? "bg-green-50 text-green-700"
+                      : "bg-yellow-50 text-yellow-700"
+                  }`}
+                >
                   {item.status}
                 </span>
               </div>
@@ -211,14 +241,22 @@ const ReviewLaunch = () => {
       <section className="rounded-xl border border-blue-200 bg-blue-50 p-5 sm:p-6 shadow-sm mt-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
-            <Typography variant="h3" className="text-lg font-bold text-gray-900">
+            <Typography
+              variant="h3"
+              className="text-lg font-bold text-gray-900"
+            >
               Ready to launch · 6 PASS · 2 WARN · 0 FAIL
             </Typography>
-            <Typography variant="bodySmall" className="text-gray-600 mt-1 block max-w-2xl">
-              Launching will send <span className="font-bold">2,140</span> "Cycle opens" notifications and create review instances for all eligible employees.
+            <Typography
+              variant="bodySmall"
+              className="text-gray-600 mt-1 block max-w-2xl"
+            >
+              Launching will send <span className="font-bold">2,140</span>{" "}
+              "Cycle opens" notifications and create review instances for all
+              eligible employees.
             </Typography>
           </div>
-          
+
           <div className="flex flex-col items-end gap-2 shrink-0">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <button className="flex-1 sm:flex-none rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-bold text-gray-700 shadow-sm transition hover:bg-gray-50">

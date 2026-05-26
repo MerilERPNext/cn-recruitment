@@ -17,7 +17,10 @@ const TemplateSelector = ({
     <section className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
         <div>
-          <Typography variant="h3" className="text-base font-bold text-gray-900">
+          <Typography
+            variant="h3"
+            className="text-base font-bold text-gray-900"
+          >
             Choose a form template
           </Typography>
           <Typography variant="bodySmall" className="text-gray-500 mt-0.5">
@@ -44,7 +47,9 @@ const TemplateSelector = ({
               }`}
             >
               <div className="mb-4 flex items-start justify-between">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${template.iconColor || "bg-gray-100 text-gray-500"} ${isActive ? "ring-2 ring-blue-500 ring-offset-2" : ""}`}>
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg ${template.iconColor || "bg-gray-100 text-gray-500"} ${isActive ? "ring-2 ring-blue-500 ring-offset-2" : ""}`}
+                >
                   <FileText className="h-5 w-5" />
                 </div>
                 {template.mostUsed && (
@@ -53,12 +58,19 @@ const TemplateSelector = ({
                   </span>
                 )}
               </div>
-              
-              <Typography variant="bodyMedium" className="font-bold text-gray-900 leading-tight">
+
+              <Typography
+                variant="bodyMedium"
+                className="font-bold text-gray-900 leading-tight"
+              >
                 {template.title}
               </Typography>
-              <Typography variant="caption" className="mt-1 block text-gray-500">
-                {template.sectionsCount} sections · {template.questionsCount} questions
+              <Typography
+                variant="caption"
+                className="mt-1 block text-gray-500"
+              >
+                {template.sectionsCount} sections · {template.questionsCount}{" "}
+                questions
               </Typography>
 
               {isActive && (

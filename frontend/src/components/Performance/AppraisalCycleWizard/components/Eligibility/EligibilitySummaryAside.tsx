@@ -10,7 +10,9 @@ type EligibilitySummaryAsideProps = {
   breakdown: EligibilityBreakdownItem[];
 };
 
-const EligibilitySummaryAside = ({ breakdown }: EligibilitySummaryAsideProps) => {
+const EligibilitySummaryAside = ({
+  breakdown,
+}: EligibilitySummaryAsideProps) => {
   return (
     <aside className="min-w-0 space-y-4">
       <section className="overflow-hidden rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 p-4 text-white shadow-sm sm:p-5">
@@ -20,14 +22,21 @@ const EligibilitySummaryAside = ({ breakdown }: EligibilitySummaryAsideProps) =>
         >
           Matching employees
         </Typography>
-        <div className="mt-2 text-5xl font-bold leading-none sm:text-6xl">2,140</div>
-        <Typography variant="bodyMedium" className="mt-2 text-sm font-semibold text-blue-50">
+        <div className="mt-2 text-5xl font-bold leading-none sm:text-6xl">
+          2,140
+        </div>
+        <Typography
+          variant="bodyMedium"
+          className="mt-2 text-sm font-semibold text-blue-50"
+        >
           ↑ 86 since you last viewed
         </Typography>
         <div className="mt-5 grid grid-cols-1 gap-3 rounded-lg bg-white/15 p-3 min-[380px]:grid-cols-2 sm:mt-6">
           <div>
             <div className="text-xl font-bold">2,183</div>
-            <div className="text-xs font-semibold text-blue-50">Matched rule</div>
+            <div className="text-xs font-semibold text-blue-50">
+              Matched rule
+            </div>
           </div>
           <div>
             <div className="text-xl font-bold">43</div>

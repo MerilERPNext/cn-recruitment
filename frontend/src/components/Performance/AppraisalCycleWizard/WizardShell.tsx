@@ -70,19 +70,29 @@ type WizardShellProps = {
   onNext?: () => void;
 };
 
-const WizardShell = ({ children, contentClassName = "", data, title, onNext }: WizardShellProps) => {
+const WizardShell = ({
+  children,
+  contentClassName = "",
+  data,
+  title,
+  onNext,
+}: WizardShellProps) => {
   const navigate = useNavigate();
   const activeStepIndex = Math.max(
     data.steps.findIndex((step) => step.id === data.activeStepId),
     0,
   );
   const totalSteps = data.steps.length;
-  const progress = totalSteps ? `${((activeStepIndex + 1) / totalSteps) * 100}%` : "0%";
+  const progress = totalSteps
+    ? `${((activeStepIndex + 1) / totalSteps) * 100}%`
+    : "0%";
   const stepLabel = `Step ${activeStepIndex + 1} of ${totalSteps}`;
   const cycleTitle = title || data.title;
-  
+
   const hasNextStep = activeStepIndex < totalSteps - 1;
-  const computedNextLabel = hasNextStep ? data.steps[activeStepIndex + 1].label : "Complete";
+  const computedNextLabel = hasNextStep
+    ? data.steps[activeStepIndex + 1].label
+    : "Complete";
 
   const handleNavigateStep = (stepId: string) => {
     if (stepId === "cycle-details") {
@@ -126,9 +136,15 @@ const WizardShell = ({ children, contentClassName = "", data, title, onNext }: W
               {cycleTitle}
             </Typography>
             <div className="mt-3 h-1.5 overflow-hidden rounded-md bg-gray-200">
-              <div className="h-full rounded-md bg-blue-500" style={{ width: progress }} />
+              <div
+                className="h-full rounded-md bg-blue-500"
+                style={{ width: progress }}
+              />
             </div>
-            <Typography variant="caption" className="mt-1.5 block font-semibold text-gray-600">
+            <Typography
+              variant="caption"
+              className="mt-1.5 block font-semibold text-gray-600"
+            >
               {stepLabel}
             </Typography>
           </div>
@@ -143,7 +159,9 @@ const WizardShell = ({ children, contentClassName = "", data, title, onNext }: W
                   key={step.id}
                   onClick={() => handleNavigateStep(step.id)}
                   className={`flex min-w-[9.5rem] max-w-[13rem] snap-start items-center gap-2 rounded-lg px-3 py-2.5 text-left transition-colors sm:min-w-[11rem] md:w-full md:min-w-0 md:max-w-none md:gap-3 ${
-                    active ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50"
+                    active
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-gray-600 hover:bg-gray-50"
                   }`}
                 >
                   <span
@@ -160,7 +178,9 @@ const WizardShell = ({ children, contentClassName = "", data, title, onNext }: W
                   <Typography
                     variant="bodyMedium"
                     className={`min-w-0 truncate text-sm ${
-                      active ? "font-bold text-blue-700" : "font-semibold text-gray-600"
+                      active
+                        ? "font-bold text-blue-700"
+                        : "font-semibold text-gray-600"
                     }`}
                   >
                     {step.label}
@@ -220,7 +240,7 @@ const WizardShell = ({ children, contentClassName = "", data, title, onNext }: W
           </div>
 
           <footer className="shrink-0 flex flex-col gap-3 border-t border-gray-200 bg-white px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <button 
+            <button
               onClick={handleBack}
               className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 sm:w-auto hover:bg-gray-50 transition-colors"
             >
@@ -232,7 +252,7 @@ const WizardShell = ({ children, contentClassName = "", data, title, onNext }: W
                 <Check className="h-4 w-4 text-emerald-500" />
                 {data.validationStatus}
               </div>
-              <button 
+              <button
                 onClick={handleNext}
                 className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-blue-500 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-600 sm:w-auto"
               >

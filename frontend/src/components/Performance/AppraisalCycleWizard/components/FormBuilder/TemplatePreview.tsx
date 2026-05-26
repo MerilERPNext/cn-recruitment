@@ -9,15 +9,15 @@ type TemplatePreviewProps = {
   setSections: Dispatch<SetStateAction<FormSection[]>>;
 };
 
-const TemplatePreview = ({
-  template,
-  sections,
-}: TemplatePreviewProps) => {
+const TemplatePreview = ({ template, sections }: TemplatePreviewProps) => {
   return (
     <section className="rounded-lg border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
         <div>
-          <Typography variant="h3" className="text-base font-bold text-gray-900">
+          <Typography
+            variant="h3"
+            className="text-base font-bold text-gray-900"
+          >
             {template.title} - v3
           </Typography>
           <Typography variant="bodySmall" className="text-gray-500 mt-0.5">
@@ -37,16 +37,31 @@ const TemplatePreview = ({
           >
             <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
               <div className="flex w-6 flex-col items-center justify-center gap-[3px] text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing shrink-0">
-                <div className="flex gap-[3px]"><div className="h-1 w-1 rounded-full bg-current"></div><div className="h-1 w-1 rounded-full bg-current"></div></div>
-                <div className="flex gap-[3px]"><div className="h-1 w-1 rounded-full bg-current"></div><div className="h-1 w-1 rounded-full bg-current"></div></div>
-                <div className="flex gap-[3px]"><div className="h-1 w-1 rounded-full bg-current"></div><div className="h-1 w-1 rounded-full bg-current"></div></div>
+                <div className="flex gap-[3px]">
+                  <div className="h-1 w-1 rounded-full bg-current"></div>
+                  <div className="h-1 w-1 rounded-full bg-current"></div>
+                </div>
+                <div className="flex gap-[3px]">
+                  <div className="h-1 w-1 rounded-full bg-current"></div>
+                  <div className="h-1 w-1 rounded-full bg-current"></div>
+                </div>
+                <div className="flex gap-[3px]">
+                  <div className="h-1 w-1 rounded-full bg-current"></div>
+                  <div className="h-1 w-1 rounded-full bg-current"></div>
+                </div>
               </div>
 
               <div className="flex-1 min-w-0 pr-2 sm:pr-4">
-                <Typography variant="bodyMedium" className="font-bold text-gray-900 leading-tight truncate">
+                <Typography
+                  variant="bodyMedium"
+                  className="font-bold text-gray-900 leading-tight truncate"
+                >
                   {section.title}
                 </Typography>
-                <Typography variant="caption" className="text-gray-500 truncate block mt-0.5">
+                <Typography
+                  variant="caption"
+                  className="text-gray-500 truncate block mt-0.5"
+                >
                   {section.fields}
                 </Typography>
               </div>

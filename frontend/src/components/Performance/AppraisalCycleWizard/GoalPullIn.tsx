@@ -1,8 +1,8 @@
 import { useState } from "react";
-import WizardShell from "./WizardShell";
 import { mockWizardData } from "./AppraisalCycleWizard";
-import SourceSettings from "./components/GoalPullIn/SourceSettings";
 import AutoRating from "./components/GoalPullIn/AutoRating";
+import SourceSettings from "./components/GoalPullIn/SourceSettings";
+import WizardShell from "./WizardShell";
 
 const GoalPullIn = () => {
   const [autoPull, setAutoPull] = useState(true);
@@ -15,12 +15,13 @@ const GoalPullIn = () => {
     activeStepId: "goal-pull-in",
     header: {
       title: "Goal Pull-in",
-      description: "Map approved goals into the appraisal form and define how progress translates to ratings.",
+      description:
+        "Map approved goals into the appraisal form and define how progress translates to ratings.",
     },
     validationStatus: "Validation passed",
     nextStepLabel: "Competencies (Skip to Step 6)",
   };
-  
+
   return (
     <WizardShell
       data={goalPullInData}

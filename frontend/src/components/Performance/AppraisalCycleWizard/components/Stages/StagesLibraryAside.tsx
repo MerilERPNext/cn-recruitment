@@ -44,8 +44,8 @@ const StagesLibraryAside = ({
           variant="bodyMedium"
           className="mt-2 text-sm font-normal leading-relaxed text-gray-600"
         >
-          Industry median for an annual cycle is 56 days. Stages with SLA &lt; 5d trigger
-          more reminder noise.
+          Industry median for an annual cycle is 56 days. Stages with SLA &lt;
+          5d trigger more reminder noise.
         </Typography>
       </section>
 
@@ -65,10 +65,16 @@ const StagesLibraryAside = ({
                 key={template}
                 onClick={() => onTemplateSelect(template)}
                 className={`flex min-h-[38px] w-full items-center gap-2 rounded-md px-3 text-left text-sm font-semibold ${
-                  selected ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50"
+                  selected
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-600 hover:bg-gray-50"
                 }`}
               >
-                {selected ? <Check className="h-4 w-4 shrink-0" /> : <span className="w-4" />}
+                {selected ? (
+                  <Check className="h-4 w-4 shrink-0" />
+                ) : (
+                  <span className="w-4" />
+                )}
                 <span className="min-w-0 truncate">{template}</span>
               </button>
             );
