@@ -44,6 +44,8 @@ import Notifications from "./components/Performance/AppraisalCycleWizard/Notific
 import LettersRelease from "./components/Performance/AppraisalCycleWizard/LettersRelease.tsx";
 import ReviewLaunch from "./components/Performance/AppraisalCycleWizard/ReviewLaunch.tsx";
 
+import CalibratorSession from "./components/Performance/Calibrator/Calibrator.tsx";
+import BoxGrid from "./components/Performance/Calibrator/BoxGrid.tsx";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -1353,6 +1355,16 @@ export const routesConfig: AppRoute[] = [
       {
         path: "appraisal-cycle-wizard/review-launch",
         element: <ReviewLaunch />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "calibrator/session",
+        element: <CalibratorSession />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "calibrator/box-grid",
+        element: <BoxGrid />,
         permissionKey: "Performance Admin",
       },
     ],

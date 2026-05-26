@@ -68,7 +68,7 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
 
                                 return (
                                     <React.Fragment key={step.label}>
-                                        <div className={`flex min-w-0 shrink items-center md:shrink-0 ${stepTextClass}`}>
+                                        <div className={`flex min-w-0 shrink items-center md:shrink-1 ${stepTextClass}`}>
                                             <div className={`mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold md:mr-2 ${circleClass}`}>
                                                 {isCompleted ? <Check className="h-3.5 w-3.5" /> : index + 1}
                                             </div>
