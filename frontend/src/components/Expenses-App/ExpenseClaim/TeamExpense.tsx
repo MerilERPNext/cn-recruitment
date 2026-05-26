@@ -231,7 +231,7 @@ const TeamExpense = () => {
     if (isDesktop) return null;
 
     const getEmptyStateMessage = () => {
-      const status = filters.status;
+      const status = filters.status || filters.approval_status;
       const messages: Record<string, { title: string; description: string }> = {
         Pending: {
           title: "No Pending Requests",

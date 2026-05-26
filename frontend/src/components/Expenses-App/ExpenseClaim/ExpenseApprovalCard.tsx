@@ -66,10 +66,17 @@ const ExpenseApprovalCard = ({
   const actions = (() => {
     let parsedActions: string[] = [];
     if (data?.custom_doctype_actions) {
-      try {
-        parsedActions = JSON.parse(data.custom_doctype_actions);
-      } catch (e) {
-        console.error("Failed to parse custom_doctype_actions:", e);
+      if (Array.isArray(data.custom_doctype_actions)) {
+        parsedActions = data.custom_doctype_actions;
+      } else {
+        try {
+          const parsed = JSON.parse(data.custom_doctype_actions);
+          if (Array.isArray(parsed)) {
+            parsedActions = parsed;
+          }
+        } catch (e) {
+          console.error("Failed to parse custom_doctype_actions:", e);
+        }
       }
     }
 

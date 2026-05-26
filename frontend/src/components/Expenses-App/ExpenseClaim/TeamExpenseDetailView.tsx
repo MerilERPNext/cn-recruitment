@@ -531,9 +531,21 @@ export function TeamExpenseDetailView({
   };
 
   const actions = (() => {
-    let parsedActions: string[] = data?.custom_doctype_actions
-      ? JSON.parse(data?.custom_doctype_actions)
-      : [];
+    let parsedActions: string[] = [];
+    if (data?.custom_doctype_actions) {
+      if (Array.isArray(data.custom_doctype_actions)) {
+        parsedActions = data.custom_doctype_actions;
+      } else {
+        try {
+          const parsed = JSON.parse(data.custom_doctype_actions);
+          if (Array.isArray(parsed)) {
+            parsedActions = parsed;
+          }
+        } catch (e) {
+          console.error("Failed to parse custom_doctype_actions:", e);
+        }
+      }
+    }
 
     if (allowHoldData) {
       if (!allowHoldData.show_approval_buttons) {
