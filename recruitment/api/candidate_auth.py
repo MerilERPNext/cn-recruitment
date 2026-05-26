@@ -168,28 +168,50 @@ def login(email, password):
 
 @frappe.whitelist(allow_guest=True)
 def request_email_signup_otp(email, full_name=None, mobile_no=None):
-    """Email-only signup: create CPU and send a Signup OTP.
+    """Unified entry point: signup if new, password reset if already registered.
 
-    Gated by `enable_email_signup`. Rejects the request if a candidate
-    already exists for this email — callers should use the login flow instead.
-    Re-issuing an OTP for an unverified candidate is allowed.
+    - No CPU for this email → create one (Pending Verification) and send Signup OTP.
+    - CPU exists but still Pending Verification → resend Signup OTP.
+    - CPU already Active → send Password Reset OTP (no new row created).
+    - Disabled / Locked accounts are rejected.
+
+    Existence lookup goes through the `email` field (not `name`) so trailing
+    spaces or case drift in legacy rows can't slip past the dedup check.
     """
     settings = get_settings()
     _require_enabled(settings)
-    if not cint(settings.enable_email_signup):
-        frappe.throw(_("Email signup is disabled."), frappe.PermissionError)
     if not cint(settings.enable_email_otp):
         frappe.throw(_("Email OTP is disabled."), frappe.PermissionError)
 
     email = _normalize_email(email)
+    existing_name = frappe.db.get_value("Candidate Portal User", {"email": email}, "name")
 
-    if frappe.db.exists("Candidate Portal User", email):
-        candidate = frappe.get_doc("Candidate Portal User", email)
-        if candidate.status != "Pending Verification" or cint(candidate.email_verified):
-            frappe.throw(_("Candidate already registered."), frappe.DuplicateEntryError)
-        _assert_candidate_can_login(candidate, allow_pending=True)
-    else:
-        first_name, last_name = _split_name(full_name or email.split("@")[0])
+    if existing_name:
+        candidate = frappe.get_doc("Candidate Portal User", existing_name)
+        if candidate.status == "Disabled":
+            frappe.throw(_("Candidate account is disabled."), frappe.PermissionError)
+
+        if candidate.status == "Pending Verification" and not cint(candidate.email_verified):
+            if not cint(settings.enable_email_signup):
+                frappe.throw(_("Email signup is disabled."), frappe.PermissionError)
+            _assert_candidate_can_login(candidate, allow_pending=True)
+            result = _issue_otp(settings, email, "Signup", "Email", candidate=candidate.name)
+            frappe.db.commit()
+            return {"mode": "signup", **result}
+
+        # Account is already activated → password reset flow.
+        if not cint(settings.allow_password_login):
+            frappe.throw(_("Password reset is disabled."), frappe.PermissionError)
+        _assert_candidate_can_login(candidate)
+        result = _issue_otp(settings, email, "Password Reset", "Email", candidate=candidate.name)
+        frappe.db.commit()
+        return {"mode": "password_reset", **result}
+
+    if not cint(settings.enable_email_signup):
+        frappe.throw(_("Email signup is disabled."), frappe.PermissionError)
+
+    first_name, last_name = _split_name(full_name or email.split("@")[0])
+    try:
         candidate = frappe.new_doc("Candidate Portal User")
         candidate.email = email
         candidate.full_name = full_name or " ".join(part for part in (first_name, last_name) if part)
@@ -201,10 +223,17 @@ def request_email_signup_otp(email, full_name=None, mobile_no=None):
         candidate.signup_ip_address = _request_ip()
         candidate.signup_user_agent = _request_user_agent()
         candidate.insert(ignore_permissions=True)
+    except frappe.DuplicateEntryError:
+        # Lost the race / unique constraint caught a concurrent insert.
+        # Recover by loading the row that won and continuing.
+        fallback_name = frappe.db.get_value("Candidate Portal User", {"email": email}, "name")
+        if not fallback_name:
+            raise
+        candidate = frappe.get_doc("Candidate Portal User", fallback_name)
 
     result = _issue_otp(settings, email, "Signup", "Email", candidate=candidate.name)
     frappe.db.commit()
-    return result
+    return {"mode": "signup", **result}
 
 
 @frappe.whitelist(allow_guest=True)
@@ -281,20 +310,26 @@ def verify_otp(identifier, otp, purpose="Login", identifier_type="Email"):
     elif purpose == "Activate":
         candidate.email_verified = 1
         candidate.save(ignore_permissions=True)
+    elif purpose == "Password Reset":
+        candidate.require_password_reset = 1
+        candidate.save(ignore_permissions=True)
     _assert_candidate_can_login(candidate, allow_pending=purpose in ("Signup", "Verify Email", "Activate"))
 
     if purpose == "Signup":
         login_method = "Signup Email OTP"
     elif purpose == "Activate":
         login_method = "Activation Email OTP"
+    elif purpose == "Password Reset":
+        login_method = "Password Reset Email OTP"
     else:
         login_method = "Password + Email OTP"
     session = _create_candidate_session(candidate.name, settings, login_method, otp_log=log.name)
     _set_session_cookie(session.session_token, settings)
     frappe.db.commit()
 
-    response = {"status": "success", "user": _public_candidate(candidate.name), "session_id": session.name}
-    if not _candidate_has_password(candidate):
+    user_payload = _public_candidate(candidate.name)
+    response = {"status": "success", "user": user_payload, "session_id": session.name}
+    if user_payload and user_payload.get("password_setup_required"):
         response["status"] = "password_setup_required"
     return response
 
