@@ -1,8 +1,9 @@
 import React from "react";
-import { Building2, ExternalLink, IdCard, MapPin, Warehouse } from "lucide-react";
+import { Building2, ExternalLink, IdCard, MapPin, TrendingUp, Warehouse } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { Typography } from "../shared/atoms/Typography";
+import Tooltip from "../shared/Tooltip";
 
 interface EmploymentHistoryCardProps {
   title?: string | null;
@@ -13,6 +14,7 @@ interface EmploymentHistoryCardProps {
   location?: string | null;
   id?: string | null;
   doctype_name: string | null;
+  is_promotion?: boolean | null;
 }
 
 const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({
@@ -24,6 +26,7 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({
   location,
   id,
   doctype_name,
+  is_promotion = false,
 }) => {
   const formatDate = (date?: string | null) => {
     if (!date) return "N/A";
@@ -38,11 +41,22 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({
         </div>
         <div className="flex flex-col gap-1">
           {doctype_name === 'Employee' ? <Link to={`/webapp/employee-profile?target_user=${id}`} target="_blank">
-            <h3 className="font-medium text-gray-900 truncate flex gap-1 items-center hover:text-primary break-all">
+            <h3 className="font-medium text-gray-900 truncate flex gap-1 items-center hover:text-primary break-all items-center gap-2">
               <span>{title}</span><ExternalLink className="h-4 w-4" />
+              {is_promotion ?
+                <Tooltip content="Promotion">
+                  <TrendingUp className="text-success h-4 w-4" />
+                </Tooltip> : null
+              }
+
             </h3>
-          </Link> : <h3 className="font-medium text-gray-900 truncate ">
+          </Link> : <h3 className="font-medium text-gray-900 truncate flex gap-2 items-center">
             <span className="break-all text-wrap">{title}</span>
+            {is_promotion ?
+              <Tooltip content="Promotion">
+                <TrendingUp className="text-success h-4 w-4" />
+              </Tooltip> : null
+            }
           </h3>}
           <div className="flex flex-wrap gap-4">
             {id && (

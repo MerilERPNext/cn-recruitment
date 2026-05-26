@@ -305,28 +305,61 @@ export const profileService = {
       throw error;
     }
   },
+  deleteEmpReportingDetailsRecord: async (employee: string): Promise<any> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.delete_employee_history_record",
+        {
+          name: employee,
+        },
+      );
+      return response as any;
+    } catch (error) {
+      console.error("📡 Error while fetching hierarchy history:", error);
+      throw error;
+    }
+  },
+
+  updateEmpReportingDetailsRecord: async (
+    employee: string,
+    field: string,
+    value: string,
+    start_date: string
+  ): Promise<boolean> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.update_employee_reporting",
+        {
+          employee: employee,
+          field: field,
+          value: value,
+          start_date: start_date
+        },
+      );
+      return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while updating reporting details:", error);
+      throw error;
+    }
+  },
 
   getFutureFieldTransactions: async (
     employee: string
   ): Promise<FutureTransaction[]> => {
-    try {
-      const response = await FrappeAPI.callMethod(
-        "cn_hrms_core.cn_hrms_core.apis.employee_history.get_future_field_transactions",
-        {
-          employee: employee,
-        }
-      );
-      return (response as FutureTransaction[]) || [];
-    } catch (error) {
-      throw error;
-    }
+    const response = await FrappeAPI.callMethod(
+      "cn_hrms_core.cn_hrms_core.apis.employee_history.get_future_field_transactions",
+      {
+        employee: employee,
+      }
+    );
+    return (response as FutureTransaction[]) || [];
   },
 
   uploadFile: async (
     file: File,
     doctype?: string,
     docName?: string,
-  ): Promise<{ file_url: string; [key: string]: any }> => {
+  ): Promise<{ file_url: string;[key: string]: any }> => {
     try {
       const result = await FrappeAPI.uploadFile(file, "", docName, doctype);
       return result;
