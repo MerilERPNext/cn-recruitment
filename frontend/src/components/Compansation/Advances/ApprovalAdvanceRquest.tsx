@@ -3,6 +3,8 @@
 import { useCallback, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
@@ -19,6 +21,18 @@ const TeamAdvanceRequest = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
   const referenceName = searchParams.get("reference_name");
+
+  const uiPermission = {
+    app: "Compensation",
+    page: "Team Advances",
+    actionKey: "actions_enabled",
+  };
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEnabled = isActionEnabled(
+    uiPermissionData,
+    uiPermission?.actionKey ?? "",
+    uiPermission?.page,
+  );
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
@@ -185,6 +199,7 @@ const TeamAdvanceRequest = () => {
                 },
               ]}
               defaultFilters={{ status: "Draft" }}
+              bulkSelectVisible={actionsEnabled}
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item: any) => {
                 if (item?.data?.custom_selected_doctype_action === "Send Back") {
@@ -192,6 +207,7 @@ const TeamAdvanceRequest = () => {
                 }
                 return (
                   <ApprovalRejectionAdvanceList
+                    actionsEnabled={actionsEnabled}
                     isSelected={item?.isSelected}
                     onToggleSelect={item?.onToggleSelect}
                     data={item?.data}
@@ -215,6 +231,7 @@ const TeamAdvanceRequest = () => {
         open={isModalOpen}
         item={selectedItem} // null when opened via direct URL — modal fetches data itself
         onClose={handleClose}
+        actionsEnabled={actionsEnabled}
       />
     </div>
   );

@@ -2,6 +2,8 @@
 import { useCallback, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
+import { useGetUiPermission } from "../../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../../utils/uiPermission";
 import ApprovalList from "../../../shared/ApprovalList";
 import { Typography } from "../../../shared/atoms/Typography";
 import CardTable, { ColumnSortConfig } from "../../../shared/CardTable";
@@ -15,6 +17,18 @@ const TeamLoanRequest = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
+
+  const uiPermission = {
+    app: "Compensation",
+    page: "Team Loan Requests",
+    actionKey: "actions_enabled",
+  };
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEnabled = isActionEnabled(
+    uiPermissionData,
+    uiPermission?.actionKey ?? "",
+    uiPermission?.page,
+  );
 
   // Read from URL
   const requestId = searchParams.get("requestId");
@@ -194,6 +208,7 @@ const TeamLoanRequest = () => {
                 },
               ]}
               defaultFilters={{ status: "Open" }}
+              bulkSelectVisible={actionsEnabled}
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item: any) => {
                 if (item?.data?.custom_selected_doctype_action === "Send Back") {
@@ -202,6 +217,7 @@ const TeamLoanRequest = () => {
                 return (
                   <ApprovalRejectionLoanList
                     data={item.data}
+                    actionsEnabled={actionsEnabled}
                     isSelected={item.isSelected}
                     onToggleSelect={item.onToggleSelect}
                     onAction={item.onAction}
@@ -224,6 +240,7 @@ const TeamLoanRequest = () => {
         open={isModalOpen}
         item={selectedItem} // null when opened via direct URL — modal fetches data itself
         onClose={handleClose}
+        actionsEnabled={actionsEnabled}
       />
     </div>
   );
