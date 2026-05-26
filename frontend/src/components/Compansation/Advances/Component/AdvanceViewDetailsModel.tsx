@@ -25,6 +25,7 @@ type Props = {
   documentName: string | null;
   referenceName: string | null;
   onClose: () => void;
+  actionsEnabled?: boolean;
 };
 
 const AdvanceDetailsModal = ({
@@ -33,6 +34,7 @@ const AdvanceDetailsModal = ({
   open,
   item,
   onClose,
+  actionsEnabled = true,
 }: Props) => {
   const { isDesktop } = useScreenSize();
 
@@ -235,14 +237,16 @@ const AdvanceDetailsModal = ({
 
           {/* ACTION BUTTONS */}
           <div className="border-t p-4">
-            <TeamApprovalActionPill
-              variant={isDesktop ? "modal" : "buttons"}
-              actions={actions}
-              status={ref?.status || data?.status || ""}
-              recordId={data?.todo_id}
-              loadingAction={loadingAction}
-              onAction={handleActionClick}
-            />
+            {actionsEnabled && (
+              <TeamApprovalActionPill
+                variant={isDesktop ? "modal" : "buttons"}
+                actions={actions}
+                status={ref?.status || data?.status || ""}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={handleActionClick}
+              />
+            )}
           </div>
         </div>
       </div>
