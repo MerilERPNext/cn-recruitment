@@ -8,6 +8,7 @@ import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 
 type Props = {
+  actionsEnabled: boolean;
   data: any;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -19,6 +20,7 @@ type Props = {
 };
 
 const TeamProofApprovalCard = ({
+  actionsEnabled = false,
   data,
   onAction,
   onClick,
@@ -75,7 +77,7 @@ const TeamProofApprovalCard = ({
         {/* Proof */}
 
         <div className="flex justify-center">
-        <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
+          <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
         </div>
 
         {/* Actions */}
@@ -85,6 +87,7 @@ const TeamProofApprovalCard = ({
         >
           {data?.todo_status === "Open" && !isActed ? (
             <TeamApprovalActionPill
+              actionsEnabled={actionsEnabled}
               actions={actions}
               status={data?.status}
               recordId={data?.todo_id}
@@ -129,6 +132,7 @@ const TeamProofApprovalCard = ({
 
           {data?.todo_status === "Open" && !isActed ? (
             <TeamApprovalActionPill
+              actionsEnabled={actionsEnabled}
               actions={actions}
               status={data?.status}
               recordId={data?.todo_id}
