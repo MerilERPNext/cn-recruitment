@@ -2,23 +2,7 @@ import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Badge from '../../../shared/Badge';
-
-interface GoalItem {
-  id: string;
-  type: string;
-  typeBgColor: string;
-  typeTextColor: string;
-  title: string;
-  weightage: string;
-  category: string;
-  progressText: string;
-  progressPercentage: number;
-  progressColor: string;
-  status: string;
-  statusBgColor: string;
-  statusTextColor: string;
-  statusPulse: string;
-}
+import type { GoalItem } from '../types';
 
 const goalsData: GoalItem[] = [
   {

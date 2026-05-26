@@ -1,16 +1,7 @@
 import React from 'react';
 import { BarChart2, Calendar, Sparkles, MessageSquare } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
-
-interface StatItem {
-  id: string;
-  title: string;
-  icon: React.ElementType;
-  iconBgColor: string;
-  iconTextColor: string;
-  value: string;
-  subtitle: string;
-}
+import type { StatItem } from '../types';
 
 const statsData: StatItem[] = [
   {

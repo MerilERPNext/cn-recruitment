@@ -2,27 +2,7 @@ import React from 'react';
 import { Calendar, Check, Sparkles } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Badge from '../../../shared/Badge';
-
-interface TaskItem {
-  id: string;
-  title: string;
-  dueDate: string;
-  icon: React.ElementType;
-  iconBgColor: string;
-  iconTextColor: string;
-  buttonText: string;
-}
-
-interface FeedbackItem {
-  id: string;
-  authorInitials: string;
-  authorName: string;
-  authorRole: string;
-  type: string;
-  typeBgColor: string;
-  typeTextColor: string;
-  quote?: string;
-}
+import type { FeedbackItem, TaskItem } from '../types';
 
 const tasksData: TaskItem[] = [
   {
