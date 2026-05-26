@@ -117,6 +117,11 @@ const TeamReviews = lazyWithRetry(
   "TeamReviews",
 );
 
+const PreReleasePreview = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/PreReleasePreview"),
+  "PreReleasePreview",
+);
+
 const TeamCalibration = lazyWithRetry(
   () => import("./components/Performance/MyTeam/TeamCalibration"),
   "TeamCalibration",
@@ -1244,6 +1249,11 @@ export const routesConfig: AppRoute[] = [
       {
         path: "team-reviews",
         element: <TeamReviews />,
+        permissionKey: "Team Reviews",
+      },
+      {
+        path: "team-pre-release-preview",
+        element: <PreReleasePreview />,
         permissionKey: "Team Reviews",
       },
       {

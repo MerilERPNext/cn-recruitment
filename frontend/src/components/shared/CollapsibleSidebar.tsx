@@ -17,6 +17,7 @@ import {
   FileText,
   Gift,
   Goal,
+  Grid3X3,
   HandCoins,
   HelpCircle,
   Home,
@@ -27,6 +28,7 @@ import {
   Share2,
   Sheet,
   Shield,
+  SlidersHorizontal,
   SquarePlus,
   Telescope,
   Timer,
@@ -438,7 +440,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             },
             {
               name: "Calibration",
-              icon: Award,
+              icon: SlidersHorizontal,
               href: "/webapp/performance-app/team-calibration",
             },
             {
@@ -506,18 +508,18 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "Calibrator",
-          icon: ChartNoAxesCombined,
+          icon: SlidersHorizontal,
           href: "/webapp/performance-app/calibrator",
           permissionKey: "Appraisal Cycle Wizard",
           subItems: [
             {
               name: "Session",
-              icon: ChartNoAxesCombined,
+              icon: Users,
               href: "/webapp/performance-app/calibrator/session"
             },
             {
               name: "9-Box Grid",
-              icon: ChartNoAxesCombined,
+              icon: Grid3X3,
               href: "/webapp/performance-app/calibrator/box-grid"
             }
           ]
