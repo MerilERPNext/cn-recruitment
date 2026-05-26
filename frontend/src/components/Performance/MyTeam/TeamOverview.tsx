@@ -98,9 +98,9 @@ const TeamOverview: React.FC = () => {
             </div>
             {/* Right */}
             <div
-              className={`flex ${isCompact ? "w-full" : "items-end"} gap-2 shrink-0`}
+              className={`flex ${isCompact ? "w-full flex-col sm:flex-row items-start sm:items-center" : "items-end"} gap-4 shrink-0`}
             >
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-start sm:items-center">
                 <Typography
                   variant="caption"
                   className="text-gray-400 uppercase tracking-widest font-bold text-[10px]"
@@ -117,7 +117,7 @@ const TeamOverview: React.FC = () => {
               <Button
                 variant="contain"
                 bgColor="primary"
-                className={`${isCompact ? "w-full" : "px-5 py-2.5"} bg-[#1a73e8] hover:bg-blue-600 font-semibold rounded-lg shadow-sm text-sm inline-flex items-center justify-center`}
+                className={`${isCompact ? "w-full sm:w-auto" : "px-5 py-2.5"} bg-[#1a73e8] hover:bg-blue-600 font-semibold rounded-lg shadow-sm text-sm inline-flex items-center justify-center`}
               >
                 Continue Self-Review <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
@@ -207,17 +207,23 @@ const TeamOverview: React.FC = () => {
             <div
               className={`flex items-center gap-3 ${isCompact ? "flex-wrap w-full" : ""}`}
             >
-              <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-700 font-medium hover:bg-gray-50 transition-colors bg-white" aria-label="Filter team by status">
+              <button
+                className={`flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-700 font-medium hover:bg-gray-50 transition-colors bg-white ${isCompact ? "flex-1 justify-center" : ""}`}
+                aria-label="Filter team by status"
+              >
                 All status <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
               </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-700 font-medium hover:bg-gray-50 transition-colors bg-white" aria-label="Sort team by progress">
+              <button
+                className={`flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-700 font-medium hover:bg-gray-50 transition-colors bg-white ${isCompact ? "flex-1 justify-center" : ""}`}
+                aria-label="Sort team by progress"
+              >
                 Sort: progress{" "}
                 <ArrowUp className="w-3 h-3 text-gray-400 rotate-180" />
               </button>
               <Button
                 variant="contain"
                 bgColor="primary"
-                className={`${isCompact ? "flex-1" : "px-4 py-1.5"} text-xs font-semibold bg-[#1a73e8] hover:bg-blue-600 rounded-lg`}
+                className={`${isCompact ? "w-full" : "px-4 py-1.5"} text-xs font-semibold bg-[#1a73e8] hover:bg-blue-600 rounded-lg justify-center`}
               >
                 Nudge 2 overdue
               </Button>
@@ -226,9 +232,7 @@ const TeamOverview: React.FC = () => {
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table
-              className="w-full text-left border-collapse min-w-[900px]"
-            >
+            <table className="w-full text-left border-collapse min-w-[900px]">
               <thead>
                 <tr className="border-y border-gray-100">
                   <th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider w-[240px]">

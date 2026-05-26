@@ -23,7 +23,10 @@ const EligibilityExclusionsCard = ({
       <Typography variant="h3" className="text-base font-bold text-gray-900">
         Exclusions & Overrides
       </Typography>
-      <Typography variant="bodyMedium" className="mt-1 text-sm font-normal text-gray-500">
+      <Typography
+        variant="bodyMedium"
+        className="mt-1 text-sm font-normal text-gray-500"
+      >
         People matching the rules above who should NOT participate
       </Typography>
 

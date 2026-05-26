@@ -1,15 +1,22 @@
 import { lazy, Suspense, useState } from "react";
 import { mockWizardData } from "./AppraisalCycleWizard";
-import type { EligibilityBreakdownItem } from "./components/Eligibility/EligibilitySummaryAside";
-import type { EligibilityEmployee } from "./components/Eligibility/EligibilityEmployeesCard";
 import type { EligibilityExclusion } from "./components/Eligibility/EligibilityExclusionsCard";
 import type { EligibilityRule } from "./components/Eligibility/EligibilityRulesCard";
+import type { EligibilityBreakdownItem } from "./components/Eligibility/EligibilitySummaryAside";
 import WizardShell from "./WizardShell";
 
-const EligibilityRulesCard = lazy(() => import("./components/Eligibility/EligibilityRulesCard"));
-const EligibilityExclusionsCard = lazy(() => import("./components/Eligibility/EligibilityExclusionsCard"));
-const EligibilityEmployeesCard = lazy(() => import("./components/Eligibility/EligibilityEmployeesCard"));
-const EligibilitySummaryAside = lazy(() => import("./components/Eligibility/EligibilitySummaryAside"));
+const EligibilityRulesCard = lazy(
+  () => import("./components/Eligibility/EligibilityRulesCard"),
+);
+const EligibilityExclusionsCard = lazy(
+  () => import("./components/Eligibility/EligibilityExclusionsCard"),
+);
+const EligibilityEmployeesCard = lazy(
+  () => import("./components/Eligibility/EligibilityEmployeesCard"),
+);
+const EligibilitySummaryAside = lazy(
+  () => import("./components/Eligibility/EligibilitySummaryAside"),
+);
 
 const ruleRows: EligibilityRule[] = [
   {
@@ -43,9 +50,17 @@ const ruleRows: EligibilityRule[] = [
 ];
 
 const exclusions: EligibilityExclusion[] = [
-  { label: "On long leave (>50% of cycle)", count: "12 employees", checked: true },
+  {
+    label: "On long leave (>50% of cycle)",
+    count: "12 employees",
+    checked: true,
+  },
   { label: "In notice period", count: "8 employees", checked: true },
-  { label: "Joined < 90 days before cycle end", count: "23 employees", checked: true },
+  {
+    label: "Joined < 90 days before cycle end",
+    count: "23 employees",
+    checked: true,
+  },
   { label: "Currently on PIP", count: "4 employees", checked: false },
 ];
 
@@ -58,10 +73,39 @@ const breakdown: EligibilityBreakdownItem[] = [
   { label: "Others", value: 382, percent: 18 },
 ];
 
-const employees: EligibilityEmployee[] = [
-  { name: "Aarav Mehta", team: "Engineering", location: "India Tech", type: "Full-time" },
-  { name: "Nisha Rao", team: "Design", location: "India Tech", type: "Full-time" },
-  { name: "Rohan Iyer", team: "Product", location: "India Tech", type: "Full-time" },
+const employees = [
+  {
+    name: "Pallavi Mahar",
+    department: "Design · Oxygen",
+    grade: "L4",
+    manager: "Rohit Khanna",
+    tenure: "3.2y",
+    initials: "PM",
+  },
+  {
+    name: "Karthik Iyer",
+    department: "Engineering · Platform",
+    grade: "L4",
+    manager: "Rohit Khanna",
+    tenure: "4.1y",
+    initials: "KI",
+  },
+  {
+    name: "Riya Banerjee",
+    department: "Design · Oxygen",
+    grade: "L3",
+    manager: "Rohit Khanna",
+    tenure: "1.8y",
+    initials: "RB",
+  },
+  {
+    name: "Shreya Das",
+    department: "Design · Oxygen",
+    grade: "L2",
+    manager: "Rohit Khanna",
+    tenure: "0.6y",
+    initials: "SD",
+  },
 ];
 
 const fieldOptions = [
@@ -81,7 +125,15 @@ const fieldOptions = [
   value,
 }));
 
-const operatorOptions = ["is", "is not", "is in", "is not in", "≥", "≤", "contains"].map((value) => ({
+const operatorOptions = [
+  "is",
+  "is not",
+  "is in",
+  "is not in",
+  "≥",
+  "≤",
+  "contains",
+].map((value) => ({
   label: value,
   value,
 }));

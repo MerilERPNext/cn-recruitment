@@ -42,15 +42,21 @@ const EligibilityRulesCard = ({
       <div className="mb-5 grid grid-cols-2 rounded-lg bg-gray-50 p-1 sm:inline-flex">
         <button
           onClick={() => setActiveMode("rules")}
-          className={`min-h-[40px] rounded-md px-3 py-2 text-sm font-bold sm:px-4 ${activeMode === "rules" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
-            }`}
+          className={`min-h-[40px] rounded-md px-3 py-2 text-sm font-bold sm:px-4 ${
+            activeMode === "rules"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500"
+          }`}
         >
           Dynamic rules
         </button>
         <button
           onClick={() => setActiveMode("csv")}
-          className={`min-h-[40px] rounded-md px-3 py-2 text-sm font-bold sm:px-4 ${activeMode === "csv" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500"
-            }`}
+          className={`min-h-[40px] rounded-md px-3 py-2 text-sm font-bold sm:px-4 ${
+            activeMode === "csv"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500"
+          }`}
         >
           Static CSV upload
         </button>
@@ -71,21 +77,27 @@ const EligibilityRulesCard = ({
           >
             <div className="flex min-h-[38px] items-center sm:row-span-3 xl:row-span-1">
               <span
-                className={`rounded-md px-3 py-1.5 text-xs font-bold ${rule.joiner === "WHERE"
+                className={`rounded-md px-3 py-1.5 text-xs font-bold ${
+                  rule.joiner === "WHERE"
                     ? "bg-white text-gray-500 xl:bg-white"
                     : "bg-blue-50 text-blue-600"
-                  }`}
+                }`}
               >
                 {rule.joiner}
               </span>
             </div>
             <Select
               options={fieldOptions}
-              value={fieldOptions.find((option) => option.value === rule.field) ?? fieldOptions[0]}
+              value={
+                fieldOptions.find((option) => option.value === rule.field) ??
+                fieldOptions[0]
+              }
               onChange={(option) =>
                 setRules((current) =>
                   current.map((item) =>
-                    item.id === rule.id ? { ...item, field: option.value } : item,
+                    item.id === rule.id
+                      ? { ...item, field: option.value }
+                      : item,
                   ),
                 )
               }
@@ -94,13 +106,16 @@ const EligibilityRulesCard = ({
             <Select
               options={operatorOptions}
               value={
-                operatorOptions.find((option) => option.value === rule.operator) ??
-                operatorOptions[0]
+                operatorOptions.find(
+                  (option) => option.value === rule.operator,
+                ) ?? operatorOptions[0]
               }
               onChange={(option) =>
                 setRules((current) =>
                   current.map((item) =>
-                    item.id === rule.id ? { ...item, operator: option.value } : item,
+                    item.id === rule.id
+                      ? { ...item, operator: option.value }
+                      : item,
                   ),
                 )
               }
@@ -112,19 +127,41 @@ const EligibilityRulesCard = ({
               onChange={(event) =>
                 setRules((current) =>
                   current.map((item) =>
-                    item.id === rule.id ? { ...item, value: event.target.value } : item,
+                    item.id === rule.id
+                      ? { ...item, value: event.target.value }
+                      : item,
                   ),
                 )
               }
             />
-            <button className="flex h-[38px] w-full items-center justify-center rounded-md border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 hover:text-gray-700 sm:col-start-2 xl:col-start-auto xl:w-8 xl:border-0 xl:bg-transparent">
+            <button
+              onClick={() =>
+                setRules((current) => current.filter((r) => r.id !== rule.id))
+              }
+              className="flex h-[38px] w-full items-center justify-center rounded-md border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 hover:text-gray-700 sm:col-start-2 xl:col-start-auto xl:w-8 xl:border-0 xl:bg-transparent"
+              aria-label="Remove condition"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
         ))}
       </div>
 
-      <button className="mt-4 inline-flex min-h-[38px] items-center gap-2 rounded-md border border-blue-100 bg-white px-3 text-sm font-bold text-blue-600 hover:bg-blue-50">
+      <button
+        onClick={() => {
+          setRules((current) => [
+            ...current,
+            {
+              id: Math.max(0, ...current.map((r) => r.id)) + 1,
+              joiner: current.length === 0 ? "WHERE" : "AND",
+              field: fieldOptions[0]?.value || "",
+              operator: operatorOptions[0]?.value || "",
+              value: "",
+            },
+          ]);
+        }}
+        className="mt-4 inline-flex min-h-[38px] items-center gap-2 rounded-md border border-blue-100 bg-white px-3 text-sm font-bold text-blue-600 hover:bg-blue-50"
+      >
         <Plus className="h-4 w-4" />
         Add condition
       </button>

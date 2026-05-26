@@ -78,7 +78,7 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
             </div>
             <Typography
               variant="bodySmall"
-              className="text-green-600 font-medium whitespace-nowrap"
+              className="text-green-600 font-medium whitespace-nowrap hidden sm:block"
             >
               Pick Source Goal
             </Typography>
@@ -92,7 +92,7 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
             </div>
             <Typography
               variant="bodySmall"
-              className="text-gray-900 font-bold whitespace-nowrap"
+              className="text-gray-900 font-bold whitespace-nowrap hidden sm:block"
             >
               Assign Reportees
             </Typography>
@@ -106,7 +106,7 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
             </div>
             <Typography
               variant="bodySmall"
-              className="text-gray-400 font-medium whitespace-nowrap"
+              className="text-gray-400 font-medium whitespace-nowrap hidden sm:block"
             >
               Set Contribution
             </Typography>
@@ -114,7 +114,7 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
         </div>
 
         {/* ── Source Goal Card ────────────────────────────────────────── */}
-        <div className="bg-[#fcfdff] rounded-xl border border-blue-100 p-6 flex justify-between items-center shadow-sm">
+        <div className="bg-[#fcfdff] rounded-xl border border-blue-100 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm">
           <div className="space-y-3">
             <div className="flex gap-2">
               <span className="px-2.5 py-0.5 rounded-xl text-[11px] font-semibold text-blue-600 bg-blue-50">
@@ -163,7 +163,7 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
         {/* ── Assign Table ────────────────────────────────────────────── */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
           {/* Table Header Area */}
-          <div className="p-6 border-b border-gray-100 flex justify-between items-end">
+          <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
             <div>
               <h3 className="text-lg font-bold text-gray-900">
                 Assign to reportees & set contribution
@@ -193,102 +193,112 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
             </div>
           </div>
 
-          {/* Table Columns Header */}
-          <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50/50 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-            <div className="col-span-3">Reportee</div>
-            <div className="col-span-4">Sub-goal Title</div>
-            <div className="col-span-1">Weightage</div>
-            <div className="col-span-2">Contribution to Parent</div>
-            <div className="col-span-2 pl-4">Status</div>
-          </div>
+          {/* Table Area */}
+          <div className="overflow-x-auto">
+            <div className="min-w-[900px]">
+              {/* Table Columns Header */}
+              <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50/50 border-b border-gray-100 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                <div className="col-span-3">Reportee</div>
+                <div className="col-span-4">Sub-goal Title</div>
+                <div className="col-span-1">Weightage</div>
+                <div className="col-span-2">Contribution to Parent</div>
+                <div className="col-span-2 pl-4">Status</div>
+              </div>
 
-          {/* Table Rows */}
-          <div className="divide-y divide-gray-100">
-            {reportees.map((r) => (
-              <div
-                key={r.id}
-                className="grid grid-cols-12 gap-4 px-6 py-4 items-center"
-              >
-                {/* User Column */}
-                <div className="col-span-3 flex items-center gap-3">
-                  <Avatar
-                    name={r.name}
-                    size="h-8 w-8"
-                    fontSize="text-xs"
-                    avatarBgColor="bg-blue-50"
-                    avatarTextColor="text-blue-600"
-                  />
-                  <span className="text-[13px] font-bold text-gray-900 truncate">
-                    {r.name}
-                  </span>
-                </div>
+              {/* Table Rows */}
+              <div className="divide-y divide-gray-100">
+                {reportees.map((r) => (
+                  <div
+                    key={r.id}
+                    className="grid grid-cols-12 gap-4 px-6 py-4 items-center"
+                  >
+                    {/* User Column */}
+                    <div className="col-span-3 flex items-center gap-3">
+                      <Avatar
+                        name={r.name}
+                        size="h-8 w-8"
+                        fontSize="text-xs"
+                        avatarBgColor="bg-blue-50"
+                        avatarTextColor="text-blue-600"
+                      />
+                      <span className="text-[13px] font-bold text-gray-900 truncate">
+                        {r.name}
+                      </span>
+                    </div>
 
-                {/* Sub-goal Title */}
-                <div className="col-span-4">
-                  <input
-                    aria-label={`${r.name} sub-goal title`}
-                    type="text"
-                    value={r.subGoalTitle}
-                    onChange={(e) => handleTitleChange(r.id, e.target.value)}
-                    className="w-full text-[13px] text-gray-900 border border-gray-200 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-shadow"
-                  />
-                </div>
+                    {/* Sub-goal Title */}
+                    <div className="col-span-4">
+                      <input
+                        aria-label={`${r.name} sub-goal title`}
+                        type="text"
+                        value={r.subGoalTitle}
+                        onChange={(e) =>
+                          handleTitleChange(r.id, e.target.value)
+                        }
+                        className="w-full text-[13px] text-gray-900 border border-gray-200 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-shadow"
+                      />
+                    </div>
 
-                {/* Weightage */}
-                <div className="col-span-1">
-                  <div className="flex items-center border border-gray-200 rounded-md overflow-hidden bg-white focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-300 transition-shadow">
-                    <input
-                      aria-label={`${r.name} weightage`}
-                      type="number"
-                      value={r.weightage}
-                      onChange={(e) =>
-                        handleWeightageChange(r.id, e.target.value)
-                      }
-                      className="w-full text-[13px] font-bold text-gray-900 px-2 py-1.5 text-center focus:outline-none"
-                    />
-                    <div className="bg-gray-50 border-l border-gray-200 px-2 py-1.5 text-[11px] text-gray-400 font-bold">
-                      %
+                    {/* Weightage */}
+                    <div className="col-span-1">
+                      <div className="flex items-center border border-gray-200 rounded-md overflow-hidden bg-white focus-within:ring-2 focus-within:ring-blue-100 focus-within:border-blue-300 transition-shadow">
+                        <input
+                          aria-label={`${r.name} weightage`}
+                          type="number"
+                          value={r.weightage}
+                          onChange={(e) =>
+                            handleWeightageChange(r.id, e.target.value)
+                          }
+                          className="w-full text-[13px] font-bold text-gray-900 px-2 py-1.5 text-center focus:outline-none"
+                        />
+                        <div className="bg-gray-50 border-l border-gray-200 px-2 py-1.5 text-[11px] text-gray-400 font-bold">
+                          %
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Contribution Slider */}
+                    <div className="col-span-2 flex items-center gap-3 pr-4">
+                      <input
+                        aria-label={`${r.name} contribution`}
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={r.contribution}
+                        onChange={(e) =>
+                          handleSliderChange(r.id, parseInt(e.target.value, 10))
+                        }
+                        className="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                        style={{
+                          background: `linear-gradient(to right, #3b82f6 ${r.contribution}%, #e5e7eb ${r.contribution}%)`,
+                        }}
+                      />
+                      <span className="text-[13px] font-bold text-blue-600 w-10 shrink-0 text-right">
+                        {r.contribution}%
+                      </span>
+                    </div>
+
+                    {/* Status & Action */}
+                    <div className="col-span-2 flex items-center justify-between pl-4">
+                      {getStatusBadge(r.status)}
+                      <button
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                        aria-label={`Open branch details for ${r.name}`}
+                      >
+                        <GitBranch className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                </div>
-
-                {/* Contribution Slider */}
-                <div className="col-span-2 flex items-center gap-3 pr-4">
-                  <input
-                    aria-label={`${r.name} contribution`}
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={r.contribution}
-                    onChange={(e) =>
-                      handleSliderChange(r.id, parseInt(e.target.value, 10))
-                    }
-                    className="flex-1 h-1.5 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                    style={{
-                      background: `linear-gradient(to right, #3b82f6 ${r.contribution}%, #e5e7eb ${r.contribution}%)`,
-                    }}
-                  />
-                  <span className="text-[13px] font-bold text-blue-600 w-10 shrink-0 text-right">
-                    {r.contribution}%
-                  </span>
-                </div>
-
-                {/* Status & Action */}
-                <div className="col-span-2 flex items-center justify-between pl-4">
-                  {getStatusBadge(r.status)}
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors" aria-label={`Open branch details for ${r.name}`}>
-                    <GitBranch className="w-4 h-4" />
-                  </button>
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </div>
 
       {/* ── Action Bar ──────────────────────────────────────────────── */}
       <div
-        className={`mx-auto w-full max-w-screen flex items-center justify-between pt-2 pb-8 ${isMobile ? "px-4" : "px-8"}`}
+        className={`mx-auto w-full max-w-screen flex flex-wrap items-center justify-between gap-4 pt-2 pb-8 ${isMobile ? "px-4" : "px-8"}`}
       >
         <Button
           variant="outline"
@@ -299,7 +309,7 @@ const AssignGoal: React.FC<AssignGoalProps> = ({ onBack }) => {
         >
           Back
         </Button>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button variant="outline" bgColor="text" className="border-gray-200">
             Save Draft
           </Button>
