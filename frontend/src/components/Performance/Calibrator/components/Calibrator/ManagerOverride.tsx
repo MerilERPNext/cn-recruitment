@@ -2,18 +2,12 @@ import { AlertTriangle, ArrowRight, X } from "lucide-react";
 import { useState } from "react";
 import Badge from "../../../../shared/Badge";
 import { Typography } from "../../../../shared/atoms/Typography";
+import type { CalibratorEmployee, Rating } from "../../types";
 
-type Rating = "Outstanding" | "Exceeds" | "Meets" | "Below";
-type PriorCycle = Rating | "Unsatisfactory" | "";
-
-type OverrideEmployee = {
-  detail: string;
-  initials: string;
-  manager: string;
-  managerSuggested: Rating;
-  name: string;
-  prior: [PriorCycle, PriorCycle, PriorCycle];
-};
+type OverrideEmployee = Pick<
+  CalibratorEmployee,
+  "detail" | "initials" | "manager" | "managerSuggested" | "name" | "prior"
+>;
 
 type ManagerOverrideProps = {
   employee: OverrideEmployee | null;
