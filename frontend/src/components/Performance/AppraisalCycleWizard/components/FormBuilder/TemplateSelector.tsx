@@ -53,7 +53,7 @@ const TemplateSelector = ({
                   <FileText className="h-5 w-5" />
                 </div>
                 {template.mostUsed && (
-                  <span className="rounded-full bg-yellow-100 px-2.5 py-1 text-[10px] font-bold text-yellow-800">
+                  <span className="rounded-md bg-yellow-100 px-2.5 py-1 text-[10px] font-bold text-yellow-800">
                     Most used
                   </span>
                 )}

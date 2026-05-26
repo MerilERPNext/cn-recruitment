@@ -140,7 +140,7 @@ const mockSections: FormSection[] = [
 const FormBuilder = () => {
   const [activeTemplateId, setActiveTemplateId] =
     useState<string>("standard-annual");
-  const [sections, setSections] = useState<FormSection[]>(mockSections);
+  const [sections] = useState<FormSection[]>(mockSections);
   const [activePreviewRole, setActivePreviewRole] =
     useState<string>("Employee");
 
@@ -165,7 +165,6 @@ const FormBuilder = () => {
           <TemplatePreview
             template={activeTemplate}
             sections={sections}
-            setSections={setSections}
           />
         </Suspense>
 

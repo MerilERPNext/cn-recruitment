@@ -76,11 +76,11 @@ const TemplatePreview = ({ template, sections }: TemplatePreviewProps) => {
 
               <div className="shrink-0 flex items-center gap-3">
                 {section.active ? (
-                  <div className="flex h-6 w-[72px] items-center rounded-full bg-green-50 pl-3 text-[11px] font-bold text-green-700">
+                  <div className="flex h-6 w-[72px] items-center rounded-md bg-green-50 pl-3 text-[11px] font-bold text-green-700">
                     Active
                   </div>
                 ) : (
-                  <div className="flex h-6 w-[72px] items-center rounded-full bg-gray-100 pl-3 text-[11px] font-bold text-gray-600">
+                  <div className="flex h-6 w-[72px] items-center rounded-md bg-gray-100 pl-3 text-[11px] font-bold text-gray-600">
                     Inactive
                   </div>
                 )}
