@@ -201,7 +201,7 @@ export default function TeamAdvanceDetailView({
     }
 
     // Validate against max if not allowed to exceed
-    if (!canExceedRequested && ref?.custom_requested_amount !== undefined) {
+    if (!canExceedRequested && ref?.custom_requested_amount != null) {
       if (numValue > ref.custom_requested_amount) {
         toast.error(
           `Sanctioned amount cannot exceed the requested amount of ${formatINR(ref.custom_requested_amount)}`,
@@ -247,18 +247,14 @@ export default function TeamAdvanceDetailView({
     ["Open", "Pending", "Draft"].includes(ref.custom_final_status) &&
     data.todo_status !== "Closed";
 
-  // Current sanctioned amount as a number for dirty check
-  const currentSanctionedNum = parseFloat(sanctionedAmountInput);
-  const originalSanctionedNum = ref?.advance_amount ?? 0;
+  // Current sanctioned amount dirty check
   const isSanctionedDirty =
-    !isNaN(currentSanctionedNum) &&
-    currentSanctionedNum !== originalSanctionedNum;
+    sanctionedAmountInput !== String(ref?.advance_amount ?? "");
 
   // Track unsaved changes whenever input changes
   const handleSanctionedAmountChange = (value: string) => {
     setSanctionedAmountInput(value);
-    const num = parseFloat(value);
-    const isDirty = !isNaN(num) && num !== (ref?.advance_amount ?? 0);
+    const isDirty = value !== String(ref?.advance_amount ?? "");
     setHasUnsavedChanges(isDirty);
   };
 
@@ -559,8 +555,7 @@ export default function TeamAdvanceDetailView({
             </div>
 
             <div className="flex justify-between w-full">
-              {
-                <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2">
                   <div className="flex flex-col gap-2">
                     <Typography variant="mobileCardLabel">Purpose</Typography>
                     <Typography variant="mobileCardValue">
@@ -568,7 +563,6 @@ export default function TeamAdvanceDetailView({
                     </Typography>
                   </div>
                 </div>
-              }
               <div className="flex flex-col gap-2 text-right ml-auto">
                 <MobileAllocatedTo
                   users={data?.allocated_to}

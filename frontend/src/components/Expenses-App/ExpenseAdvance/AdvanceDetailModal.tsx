@@ -16,7 +16,7 @@ interface AdvanceDetailModalProps {
   onClose: () => void;
   selectedStages: ApprovalStage[];
   status?: string;
-  assignedTo?: string;
+  assignedTo?: React.ReactNode,
 }
 
 const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({

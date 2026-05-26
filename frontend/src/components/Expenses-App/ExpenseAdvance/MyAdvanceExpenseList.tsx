@@ -31,7 +31,7 @@ const MyAdvanceExpenseList = () => {
   const [selectedAdvance, setSelectedAdvance] = useState<{
     id: string;
     status: string;
-    assignedTo?: string;
+    assignedTo?: React.ReactNode,
   } | null>(null);
   const [selectedStages, setSelectedStages] = useState<ApprovalStage[]>([]);
   const [isActed, setIsActed] = useState(false);
@@ -60,7 +60,7 @@ const MyAdvanceExpenseList = () => {
     id: string,
     stages: ApprovalStage[],
     status: string,
-    assignedTo?: string,
+    assignedTo?: React.ReactNode,
   ) => {
     setSelectedStages(stages);
     setTimeout(() => {
@@ -386,7 +386,7 @@ const MyAdvanceExpenseList = () => {
 
     return (
       <div
-        onClick={() => openDetailModal(id, stages, status, getAssignedUsersCell(item) as string)}
+        onClick={() => openDetailModal(id, stages, status, getAssignedUsersCell(item))}
         className="cursor-pointer"
       >
         {isDesktop ? <DesktopRow item={item} /> : <MobileRow item={item} />}
