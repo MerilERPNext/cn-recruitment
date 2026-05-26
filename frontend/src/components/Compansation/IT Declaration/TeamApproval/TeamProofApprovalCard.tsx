@@ -8,7 +8,7 @@ import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 
 type Props = {
-  actionsEnabled: boolean;
+  actionsEnabled?: boolean;
   data: any;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
