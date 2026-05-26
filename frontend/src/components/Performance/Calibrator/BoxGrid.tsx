@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Badge from "../../shared/Badge";
 import Button from "../../shared/atoms/Button";
 import { Card } from "../../shared/atoms/Card";
@@ -135,6 +136,12 @@ const quickPickEmployees: QuickPickEmployee[] = [
 ];
 
 const BoxGrid = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const savedOverride = location.state?.savedOverride as
+    | { employeeName: string; from: string; to: string }
+    | undefined;
+  const isVikramOverrideSaved = savedOverride?.employeeName === "Vikram Rao";
   const [enabledFilters, setEnabledFilters] = useState<Record<string, boolean>>(
     () =>
       filters.reduce<Record<string, boolean>>((acc, filter) => {
@@ -154,6 +161,49 @@ const BoxGrid = () => {
     <main className="min-h-dvh overflow-x-hidden bg-[#f4f7fb] p-2 font-sans text-gray-900 sm:p-3 lg:p-4">
       <div className="mx-auto grid max-w-[1390px] gap-4 xl:grid-cols-[minmax(0,1fr)_330px]">
         <div className="min-w-0 space-y-4">
+          {savedOverride && (
+            <Card
+              className="border border-emerald-200 bg-emerald-50 px-3 py-2.5 shadow-sm sm:px-4"
+              radius="xl"
+              padding="none"
+            >
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+                    <Check className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <Typography variant="bodyMedium" className="text-[13px] font-extrabold text-emerald-950">
+                      Override saved · {savedOverride.employeeName} moved from {savedOverride.from} to {savedOverride.to}
+                    </Typography>
+                    <p className="mt-0.5 text-[12px] font-semibold text-emerald-800">
+                      FY26 calibrated rating updated. 9-box position recalculated from manager rating and dependency.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    bgColor="text"
+                    className="h-8 rounded-md border-emerald-200 bg-white px-3 text-[12px] font-bold text-gray-700 hover:bg-emerald-50"
+                  >
+                    Undo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="subtle"
+                    bgColor="text"
+                    className="h-8 rounded-md px-3 text-[12px] font-bold text-blue-700 hover:bg-blue-50"
+                    onClick={() => navigate("/webapp/performance-app/calibrator/session")}
+                  >
+                    View audit log →
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
           <Card className="border border-gray-200 bg-white px-3 py-3 shadow-sm sm:px-4" radius="xl" padding="none">
             <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -187,33 +237,57 @@ const BoxGrid = () => {
               </div>
               <div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-2.5 lg:grid-cols-3">
-                  {boxes.map((box) => (
+                  {boxes.map((box) => {
+                    const employees =
+                      isVikramOverrideSaved && box.label === "INCONSISTENT"
+                        ? box.employees.filter((employee) => employee.name !== "Vikram R.")
+                        : isVikramOverrideSaved && box.label === "EFFECTIVE"
+                          ? [{ initials: "VR", name: "Vikram R." }, ...box.employees]
+                          : box.employees;
+                    const count =
+                      isVikramOverrideSaved && box.label === "INCONSISTENT"
+                        ? 0
+                        : isVikramOverrideSaved && box.label === "EFFECTIVE"
+                          ? 1
+                          : box.count;
+
+                    return (
                     <div
                       key={box.label}
                       className={`min-h-[160px] rounded-xl border p-2.5 sm:min-h-[190px] sm:p-3 lg:min-h-[236px] ${box.color}`}
                     >
                       <div className="mb-3 flex min-w-0 items-center justify-between gap-2">
                         <Badge label={box.label} variant={box.badgeVariant} size="sm" />
-                        <span className={`text-[15px] font-extrabold ${box.titleColor}`}>{box.count}</span>
+                        <span className={`text-[15px] font-extrabold ${box.titleColor}`}>{count}</span>
                       </div>
                       <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                        {box.employees.map((employee) => (
+                        {employees.map((employee) => {
+                          const isSavedEmployee =
+                            isVikramOverrideSaved && box.label === "EFFECTIVE" && employee.name === "Vikram R.";
+
+                          return (
                           <Button
                             key={`${box.label}-${employee.initials}-${employee.name}`}
                             type="button"
                             variant="outline"
                             bgColor="text"
-                            className="h-[54px] min-w-[78px] max-w-[112px] justify-start rounded-full border-gray-100 bg-white px-2 text-left text-[10px] font-semibold text-gray-700 shadow-sm hover:bg-violet-50 sm:h-[62px] sm:min-w-[86px] sm:max-w-[124px] sm:px-2.5 sm:text-[11px]"
+                            className={`h-[54px] min-w-[78px] max-w-[112px] justify-start rounded-full bg-white px-2 text-left text-[10px] font-semibold text-gray-700 shadow-sm hover:bg-violet-50 sm:h-[62px] sm:min-w-[86px] sm:max-w-[124px] sm:px-2.5 sm:text-[11px] ${
+                              isSavedEmployee
+                                ? "border-2 border-emerald-500 ring-2 ring-emerald-100"
+                                : "border-gray-100"
+                            }`}
                           >
                             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#e9f3ff] text-[8px] font-extrabold text-[#2486e8] sm:h-6 sm:w-6 sm:text-[9px]">
                               {employee.initials}
                             </span>
                             <span className="truncate">{employee.name}</span>
                           </Button>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="mt-3 hidden grid-cols-3 text-center text-[12px] font-bold uppercase text-[#536072] lg:grid">
                   <span>Low</span>

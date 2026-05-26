@@ -19,6 +19,7 @@ type ManagerOverrideProps = {
   employee: OverrideEmployee | null;
   onClose: () => void;
   onRatingChange: (rating: Rating) => void;
+  onSaveOverride: () => void;
   open: boolean;
   rating: Rating;
 };
@@ -57,6 +58,7 @@ const ManagerOverride = ({
   employee,
   onClose,
   onRatingChange,
+  onSaveOverride,
   open,
   rating,
 }: ManagerOverrideProps) => {
@@ -267,7 +269,10 @@ const ManagerOverride = ({
           >
             Cancel
           </button>
-          <button className="inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-md bg-blue-500 px-4 text-sm font-bold text-white shadow-sm hover:bg-blue-600 sm:min-h-[38px] sm:w-auto">
+          <button
+            className="inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-md bg-blue-500 px-4 text-sm font-bold text-white shadow-sm hover:bg-blue-600 sm:min-h-[38px] sm:w-auto"
+            onClick={onSaveOverride}
+          >
             Save Override
             <ArrowRight className="h-4 w-4" />
           </button>

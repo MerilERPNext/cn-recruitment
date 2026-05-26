@@ -1,5 +1,6 @@
 import { Grid3X3, Pause, Send } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Badge from "../../shared/Badge";
 import { Select } from "../../shared/atoms/Select";
 import { Typography } from "../../shared/atoms/Typography";
@@ -227,6 +228,7 @@ const ratingTextColor: Record<Rating, string> = {
 };
 
 const CalibratorSession = () => {
+  const navigate = useNavigate();
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
   const [calibratedRatings, setCalibratedRatings] = useState(
@@ -241,6 +243,22 @@ const CalibratorSession = () => {
   const openOverride = (employeeId: number) => {
     setSelectedEmployeeId(employeeId);
     setOverrideOpen(true);
+  };
+
+  const openBoxGrid = () => {
+    navigate("/webapp/performance-app/calibrator/box-grid");
+  };
+
+  const saveOverride = () => {
+    navigate("/webapp/performance-app/calibrator/box-grid", {
+      state: {
+        savedOverride: {
+          employeeName: selectedEmployee.name,
+          from: selectedEmployee.name === "Vikram Rao" ? "Inconsistent" : selectedEmployee.managerSuggested,
+          to: selectedEmployee.name === "Vikram Rao" ? "Effective" : calibratedRatings[selectedEmployee.id],
+        },
+      },
+    });
   };
 
   return (
@@ -276,7 +294,10 @@ const CalibratorSession = () => {
                 ))}
                 <span className="ml-3 text-sm font-medium text-gray-600">+ 2 calibrators in session</span>
               </div>
-              <button className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg border border-blue-300 bg-white px-4 text-sm font-bold text-blue-600 shadow-sm">
+              <button
+                className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg border border-blue-300 bg-white px-4 text-sm font-bold text-blue-600 shadow-sm"
+                onClick={openBoxGrid}
+              >
                 <Grid3X3 className="h-4 w-4" />
                 Open 9-Box view
               </button>
@@ -631,6 +652,7 @@ const CalibratorSession = () => {
             [selectedEmployee.id]: rating,
           }))
         }
+        onSaveOverride={saveOverride}
       />
     </div>
   );
