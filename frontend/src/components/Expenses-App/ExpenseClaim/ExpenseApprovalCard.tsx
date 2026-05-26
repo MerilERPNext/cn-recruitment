@@ -14,6 +14,7 @@ import Button from "../../shared/atoms/Button";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { AllowRequestsOnHoldResponse } from "../../../types/expense";
 
 type ApprovalCardProps = {
   actionsEnabled?: boolean;
@@ -28,10 +29,7 @@ type ApprovalCardProps = {
   isBulkSelectEnabled?: boolean;
   activeStatus?: string;
   isActed?: boolean;
-  allowHoldData?: {
-    allow_requests_to_be_put_on_hold: boolean;
-    show_approval_buttons: boolean;
-  };
+  allowHoldData?: AllowRequestsOnHoldResponse;
   onRefetch?: () => void;
 };
 
@@ -54,6 +52,10 @@ const ExpenseApprovalCard = ({
   const commentMutation = useExpenseCommentUpdate();
   const updateStatusMutation = useUpdateExpenseClaimStatusAPI();
   const { data: user } = useCurrentUser();
+
+  const showNoticeFlag = allowHoldData?.show_on_notice_flag_in_process_and_pay_reimbursement_page;
+  const isOnNotice = data?.reference_document?.custom_employment_status === "On Notice Period";
+  const shouldShowNoticeDot = showNoticeFlag && isOnNotice;
 
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [rejectionComment, setRejectionComment] = useState("");
@@ -240,16 +242,22 @@ const ExpenseApprovalCard = ({
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
-            className="min-w-0"
+            className="min-w-0 flex items-center justify-center gap-1.5"
           >
             <Typography
               variant="bodySmall"
-              className="font-medium text-center truncate block w-full"
+              className="font-medium text-center truncate"
             >
               <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.reference_document?.employee_name}
               </WrapperHoverCard>
             </Typography>
+            {shouldShowNoticeDot && (
+              <span className="relative flex h-2.5 w-2.5 flex-shrink-0" title="On Notice Period">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500 border border-white shadow-sm"></span>
+              </span>
+            )}
           </Link>
 
           <Tooltip
@@ -403,11 +411,17 @@ const ExpenseApprovalCard = ({
                   <Link
                     to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
                     target="_blank"
+                    className="flex items-center gap-1.5"
                   >
                     <Typography variant="mobileCardValue">
                       {data?.reference_document?.employee_name ||
                         data?.reference_document?.employee}
                     </Typography>
+                    {shouldShowNoticeDot && (
+                      <span className="text-amber-500 font-semibold text-xs flex-shrink-0">
+                        (On notice period)
+                      </span>
+                    )}
                   </Link>
                 </div>
               </div>

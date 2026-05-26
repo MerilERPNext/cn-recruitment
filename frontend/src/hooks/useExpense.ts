@@ -13,6 +13,7 @@ import {
   UnitPriceResponse,
 } from "../services/expenseService";
 import {
+  AllowRequestsOnHoldResponse,
   ExpenseCategoryType,
   ExpensePolicyQuestionsResponse,
 } from "../types/expense";
@@ -602,7 +603,7 @@ export function useDeleteExpenseClaim() {
 }
 
 export const useGetAllowRequestsToBePutOnHold = () => {
-  return useQuery({
+  return useQuery<AllowRequestsOnHoldResponse>({
     queryKey: ["allow-requests-to-be-put-on-hold"],
     queryFn: () => expenseService.getAllowRequestsToBePutOnHold(),
     staleTime: 5 * 60 * 1000,

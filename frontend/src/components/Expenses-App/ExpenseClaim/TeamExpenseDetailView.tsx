@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import { useEmployee } from "../../../hooks/useEmployee";
 import {
   useExpenseCommentUpdate,
   useExpenseLineItemUpdate,
@@ -10,6 +11,8 @@ import {
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import { Expense, Participant } from "../../../types/expenseAdvance";
+import { AllowRequestsOnHoldResponse } from "../../../types/expense";
+import { Employee } from "../../../types/employee";
 
 interface CustomFile {
   data?: {
@@ -68,10 +71,7 @@ export function TeamExpenseDetailView({
   onClose: () => void;
   onAction?: () => void;
   label?: string;
-  allowHoldData?: {
-    allow_requests_to_be_put_on_hold: boolean;
-    show_approval_buttons: boolean;
-  };
+  allowHoldData?: AllowRequestsOnHoldResponse;
 }) {
   const updateMutation = useExpenseLineItemUpdate();
   const mutation = useApprovalListActions();
@@ -89,6 +89,12 @@ export function TeamExpenseDetailView({
 
   const data = documentName || referenceName ? fetchedData : propsData;
   const ref = data?.reference_document || {};
+
+  const employeeId = ref?.employee;
+  const showNoticeFlag = allowHoldData?.show_on_notice_flag_in_process_and_pay_reimbursement_page;
+  const { data: employeeDetails } = useEmployee(showNoticeFlag && employeeId ? employeeId : null);
+  const isOnNotice = (employeeDetails as Employee)?.custom_employment_status === "On Notice Period";
+  const shouldShowNoticeText = showNoticeFlag && isOnNotice;
 
   const todoId = useMemo(() => {
     return (
@@ -780,11 +786,18 @@ export function TeamExpenseDetailView({
                   </Typography>
                   <Typography
                     variant="mobileCardValue"
-                    className="truncate hover:text-primary cursor-pointer"
+                    className="hover:text-primary cursor-pointer flex flex-col md:flex-row md:items-center gap-0.5 md:gap-1.5 min-w-0"
                   >
-                    <WrapperHoverCard employeeId={ref?.employee}>
-                      {ref?.employee_name || ref?.employee}
-                    </WrapperHoverCard>
+                    <div className="truncate min-w-0">
+                      <WrapperHoverCard employeeId={ref?.employee}>
+                        {ref?.employee_name || ref?.employee}
+                      </WrapperHoverCard>
+                    </div>
+                    {shouldShowNoticeText && (
+                      <span className="text-amber-500 font-semibold text-xs flex-shrink-0">
+                        (On notice period)
+                      </span>
+                    )}
                   </Typography>
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">
