@@ -941,6 +941,10 @@ const ExpensesList: React.FC = () => {
           title: "No Pending Claims",
           description: "You have no pending expense claim requests.",
         },
+        "On Hold": {
+          title: "No On Hold Claims",
+          description: "You have no expense claims on hold.",
+        },
         Approved: {
           title: "All Claims Approved",
           description: "You have no approved expense claims to review.",
@@ -1643,6 +1647,7 @@ const ExpensesList: React.FC = () => {
                       },
                       { label: "Approved", value: "Approved" },
                       { label: "Rejected", value: "Rejected" },
+                      { label: "On Hold", value: "On Hold" },
                       {
                         label: "Revoked",
                         value: "Revoked",
@@ -1822,6 +1827,7 @@ const ExpensesList: React.FC = () => {
                     { label: "Pending", value: "Pending" },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
+                    { label: "On Hold", value: "On Hold" },
                   ],
                   emptyValueConfig: {
                     filterValue: ["!=", "Cancelled"],

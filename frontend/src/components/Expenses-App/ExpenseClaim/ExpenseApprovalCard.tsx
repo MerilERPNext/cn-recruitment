@@ -3,7 +3,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
+import { useExpenseCommentUpdate, useUpdateExpenseClaimStatusAPI } from "../../../hooks/useExpense";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
@@ -28,6 +28,11 @@ type ApprovalCardProps = {
   isBulkSelectEnabled?: boolean;
   activeStatus?: string;
   isActed?: boolean;
+  allowHoldData?: {
+    allow_requests_to_be_put_on_hold: boolean;
+    show_approval_buttons: boolean;
+  };
+  onRefetch?: () => void;
 };
 
 const ExpenseApprovalCard = ({
@@ -42,9 +47,12 @@ const ExpenseApprovalCard = ({
   isBulkSelectEnabled = true,
   activeStatus = "Pending",
   isActed = false,
+  allowHoldData,
+  onRefetch,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const commentMutation = useExpenseCommentUpdate();
+  const updateStatusMutation = useUpdateExpenseClaimStatusAPI();
   const { data: user } = useCurrentUser();
 
   const [showCommentModal, setShowCommentModal] = useState(false);
@@ -53,15 +61,39 @@ const ExpenseApprovalCard = ({
     action: string;
     data: any;
   } | null>(null);
+  const [pendingHoldAction, setPendingHoldAction] = useState<string | null>(null);
 
   const actions = (() => {
-    if (!data?.custom_doctype_actions) return [];
-    try {
-      return JSON.parse(data.custom_doctype_actions);
-    } catch (e) {
-      console.error("Failed to parse custom_doctype_actions:", e);
-      return [];
+    let parsedActions: string[] = [];
+    if (data?.custom_doctype_actions) {
+      try {
+        parsedActions = JSON.parse(data.custom_doctype_actions);
+      } catch (e) {
+        console.error("Failed to parse custom_doctype_actions:", e);
+      }
     }
+
+    if (allowHoldData) {
+      if (!allowHoldData.show_approval_buttons) {
+        parsedActions = parsedActions.filter(
+          (a) => !["Approve", "Reject", "Send Back"].includes(a)
+        );
+      }
+      if (allowHoldData.allow_requests_to_be_put_on_hold) {
+        const currentApprovalStatus = data?.reference_document?.approval_status || data?.approval_status;
+        if (currentApprovalStatus === "On Hold") {
+          if (!parsedActions.includes("Unhold")) {
+            parsedActions.push("Unhold");
+          }
+        } else {
+          if (!parsedActions.includes("Hold")) {
+            parsedActions.push("Hold");
+          }
+        }
+      }
+    }
+
+    return parsedActions;
   })();
   const actionsWithForm = (() => {
     if (!data?.custom_doctype_actions_with_form) return [];
@@ -86,7 +118,12 @@ const ExpenseApprovalCard = ({
     currency: "INR",
   }).format(data?.reference_document?.total_claimed_amount ?? 0);
 
-  const handleActionClick = (action: string, actionData: any) => {
+  const handleActionClick = async (action: string, actionData: any) => {
+    if (action.toLowerCase() === "hold" || action.toLowerCase() === "unhold") {
+      setPendingHoldAction(action);
+      return;
+    }
+
     if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
       setPendingActionData({ action, data: actionData });
       setShowCommentModal(true);
@@ -132,6 +169,28 @@ const ExpenseApprovalCard = ({
   const handleCancelComment = () => {
     setShowCommentModal(false);
     setPendingActionData(null);
+  };
+
+  const handleConfirmHoldAction = async () => {
+    if (!pendingHoldAction) return;
+    const docname = data?.reference_document?.name || data?.reference_name;
+    if (docname) {
+      const newStatus = pendingHoldAction.toLowerCase() === "hold" ? "On Hold" : "Pending";
+      try {
+        await updateStatusMutation.mutateAsync({ docname, approvalStatus: newStatus });
+        toast.success(`Request ${newStatus === "On Hold" ? "put on hold" : "unheld"} successfully`);
+        if (onRefetch) {
+          onRefetch();
+        }
+      } catch (e) {
+        console.error("Failed to update status", e);
+      }
+    }
+    setPendingHoldAction(null);
+  };
+
+  const handleCancelHoldAction = () => {
+    setPendingHoldAction(null);
   };
 
   return (
@@ -263,7 +322,7 @@ const ExpenseApprovalCard = ({
           )}
 
           <div className="flex items-center justify-center">
-            {activeStatus === "Pending" && !isActed ? (
+            {(!isActed && (activeStatus === "Pending" || activeStatus === "On Hold" || data?.reference_document?.approval_status === "On Hold")) ? (
               <TeamApprovalActionPill
                 actionsEnabled={actionsEnabled}
                 actions={actions}
@@ -427,7 +486,7 @@ const ExpenseApprovalCard = ({
                 </div>
               )}
 
-              {activeStatus === "Pending" && !isActed ? (
+              {(!isActed && (activeStatus === "Pending" || activeStatus === "On Hold" || data?.reference_document?.approval_status === "On Hold")) ? (
                 <TeamApprovalActionPill
                   actionsEnabled={actionsEnabled}
                   variant="buttons"
@@ -509,6 +568,49 @@ const ExpenseApprovalCard = ({
                   <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   "Save & Continue"
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingHoldAction && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCancelHoldAction();
+          }}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Confirm Action
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to {pendingHoldAction.toLowerCase() === "hold" ? "put this request on hold" : "unhold this request"}?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={handleCancelHoldAction}
+                size="sm"
+                bgColor="disabled"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmHoldAction}
+                size="sm"
+                bgColor="primary"
+                disabled={updateStatusMutation.isPending}
+              >
+                {updateStatusMutation.isPending ? (
+                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  "Confirm"
                 )}
               </Button>
             </div>

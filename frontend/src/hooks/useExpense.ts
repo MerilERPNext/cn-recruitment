@@ -600,3 +600,33 @@ export function useDeleteExpenseClaim() {
     },
   });
 }
+
+export const useGetAllowRequestsToBePutOnHold = () => {
+  return useQuery({
+    queryKey: ["allow-requests-to-be-put-on-hold"],
+    queryFn: () => expenseService.getAllowRequestsToBePutOnHold(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useUpdateExpenseClaimStatusAPI() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ docname, approvalStatus }: { docname: string; approvalStatus: string }) =>
+      expenseService.updateExpenseClaimStatusAPI(docname, approvalStatus),
+    onSuccess: () => {
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["custom-api"] });
+        queryClient.invalidateQueries({ queryKey: ["custom-api-infinite"] });
+        queryClient.invalidateQueries({ queryKey: ["expense-claims-all"] });
+        queryClient.invalidateQueries({ queryKey: ["todo-refdocs"] });
+      }, 500);
+    },
+    onError: (err: any) => {
+      toast.error(
+        errorResponseFormater(err, "Failed to update expense status."),
+      );
+    },
+  });
+}
