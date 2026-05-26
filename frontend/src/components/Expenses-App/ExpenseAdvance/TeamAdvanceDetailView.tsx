@@ -21,6 +21,7 @@ import {
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import { useQueryClient } from "@tanstack/react-query";
 
 type TeamAdvanceDetailViewProps = {
   actionsEnabled?: boolean;
@@ -52,13 +53,14 @@ export default function TeamAdvanceDetailView({
     documentName,
     referenceName,
   );
+  const queryClient = useQueryClient();
 
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [isActed, setIsActed] = useState(false);
 
   // ── Sanctioned Amount editing state ──────────────────────────────────────
-  const [sanctionedAmountInput, setSanctionedAmountInput] =
-    useState<string>("");
+  const [sanctionedAmountInput, setSanctionedAmountInput] = useState<string>("");
+  const [savedSanctionedAmount, setSavedSanctionedAmount] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
@@ -101,9 +103,9 @@ export default function TeamAdvanceDetailView({
   // Initialise sanctioned amount input when data loads
   useEffect(() => {
     if (data?.reference_document?.advance_amount !== undefined) {
-      setSanctionedAmountInput(
-        String(data.reference_document.advance_amount ?? ""),
-      );
+      const initialAmount = String(data.reference_document.advance_amount ?? "");
+      setSanctionedAmountInput(initialAmount);
+      setSavedSanctionedAmount(initialAmount);
     }
   }, [data?.reference_document?.advance_amount]);
 
@@ -216,7 +218,9 @@ export default function TeamAdvanceDetailView({
         docname: ref.name,
         data: { advance_amount: numValue },
       });
+      queryClient.invalidateQueries({ queryKey: ["todo-refdocs"] });
       toast.success("Sanctioned amount updated successfully!");
+      setSavedSanctionedAmount(sanctionedAmountInput);
       setHasUnsavedChanges(false);
       setTimeout(() => {
         setRefetchAttendance(true);
@@ -249,12 +253,12 @@ export default function TeamAdvanceDetailView({
 
   // Current sanctioned amount dirty check
   const isSanctionedDirty =
-    sanctionedAmountInput !== String(ref?.advance_amount ?? "");
+    sanctionedAmountInput !== (savedSanctionedAmount ?? String(ref?.advance_amount ?? ""));
 
   // Track unsaved changes whenever input changes
   const handleSanctionedAmountChange = (value: string) => {
     setSanctionedAmountInput(value);
-    const isDirty = value !== String(ref?.advance_amount ?? "");
+    const isDirty = value !== (savedSanctionedAmount ?? String(ref?.advance_amount ?? ""));
     setHasUnsavedChanges(isDirty);
   };
 
