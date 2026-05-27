@@ -25,6 +25,7 @@ import WorkflowTable from "./WorkflowTable";
 import { useQueryClient } from "@tanstack/react-query";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import toast from "react-hot-toast";
+import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 
 type JsonToFormData = {
   form?: { components?: FormIOComponent[] };
@@ -76,7 +77,9 @@ const RequestDetails: React.FC = () => {
         window.trigger_chatnext_assistant(true, session);
       }
     } catch (e) {
-      console.error("Retrigger failed", e);
+      const formatedError = errorResponseFormater(e, "Retrigger Failed");
+      toast.error(formatedError);
+      console.log("Flow Retrigger Error: ", e);
     } finally {
       setIsRetriggering(false);
     }
