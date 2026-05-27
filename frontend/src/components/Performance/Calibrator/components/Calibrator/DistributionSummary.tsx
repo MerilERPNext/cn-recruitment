@@ -16,7 +16,7 @@ const DistributionSummary = ({ distribution }: DistributionSummaryProps) => {
       </Typography>
       <div className="mt-1 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <Typography variant="h2" className="text-2xl font-bold text-gray-900 sm:text-3xl">
+          <Typography variant="h3" className=" font-bold text-gray-900 ">
             Within +5%
           </Typography>
           <p className="mt-1 text-sm font-medium text-gray-500">
