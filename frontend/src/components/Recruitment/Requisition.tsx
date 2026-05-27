@@ -1,42 +1,10 @@
 import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import { FileText, Users, CheckCircle, FolderOpen } from "lucide-react";
 import Badge from "../shared/Badge";
 import FrappeListView from "../ListView";
 
 const Requisition = () => {
-  const stats = [
-    {
-      title: "Total Positions",
-      value: "65",
-      icon: FileText,
-      bgColor: "bg-purple-50",
-      iconColor: "text-purple-600",
-    },
-    {
-      title: "Active Evaluation",
-      value: "14",
-      icon: Users,
-      bgColor: "bg-blue-50",
-      iconColor: "text-blue-600",
-    },
-    {
-      title: "Active Offer Positions",
-      value: "24",
-      icon: CheckCircle,
-      bgColor: "bg-green-50",
-      iconColor: "text-green-600",
-    },
-    {
-      title: "Closed Positions",
-      value: "22",
-      icon: FolderOpen,
-      bgColor: "bg-orange-50",
-      iconColor: "text-orange-600",
-    },
-  ];
-
   const titles = [
     "Requisition Code",
     "Designation, Department & Location",
@@ -112,7 +80,7 @@ const Requisition = () => {
   const RequisitionItem = ({ item }: { item: any }) => {
     const { isDesktop } = useScreenSize();
 
-    const handleRowClick = () => {};
+    const handleRowClick = () => { };
 
     const code = item.name;
     const designation = item.designation;
@@ -288,35 +256,16 @@ const Requisition = () => {
   };
 
   return (
+
     <div className="space-y-4 md:space-y-6 p-2">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card
-              key={index}
-              radius="xl"
-              className="border p-4 md:p-5 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`w-10 h-10 md:w-12 md:h-12 ${stat.bgColor} rounded-lg flex items-center justify-center shrink-0`}
-                >
-                  <Icon className={`size-5 md:size-6 ${stat.iconColor}`} />
-                </div>
-                <div>
-                  <Typography variant="bodySmall" className="mb-1" color="body2">
-                    {stat.title}
-                  </Typography>
-                  <Typography variant="subheading" color="primary">
-                    {stat.value}
-                  </Typography>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
+      {/* Header */}
+      <div className="flex items-center justify-between px-2">
+        <Typography
+          variant="h4"
+          className="font-bold text-gray-900"
+        >
+          Requisition
+        </Typography>
       </div>
 
       {/* Table Section */}
@@ -344,6 +293,7 @@ const Requisition = () => {
       </div>
     </div>
   );
+
 };
 
 export default Requisition;
