@@ -18,3 +18,11 @@ export interface ExpensePolicyQuestionsResponse {
   data: ExpensePolicyCategory[];
   options: string[];
 }
+
+export interface AllowRequestsOnHoldResponse {
+  allow_requests_to_be_put_on_hold: boolean;
+  show_approval_buttons: boolean;
+  allow_overwriting_amount_while_processing_reimbursement_advance: boolean;
+  allow_overwriting_amount_more_than_claimed_while_approving: boolean;
+  show_on_notice_flag_in_process_and_pay_reimbursement_page: boolean;
+}

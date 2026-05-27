@@ -1,14 +1,18 @@
 import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import { useEmployee } from "../../../hooks/useEmployee";
 import {
   useExpenseCommentUpdate,
   useExpenseLineItemUpdate,
   useGetExpenseAttachments,
+  useUpdateExpenseClaimStatusAPI,
 } from "../../../hooks/useExpense";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import { Expense, Participant } from "../../../types/expenseAdvance";
+import { AllowRequestsOnHoldResponse } from "../../../types/expense";
+import { Employee } from "../../../types/employee";
 
 interface CustomFile {
   data?: {
@@ -57,6 +61,7 @@ export function TeamExpenseDetailView({
   onClose,
   onAction,
   label = "Expense Claim",
+  allowHoldData,
 }: {
   actionsEnabled?: boolean;
   documentName?: string;
@@ -66,9 +71,11 @@ export function TeamExpenseDetailView({
   onClose: () => void;
   onAction?: () => void;
   label?: string;
+  allowHoldData?: AllowRequestsOnHoldResponse;
 }) {
   const updateMutation = useExpenseLineItemUpdate();
   const mutation = useApprovalListActions();
+  const updateStatusMutation = useUpdateExpenseClaimStatusAPI();
   const commentMutation = useExpenseCommentUpdate();
   const { setRefetchAttendance } = useGlobalStore();
   const { data: user } = useCurrentUser();
@@ -82,6 +89,12 @@ export function TeamExpenseDetailView({
 
   const data = documentName || referenceName ? fetchedData : propsData;
   const ref = data?.reference_document || {};
+
+  const employeeId = ref?.employee;
+  const showNoticeFlag = allowHoldData?.show_on_notice_flag_in_process_and_pay_reimbursement_page;
+  const { data: employeeDetails } = useEmployee(showNoticeFlag && employeeId ? employeeId : null);
+  const isOnNotice = (employeeDetails as Employee)?.custom_employment_status === "On Notice Period";
+  const shouldShowNoticeText = showNoticeFlag && isOnNotice;
 
   const todoId = useMemo(() => {
     return (
@@ -106,6 +119,7 @@ export function TeamExpenseDetailView({
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [rejectionComment, setRejectionComment] = useState<string>("");
   const [showCommentModal, setShowCommentModal] = useState(false);
+  const [pendingHoldAction, setPendingHoldAction] = useState<string | null>(null);
 
   const loading = useLoadingOverlay();
   const { data: claimAttachments } = useGetExpenseAttachments(
@@ -310,6 +324,11 @@ export function TeamExpenseDetailView({
 
   const handleAction = useCallback(
     async (action: string) => {
+      if (action.toLowerCase() === "hold" || action.toLowerCase() === "unhold") {
+        setPendingHoldAction(action);
+        return;
+      }
+
       if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
         setShowCommentModal(true);
         setPendingAction(action);
@@ -444,6 +463,30 @@ export function TeamExpenseDetailView({
     setPendingAction(null);
   };
 
+  const handleConfirmHoldAction = async () => {
+    if (!pendingHoldAction) return;
+    if (claimId) {
+      const newStatus = pendingHoldAction.toLowerCase() === "hold" ? "On Hold" : "Pending";
+      try {
+        await loading?.wrap(
+          () => updateStatusMutation.mutateAsync({ docname: claimId, approvalStatus: newStatus }),
+          pendingHoldAction.toLowerCase() === "hold" ? "Putting on hold..." : "Unholding..."
+        );
+        toast.success(`Request ${newStatus === "On Hold" ? "put on hold" : "unheld"} successfully`);
+        if (onAction) {
+          onAction();
+        }
+      } catch (e) {
+        console.error("Failed to update status", e);
+      }
+    }
+    setPendingHoldAction(null);
+  };
+
+  const handleCancelHoldAction = () => {
+    setPendingHoldAction(null);
+  };
+
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open" || status === "Draft") {
       return {
@@ -493,9 +536,44 @@ export function TeamExpenseDetailView({
     );
   };
 
-  const actions = data?.custom_doctype_actions
-    ? JSON.parse(data?.custom_doctype_actions)
-    : [];
+  const actions = (() => {
+    let parsedActions: string[] = [];
+    if (data?.custom_doctype_actions) {
+      if (Array.isArray(data.custom_doctype_actions)) {
+        parsedActions = data.custom_doctype_actions;
+      } else {
+        try {
+          const parsed = JSON.parse(data.custom_doctype_actions);
+          if (Array.isArray(parsed)) {
+            parsedActions = parsed;
+          }
+        } catch (e) {
+          console.error("Failed to parse custom_doctype_actions:", e);
+        }
+      }
+    }
+
+    if (allowHoldData) {
+      if (!allowHoldData.show_approval_buttons) {
+        parsedActions = parsedActions.filter(
+          (a) => !["Approve", "Reject", "Send Back"].includes(a)
+        );
+      }
+      if (allowHoldData.allow_requests_to_be_put_on_hold) {
+        const currentApprovalStatus = ref?.approval_status || data?.approval_status;
+        if (currentApprovalStatus === "On Hold") {
+          if (!parsedActions.includes("Unhold")) {
+            parsedActions.push("Unhold");
+          }
+        } else {
+          if (!parsedActions.includes("Hold")) {
+            parsedActions.push("Hold");
+          }
+        }
+      }
+    }
+    return parsedActions;
+  })();
 
   const { totalAmount } = useMemo(() => {
     const approved = expenseItems.filter(
@@ -708,11 +786,18 @@ export function TeamExpenseDetailView({
                   </Typography>
                   <Typography
                     variant="mobileCardValue"
-                    className="truncate hover:text-primary cursor-pointer"
+                    className="hover:text-primary cursor-pointer flex flex-col md:flex-row md:items-center gap-0.5 md:gap-1.5 min-w-0"
                   >
-                    <WrapperHoverCard employeeId={ref?.employee}>
-                      {ref?.employee_name || ref?.employee}
-                    </WrapperHoverCard>
+                    <div className="truncate min-w-0">
+                      <WrapperHoverCard employeeId={ref?.employee}>
+                        {ref?.employee_name || ref?.employee}
+                      </WrapperHoverCard>
+                    </div>
+                    {shouldShowNoticeText && (
+                      <span className="text-amber-500 font-semibold text-xs flex-shrink-0">
+                        (On notice period)
+                      </span>
+                    )}
                   </Typography>
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">
@@ -1055,7 +1140,7 @@ export function TeamExpenseDetailView({
           </div>
 
           {actions?.length > 0 &&
-            status?.label === "Pending" &&
+            (status?.label === "Pending" || status?.label === "On Hold") &&
             data?.todo_status !== "Closed" &&
             !isActed ? (
             <div className="w-full bg-white border-t shadow-md p-4 z-20">
@@ -1194,6 +1279,41 @@ export function TeamExpenseDetailView({
                     bgColor="error"
                   >
                     Proceed Anyway
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Hold/Unhold confirmation modal */}
+          {pendingHoldAction && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
+              <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Confirm Action
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  Are you sure you want to {pendingHoldAction.toLowerCase() === "hold" ? "put this request on hold" : "unhold this request"}?
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    onClick={handleCancelHoldAction}
+                    size="sm"
+                    bgColor="disabled"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleConfirmHoldAction}
+                    size="sm"
+                    bgColor="primary"
+                    disabled={updateStatusMutation.isPending}
+                  >
+                    {updateStatusMutation.isPending ? (
+                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      "Confirm"
+                    )}
                   </Button>
                 </div>
               </div>

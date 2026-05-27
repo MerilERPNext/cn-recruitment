@@ -471,4 +471,20 @@ export const expenseService = {
   deleteExpenseClaim: async (expenseClaimName: string): Promise<any> => {
     return FrappeAPI.deleteDocument("Expense Claim", expenseClaimName);
   },
+
+  getAllowRequestsToBePutOnHold: async (): Promise<any> => {
+    return FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.allow_requests_to_be_put_on_hold",
+    );
+  },
+
+  updateExpenseClaimStatusAPI: async (
+    docname: string,
+    approvalStatus: string,
+  ): Promise<any> => {
+    return FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.update_approval_status",
+      { docname, approval_status: approvalStatus }
+    );
+  },
 };
