@@ -28,6 +28,10 @@ interface TicketTableRowProps {
     onRevoke: (ticket: HDTicket) => void;
     onReopen: (ticket: HDTicket) => void;
     onRowClick?: (ticket: HDTicket) => void;
+    permRevoke?: boolean;
+    permCloseTicket?: boolean;
+    permReply?: boolean;
+    permReopen?: boolean;
 }
 
 const TicketTableRow = ({
@@ -45,6 +49,10 @@ const TicketTableRow = ({
     onRevoke,
     onReopen,
     onRowClick,
+    permRevoke = true,
+    permCloseTicket = true,
+    permReply = true,
+    permReopen = true,
 }: TicketTableRowProps) => {
     const creationTime = new Date(ticket.creation);
     const delayHours = ticket.custom_second_level_escalation_delay_hours;
@@ -185,10 +193,10 @@ const TicketTableRow = ({
                 onClick={(e) => e.stopPropagation()}
             >
                 <HDActionPill
-                    canClose={showCloseTicketButton(ticket.status)}
-                    canRevoke={ticket.status === "Open" && !ticket.custom_archived}
-                    canReply={ticket.status !== "Closed"}
-                    canReopen={ticket.status === "Closed"}
+                    canClose={permCloseTicket && showCloseTicketButton(ticket.status)}
+                    canRevoke={permRevoke && ticket.status === "Open" && !ticket.custom_archived}
+                    canReply={permReply && ticket.status !== "Closed"}
+                    canReopen={permReopen && ticket.status === "Closed"}
                     onReopen={() => onReopen(ticket)}
                     onClose={() => onClose(ticket)}
                     onReply={() => onReply(ticket)}
