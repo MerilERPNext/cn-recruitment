@@ -92,146 +92,136 @@ const Requisition = () => {
     if (!isDesktop) return null;
 
     return (
-      <div className="overflow-x-auto">
-        <div
-          className="grid gap-4 px-6 py-4 bg-gray-50 border-b border-gray-200 mt-2 rounded-t-lg min-w-max"
-          style={{ gridTemplateColumns: columnWidths.join(" ") }}
-        >
-          {titles.map((title, index) => (
-            <Typography
-              key={index}
-              variant="bodySmall"
-              className="font-bold whitespace-nowrap"
-            >
-              {title}
-            </Typography>
-          ))}
-        </div>
+      <div
+        className="grid gap-4 px-6 py-4 bg-gray-50 border-b border-gray-200 mt-2 rounded-t-lg min-w-max"
+        style={{ gridTemplateColumns: columnWidths.join(" ") }}
+      >
+        {titles.map((title, index) => (
+          <Typography
+            key={index}
+            variant="bodySmall"
+            className="font-bold whitespace-nowrap"
+          >
+            {title}
+          </Typography>
+        ))}
       </div>
     );
   };
 
   const RequisitionItem = ({ item }: { item: any }) => {
     const { isDesktop } = useScreenSize();
-    
 
-    const handleRowClick = () => {
-      
-    };
+    const handleRowClick = () => {};
 
-    
     const code = item.name;
     const designation = item.designation;
     const department = item.department;
     const location = item.custom_location || item.location;
     const status = item.status;
-    
-    
+
     const totalPositions = item.no_of_positions || item.total_positions || "1";
-    
-    const positionDetail = item.position_detail || "(1 New, 0 Repl..)"; 
+
+    const positionDetail = item.position_detail || "(1 New, 0 Repl..)";
     const activeEvaluation = item.active_evaluation || "0";
     const activeOffer = item.active_offer || "--";
     const draft = item.draft_count || "0";
     const closedPositions = item.closed_positions || "--";
-    
+
     const lastUpdated = item.modified ? item.modified.split(" ")[0] : "--";
     const initiated = item.creation ? item.creation.split(" ")[0] : "--";
-    
+
     const statusColor = getStatusColor(status);
 
     if (isDesktop) {
       return (
-        <div className="overflow-x-auto">
-            <div
-              className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer items-center min-w-max bg-white"
-              style={{ gridTemplateColumns: columnWidths.join(" ") }}
-              onClick={handleRowClick}
+        <div
+          className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer items-center min-w-max bg-white"
+          style={{ gridTemplateColumns: columnWidths.join(" ") }}
+          onClick={handleRowClick}
+        >
+          <div className="flex items-center">
+            <Typography variant="bodySmall" className="font-medium text-gray-900">
+              {code}
+            </Typography>
+          </div>
+
+          <div className="flex flex-col gap-0.5">
+            <Typography variant="bodySmall" className="font-medium text-blue-600">
+              {designation}
+            </Typography>
+            <Typography variant="bodySmall" className="text-gray-600 text-xs">
+              {department}
+            </Typography>
+            <Typography variant="bodySmall" className="text-gray-600 text-xs">
+              {location}
+            </Typography>
+          </div>
+
+          <div className="flex items-center">
+            <Badge label={status} backgroundColor={statusColor} />
+          </div>
+
+          <div className="flex flex-col gap-0.5">
+            <Typography variant="bodySmall" className="font-semibold">
+              {totalPositions}
+            </Typography>
+            <Typography variant="bodySmall" className="text-gray-500 text-xs text-nowrap truncate">
+              {positionDetail}
+            </Typography>
+          </div>
+
+          <div className="flex items-center justify-center">
+            <Typography
+              variant="bodySmall"
+              className={activeEvaluation === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
             >
-              <div className="flex items-center">
-                <Typography variant="bodySmall" className="font-medium text-gray-900">
-                  {code}
-                </Typography>
-              </div>
+              {activeEvaluation}
+            </Typography>
+          </div>
 
-              <div className="flex flex-col gap-0.5">
-                <Typography variant="bodySmall" className="font-medium text-blue-600">
-                  {designation}
-                </Typography>
-                <Typography variant="bodySmall" className="text-gray-600 text-xs">
-                  {department}
-                </Typography>
-                <Typography variant="bodySmall" className="text-gray-600 text-xs">
-                  {location}
-                </Typography>
-              </div>
+          <div className="flex items-center justify-center">
+            <Typography
+              variant="bodySmall"
+              className={activeOffer === "--" || activeOffer === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
+            >
+              {activeOffer}
+            </Typography>
+          </div>
 
-              <div className="flex items-center">
-                <Badge label={status} backgroundColor={statusColor} />
-              </div>
+          <div className="flex items-center justify-center">
+            <Typography
+              variant="bodySmall"
+              className={draft === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
+            >
+              {draft}
+            </Typography>
+          </div>
 
-              <div className="flex flex-col gap-0.5">
-                <Typography variant="bodySmall" className="font-semibold">
-                  {totalPositions}
-                </Typography>
-                <Typography variant="bodySmall" className="text-gray-500 text-xs text-nowrap truncate">
-                  {positionDetail}
-                </Typography>
-              </div>
+          <div className="flex items-center justify-center">
+            <Typography
+              variant="bodySmall"
+              className={closedPositions === "--" || closedPositions === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
+            >
+              {closedPositions}
+            </Typography>
+          </div>
 
-              <div className="flex items-center justify-center">
-                <Typography
-                  variant="bodySmall"
-                  className={activeEvaluation === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
-                >
-                  {activeEvaluation}
-                </Typography>
-              </div>
+          <div className="flex items-center">
+            <Typography variant="bodySmall" className="text-gray-600">
+              {lastUpdated}
+            </Typography>
+          </div>
 
-              <div className="flex items-center justify-center">
-                <Typography
-                  variant="bodySmall"
-                  className={activeOffer === "--" || activeOffer === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
-                >
-                  {activeOffer}
-                </Typography>
-              </div>
-
-              <div className="flex items-center justify-center">
-                <Typography
-                  variant="bodySmall"
-                  className={draft === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
-                >
-                  {draft}
-                </Typography>
-              </div>
-
-              <div className="flex items-center justify-center">
-                <Typography
-                  variant="bodySmall"
-                  className={closedPositions === "--" || closedPositions === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
-                >
-                  {closedPositions}
-                </Typography>
-              </div>
-
-              <div className="flex items-center">
-                <Typography variant="bodySmall" className="text-gray-600">
-                  {lastUpdated}
-                </Typography>
-              </div>
-
-              <div className="flex items-center">
-                <Typography variant="bodySmall" className="text-gray-600">
-                  {initiated}
-                </Typography>
-              </div>
-            </div>
+          <div className="flex items-center">
+            <Typography variant="bodySmall" className="text-gray-600">
+              {initiated}
+            </Typography>
+          </div>
         </div>
       );
     }
 
-  
     return (
       <Card
         radius="lg"
@@ -284,7 +274,7 @@ const Requisition = () => {
               </Typography>
             </div>
             <div>
-               <Typography variant="bodySmall" className="text-gray-500 text-xs mb-0.5">
+              <Typography variant="bodySmall" className="text-gray-500 text-xs mb-0.5">
                 Last Updated
               </Typography>
               <Typography variant="bodySmall" className="font-semibold text-xs">
@@ -331,24 +321,26 @@ const Requisition = () => {
 
       {/* Table Section */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col p-2">
-        <FrappeListView
-          doctype="Job Requisition"
-          ItemComponent={RequisitionItem}
-          PreListComponent={RequisitionListHeader}
-          defaultFields={[
-            "name",
-            "designation",
-            "department",
-            "status",
-            "no_of_positions",
-            "creation",
-            "modified"
-          ]}
-          searchFields={["name", "designation", "department"]}
-          infiniteScroll={true}
-          pageSize={20}
-          isFilter={true}
-        />
+        <div className="overflow-x-auto">
+          <FrappeListView
+            doctype="Job Requisition"
+            ItemComponent={RequisitionItem}
+            PreListComponent={RequisitionListHeader}
+            defaultFields={[
+              "name",
+              "designation",
+              "department",
+              "status",
+              "no_of_positions",
+              "creation",
+              "modified",
+            ]}
+            searchFields={["name", "designation", "department"]}
+            infiniteScroll={true}
+            pageSize={20}
+            isFilter={true}
+          />
+        </div>
       </div>
     </div>
   );
