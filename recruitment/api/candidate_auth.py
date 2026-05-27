@@ -167,23 +167,16 @@ def login(email, password):
 
 
 @frappe.whitelist(allow_guest=True)
-def request_email_signup_otp(email, full_name=None, mobile_no=None):
-    """Unified entry point: signup if new, password reset if already registered.
-
-    - No CPU for this email → create one (Pending Verification) and send Signup OTP.
-    - CPU exists but still Pending Verification → resend Signup OTP.
-    - CPU already Active → send Password Reset OTP (no new row created).
-    - Disabled / Locked accounts are rejected.
-
-    Existence lookup goes through the `email` field (not `name`) so trailing
-    spaces or case drift in legacy rows can't slip past the dedup check.
-    """
+def request_email_signup_otp(email, full_name=None, mobile_no=None, mode=None):
     settings = get_settings()
     _require_enabled(settings)
     if not cint(settings.enable_email_otp):
         frappe.throw(_("Email OTP is disabled."), frappe.PermissionError)
 
     email = _normalize_email(email)
+    mode = (mode or "").strip().lower() or None
+    if mode and mode not in ("verify_email", "password_reset"):
+        frappe.throw(_("Invalid mode."))
     existing_name = frappe.db.get_value("Candidate Portal User", {"email": email}, "name")
 
     if existing_name:
@@ -191,22 +184,29 @@ def request_email_signup_otp(email, full_name=None, mobile_no=None):
         if candidate.status == "Disabled":
             frappe.throw(_("Candidate account is disabled."), frappe.PermissionError)
 
+        already_verified = candidate.status == "Active" and cint(candidate.email_verified)
+        if mode == "verify_email" and already_verified:
+            frappe.throw(_("Email already verified. Please log in to your account."))
+
         if candidate.status == "Pending Verification" and not cint(candidate.email_verified):
+            if mode == "password_reset":
+                frappe.throw(_("This account is not activated yet. Please verify your email first."), frappe.PermissionError)
             if not cint(settings.enable_email_signup):
                 frappe.throw(_("Email signup is disabled."), frappe.PermissionError)
             _assert_candidate_can_login(candidate, allow_pending=True)
             result = _issue_otp(settings, email, "Signup", "Email", candidate=candidate.name)
             frappe.db.commit()
-            return {"mode": "signup", **result}
+            return {"mode": "signup", "purpose": "Signup", **result}
 
-        # Account is already activated → password reset flow.
         if not cint(settings.allow_password_login):
             frappe.throw(_("Password reset is disabled."), frappe.PermissionError)
         _assert_candidate_can_login(candidate)
         result = _issue_otp(settings, email, "Password Reset", "Email", candidate=candidate.name)
         frappe.db.commit()
-        return {"mode": "password_reset", **result}
+        return {"mode": "password_reset", "purpose": "Password Reset", **result}
 
+    if mode == "password_reset":
+        frappe.throw(_("No candidate account found for this email."), frappe.DoesNotExistError)
     if not cint(settings.enable_email_signup):
         frappe.throw(_("Email signup is disabled."), frappe.PermissionError)
 
@@ -233,7 +233,7 @@ def request_email_signup_otp(email, full_name=None, mobile_no=None):
 
     result = _issue_otp(settings, email, "Signup", "Email", candidate=candidate.name)
     frappe.db.commit()
-    return {"mode": "signup", **result}
+    return {"mode": "signup", "purpose": "Signup", **result}
 
 
 @frappe.whitelist(allow_guest=True)
@@ -267,19 +267,19 @@ def request_otp(identifier, purpose="Login", identifier_type="Email"):
 
 
 @frappe.whitelist(allow_guest=True)
-def verify_otp(identifier, otp, purpose="Login", identifier_type="Email"):
+def verify_otp(identifier, otp, purpose="Login", identifier_type="Email", otp_log=None):
     settings = get_settings()
     _require_enabled(settings)
     identifier_type = _clean_identifier_type(identifier_type)
-    purpose = _clean_purpose(purpose)
     identifier = _normalize_identifier(identifier, identifier_type)
     otp = (otp or "").strip()
     if not otp:
         frappe.throw(_("OTP is required."))
 
-    log = _get_active_otp_log(identifier, purpose, identifier_type)
+    log = _load_otp_log_for_verify(identifier, identifier_type, purpose, otp_log)
     if not log:
         frappe.throw(_("No active OTP found. Please request a new OTP."), frappe.DoesNotExistError)
+    purpose = log.purpose
 
     now = now_datetime()
     if get_datetime(log.expires_at) < now:
@@ -747,6 +747,35 @@ def _get_active_otp_log(identifier, purpose, identifier_type):
             "identifier": identifier,
             "identifier_type": identifier_type,
             "purpose": purpose,
+            "status": ("not in", FINAL_OTP_STATUSES),
+        },
+        "name",
+        order_by="creation desc",
+    )
+    return frappe.get_doc("Candidate Portal OTP Log", name) if name else None
+
+
+def _load_otp_log_for_verify(identifier, identifier_type, purpose, otp_log):
+    if otp_log:
+        if not frappe.db.exists("Candidate Portal OTP Log", otp_log):
+            return None
+        log = frappe.get_doc("Candidate Portal OTP Log", otp_log)
+        if log.identifier != identifier or log.identifier_type != identifier_type:
+            return None
+        if log.status in FINAL_OTP_STATUSES:
+            return None
+        return log
+
+    purpose = _clean_purpose(purpose)
+    log = _get_active_otp_log(identifier, purpose, identifier_type)
+    if log:
+        return log
+
+    name = frappe.db.get_value(
+        "Candidate Portal OTP Log",
+        {
+            "identifier": identifier,
+            "identifier_type": identifier_type,
             "status": ("not in", FINAL_OTP_STATUSES),
         },
         "name",
