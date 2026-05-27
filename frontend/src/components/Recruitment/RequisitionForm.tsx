@@ -89,6 +89,24 @@ const RequisitionForm = () => {
   const handleSubmit = async (submission: any) => {
     const finalData = { ...formData, ...submission.data };
 
+    // Map work experience and range safely based on select options
+    let custom_work_experience: string | undefined = undefined;
+    let custom_work_experience_range: string | undefined = undefined;
+
+    const expVal = finalData.custom_work_experience_range;
+    if (expVal === "Fresher") {
+      custom_work_experience = "Fresher";
+    } else if (expVal === "1 - 3 Years") {
+      custom_work_experience = "1 - 3 Years";
+      custom_work_experience_range = "1 - 3 years";
+    } else if (expVal === "4 - 5 Years") {
+      custom_work_experience = "4 - 5 years";
+      custom_work_experience_range = "3 - 5 years";
+    } else if (expVal === "5 - 10 Years") {
+      custom_work_experience = "5 - 10 years";
+      custom_work_experience_range = "5 - 10 years";
+    }
+
     // Transform form data to API format
     const transformedData: CreateJobRequisitionPayload = {
       requested_by: finalData.hiring_manager,
@@ -104,7 +122,9 @@ const RequisitionForm = () => {
       custom_salary_range_min: finalData.salary_min,
       custom_salary_range_max: finalData.salary_max,
       custom_salary_timeframe: finalData.salary_timeframe,
-      posting_date: formatDateToDDMMYYYY(finalData.recruitment_start_date),
+      posting_date: new Date(finalData.recruitment_start_date)
+        .toISOString()
+        .split("T")[0],
       // ? new Date(finalData.recruitment_start_date).toISOString().split("T")[0]
       // : new Date().toISOString().split("T")[0],
       requested_by_dept: finalData.department,
@@ -125,16 +145,23 @@ const RequisitionForm = () => {
       custom_division: finalData.custom_division,
       status: finalData.status,
       expected_compensation: finalData.expected_compensation ? Number(finalData.expected_compensation) : undefined,
-      expected_by: formatDateToDDMMYYYY(finalData.expected_by),
-      custom_employment_type: finalData.custom_employment_type,
-      custom_employment_type_link: finalData.custom_employment_type_link,
-      custom_location: finalData.custom_location,
-      custom_work_experience_range: finalData.custom_work_experience_range,
+      expected_by: new Date(finalData.expected_by)
+        .toISOString()
+        .split("T")[0],
+      custom_employment_type: ["Full Time", "Part Time", "Contract", "Intern", "Freelance"].includes(finalData.custom__employee_type || "")
+        ? finalData.custom__employee_type
+        : undefined,
+      custom_employment_type_link: finalData.employment_type,
+      custom__employee_type: finalData.custom__employee_type,
+      custom_salary: finalData.custom_salary,
+      custom_location: finalData.location,
+      custom_work_experience: custom_work_experience,
+      custom_work_experience_range: custom_work_experience_range,
       custom_preferred_notice_period: finalData.custom_preferred_notice_period,
-      custom_preferred_company: finalData.custom_preferred_company,
+      custom_preferred_company: finalData.preferred_company,
       custom_other_preferred_companies: finalData.custom_other_preferred_companies,
       custom_qualifications: finalData.custom_qualifications,
-      custom_job_description_template: finalData.custom_job_description_template,
+      custom_job_description_template: finalData.job_description_template,
       description: finalData.description,
       reason_for_requesting: finalData.reason_for_requesting,
       custom_skills: finalData.custom_skills,

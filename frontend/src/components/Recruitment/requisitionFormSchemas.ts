@@ -308,6 +308,35 @@ export const requisitionFormSchemas = {
           {
             components: [
               {
+                type: "select",
+                key: "custom_salary",
+                label: "Salary Range Between",
+                placeholder: "Select Salary Range",
+                dataSrc: "url",
+                data: {
+                  url: "/api/resource/Salary Range Between",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
+                validate: { required: true },
+              },
+            ],
+            width: 12,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
                 type: "datetime",
                 key: "recruitment_start_date",
                 label: "Recruitment Start Date",
@@ -438,17 +467,17 @@ export const requisitionFormSchemas = {
             components: [
               {
                 type: "select",
-                key: "custom_employment_type",
-                label: "Employment Type",
+                key: "employment_type",
+                label: "Employment Type (Link)",
+                placeholder: "Select Employment Type",
+                dataSrc: "url",
                 data: {
-                  values: [
-                    { label: "Full Time", value: "Full Time" },
-                    { label: "Part Time", value: "Part Time" },
-                    { label: "Contract", value: "Contract" },
-                    { label: "Internship", value: "Internship" },
-                  ],
+                  url: "/api/resource/Employment Type",
+                  headers: [{ key: "Accept", value: "application/json" }],
                 },
-                defaultValue: "Full Time",
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
                 validate: { required: true },
               },
             ],
@@ -460,10 +489,19 @@ export const requisitionFormSchemas = {
           {
             components: [
               {
-                type: "textfield",
-                key: "custom_employment_type_link",
-                label: "Employment Type Link",
-                placeholder: "e.g., Full Time",
+                type: "select",
+                key: "custom__employee_type",
+                label: "Employee Type",
+                placeholder: "Select Employee Type",
+                data: {
+                  values: [
+                    { label: "Full Time", value: "Full Time" },
+                    { label: "Part Time", value: "Part Time" },
+                    { label: "Consultant", value: "Consultant" },
+                    { label: "Intern", value: "Intern" },
+                  ],
+                },
+                validate: { required: true },
               },
             ],
             width: 6,
@@ -480,10 +518,18 @@ export const requisitionFormSchemas = {
           {
             components: [
               {
-                type: "textfield",
-                key: "custom_location",
+                type: "select",
+                key: "location",
                 label: "Target Location",
-                placeholder: "e.g., Bengaluru",
+                placeholder: "Select Location",
+                dataSrc: "url",
+                data: {
+                  url: "/api/resource/Location",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
                 validate: { required: true },
               },
             ],
@@ -546,10 +592,18 @@ export const requisitionFormSchemas = {
           {
             components: [
               {
-                type: "textfield",
-                key: "custom_preferred_company",
+                type: "select",
+                key: "preferred_company",
                 label: "Preferred Target Company",
-                placeholder: "e.g., Razorpay",
+                placeholder: "Select Company",
+                dataSrc: "url",
+                data: {
+                  url: "/api/resource/Company",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
               },
             ],
             width: 6,
@@ -580,10 +634,18 @@ export const requisitionFormSchemas = {
           {
             components: [
               {
-                type: "textfield",
-                key: "custom_job_description_template",
+                type: "select",
+                key: "job_description_template",
                 label: "Job Description Template",
-                placeholder: "e.g., Senior FE Template",
+                placeholder: "Select Template",
+                dataSrc: "url",
+                data: {
+                  url: "/api/resource/Job Description Template",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
               },
             ],
             width: 6,
