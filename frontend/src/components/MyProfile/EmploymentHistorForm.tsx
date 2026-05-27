@@ -13,25 +13,36 @@ import {
 } from "../../hooks/useEmployee";
 import CircularLoader from "../shared/atoms/CircularLoader";
 
+interface InitialEditData {
+  company: string;
+  department: string;
+  designation: string;
+  functional_area: string;
+  start_date: string;
+  is_promotion: boolean;
+}
+
 interface EmploymentHistoryProps {
   onSuccess?: (data?: any) => void;
   onCancel?: () => void;
   isEdit?: boolean;
   defaultStartDate?: string | null;
+  initialEditData?: InitialEditData;
 }
 
 const EmploymentHistoryForm = ({
   onCancel,
   isEdit = false,
   defaultStartDate,
+  initialEditData,
 }: EmploymentHistoryProps) => {
   const [instance, setInstance] = useState<any>(null);
   const initialDataApplied = useRef(false);
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const [formValues, setFormValues] = useState({
-    company: "",
-    department: "",
-    designation: "",
+    company: initialEditData?.company || "",
+    department: initialEditData?.department || "",
+    designation: initialEditData?.designation || "",
   });
 
   const { data: designationHierarchy, isLoading: designationHierarchyLoading } =
@@ -49,7 +60,7 @@ const EmploymentHistoryForm = ({
     isLoading: empDesignationHierarchyCurrentDetailsPending,
   } = useGetEmpDesignationHierarchyCurrentDetails(
     currentEmployee?.employee || "",
-    isEdit,
+    isEdit && !initialEditData,
   );
 
   // Update form options and initial values when data arrives
@@ -85,9 +96,21 @@ const EmploymentHistoryForm = ({
       }
     }
 
-    // Handle initial edit data (only once)
-    if (
+    // Handle initial edit data (only once) — wait for hierarchy options so
+    // Form.io can resolve IDs to labels immediately
+    if (isEdit && initialEditData && !initialDataApplied.current && designationHierarchy?.data) {
+      newData.company = initialEditData.company;
+      newData.department = initialEditData.department;
+      newData.designation = initialEditData.designation;
+      newData.functional_area = initialEditData.functional_area;
+      newData.startDate = initialEditData.start_date;
+      newData.is_promotion = initialEditData.is_promotion;
+
+      initialDataApplied.current = true;
+      shouldUpdate = true;
+    } else if (
       isEdit &&
+      !initialEditData &&
       empDesignationHierarchyCurrentDetails?.data &&
       !initialDataApplied.current
     ) {
@@ -98,7 +121,6 @@ const EmploymentHistoryForm = ({
       newData.functional_area = editData.functional_area;
       newData.startDate = editData.start_date;
 
-      // Also update formValues to trigger the queries for the next levels
       setFormValues({
         company: editData.company,
         department: editData.department,
@@ -134,6 +156,7 @@ const EmploymentHistoryForm = ({
     empDesignationHierarchyCurrentDetails,
     instance,
     isEdit,
+    initialEditData,
   ]);
 
   const validateForm = (data: any) => {
@@ -229,7 +252,7 @@ const EmploymentHistoryForm = ({
 
         {/* Form.io Form */}
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 pb-12 relative">
-          {empDesignationHierarchyCurrentDetailsPending && (
+          {empDesignationHierarchyCurrentDetailsPending && !initialEditData && (
             <div className="absolute inset-0 z-30 flex justify-center items-center bg-white bg-opacity-70">
               <CircularLoader />
             </div>

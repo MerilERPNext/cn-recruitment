@@ -251,6 +251,37 @@ export interface IEmployeeWorkHistory {
 /**
  * Enriched / list-view / legacy UI fields not always present on the raw Employee doc.
  */
+
+export interface WorkRole {
+  from_date: string;
+  to_date: string;
+  is_current: boolean;
+  company: {
+    id: string;
+    name: string;
+  };
+  department: {
+    id: string;
+    name: string;
+  };
+  designation: {
+    id: string;
+    name: string;
+  };
+  functional_area: {
+    id: string;
+    name: string;
+  };
+  band: {
+    id: string;
+    name: string;
+  };
+  grade: {
+    id: string;
+    name: string;
+  };
+  is_promotion: boolean;
+}
 export interface EmployeeSupplementary {
   designation_name?: string;
   department_display?: string;
@@ -266,6 +297,7 @@ export interface EmployeeSupplementary {
   custom_designation_title?: string;
   /** Read-only custom field on some sites; see profile / Form.io mappings */
   custom_designation_name?: string;
+  work_roles?: WorkRole[];
 }
 
 export interface Employee extends EmployeeFromAPI, EmployeeSupplementary { }

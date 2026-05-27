@@ -1,184 +1,71 @@
-// import React from "react";
-// import { Pencil, TrendingUp } from "lucide-react";
-// import Tooltip from "../shared/Tooltip";
-
-// interface EmploymentHistoryCardProps {
-//   title?: string | null;
-//   start_date?: string | null;
-//   end_date?: string | null;
-//   isCurrent?: boolean | null;
-//   department?: string | null;
-//   location?: string | null;
-//   id?: string | null;
-//   doctype_name: string | null;
-//   is_promotion?: boolean | null;
-// }
-
-// const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({ is_promotion = false }) => {
-//   return (
-//     <div className="bg-white rounded-xl p-6 relative max-w-[90vw] min-w-[90vw] md:min-w-[400px] md:max-w-[400px]">
-//       <div className="absolute top-4 right-4 flex items-center gap-2">
-//         <span className="bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-xl">
-//           Current
-//         </span>
-//         <button className="text-gray-400 hover:text-gray-600">
-//           <Pencil className="w-4 h-4" />
-//         </button>
-//       </div>
-
-//       <div className="space-y-4 pr-28">
-//         <div>
-//           <p className="text-xs text-gray-500">Group Company</p>
-//           <p className="font-semibold text-gray-900">PhysicsWallah Limited</p>
-//         </div>
-//         <div>
-//           <p className="text-xs text-gray-500">Department</p>
-//           <p className="font-semibold text-gray-900">Human Resources</p>
-//         </div>
-//         <div>
-//           <p className="text-xs text-gray-500">Designation</p>
-//           <p className="font-semibold text-gray-900 flex items-center gap-1.5">
-//             Associate
-//             {is_promotion && (
-//               <Tooltip content="Promotion">
-//                 <TrendingUp className="text-success h-4 w-4" />
-//               </Tooltip>
-//             )}
-//           </p>
-//         </div>
-//         <div>
-//           <p className="text-xs text-gray-500">Band</p>
-//           <p className="font-semibold text-gray-900">F - Band</p>
-//         </div>
-//         <div>
-//           <p className="text-xs text-gray-500">Grade</p>
-//           <p className="font-semibold text-gray-900">Grade 17</p>
-//         </div>
-//         <div>
-//           <p className="text-xs text-gray-500">From - To</p>
-//           <p className="font-semibold text-gray-900">04-02-2026 - Present</p>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default EmploymentHistoryCard;
-
-
 import React from "react";
-import { Building2, ExternalLink, IdCard, MapPin, TrendingUp, Warehouse } from "lucide-react";
-import { format } from "date-fns";
-import { Link } from "react-router-dom";
-import { Typography } from "../shared/atoms/Typography";
+import { Pencil, TrendingUp } from "lucide-react";
 import Tooltip from "../shared/Tooltip";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 interface EmploymentHistoryCardProps {
-  title?: string | null;
-  start_date?: string | null;
-  end_date?: string | null;
-  isCurrent?: boolean;
-  department?: string | null;
-  location?: string | null;
-  id?: string | null;
-  doctype_name: string | null;
-  is_promotion?: boolean | null;
+  company: string;
+  department: string;
+  band: string;
+  grade: string;
+  functionalArea: string;
+  start_date: string;
+  end_date: string;
+  isCurrent: boolean;
+  is_promotion: boolean;
+  designation?: string;
+  onEdit?: () => void;
 }
 
-const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({
-  title,
-  start_date,
-  end_date,
-  isCurrent,
-  department,
-  location,
-  id,
-  doctype_name,
-  is_promotion = false,
-}) => {
-  const formatDate = (date?: string | null) => {
-    if (!date) return "N/A";
-    return format(new Date(date), "dd-MM-yyyy");
-  };
-
+const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({ company, functionalArea, department, band, grade, start_date, end_date, isCurrent, is_promotion = false, onEdit }) => {
   return (
-    <div className="bg-white rounded-xl shadow-sm border hover-lift p-6 relative max-w-[90vw] min-w-[90vw]  md:min-w-[400px] md:max-w-[400px]">
-      <div className="flex items-center gap-3  mb-6">
-        <div className="p-2 bg-blue-50 rounded-lg">
-          <Building2 className="w-5 h-5 text-blue-600" />
-        </div>
-        <div className="flex flex-col gap-1">
-          {doctype_name === 'Employee' ? <Link to={`/webapp/employee-profile?target_user=${id}`} target="_blank">
-            <h3 className="font-medium text-gray-900 truncate flex gap-1 items-center hover:text-primary break-all items-center gap-2">
-              <span>{title}</span><ExternalLink className="h-4 w-4" />
-              {is_promotion ?
-                <Tooltip content="Promotion">
-                  <TrendingUp className="text-success h-4 w-4" />
-                </Tooltip> : null
-              }
-
-            </h3>
-          </Link> : <h3 className="font-medium text-gray-900 truncate flex gap-2 items-center">
-            <span className="break-all text-wrap">{title}</span>
-            {is_promotion ?
-              <Tooltip content="Promotion">
-                <TrendingUp className="text-success h-4 w-4" />
-              </Tooltip> : null
-            }
-          </h3>}
-          <div className="flex flex-wrap gap-4">
-            {id && (
-              <Typography
-                variant="label"
-                color="secondary"
-                className="font-medium truncate flex items-center gap-1.5"
-              >
-                <IdCard size={14} className="text-primary-500" />
-                <span>{id}</span>
-              </Typography>
-            )}
-            {department && (
-              <Typography
-                variant="label"
-                color="secondary"
-                className="font-medium truncate flex items-center gap-1.5"
-              >
-                <Warehouse size={14} className="text-primary-500" />
-                <span>{department}</span>
-              </Typography>
-            )}
-            {location && (
-              <Typography
-                variant="label"
-                color="secondary"
-                className="font-medium truncate flex items-center gap-1.5"
-              >
-                <MapPin size={14} className="text-primary-500" />
-                <span>{location}</span>
-              </Typography>
-            )}
-          </div>
-        </div>
+    <div className="bg-white rounded-xl p-6 relative max-w-[90vw] min-w-[90vw] md:min-w-[400px] md:max-w-[400px]">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        {isCurrent && <span className="bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-xl">
+          Current
+        </span>}
+        {onEdit && (
+          <button className="text-gray-400 hover:text-gray-600" onClick={onEdit}>
+            <Pencil className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
-      <div className="space-y-3">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">Start Date</span>
-          <span className="text-sm font-medium bg-gray-50 px-3 py-1 rounded-md">
-            {formatDate(start_date)}
-          </span>
+      <div className="space-y-4 pr-28">
+        <div>
+          <p className="text-xs text-gray-500">Group Company</p>
+          <p className="font-semibold text-gray-900">{company || "-"}</p>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500">End Date</span>
-          <span
-            style={{
-              backgroundColor: `${isCurrent ? "#DCFCE7" : "#F9FAFB"}`,
-              color: `${isCurrent ? "#166534" : ""}`,
-            }}
-            className="text-sm font-medium px-3 py-1 rounded-md"
-          >
-            {end_date ? formatDate(end_date) : "Present"}
-          </span>
+        <div>
+          <p className="text-xs text-gray-500">Department</p>
+          <p className="font-semibold text-gray-900">{department || "-"}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Designation</p>
+          <p className="font-semibold text-gray-900 flex items-center gap-1.5">
+            Associate
+            {is_promotion && (
+              <Tooltip content="Promotion">
+                <TrendingUp className="text-success h-4 w-4" />
+              </Tooltip>
+            )}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Band</p>
+          <p className="font-semibold text-gray-900">{band || "-"}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Grade</p>
+          <p className="font-semibold text-gray-900">{grade || "-"}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">Functional Area</p>
+          <p className="font-semibold text-gray-900">{functionalArea || "-"}</p>
+        </div>
+        <div>
+          <p className="text-xs text-gray-500">From - To</p>
+          <p className="font-semibold text-gray-900">{formatToIndianDate(start_date)} - {isCurrent ? "Present" : formatToIndianDate(end_date)}</p>
         </div>
       </div>
     </div>
@@ -186,3 +73,4 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({
 };
 
 export default EmploymentHistoryCard;
+
