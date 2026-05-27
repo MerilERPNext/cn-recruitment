@@ -196,27 +196,27 @@ export default function ExtraPayment() {
   );
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex-shrink-0">
-        <div className="px-1 md:px-6 py-1 md:py-4">
-          <div className="flex items-center justify-between">
-            {isDesktop ? (
-              <div>
-                <Typography variant="h4">Extra Payment History</Typography>
-                <Typography variant="bodySmall" color="body2">
-                  Track and manage your extra payments
-                </Typography>
-              </div>
-            ) : (
-              <div>
-                <Typography variant="h4" className="mb-2">
-                  Extra Payment History
-                </Typography>
-              </div>
-            )}
+    <div className="flex flex-col h-full bg-app font-brand">
+      {/* ── Top bar ──────────────────────────────────────────────────────────── */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-10 w-full">
+        {/* Desktop top bar (hidden on mobile) */}
+        {isDesktop && (
+          <div className="sm:flex items-center justify-between h-[52px] px-7">
+            <span className="font-bold text-[17px] text-text-title tracking-tight">Extra Payment History</span>
+            <div className="flex items-center gap-3.5">
+              {/* No other buttons inside header */}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Mobile top bar (hidden on sm+) */}
+        {!isDesktop && (
+          <div className="flex flex-col px-4 pt-3 pb-3 gap-2.5">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-[16px] text-text-title tracking-tight">Extra Payment History</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ---------------------- DESKTOP ---------------------- */}

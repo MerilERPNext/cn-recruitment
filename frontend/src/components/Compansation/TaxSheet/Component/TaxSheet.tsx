@@ -155,18 +155,6 @@ export default function TaxSheet({ selectedPeriod, setSelectedPeriod }: any) {
 
   return (
     <div className="space-y-1">
-      <Card padding="sm">
-        <div className="flex items-center justify-between w-full">
-          <div className="flex flex-col">
-            <Typography variant="h4">Tax Sheet {selectedPeriod}</Typography>
-            <Typography variant="bodySmall" color="body2">
-              Selected Pay Roll Period {selectedPeriod}
-            </Typography>
-          </div>
-          <FilterDropdowns />
-        </div>
-      </Card>
-
       <div className="overflow-x-auto border rounded-lg">
         <div
           className="min-w-max"
