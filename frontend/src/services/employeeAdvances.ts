@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FrappeAPI from "../utils/frappeAPI";
-import { ApiAdvance, ApiAdvanceResponse } from "../types/employeeAttendance";
+import { AllowRequestsOnHoldResponse, ApiAdvance, ApiAdvanceResponse } from "../types/employeeAttendance";
 import {
   CostCenterType,
   CurrencyType,
@@ -209,6 +209,14 @@ type EmployeeAdvanceUpdatePayload = {
   docname: string;
   data: Record<string, unknown>;
 };
+
+export const getAllowRequestsOnHold =
+  async (): Promise<AllowRequestsOnHoldResponse> => {
+    const result = await FrappeAPI.getMethod(
+      "chatnext_expense_trips.expense_claim.allow_requests_to_be_put_on_hold",
+    );
+    return result as AllowRequestsOnHoldResponse;
+  };
 
 export const updateEmployeeAdvance = async ({
   docname,

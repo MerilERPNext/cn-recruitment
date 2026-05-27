@@ -20,6 +20,7 @@ import {
 import { FilterCondition } from "../types/frappe";
 import { AddressInfoData } from "../types/profile";
 import { useLoggedInUser } from "./useLoggedInUser";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
 
 // Hook to get a single employee by ID
 const defaultQueryOptions = {
@@ -613,12 +614,17 @@ export const useGetEmpDesignationHierarchyCurrentDetails = (
 };
 
 export const useAddEmployeeHistoryMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["addEmployeeHistory"],
     mutationFn: (body: Record<string, unknown>) =>
       profileService.addEmployeeHistory(body),
     onError: (error) => {
       console.error("Error adding employee history:", error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employment-history-data"] });
+      toast.success("Employee history added successfully");
     },
   });
 };
@@ -648,6 +654,36 @@ export const useGetEmployeeHierarchyHistory = (employee: string) => {
     queryFn: () => profileService.getEmployeeHierarchyHistory(employee),
     staleTime: 1000 * 60 * 5,
     enabled: !!employee,
+  });
+};
+export const useDeleteEmpReportingDetailsRecordMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["deleteEmpReportingDetailsRecord"],
+    mutationFn: (name: string) => profileService.deleteEmpReportingDetailsRecord(name),
+    onError: (error) => {
+      toast.error(errorResponseFormater(error));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getEmployeeHierarchyHistory"] });
+      toast.success("Employee reporting details deleted successfully");
+    },
+  });
+};
+
+export const useUpdateEmpReportingDetailsRecordMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["updateEmpReportingDetailsRecord"],
+    mutationFn: ({ employee, field, value, start_date }: { employee: string, field: string, value: string, start_date: string }) => profileService.updateEmpReportingDetailsRecord(employee, field, value, start_date),
+    onError: (error) => {
+      toast.error(errorResponseFormater(error));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getEmployeeHierarchyHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["getEmployeeReportingDetails"] });
+      toast.success("Employee reporting details updated successfully");
+    },
   });
 };
 

@@ -136,6 +136,14 @@ export const LoantItem: React.FC<{
         />
 
         <MyApprovalActionPill
+          uiPermission={{
+            app: "Compensation",
+            page: "My Loan Requests",
+            actionKeysMap: {
+              edit: "edit",
+              revoke: "revoke",
+            },
+          }}
           variant="buttons"
           canRevoke={canRevoke}
           canEdit={canEdit}

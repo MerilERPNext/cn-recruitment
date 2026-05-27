@@ -262,6 +262,14 @@ export const LoanRow = ({
         {/* Actions */}
         <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
           <MyApprovalActionPill
+            uiPermission={{
+              app: "Compensation",
+              page: "My Loan Requests",
+              actionKeysMap: {
+                edit: "edit",
+                revoke: "revoke",
+              },
+            }}
             canRevoke={canRevoke}
             canEdit={canEdit}
             onRevoke={handleRevokeClick}

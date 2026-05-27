@@ -66,7 +66,13 @@ const TodoAppShadowWrapper = () => {
         };
     }, [isScriptLoaded]);
 
-    return <div ref={containerRef} className="todo-shadow-container" />;
+    return (
+        <div
+            ref={containerRef}
+            className="todo-shadow-container"
+            style={{ width: "100%", height: "100%", display: "block" }}
+        />
+    );
 };
 
 export default TodoAppShadowWrapper;

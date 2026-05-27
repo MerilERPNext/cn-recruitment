@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { useNavigate, useSearchParams } from "react-router";
 import * as XLSX from "xlsx";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useGetAllExpenseCategories } from "../../../hooks/useExpense";
+import { useGetAllExpenseCategories, useGetAllowRequestsToBePutOnHold } from "../../../hooks/useExpense";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -24,6 +24,7 @@ import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
   const { data: expenseCategories } = useGetAllExpenseCategories();
+  const { data: allowHoldData } = useGetAllowRequestsToBePutOnHold();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [activeStatus, setActiveStatus] = useState("Pending");
   const navigate = useNavigate();
@@ -230,7 +231,7 @@ const TeamExpense = () => {
     if (isDesktop) return null;
 
     const getEmptyStateMessage = () => {
-      const status = filters.status;
+      const status = filters.status || filters.approval_status;
       const messages: Record<string, { title: string; description: string }> = {
         Pending: {
           title: "No Pending Requests",
@@ -244,6 +245,10 @@ const TeamExpense = () => {
         Rejected: {
           title: "No Rejected Claims",
           description: "There are no rejected expense claims.",
+        },
+        "On Hold": {
+          title: "No On Hold Claims",
+          description: "There are no expense claims on hold.",
         },
       };
 
@@ -318,6 +323,7 @@ const TeamExpense = () => {
                         customAPIParams: { todo_status: "Closed" },
                       },
                       { label: "Rejected", value: "Rejected" },
+                      { label: "On Hold", value: "On Hold" },
                     ],
                     emptyValueConfig: {
                       filterValue: ["!=", "Cancelled"],
@@ -365,6 +371,8 @@ const TeamExpense = () => {
                       isBulkSelectEnabled={isBulkSelectEnabled}
                       activeStatus={activeStatus}
                       isActed={item?.isActed}
+                      allowHoldData={allowHoldData}
+                      onRefetch={() => setRefetchApprovalList(true)}
                     />
                   );
                 }}
@@ -382,6 +390,7 @@ const TeamExpense = () => {
           label="Expense Claim"
           onClose={handleCloseModal}
           onAction={handleActionComplete}
+          allowHoldData={allowHoldData}
         />
       )}
     </div>

@@ -12,9 +12,24 @@ import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton"
 import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 import TeamProofApprovalCard from "./TeamProofApprovalCard";
 import { BulkSelectProvider } from "../../../shared/BulkSelectContext";
+import { useGetUiPermission } from "../../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../../utils/uiPermission";
 
 const TeamProofSubmissionList = () => {
   const [refetch, setRefetch] = useState(false);
+
+  const uiPermission = {
+    app: "Compensation",
+    page: "Team IT Declaration",
+    actionKey: "actions_enabled",
+  };
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEnabled = isActionEnabled(
+    uiPermissionData,
+    uiPermission?.actionKey ?? "",
+    uiPermission?.page,
+  );
+
 
   const navigate = useNavigate();
 
@@ -114,12 +129,13 @@ const TeamProofSubmissionList = () => {
               columnWidths={columnWidths}
               SkeletonComponent={CardSkeleton}
               noRecordsScreen={noRecordsScreen}
-              bulkSelectVisible={false}
+              bulkSelectVisible={actionsEnabled}
               renderCardContent={(item) => {
                 if (item?.data?.custom_selected_doctype_action === "Send Back") {
                   return null;
                 }
                 return <TeamProofApprovalCard
+                  actionsEnabled={actionsEnabled}
                   data={item.data}
                   loadingAction={item.loadingAction}
                   onAction={item.onAction}

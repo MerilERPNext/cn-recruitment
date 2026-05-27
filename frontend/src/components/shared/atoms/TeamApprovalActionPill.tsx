@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, SendToBack, X } from "lucide-react";
+import { Check, SendToBack, X, Pause, Play } from "lucide-react";
 import type { JSX } from "react";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
@@ -53,6 +53,18 @@ const ACTION_CONFIG: Record<
     buttonClasses:
       "bg-amber-50 text-amber-600 hover:bg-amber-100 focus:ring-amber-500",
   },
+  hold: {
+    tooltip: "Put on Hold",
+    icon: <Pause className="w-4 h-4 text-blue-600" strokeWidth={2} />,
+    buttonClasses:
+      "bg-blue-50 text-blue-600 hover:bg-blue-100 focus:ring-blue-500",
+  },
+  unhold: {
+    tooltip: "Unhold",
+    icon: <Play className="w-4 h-4 text-emerald-600" strokeWidth={2} />,
+    buttonClasses:
+      "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 focus:ring-emerald-500",
+  },
 };
 
 const normalizeAction = (action: string) =>
@@ -83,7 +95,8 @@ const TeamApprovalActionPill = ({
     (!uiPermission?.actionKey || areActionsEnabled) &&
     (normalizedStatus === "open" ||
       normalizedStatus === "pending" ||
-      normalizedStatus === "draft") &&
+      normalizedStatus === "draft" ||
+      normalizedStatus === "on hold") &&
     actions?.length > 0;
 
   if (!isActionable) {

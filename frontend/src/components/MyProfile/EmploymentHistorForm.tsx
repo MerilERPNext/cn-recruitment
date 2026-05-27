@@ -191,6 +191,7 @@ const EmploymentHistoryForm = ({
         designation: data.designation,
         start_date: data.startDate,
         functional_area: data.functional_area,
+        is_promotion: data.is_promotion,
       });
       onCancel?.();
     } catch (err) {
