@@ -5,6 +5,7 @@ export interface PositionDetail {
   functional_area?: string;
   reporting_manager: string;
   employee_type: string;
+  vacancy_type?: string;
 }
 
 export interface ReplacementPositionDetail {
@@ -13,6 +14,7 @@ export interface ReplacementPositionDetail {
   replacement_for: string;
   reporting_manager: string;
   employee_type: string;
+  vacancy_type?: string;
 }
 
 // Form Data Types (what the form collects)
@@ -23,6 +25,8 @@ export interface JobRequisitionFormData {
   department: string;
   designation: string;
   functional_area?: string;
+  custom_division?: string;
+  status?: string;
 
   // Job Details
   experience_from?: number;
@@ -36,6 +40,19 @@ export interface JobRequisitionFormData {
   hiring_lead: string;
   additional_roles_responsibilities?: string;
   additional_skills?: string;
+  expected_compensation?: number;
+  expected_by?: string;
+  custom_employment_type?: string;
+  custom_employment_type_link?: string;
+  custom_location?: string;
+  custom_work_experience_range?: string;
+  custom_preferred_notice_period?: string;
+  custom_preferred_company?: string;
+  custom_other_preferred_companies?: string;
+  custom_job_description_template?: string;
+  description?: string;
+  reason_for_requesting?: string;
+  custom_skills?: string[];
 
   // Position Selection
   position_type: "new" | "replacement";
@@ -48,6 +65,9 @@ export interface JobRequisitionFormData {
   comments_instructions?: string;
   cost_centre: string;
   designation_change?: string;
+  custom_qualifications?: { qualification: string; mandatory: string }[];
+  custom_pre_screened_candidates?: { candidate_name: string; email: string; phone: string; cv?: any; offer_directly: boolean }[];
+  custom_assign_to_recruiter?: string;
 }
 
 // API Payload Types (what gets sent to the backend)
@@ -75,6 +95,25 @@ export interface CreateJobRequisitionPayload {
   custom_additional_roles__responsibilities?: string;
   custom_additional_skills?: string;
   custom_position_details: (PositionDetail | ReplacementPositionDetail)[];
+
+  custom_division?: string;
+  expected_compensation?: number;
+  status?: string;
+  expected_by?: string;
+  custom_employment_type?: string;
+  custom_employment_type_link?: string;
+  custom_location?: string;
+  custom_work_experience_range?: string;
+  custom_preferred_notice_period?: string;
+  custom_preferred_company?: string;
+  custom_other_preferred_companies?: string;
+  custom_qualifications?: { qualification: string; mandatory: string }[];
+  custom_job_description_template?: string;
+  description?: string;
+  reason_for_requesting?: string;
+  custom_skills?: string[];
+  custom_assign_to_recruiter?: string;
+  custom_pre_screened_candidates?: { candidate_name: string; email: string; phone: string; cv?: any; offer_directly: boolean }[];
 }
 
 // API Response Types

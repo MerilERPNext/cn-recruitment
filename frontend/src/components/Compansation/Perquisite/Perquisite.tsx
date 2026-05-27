@@ -89,15 +89,30 @@ export default function PerquisiteList() {
   // Client-side sort applied after DataListView gives us mapped data
 
   return (
-    <div className="w-full lg:p-4 p-2">
-      <div className="sm:mb-4 px-2 mb-2">
-        <Typography variant="h4">Employee Perquisite</Typography>
+    <div className="w-full bg-app font-brand flex flex-col min-h-screen">
+      {/* ── Top bar ──────────────────────────────────────────────────────────── */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-10 w-full">
+        {/* Desktop top bar (hidden on mobile) */}
         {isDesktop && (
-          <Typography variant="bodySmall" color="body2">
-            Track Employee Perquisite History
-          </Typography>
+          <div className="sm:flex items-center justify-between h-[52px] px-7">
+            <span className="font-bold text-[17px] text-text-title tracking-tight">Employee Perquisite</span>
+            <div className="flex items-center gap-3.5">
+              {/* No other buttons inside header */}
+            </div>
+          </div>
+        )}
+
+        {/* Mobile top bar (hidden on sm+) */}
+        {!isDesktop && (
+          <div className="flex flex-col px-4 pt-3 pb-3 gap-2.5">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-[16px] text-text-title tracking-tight">Employee Perquisite</span>
+            </div>
+          </div>
         )}
       </div>
+
+      <div className="flex-1 lg:p-4 p-2">
 
       {isDesktop ? (
         /* ================= DESKTOP ================= */
@@ -283,6 +298,7 @@ export default function PerquisiteList() {
           </Card>
         </div>
       )}
+    </div>
     </div>
   );
 }

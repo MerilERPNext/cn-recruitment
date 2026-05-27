@@ -51,22 +51,34 @@ const CTCSalaryUI = () => {
   };
 
   const Header = () => (
-    <div className="flex justify-between items-center mb-2 sm:px-2">
-      <div>
-        {isDesktop && (
-          <div>
-            <Typography variant="h4">Compensation</Typography>
-            <Typography variant="bodySmall" color="body2">
-              Detailed breakdown of your salary structure
-            </Typography>
+    <div className="bg-white border-b border-gray-100 sticky top-0 z-10 w-full mb-4 font-brand">
+      {/* Desktop top bar (hidden on mobile) */}
+      {isDesktop && (
+        <div className="sm:flex items-center justify-between h-[52px] px-7">
+          <span className="font-bold text-[17px] text-text-title tracking-tight">Compensation</span>
+          <div className="flex items-center gap-3.5">
+            <ShowHideButton
+              showAmount={isMoneyMasked}
+              onToggleAmount={toggleMoneyMask}
+            />
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <ShowHideButton
-        showAmount={isMoneyMasked}
-        onToggleAmount={toggleMoneyMask}
-      />
+      {/* Mobile top bar (hidden on sm+) */}
+      {!isDesktop && (
+        <div className="flex flex-col px-4 pt-3 pb-3 gap-2.5">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-[16px] text-text-title tracking-tight">Compensation</span>
+            <div className="flex items-center gap-2">
+              <ShowHideButton
+                showAmount={isMoneyMasked}
+                onToggleAmount={toggleMoneyMask}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -195,10 +207,9 @@ const CTCSalaryUI = () => {
   );
 
   return (
-    <div className="min-h-screen rounded-lg sm:px-4">
-      <div className="w-full py-4">
-        <Header />
-
+    <div className="min-h-screen bg-app font-brand flex flex-col">
+      <Header />
+      <div className="w-full sm:px-4 py-4 flex-1">
         <div className="space-y-8 animate-in fade-in duration-500">
           <div className="grid grid-cols-1 md:grid-cols-3 sm:gap-6 gap-3">
             <StatCard

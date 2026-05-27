@@ -120,16 +120,38 @@ const RequisitionForm = () => {
         finalData.additional_roles_responsibilities,
       custom_additional_skills: finalData.additional_skills,
 
+      // New fields mapping
+      custom_division: finalData.custom_division,
+      status: finalData.status,
+      expected_compensation: finalData.expected_compensation ? Number(finalData.expected_compensation) : undefined,
+      expected_by: finalData.expected_by,
+      custom_employment_type: finalData.custom_employment_type,
+      custom_employment_type_link: finalData.custom_employment_type_link,
+      custom_location: finalData.custom_location,
+      custom_work_experience_range: finalData.custom_work_experience_range,
+      custom_preferred_notice_period: finalData.custom_preferred_notice_period,
+      custom_preferred_company: finalData.custom_preferred_company,
+      custom_other_preferred_companies: finalData.custom_other_preferred_companies,
+      custom_qualifications: finalData.custom_qualifications,
+      custom_job_description_template: finalData.custom_job_description_template,
+      description: finalData.description,
+      reason_for_requesting: finalData.reason_for_requesting,
+      custom_skills: finalData.custom_skills,
+      custom_assign_to_recruiter: finalData.custom_assign_to_recruiter,
+      custom_pre_screened_candidates: finalData.custom_pre_screened_candidates,
+
       // Transform positions array
       custom_position_details:
         finalData.position_type === "new"
           ? (finalData.positions || []).map((pos: PositionDetail) => ({
+            vacancy_type: "New",
             location: pos.location,
             reporting_manager: pos.reporting_manager,
             employee_type: pos.employee_type,
             functional_area: pos.functional_area,
           }))
           : (finalData.replacement_positions || []).map((pos: ReplacementPositionDetail) => ({
+            vacancy_type: "Replacement",
             location: pos.location,
             replacement_for: pos.replacement_for,
             reporting_manager: pos.reporting_manager,
