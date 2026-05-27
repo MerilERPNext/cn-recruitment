@@ -7,8 +7,6 @@ import {
 } from "../../../../hooks/useTaxSheet";
 import { TaxSheetData, SeriesItem } from "../../../../types/taxSheet";
 import CustomDropdown from "../../../shared/CustomDropdown";
-import { Card } from "../../../shared/atoms/Card";
-import { Typography } from "../../../shared/atoms/Typography";
 import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
 
@@ -143,7 +141,7 @@ export default function TaxSheet({ selectedPeriod, setSelectedPeriod }: any) {
     );
   };
 
-  const FilterDropdowns = () => (
+
     <div className="flex items-center gap-2">
       <CustomDropdown
         value={selectedPeriod}
@@ -151,7 +149,7 @@ export default function TaxSheet({ selectedPeriod, setSelectedPeriod }: any) {
         options={payrollPeriodOptions}
       />
     </div>
-  );
+
 
   return (
     <div className="space-y-1">

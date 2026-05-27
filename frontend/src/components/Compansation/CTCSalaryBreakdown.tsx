@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useGenerateSalarySlip } from "../../hooks/useCTC";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import { Typography } from "../shared/atoms/Typography";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
 
 import ShowHideButton from "./ui/ShowHideButton";
