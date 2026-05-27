@@ -4,7 +4,6 @@ import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { isActionEnabled } from "../../../utils/uiPermission";
-import { Typography } from "../../shared/atoms/Typography";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import CreateLoanDialog from "./component/CreateLoanDailog";
 import { LoantItem } from "./component/ListViewOfLoanForMobile";

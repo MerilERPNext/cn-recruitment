@@ -1,23 +1,15 @@
 "use client";
-import { useEffect, useState } from "react";
 import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import {
   useIncomeTaxComputationData,
-  useTaxSheetPayrollPriodsData,
 } from "../../../../hooks/useTaxSheet";
-import CustomDropdown from "../../../shared/CustomDropdown";
-import IncomeTaxComputationlist from "./IncomeTaxComputationlist";
-import { Typography } from "../../../shared/atoms/Typography";
-import { Card } from "../../../shared/atoms/Card";
 
-type PayrollPeriod = {
-  start_date: string | number | Date;
-  end_date: string | number | Date;
-  name: string;
-};
+import IncomeTaxComputationlist from "./IncomeTaxComputationlist";
+
+
+
 type taxsheetData = {
   current_tax_regime: string;
-  // Add other relevant fields as needed
 };
 
 export default function IncomeComputationSheetContainer({ selectedPeriod }: { selectedPeriod: string }) {

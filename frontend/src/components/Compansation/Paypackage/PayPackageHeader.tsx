@@ -1,5 +1,4 @@
 "use client";
-import { Typography } from "../../shared/atoms/Typography";
 import CustomDropdown from "../../shared/CustomDropdown";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import ShowHideButton from "../ui/ShowHideButton";
