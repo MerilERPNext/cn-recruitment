@@ -98,13 +98,6 @@
                     }
                 },
                 {
-                    "type": "checkbox",
-                    "key": "is_promotion",
-                    "label": "Is Promotion",
-                    "input": false,
-                    "customConditional": "show = !!data.department"
-                },
-                {
                     "type": "select",
                     "key": "functional_area",
                     "label": "Functional Area",
@@ -125,6 +118,13 @@
                     "customOptions": {
                         "searchResultLimit": 100
                     }
+                },
+                {
+                    "type": "checkbox",
+                    "key": "is_promotion",
+                    "label": "Is Promotion",
+                    "input": false,
+                    "customConditional": "show = !!data.designation"
                 },
                 {
                     "type": "datetime",

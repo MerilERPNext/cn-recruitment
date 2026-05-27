@@ -1,3 +1,71 @@
+// import React from "react";
+// import { Pencil, TrendingUp } from "lucide-react";
+// import Tooltip from "../shared/Tooltip";
+
+// interface EmploymentHistoryCardProps {
+//   title?: string | null;
+//   start_date?: string | null;
+//   end_date?: string | null;
+//   isCurrent?: boolean | null;
+//   department?: string | null;
+//   location?: string | null;
+//   id?: string | null;
+//   doctype_name: string | null;
+//   is_promotion?: boolean | null;
+// }
+
+// const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({ is_promotion = false }) => {
+//   return (
+//     <div className="bg-white rounded-xl p-6 relative max-w-[90vw] min-w-[90vw] md:min-w-[400px] md:max-w-[400px]">
+//       <div className="absolute top-4 right-4 flex items-center gap-2">
+//         <span className="bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-xl">
+//           Current
+//         </span>
+//         <button className="text-gray-400 hover:text-gray-600">
+//           <Pencil className="w-4 h-4" />
+//         </button>
+//       </div>
+
+//       <div className="space-y-4 pr-28">
+//         <div>
+//           <p className="text-xs text-gray-500">Group Company</p>
+//           <p className="font-semibold text-gray-900">PhysicsWallah Limited</p>
+//         </div>
+//         <div>
+//           <p className="text-xs text-gray-500">Department</p>
+//           <p className="font-semibold text-gray-900">Human Resources</p>
+//         </div>
+//         <div>
+//           <p className="text-xs text-gray-500">Designation</p>
+//           <p className="font-semibold text-gray-900 flex items-center gap-1.5">
+//             Associate
+//             {is_promotion && (
+//               <Tooltip content="Promotion">
+//                 <TrendingUp className="text-success h-4 w-4" />
+//               </Tooltip>
+//             )}
+//           </p>
+//         </div>
+//         <div>
+//           <p className="text-xs text-gray-500">Band</p>
+//           <p className="font-semibold text-gray-900">F - Band</p>
+//         </div>
+//         <div>
+//           <p className="text-xs text-gray-500">Grade</p>
+//           <p className="font-semibold text-gray-900">Grade 17</p>
+//         </div>
+//         <div>
+//           <p className="text-xs text-gray-500">From - To</p>
+//           <p className="font-semibold text-gray-900">04-02-2026 - Present</p>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default EmploymentHistoryCard;
+
+
 import React from "react";
 import { Building2, ExternalLink, IdCard, MapPin, TrendingUp, Warehouse } from "lucide-react";
 import { format } from "date-fns";
