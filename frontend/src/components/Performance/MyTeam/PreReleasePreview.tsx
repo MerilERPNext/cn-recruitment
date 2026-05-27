@@ -175,7 +175,7 @@ const PreReleasePreview: React.FC = () => {
                 className="h-10 w-full justify-center rounded-lg bg-emerald-600 px-4 text-sm font-bold text-black hover:bg-emerald-700 sm:w-auto"
               >
                 <Check className="h-4 w-4" />
-                Approve for release
+                Approve for release 
               </Button>
             </div>
           </header>
