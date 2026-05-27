@@ -4,28 +4,32 @@ import {
   CreateJobRequisitionResponse,
 } from "../types/recruitment";
 
+// Fields that Frappe manages via workflow — never send these from the client
+const FRAPPE_MANAGED_FIELDS = ["status", "workflow_state"];
+
 export const recruitmentService = {
   createJobRequisition: async (
     payload: CreateJobRequisitionPayload
   ): Promise<CreateJobRequisitionResponse> => {
-    // Remove undefined / null / empty string values
+    // Remove undefined / null / empty string values AND workflow-managed fields
     const cleanedPayload = Object.fromEntries(
       Object.entries(payload).filter(
-        ([, value]) =>
+        ([key, value]) =>
+          !FRAPPE_MANAGED_FIELDS.includes(key) &&
           value !== undefined &&
           value !== null &&
           value !== ""
       )
     );
 
-    // Ensure required arrays exist
+    // Ensure required arrays always exist (even after the filter above)
     cleanedPayload.custom_position_details =
       payload.custom_position_details || [];
 
     cleanedPayload.custom_qualifications =
       payload.custom_qualifications || [];
 
-    // Convert skills safely
+    // Skills: keep as plain string array — backend handles both string and {skill:...}
     cleanedPayload.custom_skills = Array.isArray(payload.custom_skills)
       ? payload.custom_skills.filter(Boolean)
       : [];

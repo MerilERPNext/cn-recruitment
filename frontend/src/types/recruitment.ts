@@ -44,12 +44,19 @@ export interface JobRequisitionFormData {
   expected_by?: string;
   custom_employment_type?: string;
   custom_employment_type_link?: string;
+  custom__employee_type?: string;
   custom_location?: string;
+  custom_work_experience?: string;
   custom_work_experience_range?: string;
   custom_preferred_notice_period?: string;
   custom_preferred_company?: string;
   custom_other_preferred_companies?: string;
   custom_job_description_template?: string;
+  custom_salary?: string;
+  employment_type?: string;
+  location?: string;
+  preferred_company?: string;
+  job_description_template?: string;
   description?: string;
   reason_for_requesting?: string;
   custom_skills?: string[];
@@ -72,8 +79,9 @@ export interface JobRequisitionFormData {
 
 // API Payload Types (what gets sent to the backend)
 export interface CreateJobRequisitionPayload {
-  requested_by: string;
+  requested_by: string | undefined;
   company: string;
+  requested_by_designation: string;
   department: string;
   designation: string;
   custom_functional_area?: string;
@@ -102,7 +110,10 @@ export interface CreateJobRequisitionPayload {
   expected_by?: string;
   custom_employment_type?: string;
   custom_employment_type_link?: string;
+  custom__employee_type?: string;
+  custom_salary?: string;
   custom_location?: string;
+  custom_work_experience?: string;
   custom_work_experience_range?: string;
   custom_preferred_notice_period?: string;
   custom_preferred_company?: string;
