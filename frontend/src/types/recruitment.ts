@@ -79,8 +79,9 @@ export interface JobRequisitionFormData {
 
 // API Payload Types (what gets sent to the backend)
 export interface CreateJobRequisitionPayload {
-  requested_by: string;
+  requested_by: string | undefined;
   company: string;
+  requested_by_designation: string;
   department: string;
   designation: string;
   custom_functional_area?: string;

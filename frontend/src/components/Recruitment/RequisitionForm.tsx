@@ -16,7 +16,6 @@ import {
 } from "../../types/recruitment";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { formatDateToDDMMYYYY } from "../../utils/helperUtils";
 
 const RequisitionForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -109,10 +108,11 @@ const RequisitionForm = () => {
 
     // Transform form data to API format
     const transformedData: CreateJobRequisitionPayload = {
-      requested_by: finalData.hiring_manager,
+      requested_by: currentEmployee?.employee || currentEmployee?.name,
       company: finalData.company,
       department: finalData.department,
       designation: finalData.designation,
+      requested_by_designation: finalData.designation,
       custom_functional_area: finalData.functional_area,
       custom_experience_range_from: finalData.experience_from?.toString(),
       custom_experience_range_to: finalData.experience_to?.toString(),

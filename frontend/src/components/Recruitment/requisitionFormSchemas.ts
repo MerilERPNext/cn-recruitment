@@ -76,7 +76,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/resource/Designation?filters=[["custom_department","=","{{ data.department }}"]]',
+          url: '/api/resource/Designation',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "data",
@@ -862,14 +862,14 @@ export const requisitionFormSchemas = {
                 key: "location",
                 label: "Location",
                 placeholder: "Select Location",
+                dataSrc: "url",
                 data: {
-                  values: [
-                    {
-                      label: "Corporate Office, Uttar Pradesh",
-                      value: "corporate_up",
-                    },
-                  ],
+                  url: "/api/resource/Branch",
+                  headers: [{ key: "Accept", value: "application/json" }],
                 },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
                 validate: { required: true },
               },
               {
@@ -909,13 +909,14 @@ export const requisitionFormSchemas = {
                 key: "employee_type",
                 label: "Employee Type",
                 placeholder: "Select",
+                dataSrc: "url",
                 data: {
-                  values: [
-                    { label: "Full Time", value: "full_time" },
-                    { label: "Part Time", value: "part_time" },
-                    { label: "Contract", value: "contract" },
-                  ],
+                  url: "/api/resource/Employment Type",
+                  headers: [{ key: "Accept", value: "application/json" }],
                 },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
                 validate: { required: true },
               },
             ],
