@@ -148,7 +148,16 @@ const App: React.FC = () => {
             <LoadingOverlayProvider>
               <RequestLeaveModalProvider>
                 <GlobalLeaveRequestModal />
-                <Toaster position="top-center" containerClassName="z-50">
+                <Toaster
+                  position="top-center"
+                  containerClassName="z-50 !top-4 md:!top-6"
+                  toastOptions={{
+                    style: {
+                      maxWidth: "90vw",
+                      width: "380px",
+                    }
+                  }}
+                >
                   {(t) => (
                     <ToastBar
                       toast={t}
@@ -161,37 +170,44 @@ const App: React.FC = () => {
                             : "4px solid #EF4444",
                         boxShadow:
                           "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                        minWidth: "260px",
-                        padding: "1rem",
+                        minWidth: "280px",
+                        maxWidth: "90vw",
+                        padding: "0.75rem 1rem",
                         borderRadius: "0.5rem",
                         transition:
                           "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
                       }}
                     >
                       {({ message }: { message: React.ReactNode }) => (
-                        <>
+                        <div className="flex items-start w-full min-w-0">
                           {t.type === "success" ? (
                             <CheckCircle2
-                              className="h-6 w-6 text-green-500 mr-2"
+                              className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5"
                               strokeWidth={2}
                             />
                           ) : (
                             <CircleX
-                              className="h-6 w-6 text-red-500 mr-2"
+                              className="h-5 w-5 text-red-500 mr-2 shrink-0 mt-0.5"
                               strokeWidth={2}
                             />
                           )}
-                          {message
-                          }
+                          <div
+                            className="flex-1 min-w-0 overflow-y-auto pr-1 text-sm text-gray-700 break-words custom-toast-scrollbar"
+                            style={{
+                              scrollbarWidth: "thin",
+                            }}
+                          >
+                            {message}
+                          </div>
                           {t.type !== "loading" && (
                             <button
-                              className="ml-4 p-1 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-700 focus:outline-none transition-colors duration-200"
+                              className="ml-3 p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none transition-colors duration-200 shrink-0"
                               onClick={() => toast.dismiss(t.id)}
                             >
                               <X className="h-4 w-4" />
                             </button>
                           )}
-                        </>
+                        </div>
                       )}
                     </ToastBar>
                   )}
