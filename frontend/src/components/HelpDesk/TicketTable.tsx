@@ -29,6 +29,10 @@ interface TicketTableProps {
   userLookup?: Map<string, string>;
   employeeByEmail?: Map<string, string>;
   headerControls?: React.ReactNode;
+  permRevoke?: boolean;
+  permCloseTicket?: boolean;
+  permReply?: boolean;
+  permReopen?: boolean;
 }
 
 const getAssignedName = (
@@ -128,6 +132,10 @@ interface TicketCardProps {
   onRevoke: (ticket: HDTicket) => void;
   onReopen: (ticket: HDTicket) => void;
   onRowClick?: (ticket: HDTicket) => void;
+  permRevoke?: boolean;
+  permCloseTicket?: boolean;
+  permReply?: boolean;
+  permReopen?: boolean;
 }
 
 const TicketCard: React.FC<TicketCardProps> = ({
@@ -140,6 +148,10 @@ const TicketCard: React.FC<TicketCardProps> = ({
   onRevoke,
   onReopen,
   onRowClick,
+  permRevoke = true,
+  permCloseTicket = true,
+  permReply = true,
+  permReopen = true,
 }) => {
   const getCategoryName = (categoryId: string | undefined): string => {
     if (!categoryId) return "-";
@@ -252,10 +264,10 @@ const TicketCard: React.FC<TicketCardProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <HDActionPill
-              canClose={showCloseTicketButton(ticket.status)}
-              canRevoke={ticket.status === "Open" && !ticket.custom_archived}
-              canReply={ticket.status !== "Closed"}
-              canReopen={ticket.status === "Closed"}
+              canClose={permCloseTicket && showCloseTicketButton(ticket.status)}
+              canRevoke={permRevoke && ticket.status === "Open" && !ticket.custom_archived}
+              canReply={permReply && ticket.status !== "Closed"}
+              canReopen={permReopen && ticket.status === "Closed"}
               onReopen={() => onReopen(ticket)}
               onClose={() => onClose(ticket)}
               onReply={() => onReply(ticket)}
@@ -342,6 +354,10 @@ interface MobileTicketDetailModalProps {
   onReopen: (ticket: HDTicket) => void;
   onCloseTicket: (ticket: HDTicket) => void;
   onRevoke: (ticket: HDTicket) => void;
+  permRevoke?: boolean;
+  permCloseTicket?: boolean;
+  permReply?: boolean;
+  permReopen?: boolean;
 }
 
 const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
@@ -355,6 +371,10 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
   onReopen,
   onCloseTicket,
   onRevoke,
+  permRevoke = true,
+  permCloseTicket = true,
+  permReply = true,
+  permReopen = true,
 }) => {
   const targetTime = ticket
     ? new Date(new Date(ticket.creation).getTime() + (ticket.custom_second_level_escalation_delay_hours || 0) * 60 * 60 * 1000)
@@ -458,10 +478,10 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
             Close
           </Button>
           <HDActionPill
-            canClose={showCloseTicketButton(ticket.status)}
-            canRevoke={ticket.status === "Open" && !ticket.custom_archived}
-            canReply={ticket.status !== "Closed"}
-            canReopen={ticket.status === "Closed"}
+            canClose={permCloseTicket && showCloseTicketButton(ticket.status)}
+            canRevoke={permRevoke && ticket.status === "Open" && !ticket.custom_archived}
+            canReply={permReply && ticket.status !== "Closed"}
+            canReopen={permReopen && ticket.status === "Closed"}
             onReopen={() => { onReopen(ticket); onClose(); }}
             onClose={() => { onCloseTicket(ticket); onClose(); }}
             onReply={() => { onReply(ticket); onClose(); }}
@@ -488,6 +508,10 @@ const TicketTable: React.FC<TicketTableProps> = ({
   userLookup,
   employeeByEmail,
   headerControls,
+  permRevoke = true,
+  permCloseTicket = true,
+  permReply = true,
+  permReopen = true,
 }) => {
   const { isDesktop } = useScreenSize();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -635,6 +659,10 @@ const TicketTable: React.FC<TicketTableProps> = ({
               onRevoke={onRevoke}
               onReopen={onReopen}
               onRowClick={() => setSelectedMobileTicket(ticket)}
+              permRevoke={permRevoke}
+              permCloseTicket={permCloseTicket}
+              permReply={permReply}
+              permReopen={permReopen}
             />
           ))}
 
@@ -649,6 +677,10 @@ const TicketTable: React.FC<TicketTableProps> = ({
             onReopen={onReopen}
             onCloseTicket={onClose}
             onRevoke={onRevoke}
+            permRevoke={permRevoke}
+            permCloseTicket={permCloseTicket}
+            permReply={permReply}
+            permReopen={permReopen}
           />
         </div>
       </div>
@@ -733,7 +765,11 @@ const TicketTable: React.FC<TicketTableProps> = ({
                 getAssignedName={getAssignedName}
                 getCategoryName={getCategoryName}
                 formateDateDiff={formateDateDiff}
-                onRowClick={onRowClick} />)}
+                onRowClick={onRowClick}
+                permRevoke={permRevoke}
+                permCloseTicket={permCloseTicket}
+                permReply={permReply}
+                permReopen={permReopen} />)}
           </tbody>
         </table>
       </div>
