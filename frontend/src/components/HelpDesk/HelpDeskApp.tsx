@@ -4,8 +4,6 @@ import { Plus, UserLock } from "lucide-react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
 import { useGetTicketStats } from "../../hooks/useHelpDeskTickets";
-import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { isActionEnabled } from "../../utils/uiPermission";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
 import Button from "../shared/atoms/Button";
@@ -38,19 +36,6 @@ const HelpDeskApp: React.FC = () => {
 
 
   const { data: stats, refetch: refetchStats, isLoading: statsLoading } = useGetTicketStats();
-
-  // UI Permission checks
-  const { data: userUiPermission } = useGetUiPermission("Help Desk");
-  const canRequestIssue = isActionEnabled(
-    userUiPermission,
-    "request_issue",
-    "Help Desk",
-  );
-  const canSwitchToAgentView = isActionEnabled(
-    userUiPermission,
-    "switch_to_agent_view",
-    "Help Desk",
-  );
 
 
   // Modal state
@@ -127,18 +112,16 @@ const HelpDeskApp: React.FC = () => {
           >
             Explore FAQ's
           </Button>
-          {canRequestIssue && (
-            <Button
-              variant="contain"
-              bgColor="primary"
-              size="lg"
-              onClick={handleRequestIssue}
-              className="pointer-events-auto w-full"
-            >
-              <Plus className="w-4 h-4" />
-              Request Issue
-            </Button>
-          )}
+          <Button
+            variant="contain"
+            bgColor="primary"
+            size="lg"
+            onClick={handleRequestIssue}
+            className="pointer-events-auto w-full"
+          >
+            <Plus className="w-4 h-4" />
+            Request Issue
+          </Button>
         </div>
       )}
     </div>
@@ -157,7 +140,7 @@ const HelpDeskApp: React.FC = () => {
             </Typography>
           )}
 
-          {!statsLoading && !currentUserLoading && isDesktop && canRedirectToDesk && canSwitchToAgentView && (
+          {!statsLoading && !currentUserLoading && isDesktop && canRedirectToDesk && (
             <a href="/helpdesk/tickets" target="_blank" rel="noopener noreferrer">
               <Button size="md">
                 <UserLock size={18} />
@@ -184,18 +167,16 @@ const HelpDeskApp: React.FC = () => {
             >
               Explore FAQ's
             </Button>
-            {canRequestIssue && (
-              <Button
-                variant="contain"
-                bgColor="primary"
-                size="lg"
-                onClick={handleRequestIssue}
-                className="pointer-events-auto"
-              >
-                <Plus className="w-4 h-4" />
-                Request Issue
-              </Button>
-            )}
+            <Button
+              variant="contain"
+              bgColor="primary"
+              size="lg"
+              onClick={handleRequestIssue}
+              className="pointer-events-auto"
+            >
+              <Plus className="w-4 h-4" />
+              Request Issue
+            </Button>
           </div>
         )}
       </div>
