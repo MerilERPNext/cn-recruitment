@@ -73,7 +73,7 @@ const formOptions: StageOption[] = [
 
 const ratingOptions: StageOption[] = [
   { label: "5-pt descriptive", value: "5-pt descriptive" },
-  { label: "1–10 numeric", value: "1–10 numeric" },
+  { label: "1-10 numeric", value: "1-10 numeric" },
   { label: "—", value: "—" },
 ];
 

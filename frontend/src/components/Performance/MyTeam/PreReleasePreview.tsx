@@ -105,7 +105,7 @@ const PreReleasePreview: React.FC = () => {
                 type="button"
                 variant="contain"
                 bgColor="success"
-                className="h-10 w-full justify-center rounded-lg bg-emerald-600 px-4 text-sm font-bold text-white hover:bg-emerald-700 min-[420px]:w-auto"
+                className="h-10 w-full justify-center rounded-lg bg-emerald-600 px-4 text-sm font-bold text-black hover:bg-emerald-700 min-[420px]:w-auto"
               >
                 Approve remaining
               </Button>
@@ -172,7 +172,7 @@ const PreReleasePreview: React.FC = () => {
                 type="button"
                 variant="contain"
                 bgColor="success"
-                className="h-10 w-full justify-center rounded-lg bg-emerald-600 px-4 text-sm font-bold text-white hover:bg-emerald-700 sm:w-auto"
+                className="h-10 w-full justify-center rounded-lg bg-emerald-600 px-4 text-sm font-bold text-black hover:bg-emerald-700 sm:w-auto"
               >
                 <Check className="h-4 w-4" />
                 Approve for release

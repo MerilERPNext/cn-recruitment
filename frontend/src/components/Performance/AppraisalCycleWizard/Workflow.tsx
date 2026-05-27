@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { Check } from "lucide-react";
 import { useState } from "react";
+import { Select } from "../../shared/atoms/Select";
 import { Switch } from "../../shared/atoms/Switch";
 import { Typography } from "../../shared/atoms/Typography";
 import { mockWizardData } from "./AppraisalCycleWizard";
@@ -35,6 +36,28 @@ const visualWorkflowStages = [
   { id: 6, title: "HR Admin", subtitle: "Release", color: "red" },
 ];
 
+const autoApproveOptions = [
+  { label: "1 day", value: "1 day" },
+  { label: "2 days", value: "2 days" },
+  { label: "5 days", value: "5 days" },
+  { label: "Never", value: "Never" },
+];
+
+const firstEscalationOptions = [
+  { label: "To Skip (L2)", value: "To Skip (L2)" },
+  { label: "To HRBP", value: "To HRBP" },
+  { label: "To HR Head", value: "To HR Head" },
+];
+
+const finalEscalationOptions = [
+  { label: "To HRBP", value: "To HRBP" },
+  { label: "To HR Head", value: "To HR Head" },
+  { label: "To Cycle Owner", value: "To Cycle Owner" },
+];
+
+const slaSelectClass =
+  "relative w-full [&>button]:min-h-[42px] [&>button]:rounded-lg [&>button]:border-gray-300 [&>button]:px-3 [&>button]:py-2.5 [&>button]:text-sm [&>button]:font-medium [&>button]:shadow-sm [&>button_span]:font-medium [&>div]:mt-1 [&>div]:w-full [&>div]:rounded-none [&>div]:p-0 [&_li]:rounded-none [&_li]:px-3 [&_li]:py-2 [&_li]:text-sm";
+
 const colorMap = {
   blue: { bg: "bg-blue-500", border: "border-blue-500", text: "text-blue-500" },
   indigo: {
@@ -62,6 +85,15 @@ const colorMap = {
 
 const Workflow = () => {
   const [activePattern, setActivePattern] = useState("single");
+  const [autoApproveAfter, setAutoApproveAfter] = useState(
+    autoApproveOptions[1],
+  );
+  const [firstEscalation, setFirstEscalation] = useState(
+    firstEscalationOptions[0],
+  );
+  const [finalEscalation, setFinalEscalation] = useState(
+    finalEscalationOptions[1],
+  );
   const [lockdownRules, setLockdownRules] = useState({
     lockSelfReview: true,
     lockManagerRating: true,
@@ -142,32 +174,34 @@ const Workflow = () => {
             <label className="text-xs font-bold text-gray-700">
               Auto-approve after
             </label>
-            <select className="w-full rounded-lg border border-gray-300 bg-white py-2.5 px-3 text-sm font-medium text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-              <option>2 days</option>
-              <option>3 days</option>
-              <option>5 days</option>
-              <option>7 days</option>
-            </select>
+            <Select
+              options={autoApproveOptions}
+              value={autoApproveAfter}
+              onChange={setAutoApproveAfter}
+              className={slaSelectClass}
+            />
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-xs font-bold text-gray-700">
               First escalation
             </label>
-            <select className="w-full rounded-lg border border-gray-300 bg-white py-2.5 px-3 text-sm font-medium text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-              <option>To Skip (L2)</option>
-              <option>To HRBP</option>
-              <option>To HR Head</option>
-            </select>
+            <Select
+              options={firstEscalationOptions}
+              value={firstEscalation}
+              onChange={setFirstEscalation}
+              className={slaSelectClass}
+            />
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-xs font-bold text-gray-700">
               Final escalation
             </label>
-            <select className="w-full rounded-lg border border-gray-300 bg-white py-2.5 px-3 text-sm font-medium text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-              <option>To HR Head</option>
-              <option>To Skip (L2)</option>
-              <option>To HRBP</option>
-            </select>
+            <Select
+              options={finalEscalationOptions}
+              value={finalEscalation}
+              onChange={setFinalEscalation}
+              className={slaSelectClass}
+            />
           </div>
         </div>
       </section>
