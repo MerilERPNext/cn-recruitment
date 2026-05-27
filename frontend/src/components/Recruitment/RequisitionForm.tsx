@@ -16,6 +16,7 @@ import {
 } from "../../types/recruitment";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { formatDateToDDMMYYYY } from "../../utils/helperUtils";
 
 const RequisitionForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -103,7 +104,7 @@ const RequisitionForm = () => {
       custom_salary_range_min: finalData.salary_min,
       custom_salary_range_max: finalData.salary_max,
       custom_salary_timeframe: finalData.salary_timeframe,
-      posting_date: finalData.recruitment_start_date,
+      posting_date: formatDateToDDMMYYYY(finalData.recruitment_start_date),
       // ? new Date(finalData.recruitment_start_date).toISOString().split("T")[0]
       // : new Date().toISOString().split("T")[0],
       requested_by_dept: finalData.department,
@@ -124,7 +125,7 @@ const RequisitionForm = () => {
       custom_division: finalData.custom_division,
       status: finalData.status,
       expected_compensation: finalData.expected_compensation ? Number(finalData.expected_compensation) : undefined,
-      expected_by: finalData.expected_by,
+      expected_by: formatDateToDDMMYYYY(finalData.expected_by),
       custom_employment_type: finalData.custom_employment_type,
       custom_employment_type_link: finalData.custom_employment_type_link,
       custom_location: finalData.custom_location,
@@ -181,8 +182,8 @@ const RequisitionForm = () => {
             <div
               key={step.key}
               className={`flex-1 min-w-[140px] md:min-w-0 text-center pb-4 px-2 cursor-pointer whitespace-nowrap ${index === currentStep
-                  ? "text-primary-500 border-b-2 border-primary-500 font-semibold"
-                  : "text-gray-500"
+                ? "text-primary-500 border-b-2 border-primary-500 font-semibold"
+                : "text-gray-500"
                 }`}
               onClick={() => setCurrentStep(index)}
             >
