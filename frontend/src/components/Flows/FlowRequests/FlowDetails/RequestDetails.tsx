@@ -151,10 +151,10 @@ const RequestDetails: React.FC = () => {
     let rawData: JsonToFormData;
     try {
       displayData = JSON.parse(
-        data.initiator_forms[0]?.form_data_display || "{}",
+        data?.initiator_forms?.[0]?.form_data_display || "{}",
       );
       rawData = JSON.parse(
-        data.initiator_forms[0]?.form_data || "{}",
+        data?.initiator_forms?.[0]?.form_data || "{}",
       );
     } catch (e: unknown) {
       console.error("Failed to parse form data", (e as Error)?.message);

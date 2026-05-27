@@ -115,6 +115,14 @@ const MyOvertimeRequests = () => {
   const OvertimeItemComponent = useCallback(
     (props: { item: MyPlannedAttendanceRequest }) => (
       <MyRequestCard
+        uiPermission={{
+          app: "Attendance",
+          page: "Planned Overtime",
+          actionKeysMap: {
+            edit: "edit_overtime_request",
+            revoke: "can_revoke_overtime",
+          },
+        }}
         request={props.item}
         onClick={handleRequestClick}
         onEdit={handleEditRequest}

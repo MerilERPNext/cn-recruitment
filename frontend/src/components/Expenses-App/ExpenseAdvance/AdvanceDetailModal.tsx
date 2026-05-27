@@ -16,6 +16,7 @@ interface AdvanceDetailModalProps {
   onClose: () => void;
   selectedStages: ApprovalStage[];
   status?: string;
+  assignedTo?: React.ReactNode,
 }
 
 const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
@@ -23,6 +24,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
   onClose,
   selectedStages,
   status,
+  assignedTo,
 }) => {
   const raw = useFrappeDocument("Employee Advance", id as string);
 
@@ -37,6 +39,8 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
     expenses?: Expense[];
     custom_advance_policy?: string;
     custom_advance_type?: string;
+    custom_requested_amount?: number;
+    creation: string;
   }
 
   const advanceDetails = raw.data as EmployeeAdvance | undefined;
@@ -45,6 +49,10 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
   const { isDesktop } = useScreenSize();
 
   const finalStatus = status || advanceDetails?.status;
+
+  const showSanctionedAmount =
+    Array.isArray(selectedStages) &&
+    selectedStages.some((stage) => stage.status === "Approved");
 
   if (!id) return null;
 
@@ -281,13 +289,43 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                   </div>
                   <div className="flex flex-col gap-2 text-right">
                     <Typography variant="mobileCardLabel" className="block">
-                      Amount
+                      Advance Amount
                     </Typography>
                     <Typography
                       variant="mobileCardValue"
                       className="font-bold text-blue-700"
                     >
-                      {formatCurrency(advanceDetails?.advance_amount ?? 0)}
+                      {formatCurrency(advanceDetails?.custom_requested_amount ?? 0)}
+                    </Typography>
+                  </div>
+                </div>
+
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-2">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Created At
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {formatToIndianDate(advanceDetails?.creation ?? "")}
+                    </Typography>
+                  </div>
+                  <div className="flex flex-col gap-2 text-right">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Sanctioned Amount
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {showSanctionedAmount ? formatCurrency(advanceDetails?.advance_amount ?? 0) : " -- "}
+                    </Typography>
+                  </div>
+                </div>
+
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-2">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Assigned To
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {assignedTo || "—"}
                     </Typography>
                   </div>
                 </div>
@@ -307,17 +345,18 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
               )}
 
               {/* Expense Breakup */}
-              <div className="mt-6 border-t pt-4">
-                <Typography
-                  variant="bodySmall"
-                  className="base-title mb-1 font-bold block"
-                >
-                  Advance Breakup Items ({advanceDetails?.expenses?.length || 0}
-                  )
-                </Typography>
+              {(advanceDetails?.expenses?.length ?? 0) > 0 && (
+                <div className="mt-6 border-t pt-4">
+                  <Typography
+                    variant="bodySmall"
+                    className="base-title mb-1 font-bold block"
+                  >
+                    Advance Breakup Items ({advanceDetails?.expenses?.length || 0})
+                  </Typography>
 
-                {isDesktop ? DesktopBreakup : MobileBreakup}
-              </div>
+                  {isDesktop ? DesktopBreakup : MobileBreakup}
+                </div>
+              )}
             </>
           )}
         </div>

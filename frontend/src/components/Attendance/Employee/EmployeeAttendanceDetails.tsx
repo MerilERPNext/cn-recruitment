@@ -43,6 +43,7 @@ interface EmployeeAttendanceDetailsProps {
   onClose?: () => void;
   data?: AttendanceRecord;
   events?: AttendanceRecord[];
+  isWeeklyOff?: boolean;
 }
 
 const EmployeeAttendanceDetails = ({
@@ -51,6 +52,7 @@ const EmployeeAttendanceDetails = ({
   data,
   events,
   onClose,
+  isWeeklyOff,
 }: EmployeeAttendanceDetailsProps = {}) => {
   const { search } = useLocation();
   const query = new URLSearchParams(search);
@@ -442,7 +444,7 @@ const EmployeeAttendanceDetails = ({
     }
     return (
       <div className="flex-grow overflow-y-auto p-4 space-y-6 ">
-        {status === "week off" && renderWeekOffMessage()}
+        {(status === "week off" || isWeeklyOff) && renderWeekOffMessage()}
         {isLoading ? (
           renderLoadingState()
         ) : (

@@ -45,7 +45,7 @@ const Expenses = lazyWithRetry(
   "Expenses",
 );
 const FlexiDeclaration = lazyWithRetry(
-  () => import("./components/Compansation/fl/FlexiDeclaration"),
+  () => import("./components/Compansation/FlexiDeclaration/FlexiDeclaration"),
 );
 const RecruitmentApp = lazyWithRetry(
   () => import("./components/RecruitmentApp"),
@@ -218,6 +218,10 @@ const Policies = lazyWithRetry(
 const PoliciesEnforced = lazyWithRetry(
   () => import("./components/PoliciesEnforced"),
   "PoliciesEnforced",
+);
+const MandatoryHrProcessEnforced = lazyWithRetry(
+  () => import("./components/MandatoryHrProcessEnforced"),
+  "MandatoryHrProcessEnforced",
 );
 const PolicySignOff = lazyWithRetry(
   () => import("./components/PolicySignOff"),
@@ -451,6 +455,26 @@ const RequisitionForm = lazyWithRetry(
   () => import("./components/Recruitment/RequisitionForm"),
   "RequisitionForm",
 );
+const IJPOpenings = lazyWithRetry(
+  () => import("./components/Recruitment/IJPOpenings"),
+  "IJPOpenings",
+);
+const IJPJobsApplied = lazyWithRetry(
+  () => import("./components/Recruitment/IJPJobsApplied"),
+  "IJPJobsApplied",
+);
+const OfferLetter = lazyWithRetry(
+  () => import("./components/Recruitment/OfferLetterPage"),
+  "OfferLetter",
+);
+const LinkAccounts = lazyWithRetry(
+  () => import("./components/Recruitment/LinkAccounts"),
+  "LinkAccounts",
+);
+const ConfigureJobBoards = lazyWithRetry(
+  () => import("./components/Recruitment/ConfigureJobBoards"),
+  "ConfigureJobBoards",
+);
 const RecognitionPage = lazyWithRetry(
   () => import("./components/Recognition/RecognitionPage"),
   "RecognitionPage",
@@ -645,6 +669,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/policies-enforced/view/:policyId",
     element: <PolicySignOff />,
     permissionKey: "Policies",
+  },
+  {
+    path: "/webapp/hr-process-mandatory",
+    element: <MandatoryHrProcessEnforced />,
+    permissionKey: "HR Process Mandatory",
   },
   {
     path: "/webapp/recruitment-app/job-applicant-detail/:id",
@@ -1078,6 +1107,21 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Overview",
       },
       {
+        path: "job-openings",
+        element: <JobOpeningsUI />,
+        permissionKey: "Job Openings",
+      },
+      {
+        path: "candidates",
+        element: <JobApplicantList />,
+        permissionKey: "Job Applicant List",
+      },
+      {
+        path: "candidates/detail/:id",
+        element: <JobApplicantDetails />,
+        permissionKey: "Recruitment",
+      },
+      {
         path: "requisition",
         element: <Requisition />,
         permissionKey: "Requisitions",
@@ -1086,6 +1130,56 @@ export const routesConfig: AppRoute[] = [
         path: "requisition/new",
         element: <RequisitionForm />,
         permissionKey: "Requisitions",
+      },
+      {
+        path: "interviews",
+        element: <InterviewList />,
+        permissionKey: "Interviews",
+      },
+      {
+        path: "interviews/:id",
+        element: <InterviewPage />,
+        permissionKey: "Interviews",
+      },
+      {
+        path: "refer",
+        element: <AddNewReferral />,
+        permissionKey: "Referrals",
+      },
+      {
+        path: "referrals",
+        element: <ReferralList />,
+        permissionKey: "Referrals",
+      },
+      {
+        path: "referrals/:id",
+        element: <ReferralDetails />,
+        permissionKey: "Referrals",
+      },
+      {
+        path: "ijp-openings",
+        element: <IJPOpenings />,
+        permissionKey: "IJP Openings",
+      },
+      {
+        path: "ijp-applied",
+        element: <IJPJobsApplied />,
+        permissionKey: "IJP Jobs Applied",
+      },
+      {
+        path: "offer-letter",
+        element: <OfferLetter />,
+        permissionKey: "Offer Letter",
+      },
+      {
+        path: "link-accounts",
+        element: <LinkAccounts />,
+        permissionKey: "Link Accounts",
+      },
+      {
+        path: "configure-job-boards",
+        element: <ConfigureJobBoards />,
+        permissionKey: "Configure Job Boards",
       },
     ],
   },

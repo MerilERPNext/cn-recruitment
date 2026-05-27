@@ -46,7 +46,12 @@
                     "valueProperty": "name",
                     "template": "<span>{{item.company_name}} ({{ item.name }})</span>",
                     "validateWhenHidden": false,
-                    "customClass": "w-full"
+                    "customClass": "w-full",
+                    "searchEnabled": true,
+                    "searchResultLimit": 100,
+                    "customOptions": {
+                        "searchResultLimit": 100
+                    }
                 },
                 {
                     "type": "select",
@@ -63,7 +68,12 @@
                     "valueProperty": "name",
                     "template": "<span>{{item.department_name}} ({{ item.name }})</span>",
                     "validateWhenHidden": false,
-                    "customClass": "w-full"
+                    "customClass": "w-full",
+                    "searchEnabled": true,
+                    "searchResultLimit": 100,
+                    "customOptions": {
+                        "searchResultLimit": 100
+                    }
                 },
                 {
                     "type": "select",
@@ -80,7 +90,19 @@
                     "valueProperty": "name",
                     "template": "<span>{{item.designation_name}} ({{ item.name }})</span>",
                     "validateWhenHidden": false,
-                    "customClass": "w-full"
+                    "customClass": "w-full",
+                    "searchEnabled": true,
+                    "searchResultLimit": 100,
+                    "customOptions": {
+                        "searchResultLimit": 100
+                    }
+                },
+                {
+                    "type": "checkbox",
+                    "key": "is_promotion",
+                    "label": "Is Promotion",
+                    "input": false,
+                    "customConditional": "show = !!data.department"
                 },
                 {
                     "type": "select",
@@ -97,7 +119,12 @@
                     "valueProperty": "name",
                     "template": "<span>{{item.functional_area_name}} ({{ item.name }})</span>",
                     "validateWhenHidden": false,
-                    "customClass": "w-full"
+                    "customClass": "w-full",
+                    "searchEnabled": true,
+                    "searchResultLimit": 100,
+                    "customOptions": {
+                        "searchResultLimit": 100
+                    }
                 },
                 {
                     "type": "datetime",

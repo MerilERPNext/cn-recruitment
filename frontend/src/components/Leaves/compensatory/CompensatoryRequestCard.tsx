@@ -13,6 +13,7 @@ import Tooltip from "../../shared/Tooltip";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import { RoleAssignedUsersType } from "../../../types/flows";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 export type CompensatoryRequestItem = {
   name: string;
   leave_type: string;
@@ -50,9 +51,7 @@ const CompensatoryRequestCard = ({
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onError: (error: any) => {
-        toast.error(
-          `Payment request failed: ${error.message || "Unknown error"}`,
-        );
+        toast.error(errorResponseFormater(error) as any);
       },
     });
   };
@@ -128,7 +127,13 @@ const CompensatoryRequestCard = ({
 
       <div className="flex items-center justify-center">
         <MyApprovalActionPill
-          isPending={false}
+          uiPermission={{
+            app: "Leaves and Holidays",
+            page: "Compensatory",
+            actionKeysMap: {
+              pay: "pay"
+            }
+          }}
           canPay={item?.pay_button_required}
           onPay={handlePay}
           payLoading={isPending}
@@ -189,14 +194,20 @@ const CompensatoryRequestCard = ({
             users={item?.allocated_to}
             roles={item?.allocated_roles}
             align="right"
-          RoleAssignedUsers={item?.role_assigned_users}
-        />
+            RoleAssignedUsers={item?.role_assigned_users}
+          />
         </div>
         {/* Pay Button */}
 
         <MyApprovalActionPill
+          uiPermission={{
+            app: "Leaves and Holidays",
+            page: "Compensatory",
+            actionKeysMap: {
+              pay: "pay"
+            }
+          }}
           variant="buttons"
-          isPending={false}
           canPay={item?.pay_button_required}
           onPay={handlePay}
           payLoading={isPending}

@@ -1,10 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { MyPlannedAttendanceRequest } from "../../../types/attendance";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
+import { BulkSelectProvider } from "../../shared/BulkSelectContext";
 import CardTable from "../../shared/CardTable";
 import { ColumnSortConfig } from "../../shared/CardTableContext";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
@@ -14,6 +17,17 @@ import OvertimeApprovalCard from "./OvertimeApprovalCard";
 const TeamOvertimeRequests = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
+  const uiPermission = {
+    app: "Attendance",
+    page: "Team Overtime",
+    actionKey: "actions_enabled",
+  };
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEnabled = isActionEnabled(
+    uiPermissionData,
+    uiPermission?.actionKey ?? "",
+    uiPermission?.page,
+  );
 
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
@@ -50,12 +64,27 @@ const TeamOvertimeRequests = () => {
   }, [setSearchParams]);
 
   const tableTitles = isBulkSelectEnabled
-    ? ["Select", "Employee", "Description", "Assigned To", "Due Date", "Status", "Actions"]
-    : ["Employee", "Description", "Assigned To", "Due Date", "Status", "Actions"];
+    ? [
+      "Select",
+      "Employee",
+      "Description",
+      "Assigned To",
+      "Due Date",
+      "Status",
+      "Actions",
+    ]
+    : [
+      "Employee",
+      "Description",
+      "Assigned To",
+      "Due Date",
+      "Status",
+      "Actions",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1.5fr", "1fr", "1fr", "1fr"]
-    : ["1fr", "1.5fr", '1fr', "1fr", "1fr", "1fr"];
+    : ["1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"];
 
   const sortableColumns: ColumnSortConfig[] = [
     {
@@ -77,7 +106,8 @@ const TeamOvertimeRequests = () => {
       sortable: true,
       type: "date",
       field: "due_date",
-      getValue: (item: MyPlannedAttendanceRequest) => String(item.due_date ?? ""),
+      getValue: (item: MyPlannedAttendanceRequest) =>
+        String(item.due_date ?? ""),
     },
     {
       sortable: false,
@@ -109,78 +139,87 @@ const TeamOvertimeRequests = () => {
       )}
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable titles={tableTitles} columnWidths={tableColumnWidths} columnSortConfig={columnSortConfig}>
-          {currentUser?.name && (
-            <ApprovalList
-              doctype="Planned Overtime Request"
-              pageSize={10}
-              refetch={refetchApprovalList}
-              setRefetch={setRefetchApprovalList}
-              infiniteScroll={false}
-              loadMorePagination={false}
-              showPagination={true}
-              onApprovalRefetchComplete={handleApprovalRefetchComplete}
-              isSearch={true}
-              isFilter={true}
-              columnWidths={tableColumnWidths}
-              onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-              filterFields={[
-                {
-                  fieldname: "status",
-                  label: "Status",
-                  fieldtype: "Select",
-                  options: [
-                    {
-                      label: "Pending",
-                      key: "Open",
-                      value: "Open",
+        <BulkSelectProvider>
+          <CardTable
+            titles={tableTitles}
+            columnWidths={tableColumnWidths}
+            columnSortConfig={columnSortConfig}
+          >
+            {currentUser?.name && (
+              <ApprovalList
+                doctype="Planned Overtime Request"
+                pageSize={10}
+                refetch={refetchApprovalList}
+                setRefetch={setRefetchApprovalList}
+                infiniteScroll={false}
+                loadMorePagination={false}
+                showPagination={true}
+                onApprovalRefetchComplete={handleApprovalRefetchComplete}
+                isSearch={true}
+                isFilter={true}
+                columnWidths={tableColumnWidths}
+                onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+                bulkSelectVisible={actionsEnabled}
+                filterFields={[
+                  {
+                    fieldname: "status",
+                    label: "Status",
+                    fieldtype: "Select",
+                    options: [
+                      {
+                        label: "Pending",
+                        key: "Open",
+                        value: "Open",
+                      },
+                      {
+                        label: "Approved",
+                        key: "Approved",
+                        value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                        customAPIParams: { todo_status: "Closed" },
+                      },
+                      {
+                        label: "Rejected",
+                        key: "Rejected",
+                        value: "Rejected",
+                      },
+                    ],
+                    emptyValueConfig: {
+                      filterValue: ["!=", "Cancelled"],
                     },
-                    {
-                      label: "Approved",
-                      key: "Approved",
-                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                      customAPIParams: { todo_status: "Closed" },
-                    },
-                    {
-                      label: "Rejected",
-                      key: "Rejected",
-                      value: "Rejected",
-                    },
-                  ],
-                  emptyValueConfig: {
-                    filterValue: ["!=", "Cancelled"],
                   },
-                },
-              ]}
-              SkeletonComponent={CardSkeleton}
-              defaultFilters={{ status: "Open" }}
-              renderCardContent={(item) => {
-                if (
-                  item?.data?.custom_selected_doctype_action === "Send Back"
-                ) {
-                  return null;
-                }
-                return (
-                  <OvertimeApprovalCard
-                    isSelected={item?.isSelected}
-                    onToggleSelect={item?.onToggleSelect}
-                    data={item?.data}
-                    onAction={item?.onAction}
-                    onClick={(request: MyPlannedAttendanceRequest) =>
-                      handleRequestClick(request)
-                    }
-                    loadingAction={item?.loadingAction}
-                    isBulkSelectEnabled={isBulkSelectEnabled}
-                    isActed={item?.isActed}
-                  />
-                );
-              }}
-            />
-          )}
-        </CardTable>
+                ]}
+                SkeletonComponent={CardSkeleton}
+                defaultFilters={{ status: "Open" }}
+                renderCardContent={(item) => {
+                  if (
+                    item?.data?.custom_selected_doctype_action === "Send Back"
+                  ) {
+                    return null;
+                  }
+                  return (
+                    <OvertimeApprovalCard
+                      actionsEnabled={actionsEnabled}
+                      isSelected={item?.isSelected}
+                      onToggleSelect={item?.onToggleSelect}
+                      data={item?.data}
+                      onAction={item?.onAction}
+                      onClick={(request: MyPlannedAttendanceRequest) =>
+                        handleRequestClick(request)
+                      }
+                      loadingAction={item?.loadingAction}
+                      isBulkSelectEnabled={isBulkSelectEnabled}
+                      isActed={item?.isActed}
+                    />
+                  );
+                }}
+              />
+            )}
+          </CardTable>
+        </BulkSelectProvider>
       </div>
       {(requestId || referenceName) && (
         <MyOvertimeDetails
+          actionsEnabled={actionsEnabled}
           documentName={requestId || ""}
           referenceName={referenceName || ""}
           onClose={handleCloseModal}

@@ -25,6 +25,7 @@ type AttendanceStatusInfo = {
   firstHalf?: string;
   secondHalf?: string;
   events: AttendanceRecord[]; // all non-attendance-type records on the same day
+  isWeeklyOff?: boolean;
   record?: AttendanceRecord; // the attendance record whose status is being used
 };
 
@@ -48,6 +49,7 @@ type ShowDetailsType = {
   status: string;
   data: AttendanceRecord;
   events?: AttendanceRecord[];
+  isWeeklyOff?: boolean;
 };
 type attendanceProps = {
   selectedDate: Date | null;
@@ -90,7 +92,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
             )
           )
         ).map((doctype, index) => (
-          <div
+          doctype !== "Employee Checkin" && <div
             key={index}
             className={`w-[6px] h-[6px] rounded-full ${getEventDotColor(
               doctype
@@ -117,6 +119,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
             status: attendance?.status,
             data: attendance?.record as AttendanceRecord,
             events: attendance?.events as AttendanceRecord[],
+            isWeeklyOff: attendance?.isWeeklyOff,
           });
           // if (
           //   // attendance?.status !== "default" &&

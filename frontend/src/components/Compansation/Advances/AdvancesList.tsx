@@ -467,7 +467,14 @@ const AdvanceDesktopRow = ({
 
       <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
         <MyApprovalActionPill
-          isPending={advance.advanceStatus === "Pending"}
+          uiPermission={{
+            app: "Compensation",
+            page: "My Advances",
+            actionKeysMap: {
+              edit: "edit",
+              revoke: "revoke",
+            },
+          }}
           canRevoke={canRevoke}
           canEdit={canEdit}
           onRevoke={handleRevokeClick}
@@ -575,8 +582,15 @@ const AdvanceMobileRow = ({
 
         <div className={isActed ? "pointer-events-none opacity-50" : ""}>
           <MyApprovalActionPill
+            uiPermission={{
+              app: "Compensation",
+              page: "My Advances",
+              actionKeysMap: {
+                edit: "edit",
+                revoke: "revoke",
+              },
+            }}
             variant="buttons"
-            isPending={advance.advanceStatus === "Pending"}
             canRevoke={canRevoke}
             canEdit={canEdit}
             onRevoke={handleRevokeClick}

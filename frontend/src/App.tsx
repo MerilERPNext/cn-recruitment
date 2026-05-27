@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Navigate,
   Route,
@@ -34,6 +34,7 @@ import { LoadingOverlayProvider } from "./context/OverlayContext";
 import GlobalLeaveRequestModal from "./components/Leaves/GlobalLeaveRequestModal";
 
 import { useWebsiteBranding } from "./hooks/useBranding";
+import MandatoryHrProcessHandler from "./components/MandatoryHrProcessHandler";
 
 // Component to sync ViewedUserContext with frappeAPI
 // NOTE: Must be defined BEFORE App to avoid Vite HMR evaluating it outside the provider tree.
@@ -196,6 +197,7 @@ const App: React.FC = () => {
                   )}
                 </Toaster>
                 <MandatoryPoliciesHandler />
+                <MandatoryHrProcessHandler />
 
                 <div
                   className="min-h-screen bg-app"
@@ -223,8 +225,10 @@ const SESSION_POLICY_SHOWN_KEY = "policy_page_shown";
 const SESSION_POLICY_REDIRECT_TO_KEY = "policy_redirect_to";
 const SESSION_POLICY_AUTO_OPENED_KEY = "policy_is_auto_opened";
 
+
 const MandatoryPoliciesHandler = () => {
   const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { isViewingOtherUser } = useTargetUser();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -254,11 +258,30 @@ const MandatoryPoliciesHandler = () => {
     }
   );
 
+  const {
+    data: NonMandatoryPoliciesCount,
+    isFetching: isNonMandatoryPoliciesCountFetching,
+  } = useFrappeDocumentCount(
+    {
+      doctype: "Policy Details",
+      filters: [
+        ["status", "=", "Pending"],
+        ["employee_id", "=", currentEmployee?.name || ""],
+        ["triggered_from_flow", "!=", 1],
+        ["due_date", ">=", new Date().toLocaleDateString('en-CA')],
+      ],
+    },
+    {
+      enabled: !!currentEmployee,
+    }
+  );
+
   useEffect(() => {
     if (
       isCurrentEmployeeFetching ||
       isMandatoryPoliciesCountFetching ||
-      mandatoryPoliciesCount === undefined
+      mandatoryPoliciesCount === undefined ||
+      isViewingOtherUser
     ) {
       return;
     }
@@ -302,6 +325,49 @@ const MandatoryPoliciesHandler = () => {
     isAutoOpened,
     redirectTo,
     location.pathname,
+    isViewingOtherUser,
+  ]);
+
+  // One-time redirect per page reload for non-mandatory policies
+  const hasRedirectedForNonMandatory = useRef(false);
+
+  useEffect(() => {
+    if (
+      isCurrentEmployeeFetching ||
+      isMandatoryPoliciesCountFetching ||
+      isNonMandatoryPoliciesCountFetching ||
+      mandatoryPoliciesCount === undefined ||
+      NonMandatoryPoliciesCount === undefined ||
+      isViewingOtherUser
+    ) {
+      return;
+    }
+
+    // Skip if mandatory policies are present (mandatory flow takes priority)
+    if (mandatoryPoliciesCount > 0) {
+      return;
+    }
+
+    // Skip if already redirected since last page reload
+    if (hasRedirectedForNonMandatory.current) {
+      return;
+    }
+
+    const onPolicyPage = window.location.pathname.includes("/webapp/policies-enforced");
+
+    if (NonMandatoryPoliciesCount > 0 && !onPolicyPage) {
+      hasRedirectedForNonMandatory.current = true;
+      navigate("/webapp/policies-enforced");
+    }
+  }, [
+    NonMandatoryPoliciesCount,
+    isNonMandatoryPoliciesCountFetching,
+    mandatoryPoliciesCount,
+    isCurrentEmployeeFetching,
+    isMandatoryPoliciesCountFetching,
+    navigate,
+    location.pathname,
+    isViewingOtherUser,
   ]);
 
   return null;

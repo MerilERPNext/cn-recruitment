@@ -8,16 +8,17 @@ import {
 } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import AllocatedToTooltip from "../shared/AllocatedToTooltip";
 import Button from "../shared/atoms/Button";
 import StatusBadge from "../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
-import AllocatedToTooltip from "../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../shared/MobileAllocatedTo";
 import Tooltip from "../shared/Tooltip";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 type LeaveApprovalCardProps = {
+  actionsEnabled?: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -31,6 +32,7 @@ type LeaveApprovalCardProps = {
   isActed?: boolean;
 };
 const LeaveApprovalCard = ({
+  actionsEnabled,
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -223,6 +225,7 @@ const LeaveApprovalCard = ({
           <div className="flex items-center justify-center">
             {data?.todo_status === "Open" && !isActed ? (
               <TeamApprovalActionPill
+                actionsEnabled={actionsEnabled}
                 actions={actions}
                 status={data?.reference_document?.status}
                 recordId={data?.todo_id}
@@ -345,8 +348,8 @@ const LeaveApprovalCard = ({
                   roles={data?.allocated_roles}
                   username={data?.username}
                   role={data?.role}
-                RoleAssignedUsers={data?.role_assigned_users}
-              />
+                  RoleAssignedUsers={data?.role_assigned_users}
+                />
               </div>
 
               {data?.reference_document?.status === "Rejected" &&
@@ -366,6 +369,7 @@ const LeaveApprovalCard = ({
 
               {data?.todo_status === "Open" && !isActed ? (
                 <TeamApprovalActionPill
+                  actionsEnabled={actionsEnabled}
                   variant="buttons"
                   actions={actions}
                   status={data?.reference_document?.status}

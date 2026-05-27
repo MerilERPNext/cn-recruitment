@@ -1389,7 +1389,7 @@ def get_job_applicant_portal_field_names(job_applicant_id=None):
     }
 
 
-@candidate_required
+@frappe.whitelist()
 def get_candidate_feature_flags():
     doc = frappe.get_single("Candidate Portal Feature Flag")
 
@@ -1401,10 +1401,12 @@ def get_candidate_feature_flags():
     return result
 
 
-@candidate_required
+@frappe.whitelist()
 def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20):
     """Returns [{id, label}] for a doctype; label uses title_field when set.
-    Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins)."""
+    Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins).
+    Accessible to any authenticated Frappe user (desk session or API key/secret) — the
+    candidate portal frontend authenticates via the candidate user's API key+secret."""
     if not doctype:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Doctype is required.")}

@@ -10,6 +10,9 @@ import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 import { ShiftDetailView } from "./ShiftDetailView";
 import { MyShiftRequest } from "../../types/shift";
+import { BulkSelectProvider } from "../shared/BulkSelectContext";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 const BASE_COLUMN_SORT_CONFIG_TEAM: ColumnSortConfig[] = [
   { sortable: false },
@@ -53,6 +56,17 @@ const AllShiftChangeRequestsList: React.FC = () => {
 
   const requestId = searchParams.get("requestId");
   const referenceName = searchParams.get("reference_name");
+
+  const uiPermission = {
+    app: "Attendance",
+    page: "All Shifts",
+    actionKey: "team_actions_enabled"
+  }
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEnabled = isActionEnabled(uiPermissionData, uiPermission?.actionKey ?? "", uiPermission?.page);
+
+
+
 
   const handleRequestClick = useCallback(
     (request: any) => {
@@ -129,74 +143,78 @@ const AllShiftChangeRequestsList: React.FC = () => {
       )}
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable
-          titles={tableTitles}
-          columnWidths={tableColumnWidths}
-          columnSortConfig={columnSortConfig}
-        >
-          <ApprovalList
-            doctype={"Shift Request"}
-            refetch={refetchApprovalList}
-            setRefetch={setRefetchApprovalList}
-            onApprovalRefetchComplete={handleApprovalRefetchComplete}
-            pageSize={10}
-            infiniteScroll={false}
-            loadMorePagination={false}
-            showPagination={true}
-            isSearch={true}
-            isFilter={true}
+        <BulkSelectProvider>
+          <CardTable
+            titles={tableTitles}
             columnWidths={tableColumnWidths}
-            onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-            filterFields={[
-              {
-                fieldname: "status",
-                label: "Status",
-                fieldtype: "Select",
-                options: [
-                  {
-                    label: "Pending",
-                    key: "Draft",
-                    value: "Draft",
+            columnSortConfig={columnSortConfig}
+          >
+            <ApprovalList
+              bulkSelectVisible={actionsEnabled}
+              doctype={"Shift Request"}
+              refetch={refetchApprovalList}
+              setRefetch={setRefetchApprovalList}
+              onApprovalRefetchComplete={handleApprovalRefetchComplete}
+              pageSize={10}
+              infiniteScroll={false}
+              loadMorePagination={false}
+              showPagination={true}
+              isSearch={true}
+              isFilter={true}
+              columnWidths={tableColumnWidths}
+              onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+              filterFields={[
+                {
+                  fieldname: "status",
+                  label: "Status",
+                  fieldtype: "Select",
+                  options: [
+                    {
+                      label: "Pending",
+                      key: "Draft",
+                      value: "Draft",
+                    },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" },
+                    },
+                    {
+                      label: "Rejected",
+                      key: "Rejected",
+                      value: "Rejected",
+                    },
+                  ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
                   },
-                  {
-                    label: "Approved",
-                    key: "Approved",
-                    value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                    customAPIParams: { todo_status: "Closed" },
-                  },
-                  {
-                    label: "Rejected",
-                    key: "Rejected",
-                    value: "Rejected",
-                  },
-                ],
-                emptyValueConfig: {
-                  filterValue: ["!=", "Cancelled"],
                 },
-              },
-            ]}
-            defaultFilters={{ status: "Draft" }}
-            SkeletonComponent={CardSkeleton}
-            renderCardContent={(item) => {
-              if (item?.data?.custom_selected_doctype_action === "Send Back") {
-                return null;
-              }
-              return (
-                <ApprovalRejectionQueue
-                  isSelected={item?.isSelected}
-                  onToggleSelect={item?.onToggleSelect}
-                  data={item?.data}
-                  onAction={item?.onAction}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  onClick={(request: any) => handleRequestClick(request)}
-                  loadingAction={item?.loadingAction}
-                  isBulkSelectEnabled={isBulkSelectEnabled}
-                  isActed={item?.isActed}
-                />
-              );
-            }}
-          />
-        </CardTable>
+              ]}
+              defaultFilters={{ status: "Draft" }}
+              SkeletonComponent={CardSkeleton}
+              renderCardContent={(item) => {
+                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                  return null;
+                }
+                return (
+                  <ApprovalRejectionQueue
+                    actionsEnabled={actionsEnabled}
+                    isSelected={item?.isSelected}
+                    onToggleSelect={item?.onToggleSelect}
+                    data={item?.data}
+                    onAction={item?.onAction}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    onClick={(request: any) => handleRequestClick(request)}
+                    loadingAction={item?.loadingAction}
+                    isBulkSelectEnabled={isBulkSelectEnabled}
+                    isActed={item?.isActed}
+                  />
+                );
+              }}
+            />
+          </CardTable>
+        </BulkSelectProvider>
       </div>
 
       {(requestId || referenceName) && (

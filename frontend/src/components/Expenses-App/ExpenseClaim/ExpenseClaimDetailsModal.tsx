@@ -68,6 +68,12 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
   const shouldShowSanctionedAmount = Array.isArray(selectedStages) && selectedStages.some((stage: ApprovalStage) => stage.status === "Approved");
 
+  const hasOdometerValues = Array.isArray(data?.expenses) && data.expenses.some(
+    (item: Expense) =>
+      (item.custom_odometer_from !== undefined && item.custom_odometer_from !== null && item.custom_odometer_from !== "") ||
+      (item.custom_odometer_to !== undefined && item.custom_odometer_to !== null && item.custom_odometer_to !== "")
+  );
+
   const isSendedBack =
     currentUser?.name === selectedSendBackUser && canEditProp && todoStatus !== "Closed";
 
@@ -384,6 +390,12 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
               <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Claimed Amt</th>
               <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Claimed Date</th>
               <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Sanctioned Amt</th>
+              {hasOdometerValues && (
+                <>
+                  <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Odometer From</th>
+                  <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Odometer To</th>
+                </>
+              )}
               <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Attachment</th>
               {isSendedBack && (
                 <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Actions</th>
@@ -411,6 +423,24 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   <td className="px-4 py-3 text-gray-800">
                     {shouldShowSanctionedAmount ? formatINR(item.sanctioned_amount) : "—"}
                   </td>
+                  {hasOdometerValues && (
+                    <>
+                      <td className="px-4 py-3 text-gray-800">
+                        {item.custom_odometer_from !== undefined &&
+                        item.custom_odometer_from !== null &&
+                        item.custom_odometer_from !== ""
+                          ? String(item.custom_odometer_from)
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-800">
+                        {item.custom_odometer_to !== undefined &&
+                        item.custom_odometer_to !== null &&
+                        item.custom_odometer_to !== ""
+                          ? String(item.custom_odometer_to)
+                          : "—"}
+                      </td>
+                    </>
+                  )}
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-2 items-center justify-center">
                       {getAttachmentsForItem(item).map((file: { file_url: string }, i: number) => (
@@ -443,7 +473,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
               <tr>
                 <td
                   className="px-4 py-8 text-center text-gray-400 italic"
-                  colSpan={isSendedBack ? 9 : 8}
+                  colSpan={isSendedBack ? 11 : 10}
                 >
                   No expense items found.
                 </td>
@@ -525,6 +555,30 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                     {shouldShowSanctionedAmount ? formatINR(item.sanctioned_amount) : "—"}
                   </Typography>
                 </div>
+                {item.custom_odometer_from !== undefined &&
+                  item.custom_odometer_from !== null &&
+                  item.custom_odometer_from !== "" && (
+                    <div className="flex flex-col gap-1">
+                      <Typography variant="mobileCardLabel" className="block">
+                        Odometer From
+                      </Typography>
+                      <Typography variant="mobileCardValue">
+                        {String(item.custom_odometer_from)}
+                      </Typography>
+                    </div>
+                  )}
+                {item.custom_odometer_to !== undefined &&
+                  item.custom_odometer_to !== null &&
+                  item.custom_odometer_to !== "" && (
+                    <div className="flex flex-col gap-1">
+                      <Typography variant="mobileCardLabel" className="block">
+                        Odometer To
+                      </Typography>
+                      <Typography variant="mobileCardValue">
+                        {String(item.custom_odometer_to)}
+                      </Typography>
+                    </div>
+                  )}
               </div>
 
               {/* Attachment */}

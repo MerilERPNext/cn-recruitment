@@ -19,6 +19,7 @@ import { BenefitType } from "../../../types/benefit";
 
 // Props type
 type BenefitRequestItemProps = {
+  actionsEnabled: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -32,6 +33,7 @@ type BenefitRequestItemProps = {
 };
 
 const BenefitRequestItem = ({
+  actionsEnabled,
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -168,6 +170,7 @@ const BenefitRequestItem = ({
           <div className="flex items-center justify-center">
             {data?.todo_status === "Open" && !isActed ? (
               <TeamApprovalActionPill
+                actionsEnabled={actionsEnabled}
                 actions={actions}
                 status={data.status === "Closed" &&
                   data.reference_document.custom_status !== "Rejected"
@@ -269,6 +272,7 @@ const BenefitRequestItem = ({
               <div className="mt-4 w-full">
                 {data?.todo_status === "Open" && !isActed ? (
                   <TeamApprovalActionPill
+                    actionsEnabled={actionsEnabled}
                     variant="buttons"
                     actions={actions}
                     status={data.status === "Closed" &&

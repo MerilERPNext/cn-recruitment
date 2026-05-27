@@ -200,6 +200,8 @@ export interface Expense {
   custom_end_datetime?: Date;
   custom_form_json?: string | null;
   custom_form_data?: string | null;
+  custom_odometer_from?: number | string | null;
+  custom_odometer_to?: number | string | null;
 }
 
 

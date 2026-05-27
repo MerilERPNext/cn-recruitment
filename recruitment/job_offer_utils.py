@@ -3,7 +3,7 @@ import json
 from  hrms.payroll.doctype.salary_slip import salary_slip
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
-from frappe.utils import formatdate
+from frappe.utils import formatdate, now_datetime, time_diff_in_hours
 
 @frappe.whitelist(allow_guest=True)
 def download_job_offer_pdf(appl):
@@ -17,7 +17,7 @@ def download_job_offer_pdf(appl):
         jo_id = frappe.db.get_value("Job Offer", {
             "job_applicant": appl,
             "docstatus": ["!=", 2],
-            "status": "Awaiting Response"
+            "status": ["in", ["Awaiting Response", "Accepted", "Rejected"]]
         })
         if not jo_id:
             frappe.throw("No active Job Offer found")
@@ -53,7 +53,7 @@ def preview_job_offer_html(appl):
         jo_id = frappe.db.get_value("Job Offer", {
             "job_applicant": appl,
             "docstatus": ["!=", 2],
-            "status": "Awaiting Response"
+            "status": ["in", ["Awaiting Response", "Accepted", "Rejected"]]
         })
         if not jo_id:
             frappe.throw("No active Job Offer found")
@@ -129,6 +129,24 @@ def get_job_offer_summary(appl):
         duration = jo.get("custom_duration")
         expected_doj = jo.get("custom_expected_doj")
         stipend = jo.get("custom_stipend")
+        expiry_date = jo.get("custom_jo_expiry_date")
+
+        expiry_display = None
+        if expiry_date:
+            try:
+                hours_remaining = int(time_diff_in_hours(
+                    str(expiry_date) + " 23:59:59",
+                    now_datetime(),
+                ))
+                if hours_remaining <= 0:
+                    expiry_display = "Expired"
+                elif hours_remaining > 24:
+                    days = hours_remaining // 24
+                    expiry_display = f"{days} day{'s' if days != 1 else ''}"
+                else:
+                    expiry_display = f"{hours_remaining} hour{'s' if hours_remaining != 1 else ''}"
+            except Exception:
+                pass
 
         return {
             "applicant_name": f"{jo.get('applicant_name') or ''} {jo.get('applicant_last_name') or ''}".strip(),
@@ -136,6 +154,7 @@ def get_job_offer_summary(appl):
             "duration_display": f"{duration} Month{'s' if int(duration) != 1 else ''}" if duration else None,
             "expected_doj_display": formatdate(expected_doj) if expected_doj else None,
             "stipend_display": f"₹ {stipend}" if stipend else None,
+            "expiry_display": expiry_display,
         }
     finally:
         frappe.flags.ignore_permissions = original_ignore

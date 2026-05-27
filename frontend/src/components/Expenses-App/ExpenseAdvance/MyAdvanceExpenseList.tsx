@@ -13,6 +13,7 @@ import { ApprovalStage } from "../../../types/expenseAdvance";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { COLUMN_SORT_CONFIG_EXPENSE_ADVANCE } from "../../../utils/tableSortConfig";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import CardTable from "../../shared/CardTable";
@@ -24,18 +25,21 @@ import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailModal from "./AdvanceDetailModal";
-import { COLUMN_SORT_CONFIG_EXPENSE_ADVANCE } from "../../../utils/tableSortConfig";
+import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvance, setSelectedAdvance] = useState<{
     id: string;
     status: string;
+    assignedTo?: React.ReactNode,
   } | null>(null);
   const [selectedStages, setSelectedStages] = useState<ApprovalStage[]>([]);
   const [isActed, setIsActed] = useState(false);
 
   const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: currentEmployee } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
   const { data: currentUser } = useCurrentUser();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const navigate = useNavigate();
@@ -56,10 +60,11 @@ const MyAdvanceExpenseList = () => {
     id: string,
     stages: ApprovalStage[],
     status: string,
+    assignedTo?: React.ReactNode,
   ) => {
     setSelectedStages(stages);
     setTimeout(() => {
-      setSelectedAdvance({ id, status });
+      setSelectedAdvance({ id, status, assignedTo });
       setSearchParams({ reference_name: id });
     }, 0);
   };
@@ -129,10 +134,16 @@ const MyAdvanceExpenseList = () => {
     const doc = item.reference_document;
     const { canEdit, canRevoke } = getActionFlags(item);
 
+    const showSanctionedAmount =
+      Array.isArray(item?.approval_stages_status) &&
+      item.approval_stages_status.some(
+        (stage: any) => stage.status === "Approved",
+      );
+
     return (
       <div
-        className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
+        className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
         <Tooltip
           content={doc.name || ""}
@@ -145,18 +156,28 @@ const MyAdvanceExpenseList = () => {
             {doc.name}
           </Typography>
         </Tooltip>
-       
+
         <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.custom_advance_type} 
+          {getAssignedUsersCell(item)}
+        </Typography>
+
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {doc.custom_advance_type}
         </Typography>
         <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.custom_advance_policy} 
+          {doc.custom_advance_policy}
         </Typography>
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatToIndianDate(doc.posting_date)}
-        </Typography> 
+        </Typography>
         <Typography variant="bodySmall" className="font-medium text-center">
-          {formatCurrency(doc.advance_amount)}
+          {formatToIndianDate(doc.creation)}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {formatCurrency(doc.custom_requested_amount)}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {showSanctionedAmount ? formatCurrency(doc.advance_amount) : " -- "}
         </Typography>
         <div className="flex items-center justify-center">
           <AllocatedToTooltip
@@ -169,8 +190,8 @@ const MyAdvanceExpenseList = () => {
             <StatusBadge
               status={
                 item?.custom_allow_revoke === 1 &&
-                  item?.todo_status?.toLowerCase() === "cancelled" &&
-                  item?.reference_document?.docstatus === 2
+                item?.todo_status?.toLowerCase() === "cancelled" &&
+                item?.reference_document?.docstatus === 2
                   ? "Revoked"
                   : item?.reference_document?.custom_final_status
               }
@@ -183,7 +204,14 @@ const MyAdvanceExpenseList = () => {
           onClick={(e) => e.stopPropagation()}
         >
           <MyApprovalActionPill
-            isPending={doc?.custom_final_status === "Pending"}
+            uiPermission={{
+              app: "Expenses",
+              page: "My Advances",
+              actionKeysMap: {
+                edit: "edit",
+                revoke: "revoke",
+              },
+            }}
             canEdit={canEdit && !isActed}
             onEdit={() => handleEditClick(item)}
             canRevoke={canRevoke && !isActed}
@@ -198,6 +226,12 @@ const MyAdvanceExpenseList = () => {
   const MobileRow = ({ item }: any) => {
     const doc = item.reference_document;
     const { canEdit, canRevoke } = getActionFlags(item);
+
+    const showSanctionedAmount =
+      Array.isArray(item?.approval_stages_status) &&
+      item.approval_stages_status.some(
+        (stage: any) => stage.status === "Approved",
+      );
 
     return (
       <div
@@ -220,8 +254,8 @@ const MyAdvanceExpenseList = () => {
                 <StatusBadge
                   status={
                     item?.custom_allow_revoke === 1 &&
-                      item?.todo_status?.toLowerCase() === "cancelled" &&
-                      item?.reference_document?.docstatus === 2
+                    item?.todo_status?.toLowerCase() === "cancelled" &&
+                    item?.reference_document?.docstatus === 2
                       ? "Revoked"
                       : item?.reference_document?.custom_final_status
                   }
@@ -235,13 +269,13 @@ const MyAdvanceExpenseList = () => {
                   username={item?.username}
                   role={item?.role}
                   align="left"
-                RoleAssignedUsers={item?.role_assigned_users}
-              />
+                  RoleAssignedUsers={item?.role_assigned_users}
+                />
                 <StatusBadge
                   status={
                     item?.custom_allow_revoke === 1 &&
-                      item?.todo_status?.toLowerCase() === "cancelled" &&
-                      item?.reference_document?.docstatus === 2
+                    item?.todo_status?.toLowerCase() === "cancelled" &&
+                    item?.reference_document?.docstatus === 2
                       ? "Revoked"
                       : item?.reference_document?.custom_final_status
                   }
@@ -263,7 +297,37 @@ const MyAdvanceExpenseList = () => {
             <div className="flex flex-col gap-1 text-right">
               <Typography variant="mobileCardLabel">Advance Amount</Typography>
               <Typography variant="mobileCardValue">
-                {formatCurrency(doc?.advance_amount)}
+                {formatCurrency(doc?.custom_requested_amount)}
+              </Typography>
+            </div>
+          </div>
+
+          <div className="flex justify-between w-full">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Sanctioned Amount</Typography>
+              <Typography variant="mobileCardValue">
+                {showSanctionedAmount ? formatCurrency(doc?.advance_amount) : " -- "}
+              </Typography>
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel">Advance Policy</Typography>
+              <Typography variant="mobileCardValue">
+                {doc?.custom_advance_policy}
+              </Typography>
+            </div>
+          </div>
+
+          <div className="flex justify-between w-full">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Posting Date</Typography>
+              <Typography variant="mobileCardValue">
+                {formatToIndianDate(doc?.posting_date)}
+              </Typography>
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel">Created At</Typography>
+              <Typography variant="mobileCardValue">
+                {formatToIndianDate(doc?.creation)}
               </Typography>
             </div>
           </div>
@@ -271,25 +335,30 @@ const MyAdvanceExpenseList = () => {
           {/* Company & Posting Date */}
           <div className="flex justify-between w-full">
             <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel">Advance Policy</Typography>
+              <Typography variant="mobileCardLabel">Assinged To</Typography>
               <Typography variant="mobileCardValue">
-                {doc?.custom_advance_policy}
-              </Typography>
-            </div>
-            <div className="flex flex-col gap-1 text-right">
-              <Typography variant="mobileCardLabel">Posting Date</Typography>
-              <Typography variant="mobileCardValue">
-                {formatToIndianDate(doc?.posting_date)}
+                {getAssignedUsersCell(item)}
               </Typography>
             </div>
           </div>
 
+
           {/* Action Buttons — stop propagation to prevent opening detail modal */}
           {(canEdit || canRevoke) && (
-            <div onClick={(e) => e.stopPropagation()} className={isActed ? "pointer-events-none opacity-50" : ""}>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className={isActed ? "pointer-events-none opacity-50" : ""}
+            >
               <MyApprovalActionPill
+                uiPermission={{
+                  app: "Expenses",
+                  page: "My Advances",
+                  actionKeysMap: {
+                    edit: "edit",
+                    revoke: "revoke",
+                  },
+                }}
                 variant="buttons"
-                isPending={doc?.custom_final_status === "Pending"}
                 canEdit={canEdit && !isActed}
                 onEdit={() => handleEditClick(item)}
                 canRevoke={canRevoke && !isActed}
@@ -310,14 +379,14 @@ const MyAdvanceExpenseList = () => {
 
     const status =
       item?.custom_allow_revoke === 1 &&
-        item?.todo_status?.toLowerCase() === "cancelled" &&
-        item?.reference_document?.docstatus === 2
+      item?.todo_status?.toLowerCase() === "cancelled" &&
+      item?.reference_document?.docstatus === 2
         ? "Revoked"
         : item?.reference_document?.custom_final_status;
 
     return (
       <div
-        onClick={() => openDetailModal(id, stages, status)}
+        onClick={() => openDetailModal(id, stages, status, getAssignedUsersCell(item))}
         className="cursor-pointer"
       >
         {isDesktop ? <DesktopRow item={item} /> : <MobileRow item={item} />}
@@ -380,12 +449,23 @@ const MyAdvanceExpenseList = () => {
             "Posting Date",
             "Created At",
             "Advance Amount",
+            "Sanctioned Amount",
             "Status",
             "Actions",
           ]}
-          columnWidths={["1fr","1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={[
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+            "1fr",
+          ]}
           columnSortConfig={COLUMN_SORT_CONFIG_EXPENSE_ADVANCE}
-
         >
           <DataListView
             queryKey={["employee-advance"]}
@@ -445,6 +525,7 @@ const MyAdvanceExpenseList = () => {
           onClose={closeDetailModal}
           selectedStages={selectedStages}
           status={selectedAdvance?.status}
+          assignedTo={selectedAdvance?.assignedTo}
         />
       )}
     </div>

@@ -20,6 +20,7 @@ export type ApprovalRejectionLoanProps = {
   onToggleSelect?: (id: string) => void;
   data: any;
   isActed?: boolean;
+  actionsEnabled?: boolean;
   onAction: (action: string, data: any) => void;
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
@@ -32,6 +33,7 @@ const ApprovalRejectionAdvanceList = ({
   onToggleSelect,
   data,
   isActed = false,
+  actionsEnabled = true,
   onAction,
   onClick,
   loadingAction,
@@ -172,7 +174,7 @@ const ApprovalRejectionAdvanceList = ({
           </div>
 
           <div className="flex items-center justify-center">
-            {data?.todo_status === "Open" && !isActed ? (
+            {actionsEnabled && data?.todo_status === "Open" && !isActed ? (
               <TeamApprovalActionPill
                 actions={actions}
                 status={data?.status}
@@ -306,7 +308,7 @@ const ApprovalRejectionAdvanceList = ({
               </div>
             </div>
 
-            {data?.todo_status === "Open" && !isActed ? (
+            {actionsEnabled && data?.todo_status === "Open" && !isActed ? (
               <TeamApprovalActionPill
                 variant="buttons"
                 actions={actions}

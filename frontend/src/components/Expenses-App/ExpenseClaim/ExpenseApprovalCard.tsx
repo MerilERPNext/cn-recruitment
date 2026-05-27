@@ -3,7 +3,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
+import { useExpenseCommentUpdate, useUpdateExpenseClaimStatusAPI } from "../../../hooks/useExpense";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
@@ -14,8 +14,10 @@ import Button from "../../shared/atoms/Button";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { AllowRequestsOnHoldResponse } from "../../../types/expense";
 
 type ApprovalCardProps = {
+  actionsEnabled?: boolean;
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -27,9 +29,12 @@ type ApprovalCardProps = {
   isBulkSelectEnabled?: boolean;
   activeStatus?: string;
   isActed?: boolean;
+  allowHoldData?: AllowRequestsOnHoldResponse;
+  onRefetch?: () => void;
 };
 
 const ExpenseApprovalCard = ({
+  actionsEnabled,
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
@@ -40,10 +45,17 @@ const ExpenseApprovalCard = ({
   isBulkSelectEnabled = true,
   activeStatus = "Pending",
   isActed = false,
+  allowHoldData,
+  onRefetch,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const commentMutation = useExpenseCommentUpdate();
+  const updateStatusMutation = useUpdateExpenseClaimStatusAPI();
   const { data: user } = useCurrentUser();
+
+  const showNoticeFlag = allowHoldData?.show_on_notice_flag_in_process_and_pay_reimbursement_page;
+  const isOnNotice = data?.reference_document?.custom_employment_status === "On Notice Period";
+  const shouldShowNoticeDot = showNoticeFlag && isOnNotice;
 
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [rejectionComment, setRejectionComment] = useState("");
@@ -51,13 +63,56 @@ const ExpenseApprovalCard = ({
     action: string;
     data: any;
   } | null>(null);
+  const [pendingHoldAction, setPendingHoldAction] = useState<string | null>(null);
 
-  const actions = data?.custom_doctype_actions
-    ? JSON.parse(data?.custom_doctype_actions)
-    : [];
-  const actionsWithForm = data?.custom_doctype_actions_with_form
-    ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
-    : [];
+  const actions = (() => {
+    let parsedActions: string[] = [];
+    if (data?.custom_doctype_actions) {
+      if (Array.isArray(data.custom_doctype_actions)) {
+        parsedActions = data.custom_doctype_actions;
+      } else {
+        try {
+          const parsed = JSON.parse(data.custom_doctype_actions);
+          if (Array.isArray(parsed)) {
+            parsedActions = parsed;
+          }
+        } catch (e) {
+          console.error("Failed to parse custom_doctype_actions:", e);
+        }
+      }
+    }
+
+    if (allowHoldData) {
+      if (!allowHoldData.show_approval_buttons) {
+        parsedActions = parsedActions.filter(
+          (a) => !["Approve", "Reject", "Send Back"].includes(a)
+        );
+      }
+      if (allowHoldData.allow_requests_to_be_put_on_hold) {
+        const currentApprovalStatus = data?.reference_document?.approval_status || data?.approval_status;
+        if (currentApprovalStatus === "On Hold") {
+          if (!parsedActions.includes("Unhold")) {
+            parsedActions.push("Unhold");
+          }
+        } else {
+          if (!parsedActions.includes("Hold")) {
+            parsedActions.push("Hold");
+          }
+        }
+      }
+    }
+
+    return parsedActions;
+  })();
+  const actionsWithForm = (() => {
+    if (!data?.custom_doctype_actions_with_form) return [];
+    try {
+      return JSON.parse(data.custom_doctype_actions_with_form.replace(/'/g, '"'));
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions_with_form:", e);
+      return [];
+    }
+  })();
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? activeStatus === "Approved"
@@ -72,7 +127,12 @@ const ExpenseApprovalCard = ({
     currency: "INR",
   }).format(data?.reference_document?.total_claimed_amount ?? 0);
 
-  const handleActionClick = (action: string, actionData: any) => {
+  const handleActionClick = async (action: string, actionData: any) => {
+    if (action.toLowerCase() === "hold" || action.toLowerCase() === "unhold") {
+      setPendingHoldAction(action);
+      return;
+    }
+
     if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
       setPendingActionData({ action, data: actionData });
       setShowCommentModal(true);
@@ -120,6 +180,28 @@ const ExpenseApprovalCard = ({
     setPendingActionData(null);
   };
 
+  const handleConfirmHoldAction = async () => {
+    if (!pendingHoldAction) return;
+    const docname = data?.reference_document?.name || data?.reference_name;
+    if (docname) {
+      const newStatus = pendingHoldAction.toLowerCase() === "hold" ? "On Hold" : "Pending";
+      try {
+        await updateStatusMutation.mutateAsync({ docname, approvalStatus: newStatus });
+        toast.success(`Request ${newStatus === "On Hold" ? "put on hold" : "unheld"} successfully`);
+        if (onRefetch) {
+          onRefetch();
+        }
+      } catch (e) {
+        console.error("Failed to update status", e);
+      }
+    }
+    setPendingHoldAction(null);
+  };
+
+  const handleCancelHoldAction = () => {
+    setPendingHoldAction(null);
+  };
+
   return (
     <>
       {isDesktop ? (
@@ -160,16 +242,22 @@ const ExpenseApprovalCard = ({
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
-            className="min-w-0"
+            className="min-w-0 flex items-center justify-center gap-1.5"
           >
             <Typography
               variant="bodySmall"
-              className="font-medium text-center truncate block w-full"
+              className="font-medium text-center truncate"
             >
               <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.reference_document?.employee_name}
               </WrapperHoverCard>
             </Typography>
+            {shouldShowNoticeDot && (
+              <span className="relative flex h-2.5 w-2.5 flex-shrink-0" title="On Notice Period">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500 border border-white shadow-sm"></span>
+              </span>
+            )}
           </Link>
 
           <Tooltip
@@ -230,7 +318,7 @@ const ExpenseApprovalCard = ({
               <StatusBadge
                 status={
                   data?.todo_status === "Closed" &&
-                  data?.reference_document?.approval_status !== "Rejected"
+                    data?.reference_document?.approval_status !== "Rejected"
                     ? "Approved"
                     : data?.reference_document?.approval_status
                 }
@@ -249,8 +337,9 @@ const ExpenseApprovalCard = ({
           )}
 
           <div className="flex items-center justify-center">
-            {activeStatus === "Pending" && !isActed ? (
+            {(!isActed && (activeStatus === "Pending" || activeStatus === "On Hold" || data?.reference_document?.approval_status === "On Hold")) ? (
               <TeamApprovalActionPill
+                actionsEnabled={actionsEnabled}
                 actions={actions}
                 status={data?.status}
                 recordId={data?.todo_id}
@@ -306,7 +395,7 @@ const ExpenseApprovalCard = ({
                 <StatusBadge
                   status={
                     data?.todo_status === "Closed" &&
-                    data?.reference_document?.approval_status !== "Rejected"
+                      data?.reference_document?.approval_status !== "Rejected"
                       ? "Approved"
                       : data?.reference_document?.approval_status
                   }
@@ -322,11 +411,17 @@ const ExpenseApprovalCard = ({
                   <Link
                     to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
                     target="_blank"
+                    className="flex items-center gap-1.5"
                   >
                     <Typography variant="mobileCardValue">
                       {data?.reference_document?.employee_name ||
                         data?.reference_document?.employee}
                     </Typography>
+                    {shouldShowNoticeDot && (
+                      <span className="text-amber-500 font-semibold text-xs flex-shrink-0">
+                        (On notice period)
+                      </span>
+                    )}
                   </Link>
                 </div>
               </div>
@@ -394,8 +489,8 @@ const ExpenseApprovalCard = ({
                 roles={data?.allocated_roles}
                 username={data?.username}
                 role={data?.role}
-              RoleAssignedUsers={data?.role_assigned_users}
-            />
+                RoleAssignedUsers={data?.role_assigned_users}
+              />
               {activeStatus === "Approved" && (
                 <div className="flex justify-between w-full">
                   <div className="flex flex-col gap-1">
@@ -412,8 +507,9 @@ const ExpenseApprovalCard = ({
                 </div>
               )}
 
-              {activeStatus === "Pending" && !isActed ? (
+              {(!isActed && (activeStatus === "Pending" || activeStatus === "On Hold" || data?.reference_document?.approval_status === "On Hold")) ? (
                 <TeamApprovalActionPill
+                  actionsEnabled={actionsEnabled}
                   variant="buttons"
                   actions={actions}
                   status={data?.status}
@@ -493,6 +589,49 @@ const ExpenseApprovalCard = ({
                   <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   "Save & Continue"
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingHoldAction && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCancelHoldAction();
+          }}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Confirm Action
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to {pendingHoldAction.toLowerCase() === "hold" ? "put this request on hold" : "unhold this request"}?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={handleCancelHoldAction}
+                size="sm"
+                bgColor="disabled"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmHoldAction}
+                size="sm"
+                bgColor="primary"
+                disabled={updateStatusMutation.isPending}
+              >
+                {updateStatusMutation.isPending ? (
+                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  "Confirm"
                 )}
               </Button>
             </div>

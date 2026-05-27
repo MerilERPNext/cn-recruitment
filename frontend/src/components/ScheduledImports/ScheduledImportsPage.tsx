@@ -1,11 +1,13 @@
 import { Upload } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useScheduledImports } from "../../hooks/useScheduledImports";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { scheduledImportsService } from "../../services/scheduledImportsService";
 import type {
   ImportStatusSummary,
   ScheduledDataImport,
@@ -19,6 +21,8 @@ import ImportMobileCard from "./ImportMobileCard";
 import ImportTableRow from "./ImportTableRow";
 import ImportTableSkeleton from "./ImportTableSkeleton";
 
+import { useTargetUser } from "../../context/ViewedUserContext";
+import { useEmployee } from "../../hooks/useEmployee";
 import { COLUMN_SORT_CONFIG_SCHEDULED_IMPORTS } from "../../utils/tableSortConfig";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
@@ -41,22 +45,27 @@ const COLUMN_TITLES = [
 ];
 
 const COLUMN_WIDTHS = [
-  "1fr",
-  "1fr",
-  "1fr",
-  "1fr",
-  "1fr",
-  "1fr",
-  "1fr",
-  "1fr",
-  "1fr",
-  "1fr",
+  "1fr", // Import ID
+  "1.5fr", // Import Name
+  "0.7fr", // Source
+  "1.5fr", // File Name
+  "1fr", // Initiated On
+  "1fr", // Initiated By
+  "1fr", // Scheduled Time
+  "0.8fr", // Status
+  "2fr", // Summary
+  "2fr", // Actions
 ];
 
 const ScheduledImportsPage: React.FC = () => {
   const { isDesktop } = useScreenSize();
+  const { targetEmployeeId } = useTargetUser();
+  const { data: targetEmployee } = useEmployee(targetEmployeeId);
+  const { data: loggedInUserId } = useLoggedInUser();
+  const targetedEmployeeIdValue =
+    targetEmployee?.company_email || targetEmployee?.prefered_email;
 
-  const { data: owner } = useLoggedInUser();
+  const owner = targetEmployeeId ? targetedEmployeeIdValue : loggedInUserId;
 
   const { data: uiPermissions } = useGetUiPermission();
 
@@ -67,7 +76,10 @@ const ScheduledImportsPage: React.FC = () => {
   });
   const [orderBy, setOrderBy] = useState<string>("creation desc");
 
-  const { data: allImports = [] } = useScheduledImports(owner ?? "", monthFilter);
+  const { data: allImports = [] } = useScheduledImports(
+    owner ?? "",
+    monthFilter,
+  );
 
   const hasPermission = useMemo(() => {
     if (!uiPermissions || uiPermissions.length === 0) return false;
@@ -110,8 +122,12 @@ const ScheduledImportsPage: React.FC = () => {
       "/app/scheduled-data-import/new-scheduled-data-import";
   }, []);
 
-  const handleErrorReport = useCallback((item: ScheduledDataImport) => {
-    toast(`Error report functionality coming soon. ${item.name}`);
+  const handleErrorReport = useCallback(async (item: ScheduledDataImport) => {
+    try {
+      await scheduledImportsService.downloadErrorReport(item);
+    } catch (error) {
+      toast.error(errorResponseFormater(error) as any);
+    }
   }, []);
 
   const handleDownloadFile = useCallback((item: ScheduledDataImport) => {
@@ -212,6 +228,7 @@ const ScheduledImportsPage: React.FC = () => {
                 "schedule_the_import",
                 "status",
                 "import_log",
+                "failed_records_count",
               ]}
               searchFields={[
                 "name",
@@ -274,6 +291,7 @@ const ScheduledImportsPage: React.FC = () => {
               "schedule_the_import",
               "status",
               "import_log",
+              "failed_records_count",
             ]}
             searchFields={[
               "name",
@@ -285,8 +303,7 @@ const ScheduledImportsPage: React.FC = () => {
             defaultFilters={(() => {
               const filters: Record<string, any> = {};
               if (owner) filters.owner = owner;
-              if (activeFilter === "pending-approval")
-                filters.status = "Draft";
+              if (activeFilter === "pending-approval") filters.status = "Draft";
               else if (activeFilter === "pending-scheduled")
                 filters.status = "Scheduled";
               else if (activeFilter === "processing")

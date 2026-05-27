@@ -147,32 +147,32 @@ const AllTeamShiftsList: React.FC = () => {
           )}
           <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
             <CardTable
-              titles={[
-                "Employee",
-                "Shift Type",
-                "Start Date",
-                "End Date",
-                "Status",
-              ]}
-              columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
-            >
-              {isLoading ? (
-                <CardSkeleton />
-              ) : teamShifts.length > 0 ? (
-                teamShifts.map((shift, index) => (
-                  <TeamShiftRowItem
-                    key={shift.name}
-                    item={shift}
-                    index={index}
+                titles={[
+                  "Employee",
+                  "Shift Type",
+                  "Start Date",
+                  "End Date",
+                  "Status",
+                ]}
+                columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
+              >
+                {isLoading ? (
+                  <CardSkeleton />
+                ) : teamShifts.length > 0 ? (
+                  teamShifts.map((shift, index) => (
+                    <TeamShiftRowItem
+                      key={shift.name}
+                      item={shift}
+                      index={index}
+                    />
+                  ))
+                ) : (
+                  <NoDataFound
+                    title="No Team Shift Assignments"
+                    subtitle="No team shifts found."
                   />
-                ))
-              ) : (
-                <NoDataFound
-                  title="No Team Shift Assignments"
-                  subtitle="No team shifts found."
-                />
-              )}
-            </CardTable>
+                )}
+              </CardTable>
           </div>
         </div>
       ) : (

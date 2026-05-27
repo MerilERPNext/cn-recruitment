@@ -1,15 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, ReactNode, useCallback, useEffect } from "react";
-import DataListView, { FilterField } from "../DataListView";
-import { BulkActionBar } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
-import { useApprovalListActions } from "../../hooks/userApprovalList";
-import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
+import { ReactNode, useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
-import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useLoadingOverlay } from "../../context/OverlayContext";
+import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
+import {
+  useBulkUpdateRejectionReason,
+  useIsRejectionReasonMandatory,
+} from "../../hooks/useLeaves";
+import { useApprovalListActions } from "../../hooks/userApprovalList";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { isActionEnabled } from "../../utils/uiPermission";
+import { BulkActionFooter } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
+import DataListView, { FilterField } from "../DataListView";
+import { useBulkSelectContext } from "./BulkSelectContext";
+import RejectionReasonModal from "./RejectionReasonModal";
 
 type ApprovalListProps = {
+  uiPermission?: {
+    app: string;
+    page: string;
+    actionKey: string;
+  };
   doctype: string;
   renderCardContent: ({
     todoId,
@@ -47,8 +61,8 @@ type ApprovalListProps = {
   columnWidths?: string[];
   orderBy?: string;
   noRecordsScreen?:
-  | React.ReactNode
-  | ((filters: Record<string, any>) => React.ReactNode);
+    | React.ReactNode
+    | ((filters: Record<string, any>) => React.ReactNode);
   SkeletonComponent?: React.ComponentType;
   onActiveFiltersChange?: (filters: Record<string, any>) => void;
   onDataLoad?: (data: any[]) => void;
@@ -73,6 +87,7 @@ const normalizeFilters = (filters: Record<string, any>) => {
 };
 
 const ApprovalList = ({
+  uiPermission,
   doctype,
   status,
   renderCardContent,
@@ -89,7 +104,6 @@ const ApprovalList = ({
   onBulkSelectVisibilityChange,
   bulkSelectVisible,
   defaultFilters,
-  columnWidths,
   noRecordsScreen,
   SkeletonComponent,
   orderBy,
@@ -101,13 +115,23 @@ const ApprovalList = ({
     normalizeFilters(defaultFilters || {}),
   );
 
-  const handleFiltersChange = useCallback((filters: Record<string, any>) => {
-    const normalized = normalizeFilters(filters);
-    setActiveFilters(normalized);
-    if (onActiveFiltersChange) {
-      onActiveFiltersChange(normalized);
-    }
-  }, [onActiveFiltersChange]);
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEnabled = isActionEnabled(
+    uiPermissionData,
+    uiPermission?.actionKey ?? "",
+    uiPermission?.page,
+  );
+
+  const handleFiltersChange = useCallback(
+    (filters: Record<string, any>) => {
+      const normalized = normalizeFilters(filters);
+      setActiveFilters(normalized);
+      if (onActiveFiltersChange) {
+        onActiveFiltersChange(normalized);
+      }
+    },
+    [onActiveFiltersChange],
+  );
 
   const loading = useLoadingOverlay();
 
@@ -121,9 +145,16 @@ const ApprovalList = ({
     isLoading: boolean;
   } | null>(null);
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<any[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
   const [actedIds, setActedIds] = useState<Set<string>>(new Set());
+
+  const { data: isRejectionMandatory } = useIsRejectionReasonMandatory();
+  const bulkUpdateMutation = useBulkUpdateRejectionReason();
+  const [showBulkCommentModal, setShowBulkCommentModal] = useState(false);
+  const [pendingBulkAction, setPendingBulkAction] = useState<
+    "Approve" | "Reject" | null
+  >(null);
 
   const addActedId = useCallback((id: string) => {
     setActedIds((prev) => new Set(prev).add(id));
@@ -138,7 +169,12 @@ const ApprovalList = ({
     return () => document.removeEventListener("approval:acted", handler);
   }, [addActedId]);
 
-  const currentStatus = activeFilters?.status || activeFilters?.approval_status || activeFilters?.custom_final_status || activeFilters?.custom_status || status;
+  const currentStatus =
+    activeFilters?.status ||
+    activeFilters?.approval_status ||
+    activeFilters?.custom_final_status ||
+    activeFilters?.custom_status ||
+    status;
 
   const statusBasedBulkEnable =
     currentStatus === "Open" ||
@@ -146,22 +182,25 @@ const ApprovalList = ({
     currentStatus === "Draft";
 
   // parent prop + internal logic combine
-  const finalBulkSelectVisible =
-    typeof bulkSelectVisible === "boolean"
+  // If a uiPermission actionKey is set but the action is disabled, always hide bulk select.
+  const bulkAllowedByPermission = !uiPermission?.actionKey || actionsEnabled;
+  const finalBulkSelectVisible = bulkAllowedByPermission
+    ? typeof bulkSelectVisible === "boolean"
       ? bulkSelectVisible
-      : statusBasedBulkEnable;
-
+      : statusBasedBulkEnable
+    : false;
 
   useEffect(() => {
     onBulkSelectVisibilityChange?.(finalBulkSelectVisible);
   }, [finalBulkSelectVisible, onBulkSelectVisibilityChange]);
 
   const triggerRefetch = useCallback(() => {
-    if (setRefetch) {
-      setRefetch(true);
-    }
+    // Only fire one trigger. setRefetch is for the parent to push a refetch
+    // inward — using both setters causes two separate renders (React state vs
+    // Zustand store are different update systems), which makes refetchTrigger
+    // flip to true twice and fires two API calls.
     setRefetchAttendance(true);
-  }, [setRefetch, setRefetchAttendance]);
+  }, [setRefetchAttendance]);
 
   useEffect(() => {
     const handleChatClose = () => {
@@ -189,6 +228,7 @@ const ApprovalList = ({
       document.removeEventListener("approval:acted", handleActed);
     };
   }, [addActedId]);
+
   // Toggle single
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -197,7 +237,7 @@ const ApprovalList = ({
   };
 
   // Toggle all
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     if (selectedIds.length === allRequests.length) {
       setSelectedIds([]);
     } else {
@@ -205,8 +245,8 @@ const ApprovalList = ({
         allRequests.map((req) => {
           const actionsWithForm = req?.custom_doctype_actions_with_form
             ? JSON.parse(
-              req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
-            )
+                req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
+              )
             : [];
           if (
             actionsWithForm?.includes("Approve") ||
@@ -219,7 +259,7 @@ const ApprovalList = ({
         }),
       );
     }
-  };
+  }, [selectedIds, allRequests]);
 
   const handleAction = useCallback(
     async (
@@ -305,52 +345,154 @@ const ApprovalList = ({
   );
 
   const batchActionMutation = useActionOnAttendanceRequest();
-  const handleBulkAction = async (action: "Approve" | "Reject") => {
-    await loading?.wrap(async () => {
-      try {
-        setBulkLoading({ action, isLoading: true });
 
-        await new Promise<void>((resolve, reject) => {
-          batchActionMutation.mutate(
-            {
-              todo_ids: selectedIds.filter(Boolean),
-              selected_action: action,
-            },
-            {
-              onSuccess: () => {
-                const ids = selectedIds.filter(Boolean);
-                setActedIds((prev) => {
-                  const next = new Set(prev);
-                  ids.forEach((id) => next.add(id));
-                  return next;
-                });
-                toast.success(
-                  `Requests ${action === "Reject"
-                    ? "rejected"
-                    : `${action.toLowerCase()}d`
-                  } successfully!`,
-                );
-                triggerRefetch();
-                resolve();
-              },
-              onError: (error) => {
-                toast.error(errorResponseFormater(error));
-                console.error(error);
-                reject(error);
-              },
-            },
-          );
-        });
-
-        setSelectedIds([]);
-      } finally {
-        setBulkLoading(null);
+  const handleBulkActionClick = (action: "Approve" | "Reject") => {
+    if (action === "Reject" && doctype === "Leave Application") {
+      const isMandatory = isRejectionMandatory?.message ?? true;
+      if (isMandatory) {
+        setPendingBulkAction(action);
+        setShowBulkCommentModal(true);
+        return;
       }
-    }, `${action}ing selected requests…`);
+    }
+    handleBulkAction(action);
   };
 
+  const handleSaveBulkComment = async (reason: string) => {
+    try {
+      const docnames = selectedIds
+        .map((id) => {
+          const req = allRequests.find((r) => r.todo_id === id);
+          return req?.reference_name || req?.reference_document?.name;
+        })
+        .filter(Boolean);
+
+      if (docnames.length > 0) {
+        await bulkUpdateMutation.mutateAsync({
+          doctype,
+          docnames,
+          comment: reason,
+        });
+      }
+      setShowBulkCommentModal(false);
+      if (pendingBulkAction) {
+        handleBulkAction(pendingBulkAction);
+      }
+    } catch (error) {
+      console.error("Failed to save bulk comment", error);
+    }
+  };
+
+  const handleCancelBulkComment = () => {
+    setShowBulkCommentModal(false);
+    setPendingBulkAction(null);
+  };
+
+  const handleBulkAction = useCallback(
+    async (action: "Approve" | "Reject") => {
+      await loading?.wrap(async () => {
+        try {
+          setBulkLoading({ action, isLoading: true });
+
+          await new Promise<void>((resolve, reject) => {
+            batchActionMutation.mutate(
+              {
+                todo_ids: selectedIds.filter(Boolean),
+                selected_action: action,
+              },
+              {
+                onSuccess: () => {
+                  const ids = selectedIds.filter(Boolean);
+                  setActedIds((prev) => {
+                    const next = new Set(prev);
+                    ids.forEach((id) => next.add(id));
+                    return next;
+                  });
+                  toast.success(
+                    `Requests ${
+                      action === "Reject"
+                        ? "rejected"
+                        : `${action.toLowerCase()}d`
+                    } successfully!`,
+                  );
+                  triggerRefetch();
+                  resolve();
+                },
+                onError: (error) => {
+                  toast.error(errorResponseFormater(error));
+                  console.error(error);
+                  reject(error);
+                },
+              },
+            );
+          });
+
+          setSelectedIds([]);
+        } finally {
+          setBulkLoading(null);
+        }
+      }, `${action} selected requests…`);
+    },
+    [loading, batchActionMutation, selectedIds, triggerRefetch],
+  );
+
+  // ── BulkSelectContext sync ───────────────────────────────────────────────
+  // CardTable is a parent of ApprovalList so it can't receive a provider from
+  // us — instead we write upward into the BulkSelectProvider that wraps both.
+  //
+  // Rule: only plain DATA goes into context STATE (to avoid re-render loops).
+  // Function callbacks go into callbacksRef — ref writes are synchronous and
+  // never trigger re-renders, so they can't cause infinite loops.
+  const bulkCtx = useBulkSelectContext();
+  const bulkSetState = bulkCtx?.setState; // stable Dispatch — safe as dep
+
+  // Keep callbacks current in the ref on every render (cheap, no side-effects).
+  if (bulkCtx?.callbacksRef) {
+    bulkCtx.callbacksRef.current = {
+      onSelectAll: handleSelectAll,
+      onBulkAction: handleBulkAction,
+    };
+  }
+
+  // Sync plain data into context state. No function refs in deps → no loop.
+  useEffect(() => {
+    if (!bulkSetState) return;
+    bulkSetState({
+      selectedIds,
+      allRequests,
+      isEnabled: finalBulkSelectVisible,
+      bulkLoading,
+    });
+  }, [
+    bulkSetState,
+    selectedIds,
+    allRequests,
+    finalBulkSelectVisible,
+    bulkLoading,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      bulkSetState?.(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Stable callback — prevents DataListView's onDataLoad effect from firing
+  // on every ApprovalList re-render (which would call setAllRequests → loop).
+  const handleDataLoad = useCallback((data: any[]) => {
+    setAllRequests(data);
+    onDataLoad?.(data);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const { isDesktop } = useScreenSize();
+
+  const allSelected =
+    allRequests.length > 0 && selectedIds.length === allRequests.length;
+
   return (
-    <div>
+    <>
       <DataListView
         queryKey={["todo-approvals", doctype]}
         defaultFilters={defaultFilters || { status }}
@@ -360,17 +502,13 @@ const ApprovalList = ({
             doctype: doctype,
             include_allocated_todos: true,
             fields: ["*"],
-            // status: status,
             ...activeFilters,
           },
         }}
-        // onFiltersChange={(filters) => {
-        //   setActiveFilters(filters);
-        // }}
         noRecordsScreen={
           typeof noRecordsScreen === "function"
             ? (filters: Record<string, any>) =>
-              noRecordsScreen({ ...filters, ...activeFilters })
+                noRecordsScreen({ ...filters, ...activeFilters })
             : noRecordsScreen
         }
         onFiltersChange={handleFiltersChange}
@@ -382,26 +520,40 @@ const ApprovalList = ({
         showRefreshButton={false}
         infiniteScroll={infiniteScroll}
         loadMorePagination={loadMorePagination}
-        onDataLoad={(data) => {
-          setAllRequests(data);
-          onDataLoad?.(data);
-        }}
+        onDataLoad={handleDataLoad}
         SkeletonComponent={SkeletonComponent}
         orderBy={orderBy}
-        PreListComponent={() => (
-          <div className="mb-2 lg:mb-0 lg:mt-[-8px] sm:p-0">
-            {finalBulkSelectVisible && (
-              <BulkActionBar
-                selectedIds={selectedIds}
-                pendingRequests={allRequests}
-                onSelectAll={handleSelectAll}
-                onBulkAction={handleBulkAction}
-                loadingAction={bulkLoading}
-                columnWidths={columnWidths}
-              />
-            )}
-          </div>
-        )}
+        PreListComponent={
+          // On mobile the CardTable header is hidden, so we show a compact
+          // select-all row. On desktop the checkbox lives in the CardTable
+          // header via BulkSelectContext — nothing needed here.
+          !isDesktop && finalBulkSelectVisible && allRequests.length > 0
+            ? () => (
+                <div className="flex items-center gap-3 px-4 py-2 bg-primary/20  mb-1">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={handleSelectAll}
+                    className="cursor-pointer w-4 h-4"
+                  />
+                  <span className="text-sm">Select all pending requests</span>
+                </div>
+              )
+            : undefined
+        }
+        PostListComponent={
+          // Renders between the last list item and the pagination row.
+          // Only visible when at least one item is selected.
+          finalBulkSelectVisible
+            ? () => (
+                <BulkActionFooter
+                  selectedIds={selectedIds}
+                  onBulkAction={handleBulkActionClick}
+                  loadingAction={bulkLoading}
+                />
+              )
+            : undefined
+        }
         renderItem={(item: any) => {
           const todoId = item?.todo_id;
           const isActed = actedIds.has(todoId);
@@ -434,7 +586,13 @@ const ApprovalList = ({
           }
         }}
       />
-    </div>
+      <RejectionReasonModal
+        isOpen={showBulkCommentModal}
+        isPending={bulkUpdateMutation.isPending}
+        onCancel={handleCancelBulkComment}
+        onSave={handleSaveBulkComment}
+      />
+    </>
   );
 };
 
