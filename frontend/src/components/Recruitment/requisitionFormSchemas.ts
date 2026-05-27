@@ -105,6 +105,26 @@ export const requisitionFormSchemas = {
         clearOnRefresh: true,
         customConditional: "show = !!data.designation",
       },
+      {
+        type: "textfield",
+        key: "custom_division",
+        label: "Division",
+        placeholder: "Enter Division (e.g. Product Engineering)",
+      },
+      {
+        type: "select",
+        key: "status",
+        label: "Status",
+        data: {
+          values: [
+            { label: "Pending", value: "Pending" },
+            { label: "Approved", value: "Approved" },
+            { label: "Open", value: "Open" },
+          ],
+        },
+        defaultValue: "Pending",
+        validate: { required: true },
+      },
     ],
   },
   jobDetails: {
@@ -363,6 +383,245 @@ export const requisitionFormSchemas = {
           },
         ],
       },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "number",
+                key: "expected_compensation",
+                label: "Expected Compensation",
+                placeholder: "e.g., 600000",
+                validate: { required: true },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "datetime",
+                key: "expected_by",
+                label: "Expected By Date",
+                format: "dd-MM-yyyy",
+                enableDate: true,
+                enableTime: false,
+                validate: { required: true },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "select",
+                key: "custom_employment_type",
+                label: "Employment Type",
+                data: {
+                  values: [
+                    { label: "Full Time", value: "Full Time" },
+                    { label: "Part Time", value: "Part Time" },
+                    { label: "Contract", value: "Contract" },
+                    { label: "Internship", value: "Internship" },
+                  ],
+                },
+                defaultValue: "Full Time",
+                validate: { required: true },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "textfield",
+                key: "custom_employment_type_link",
+                label: "Employment Type Link",
+                placeholder: "e.g., Full Time",
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "textfield",
+                key: "custom_location",
+                label: "Target Location",
+                placeholder: "e.g., Bengaluru",
+                validate: { required: true },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "textfield",
+                key: "custom_work_experience_range",
+                label: "Work Experience Range",
+                placeholder: "e.g., 1 - 3 years",
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "textfield",
+                key: "custom_preferred_notice_period",
+                label: "Preferred Notice Period",
+                placeholder: "e.g., 30 Days",
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "textfield",
+                key: "custom_preferred_company",
+                label: "Preferred Target Company",
+                placeholder: "e.g., Razorpay",
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "textfield",
+                key: "custom_other_preferred_companies",
+                label: "Other Preferred Companies",
+                placeholder: "e.g., Razorpay, Cred, Postman",
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "textfield",
+                key: "custom_job_description_template",
+                label: "Job Description Template",
+                placeholder: "e.g., Senior FE Template",
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "select",
+        key: "custom_skills",
+        label: "Required Skills",
+        placeholder: "Select or type skills",
+        multiple: true,
+        data: {
+          values: [
+            { label: "React", value: "React" },
+            { label: "TypeScript", value: "TypeScript" },
+            { label: "JavaScript", value: "JavaScript" },
+            { label: "Node.js", value: "Node.js" },
+            { label: "Python", value: "Python" },
+            { label: "Java", value: "Java" },
+            { label: "Go", value: "Go" },
+            { label: "SQL", value: "SQL" },
+          ],
+        },
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "textarea",
+                key: "description",
+                label: "Job Description (HTML)",
+                placeholder: "<p>Job Description details...</p>",
+                rows: 4,
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "textarea",
+                key: "reason_for_requesting",
+                label: "Reason for Requesting",
+                placeholder: "Enter details here...",
+                rows: 4,
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
     ],
   },
   positionSelection: {
@@ -603,6 +862,74 @@ export const requisitionFormSchemas = {
         type: "textfield",
         key: "designation_change",
         label: "Designation Change",
+      },
+      {
+        type: "datagrid",
+        key: "custom_qualifications",
+        label: "Qualifications",
+        addAnother: "Add Qualification",
+        components: [
+          {
+            type: "textfield",
+            key: "qualification",
+            label: "Qualification",
+            placeholder: "e.g., B.Com, B.Tech",
+            validate: { required: true },
+          },
+          {
+            type: "select",
+            key: "mandatory",
+            label: "Mandatory?",
+            data: {
+              values: [
+                { label: "Required", value: "Required" },
+                { label: "Preferred", value: "Preferred" },
+              ],
+            },
+            defaultValue: "Required",
+            validate: { required: true },
+          },
+        ],
+      },
+      {
+        type: "textfield",
+        key: "custom_assign_to_recruiter",
+        label: "Assign to Recruiter (Email)",
+        placeholder: "e.g., recruiter@company.com",
+      },
+      {
+        type: "datagrid",
+        key: "custom_pre_screened_candidates",
+        label: "Pre-Screened Candidates",
+        addAnother: "Add Candidate",
+        components: [
+          {
+            type: "textfield",
+            key: "candidate_name",
+            label: "Candidate Name",
+            placeholder: "e.g., Maya Krishnan",
+            validate: { required: true },
+          },
+          {
+            type: "textfield",
+            key: "email",
+            label: "Email",
+            placeholder: "e.g., candidate@email.com",
+            validate: { required: true },
+          },
+          {
+            type: "textfield",
+            key: "phone",
+            label: "Phone",
+            placeholder: "e.g., +91...",
+          },
+          {
+            type: "checkbox",
+            key: "offer_directly",
+            label: "Offer Directly?",
+            defaultValue: false,
+          },
+        ],
       },
     ],
   },
