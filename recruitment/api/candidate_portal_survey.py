@@ -13,22 +13,22 @@ JOB_OFFER_URL_TEMPLATE = "/job_offer?appl={applicant}"
 def get_post_login_route():
     """Tell the candidate portal where to land after login.
 
-    - Survey enabled + not yet submitted → render the survey (frontend
-      uses the returned Form.io schema, then calls `submit_survey`).
-    - Survey enabled + already submitted → redirect to the job offer page.
-    - Survey not enabled → redirect to the action center, which handles
-      per-client routing (pre-offer form / job offer / onboarding).
+    - Survey enabled + not yet submitted → render the survey.
+    - Otherwise → job offer page if an offer is still awaiting response,
+      else the action center (offer accepted/rejected, or no survey).
     """
     applicant_name, opening_name = _resolve_candidate_application()
     if not applicant_name or not opening_name:
         return {"survey_required": False, "redirect_url": ACTION_CENTER_URL}
 
     opening = frappe.get_doc("Job Opening", opening_name)
-    if not _is_survey_enabled(opening) or not opening.get("custom_recruitment_survey_form"):
-        return {"survey_required": False, "redirect_url": ACTION_CENTER_URL}
-
-    if frappe.db.exists("Recruitment Survey Response", {"job_applicant": applicant_name}):
-        return {"survey_required": False, "redirect_url": _job_offer_url(applicant_name)}
+    survey_pending = (
+        _is_survey_enabled(opening)
+        and opening.get("custom_recruitment_survey_form")
+        and not frappe.db.exists("Recruitment Survey Response", {"job_applicant": applicant_name})
+    )
+    if not survey_pending:
+        return {"survey_required": False, "redirect_url": _next_url(applicant_name)}
 
     widget_name = opening.get("custom_recruitment_survey_form")
     widget = frappe.get_doc("Microapp Form Widget", widget_name)
@@ -43,10 +43,10 @@ def get_post_login_route():
 
 @candidate_required
 def submit_survey(response):
-    """Persist the candidate's survey response and return the job-offer URL.
+    """Persist the candidate's survey response and return the next URL.
 
     Idempotent — a repeat submission for the same applicant returns
-    the job-offer redirect without creating a duplicate row.
+    the same redirect without creating a duplicate row.
     """
     applicant_name, opening_name = _resolve_candidate_application()
     if not applicant_name:
@@ -59,7 +59,7 @@ def submit_survey(response):
         frappe.throw(_("Recruitment survey is not enabled for this job opening."))
 
     if frappe.db.exists("Recruitment Survey Response", {"job_applicant": applicant_name}):
-        return {"status": "success", "redirect_url": _job_offer_url(applicant_name)}
+        return {"status": "success", "redirect_url": _next_url(applicant_name)}
 
     doc = frappe.new_doc("Recruitment Survey Response")
     doc.job_applicant = applicant_name
@@ -71,7 +71,18 @@ def submit_survey(response):
     doc.insert(ignore_permissions=True)
     frappe.db.commit()
 
-    return {"status": "success", "redirect_url": _job_offer_url(applicant_name)}
+    return {"status": "success", "redirect_url": _next_url(applicant_name)}
+
+
+def _next_url(applicant_name):
+    """Job offer URL while the offer is awaiting response; otherwise action center."""
+    has_pending_offer = frappe.db.exists(
+        "Job Offer",
+        {"job_applicant": applicant_name, "status": "Awaiting Response", "docstatus": ("<", 2)},
+    )
+    if has_pending_offer:
+        return JOB_OFFER_URL_TEMPLATE.format(applicant=applicant_name)
+    return ACTION_CENTER_URL
 
 
 def _resolve_candidate_application():
