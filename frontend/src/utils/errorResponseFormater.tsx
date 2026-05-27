@@ -17,9 +17,9 @@ export const errorResponseFormater = (
   }
 
   // Show success_message and error_message toasts if showToast is enabled
+  const messageData = error?.response?.data?.message;
   if (options?.showToast) {
     try {
-      const messageData = error?.response?.data?.message;
       if (messageData && typeof messageData === "object") {
         if (messageData.error_message) {
           toast.error(
@@ -61,5 +61,11 @@ export const errorResponseFormater = (
 
   if (err == null) err = fallback;
   // ❗ Always return sanitized HTML ReactNode
+
+  if (options?.showToast && !messageData?.success_message && !messageData?.error_message) {
+    toast.error(
+      <div className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(err) }} />
+    );
+  }
   return <div className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(err) }} />;
 };
