@@ -12,7 +12,9 @@ type TabName =
     | "Self Review" | "Peer Nomination" | "Skill And Proficiency"
     | "Feedback"
     | "New Goal Plan"
-    | "Performance Review";
+    | "Performance Review"
+    | "Cycle"
+    | "Calibrator";
 
 
 const tabRoutes: Record<TabName, string> = {
@@ -25,6 +27,8 @@ const tabRoutes: Record<TabName, string> = {
     Feedback: "/webapp/performance-app/feedback",
     "New Goal Plan": "/webapp/performance-app/new-goal-plan",
     "Performance Review": "/webapp/performance-app/performance-review",
+    Cycle: "/webapp/performance-app/appraisal-cycle-wizard",
+    Calibrator: "/webapp/performance-app/calibrator/session",
 };
 
 

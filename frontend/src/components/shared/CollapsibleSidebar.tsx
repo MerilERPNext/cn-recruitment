@@ -420,7 +420,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         {
           name: "My Team",
           icon: Users,
-          href: "/webapp/performance-app/my-team",
+          href: "/webapp/performance-app/team-overview",
           permissionKey: "My Team",
           subItems: [
             {
