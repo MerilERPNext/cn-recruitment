@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { FileText } from "lucide-react"; // Using generic icon if specific logos aren't available
 import { Switch } from "../../../../shared/atoms/Switch";
 import { Typography } from "../../../../shared/atoms/Typography";
@@ -67,7 +68,7 @@ type Integration = {
   active: boolean;
 };
 
-const integrations: Integration[] = [
+const defaultIntegrations: Integration[] = [
   {
     id: "jira",
     name: "Jira (Atlassian)",
@@ -100,6 +101,27 @@ const AutoRating = ({
   globalAutoRating,
   setGlobalAutoRating,
 }: AutoRatingProps) => {
+  const [integrations, setIntegrations] =
+    useState<Integration[]>(defaultIntegrations);
+
+  const handleIntegrationToggle = (integrationId: string, active: boolean) => {
+    setIntegrations((currentIntegrations) =>
+      currentIntegrations.map((integration) =>
+        integration.id === integrationId
+          ? {
+              ...integration,
+              active,
+              status: active
+                ? integration.status === "Not connected"
+                  ? "Connected"
+                  : integration.status
+                : "Not connected",
+            }
+          : integration,
+      ),
+    );
+  };
+
   return (
     <section className="rounded-lg border border-gray-200 bg-white p-5 sm:p-6 shadow-sm">
       <div className="flex items-start justify-between mb-8">
@@ -217,7 +239,9 @@ const AutoRating = ({
                 </div>
                 <Switch
                   checked={integration.active}
-                  onCheckedChange={() => {}}
+                  onCheckedChange={(checked) =>
+                    handleIntegrationToggle(integration.id, checked)
+                  }
                 />
               </div>
             ))}
