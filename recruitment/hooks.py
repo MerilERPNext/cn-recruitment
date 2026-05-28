@@ -55,6 +55,7 @@ fixtures = [
 doctype_js = {
     "Job Offer": ["public/js/job_offer.js"],
     "Job Applicant": ["public/js/job_applicant.js"],
+    "Job Requisition": ["public/js/job_requisition.js"],
     "Interview": ["public/js/interview.js"],
     "User": ["public/js/user.js"],
     "Employee Onboarding": [
