@@ -72,6 +72,7 @@ const RecruitmentApp: React.FC = () => {
 
   const isFormPage =
     location.pathname === "/webapp/recruitment/requisition/new" ||
+    location.pathname.startsWith("/webapp/recruitment/requisition/edit") ||
     location.pathname === "/webapp/recruitment/refer";
 
   const shouldShowActionButton = () => {
@@ -127,6 +128,9 @@ const RecruitmentApp: React.FC = () => {
     }
     if (path.startsWith("/webapp/recruitment/referrals/")) {
       return "Referral Details";
+    }
+    if (path.startsWith("/webapp/recruitment/requisition/edit")) {
+      return "Edit Requisition";
     }
 
     return routeTitles[path] || "Recruitment";

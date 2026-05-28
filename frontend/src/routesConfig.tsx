@@ -1132,6 +1132,11 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Requisitions",
       },
       {
+        path: "requisition/edit",
+        element: <RequisitionForm />,
+        permissionKey: "Requisitions",
+      },
+      {
         path: "interviews",
         element: <InterviewList />,
         permissionKey: "Interviews",
