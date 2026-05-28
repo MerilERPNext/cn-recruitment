@@ -164,6 +164,8 @@ export type RoleSelect = {
 
 export type FlowRequestItem = {
   request_id: string;
+  funnel?: string;
+  retrigger_definition_name?: string;
   flow_name: string;
   category: string;
   effective_date: string | null;
