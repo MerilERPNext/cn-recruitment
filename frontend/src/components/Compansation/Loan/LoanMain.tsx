@@ -148,7 +148,7 @@ export default function LoansPage() {
     <>
       <div className="flex flex-col h-full bg-app font-brand">
         {/* ── Top bar ──────────────────────────────────────────────────────────── */}
-        <div className="bg-white border-b border-gray-100 sticky top-0 z-10 w-full">
+        <div className="bg-white border-b mb-6 border-gray-100 sticky top-0 z-10 w-full">
           {/* Desktop top bar (hidden on mobile) */}
           {isDesktop && (
             <div className="sm:flex items-center justify-between h-[52px] px-7">

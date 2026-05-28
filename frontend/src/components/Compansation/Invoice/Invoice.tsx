@@ -538,7 +538,7 @@ export default function Invoice() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+      <div className="flex-1 overflow-visibles md:px-4 pb-5 md:pb-20">
         {isDesktop ? (
           <CardTable titles={titles} columnWidths={columnWidths} columnSortConfig={SALARY_SORT_CONFIG}>
             <DataListView

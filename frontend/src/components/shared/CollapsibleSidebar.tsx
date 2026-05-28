@@ -36,9 +36,7 @@ import {
   Share2,
   SquarePlus,
   UserSearch,
-  Briefcase,
   UserPlus,
-  Settings,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
