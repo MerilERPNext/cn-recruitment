@@ -9,7 +9,7 @@ import FrappeAPI from "../../utils/frappeAPI";
 import type { FetchParams } from "../../services/customApiService";
 import type { FrappePageResponse } from "../../types/frappe";
 import CardTable, { ColumnSortConfig } from "../shared/CardTable";
-import { Edit } from "lucide-react";
+import { Briefcase, CheckCircle, Edit, FileText, FolderOpen } from "lucide-react";
 
 const EditButton = ({ requisition, onClose }: { requisition: any; onClose: () => void }) => {
   const navigate = useNavigate();
@@ -30,6 +30,12 @@ const EditButton = ({ requisition, onClose }: { requisition: any; onClose: () =>
 
 const Requisition = () => {
   const { isDesktop } = useScreenSize();
+  const [summary, setSummary] = useState<{
+    total_requisitions: number;
+    total_positions: number;
+    active_offer_positions: number;
+    closed_positions: number;
+  } | null>(null);
   const titles = [
     "Requisition Code",
     "Designation, Department & Location",
@@ -348,6 +354,10 @@ const Requisition = () => {
     const hasNextPage = start + returned < totalCount;
     const nextCursor = hasNextPage ? start + returned : undefined;
 
+    if (response?.data?.summary) {
+      setSummary(response.data.summary);
+    }
+
     return {
       data: requisitions,
       totalCount,
@@ -429,8 +439,76 @@ const Requisition = () => {
     []
   );
 
+  const statCards = [
+    {
+      title: "Total Requisitions",
+      value: summary?.total_requisitions ?? "—",
+      icon: FileText,
+      bgColor: "bg-purple-50",
+      iconColor: "text-purple-600",
+    },
+    {
+      title: "Total Positions",
+      value: summary?.total_positions ?? "—",
+      icon: Briefcase,
+      bgColor: "bg-blue-50",
+      iconColor: "text-blue-600",
+    },
+    {
+      title: "Active Offer Positions",
+      value: summary?.active_offer_positions ?? "—",
+      icon: CheckCircle,
+      bgColor: "bg-green-50",
+      iconColor: "text-green-600",
+    },
+    {
+      title: "Closed Positions",
+      value: summary?.closed_positions ?? "—",
+      icon: FolderOpen,
+      bgColor: "bg-orange-50",
+      iconColor: "text-orange-600",
+    },
+  ];
+
   return (
-    <div className="flex-1 overflow-y-auto pb-24">
+    <div className="flex-1  overflow-y-auto pb-24">
+      <div className="flex items-center justify-between px-2">
+        <Typography
+          variant="h4"
+          className="font-bold text-gray-900"
+        >
+          Requisition
+        </Typography>
+      </div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 mb-4 md:grid-cols-4 gap-3 md:gap-4 px-1">
+        {statCards.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <Card
+              key={index}
+              radius="xl"
+              className="border p-4 md:p-5 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className={`w-10 h-10 md:w-12 md:h-12 ${stat.bgColor} rounded-lg flex items-center justify-center shrink-0`}
+                >
+                  <Icon className={`size-5 md:size-6 ${stat.iconColor}`} />
+                </div>
+                <div>
+                  <Typography variant="bodySmall" className="mb-1" color="body2">
+                    {stat.title}
+                  </Typography>
+                  <Typography variant="subheading" color="primary">
+                    {stat.value}
+                  </Typography>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
       {isDesktop ? (
         <CardTable
           titles={titles}
@@ -469,9 +547,8 @@ const Requisition = () => {
           <div className="absolute inset-0" onClick={() => setSelectedRequisition(null)} />
 
           <div
-            className={`bg-white flex flex-col w-full ${
-              isDesktop ? "max-w-[600px]" : ""
-            } shadow-lg relative h-screen z-10`}
+            className={`bg-white flex flex-col w-full ${isDesktop ? "max-w-[600px]" : ""
+              } shadow-lg relative h-screen z-10`}
           >
             {/* Header */}
             <div className="flex justify-between items-center p-4 border-b">
