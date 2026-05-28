@@ -437,6 +437,37 @@ def create_job_requisition(payload=None):
 # ---------------------------------------------------------------------------
 
 
+# Status buckets used by the list-view summary cards.
+# Edit here if the workflow ever introduces new states.
+ACTIVE_STATUSES = ("Open & Approved", "In-Progress", "Job Opening Created")
+CLOSED_STATUSES = ("Filled", "Cancelled", "Rejected")
+
+
+def _compute_global_summary():
+    """Single aggregate query returning the 4 list-view card counts.
+    Always global — does NOT honor list filters by design."""
+    row = frappe.db.sql(
+        """
+        SELECT
+            COUNT(*)                                        AS total_requisitions,
+            COALESCE(SUM(no_of_positions), 0)               AS total_positions,
+            COALESCE(SUM(CASE WHEN status IN %(active)s
+                              THEN no_of_positions ELSE 0 END), 0) AS active_offer_positions,
+            COALESCE(SUM(CASE WHEN status IN %(closed)s
+                              THEN no_of_positions ELSE 0 END), 0) AS closed_positions
+        FROM `tabJob Requisition`
+        """,
+        {"active": ACTIVE_STATUSES, "closed": CLOSED_STATUSES},
+        as_dict=True,
+    )[0]
+    return {
+        "total_requisitions": int(row.total_requisitions or 0),
+        "total_positions": int(row.total_positions or 0),
+        "active_offer_positions": int(row.active_offer_positions or 0),
+        "closed_positions": int(row.closed_positions or 0),
+    }
+
+
 def _serialise_requisition(doc):
     """Flat round-trip representation of a JR.
     All parent fields keep their DocType field names so the UI can bind
@@ -574,6 +605,7 @@ def get_job_requisition(
                     "start": start,
                     "returned": len(items),
                 },
+                "summary": _compute_global_summary(),
             },
             http=200,
         )
