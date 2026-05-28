@@ -134,7 +134,11 @@ const ConfirmationWorkflow = () => {
       const raw = item?.initiator_forms?.[0]?.form_data;
       if (!raw) return null;
       try {
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        return {
+          form: parsed?.form,
+          answer: parsed?.submission_data ?? parsed?.answer,
+        };
       } catch {
         return null;
       }

@@ -5,7 +5,6 @@ import NoDataFound from "./atoms/NoDataFound";
 import type { FunnelActivityLogEntry } from "../../types/flows";
 import { useGetFunnelActivityLog } from "../../hooks/useFlows";
 import { Typography } from "./atoms/Typography";
-import formatToIndianDate from "../../utils/formatToIndianDate";
 
 interface ActivityLogDrawerProps {
   open: boolean;
@@ -15,32 +14,29 @@ interface ActivityLogDrawerProps {
   size?: "sm" | "md" | "lg" | "xl" | "xxl" | "full";
 }
 
-const toIndianDateTime = (value: string): Date | null => {
+const formatLogTimestamp = (value: string): { date: string; time: string } => {
   // API returns MySQL datetime with microseconds, ex: "2026-04-23 18:30:36.815713"
-  if (!value) return null;
+  if (!value) return { date: "", time: "" };
 
   const normalized = value.replace(" ", "T");
   const [base, fractional] = normalized.split(".");
-  const safeIso = fractional ? `${base}.${fractional.slice(0, 3)}` : base;
+  const safeIso = fractional
+    ? `${base}.${fractional.slice(0, 3)}Z`
+    : `${base}Z`;
 
+  // Treat the timestamp as UTC and format in Asia/Kolkata for display.
   const d = new Date(safeIso);
-  if (Number.isNaN(d.getTime())) return null;
+  if (Number.isNaN(d.getTime())) return { date: "", time: "" };
 
-  const indian = new Date(
-    d.toLocaleString("en-US", {
-      timeZone: "Asia/Kolkata",
-    }),
-  );
+  const date = d.toLocaleDateString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 
-  return Number.isNaN(indian.getTime()) ? null : indian;
-};
-
-const formatLogTimestamp = (value: string) => {
-  const indianDate = toIndianDateTime(value);
-  if (!indianDate) return { date: "", time: "" };
-
-  const date = formatToIndianDate(indianDate);
-  const time = indianDate.toLocaleTimeString("en-IN", {
+  const time = d.toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,

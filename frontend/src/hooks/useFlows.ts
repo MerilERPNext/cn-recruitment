@@ -218,9 +218,6 @@ export const useGetFunnelActivityLog = (
     queryKey: ["funnel-activity-log", funnel_activity_id],
     queryFn: () => getFunnelActivityLog(funnel_activity_id),
     enabled: !!funnel_activity_id && enabled,
-    staleTime: 5 * 60 * 1000, // cache as fresh for 5 minutes
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
   });
 };
 
