@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -30,6 +31,7 @@ const EditButton = ({ requisition, onClose }: { requisition: any; onClose: () =>
 
 const Requisition = () => {
   const { isDesktop } = useScreenSize();
+  const { data: currentEmployee } = useCurrentEmployee();
   const [summary, setSummary] = useState<{
     total_requisitions: number;
     total_positions: number;
@@ -315,7 +317,7 @@ const Requisition = () => {
     );
   };
 
-  const fetchRequisitions = async (params: FetchParams): Promise<FrappePageResponse> => {
+  const fetchRequisitions = useCallback(async (params: FetchParams): Promise<FrappePageResponse> => {
     const start = params.pageParam !== undefined ? params.pageParam : 0;
     const limit = params.pageSize || 20;
 
@@ -343,6 +345,7 @@ const Requisition = () => {
         start,
         limit,
         filters: finalFilters.length > 0 ? JSON.stringify(finalFilters) : undefined,
+        employee: currentEmployee?.name,
         order_by: params.orderBy || "modified desc",
       }
     );
@@ -365,7 +368,7 @@ const Requisition = () => {
       nextCursor,
       pages: [Math.floor(start / limit) + 1],
     };
-  };
+  }, [currentEmployee?.name]);
 
   const filterFields: FilterField[] = [
     {
@@ -516,7 +519,7 @@ const Requisition = () => {
           columnSortConfig={REQUISITION_SORT_CONFIG}
         >
           <DataListView
-            queryKey={["job-requisitions"]}
+            queryKey={["job-requisitions", currentEmployee?.name ?? ""]}
             fetchFunction={fetchRequisitions}
             ItemComponent={ItemComponent}
             searchFields={["name", "designation", "department"]}

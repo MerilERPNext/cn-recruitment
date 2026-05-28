@@ -1,47 +1,44 @@
 import React from "react";
 import { FolderSearch } from "lucide-react";
 import { Typography } from "./Typography";
+import { BeatLoader } from "react-spinners";
 
 interface NoDataFoundProps {
     title?: string;
     subtitle?: string;
     className?: string;
+    loading?: boolean;
 }
 
-/**
- * Animated empty-state component used across the project
- * wherever there is no data to display.
- */
 export const NoDataFound: React.FC<NoDataFoundProps> = ({
     title = "No Data Found",
     subtitle = "There's nothing to show here right now.",
     className = "",
+    loading = false,
 }) => {
+    if (loading) {
+        return (
+            <div className={`flex flex-col items-center justify-center py-10 px-4 ${className}`}>
+                <BeatLoader color="#6172f3" size={10} />
+            </div>
+        );
+    }
+
     return (
         <div
             className={`flex flex-col items-center justify-center py-10 px-4 ${className}`}
             style={{ animation: "ndFadeUp 0.5s ease-out both" }}
         >
-            {/* Animated icon container */}
             <div
                 className="relative mb-5"
                 style={{ animation: "ndFloat 3s ease-in-out infinite" }}
             >
-                {/* Icon container — soft squircle */}
                 <div
                     className="relative flex items-center justify-center w-20 h-20 rounded-2xl bg-primary-50 border border-primary-200"
-                    style={{
-                        boxShadow: "0 4px 16px rgba(97,114,243,0.08)",
-                    }}
+                    style={{ boxShadow: "0 4px 16px rgba(97,114,243,0.08)" }}
                 >
-                    <FolderSearch
-                        className="text-primary-500"
-                        size={32}
-                        strokeWidth={1.8}
-                    />
+                    <FolderSearch className="text-primary-500" size={32} strokeWidth={1.8} />
                 </div>
-
-                {/* Floating particles */}
                 <span
                     className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary-300"
                     style={{ animation: "ndOrbit 3s ease-in-out infinite" }}
@@ -55,20 +52,10 @@ export const NoDataFound: React.FC<NoDataFoundProps> = ({
                     style={{ animation: "ndOrbit 3s ease-in-out infinite 0.5s" }}
                 />
             </div>
-
-            {/* Text */}
-            <Typography
-                variant="subheading"
-                color="title"
-                className="mb-1 text-center"
-            >
+            <Typography variant="subheading" color="title" className="mb-1 text-center">
                 {title}
             </Typography>
-            <Typography
-                variant="bodySmall"
-                color="body2"
-                className="text-center max-w-xs"
-            >
+            <Typography variant="bodySmall" color="body2" className="text-center max-w-xs">
                 {subtitle}
             </Typography>
         </div>

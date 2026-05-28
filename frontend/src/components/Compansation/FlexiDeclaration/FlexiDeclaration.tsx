@@ -13,6 +13,7 @@ import { SquarePen } from "lucide-react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import toast from "react-hot-toast";
 import { getCurrentPeriod } from "../../Benefits/shared/logic";
+import NoDataFound from "../../shared/atoms/NoDataFound";
 
 function formatINR(num: string | number | undefined | null) {
   if (num === undefined || num === null || num === "") return "";
@@ -268,11 +269,7 @@ export default function FlexiDeclaration() {
       {isLoading ? (
         /* Single loader covers both panels */
         <div className="flex flex-col items-center justify-center min-h-[220px] py-12">
-          <div className="relative flex items-center justify-center w-16 h-16 mb-4">
-            <div className="absolute w-16 h-16 rounded-full border-[3px] border-gray-100" />
-            <div className="absolute w-16 h-16 rounded-full border-[3px] border-primary border-t-transparent animate-spin" />
-          </div>
-          <span className="text-[13px] text-text-body2 mt-1">Loading flexi data…</span>
+          <NoDataFound loading />
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 max-w-[1400px] mx-auto px-4 sm:px-7 py-5 sm:py-7 pb-10">
