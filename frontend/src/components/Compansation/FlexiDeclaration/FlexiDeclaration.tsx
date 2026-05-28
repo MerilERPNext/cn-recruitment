@@ -8,7 +8,7 @@ import {
 } from "../../../hooks/payroll/useFlexiDeclaration";
 import { FlexiComponent, ComponentPartOfCTC } from "../../../types/flexiDeclaration";
 import { IoIosArrowDown } from "react-icons/io";
-import { EditFlexiLockingPeriod } from "../fl/Component/EditFlexiLockingPeriod";
+import { EditFlexiLockingPeriod } from "../flexiDeclarations/Component/EditFlexiLockingPeriod";
 import { SquarePen } from "lucide-react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import toast from "react-hot-toast";
