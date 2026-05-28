@@ -950,14 +950,6 @@ export const requisitionFormSchemas = {
           },
         ],
       },
-      {
-        type: "select",
-        key: "cost_centre",
-        label: "Cost Centre *",
-        customClass: "required-field",
-        placeholder: "Select Cost Centre",
-        validate: { required: true },
-      }
     ],
   },
 };
