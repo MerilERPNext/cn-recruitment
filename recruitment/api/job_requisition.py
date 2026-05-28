@@ -585,3 +585,85 @@ def get_job_requisition(
     except Exception as exc:
         frappe.log_error(frappe.get_traceback(), "get_job_requisition failed")
         return _err(_("Failed to fetch job requisition: {0}").format(str(exc)), http=500)
+
+
+# ---------------------------------------------------------------------------
+# UPDATE
+# ---------------------------------------------------------------------------
+
+
+@frappe.whitelist()
+def update_job_requisition(name=None, payload=None):
+    """
+    Update an existing Job Requisition.
+
+    Accepts the same flat payload as create_job_requisition but targets a
+    specific document identified by `name`.  Child tables (positions,
+    qualifications, skills, pre-screened candidates) are fully replaced.
+
+    Returns:
+        {
+          "success": true,
+          "message": "Requisition HR-HIREQ-00017 updated.",
+          "data": { "name": "HR-HIREQ-00017" }
+        }
+    """
+    try:
+        if not name:
+            return _err(_("'name' is required to update a requisition."), http=400)
+
+        payload = _coerce_payload(payload)
+
+        # Strip workflow-managed fields
+        for managed in FRAPPE_MANAGED_FIELDS:
+            payload.pop(managed, None)
+
+        if not frappe.db.exists(JOB_REQUISITION, name):
+            return _err(_("Job Requisition not found: {0}").format(name), http=404)
+
+        doc = frappe.get_doc(JOB_REQUISITION, name)
+        doc.check_permission("write")
+        _bypass_hrms_duplicate_check(doc)
+
+        # Apply parent fields (skips None / "")
+        _apply_parent_fields(doc, payload)
+
+        # Update no_of_positions if explicitly provided
+        positions = _list_field(payload, "custom_position_details")
+        if positions:
+            parent_vacancy = payload.get("custom_type_of_position")
+            parent_functional_area = payload.get("custom_functional_area")
+
+            doc.set("custom_position_details", [])
+            for idx, p in enumerate(positions, start=1):
+                doc.append(
+                    "custom_position_details",
+                    _position_row(p, idx, parent_vacancy, parent_functional_area),
+                )
+            if not payload.get("no_of_positions"):
+                doc.no_of_positions = len(positions)
+
+        # Rewrite child tables if provided
+        if "custom_qualifications" in payload:
+            _apply_qualifications(doc, payload)
+        if "custom_skills" in payload:
+            _apply_skills(doc, payload)
+        if "custom_pre_screened_candidates" in payload:
+            _apply_pre_screened(doc, payload)
+
+        doc.save(ignore_permissions=False)
+        frappe.db.commit()
+
+        return _ok(
+            message=_("Requisition {0} updated.").format(name),
+            data={"name": doc.name},
+            http=200,
+        )
+
+    except frappe.ValidationError as exc:
+        return _err(str(exc), http=400)
+    except frappe.PermissionError as exc:
+        return _err(str(exc) or _("Not permitted."), http=403)
+    except Exception as exc:
+        frappe.log_error(frappe.get_traceback(), "update_job_requisition failed")
+        return _err(_("Failed to update job requisition: {0}").format(str(exc)), http=500)
