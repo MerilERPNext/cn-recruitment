@@ -300,3 +300,10 @@ body {
     /* Highly compact height limit on desktop */
   }
 }
+
+.formio-component .control-label.field-required::after,
+.formio-component .col-form-label.field-required::after {
+  content: " *";
+  color: #ef4444;
+  font-weight: 600;
+}
