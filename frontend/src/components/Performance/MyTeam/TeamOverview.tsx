@@ -250,7 +250,7 @@ const TeamOverview: React.FC = () => {
                   <th className="py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider w-[130px]">
                     My Review
                   </th>
-                  <th className="py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider w-[140px]">
+                  <th className="py-3 px-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider w-[100px]">
                     Last Rating
                   </th>
                   <th className="py-3 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center w-[110px]">
@@ -334,36 +334,39 @@ const TeamOverview: React.FC = () => {
                     </td>
                     {/* Action */}
                     <td className="py-3 px-6 whitespace-nowrap text-center">
-                      {m.action === "Review" && (
-                        <Button
-                          variant="contain"
-                          bgColor="primary"
-                          size="sm"
-                          className="w-24 justify-center"
-                        >
-                          Review <ArrowRight className="w-3 h-3 ml-1" />
-                        </Button>
-                      )}
-                      {m.action === "Nudge" && (
-                        <Button
-                          variant="contain"
-                          bgColor="primary"
-                          size="sm"
-                          className="w-24 justify-center"
-                        >
-                          Nudge
-                        </Button>
-                      )}
-                      {m.action === "View" && (
-                        <Button
-                          variant="outline"
-                          bgColor="primary"
-                          size="sm"
-                          className="w-24 justify-center border-blue-200"
-                        >
-                          View
-                        </Button>
-                      )}
+                      <div className="mx-auto w-24">
+                        {m.action === "Review" && (
+                          <Button
+                            variant="contain"
+                            bgColor="primary"
+                            size="sm"
+                            fullWidth
+                          >
+                            Review <ArrowRight className="w-3 h-3 ml-1" />
+                          </Button>
+                        )}
+                        {m.action === "Nudge" && (
+                          <Button
+                            variant="contain"
+                            bgColor="primary"
+                            size="sm"
+                            fullWidth
+                          >
+                            Nudge
+                          </Button>
+                        )}
+                        {m.action === "View" && (
+                          <Button
+                            variant="outline"
+                            bgColor="primary"
+                            size="sm"
+                            fullWidth
+                            className="border-blue-200"
+                          >
+                            View
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

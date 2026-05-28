@@ -448,11 +448,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
               icon: Clock,
               href: "/webapp/performance-app/team-check-ins",
             },
-            {
-              name: "1:1 Notes",
-              icon: FileText,
-              href: "/webapp/performance-app/team-notes",
-            },
+            
           ],
         },
         {
