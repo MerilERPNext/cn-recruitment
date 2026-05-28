@@ -16,7 +16,7 @@ export const requisitionFormSchemas = {
       {
         type: "select",
         key: "hiring_manager",
-        label: "Hiring Manager",
+        label: "Hiring Manager <span style='color: #ef4444'>*</span>",
         placeholder: "Select Hiring Manager",
         dataSrc: "url",
         data: {
@@ -35,7 +35,7 @@ export const requisitionFormSchemas = {
       {
         type: "select",
         key: "company",
-        label: "Company",
+        label: "Company <span style='color: #ef4444'>*</span>",
         placeholder: "Select Company",
         input: true,
         dataSrc: "url",
@@ -52,7 +52,7 @@ export const requisitionFormSchemas = {
       {
         type: "select",
         key: "department",
-        label: "Department",
+        label: "Department <span style='color: #ef4444'>*</span>",
         placeholder: "Select Department",
         input: true,
         dataSrc: "url",
@@ -71,7 +71,7 @@ export const requisitionFormSchemas = {
       {
         type: "select",
         key: "designation",
-        label: "Designation",
+        label: "Designation <span style='color: #ef4444'>*</span>",
         placeholder: "Select Designation",
         input: true,
         dataSrc: "url",
@@ -226,7 +226,7 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "salary_currency",
-                label: "Salary Range (Currency)",
+                label: "Salary Range (Currency) <span style='color: #ef4444'>*</span>",
                 dataSrc: "url",
                 data: {
                   url: '/api/resource/Currency?fields=["name"]',
@@ -249,7 +249,7 @@ export const requisitionFormSchemas = {
               {
                 type: "textfield",
                 key: "salary_min",
-                label: "Salary Range (Min)",
+                label: "Salary Range (Min) <span style='color: #ef4444'>*</span>",
                 placeholder: "Min Salary",
                 validate: { required: true },
               },
@@ -264,7 +264,7 @@ export const requisitionFormSchemas = {
               {
                 type: "textfield",
                 key: "salary_max",
-                label: "Salary Range (Max)",
+                label: "Salary Range (Max) <span style='color: #ef4444'>*</span>",
                 placeholder: "Max Salary",
                 validate: { required: true },
               },
@@ -279,7 +279,7 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "salary_timeframe",
-                label: "Salary Timeframe",
+                label: "Salary Timeframe <span style='color: #ef4444'>*</span>",
                 data: {
                   values: [
                     { label: "Hourly", value: "Hourly" },
@@ -326,7 +326,7 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "hiring_lead",
-                label: "Hiring lead",
+                label: "Hiring lead <span style='color: #ef4444'>*</span>",
                 placeholder: "Select Hiring Lead",
                 dataSrc: "url",
                 data: {
@@ -454,7 +454,7 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "location",
-                label: "Target Location",
+                label: "Target Location <span style='color: #ef4444'>*</span>",
                 placeholder: "Select Location",
                 dataSrc: "url",
                 data: {
@@ -713,7 +713,7 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "location",
-                label: "Location",
+                label: "Location <span style='color: #ef4444'>*</span>",
                 placeholder: "Select Location",
                 dataSrc: "url",
                 data: {
@@ -742,7 +742,7 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "reporting_manager",
-                label: "Reporting manager",
+                label: "Reporting manager <span style='color: #ef4444'>*</span>",
                 placeholder: "Search Employees",
                 dataSrc: "url",
                 data: {
@@ -758,7 +758,7 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "employee_type",
-                label: "Employee Type",
+                label: "Employee Type <span style='color: #ef4444'>*</span>",
                 placeholder: "Select",
                 dataSrc: "url",
                 data: {
@@ -794,7 +794,7 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "location",
-                label: "Location",
+                label: "Location <span style='color: #ef4444'>*</span>",
                 placeholder: "Select Location",
                 dataSrc: "url",
                 data: {
@@ -825,7 +825,7 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "reporting_manager",
-                label: "Reporting manager",
+                label: "Reporting manager <span style='color: #ef4444'>*</span>",
                 placeholder: "Search Employees",
                 dataSrc: "url",
                 data: {
@@ -841,7 +841,7 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "employee_type",
-                label: "Employee Type",
+                label: "Employee Type <span style='color: #ef4444'>*</span>",
                 placeholder: "Select",
                 dataSrc: "url",
                 data: {
@@ -934,6 +934,7 @@ export const requisitionFormSchemas = {
           },
         ],
       },
+ 
     ],
   },
 };

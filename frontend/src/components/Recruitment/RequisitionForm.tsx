@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { Form } from "@tsed/react-formio";
 import {
@@ -19,6 +20,69 @@ import { useNavigate, useLocation } from "react-router-dom";
 import FrappeAPI from "../../utils/frappeAPI";
 import { useQueryClient } from "@tanstack/react-query";
 import { Edit, X } from "lucide-react";
+
+// ---------------------------------------------------------------------------
+// Validation config per step index
+// ---------------------------------------------------------------------------
+const stepValidationRules: Record<number, { key: string; label: string }[]> = {
+  0: [
+    { key: "hiring_manager", label: "Hiring Manager" },
+    { key: "company", label: "Company" },
+    { key: "department", label: "Department" },
+    { key: "designation", label: "Designation" },
+  ],
+  1: [
+    { key: "salary_currency", label: "Salary Range (Currency)" },
+    { key: "salary_min", label: "Salary Range (Min)" },
+    { key: "salary_max", label: "Salary Range (Max)" },
+    { key: "salary_timeframe", label: "Salary Timeframe" },
+    { key: "hiring_lead", label: "Hiring Lead" },
+    { key: "location", label: "Location" },
+  ],
+  2: [
+    // positions / replacement_positions validated dynamically below
+  ],
+};
+
+function validateStep(
+  step: number,
+  formData: JobRequisitionFormData
+): string[] {
+  const errors: string[] = [];
+
+  const rules = stepValidationRules[step] ?? [];
+  for (const rule of rules) {
+    const val = (formData as any)[rule.key];
+    if (val === undefined || val === null || val === "") {
+      errors.push(`${rule.label} is required.`);
+    }
+  }
+
+  // Step 2: validate position rows
+  if (step === 2) {
+    const posType = (formData as any).position_type;
+
+    if (posType === "new") {
+      const positions: any[] = (formData as any).positions ?? [];
+      positions.forEach((pos, i) => {
+        if (!pos.reporting_manager)
+          errors.push(`Position ${i + 1}: Reporting Manager is required.`);
+        if (!pos.employee_type)
+          errors.push(`Position ${i + 1}: Employee Type is required.`);
+      });
+    } else if (posType === "replacement") {
+      const replacements: any[] = (formData as any).replacement_positions ?? [];
+      replacements.forEach((pos, i) => {
+        if (!pos.reporting_manager)
+          errors.push(`Replacement ${i + 1}: Reporting Manager is required.`);
+        if (!pos.employee_type)
+          errors.push(`Replacement ${i + 1}: Employee Type is required.`);
+      });
+    }
+  }
+
+  return errors;
+}
 
 // ---------------------------------------------------------------------------
 // Helper: map an existing requisition (API shape) → JobRequisitionFormData
@@ -115,6 +179,7 @@ const RequisitionForm = () => {
 
   const [formData, setFormData] = useState<JobRequisitionFormData>({} as JobRequisitionFormData);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   // Pre-populate for edit mode
   useEffect(() => {
@@ -136,14 +201,41 @@ const RequisitionForm = () => {
   }, [currentEmployee, isEditMode]);
 
   const handleNext = () => {
+    const errors = validateStep(currentStep, formData);
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    setValidationErrors([]);
     if (currentStep < requisitionSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handlePrevious = () => {
+    setValidationErrors([]);
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleStepClick = (index: number) => {
+    // Allow going back freely; going forward requires passing current step validation
+    if (index < currentStep) {
+      setValidationErrors([]);
+      setCurrentStep(index);
+      return;
+    }
+    if (index > currentStep) {
+      const errors = validateStep(currentStep, formData);
+      if (errors.length > 0) {
+        setValidationErrors(errors);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      setValidationErrors([]);
+      setCurrentStep(index);
     }
   };
 
@@ -180,6 +272,11 @@ const RequisitionForm = () => {
           }),
         );
       }
+    }
+
+    // Clear validation errors as user fills fields
+    if (validationErrors.length > 0) {
+      setValidationErrors([]);
     }
 
     setFormData(newData);
@@ -340,6 +437,18 @@ const RequisitionForm = () => {
         </div>
       )}
 
+      {/* Validation error banner */}
+      {validationErrors.length > 0 && (
+        <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-300 text-red-700 text-sm">
+          <p className="font-semibold mb-1">Please fill in all required fields before proceeding:</p>
+          <ul className="list-disc list-inside space-y-0.5">
+            {validationErrors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="mb-8 border-b overflow-x-auto scrollbar-hide">
         <div className="flex min-w-max md:min-w-0">
           {requisitionSteps.map((step, index) => (
@@ -349,7 +458,7 @@ const RequisitionForm = () => {
                 ? "text-primary-500 border-b-2 border-primary-500 font-semibold"
                 : "text-gray-500"
                 }`}
-              onClick={() => setCurrentStep(index)}
+              onClick={() => handleStepClick(index)}
             >
               {step.label}
             </div>
