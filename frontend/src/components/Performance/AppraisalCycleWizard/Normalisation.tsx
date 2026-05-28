@@ -1,5 +1,7 @@
+import { ApexOptions } from "apexcharts";
 import { Check } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import Chart from "react-apexcharts";
 import { Switch } from "../../shared/atoms/Switch";
 import { Typography } from "../../shared/atoms/Typography";
 import { mockWizardData } from "./AppraisalCycleWizard";
@@ -33,17 +35,15 @@ const initialDistributions = [
   {
     id: "outstanding",
     label: "Outstanding",
-    target: 5,
     actual: 13,
     outside: true,
   },
-  { id: "exceeds", label: "Exceeds", target: 15, actual: 25, outside: true },
-  { id: "meets", label: "Meets", target: 60, actual: 37, outside: false },
-  { id: "below", label: "Below", target: 15, actual: 13, outside: false },
+  { id: "exceeds", label: "Exceeds", actual: 25, outside: true },
+  { id: "meets", label: "Meets", actual: 37, outside: false },
+  { id: "below", label: "Below", actual: 13, outside: false },
   {
     id: "unsatisfactory",
     label: "Unsatisfactory",
-    target: 5,
     actual: 12,
     outside: true,
   },
@@ -76,6 +76,92 @@ const Normalisation = () => {
     const num = parseInt(value, 10);
     setTargets({ ...targets, [key]: isNaN(num) ? 0 : num });
   };
+
+  const distributionChartData = useMemo(
+    () =>
+      [...initialDistributions].reverse().map((dist) => ({
+        ...dist,
+        target: targets[dist.id as keyof typeof targets],
+      })),
+    [targets],
+  );
+
+  const distributionChartOptions: ApexOptions = useMemo(
+    () => ({
+      chart: {
+        type: "bar",
+        toolbar: { show: false },
+        zoom: { enabled: false },
+      },
+      colors: ["#e5e7eb", "#3b82f6", "#ef4444"],
+      dataLabels: { enabled: false },
+      grid: {
+        borderColor: "#eef2f7",
+        strokeDashArray: 4,
+      },
+      legend: {
+        position: "bottom",
+        horizontalAlign: "center",
+        fontSize: "12px",
+        labels: { colors: "#4b5563" },
+      },
+      plotOptions: {
+        bar: {
+          borderRadius: 4,
+          columnWidth: "52%",
+        },
+      },
+      tooltip: {
+        y: {
+          formatter: (value) => `${value}%`,
+        },
+      },
+      xaxis: {
+        categories: distributionChartData.map((dist) => dist.label),
+        axisBorder: { show: false },
+        axisTicks: { show: false },
+        labels: {
+          style: {
+            colors: "#374151",
+            fontSize: "11px",
+            fontWeight: 700,
+          },
+        },
+      },
+      yaxis: {
+        min: 0,
+        max: 60,
+        tickAmount: 4,
+        labels: {
+          style: { colors: "#9ca3af", fontSize: "11px" },
+          formatter: (value) => `${Math.round(value)}%`,
+        },
+      },
+    }),
+    [distributionChartData],
+  );
+
+  const distributionChartSeries = useMemo(
+    () => [
+      {
+        name: "Target distribution",
+        data: distributionChartData.map((dist) => dist.target),
+      },
+      {
+        name: "Actual",
+        data: distributionChartData.map((dist) =>
+          dist.outside ? null : dist.actual,
+        ),
+      },
+      {
+        name: "Outside band",
+        data: distributionChartData.map((dist) =>
+          dist.outside ? dist.actual : null,
+        ),
+      },
+    ],
+    [distributionChartData],
+  );
 
   return (
     <WizardShell
@@ -154,71 +240,14 @@ const Normalisation = () => {
           Per-bucket targets across 2,140 eligible employees
         </Typography>
 
-        {/* Chart Visualization */}
-        <div className="flex flex-col items-center mb-10 w-full overflow-x-auto pb-4">
-          <div className="flex items-end justify-center gap-[4%] w-full min-w-[500px] h-48 border-b border-gray-100 pb-2">
-            {[...initialDistributions].reverse().map((dist) => (
-              <div
-                key={dist.id}
-                className="flex flex-col items-center gap-2 flex-1 relative group"
-              >
-                <div className="flex items-end gap-1.5 h-32 w-full justify-center">
-                  {/* Target Bar */}
-                  <div
-                    className="w-4 sm:w-6 bg-gray-200 rounded-t-sm transition-all relative"
-                    style={{ height: `${(dist.target / 60) * 100}%` }}
-                  >
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-800 text-white text-[10px] py-0.5 px-1.5 rounded whitespace-nowrap pointer-events-none">
-                      Target: {dist.target}%
-                    </div>
-                  </div>
-                  {/* Actual Bar */}
-                  <div
-                    className={`w-4 sm:w-6 rounded-t-sm transition-all relative ${dist.outside ? "bg-red-500" : "bg-blue-500"}`}
-                    style={{ height: `${(dist.actual / 60) * 100}%` }}
-                  >
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-800 text-white text-[10px] py-0.5 px-1.5 rounded whitespace-nowrap pointer-events-none z-10">
-                      Actual: {dist.actual}%
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col items-center w-full">
-                  <Typography
-                    variant="caption"
-                    className="font-bold text-gray-800 text-center text-[11px] sm:text-xs"
-                  >
-                    {dist.label}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    className="text-gray-400 text-center text-[10px] whitespace-nowrap"
-                  >
-                    Target {dist.target}% / Actual {dist.actual}%
-                  </Typography>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-6 mt-6">
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-sm bg-gray-200"></div>
-              <span className="text-xs font-semibold text-gray-600">
-                Target distribution
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-sm bg-blue-500"></div>
-              <span className="text-xs font-semibold text-gray-600">
-                Actual
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded-sm bg-red-500"></div>
-              <span className="text-xs font-semibold text-gray-600">
-                Outside band
-              </span>
-            </div>
+        <div className="mb-10 w-full overflow-x-auto pb-4">
+          <div className="min-w-[560px]">
+            <Chart
+              options={distributionChartOptions}
+              series={distributionChartSeries}
+              type="bar"
+              height={280}
+            />
           </div>
         </div>
 

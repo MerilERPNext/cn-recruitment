@@ -7,12 +7,12 @@ import {
   X,
 } from "lucide-react";
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import Badge, { type BadgeVariant } from "../../shared/Badge";
 import Modal from "../../shared/Modal";
-import AssignGoal from "./AssignGoal";
 
 import Avatar from "../../shared/Avatar";
 import { APPROVAL_GOALS, GOAL_DETAIL, TEAM_MEMBERS } from "./mockData";
@@ -53,9 +53,14 @@ const getInitialsBg = (initials: string) => {
 interface GoalDetailModalProps {
   goal: GoalDetailData;
   onClose: () => void;
+  onApprove: () => void;
 }
 
-const GoalDetailModal: React.FC<GoalDetailModalProps> = ({ goal, onClose }) => {
+const GoalDetailModal: React.FC<GoalDetailModalProps> = ({
+  goal,
+  onClose,
+  onApprove,
+}) => {
   const [comment, setComment] = useState(goal.managerComment);
   const { isMobile } = useScreenSize();
 
@@ -231,7 +236,7 @@ const GoalDetailModal: React.FC<GoalDetailModalProps> = ({ goal, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-t border-gray-100 bg-gray-50/50 rounded-b-lg">
+        <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 bg-white px-6 py-4 shadow-[0_-1px_2px_rgba(15,23,42,0.04)]">
           <Typography variant="caption" className="text-gray-500">
             Auto-approves in {goal.autoApprovesInDays} days
           </Typography>
@@ -241,14 +246,25 @@ const GoalDetailModal: React.FC<GoalDetailModalProps> = ({ goal, onClose }) => {
               bgColor="text"
               size="sm"
               onClick={onClose}
-              className="bg-white px-4"
+              className="h-9 w-[92px] bg-white px-0 text-xs font-semibold"
             >
               Send back
             </Button>
-            <Button variant="outline" bgColor="error" size="sm">
+            <Button
+              variant="outline"
+              bgColor="error"
+              size="sm"
+              className="h-9 w-[70px] bg-white px-0 text-xs font-semibold"
+            >
               Reject
             </Button>
-            <Button variant="contain" bgColor="success" size="sm">
+            <Button
+              variant="contain"
+              bgColor="success"
+              size="sm"
+              onClick={onApprove}
+              className="h-9 w-[110px] px-0 text-xs font-semibold"
+            >
               Approve goal
             </Button>
           </div>
@@ -261,10 +277,10 @@ const GoalDetailModal: React.FC<GoalDetailModalProps> = ({ goal, onClose }) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const TeamGoals: React.FC = () => {
+  const navigate = useNavigate();
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
 
-  const [isAssigningGoal, setIsAssigningGoal] = useState(false);
   const [checkedGoals, setCheckedGoals] = useState<Set<string>>(
     new Set(APPROVAL_GOALS.filter((g) => g.checked).map((g) => g.id)),
   );
@@ -283,6 +299,11 @@ const TeamGoals: React.FC = () => {
       employeeInitials: baseGoal.employeeInitials,
       weightage: baseGoal.weightage || GOAL_DETAIL.weightage,
     });
+  };
+
+  const handleApproveGoal = () => {
+    setSelectedGoal(null);
+    navigate("/webapp/performance-app/team-goals/assign-goal");
   };
 
   const totalGoals = 32;
@@ -305,9 +326,7 @@ const TeamGoals: React.FC = () => {
     });
   };
 
-  if (isAssigningGoal) {
-    return <AssignGoal onBack={() => setIsAssigningGoal(false)} />;
-  }
+
 
   return (
     <main
@@ -344,7 +363,6 @@ const TeamGoals: React.FC = () => {
               size="sm"
               icon={<Plus className="h-4 w-4" />}
               className={isCompact ? "w-full sm:w-fit" : ""}
-              onClick={() => setIsAssigningGoal(true)}
             >
               Assign Goal
             </Button>
@@ -657,6 +675,7 @@ const TeamGoals: React.FC = () => {
         <GoalDetailModal
           goal={selectedGoal}
           onClose={() => setSelectedGoal(null)}
+          onApprove={handleApproveGoal}
         />
       )}
     </main>

@@ -112,6 +112,11 @@ const TeamGoals = lazyWithRetry(
   "TeamGoals",
 );
 
+const AssignGoal = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/AssignGoal"),
+  "AssignGoal",
+);
+
 const TeamReviews = lazyWithRetry(
   () => import("./components/Performance/MyTeam/TeamReviews"),
   "TeamReviews",
@@ -1244,6 +1249,11 @@ export const routesConfig: AppRoute[] = [
       {
         path: "team-goals",
         element: <TeamGoals />,
+        permissionKey: "Team Goals",
+      },
+      {
+        path: "team-goals/assign-goal",
+        element: <AssignGoal />,
         permissionKey: "Team Goals",
       },
       {
