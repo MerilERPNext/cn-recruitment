@@ -32,9 +32,10 @@ import { createPortal } from "react-dom";
 import ViewFormButton from "../ViewFormButton";
 import { FormIOComponent } from "../../../types/formio";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
-import { TodoType } from "../../../types/todos";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import FormPreview from "../../shared/molecules/FormPreview";
+import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
+import type { FlowRequestItem } from "../../../types/flows";
 
 const ConfirmationWorkflow = () => {
   const { isDesktop } = useScreenSize();
@@ -79,19 +80,30 @@ const ConfirmationWorkflow = () => {
   } = useGetShouldShowConfirmationButton(document_name);
 
   const {
-    data: employeeConfirmationPending,
+    data: employeeConfirmationAll,
     isLoading: loadingConfirmationTodo,
     refetch: refetchConfirmationAndSeparation,
-  } = useConfirmation(doctype, "Open");
-  const {
-    data: employeeConfirmationClosed,
-    isLoading: loadingConfirmationClosed,
-    refetch: refetchConfirmationAndSeparationClosed,
-  } = useConfirmation(doctype, "Closed");
-  const item =
-    employeeConfirmationPending?.[0] || employeeConfirmationClosed?.[0];
+  } = useConfirmation(doctype);
 
-  const stages = item?.approval_stages_status;
+  const employeeConfirmationPending = useMemo(
+    () =>
+      (employeeConfirmationAll ?? []).filter((i) =>
+        ["Pending", "Draft"].includes(i?.approval_status ?? ""),
+      ),
+    [employeeConfirmationAll],
+  );
+
+  const employeeConfirmationClosed = useMemo(
+    () =>
+      (employeeConfirmationAll ?? []).filter((i) =>
+        ["Completed", "Approved", "Rejected"].includes(i?.approval_status ?? ""),
+      ),
+    [employeeConfirmationAll],
+  );
+
+  const item = employeeConfirmationPending?.[0] || employeeConfirmationClosed?.[0];
+
+  const stages = item?.approval_stages;
 
   const confirmationData = getFunnelData("Confirmation");
   const definition_name = confirmationData?.[0]?.name || "";
@@ -101,7 +113,7 @@ const ConfirmationWorkflow = () => {
     loadingCardData ||
     loadingConfirmationTodo ||
     loadingCurrentEmployee ||
-    loadingConfirmationClosed;
+    false;
 
   const { mutateAsync: fetchChatAssistantData } = useChatAssistantLazy();
   const [isTriggeringChat, setIsTriggeringChat] = useState(false);
@@ -116,11 +128,17 @@ const ConfirmationWorkflow = () => {
   }, [isTriggeringChat, loading]);
 
   const [showSelfInitForm, setShowSelfInitForm] = useState<boolean>(false);
+  const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const selfInitFormAndAns = useMemo(
-    () =>
-      item?.reference_document?.initiator_form
-        ? JSON.parse(item?.reference_document?.initiator_form)
-        : null,
+    () => {
+      const raw = item?.initiator_forms?.[0]?.form_data;
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    },
     [item],
   );
 
@@ -184,12 +202,13 @@ const ConfirmationWorkflow = () => {
   const handleAct = async (action: {
     name: string;
     hasForm: boolean;
-    todo: TodoType;
+    todoId: string;
+    customApprovalType?: "Approval Matrix" | "Multi Actions";
   }) => {
     handleAction(action.name, {
-      todo_id: action.todo?.todo_id,
+      todo_id: action.todoId,
       custom_open_chatnext_assistant_on_action: action.hasForm,
-      custom_approval_type: action.todo?.custom_approval_type,
+      custom_approval_type: action.customApprovalType ?? "Approval Matrix",
     });
   };
 
@@ -209,7 +228,6 @@ const ConfirmationWorkflow = () => {
       refetchTargetEmployee();
       refetch();
       refetchConfirmationAndSeparation();
-      refetchConfirmationAndSeparationClosed();
       refetchShowConfirmationButton();
     };
 
@@ -230,7 +248,6 @@ const ConfirmationWorkflow = () => {
     refetchTargetEmployee,
     refetch,
     refetchConfirmationAndSeparation,
-    refetchConfirmationAndSeparationClosed,
     refetchShowConfirmationButton,
   ]);
 
@@ -253,11 +270,11 @@ const ConfirmationWorkflow = () => {
         bg: "bg-green-50",
         text: "text-green-600",
       },
-      ...(item?.reference_document?.creation
+      ...(item?.initiated_on
         ? [
           {
             label: "Trigger Date",
-            value: formatToIndianDate(item.reference_document.creation),
+            value: formatToIndianDate(item.initiated_on),
             Icon: Clock,
             bg: "bg-orange-50",
             text: "text-orange-600",
@@ -287,7 +304,7 @@ const ConfirmationWorkflow = () => {
       id: 2,
       title: "Employee Self Form Submission",
       description: "Please submit all required fields",
-      time: formatToIndianDate(item?.reference_document?.creation || ""),
+      time: formatToIndianDate(item?.initiated_on || ""),
       status: showConfirmationButton?.show_button
         ? "action_required"
         : "pending",
@@ -304,14 +321,38 @@ const ConfirmationWorkflow = () => {
   }
   /* ---------------------------------------------------------- */
 
+  const funnelActivityId = item?.request_id || "";
+  const canActOnThisRequest = Boolean(
+    (item as FlowRequestItem | undefined)?.approval_stages?.some((s) => s?.todo?.custom_doctype_actions),
+  );
+
   return (
     <div className=" md:bg-blue-50  min-h-screen sm:p-4  text-gray-800  font-sans">
-      <div className="flex flex-col md:mb-4 p-2">
-        {isDesktop && <Typography variant="h4">Confirmation</Typography>}
-        <Typography variant="bodySmall" color="body2">
-          View Your Confirmation Process
-        </Typography>
+      <div className="flex items-start justify-between gap-3 md:mb-4 p-2">
+        <div className="flex flex-col">
+          {isDesktop && <Typography variant="h4">Confirmation</Typography>}
+          <Typography variant="bodySmall" color="body2">
+            View Your Confirmation Process
+          </Typography>
+        </div>
+
+        <Button
+          variant="outline"
+          onClick={() => setIsActivityLogOpen(true)}
+          className="flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm"
+          disabled={!funnelActivityId}
+        >
+          Activity Log
+        </Button>
       </div>
+
+      <ActivityLogDrawer
+        open={isActivityLogOpen}
+        onClose={() => setIsActivityLogOpen(false)}
+        funnelActivityId={funnelActivityId}
+        title="Activity Log"
+        size="xxl"
+      />
 
       <Card>
         <div className="max-md:bg-blue-50 rounded-lg p-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -329,13 +370,13 @@ const ConfirmationWorkflow = () => {
         </Typography>
 
         {/* TimelineDummy  */}
-        {timelineData.map((item, idx) => {
+        {timelineData.map((td, idx) => {
           const isLast = idx === timelineData.length - 1 && !postStagesStarted;
-          const status = postStagesStarted ? "completed" : item.status;
+          const status = postStagesStarted ? "completed" : td.status;
           return (
             <div
               className="grid sm:grid-cols-[80px_1fr] grid-cols-[30px_1fr] hover:bg-primary-10"
-              key={item.id}
+              key={td.id}
             >
               <StatusTimelineItem
                 isLast={isLast}
@@ -344,17 +385,17 @@ const ConfirmationWorkflow = () => {
 
               <div className="grid lg:grid-cols-2 grid-cols-1 py-2">
                 <div className="ml-4 flex flex-col">
-                  <Typography variant="bodyMedium">{item.title}</Typography>
+                  <Typography variant="bodyMedium">{td.title}</Typography>
                   <Typography variant="bodySmall">
-                    {item.description}
+                    {td.description}
                   </Typography>
                 </div>
 
                 <div className="flex justify-between max-lg:flex-row-reverse items-start px-4 pt-1 pb-3">
-                  {item?.show_view_form_btn && (
+                  {td?.show_view_form_btn && (
                     <ViewFormButton onClick={() => handleShowForm()} />
                   )}
-                  {item.show_confirmation_button ? (
+                  {td.show_confirmation_button ? (
                     <Button
                       variant="contain"
                       size="md"
@@ -362,12 +403,12 @@ const ConfirmationWorkflow = () => {
                       loading={isTriggeringChat}
                       disabled={isTriggeringChat}
                     >
-                      {item.self_confirmation_btn_name}
+                      {(td as any)?.self_confirmation_btn_name}
                     </Button>
                   ) : (
                     <div></div>
                   )}
-                  <div>{item.time}</div>
+                  <div>{td.time}</div>
                 </div>
               </div>
             </div>
@@ -382,7 +423,7 @@ const ConfirmationWorkflow = () => {
               key={stages[idx].stage_name}
               stages={stages}
               idx={idx}
-              item={item}
+              canActOnThisRequest={canActOnThisRequest}
             />
           </div>
         ))}

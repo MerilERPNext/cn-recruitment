@@ -1,13 +1,19 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import FrappeAPI from "../utils/frappeAPI";
+import type { FlowRequestItem } from "../types/flows";
 
-export const ConfirmationService = async (doctype: string, todo_status: "Open" | "Closed") => {
-  const response = await FrappeAPI.callMethod(
-    "cn_leave_shift_managment.api.get_open_approval_todos",
-    { doctype: doctype, order_by: "modified desc", todo_status }
-  ) as { status: string; data: any[] };
+type FunnelDetailsResponse = { data: FlowRequestItem[] };
 
-  return response?.data ?? []; // always return array
+export const ConfirmationService = async (
+  doctype: string,
+): Promise<FlowRequestItem[]> => {
+  // Use funnel activity details (same API used in Separation)
+  const response = (await FrappeAPI.callMethod(
+    "cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_details",
+    { doctype },
+  )) as FunnelDetailsResponse;
+
+  const items = Array.isArray(response?.data) ? response.data : [];
+  return items;
 };
 
 export const ConfirmationEmployeeService = async () => {

@@ -21,6 +21,7 @@ import ReviewForm from "../../Separation/components/ReviewForm";
 import AttachmentPreview from "./AttachmentPreview";
 import FlowTable from "./FlowTable";
 import WorkflowTable from "./WorkflowTable";
+import ActivityLogDrawer from "../../../shared/ActivityLogDrawer";
 
 import { useQueryClient } from "@tanstack/react-query";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
@@ -41,6 +42,7 @@ const RequestDetails: React.FC = () => {
   const [workflowExpanded, setWorkflowExpanded] = useState(false);
   const [showSelfForm, setShowSelfForm] = useState(false);
   const [isEditingForm, setIsEditingForm] = useState(false);
+  const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const [responseData, setResponseData] = useState<{
     addAttachment?: Attachment[];
   } | null>(null);
@@ -321,6 +323,14 @@ const RequestDetails: React.FC = () => {
                     {isDesktop && <span>Initiation Form</span>}
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  onClick={() => setIsActivityLogOpen(true)}
+                  className={`flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm ${isDesktop ? "px-3" : "px-2"}`}
+                >
+                  {isDesktop && <span>Activity Log</span>}
+                  {!isDesktop && <span>Log</span>}
+                </Button>
                 {isDesktop && showRetriggerButton && (
                   <Button
                     bgColor="blue-600"
@@ -393,6 +403,13 @@ const RequestDetails: React.FC = () => {
 
         </div>
       </div>
+      <ActivityLogDrawer
+        open={isActivityLogOpen}
+        onClose={() => setIsActivityLogOpen(false)}
+        funnelActivityId={id || ""}
+        title="Activity Log"
+        size="xxl"
+      />
       <div className="overflow-y-auto flex-1">
         <div className="flex flex-col gap-3 px-4 sm:px-7 py-4 pb-8">
           {/* Overall Stats Card */}
