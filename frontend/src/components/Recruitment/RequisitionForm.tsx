@@ -301,7 +301,11 @@ const RequisitionForm = () => {
     }
 
     return {
-      requested_by: currentEmployee?.employee || currentEmployee?.name,
+      requested_by: 
+      finalData.hiring_manager ||
+      existingRequisition?.requested_by ||
+      currentEmployee?.employee ||
+      currentEmployee?.name,
       company: finalData.company,
       department: finalData.department,
       designation: finalData.designation,

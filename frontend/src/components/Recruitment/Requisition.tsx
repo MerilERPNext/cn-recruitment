@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
@@ -439,6 +440,7 @@ const Requisition = () => {
       ({ item }: { item: any }) => (
         <RequisitionItem item={item} onView={setSelectedRequisition} />
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
