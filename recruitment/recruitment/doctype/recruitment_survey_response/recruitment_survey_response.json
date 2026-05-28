@@ -1,0 +1,47 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "format:RSR-{YYYY}-{#####}",
+ "creation": "2026-05-27 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "job_applicant",
+  "candidate_email",
+  "column_break_1",
+  "job_opening",
+  "microapp_form_widget",
+  "submitted_at",
+  "response_section",
+  "response_json"
+ ],
+ "fields": [
+  {"fieldname": "job_applicant", "fieldtype": "Link", "in_list_view": 1, "in_standard_filter": 1, "label": "Job Applicant", "options": "Job Applicant", "reqd": 1, "unique": 1},
+  {"fieldname": "candidate_email", "fieldtype": "Data", "in_list_view": 1, "in_standard_filter": 1, "label": "Candidate Email", "read_only": 1},
+  {"fieldname": "column_break_1", "fieldtype": "Column Break"},
+  {"fieldname": "job_opening", "fieldtype": "Link", "in_list_view": 1, "in_standard_filter": 1, "label": "Job Opening", "options": "Job Opening", "read_only": 1},
+  {"fieldname": "microapp_form_widget", "fieldtype": "Link", "label": "Form Widget", "options": "Microapp Form Widget", "read_only": 1},
+  {"fieldname": "submitted_at", "fieldtype": "Datetime", "label": "Submitted At", "read_only": 1},
+  {"fieldname": "response_section", "fieldtype": "Section Break", "label": "Response"},
+  {"fieldname": "response_json", "fieldtype": "JSON", "label": "Response", "read_only": 1}
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-05-27 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Recruitment Survey Response",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1},
+  {"export": 1, "read": 1, "report": 1, "role": "HR Manager"},
+  {"read": 1, "role": "HR User"}
+ ],
+ "quick_entry": 0,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "job_applicant",
+ "track_changes": 1
+}

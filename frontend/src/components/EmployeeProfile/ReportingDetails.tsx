@@ -21,6 +21,7 @@ import ConfirmationModal from "../shared/atoms/ConfirmationModal";
 
 const CATEGORY_FIELD_MAP: Record<string, string> = {
   "Reports To": "reports_to",
+  "Manager": "reports_to",
   "Dotted Line Manager": "custom_dotted_line_manager",
   "HOD": "custom_hod",
   "CXO": "custom_cxo",

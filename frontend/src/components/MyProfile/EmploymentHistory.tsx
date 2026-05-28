@@ -2,11 +2,12 @@ import React from "react";
 import { Typography } from "../shared/atoms/Typography";
 import EmploymentHistoryCard from "./EmploymentHistoryCard";
 import Button from "../shared/atoms/Button";
-import { EditIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import EmploymentHistoryForm from "./EmploymentHistorForm";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import { useGetEmploymentHistoryData } from "../../hooks/useEmployee";
+import { WorkRole } from "../../types/employee";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
@@ -26,6 +27,7 @@ export interface Employee {
   name: string;
   date_of_joining?: string;
   custom_work_history?: CustomWorkHistory[];
+  work_roles?: WorkRole[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
@@ -34,7 +36,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   employeeId,
 }) => {
   const { data, isLoading, error } = useGetEmploymentHistoryData(employeeId || "")
-  const history = data?.custom_work_history?.filter((item) => item.history_type !== "Reporting") || [];
+  const history = data?.work_roles || [];
   const hasEmploymentHistory = history.length > 0;
 
   const defaultStartDateForAdd = !hasEmploymentHistory
@@ -54,16 +56,19 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 
   const [isModalOpen, setIsModalOpen] = React.useState<boolean>(false);
   const [isEditing, setIsEditing] = React.useState<boolean>(false);
+  const [editItem, setEditItem] = React.useState<WorkRole | null>(null);
 
-  const groupedHistory = history.reduce<Record<string, CustomWorkHistory[]>>(
-    (acc, item) => {
-      const groupKey = item.field_label;
-      if (!acc[groupKey]) acc[groupKey] = [];
-      acc[groupKey].push(item);
-      return acc;
-    },
-    {},
-  );
+  const handleEditCard = (item: WorkRole) => {
+    setEditItem(item);
+    setIsEditing(true);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setIsEditing(false);
+    setEditItem(null);
+  };
 
   return (
     <div className="address-form-container bg-white rounded-md">
@@ -78,19 +83,6 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             </Typography>
           </div>
           <div className="flex">
-            {canEditEmploymentHistory && (
-              <Button
-                onClick={() => {
-                  setIsModalOpen(true);
-                  setIsEditing(true);
-                }}
-                icon={<EditIcon className="h-4 w-4" />}
-                variant="subtle"
-                size="md"
-              >
-                Edit
-              </Button>
-            )}
             {canAddEmploymentHistory && (
               <Button
                 onClick={() => setIsModalOpen(true)}
@@ -134,71 +126,45 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           <p className="p-4 text-red-500">Failed to load employment history</p>
         )}
 
-        {!isLoading &&
-          !error &&
-          (() => {
-            const sortedCategories = Object.keys(groupedHistory).sort((a, b) =>
-              a.localeCompare(b),
-            );
-
-            return sortedCategories.map((category) => {
-              const items = groupedHistory[category];
-              const sortedItems = [...items].sort((a, b) => {
-                const aIsCurrent = !a.end_date;
-                const bIsCurrent = !b.end_date;
-                if (aIsCurrent && !bIsCurrent) return -1;
-                if (!aIsCurrent && bIsCurrent) return 1;
-                const aDate = a.start_date
-                  ? new Date(a.start_date).getTime()
-                  : 0;
-                const bDate = b.start_date
-                  ? new Date(b.start_date).getTime()
-                  : 0;
-                return bDate - aDate;
-              });
-
-              return (
-                <div key={category} className="mb-5 md:mb-10">
-                  <Typography variant="h4" className="font-bold text-gray-800 mb-4 text-lg">
-                    {category !== "null" && category !== null && category !== undefined ? category : "Others"}
-                  </Typography>
-
-                  <div className="flex gap-2 overflow-auto">
-                    {sortedItems.map((item) => (
-                      <div
-                        key={item.name}
-                        className={`${sortedItems.length === 1 ? "max-w-md w-full" : ""
-                          }`}
-                      >
-                        <EmploymentHistoryCard
-                          title={item.records_details?.name || item.records}
-                          start_date={item.start_date}
-                          end_date={item.end_date}
-                          isCurrent={!item.end_date}
-                          department={item.doctype_name === 'Employee' ? item.records_details?.department?.department_name : null}
-                          location={item.doctype_name === 'Employee' ? item.records_details?.branch?.branch_value : null}
-                          id={item?.records_details?.id || ""}
-                          doctype_name={item.doctype_name}
-                          is_promotion={item.is_promotion}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            });
-          })()}
+        <div className="flex gap-2 overflow-auto">
+          {history.map((item) => (
+            <div
+              key={item.from_date + item.designation}
+              className={`${history.length === 1 ? "max-w-md w-full" : ""
+                }`}
+            >
+              <EmploymentHistoryCard
+                company={item.company?.name}
+                department={item.department?.name}
+                band={item.band?.name}
+                grade={item.grade?.name}
+                start_date={item.from_date}
+                end_date={item.to_date}
+                isCurrent={item.is_current}
+                functionalArea={item.functional_area?.name}
+                is_promotion={item.is_promotion}
+                onEdit={canEditEmploymentHistory ? () => handleEditCard(item) : undefined}
+              />
+            </div>
+          ))}
+        </div>
       </div>
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <EmploymentHistoryForm
-              onCancel={() => {
-                setIsModalOpen(false);
-                setIsEditing(false);
-              }}
+              key={editItem ? `${editItem.from_date}-${editItem.designation?.id}` : "add"}
+              onCancel={handleCloseModal}
               isEdit={isEditing}
               defaultStartDate={defaultStartDateForAdd}
+              initialEditData={editItem ? {
+                company: editItem.company?.id,
+                department: editItem.department?.id,
+                designation: editItem.designation?.id,
+                functional_area: editItem.functional_area?.id,
+                start_date: editItem.from_date,
+                is_promotion: editItem.is_promotion,
+              } : undefined}
             />
           </div>
         </div>

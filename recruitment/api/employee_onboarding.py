@@ -349,7 +349,8 @@ def get_employee_onboarding_list(
 
         count_result = frappe.get_list(
             DOCTYPENAME,
-            fields=["count(name) as total_count"],
+            # fields=["count(name) as total_count"],
+            fields=[{"COUNT": "name", "as": "total_count"}],
             filters=filters,
             or_filters=or_filters if or_filters else None,
             page_length=1,

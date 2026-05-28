@@ -25,6 +25,8 @@ import {
 } from "../../hooks/useHelpDeskTickets";
 import useDebounce from "../../hooks/useDebounce";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../context/OverlayContext";
@@ -88,6 +90,13 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
   const requestClosureMutation = useRequestClosure();
   const revokeTicketMutation = useRevokeTicket();
   const reopenTicketMutation = useReopenTicket();
+
+  // UI Permission checks
+  const { data: userUiPermission } = useGetUiPermission("Help Desk");
+  const permRevoke = isActionEnabled(userUiPermission, "revoke", "Help Desk");
+  const permCloseTicket = isActionEnabled(userUiPermission, "close_ticket", "Help Desk");
+  const permReply = isActionEnabled(userUiPermission, "reply", "Help Desk");
+  const permReopen = isActionEnabled(userUiPermission, "reopen", "Help Desk");
 
   // Computed values
   const tickets = useMemo(() => ticketData?.data || [], [ticketData]);
@@ -323,7 +332,11 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
             onClose={handleClose}
             onRevoke={handleRevoke}
             onReopen={handleReopen}
-            onRowClick={handleReply}
+            onRowClick={permReply ? handleReply : undefined}
+            permRevoke={permRevoke}
+            permCloseTicket={permCloseTicket}
+            permReply={permReply}
+            permReopen={permReopen}
             sortField={sortField}
             sortDirection={sortDirection}
             onSort={handleSort}

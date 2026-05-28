@@ -286,59 +286,27 @@ const ITDeclarationForm = () => {
   // Register action button in central SalarySlipApp via ref pattern
 
   return (
-    <div className="bg-white min-h-screen">
-      <header className=" md:p-4  rounded-lg">
-        <div
-          className={`p-2 mb-2 rounded ${PrrofOfITDeclaration?.status === "failed"
-            ? "bg-error-50 text-error"
-            : "bg-success-50 text-success"
-            }`}
-        >
-          <Typography variant="bodySmall">
-            {parts.map((part: string, index: number) =>
-              dateRegex.test(part) ? (
-                <strong key={index}>{part}</strong>
-              ) : (
-                <span key={index}>{part}</span>
-              )
-            )}
-          </Typography>
-        </div>
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-          <div className="flex flex-row justify-between items-start">
-            <div className="flex flex-col">
-              <Typography variant="h4">IT Declaration</Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage your IT Declarations.
-              </Typography>
-            </div>
-            {/* Mobile: year dropdown aligned right next to title */}
-            {!isDesktop && (
-              <CustomDropdown
-                value={selectedPeriod}
-                onChange={handlePeriodChange}
-                options={
-                  payrollPeriods?.map((p) => ({
-                    value: p.name,
-                    label: p.name,
-                  })) || []
-                }
-              />
-            )}
-          </div>
-          {/* Desktop: single horizontal row */}
-          {isDesktop ? (
-            <div className="flex flex-row gap-2 items-center w-auto">
-              <CustomDropdown
-                value={selectedPeriod}
-                onChange={handlePeriodChange}
-                options={
-                  payrollPeriods?.map((p) => ({
-                    value: p.name,
-                    label: p.name,
-                  })) || []
-                }
-              />
+    <div className="bg-white min-h-screen bg-app font-brand flex flex-col">
+      {/* ── Top bar ──────────────────────────────────────────────────────────── */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-10 w-full">
+        {/* Desktop top bar (hidden on mobile) */}
+        {isDesktop && (
+          <div className="sm:flex items-center justify-between h-[52px] px-7">
+            <span className="font-bold text-[17px] text-text-title tracking-tight">IT Declaration</span>
+            <div className="flex items-center gap-3.5">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[13px] text-text-body2">Payroll Period</span>
+                <CustomDropdown
+                  value={selectedPeriod}
+                  onChange={handlePeriodChange}
+                  options={
+                    payrollPeriods?.map((p) => ({
+                      value: p.name,
+                      label: p.name,
+                    })) || []
+                  }
+                />
+              </div>
               {actionsEnabled.compare_tax && (
                 <CompareTaxSheetHandler
                   declarationId={declarationId}
@@ -362,40 +330,82 @@ const ITDeclarationForm = () => {
                 )}
               <Button
                 variant="contain"
-                size="md"
+                size="sm"
                 onClick={handleSubmit}
                 disabled={PrrofOfITDeclaration?.status === "failed"}
               >
                 Submit
               </Button>
             </div>
-          ) : (
-            /* Mobile: stacked layout for action buttons */
-            <div className="flex flex-col gap-3 w-full">
-              {/* Action buttons — evenly spaced row */}
-              <div className="flex flex-row gap-2 [&>button]:flex-1 [&>button]:w-0 [&>button]:min-w-0">
+          </div>
+        )}
+
+        {/* Mobile top bar (hidden on sm+) */}
+        {!isDesktop && (
+          <div className="flex flex-col px-4 pt-3 pb-3 gap-2.5">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-[16px] text-text-title tracking-tight">IT Declaration</span>
+              <CustomDropdown
+                value={selectedPeriod}
+                onChange={handlePeriodChange}
+                options={
+                  payrollPeriods?.map((p) => ({
+                    value: p.name,
+                    label: p.name,
+                  })) || []
+                }
+              />
+            </div>
+            <div className="flex gap-2 [&>*]:flex-1 [&>*]:w-0 [&>*]:min-w-0">
+              {actionsEnabled.compare_tax && (
                 <CompareTaxSheetHandler
                   declarationId={declarationId}
                   disabled={false}
                 />
+              )}
+              {actionsEnabled.form_12b && (
                 <Form12B
                   declarationId={declarationIdFromITDeclaration}
                   docName={declarationDoctype}
                   disabled={false}
                 />
-                <PreviewOfITDeclaration
-                  declarationId={declarationIdFromITDeclaration}
-                  disabled={false}
-                />
-                <Button
-                  onClick={handleSubmit}
-                  disabled={PrrofOfITDeclaration?.status === "failed"}
-                >
-                  Submit
-                </Button>
-              </div>
+              )}
+              {actionsEnabled.preview &&
+                declarationDoctype ===
+                "Employee Tax Exemption Proof Submission" && (
+                  <PreviewOfITDeclaration
+                    declarationId={declarationIdFromITDeclaration}
+                    disabled={false}
+                  />
+                )}
+              <Button
+                onClick={handleSubmit}
+                disabled={PrrofOfITDeclaration?.status === "failed"}
+                size="sm"
+              >
+                Submit
+              </Button>
             </div>
-          )}
+          </div>
+        )}
+      </div>
+
+      <header className=" md:p-4 rounded-lg flex-1 overflow-y-auto">
+        <div
+          className={`p-2 mb-2 rounded ${PrrofOfITDeclaration?.status === "failed"
+            ? "bg-error-50 text-error"
+            : "bg-success-50 text-success"
+            }`}
+        >
+          <Typography variant="bodySmall">
+            {parts.map((part: string, index: number) =>
+              dateRegex.test(part) ? (
+                <strong key={index}>{part}</strong>
+              ) : (
+                <span key={index}>{part}</span>
+              )
+            )}
+          </Typography>
         </div>
         <div className="flex flex-col md:flex-row gap-2 md:items-center mt-4">
           {isDesktop && <p className="text-gray-500">Tax Regime</p>}

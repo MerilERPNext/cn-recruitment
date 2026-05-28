@@ -76,7 +76,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/resource/Designation?filters=[["custom_department","=","{{ data.department }}"]]',
+          url: '/api/resource/Designation',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "data",
@@ -95,7 +95,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/resource/Functional Area?filters=[["designation","=","{{ data.designation }}"]]',
+          url: '/api/resource/Functional Area',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "data",
@@ -104,6 +104,35 @@ export const requisitionFormSchemas = {
         refreshOn: "designation",
         clearOnRefresh: true,
         customConditional: "show = !!data.designation",
+      },
+      {
+        type: "select",
+        key: "custom_division",
+        label: "Division",
+        placeholder: "Select Division",
+        input: true,
+        dataSrc: "url",
+        data: {
+          url: '/api/resource/Division?fields=["name"]',
+          headers: [{ key: "Accept", value: "application/json" }],
+        },
+        selectValues: "data",
+        valueProperty: "name",
+        template: "<span>{{ item.name }}</span>",
+      },
+      {
+        type: "select",
+        key: "status",
+        label: "Status",
+        data: {
+          values: [
+            { label: "Pending", value: "Pending" },
+            { label: "Approved", value: "Approved" },
+            { label: "Open", value: "Open" },
+          ],
+        },
+        defaultValue: "Pending",
+        validate: { required: true },
       },
     ],
   },
@@ -279,10 +308,39 @@ export const requisitionFormSchemas = {
           {
             components: [
               {
+                type: "select",
+                key: "custom_salary",
+                label: "Salary Range Between",
+                placeholder: "Select Salary Range",
+                dataSrc: "url",
+                data: {
+                  url: "/api/resource/Salary Range Between",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
+                validate: { required: true },
+              },
+            ],
+            width: 12,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
                 type: "datetime",
                 key: "recruitment_start_date",
                 label: "Recruitment Start Date",
-                format: "dd-MM-yyyy",
+                format: "yyyy-MM-dd",
                 enableDate: true,
                 enableTime: false,
               },
@@ -354,6 +412,292 @@ export const requisitionFormSchemas = {
                 placeholder:
                   "Please Add the additional skills of the candidates you want to hire for this role",
                 rows: 5,
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "number",
+                key: "expected_compensation",
+                label: "Expected Compensation",
+                placeholder: "e.g., 600000",
+                validate: { required: true },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "datetime",
+                key: "expected_by",
+                label: "Expected By Date",
+                format: "yyyy-MM-dd",
+                enableDate: true,
+                enableTime: false,
+                validate: { required: true },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "select",
+                key: "employment_type",
+                label: "Employment Type (Link)",
+                placeholder: "Select Employment Type",
+                dataSrc: "url",
+                data: {
+                  url: "/api/resource/Employment Type",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
+                validate: { required: true },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "select",
+                key: "custom__employee_type",
+                label: "Employee Type",
+                placeholder: "Select Employee Type",
+                data: {
+                  values: [
+                    { label: "Full Time", value: "Full Time" },
+                    { label: "Part Time", value: "Part Time" },
+                    { label: "Consultant", value: "Consultant" },
+                    { label: "Intern", value: "Intern" },
+                  ],
+                },
+                validate: { required: true },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "select",
+                key: "location",
+                label: "Target Location",
+                placeholder: "Select Location",
+                dataSrc: "url",
+                data: {
+                  url: "/api/resource/Location",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
+                validate: { required: true },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "select",
+                key: "custom_work_experience_range",
+                label: "Work Experience Range",
+                placeholder: "Select Work Experience Range",
+                data: {
+                  values: [
+                    { label: "Fresher", value: "Fresher" },
+                    { label: "1 - 3 Years", value: "1 - 3 Years" },
+                    { label: "4 - 5 Years", value: "4 - 5 Years" },
+                    { label: "5 - 10 Years", value: "5 - 10 Years" },
+                  ],
+                },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "select",
+                key: "custom_preferred_notice_period",
+                label: "Preferred Notice Period",
+                placeholder: "Select Notice Period",
+                data: {
+                  values: [
+                    { label: "Immediate", value: "Immediate" },
+                    { label: "15 Days", value: "15 Days" },
+                    { label: "30 Days", value: "30 Days" },
+                    { label: "60 Days", value: "60 Days" },
+                    { label: "90 Days", value: "90 Days" },
+                  ],
+                },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "select",
+                key: "preferred_company",
+                label: "Preferred Target Company",
+                placeholder: "Select Company",
+                dataSrc: "url",
+                data: {
+                  url: "/api/resource/Company",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "textfield",
+                key: "custom_other_preferred_companies",
+                label: "Other Preferred Companies",
+                placeholder: "e.g., Razorpay, Cred, Postman",
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "select",
+                key: "job_description_template",
+                label: "Job Description Template",
+                placeholder: "Select Template",
+                dataSrc: "url",
+                data: {
+                  url: "/api/resource/Job Description Template",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "select",
+        key: "custom_skills",
+        label: "Required Skills",
+        placeholder: "Select Skills",
+        multiple: true,
+        input: true,
+        dataSrc: "url",
+        data: {
+          url: '/api/resource/Skill?fields=["name"]',
+          headers: [{ key: "Accept", value: "application/json" }],
+        },
+        selectValues: "data",
+        valueProperty: "name",
+        template: "<span>{{ item.name }}</span>",
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "textarea",
+                key: "description",
+                label: "Job Description (HTML)",
+                placeholder: "<p>Job Description details...</p>",
+                rows: 4,
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "textarea",
+                key: "reason_for_requesting",
+                label: "Reason for Requesting",
+                placeholder: "Enter details here...",
+                rows: 4,
               },
             ],
             width: 6,
@@ -454,7 +798,7 @@ export const requisitionFormSchemas = {
                 placeholder: "Select",
                 dataSrc: "url",
                 data: {
-                  url: '/api/resource/Functional Area?fields=["name"]',
+                  url: '/api/resource/Functional Area',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "data",
@@ -518,14 +862,14 @@ export const requisitionFormSchemas = {
                 key: "location",
                 label: "Location",
                 placeholder: "Select Location",
+                dataSrc: "url",
                 data: {
-                  values: [
-                    {
-                      label: "Corporate Office, Uttar Pradesh",
-                      value: "corporate_up",
-                    },
-                  ],
+                  url: "/api/resource/Branch",
+                  headers: [{ key: "Accept", value: "application/json" }],
                 },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
                 validate: { required: true },
               },
               {
@@ -565,13 +909,14 @@ export const requisitionFormSchemas = {
                 key: "employee_type",
                 label: "Employee Type",
                 placeholder: "Select",
+                dataSrc: "url",
                 data: {
-                  values: [
-                    { label: "Full Time", value: "full_time" },
-                    { label: "Part Time", value: "part_time" },
-                    { label: "Contract", value: "contract" },
-                  ],
+                  url: "/api/resource/Employment Type",
+                  headers: [{ key: "Accept", value: "application/json" }],
                 },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
                 validate: { required: true },
               },
             ],
@@ -603,6 +948,74 @@ export const requisitionFormSchemas = {
         type: "textfield",
         key: "designation_change",
         label: "Designation Change",
+      },
+      {
+        type: "datagrid",
+        key: "custom_qualifications",
+        label: "Qualifications",
+        addAnother: "Add Qualification",
+        components: [
+          {
+            type: "textfield",
+            key: "qualification",
+            label: "Qualification",
+            placeholder: "e.g., B.Com, B.Tech",
+            validate: { required: true },
+          },
+          {
+            type: "select",
+            key: "mandatory",
+            label: "Mandatory?",
+            data: {
+              values: [
+                { label: "Required", value: "Required" },
+                { label: "Preferred", value: "Preferred" },
+              ],
+            },
+            defaultValue: "Required",
+            validate: { required: true },
+          },
+        ],
+      },
+      {
+        type: "textfield",
+        key: "custom_assign_to_recruiter",
+        label: "Assign to Recruiter (Email)",
+        placeholder: "e.g., recruiter@company.com",
+      },
+      {
+        type: "datagrid",
+        key: "custom_pre_screened_candidates",
+        label: "Pre-Screened Candidates",
+        addAnother: "Add Candidate",
+        components: [
+          {
+            type: "textfield",
+            key: "candidate_name",
+            label: "Candidate Name",
+            placeholder: "e.g., Maya Krishnan",
+            validate: { required: true },
+          },
+          {
+            type: "textfield",
+            key: "email",
+            label: "Email",
+            placeholder: "e.g., candidate@email.com",
+            validate: { required: true },
+          },
+          {
+            type: "textfield",
+            key: "phone",
+            label: "Phone",
+            placeholder: "e.g., +91...",
+          },
+          {
+            type: "checkbox",
+            key: "offer_directly",
+            label: "Offer Directly?",
+            defaultValue: false,
+          },
+        ],
       },
     ],
   },

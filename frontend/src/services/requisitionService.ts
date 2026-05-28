@@ -12,7 +12,7 @@ export const requisitionService = {
       console.log(`✅ Requisition details:`, result)
   
       return result
-    } catch (error) {
+     } catch (error) {
       console.error(`❌ Failed to fetch requisition details for ${requisition_name}:`, error)
       throw error
     }

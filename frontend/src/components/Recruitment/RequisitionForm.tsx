@@ -88,12 +88,31 @@ const RequisitionForm = () => {
   const handleSubmit = async (submission: any) => {
     const finalData = { ...formData, ...submission.data };
 
+    // Map work experience and range safely based on select options
+    let custom_work_experience: string | undefined = undefined;
+    let custom_work_experience_range: string | undefined = undefined;
+
+    const expVal = finalData.custom_work_experience_range;
+    if (expVal === "Fresher") {
+      custom_work_experience = "Fresher";
+    } else if (expVal === "1 - 3 Years") {
+      custom_work_experience = "1 - 3 Years";
+      custom_work_experience_range = "1 - 3 years";
+    } else if (expVal === "4 - 5 Years") {
+      custom_work_experience = "4 - 5 years";
+      custom_work_experience_range = "3 - 5 years";
+    } else if (expVal === "5 - 10 Years") {
+      custom_work_experience = "5 - 10 years";
+      custom_work_experience_range = "5 - 10 years";
+    }
+
     // Transform form data to API format
     const transformedData: CreateJobRequisitionPayload = {
-      requested_by: finalData.hiring_manager,
+      requested_by: currentEmployee?.employee || currentEmployee?.name,
       company: finalData.company,
       department: finalData.department,
       designation: finalData.designation,
+      requested_by_designation: finalData.designation,
       custom_functional_area: finalData.functional_area,
       custom_experience_range_from: finalData.experience_from?.toString(),
       custom_experience_range_to: finalData.experience_to?.toString(),
@@ -103,7 +122,9 @@ const RequisitionForm = () => {
       custom_salary_range_min: finalData.salary_min,
       custom_salary_range_max: finalData.salary_max,
       custom_salary_timeframe: finalData.salary_timeframe,
-      posting_date: finalData.recruitment_start_date,
+      posting_date: new Date(finalData.recruitment_start_date)
+        .toISOString()
+        .split("T")[0],
       // ? new Date(finalData.recruitment_start_date).toISOString().split("T")[0]
       // : new Date().toISOString().split("T")[0],
       requested_by_dept: finalData.department,
@@ -120,16 +141,45 @@ const RequisitionForm = () => {
         finalData.additional_roles_responsibilities,
       custom_additional_skills: finalData.additional_skills,
 
+      // New fields mapping
+      custom_division: finalData.custom_division,
+      status: finalData.status,
+      expected_compensation: finalData.expected_compensation ? Number(finalData.expected_compensation) : undefined,
+      expected_by: new Date(finalData.expected_by)
+        .toISOString()
+        .split("T")[0],
+      custom_employment_type: ["Full Time", "Part Time", "Contract", "Intern", "Freelance"].includes(finalData.custom__employee_type || "")
+        ? finalData.custom__employee_type
+        : undefined,
+      custom_employment_type_link: finalData.employment_type,
+      custom__employee_type: finalData.custom__employee_type,
+      custom_salary: finalData.custom_salary,
+      custom_location: finalData.location,
+      custom_work_experience: custom_work_experience,
+      custom_work_experience_range: custom_work_experience_range,
+      custom_preferred_notice_period: finalData.custom_preferred_notice_period,
+      custom_preferred_company: finalData.preferred_company,
+      custom_other_preferred_companies: finalData.custom_other_preferred_companies,
+      custom_qualifications: finalData.custom_qualifications,
+      custom_job_description_template: finalData.job_description_template,
+      description: finalData.description,
+      reason_for_requesting: finalData.reason_for_requesting,
+      custom_skills: finalData.custom_skills,
+      custom_assign_to_recruiter: finalData.custom_assign_to_recruiter,
+      custom_pre_screened_candidates: finalData.custom_pre_screened_candidates,
+
       // Transform positions array
       custom_position_details:
         finalData.position_type === "new"
           ? (finalData.positions || []).map((pos: PositionDetail) => ({
+            vacancy_type: "New",
             location: pos.location,
             reporting_manager: pos.reporting_manager,
             employee_type: pos.employee_type,
             functional_area: pos.functional_area,
           }))
           : (finalData.replacement_positions || []).map((pos: ReplacementPositionDetail) => ({
+            vacancy_type: "Replacement",
             location: pos.location,
             replacement_for: pos.replacement_for,
             reporting_manager: pos.reporting_manager,
@@ -159,8 +209,8 @@ const RequisitionForm = () => {
             <div
               key={step.key}
               className={`flex-1 min-w-[140px] md:min-w-0 text-center pb-4 px-2 cursor-pointer whitespace-nowrap ${index === currentStep
-                  ? "text-primary-500 border-b-2 border-primary-500 font-semibold"
-                  : "text-gray-500"
+                ? "text-primary-500 border-b-2 border-primary-500 font-semibold"
+                : "text-gray-500"
                 }`}
               onClick={() => setCurrentStep(index)}
             >
