@@ -349,6 +349,12 @@ const MandatoryPoliciesHandler = () => {
   // One-time redirect per page reload for non-mandatory policies
   const hasRedirectedForNonMandatory = useRef(false);
 
+  // If a different employee logs in without a full reload, ensure we don't
+  // suppress their redirect due to a previous user's in-memory ref state.
+  useEffect(() => {
+    hasRedirectedForNonMandatory.current = false;
+  }, [currentEmployee?.name]);
+
   useEffect(() => {
     if (
       isCurrentEmployeeFetching ||
@@ -366,11 +372,14 @@ const MandatoryPoliciesHandler = () => {
       return;
     }
 
+    const sessionRedirectKey = currentEmployee?.name
+      ? `${SESSION_NON_MANDATORY_POLICY_REDIRECTED_KEY}_${currentEmployee.name}`
+      : SESSION_NON_MANDATORY_POLICY_REDIRECTED_KEY;
+
     // Skip if already redirected once in this session (or since last reload)
     if (
       hasRedirectedForNonMandatory.current ||
-      sessionStorage.getItem(SESSION_NON_MANDATORY_POLICY_REDIRECTED_KEY) ===
-        "true"
+      sessionStorage.getItem(sessionRedirectKey) === "true"
     ) {
       return;
     }
@@ -379,10 +388,7 @@ const MandatoryPoliciesHandler = () => {
 
     if (NonMandatoryPoliciesCount > 0 && !onPolicyPage) {
       hasRedirectedForNonMandatory.current = true;
-      sessionStorage.setItem(
-        SESSION_NON_MANDATORY_POLICY_REDIRECTED_KEY,
-        "true",
-      );
+      sessionStorage.setItem(sessionRedirectKey, "true");
       navigate("/webapp/policies-enforced");
     }
   }, [
@@ -394,6 +400,7 @@ const MandatoryPoliciesHandler = () => {
     navigate,
     location.pathname,
     isViewingOtherUser,
+    currentEmployee?.name,
   ]);
 
   return null;
