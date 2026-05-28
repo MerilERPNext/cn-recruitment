@@ -223,7 +223,7 @@ const Requisition = () => {
                       </Typography>
                     </div>
                   </div>
-                  <div className="border-t border-gray-100 pt-2 space-y-1.5 text-xs text-gray-600">
+                  <div className="border-t z-50 border-gray-100 pt-2 space-y-1.5 text-xs text-gray-600">
                     <div className="flex justify-between">
                       <span>Employee ID:</span>
                       <span className="font-semibold">{item.requested_by}</span>

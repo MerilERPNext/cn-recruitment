@@ -1,5 +1,6 @@
 // import { Funnel } from "lucide-react";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import ReactDOM from "react-dom";
 import Button, { ButtonContentAlign } from "./atoms/Button";
 
 interface Option {
@@ -18,7 +19,7 @@ interface CustomDropdownProps {
   label?: string;
   contentAlign?: ButtonContentAlign;
   variant?: "contain" | "outline" | "subtle" | "soft";
-  emptyMessage?: string; // ✅ added
+  emptyMessage?: string;
 }
 
 const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -29,31 +30,74 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   position = "bottom-left",
   label = "Select",
   contentAlign = "center",
-  emptyMessage = "No options available", // ✅ default value
+  emptyMessage = "No options available",
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const positionCss = {
-    "top-left": "bottom-[calc(100%+10px)] right-0 ",
-    "top-right": "bottom-[calc(100%+10px)] left-0 ",
-    "bottom-left": "top-full right-0",
-    "bottom-right": "top-full left-0 ",
-  };
+  const computeMenuPosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const isTop = position.startsWith("top");
+    const isRight = position.endsWith("right");
+
+    const style: React.CSSProperties = {
+      position: "fixed",
+      zIndex: 99999,
+      minWidth: 160,
+      width: "max-content",
+    };
+
+    if (isTop) {
+      style.bottom = window.innerHeight - rect.top + 10;
+    } else {
+      style.top = rect.bottom + 8;
+    }
+
+    if (isRight) {
+      style.left = rect.left;
+    } else {
+      style.right = window.innerWidth - rect.right;
+    }
+
+    setMenuStyle(style);
+  }, [position]);
+
+  useEffect(() => {
+    if (isOpen) {
+      computeMenuPosition();
+    }
+  }, [isOpen, computeMenuPosition]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        triggerRef.current &&
+        !triggerRef.current.contains(target) &&
+        menuRef.current &&
+        !menuRef.current.contains(target)
       ) {
         setIsOpen(false);
       }
     };
 
+    const handleScroll = () => {
+      if (isOpen) computeMenuPosition();
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", computeMenuPosition);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", computeMenuPosition);
+    };
+  }, [isOpen, computeMenuPosition]);
 
   const handleSelect = (optionValue: string): void => {
     const syntheticEvent = {
@@ -68,38 +112,12 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   const selectedLabel =
     options.find((opt) => opt.value === value)?.label || label;
 
-  return (
-    <div
-      ref={dropdownRef}
-      className={`relative inline-block ${className || ""}`}
-    >
-      <Button
-        variant="outline"
-        bgColor="white"
-        size="md"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2  border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
-      >
-        <span>{selectedLabel}</span>
-        <svg
-          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""
-            }`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </Button>
-
-      {isOpen && (
+  const menu = isOpen
+    ? ReactDOM.createPortal(
         <div
-          className={`absolute right-0 mt-2 w-fit min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 ${positionCss[position]} max-h-60 overflow-y-auto`}
+          ref={menuRef}
+          style={menuStyle}
+          className="bg-white rounded-lg shadow-lg border border-gray-200 py-1 max-h-60 overflow-y-auto"
         >
           {options.length === 0 ? (
             <div className="px-4 py-2.5 text-sm text-gray-500 whitespace-nowrap">
@@ -114,14 +132,46 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
                 key={option.value}
                 onClick={() => handleSelect(option.value)}
                 contentAlign={contentAlign}
-                className={`block whitespace-nowrap w-full text-left px-4 py-2.5 hover:bg-primary-50 transition-colors`}
+                className="block whitespace-nowrap w-full text-left px-4 py-2.5 hover:bg-primary-50 transition-colors"
               >
                 {option.label}
               </Button>
             ))
           )}
-        </div>
-      )}
+        </div>,
+        document.body
+      )
+    : null;
+
+  return (
+    <div
+      ref={triggerRef}
+      className={`relative inline-block ${className || ""}`}
+    >
+      <Button
+        variant="outline"
+        bgColor="white"
+        size="md"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="flex items-center gap-2 border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
+      >
+        <span>{selectedLabel}</span>
+        <svg
+          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </Button>
+
+      {menu}
     </div>
   );
 };
