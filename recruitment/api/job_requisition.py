@@ -540,6 +540,7 @@ def _serialise_requisition(doc):
 def get_job_requisition(
     name=None,
     filters=None,
+    employee=None,
     limit=20,
     start=0,
     order_by="modified desc",
@@ -552,6 +553,10 @@ def get_job_requisition(
 
     List-mode optional params:
         filters   JSON object  e.g. {"status": "Pending", "department": "Accounts - D"}
+        employee  str  Employee ID — convenience filter for "requisitions
+                       raised by this employee". Merged into `filters` as
+                       `requested_by`. If `filters` also contains a
+                       `requested_by`, the explicit `filters` value wins.
         limit     int  page size              (default 20, max 100)
         start     int  offset                 (default 0)
         order_by  str  field + asc/desc       (default "modified desc")
@@ -576,6 +581,11 @@ def get_job_requisition(
             except json.JSONDecodeError:
                 return _err(_("`filters` must be valid JSON."), http=400)
         filters = filters or {}
+
+        # Convenience: `employee` query param folds into filters.requested_by.
+        # Explicit `filters.requested_by` wins so callers can still override.
+        if employee and "requested_by" not in filters:
+            filters["requested_by"] = employee
 
         try:
             limit = max(1, min(int(limit), 100))

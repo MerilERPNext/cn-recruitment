@@ -27,7 +27,8 @@
   "competencies_section",
   "competencies",
   "skills",
-  "description"
+  "description",
+  "preview"
  ],
  "fields": [
   {
@@ -154,12 +155,17 @@
    "fieldname": "description",
    "fieldtype": "Text Editor",
    "label": "Description"
+  },
+  {
+   "fieldname": "preview",
+   "fieldtype": "HTML",
+   "label": "Preview"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-27 10:00:00.000000",
+ "modified": "2026-05-28 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Job Description",

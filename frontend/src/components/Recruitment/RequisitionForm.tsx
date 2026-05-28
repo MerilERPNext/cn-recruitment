@@ -46,13 +46,10 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
     hiring_lead: req.custom_hiring_lead,
     custom_division: req.custom_division,
     location: req.custom_location,
-    cost_centre: req.custom_cost_centre,
     reason_for_requesting: req.reason_for_requesting,
     description: req.description,
     job_description_template: req.custom_job_description_template,
     additional_roles_responsibilities: req.custom_additional_roles__responsibilities,
-    comments_instructions: req.custom_comments__instructions,
-    designation_change: req.custom_designation_change,
 
     // Position
     position_type: isReplacement ? "replacement" : "new",
@@ -95,7 +92,6 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
     salary_max: req.custom_salary_range_max,
     salary_timeframe: req.custom_salary_timeframe,
     expected_compensation: req.expected_compensation ? Number(req.expected_compensation) : undefined,
-    custom_salary: req.custom_salary,
 
     // Dates
     recruitment_start_date: req.posting_date,
@@ -233,9 +229,6 @@ const RequisitionForm = () => {
         finalData.position_type === "new"
           ? finalData.number_of_new_positions
           : finalData.number_of_replacement_positions,
-      custom_comments__instructions: finalData.comments_instructions || "",
-      custom_cost_centre: finalData.cost_centre,
-      custom_designation_change: finalData.designation_change,
       custom_additional_roles__responsibilities:
         finalData.additional_roles_responsibilities,
       custom_additional_skills: finalData.additional_skills,
@@ -254,7 +247,6 @@ const RequisitionForm = () => {
         : undefined,
       custom_employment_type_link: finalData.employment_type,
       custom__employee_type: finalData.custom__employee_type,
-      custom_salary: finalData.custom_salary,
       custom_location: finalData.location,
       custom_work_experience,
       custom_work_experience_range,

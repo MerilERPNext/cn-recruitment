@@ -308,35 +308,6 @@ export const requisitionFormSchemas = {
           {
             components: [
               {
-                type: "select",
-                key: "custom_salary",
-                label: "Salary Range Between",
-                placeholder: "Select Salary Range",
-                dataSrc: "url",
-                data: {
-                  url: "/api/resource/Salary Range Between",
-                  headers: [{ key: "Accept", value: "application/json" }],
-                },
-                selectValues: "data",
-                valueProperty: "name",
-                template: "<span>{{ item.name }}</span>",
-                validate: { required: true },
-              },
-            ],
-            width: 12,
-            offset: 0,
-            push: 0,
-            pull: 0,
-          },
-        ],
-      },
-      {
-        type: "columns",
-        customClass: "my-3",
-        columns: [
-          {
-            components: [
-              {
                 type: "datetime",
                 key: "recruitment_start_date",
                 label: "Recruitment Start Date",
@@ -932,23 +903,6 @@ export const requisitionFormSchemas = {
   },
   otherDetails: {
     components: [
-      {
-        type: "textarea",
-        key: "comments_instructions",
-        label: "Comments / Instructions",
-        rows: 4,
-      },
-      {
-        type: "textfield",
-        key: "cost_centre",
-        label: "Cost Centre",
-        validate: { required: true },
-      },
-      {
-        type: "textfield",
-        key: "designation_change",
-        label: "Designation Change",
-      },
       {
         type: "datagrid",
         key: "custom_qualifications",

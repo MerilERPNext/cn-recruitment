@@ -32,9 +32,36 @@ frappe.ui.form.on("Job Description", {
     },
 
     refresh(frm) {
-        // Nothing extra on refresh — competencies are already saved in the table
+        render_description_preview(frm);
+    },
+
+    description(frm) {
+        render_description_preview(frm);
     },
 });
+
+function render_description_preview(frm) {
+    const wrapper = frm.fields_dict.preview && frm.fields_dict.preview.$wrapper;
+    if (!wrapper) {
+        return;
+    }
+    const html = frm.doc.description || "";
+    wrapper.empty();
+    wrapper.append(`
+        <div class="jd-preview" style="
+            border: 1px solid var(--border-color, #d1d8dd);
+            border-radius: 6px;
+            padding: 14px 18px;
+            background: var(--bg-color, #fff);
+            min-height: 60px;
+            line-height: 1.55;
+            font-size: 14px;
+            color: var(--text-color, #1F272E);
+        ">
+            ${html || `<span style="color: var(--text-muted, #6c7680);">${__("Preview will appear here once a description is filled in.")}</span>`}
+        </div>
+    `);
+}
 
 // ─────────────────────────────────────────────────────────────
 // Competency Auto-Fill: Listen to Designation child table events

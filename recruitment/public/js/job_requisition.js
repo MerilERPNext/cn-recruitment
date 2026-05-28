@@ -8,8 +8,19 @@
 //     description + skills into Job Requisition.
 //  4. If the user picks/clears custom_job_description_template
 //     manually, sync description + skills accordingly.
+//  5. The HTML `custom_preview` field renders the live `description`
+//     value as a styled card so the user can see the final JD layout
+//     without scrolling through raw Text Editor markup.
 
 frappe.ui.form.on("Job Requisition", {
+    refresh(frm) {
+        render_description_preview(frm);
+    },
+
+    description(frm) {
+        render_description_preview(frm);
+    },
+
     designation(frm) {
         try_autofetch_jd(frm);
     },
@@ -78,4 +89,29 @@ function apply_jd_payload(frm, data) {
         row.skill = skill;
     });
     frm.refresh_field("custom_skills");
+
+    render_description_preview(frm);
+}
+
+function render_description_preview(frm) {
+    const wrapper = frm.fields_dict.custom_preview && frm.fields_dict.custom_preview.$wrapper;
+    if (!wrapper) {
+        return;
+    }
+    const html = frm.doc.description || "";
+    wrapper.empty();
+    wrapper.append(`
+        <div class="custom-jd-preview" style="
+            border: 1px solid var(--border-color, #d1d8dd);
+            border-radius: 6px;
+            padding: 14px 18px;
+            background: var(--bg-color, #fff);
+            min-height: 60px;
+            line-height: 1.55;
+            font-size: 14px;
+            color: var(--text-color, #1F272E);
+        ">
+            ${html || `<span style="color: var(--text-muted, #6c7680);">${__("Job description preview will appear here once a description is filled in.")}</span>`}
+        </div>
+    `);
 }

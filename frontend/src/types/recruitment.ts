@@ -98,7 +98,7 @@ export interface CreateJobRequisitionPayload {
   custom_type_of_position: "New" | "Replacement";
   no_of_positions: number;
   custom_comments__instructions?: string;
-  custom_cost_centre: string;
+  custom_cost_centre?: string;
   custom_designation_change?: string;
   custom_additional_roles__responsibilities?: string;
   custom_additional_skills?: string;
