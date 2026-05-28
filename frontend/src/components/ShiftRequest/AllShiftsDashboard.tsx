@@ -144,6 +144,11 @@ const MyShifts: React.FC = () => {
       <div className="max-h-96 overflow-y-auto my-shifts-dashboard">
         {isLoading ? (
           <CardSkeleton rows={3} />
+        ) : myShifts.length === 0 ? (
+          <NoDataFound
+            title="No Shift Assignment"
+            subtitle="No Shift Assignments Found"
+          />
         ) : (
           <ul>
             {myShifts.map((shift, idx) => (
