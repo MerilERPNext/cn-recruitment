@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Attachment } from "../../../types/flows";
+import type { Attachment, FlowRequestStage } from "../../../types/flows";
 
 import { FormIOComponent } from "../../../types/formio";
 import ReviewForm from "../Separation/components/ReviewForm";
@@ -7,7 +7,6 @@ import { createPortal } from "react-dom";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusTimelineItem from "./components/StatusTimelineItem";
-import { ApprovalStage } from "../../../types/todos";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import ViewFormButton from "../ViewFormButton";
@@ -18,16 +17,15 @@ import FormPreview from "../../shared/molecules/FormPreview";
 type handleActPropsType = {
   name: string;
   hasForm: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  todo: any;
+  todoId: string;
+  customApprovalType?: "Approval Matrix" | "Multi Actions";
 };
 
 interface StageCardProps {
-  stages: ApprovalStage[];
+  stages: FlowRequestStage[];
   idx: number;
   showActButton?: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  item: any;
+  canActOnThisRequest: boolean;
   handleAct: (handleActPropsType: handleActPropsType) => void;
 }
 
@@ -35,7 +33,7 @@ const StageCard: React.FC<StageCardProps> = ({
   stages,
   idx,
   showActButton = false,
-  item,
+  canActOnThisRequest,
   handleAct,
 }) => {
   const stage = stages[idx];
@@ -60,7 +58,7 @@ const StageCard: React.FC<StageCardProps> = ({
     if (!showActButton) return false;
     let actionPermission = false;
 
-    if (!item?.custom_doctype_actions) return false;
+    if (!canActOnThisRequest) return false;
     if (stage?.user_id && currentUser?.name)
       actionPermission = stage.user_id === currentUser.name;
 
@@ -70,7 +68,7 @@ const StageCard: React.FC<StageCardProps> = ({
       );
 
     return actionPermission;
-  }, [stage, currentUser, item, showActButton]);
+  }, [stage, currentUser, canActOnThisRequest, showActButton]);
 
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [show, setShow] = useState(false);
@@ -151,8 +149,14 @@ const StageCard: React.FC<StageCardProps> = ({
               variant="contain"
               size="md"
               onClick={() =>
-                handleAct({ name: "Act", hasForm: true, todo: item })
+                handleAct({
+                  name: "Act",
+                  hasForm: true,
+                  todoId: stage?.todo?.name ?? "",
+                  customApprovalType: stage?.todo?.custom_approval_type,
+                })
               }
+              disabled={!stage?.todo?.name}
             >
               Act
             </Button>
@@ -163,7 +167,7 @@ const StageCard: React.FC<StageCardProps> = ({
           <div>
             {status == "action_required"
               ? "In Progress"
-              : formatToIndianDate(stage?.approval_time)}
+              : formatToIndianDate(stage?.approval_time || "")}
           </div>
         </div>
 

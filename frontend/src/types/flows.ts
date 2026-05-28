@@ -247,3 +247,30 @@ export type FlowRequestResponse = {
 };
 
 export type SeparationFunnelDetails = FlowRequestResponse;
+
+export type FunnelActivityLogDetail = {
+  label: string;
+  value: string;
+};
+
+export type FunnelActivityLogEntry = {
+  activity_type: string;
+  category: string;
+  title: string;
+  timestamp: string;
+  details: FunnelActivityLogDetail[];
+};
+
+export type FunnelActivityLogData = {
+  request_id: string;
+  flow_name: string;
+  entries: FunnelActivityLogEntry[];
+  total: number;
+  page: number;
+  limit: number;
+  has_more: boolean;
+};
+
+export type FunnelActivityLogResponse = {
+  data: FunnelActivityLogData;
+};

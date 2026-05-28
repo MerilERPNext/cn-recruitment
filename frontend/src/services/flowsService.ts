@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FrappeAPI from "../utils/frappeAPI";
+import type { FunnelActivityLogResponse } from "../types/flows";
 
 export const getDifinitionNameForSeparation = async (): Promise<string> => {
   const response = (await FrappeAPI.callMethod(
@@ -141,6 +142,16 @@ export const getFlowRequestById = async (
   );
 
   return response as any;
+};
+
+// cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_log?funnel_activity_id=rl7mpd6vkc
+export const getFunnelActivityLog = async (funnel_activity_id: string) => {
+  const response = await FrappeAPI.callMethod(
+    "cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_log",
+    { funnel_activity_id },
+  );
+
+  return response as FunnelActivityLogResponse;
 };
 
 
