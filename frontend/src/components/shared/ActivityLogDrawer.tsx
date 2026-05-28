@@ -28,12 +28,17 @@ const formatLogTimestamp = (value: string): { date: string; time: string } => {
   const d = new Date(safeIso);
   if (Number.isNaN(d.getTime())) return { date: "", time: "" };
 
-  const date = d.toLocaleDateString("en-IN", {
+  const dateParts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Asia/Kolkata",
     day: "2-digit",
-    month: "short",
+    month: "2-digit",
     year: "numeric",
-  });
+  }).formatToParts(d);
+
+  const day = dateParts.find((p) => p.type === "day")?.value ?? "";
+  const month = dateParts.find((p) => p.type === "month")?.value ?? "";
+  const year = dateParts.find((p) => p.type === "year")?.value ?? "";
+  const date = day && month && year ? `${day}-${month}-${year}` : "";
 
   const time = d.toLocaleTimeString("en-IN", {
     timeZone: "Asia/Kolkata",
