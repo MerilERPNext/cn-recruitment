@@ -9,7 +9,7 @@ import FrappeAPI from "../../utils/frappeAPI";
 import type { FetchParams } from "../../services/customApiService";
 import type { FrappePageResponse } from "../../types/frappe";
 import CardTable, { ColumnSortConfig } from "../shared/CardTable";
-import { Edit, Edit2 } from "lucide-react";
+import { Edit } from "lucide-react";
 
 const EditButton = ({ requisition, onClose }: { requisition: any; onClose: () => void }) => {
   const navigate = useNavigate();
@@ -79,7 +79,6 @@ const Requisition = () => {
         return "bg-gray-50 text-gray-600";
     }
   };
-
 
   const RequisitionItem = ({ item, onView }: { item: any; onView: (item: any) => void }) => {
     const { isDesktop } = useScreenSize();
@@ -363,24 +362,18 @@ const Requisition = () => {
       fieldname: "status",
       label: "Status",
       fieldtype: "Select",
-      options: [
-        "Pending",
-        "Approved",
-        "Cancelled",
-        "Closed",
-        "Draft"
-      ]
+      options: ["Pending", "Approved", "Cancelled", "Closed", "Draft"],
     },
     {
       fieldname: "department",
       label: "Department",
-      fieldtype: "Data"
+      fieldtype: "Data",
     },
     {
       fieldname: "designation",
       label: "Designation",
-      fieldtype: "Data"
-    }
+      fieldtype: "Data",
+    },
   ];
 
   const REQUISITION_SORT_CONFIG: ColumnSortConfig[] = [
@@ -408,18 +401,10 @@ const Requisition = () => {
       field: "no_of_positions",
       getValue: (item: any) => item.no_of_positions ?? 0,
     },
-    {
-      sortable: false,
-    },
-    {
-      sortable: false,
-    },
-    {
-      sortable: false,
-    },
-    {
-      sortable: false,
-    },
+    { sortable: false },
+    { sortable: false },
+    { sortable: false },
+    { sortable: false },
     {
       sortable: true,
       type: "date",
@@ -445,60 +430,48 @@ const Requisition = () => {
   );
 
   return (
-    <div className="space-y-4 md:space-y-6 p-2">
-      {/* Header */}
-      <div className="flex items-center justify-between px-2">
-        <Typography
-          variant="h4"
-          className="font-bold text-gray-900"
+    <div className="flex-1 overflow-y-auto pb-24">
+      {isDesktop ? (
+        <CardTable
+          titles={titles}
+          columnWidths={columnWidths}
+          columnSortConfig={REQUISITION_SORT_CONFIG}
         >
-          Requisition
-        </Typography>
-      </div>
+          <DataListView
+            queryKey={["job-requisitions"]}
+            fetchFunction={fetchRequisitions}
+            ItemComponent={ItemComponent}
+            searchFields={["name", "designation", "department"]}
+            infiniteScroll={false}
+            pageSize={10}
+            isFilter={true}
+            filterFields={filterFields}
+          />
+        </CardTable>
+      ) : (
+        <div className="space-y-3 px-1">
+          <DataListView
+            queryKey={["job-requisitions"]}
+            fetchFunction={fetchRequisitions}
+            ItemComponent={ItemComponent}
+            searchFields={["name", "designation", "department"]}
+            infiniteScroll={false}
+            pageSize={20}
+            isFilter={true}
+            filterFields={filterFields}
+          />
+        </div>
+      )}
 
-      {/* List Section */}
-      <div className="flex-1 overflow-y-auto pb-24">
-        {isDesktop ? (
-          <CardTable
-            titles={titles}
-            columnWidths={columnWidths}
-            columnSortConfig={REQUISITION_SORT_CONFIG}
-          >
-            <DataListView
-              queryKey={["job-requisitions"]}
-              fetchFunction={fetchRequisitions}
-              ItemComponent={ItemComponent}
-              searchFields={["name", "designation", "department"]}
-              infiniteScroll={false}
-              pageSize={10}
-              isFilter={true}
-              filterFields={filterFields}
-            />
-          </CardTable>
-        ) : (
-          <div className="space-y-3 px-1">
-            <DataListView
-              queryKey={["job-requisitions"]}
-              fetchFunction={fetchRequisitions}
-              ItemComponent={ItemComponent}
-              searchFields={["name", "designation", "department"]}
-              infiniteScroll={false}
-              pageSize={20}
-              isFilter={true}
-              filterFields={filterFields}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* ================= REQUISITION DETAIL MODAL / SIDEBAR ================= */}
+      {/* REQUISITION DETAIL MODAL / SIDEBAR */}
       {selectedRequisition && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40">
           <div className="absolute inset-0" onClick={() => setSelectedRequisition(null)} />
 
           <div
-            className={`bg-white flex flex-col w-full ${isDesktop ? "max-w-[600px]" : ""
-              } shadow-lg relative h-screen z-10`}
+            className={`bg-white flex flex-col w-full ${
+              isDesktop ? "max-w-[600px]" : ""
+            } shadow-lg relative h-screen z-10`}
           >
             {/* Header */}
             <div className="flex justify-between items-center p-4 border-b">
@@ -552,7 +525,9 @@ const Requisition = () => {
                     Expected compensation
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {selectedRequisition.expected_compensation ? `INR ${selectedRequisition.expected_compensation.toLocaleString("en-IN")}` : "—"}
+                    {selectedRequisition.expected_compensation
+                      ? `INR ${selectedRequisition.expected_compensation.toLocaleString("en-IN")}`
+                      : "—"}
                   </Typography>
                 </div>
                 <div>
@@ -602,7 +577,9 @@ const Requisition = () => {
                     </table>
                   </div>
                 ) : (
-                  <Typography variant="bodySmall" className="text-gray-500">No positions specified.</Typography>
+                  <Typography variant="bodySmall" className="text-gray-500">
+                    No positions specified.
+                  </Typography>
                 )}
               </div>
 
@@ -614,13 +591,18 @@ const Requisition = () => {
                 {selectedRequisition.custom_qualifications?.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {selectedRequisition.custom_qualifications.map((q: any, idx: number) => (
-                      <span key={idx} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold border border-indigo-100">
+                      <span
+                        key={idx}
+                        className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold border border-indigo-100"
+                      >
                         {q.qualification} ({q.mandatory || "Required"})
                       </span>
                     ))}
                   </div>
                 ) : (
-                  <Typography variant="bodySmall" className="text-gray-500">No qualifications specified.</Typography>
+                  <Typography variant="bodySmall" className="text-gray-500">
+                    No qualifications specified.
+                  </Typography>
                 )}
               </div>
 
@@ -632,13 +614,18 @@ const Requisition = () => {
                 {selectedRequisition.custom_skills?.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5">
                     {selectedRequisition.custom_skills.map((skill: string, idx: number) => (
-                      <span key={idx} className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium border border-emerald-100">
+                      <span
+                        key={idx}
+                        className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium border border-emerald-100"
+                      >
                         {skill}
                       </span>
                     ))}
                   </div>
                 ) : (
-                  <Typography variant="bodySmall" className="text-gray-500">No skills specified.</Typography>
+                  <Typography variant="bodySmall" className="text-gray-500">
+                    No skills specified.
+                  </Typography>
                 )}
               </div>
 
@@ -669,7 +656,9 @@ const Requisition = () => {
                     </table>
                   </div>
                 ) : (
-                  <Typography variant="bodySmall" className="text-gray-500">No candidates listed.</Typography>
+                  <Typography variant="bodySmall" className="text-gray-500">
+                    No candidates listed.
+                  </Typography>
                 )}
               </div>
 
