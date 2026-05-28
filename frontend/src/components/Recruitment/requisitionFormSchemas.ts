@@ -357,43 +357,6 @@ export const requisitionFormSchemas = {
       },
       {
         type: "columns",
-        columns: [
-          {
-            components: [
-              {
-                type: "textarea",
-                key: "additional_roles_responsibilities",
-                label: "Additional Roles & Responsibilities",
-                placeholder:
-                  "Please add the additional roles and responsibilities of the candidates you want to hire for this role",
-                rows: 5,
-              },
-            ],
-            width: 6,
-            offset: 0,
-            push: 0,
-            pull: 0,
-          },
-          {
-            components: [
-              {
-                type: "textarea",
-                key: "additional_skills",
-                label: "Additional Skills",
-                placeholder:
-                  "Please Add the additional skills of the candidates you want to hire for this role",
-                rows: 5,
-              },
-            ],
-            width: 6,
-            offset: 0,
-            push: 0,
-            pull: 0,
-          },
-        ],
-      },
-      {
-        type: "columns",
         customClass: "my-3",
         columns: [
           {

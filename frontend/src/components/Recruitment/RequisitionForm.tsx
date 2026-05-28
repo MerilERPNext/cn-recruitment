@@ -50,7 +50,6 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
     reason_for_requesting: req.reason_for_requesting,
     description: req.description,
     job_description_template: req.custom_job_description_template,
-    additional_roles_responsibilities: req.custom_additional_roles__responsibilities,
 
     // Position
     position_type: isReplacement ? "replacement" : "new",
@@ -82,7 +81,6 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
     preferred_company: req.custom_preferred_company,
     custom_other_preferred_companies: req.custom_other_preferred_companies,
     custom_qualifications: req.custom_qualifications,
-    additional_skills: req.custom_additional_skills,
     custom_skills: req.custom_skills,
     custom_assign_to_recruiter: req.custom_assign_to_recruiter,
     custom_pre_screened_candidates: req.custom_pre_screened_candidates,
@@ -230,9 +228,6 @@ const RequisitionForm = () => {
         finalData.position_type === "new"
           ? finalData.number_of_new_positions
           : finalData.number_of_replacement_positions,
-      custom_additional_roles__responsibilities:
-        finalData.additional_roles_responsibilities,
-      custom_additional_skills: finalData.additional_skills,
       custom_division: finalData.custom_division,
       status: finalData.status,
       expected_compensation: finalData.expected_compensation
