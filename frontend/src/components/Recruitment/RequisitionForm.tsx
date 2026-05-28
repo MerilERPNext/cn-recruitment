@@ -18,6 +18,7 @@ import toast from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
 import FrappeAPI from "../../utils/frappeAPI";
 import { useQueryClient } from "@tanstack/react-query";
+import { Edit, X } from "lucide-react";
 
 // ---------------------------------------------------------------------------
 // Helper: map an existing requisition (API shape) → JobRequisitionFormData
@@ -325,9 +326,17 @@ const RequisitionForm = () => {
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-6 bg-white rounded-lg shadow">
       {/* Edit mode banner */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1 px-3 py-2 border rounded-md hover:bg-gray-100 transition"
+        >
+          <X />
+        </button>
+      </div>
       {isEditMode && (
         <div className="mb-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm">
-          <span className="text-base">✏️</span>
+          <span className="text-base text-gray-500"><Edit /></span>
           <span>
             Editing requisition{" "}
             <span className="font-semibold">{existingRequisition.name}</span>
