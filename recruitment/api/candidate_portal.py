@@ -1143,7 +1143,7 @@ def get_candidate_feature_flags():
     return result
 
 
-@frappe.whitelist()
+@candidate_required
 def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20):
     """Returns [{id, label}] for a doctype; label uses title_field when set.
     Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins).
