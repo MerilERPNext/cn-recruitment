@@ -563,6 +563,9 @@ def _serialise_requisition(doc):
 
     out["custom_pre_screened_candidates"] = [
         {
+            # Child-row primary key — surfaced so the UI can identify the
+            # same row across refetches (edit/delete tracking).
+            "name": row.get("name"),
             "candidate_name": row.get("candidate_name"),
             "email": row.get("email"),
             "phone": row.get("phone"),
@@ -621,10 +624,16 @@ def get_job_requisition(
                 return _err(_("`filters` must be valid JSON."), http=400)
         filters = filters or {}
 
-        # Convenience: `employee` query param folds into filters.requested_by.
-        # Explicit `filters.requested_by` wins so callers can still override.
-        if employee and "requested_by" not in filters:
-            filters["requested_by"] = employee
+        # Security: `employee` is REQUIRED in list mode. Without it any caller
+        # could enumerate every requisition in the system. An explicit
+        # `filters.requested_by` from the caller is treated as an override
+        # (same person, just expressed via the filters object) and satisfies
+        # the requirement.
+        if not employee and "requested_by" not in filters:
+            return _err(
+                _("`employee` is required to list Job Requisitions."),
+                http=400,
+            )
 
         try:
             limit = max(1, min(int(limit), 100))
@@ -632,16 +641,47 @@ def get_job_requisition(
         except (TypeError, ValueError):
             return _err(_("`limit` and `start` must be integers."), http=400)
 
+        # Resolve `employee` against both representations the JR's
+        # `requested_by` field may hold:
+        #   - the Employee ID itself (e.g. "37001"), or
+        #   - the linked User account (e.g. "user@example.com").
+        # When both are known we OR-match — fixes the case where the JR was
+        # saved with the user email but the UI sends the Employee ID.
+        or_filters = None
+        if employee and "requested_by" not in filters:
+            candidates = [employee]
+            user_id = frappe.db.get_value("Employee", employee, "user_id")
+            if user_id and user_id not in candidates:
+                candidates.append(user_id)
+            if len(candidates) == 1:
+                filters["requested_by"] = candidates[0]
+            else:
+                or_filters = [["requested_by", "=", c] for c in candidates]
+
         names = frappe.get_list(
             JOB_REQUISITION,
             filters=filters,
+            or_filters=or_filters,
             fields=["name"],
             order_by=order_by,
             limit_page_length=limit,
             limit_start=start,
             pluck="name",
         )
-        total = frappe.db.count(JOB_REQUISITION, filters=filters)
+        if or_filters:
+            # frappe.db.count doesn't accept or_filters; pull all matching
+            # names (no pagination) and count them.
+            total = len(
+                frappe.get_list(
+                    JOB_REQUISITION,
+                    filters=filters,
+                    or_filters=or_filters,
+                    pluck="name",
+                    limit_page_length=0,
+                )
+            )
+        else:
+            total = frappe.db.count(JOB_REQUISITION, filters=filters)
         items = [_serialise_requisition(frappe.get_doc(JOB_REQUISITION, n)) for n in names]
 
         return _ok(
