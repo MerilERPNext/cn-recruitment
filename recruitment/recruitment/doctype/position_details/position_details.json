@@ -71,9 +71,8 @@
    "fieldname": "employee_type",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
-   "in_list_view": 1,
+   "in_list_view": 0,
    "label": "Employee Type",
-   "mandatory_depends_on": "eval:doc.vacancy_type==\"Replacement\"",
    "options": "Employment Type",
    "read_only_depends_on": "eval:doc.vacancy_type==\"New\""
   }

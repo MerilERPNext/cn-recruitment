@@ -7,7 +7,8 @@ import {
   FormSchemaKeys,
 } from "./requisitionFormSchemas";
 import Button from "../shared/atoms/Button";
-import { useCurrentEmployeeDetails,} from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails, useFileUpload } from "../../hooks/useEmployee";
+import { useDeleteDocument } from "../../hooks/payroll/UseDeleteDocuemt";
 import { useCreateJobRequisition } from "../../hooks/useRecruitment";
 import {
   JobRequisitionFormData,
@@ -18,6 +19,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import FrappeAPI from "../../utils/frappeAPI";
 import { useQueryClient } from "@tanstack/react-query";
 import { Edit, X, FileText, Loader2 } from "lucide-react";
+import { IoMdCloudUpload } from "react-icons/io";
 
 // ---------------------------------------------------------------------------
 // Validation config per step index
@@ -184,6 +186,130 @@ const RequisitionForm = () => {
   const [jdContent, setJdContent] = useState<string>("");
   const [jdLoading, setJdLoading] = useState(false);
 
+  // ── Pre-Screened Candidate CV upload (same pattern as HraExemptio.tsx) ──
+  const uploadMutation = useFileUpload();
+  const { mutateAsync: deleteDoc } = useDeleteDocument();
+  const [candidateFileNames, setCandidateFileNames] = useState<Record<number, string>>({});
+  const [candidateFileIds, setCandidateFileIds] = useState<Record<number, string>>({});
+
+  const handleCandidateFileUpload = (index: number, file: File | null) => {
+    if (!file) return;
+    uploadMutation.mutate(file, {
+      onSuccess(data: any) {
+        setCandidateFileNames((prev) => ({ ...prev, [index]: file.name }));
+        if (data?.name) {
+          setCandidateFileIds((prev) => ({ ...prev, [index]: data.name }));
+        }
+        setFormData((prev: any) => {
+          const candidates = [...(prev.custom_pre_screened_candidates || [])];
+          if (candidates[index]) {
+            candidates[index] = { ...candidates[index], cv: data?.file_url };
+          }
+          return { ...prev, custom_pre_screened_candidates: candidates };
+        });
+      },
+      onError(err) {
+        console.error(err);
+        toast.error("File upload failed");
+      },
+    });
+  };
+
+  // ── Bulk set vacancy type across all positions ──
+  const setAllVacancyType = (type: "New" | "Replacement") => {
+    setFormData((prev: any) => {
+      const positions = (prev.positions || []).map((pos: any) => ({
+        ...pos,
+        vacancy_type: type,
+        // Clear stale replacement_for when switching everyone to New
+        ...(type === "New" ? { replacement_for: "" } : {}),
+      }));
+      return { ...prev, positions };
+    });
+  };
+
+  // ── Row-level mutations for the custom Pre-Screened Candidates table ──
+  const addCandidate = () => {
+    setFormData((prev: any) => ({
+      ...prev,
+      custom_pre_screened_candidates: [
+        ...(prev.custom_pre_screened_candidates || []),
+        {
+          candidate_name: "",
+          email: "",
+          phone: "",
+          cv: "",
+          offer_directly: false,
+        },
+      ],
+    }));
+  };
+
+  const removeCandidate = (index: number) => {
+    setFormData((prev: any) => {
+      const candidates = [...(prev.custom_pre_screened_candidates || [])];
+      candidates.splice(index, 1);
+      return { ...prev, custom_pre_screened_candidates: candidates };
+    });
+    // Drop tracked filename / file id for that row and shift higher indices down
+    const shift = (m: Record<number, string>) => {
+      const next: Record<number, string> = {};
+      Object.entries(m).forEach(([k, v]) => {
+        const i = Number(k);
+        if (i < index) next[i] = v;
+        else if (i > index) next[i - 1] = v;
+      });
+      return next;
+    };
+    setCandidateFileNames((prev) => shift(prev));
+    setCandidateFileIds((prev) => shift(prev));
+  };
+
+  const updateCandidateField = (index: number, field: string, value: any) => {
+    setFormData((prev: any) => {
+      const candidates = [...(prev.custom_pre_screened_candidates || [])];
+      if (!candidates[index]) return prev;
+      candidates[index] = { ...candidates[index], [field]: value };
+      return { ...prev, custom_pre_screened_candidates: candidates };
+    });
+  };
+
+  const handleCandidateRemoveFile = async (index: number) => {
+    const fileId = candidateFileIds[index];
+    const clearCv = () => {
+      setCandidateFileNames((prev) => {
+        const n = { ...prev };
+        delete n[index];
+        return n;
+      });
+      setCandidateFileIds((prev) => {
+        const n = { ...prev };
+        delete n[index];
+        return n;
+      });
+      setFormData((prev: any) => {
+        const candidates = [...(prev.custom_pre_screened_candidates || [])];
+        if (candidates[index]) {
+          candidates[index] = { ...candidates[index], cv: "" };
+        }
+        return { ...prev, custom_pre_screened_candidates: candidates };
+      });
+    };
+
+    if (!fileId) {
+      clearCv();
+      return;
+    }
+    if (!window.confirm("Delete this file?")) return;
+    try {
+      await deleteDoc({ doctype: "File", name: fileId });
+      clearCv();
+    } catch (err) {
+      console.error(err);
+      toast.error("Delete failed");
+    }
+  };
+
   // Pre-populate for edit mode
   useEffect(() => {
     if (isEditMode && existingRequisition) {
@@ -245,38 +371,19 @@ const RequisitionForm = () => {
     setJdContent("");
 
     try {
-      const response = await fetch(
-        "/api/method/recruitment.api.job_requisition.preview_job_description",
+      const message: any = await FrappeAPI.callMethod(
+        "recruitment.api.job_requisition.preview_job_description",
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            designation,
-            department,
-            fields: [
-              "name",
-              "description",
-              "designation",
-              "department",
-            ],
-            limit: 1,
-          }),
+          designation,
+          department,
+          fields: ["name", "description", "designation", "department"],
+          limit: 1,
         }
       );
-    
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-    
-      const json = await response.json();
-    
-      // Map correctly to message.data OR message or data directly depending on wrappers
-      const jdData = json?.message?.data || json?.data || json?.message?.[0];
-      
+
+      // FrappeAPI.callMethod already unwraps response.data.message
+      const jdData = message?.data || message?.[0] || message;
+
       // Extract the HTML string from description_html (fallback to description if needed)
       const htmlContent = jdData?.description_html || jdData?.description;
     
@@ -369,15 +476,27 @@ const RequisitionForm = () => {
     }
 
     if (changed.changed?.component?.key === "number_of_positions") {
-      const count = parseInt(changed.data.number_of_positions) || 0;
-      newData.positions = Array.from({ length: count }, (_, i) => ({
-        position_number: i + 1,
-        vacancy_type: newData.positions?.[i]?.vacancy_type || "New",
-        location: newData.positions?.[i]?.location || "",
-        functional_area: newData.positions?.[i]?.functional_area || "",
-        reporting_manager: newData.positions?.[i]?.reporting_manager || "",
-        replacement_for: newData.positions?.[i]?.replacement_for || "",
-      }));
+      const raw = changed.data.number_of_positions;
+      const count = parseInt(raw);
+      // Only regenerate when the user has typed a valid in-range number AND
+      // the count actually differs from current rows. Skipping empty / NaN /
+      // zero values prevents wiping rows mid-edit (the cause of the jank).
+      if (Number.isFinite(count) && count > 0 && count <= 100) {
+        const currentLength = (newData.positions || []).length;
+        if (count !== currentLength) {
+          newData.positions = Array.from({ length: count }, (_, i) => ({
+            position_number: i + 1,
+            vacancy_type: newData.positions?.[i]?.vacancy_type || "New",
+            location: newData.positions?.[i]?.location || "",
+            functional_area: newData.positions?.[i]?.functional_area || "",
+            reporting_manager: newData.positions?.[i]?.reporting_manager || "",
+            replacement_for: newData.positions?.[i]?.replacement_for || "",
+          }));
+        }
+      } else {
+        // Keep previous positions intact while the user is mid-type
+        newData.positions = formData.positions;
+      }
     }
 
     if (validationErrors.length > 0) {
@@ -617,7 +736,192 @@ const RequisitionForm = () => {
           onSubmit={handleSubmit}
         />
 
-        {/* ── Attachment upload section — rendered below the form on the last step ── */}
+        {/* ── Position Selection summary bar (totals + bulk vacancy-type toggle) ── */}
+        {currentStep === 2 && (() => {
+          const positions: any[] = (formData as any).positions || [];
+          const total = positions.length;
+          const newCount = positions.filter((p) => p?.vacancy_type === "New").length;
+          const replacementCount = positions.filter(
+            (p) => p?.vacancy_type === "Replacement"
+          ).length;
+          return (
+            <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 py-2 border rounded-md bg-gray-50 text-sm">
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="font-semibold text-gray-800">
+                  {total} Total positions
+                </span>
+                <span className="flex items-center gap-1 text-gray-700">
+                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  <span className="font-semibold">{newCount}</span>
+                  <span className="text-gray-500">New</span>
+                </span>
+                <span className="flex items-center gap-1 text-gray-700">
+                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                  <span className="font-semibold">{replacementCount}</span>
+                  <span className="text-gray-500">Replacement</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-gray-500 text-xs uppercase tracking-wide">
+                  Set all to
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAllVacancyType("New")}
+                  disabled={total === 0}
+                  className="flex items-center gap-1 px-3 py-1 border border-green-500 text-green-700 rounded-full text-xs hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  New
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAllVacancyType("Replacement")}
+                  disabled={total === 0}
+                  className="flex items-center gap-1 px-3 py-1 border border-orange-500 text-orange-700 rounded-full text-xs hover:bg-orange-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                  Replacement
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Pre-Screened Candidates (custom table with inline Attachment column) ── */}
+        {currentStep === 3 && (
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Pre-Screened Candidates
+            </label>
+            <div className="overflow-x-auto border rounded-md">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50 text-gray-700">
+                  <tr>
+                    <th className="text-left font-medium px-3 py-2 border-b">Candidate Name</th>
+                    <th className="text-left font-medium px-3 py-2 border-b">Email</th>
+                    <th className="text-left font-medium px-3 py-2 border-b">Phone</th>
+                    <th className="text-left font-medium px-3 py-2 border-b">Attachment</th>
+                    <th className="text-left font-medium px-3 py-2 border-b">Offer Directly?</th>
+                    <th className="px-3 py-2 border-b w-10"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {((formData as any).custom_pre_screened_candidates || []).length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="text-center text-gray-400 px-3 py-4">
+                        No candidates added yet.
+                      </td>
+                    </tr>
+                  )}
+                  {((formData as any).custom_pre_screened_candidates || []).map(
+                    (candidate: any, index: number) => (
+                      <tr key={index} className="border-b last:border-b-0 align-top">
+                        <td className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={candidate?.candidate_name || ""}
+                            onChange={(e) =>
+                              updateCandidateField(index, "candidate_name", e.target.value)
+                            }
+                            placeholder="e.g., Maya Krishnan"
+                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="email"
+                            value={candidate?.email || ""}
+                            onChange={(e) =>
+                              updateCandidateField(index, "email", e.target.value)
+                            }
+                            placeholder="e.g., candidate@email.com"
+                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={candidate?.phone || ""}
+                            onChange={(e) =>
+                              updateCandidateField(index, "phone", e.target.value)
+                            }
+                            placeholder="e.g., +91..."
+                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="flex flex-col gap-1">
+                            <label className="flex items-center gap-2 border-2 border-dashed border-gray-300 px-2 py-1 cursor-pointer hover:border-gray-500 transition rounded">
+                              <span className="text-gray-500 text-lg shrink-0">
+                                <IoMdCloudUpload />
+                              </span>
+                              <span
+                                title={candidateFileNames[index] || candidate?.cv}
+                                className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-xs text-gray-700"
+                              >
+                                {candidateFileNames[index] ||
+                                  candidate?.cv ||
+                                  "Upload file"}
+                              </span>
+                              <input
+                                type="file"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0] || null;
+                                  if (!file) return;
+                                  handleCandidateFileUpload(index, file);
+                                  e.target.value = "";
+                                }}
+                                className="hidden"
+                              />
+                            </label>
+                            {(candidateFileNames[index] || candidate?.cv) && (
+                              <button
+                                type="button"
+                                onClick={() => handleCandidateRemoveFile(index)}
+                                className="text-xs text-gray-500 hover:text-red-600 self-start"
+                              >
+                                Remove file
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked={!!candidate?.offer_directly}
+                            onChange={(e) =>
+                              updateCandidateField(index, "offer_directly", e.target.checked)
+                            }
+                            className="w-4 h-4"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <button
+                            type="button"
+                            onClick={() => removeCandidate(index)}
+                            title="Remove candidate"
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <button
+              type="button"
+              onClick={addCandidate}
+              className="mt-2 px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition"
+            >
+              + Add Candidate
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Navigation Buttons */}

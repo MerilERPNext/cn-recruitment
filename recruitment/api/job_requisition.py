@@ -292,6 +292,39 @@ def _apply_skills(doc, payload):
             doc.append("custom_skills", {"skill": skill_name})
 
 
+def _sanitize_cv(value):
+    """Normalize the candidate `cv` payload to a file URL or empty string.
+
+    Frontend clients have historically sent the `cv` field in three shapes:
+      1. A plain URL string  e.g. "/private/files/dummy.pdf"   (current UI)
+      2. The form.io file-widget array shape
+           [{"url": "...", "storage": "customfiles", ...}]
+      3. The bucket name only  e.g. "customfiles"
+         (this happened when an older `buildPayload` fell back to
+          `candidate.cv?.[0]?.storage` because the upload had no URL)
+
+    We only persist (1). Anything else is coerced to "" so the
+    `Attach` field never gets garbage like "customfiles" written to it.
+    """
+    if not value:
+        return ""
+
+    if isinstance(value, list):
+        first = value[0] if value and isinstance(value[0], dict) else {}
+        value = first.get("url") or first.get("file_url") or ""
+
+    if isinstance(value, dict):
+        value = value.get("url") or value.get("file_url") or ""
+
+    if not isinstance(value, str):
+        return ""
+
+    value = value.strip()
+    if value.startswith(("/files/", "/private/files/", "http://", "https://")):
+        return value
+    return ""
+
+
 def _apply_pre_screened(doc, payload):
     doc.set("custom_pre_screened_candidates", [])
     for cand in _list_field(payload, "custom_pre_screened_candidates"):
@@ -306,7 +339,7 @@ def _apply_pre_screened(doc, payload):
                 "candidate_name": name,
                 "email": cand.get("email"),
                 "phone": cand.get("phone"),
-                "cv": cand.get("cv"),
+                "cv": _sanitize_cv(cand.get("cv")),
                 "offer_directly": 1 if cand.get("offer_directly") else 0,
             },
         )
