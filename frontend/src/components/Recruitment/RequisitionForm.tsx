@@ -515,7 +515,7 @@ const RequisitionForm = () => {
         toast.success("Job requisition created successfully!");
         navigate("/webapp/recruitment/requisition");
       } catch (error) {
-        console.error("Error creating job requisition:", error);
+        console.error("Error  creating job requisition:", error);
       }
     }
   };
