@@ -205,6 +205,11 @@ doc_events = {
         "after_insert": "recruitment.api.action_center.sync_job_offer_action_item",
         "on_update_after_submit": "recruitment.api.action_center.sync_job_offer_action_item"
     },
+    "Job Requisition": {
+        # Keep no_of_positions in sync with the actual custom_position_details
+        # row count on every save (Desk UI edits, scripted updates, etc.).
+        "validate": "recruitment.api.job_requisition.sync_no_of_positions",
+    },
     "Employee": {
         "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",
         "after_insert": "recruitment.auto_fetch_fields.link_employee_to_onboarding",

@@ -345,6 +345,21 @@ def _apply_pre_screened(doc, payload):
         )
 
 
+def sync_no_of_positions(doc, method=None):
+    """`validate` hook — keep parent.no_of_positions in lock-step with the
+    actual row count in custom_position_details.
+
+    Fires on every save of Job Requisition, regardless of how the doc was
+    edited (our API, Desk UI, scripted update). Only acts when the table
+    has rows — leaves the field untouched for legacy / HRMS-standard flows
+    where `custom_position_details` is empty (those flows use the standard
+    `vacancies` table instead, which we don't want to override).
+    """
+    position_rows = doc.get("custom_position_details") or []
+    if position_rows:
+        doc.no_of_positions = len(position_rows)
+
+
 def _build_requisition_doc(payload, positions_for_location):
     """Construct an unsaved Job Requisition for one location group."""
     doc = frappe.new_doc(JOB_REQUISITION)
@@ -352,8 +367,11 @@ def _build_requisition_doc(payload, positions_for_location):
 
     _apply_parent_fields(doc, payload)
 
-    if not payload.get("no_of_positions"):
-        doc.no_of_positions = len(positions_for_location)
+    # Always derive `no_of_positions` from the actual rows in
+    # custom_position_details for THIS location group. The UI ships a single
+    # total across all locations, but location-grouping splits that total
+    # into multiple JRs, so the UI value would be wrong per-JR.
+    doc.no_of_positions = len(positions_for_location)
     if not doc.get("custom_hiring_lead"):
         doc.custom_hiring_lead = payload.get("requested_by")
 
@@ -432,7 +450,9 @@ def create_job_requisition(payload=None):
                             "custom_position_details",
                             _position_row(p, start_idx + offset, parent_vacancy, parent_functional_area),
                         )
-                    doc.no_of_positions = (doc.no_of_positions or 0) + len(group_positions)
+                    # Resync from the live child table after appending,
+                    # not from the payload-supplied total.
+                    doc.no_of_positions = len(doc.get("custom_position_details") or [])
                     doc.save(ignore_permissions=False)
                     action = "updated"
                 else:
@@ -482,11 +502,33 @@ ACTIVE_STATUSES = ("Open & Approved", "In-Progress", "Job Opening Created")
 CLOSED_STATUSES = ("Filled", "Cancelled", "Rejected")
 
 
-def _compute_global_summary():
+def _compute_global_summary(employee=None, requested_by_override=None):
     """Single aggregate query returning the 4 list-view card counts.
-    Always global — does NOT honor list filters by design."""
+
+    Scoped to one user when `employee` (Employee ID) or `requested_by_override`
+    (already-resolved JR.requested_by value) is supplied — counts then mirror
+    the same `requested_by` filter the list query uses (OR-matched against the
+    Employee ID and the linked User account).
+
+    When both args are None the counts are global (admin / unfiltered case).
+    """
+    candidates = []
+    if employee:
+        candidates.append(employee)
+        user_id = frappe.db.get_value("Employee", employee, "user_id")
+        if user_id and user_id not in candidates:
+            candidates.append(user_id)
+    if requested_by_override and requested_by_override not in candidates:
+        candidates.append(requested_by_override)
+
+    params = {"active": ACTIVE_STATUSES, "closed": CLOSED_STATUSES}
+    where_clause = ""
+    if candidates:
+        params["candidates"] = tuple(candidates)
+        where_clause = "WHERE requested_by IN %(candidates)s"
+
     row = frappe.db.sql(
-        """
+        f"""
         SELECT
             COUNT(*)                                        AS total_requisitions,
             COALESCE(SUM(no_of_positions), 0)               AS total_positions,
@@ -495,8 +537,9 @@ def _compute_global_summary():
             COALESCE(SUM(CASE WHEN status IN %(closed)s
                               THEN no_of_positions ELSE 0 END), 0) AS closed_positions
         FROM `tabJob Requisition`
+        {where_clause}
         """,
-        {"active": ACTIVE_STATUSES, "closed": CLOSED_STATUSES},
+        params,
         as_dict=True,
     )[0]
     return {
@@ -694,7 +737,14 @@ def get_job_requisition(
                     "start": start,
                     "returned": len(items),
                 },
-                "summary": _compute_global_summary(),
+                # Counts scoped to the same caller the list query is scoped to.
+                # If the caller passed an explicit `filters.requested_by`, that
+                # wins (admins listing for a specific user); else fall back to
+                # the resolved `employee`.
+                "summary": _compute_global_summary(
+                    employee=employee,
+                    requested_by_override=filters.get("requested_by"),
+                ),
             },
             http=200,
         )
@@ -761,8 +811,10 @@ def update_job_requisition(name=None, payload=None):
                     "custom_position_details",
                     _position_row(p, idx, parent_vacancy, parent_functional_area),
                 )
-            if not payload.get("no_of_positions"):
-                doc.no_of_positions = len(positions)
+            # Always sync from the live child table — the payload's
+            # `no_of_positions` is a UI-level total that may not match the
+            # rows we actually persist (location grouping, row removal, etc.).
+            doc.no_of_positions = len(positions)
 
         # Rewrite child tables if provided
         if "custom_qualifications" in payload:

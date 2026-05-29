@@ -34,12 +34,33 @@ const Requisition = () => {
   const { isDesktop } = useScreenSize();
   const { data: currentEmployee } = useCurrentEmployee();
   const currentEmployeeName = currentEmployee?.employee_name;
-  const [summary, setSummary] = useState<{
+  // Persist the 4-card summary across navigations (e.g. edit → back) so the
+  // cards don't blank out when React Query returns cached row data without
+  // re-running the loader on remount.
+  const SUMMARY_STORAGE_KEY = "requisition-summary-cache";
+  type SummaryShape = {
     total_requisitions: number;
     total_positions: number;
     active_offer_positions: number;
     closed_positions: number;
-  } | null>(null);
+  };
+  const [summary, _setSummary] = useState<SummaryShape | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const cached = sessionStorage.getItem(SUMMARY_STORAGE_KEY);
+      return cached ? (JSON.parse(cached) as SummaryShape) : null;
+    } catch {
+      return null;
+    }
+  });
+  const setSummary = (next: SummaryShape) => {
+    _setSummary(next);
+    try {
+      sessionStorage.setItem(SUMMARY_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* sessionStorage unavailable — fall back to in-memory only */
+    }
+  };
   const titles = [
     "Requisition Code",
     "Designation, Department & Location",
