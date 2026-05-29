@@ -33,6 +33,7 @@ const EditButton = ({ requisition, onClose }: { requisition: any; onClose: () =>
 const Requisition = () => {
   const { isDesktop } = useScreenSize();
   const { data: currentEmployee } = useCurrentEmployee();
+  const currentEmployeeName = currentEmployee?.employee_name;
   const [summary, setSummary] = useState<{
     total_requisitions: number;
     total_positions: number;
@@ -521,7 +522,7 @@ const Requisition = () => {
           columnSortConfig={REQUISITION_SORT_CONFIG}
         >
           <DataListView
-            queryKey={["job-requisitions", currentEmployee?.name ?? ""]}
+            queryKey={["job-requisitions", currentEmployeeName || ""]}
             fetchFunction={fetchRequisitions}
             ItemComponent={ItemComponent}
             searchFields={["name", "designation", "department"]}
@@ -534,7 +535,7 @@ const Requisition = () => {
       ) : (
         <div className="space-y-3 px-1">
           <DataListView
-            queryKey={["job-requisitions", currentEmployee?.name ?? ""]}
+            queryKey={["job-requisitions", currentEmployeeName || ""]}
             fetchFunction={fetchRequisitions}
             ItemComponent={ItemComponent}
             searchFields={["name", "designation", "department"]}
