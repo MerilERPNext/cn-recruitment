@@ -980,3 +980,46 @@ def _build_preview_payload(jd_name, source):
         "description_html": doc.get("description") or "",
         "skills": skills,
     }
+
+
+# ---------------------------------------------------------------------------
+# LINK FIELD OPTIONS (mirrored from candidate_portal.get_link_field_options
+# but whitelisted for desk-session callers rather than candidate-portal users)
+# ---------------------------------------------------------------------------
+
+
+@frappe.whitelist()
+def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20):
+    """Returns [{id, label}] for a doctype; label uses title_field when set.
+    Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins).
+    Accessible to any authenticated Frappe user (desk session or API key/secret)."""
+    if not doctype:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Doctype is required.")}
+
+    try:
+        title_field = frappe.get_meta(doctype).get("title_field") or None
+    except Exception:
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _("Doctype '{0}' not found.").format(doctype)}
+
+    has_title = bool(title_field) and title_field != "name"
+    fields = ["name"] + ([title_field] if has_title else [])
+
+    search = (search_text or query or txt or "").strip()
+    or_filters = None
+    if search:
+        like = f"%{search}%"
+        or_filters = [["name", "like", like]] + ([[title_field, "like", like]] if has_title else [])
+
+    try:
+        records = frappe.get_all(
+            doctype, fields=fields, or_filters=or_filters,
+            limit=int(limit or 20), order_by=f"{title_field or 'name'} asc",
+        )
+    except Exception as e:
+        frappe.local.response["http_status_code"] = 500
+        return {"status": "error", "message": str(e)}
+
+    results = [{"id": r["name"], "label": (r.get(title_field) if has_title else None) or r["name"]} for r in records]
+    return {"status": "success", "doctype": doctype, "title_field": title_field, "total": len(results), "results": results}
