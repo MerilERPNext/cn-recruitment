@@ -486,6 +486,8 @@ const RequisitionForm = () => {
     };
   };
 
+  
+
   const handleSubmit = async (submission: any) => {
     const finalData = { ...formData, ...submission.data };
     const payload = buildPayload(finalData);
@@ -505,7 +507,7 @@ const RequisitionForm = () => {
         navigate("/webapp/recruitment/requisition");
       } catch (error: any) {
         console.error("Error updating job requisition:", error);
-        toast.error(error?.message || "Failed to update requisition. Please try again.");
+        toast.error(error?.message || "Failed to  update requisition. Please try again.");
       } finally {
         setIsUpdating(false);
       }
@@ -519,7 +521,7 @@ const RequisitionForm = () => {
       }
     }
   };
-
+  
   const getCurrentSchema = () => {
     const stepKey = requisitionSteps[currentStep].key as FormSchemaKeys;
     return requisitionFormSchemas[stepKey];
