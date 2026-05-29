@@ -16,7 +16,8 @@ export const requisitionFormSchemas = {
       {
         type: "select",
         key: "hiring_manager",
-        label: "Hiring Manager",
+        label: "Hiring Manager *",
+        customClass: "required-field",
         placeholder: "Select Hiring Manager",
         dataSrc: "url",
         data: {
@@ -35,7 +36,8 @@ export const requisitionFormSchemas = {
       {
         type: "select",
         key: "company",
-        label: "Company",
+        label: "Company *",
+        customClass: "required-field",
         placeholder: "Select Company",
         input: true,
         dataSrc: "url",
@@ -52,7 +54,8 @@ export const requisitionFormSchemas = {
       {
         type: "select",
         key: "department",
-        label: "Department",
+        label: "Department *",
+        customClass: "required-field",
         placeholder: "Select Department",
         input: true,
         dataSrc: "url",
@@ -71,7 +74,8 @@ export const requisitionFormSchemas = {
       {
         type: "select",
         key: "designation",
-        label: "Designation",
+        label: "Designation *",
+        customClass: "required-field",
         placeholder: "Select Designation",
         input: true,
         dataSrc: "url",
@@ -226,7 +230,8 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "salary_currency",
-                label: "Salary Range (Currency)",
+                label: "Salary Range (Currency) *",
+                customClass: "required-field",
                 dataSrc: "url",
                 data: {
                   url: '/api/resource/Currency?fields=["name"]',
@@ -249,7 +254,8 @@ export const requisitionFormSchemas = {
               {
                 type: "textfield",
                 key: "salary_min",
-                label: "Salary Range (Min)",
+                label: "Salary Range (Min) *",
+                customClass: "required-field",
                 placeholder: "Min Salary",
                 validate: { required: true },
               },
@@ -264,7 +270,8 @@ export const requisitionFormSchemas = {
               {
                 type: "textfield",
                 key: "salary_max",
-                label: "Salary Range (Max)",
+                label: "Salary Range (Max) *",
+                customClass: "required-field",
                 placeholder: "Max Salary",
                 validate: { required: true },
               },
@@ -279,7 +286,8 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "salary_timeframe",
-                label: "Salary Timeframe",
+                label: "Salary Timeframe *",
+                customClass: "required-field",
                 data: {
                   values: [
                     { label: "Hourly", value: "Hourly" },
@@ -295,35 +303,6 @@ export const requisitionFormSchemas = {
               },
             ],
             width: 3,
-            offset: 0,
-            push: 0,
-            pull: 0,
-          },
-        ],
-      },
-      {
-        type: "columns",
-        customClass: "my-3",
-        columns: [
-          {
-            components: [
-              {
-                type: "select",
-                key: "custom_salary",
-                label: "Salary Range Between",
-                placeholder: "Select Salary Range",
-                dataSrc: "url",
-                data: {
-                  url: "/api/resource/Salary Range Between",
-                  headers: [{ key: "Accept", value: "application/json" }],
-                },
-                selectValues: "data",
-                valueProperty: "name",
-                template: "<span>{{ item.name }}</span>",
-                validate: { required: true },
-              },
-            ],
-            width: 12,
             offset: 0,
             push: 0,
             pull: 0,
@@ -355,7 +334,8 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "hiring_lead",
-                label: "Hiring lead",
+                label: "Hiring lead *",
+                customClass: "required-field",
                 placeholder: "Select Hiring Lead",
                 dataSrc: "url",
                 data: {
@@ -383,43 +363,6 @@ export const requisitionFormSchemas = {
         className: "alert alert-info mt-4 rounded-md",
         content:
           '<i class="fa fa-info-circle mr-2"></i> Fill below sections if you have any specific instruction for recruiters',
-      },
-      {
-        type: "columns",
-        columns: [
-          {
-            components: [
-              {
-                type: "textarea",
-                key: "additional_roles_responsibilities",
-                label: "Additional Roles & Responsibilities",
-                placeholder:
-                  "Please add the additional roles and responsibilities of the candidates you want to hire for this role",
-                rows: 5,
-              },
-            ],
-            width: 6,
-            offset: 0,
-            push: 0,
-            pull: 0,
-          },
-          {
-            components: [
-              {
-                type: "textarea",
-                key: "additional_skills",
-                label: "Additional Skills",
-                placeholder:
-                  "Please Add the additional skills of the candidates you want to hire for this role",
-                rows: 5,
-              },
-            ],
-            width: 6,
-            offset: 0,
-            push: 0,
-            pull: 0,
-          },
-        ],
       },
       {
         type: "columns",
@@ -520,7 +463,8 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "location",
-                label: "Target Location",
+                label: "Target Location *",
+                customClass: "required-field",
                 placeholder: "Select Location",
                 dataSrc: "url",
                 data: {
@@ -680,8 +624,8 @@ export const requisitionFormSchemas = {
               {
                 type: "textarea",
                 key: "description",
-                label: "Job Description (HTML)",
-                placeholder: "<p>Job Description details...</p>",
+                label: "Job Description",
+                placeholder: "Job Description details...",
                 rows: 4,
               },
             ],
@@ -779,7 +723,8 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "location",
-                label: "Location",
+                label: "Location *",
+                customClass: "required-field",
                 placeholder: "Select Location",
                 dataSrc: "url",
                 data: {
@@ -808,7 +753,8 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "reporting_manager",
-                label: "Reporting manager",
+                label: "Reporting manager *",
+                customClass: "required-field",
                 placeholder: "Search Employees",
                 dataSrc: "url",
                 data: {
@@ -824,7 +770,8 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "employee_type",
-                label: "Employee Type",
+                label: "Employee Type *",
+                customClass: "required-field",
                 placeholder: "Select",
                 dataSrc: "url",
                 data: {
@@ -860,7 +807,8 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "location",
-                label: "Location",
+                label: "Location *",
+                customClass: "required-field",
                 placeholder: "Select Location",
                 dataSrc: "url",
                 data: {
@@ -891,7 +839,8 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "reporting_manager",
-                label: "Reporting manager",
+                label: "Reporting manager *",
+                customClass: "required-field",
                 placeholder: "Search Employees",
                 dataSrc: "url",
                 data: {
@@ -907,7 +856,8 @@ export const requisitionFormSchemas = {
               {
                 type: "select",
                 key: "employee_type",
-                label: "Employee Type",
+                label: "Employee Type *",
+                customClass: "required-field",
                 placeholder: "Select",
                 dataSrc: "url",
                 data: {
@@ -932,23 +882,6 @@ export const requisitionFormSchemas = {
   },
   otherDetails: {
     components: [
-      {
-        type: "textarea",
-        key: "comments_instructions",
-        label: "Comments / Instructions",
-        rows: 4,
-      },
-      {
-        type: "textfield",
-        key: "cost_centre",
-        label: "Cost Centre",
-        validate: { required: true },
-      },
-      {
-        type: "textfield",
-        key: "designation_change",
-        label: "Designation Change",
-      },
       {
         type: "datagrid",
         key: "custom_qualifications",

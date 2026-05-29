@@ -36,9 +36,7 @@ import {
   Share2,
   SquarePlus,
   UserSearch,
-  Briefcase,
   UserPlus,
-  Settings,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -447,34 +445,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Recruitments",
       subItems: [
         {
-          name: "Overview",
-          icon: Telescope,
-          href: "/webapp/recruitment/overview",
-          permissionKey: "Overview",
-        },
-        {
-          name: "Job Openings",
-          icon: Briefcase,
-          href: "/webapp/recruitment/job-openings",
-          permissionKey: "Job Openings",
-        },
-        {
-          name: "Candidates",
-          icon: Users,
-          href: "/webapp/recruitment/candidates",
-          permissionKey: "Job Applicant List",
-        },
-        {
           name: "Requisitions",
           icon: FileText,
           href: "/webapp/recruitment/requisition",
           permissionKey: "Requisitions",
-        },
-        {
-          name: "My Interviews",
-          icon: Calendar,
-          href: "/webapp/recruitment/interviews",
-          permissionKey: "Interviews",
         },
         {
           name: "Refer",
@@ -499,24 +473,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: CircleCheckBig,
           href: "/webapp/recruitment/ijp-applied",
           permissionKey: "IJP Jobs Applied",
-        },
-        {
-          name: "Offer Letter",
-          icon: FileText,
-          href: "/webapp/recruitment/offer-letter",
-          permissionKey: "Offer Letter",
-        },
-        {
-          name: "Link Accounts",
-          icon: FileText,
-          href: "/webapp/recruitment/link-accounts",
-          permissionKey: "Link Accounts",
-        },
-        {
-          name: "Configure Job Boards",
-          icon: Settings,
-          href: "/webapp/recruitment/configure-job-boards",
-          permissionKey: "Configure Job Boards",
         },
       ],
     },

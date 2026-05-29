@@ -7,39 +7,26 @@ import Button from "../shared/atoms/Button";
 import NavigationTabs, { Tab } from "../NavigationTab";
 
 type TabName =
-  | "Overview"
-  | "Job Openings"
-  | "Candidates"
   | "Requisitions"
-  | "My Interviews"
   | "Refer"
   | "My Referrals"
   | "IJP Openings"
   | "IJP Jobs Applied"
-  | "Offer Letter"
-  | "Link Accounts"
-  | "Configure Job Boards";
+
 
 const tabRoutes: Record<TabName, string> = {
-  "Overview": "/webapp/recruitment/overview",
-  "Job Openings": "/webapp/recruitment/job-openings",
-  "Candidates": "/webapp/recruitment/candidates",
   "Requisitions": "/webapp/recruitment/requisition",
-  "My Interviews": "/webapp/recruitment/interviews",
   "Refer": "/webapp/recruitment/refer",
   "My Referrals": "/webapp/recruitment/referrals",
   "IJP Openings": "/webapp/recruitment/ijp-openings",
   "IJP Jobs Applied": "/webapp/recruitment/ijp-applied",
-  "Offer Letter": "/webapp/recruitment/offer-letter",
-  "Link Accounts": "/webapp/recruitment/link-accounts",
-  "Configure Job Boards": "/webapp/recruitment/configure-job-boards",
 };
 
 const RecruitmentApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabName>("Overview");
+  const [activeTab, setActiveTab] = useState<TabName>("Requisitions");
 
   const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
     key,
@@ -58,7 +45,7 @@ const RecruitmentApp: React.FC = () => {
 
   useEffect(() => {
     if (location.pathname === "/webapp/recruitment" || location.pathname === "/webapp/recruitment/") {
-      const fallback = "Overview";
+      const fallback = "Requisitions";
       setActiveTab(fallback);
       navigate(tabRoutes[fallback], { replace: true });
     }
@@ -72,6 +59,7 @@ const RecruitmentApp: React.FC = () => {
 
   const isFormPage =
     location.pathname === "/webapp/recruitment/requisition/new" ||
+    location.pathname.startsWith("/webapp/recruitment/requisition/edit") ||
     location.pathname === "/webapp/recruitment/refer";
 
   const shouldShowActionButton = () => {
@@ -127,6 +115,9 @@ const RecruitmentApp: React.FC = () => {
     }
     if (path.startsWith("/webapp/recruitment/referrals/")) {
       return "Referral Details";
+    }
+    if (path.startsWith("/webapp/recruitment/requisition/edit")) {
+      return "Edit Requisition";
     }
 
     return routeTitles[path] || "Recruitment";

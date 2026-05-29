@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { Form } from "@tsed/react-formio";
 import {
@@ -15,35 +16,226 @@ import {
   ReplacementPositionDetail,
 } from "../../types/recruitment";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import FrappeAPI from "../../utils/frappeAPI";
+import { useQueryClient } from "@tanstack/react-query";
+import { Edit, X } from "lucide-react";
 
+// ---------------------------------------------------------------------------
+// Validation config per step index
+// ---------------------------------------------------------------------------
+const stepValidationRules: Record<number, { key: string; label: string }[]> = {
+  0: [
+    { key: "hiring_manager", label: "Hiring Manager" },
+    { key: "company", label: "Company" },
+    { key: "department", label: "Department" },
+    { key: "designation", label: "Designation" },
+  ],
+  1: [
+    { key: "salary_currency", label: "Salary Range (Currency)" },
+    { key: "salary_min", label: "Salary Range (Min)" },
+    { key: "salary_max", label: "Salary Range (Max)" },
+    { key: "salary_timeframe", label: "Salary Timeframe" },
+    { key: "hiring_lead", label: "Hiring Lead" },
+    { key: "location", label: "Location" },
+  ],
+  2: [
+    // positions / replacement_positions validated dynamically below
+  ],
+};
+
+function validateStep(
+  step: number,
+  formData: JobRequisitionFormData
+): string[] {
+  const errors: string[] = [];
+
+  const rules = stepValidationRules[step] ?? [];
+  for (const rule of rules) {
+    const val = (formData as any)[rule.key];
+    if (val === undefined || val === null || val === "") {
+      errors.push(`${rule.label} is required.`);
+    }
+  }
+
+  // Step 2: validate position rows
+  if (step === 2) {
+    const posType = (formData as any).position_type;
+
+    if (posType === "new") {
+      const positions: any[] = (formData as any).positions ?? [];
+      positions.forEach((pos, i) => {
+        if (!pos.reporting_manager)
+          errors.push(`Position ${i + 1}: Reporting Manager is required.`);
+        if (!pos.employee_type)
+          errors.push(`Position ${i + 1}: Employee Type is required.`);
+      });
+    } else if (posType === "replacement") {
+      const replacements: any[] = (formData as any).replacement_positions ?? [];
+      replacements.forEach((pos, i) => {
+        if (!pos.reporting_manager)
+          errors.push(`Replacement ${i + 1}: Reporting Manager is required.`);
+        if (!pos.employee_type)
+          errors.push(`Replacement ${i + 1}: Employee Type is required.`);
+      });
+    }
+  }
+
+  return errors;
+}
+
+// ---------------------------------------------------------------------------
+// Helper: map an existing requisition (API shape) → JobRequisitionFormData
+// ---------------------------------------------------------------------------
+function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
+  const positions = req.custom_position_details || [];
+  const newPositions = positions.filter((p: any) => p.vacancy_type !== "Replacement");
+  const replacementPositions = positions.filter((p: any) => p.vacancy_type === "Replacement");
+  const isReplacement = replacementPositions.length > 0 && newPositions.length === 0;
+
+  // Work experience reverse-map
+  let custom_work_experience_range: string | undefined;
+  const exp = req.custom_work_experience;
+  if (exp === "Fresher") custom_work_experience_range = "Fresher";
+  else if (exp === "1 - 3 Years") custom_work_experience_range = "1 - 3 Years";
+  else if (exp === "4 - 5 years") custom_work_experience_range = "4 - 5 Years";
+  else if (exp === "5 - 10 years") custom_work_experience_range = "5 - 10 Years";
+  else custom_work_experience_range = exp;
+
+  return {
+    company: req.company,
+    department: req.department,
+    designation: req.designation,
+    functional_area: req.custom_functional_area,
+    hiring_manager: req.requested_by,
+    hiring_lead: req.custom_hiring_lead,
+    custom_division: req.custom_division,
+    location: req.custom_location,
+    reason_for_requesting: req.reason_for_requesting,
+    description: req.description,
+    job_description_template: req.custom_job_description_template,
+
+    // Position
+    position_type: isReplacement ? "replacement" : "new",
+    number_of_new_positions: isReplacement ? undefined : req.no_of_positions,
+    number_of_replacement_positions: isReplacement ? req.no_of_positions : undefined,
+    positions: newPositions.map((p: any, i: number) => ({
+      position_number: i + 1,
+      location: p.location,
+      functional_area: p.functional_area,
+      reporting_manager: p.reporting_manager,
+      employee_type: p.employee_type,
+    })),
+    replacement_positions: replacementPositions.map((p: any, i: number) => ({
+      position_number: i + 1,
+      location: p.location,
+      replacement_for: p.replacement_for,
+      reporting_manager: p.reporting_manager,
+      employee_type: p.employee_type,
+    })),
+
+    // Requirements
+    custom__employee_type: req.custom__employee_type,
+    employment_type: req.custom_employment_type_link,
+    custom_work_experience_range,
+    experience_from: req.custom_experience_range_from,
+    experience_to: req.custom_experience_range_to,
+    experience_unit: req.custom_experience_unit,
+    custom_preferred_notice_period: req.custom_preferred_notice_period,
+    preferred_company: req.custom_preferred_company,
+    custom_other_preferred_companies: req.custom_other_preferred_companies,
+    custom_qualifications: req.custom_qualifications,
+    custom_skills: req.custom_skills,
+    custom_assign_to_recruiter: req.custom_assign_to_recruiter,
+    custom_pre_screened_candidates: req.custom_pre_screened_candidates,
+
+    // Compensation
+    salary_currency: req.custom_salary_range_currency,
+    salary_min: req.custom_salary_range_min,
+    salary_max: req.custom_salary_range_max,
+    salary_timeframe: req.custom_salary_timeframe,
+    expected_compensation: req.expected_compensation ? Number(req.expected_compensation) : undefined,
+
+    // Dates
+    recruitment_start_date: req.posting_date,
+    expected_by: req.expected_by,
+  } as Partial<JobRequisitionFormData>;
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 const RequisitionForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const createJobRequisition = useCreateJobRequisition();
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+
+  // Detect edit mode from navigation state
+  const existingRequisition: any | null = (location.state as any)?.requisition ?? null;
+  const isEditMode = Boolean(existingRequisition);
 
   const [formData, setFormData] = useState<JobRequisitionFormData>({} as JobRequisitionFormData);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
+  // Pre-populate for edit mode
   useEffect(() => {
-    if (currentEmployee?.name) {
+    if (isEditMode && existingRequisition) {
+      const mapped = mapRequisitionToFormData(existingRequisition);
+      setFormData(mapped as JobRequisitionFormData);
+    }
+  }, [isEditMode]);
+
+  // Always set employee defaults (only when not overridden by edit data)
+  useEffect(() => {
+    if (currentEmployee?.name && !isEditMode) {
       setFormData((prev: any) => ({
         ...prev,
         hiring_manager: currentEmployee.name,
         company: currentEmployee.company,
       }));
     }
-  }, [currentEmployee]);
+  }, [currentEmployee, isEditMode]);
 
   const handleNext = () => {
+    const errors = validateStep(currentStep, formData);
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    setValidationErrors([]);
     if (currentStep < requisitionSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handlePrevious = () => {
+    setValidationErrors([]);
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleStepClick = (index: number) => {
+    // Allow going back freely; going forward requires passing current step validation
+    if (index < currentStep) {
+      setValidationErrors([]);
+      setCurrentStep(index);
+      return;
+    }
+    if (index > currentStep) {
+      const errors = validateStep(currentStep, formData);
+      if (errors.length > 0) {
+        setValidationErrors(errors);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      setValidationErrors([]);
+      setCurrentStep(index);
     }
   };
 
@@ -82,13 +274,15 @@ const RequisitionForm = () => {
       }
     }
 
+    // Clear validation errors as user fills fields
+    if (validationErrors.length > 0) {
+      setValidationErrors([]);
+    }
+
     setFormData(newData);
   };
 
-  const handleSubmit = async (submission: any) => {
-    const finalData = { ...formData, ...submission.data };
-
-    // Map work experience and range safely based on select options
+  const buildPayload = (finalData: any): CreateJobRequisitionPayload => {
     let custom_work_experience: string | undefined = undefined;
     let custom_work_experience_range: string | undefined = undefined;
 
@@ -106,9 +300,12 @@ const RequisitionForm = () => {
       custom_work_experience_range = "5 - 10 years";
     }
 
-    // Transform form data to API format
-    const transformedData: CreateJobRequisitionPayload = {
-      requested_by: currentEmployee?.employee || currentEmployee?.name,
+    return {
+      requested_by: 
+      finalData.hiring_manager ||
+      existingRequisition?.requested_by ||
+      currentEmployee?.employee ||
+      currentEmployee?.name,
       company: finalData.company,
       department: finalData.department,
       designation: finalData.designation,
@@ -122,11 +319,9 @@ const RequisitionForm = () => {
       custom_salary_range_min: finalData.salary_min,
       custom_salary_range_max: finalData.salary_max,
       custom_salary_timeframe: finalData.salary_timeframe,
-      posting_date: new Date(finalData.recruitment_start_date)
-        .toISOString()
-        .split("T")[0],
-      // ? new Date(finalData.recruitment_start_date).toISOString().split("T")[0]
-      // : new Date().toISOString().split("T")[0],
+      posting_date: finalData.recruitment_start_date
+        ? new Date(finalData.recruitment_start_date).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
       requested_by_dept: finalData.department,
       custom_type_of_position:
         finalData.position_type === "new" ? "New" : "Replacement",
@@ -134,29 +329,24 @@ const RequisitionForm = () => {
         finalData.position_type === "new"
           ? finalData.number_of_new_positions
           : finalData.number_of_replacement_positions,
-      custom_comments__instructions: finalData.comments_instructions || "",
-      custom_cost_centre: finalData.cost_centre,
-      custom_designation_change: finalData.designation_change,
-      custom_additional_roles__responsibilities:
-        finalData.additional_roles_responsibilities,
-      custom_additional_skills: finalData.additional_skills,
-
-      // New fields mapping
       custom_division: finalData.custom_division,
       status: finalData.status,
-      expected_compensation: finalData.expected_compensation ? Number(finalData.expected_compensation) : undefined,
-      expected_by: new Date(finalData.expected_by)
-        .toISOString()
-        .split("T")[0],
-      custom_employment_type: ["Full Time", "Part Time", "Contract", "Intern", "Freelance"].includes(finalData.custom__employee_type || "")
+      expected_compensation: finalData.expected_compensation
+        ? Number(finalData.expected_compensation)
+        : undefined,
+      expected_by: finalData.expected_by
+        ? new Date(finalData.expected_by).toISOString().split("T")[0]
+        : undefined,
+      custom_employment_type: ["Full Time", "Part Time", "Contract", "Intern", "Freelance"].includes(
+        finalData.custom__employee_type || ""
+      )
         ? finalData.custom__employee_type
         : undefined,
       custom_employment_type_link: finalData.employment_type,
       custom__employee_type: finalData.custom__employee_type,
-      custom_salary: finalData.custom_salary,
       custom_location: finalData.location,
-      custom_work_experience: custom_work_experience,
-      custom_work_experience_range: custom_work_experience_range,
+      custom_work_experience,
+      custom_work_experience_range,
       custom_preferred_notice_period: finalData.custom_preferred_notice_period,
       custom_preferred_company: finalData.preferred_company,
       custom_other_preferred_companies: finalData.custom_other_preferred_companies,
@@ -167,8 +357,6 @@ const RequisitionForm = () => {
       custom_skills: finalData.custom_skills,
       custom_assign_to_recruiter: finalData.custom_assign_to_recruiter,
       custom_pre_screened_candidates: finalData.custom_pre_screened_candidates,
-
-      // Transform positions array
       custom_position_details:
         finalData.position_type === "new"
           ? (finalData.positions || []).map((pos: PositionDetail) => ({
@@ -186,13 +374,41 @@ const RequisitionForm = () => {
             employee_type: pos.employee_type,
           })),
     };
+  };
 
-    try {
-      await createJobRequisition.mutateAsync(transformedData);
-      toast.success("Job requisition created successfully!");
-      navigate("/webapp/recruitment/requisition");
-    } catch (error) {
-      console.error("Error creating job requisition:", error);
+  const handleSubmit = async (submission: any) => {
+    const finalData = { ...formData, ...submission.data };
+    const payload = buildPayload(finalData);
+
+    if (isEditMode) {
+      // UPDATE flow
+      setIsUpdating(true);
+      try {
+        await FrappeAPI.callMethod(
+          "recruitment.api.job_requisition.update_job_requisition",
+          {
+            name: existingRequisition.name,
+            payload,
+          }
+        );
+        toast.success("Requisition updated successfully!");
+        queryClient.invalidateQueries({ queryKey: ["job-requisitions"] });
+        navigate("/webapp/recruitment/requisition");
+      } catch (error: any) {
+        console.error("Error updating job requisition:", error);
+        toast.error(error?.message || "Failed to update requisition. Please try again.");
+      } finally {
+        setIsUpdating(false);
+      }
+    } else {
+      // CREATE flow
+      try {
+        await createJobRequisition.mutateAsync(payload);
+        toast.success("Job requisition created successfully!");
+        navigate("/webapp/recruitment/requisition");
+      } catch (error) {
+        console.error("Error creating job requisition:", error);
+      }
     }
   };
 
@@ -201,8 +417,42 @@ const RequisitionForm = () => {
     return requisitionFormSchemas[stepKey];
   };
 
+  const isBusy = isUpdating || createJobRequisition.isPending;
+
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-6 bg-white rounded-lg shadow">
+      {/* Edit mode banner */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1 px-3 py-2 border rounded-md hover:bg-gray-100 transition"
+        >
+          <X />
+        </button>
+      </div>
+      {isEditMode && (
+        <div className="mb-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm">
+          <span className="text-base text-gray-500"><Edit /></span>
+          <span>
+            Editing requisition{" "}
+            <span className="font-semibold">{existingRequisition.name}</span>
+            {" — "}{existingRequisition.designation}, {existingRequisition.department}
+          </span>
+        </div>
+      )}
+
+      {/* Validation error banner */}
+      {validationErrors.length > 0 && (
+        <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-300 text-red-700 text-sm">
+          <p className="font-semibold mb-1">Please fill in all required fields before proceeding:</p>
+          <ul className="list-disc list-inside space-y-0.5">
+            {validationErrors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="mb-8 border-b overflow-x-auto scrollbar-hide">
         <div className="flex min-w-max md:min-w-0">
           {requisitionSteps.map((step, index) => (
@@ -212,7 +462,7 @@ const RequisitionForm = () => {
                 ? "text-primary-500 border-b-2 border-primary-500 font-semibold"
                 : "text-gray-500"
                 }`}
-              onClick={() => setCurrentStep(index)}
+              onClick={() => handleStepClick(index)}
             >
               {step.label}
             </div>
@@ -255,10 +505,12 @@ const RequisitionForm = () => {
             onClick={() => {
               handleSubmit({ data: formData });
             }}
-            disabled={createJobRequisition.isPending}
+            disabled={isBusy}
             className="px-4 md:px-6 py-2"
           >
-            {createJobRequisition.isPending ? "Submitting..." : "Submit"}
+            {isBusy
+              ? isEditMode ? "Saving..." : "Submitting..."
+              : isEditMode ? "Save Changes" : "Submit"}
           </Button>
         )}
       </div>

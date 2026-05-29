@@ -38,7 +38,7 @@ const MyToDoItem: React.FC<{ item: ToDo; index?: number }> = ({ item }) => {
         <div className="mr-2">
           <Typography
             variant="bodySmall"
-            className="font-medium block line-clamp-1 break-all"
+            className="font-medium block line-clamp-1"
           >
             {cleanDescription || "Task"}
           </Typography>
@@ -90,16 +90,17 @@ const TasksAwaiting: React.FC = () => {
     if (activeCategory === "All") return fullData;
 
     if (activeCategory === "Uncategorized") {
-      return fullData.filter((item) => !item.custom_todo_type);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return fullData.filter((item: { custom_todo_type: any; }) => !item.custom_todo_type);
     }
 
-    return fullData.filter((item) => item.custom_todo_type === activeCategory);
+    return fullData.filter((item: { custom_todo_type: string; }) => item.custom_todo_type === activeCategory);
   }, [activeCategory, fullData]);
 
   const categoryCounts = useMemo(() => {
     const grouped: Record<string, number> = {};
 
-    fullData.forEach((item) => {
+    fullData.forEach((item: { custom_todo_type: string; }) => {
       const cat = item.custom_todo_type || "Uncategorized";
       grouped[cat] = (grouped[cat] || 0) + 1;
     });
@@ -196,7 +197,7 @@ const TasksAwaiting: React.FC = () => {
         ) : filtered.length > 0 ? (
           filtered
             .slice(0, 3)
-            .map((item) => <MyToDoItem key={item.name} item={item} />)
+            .map((item: ToDo) => <MyToDoItem key={item.name} item={item} />)
         ) : (
           <NoDataFound
             title="You're all caught up 🎉"

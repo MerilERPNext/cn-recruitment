@@ -198,10 +198,10 @@ export default function ExtraPayment() {
   return (
     <div className="flex flex-col h-full bg-app font-brand">
       {/* ── Top bar ──────────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10 w-full">
+      <div className="bg-white border-b border-gray-100 mb-6 sticky top-0 z-10 w-full">
         {/* Desktop top bar (hidden on mobile) */}
         {isDesktop && (
-          <div className="sm:flex items-center justify-between h-[52px] px-7">
+          <div className="sm:flex items-center justify-between h-[52px] px-7 ">
             <span className="font-bold text-[17px] text-text-title tracking-tight">Extra Payment History</span>
             <div className="flex items-center gap-3.5">
               {/* No other buttons inside header */}

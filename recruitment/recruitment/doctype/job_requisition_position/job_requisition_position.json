@@ -59,7 +59,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Location",
-   "options": "Location"
+   "options": "Branch"
   },
   {
    "fieldname": "candidate",

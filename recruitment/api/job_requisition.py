@@ -14,6 +14,14 @@ get_job_requisition(name=..., filters=..., limit=..., start=..., order_by=...)
     - With `name`        →  one Job Requisition (flat shape)
     - Without `name`     →  paginated list, each item in the same shape
 
+update_job_requisition(name, payload)
+    Update an existing Job Requisition by name. Full child-table replace.
+
+preview_job_description(designation, department)
+    Look up the best-matching Job Description for the given pair and
+    return a flat payload the frontend can render directly as a JD
+    preview card (description HTML + skills + title).
+
 Response envelope (project convention):
     {"success": bool, "message": str, "data": <payload> | None}
 HTTP status code is set on frappe.local.response.
@@ -67,7 +75,6 @@ PARENT_WRITABLE_FIELDS = (
     "custom_additional_roles__responsibilities",
     # Requirement tab
     "custom__employee_type",
-    "custom_employment_type",
     "custom_employment_type_link",
     "custom_location",
     "custom_work_experience",
@@ -437,6 +444,37 @@ def create_job_requisition(payload=None):
 # ---------------------------------------------------------------------------
 
 
+# Status buckets used by the list-view summary cards.
+# Edit here if the workflow ever introduces new states.
+ACTIVE_STATUSES = ("Open & Approved", "In-Progress", "Job Opening Created")
+CLOSED_STATUSES = ("Filled", "Cancelled", "Rejected")
+
+
+def _compute_global_summary():
+    """Single aggregate query returning the 4 list-view card counts.
+    Always global — does NOT honor list filters by design."""
+    row = frappe.db.sql(
+        """
+        SELECT
+            COUNT(*)                                        AS total_requisitions,
+            COALESCE(SUM(no_of_positions), 0)               AS total_positions,
+            COALESCE(SUM(CASE WHEN status IN %(active)s
+                              THEN no_of_positions ELSE 0 END), 0) AS active_offer_positions,
+            COALESCE(SUM(CASE WHEN status IN %(closed)s
+                              THEN no_of_positions ELSE 0 END), 0) AS closed_positions
+        FROM `tabJob Requisition`
+        """,
+        {"active": ACTIVE_STATUSES, "closed": CLOSED_STATUSES},
+        as_dict=True,
+    )[0]
+    return {
+        "total_requisitions": int(row.total_requisitions or 0),
+        "total_positions": int(row.total_positions or 0),
+        "active_offer_positions": int(row.active_offer_positions or 0),
+        "closed_positions": int(row.closed_positions or 0),
+    }
+
+
 def _serialise_requisition(doc):
     """Flat round-trip representation of a JR.
     All parent fields keep their DocType field names so the UI can bind
@@ -509,6 +547,7 @@ def _serialise_requisition(doc):
 def get_job_requisition(
     name=None,
     filters=None,
+    employee=None,
     limit=20,
     start=0,
     order_by="modified desc",
@@ -521,6 +560,10 @@ def get_job_requisition(
 
     List-mode optional params:
         filters   JSON object  e.g. {"status": "Pending", "department": "Accounts - D"}
+        employee  str  Employee ID — convenience filter for "requisitions
+                       raised by this employee". Merged into `filters` as
+                       `requested_by`. If `filters` also contains a
+                       `requested_by`, the explicit `filters` value wins.
         limit     int  page size              (default 20, max 100)
         start     int  offset                 (default 0)
         order_by  str  field + asc/desc       (default "modified desc")
@@ -545,6 +588,11 @@ def get_job_requisition(
             except json.JSONDecodeError:
                 return _err(_("`filters` must be valid JSON."), http=400)
         filters = filters or {}
+
+        # Convenience: `employee` query param folds into filters.requested_by.
+        # Explicit `filters.requested_by` wins so callers can still override.
+        if employee and "requested_by" not in filters:
+            filters["requested_by"] = employee
 
         try:
             limit = max(1, min(int(limit), 100))
@@ -574,6 +622,7 @@ def get_job_requisition(
                     "start": start,
                     "returned": len(items),
                 },
+                "summary": _compute_global_summary(),
             },
             http=200,
         )
@@ -585,3 +634,277 @@ def get_job_requisition(
     except Exception as exc:
         frappe.log_error(frappe.get_traceback(), "get_job_requisition failed")
         return _err(_("Failed to fetch job requisition: {0}").format(str(exc)), http=500)
+
+
+# ---------------------------------------------------------------------------
+# UPDATE
+# ---------------------------------------------------------------------------
+
+
+@frappe.whitelist()
+def update_job_requisition(name=None, payload=None):
+    """
+    Update an existing Job Requisition.
+
+    Accepts the same flat payload as create_job_requisition but targets a
+    specific document identified by `name`.  Child tables (positions,
+    qualifications, skills, pre-screened candidates) are fully replaced.
+
+    Returns:
+        {
+          "success": true,
+          "message": "Requisition HR-HIREQ-00017 updated.",
+          "data": { "name": "HR-HIREQ-00017" }
+        }
+    """
+    try:
+        if not name:
+            return _err(_("'name' is required to update a requisition."), http=400)
+
+        payload = _coerce_payload(payload)
+
+        # Strip workflow-managed fields
+        for managed in FRAPPE_MANAGED_FIELDS:
+            payload.pop(managed, None)
+
+        if not frappe.db.exists(JOB_REQUISITION, name):
+            return _err(_("Job Requisition not found: {0}").format(name), http=404)
+
+        doc = frappe.get_doc(JOB_REQUISITION, name)
+        doc.check_permission("write")
+        _bypass_hrms_duplicate_check(doc)
+
+        # Apply parent fields (skips None / "")
+        _apply_parent_fields(doc, payload)
+
+        # Update no_of_positions if explicitly provided
+        positions = _list_field(payload, "custom_position_details")
+        if positions:
+            parent_vacancy = payload.get("custom_type_of_position")
+            parent_functional_area = payload.get("custom_functional_area")
+
+            doc.set("custom_position_details", [])
+            for idx, p in enumerate(positions, start=1):
+                doc.append(
+                    "custom_position_details",
+                    _position_row(p, idx, parent_vacancy, parent_functional_area),
+                )
+            if not payload.get("no_of_positions"):
+                doc.no_of_positions = len(positions)
+
+        # Rewrite child tables if provided
+        if "custom_qualifications" in payload:
+            _apply_qualifications(doc, payload)
+        if "custom_skills" in payload:
+            _apply_skills(doc, payload)
+        if "custom_pre_screened_candidates" in payload:
+            _apply_pre_screened(doc, payload)
+
+        doc.save(ignore_permissions=False)
+        frappe.db.commit()
+
+        return _ok(
+            message=_("Requisition {0} updated.").format(name),
+            data={"name": doc.name},
+            http=200,
+        )
+
+    except frappe.ValidationError as exc:
+        return _err(str(exc), http=400)
+    except frappe.PermissionError as exc:
+        return _err(str(exc) or _("Not permitted."), http=403)
+    except Exception as exc:
+        frappe.log_error(frappe.get_traceback(), "update_job_requisition failed")
+        return _err(_("Failed to update job requisition: {0}").format(str(exc)), http=500)
+
+
+# ---------------------------------------------------------------------------
+# JOB DESCRIPTION PREVIEW
+# ---------------------------------------------------------------------------
+
+
+JOB_DESCRIPTION = "Job Description"
+
+
+@frappe.whitelist()
+def preview_job_description(designation=None, department=None):
+    """
+    Return a preview payload for the Job Description that best matches the
+    given (designation, department) pair, or the system-wide default JD
+    when nothing matches.
+
+    Used by the React Requisition form to render a JD preview card BEFORE
+    the requisition is saved — once the user has picked designation and
+    department on the Basic Details step.
+
+    Resolution order
+    ----------------
+    1. **Exact match** — A Job Description whose `designation` Table
+       MultiSelect contains the given designation AND whose `department`
+       Table MultiSelect contains the given department. When multiple
+       JDs qualify, the most recently modified one wins.
+       → `source: "match"`, `matched: true`
+
+    2. **Default fallback** — If no JD matches and exactly one JD is
+       marked `is_default = 1`, return that JD as a fallback.
+       → `source: "default"`, `matched: false`
+
+    3. **Nothing available** — Neither a match nor a default JD exists.
+       → `source: "none"`, `matched: false`, empty payload.
+
+    Args
+    ----
+    designation : str   (required)  Designation ID.
+    department  : str   (required)  Department ID.
+
+    Returns
+    -------
+    Match found:
+        {
+          "success": true,
+          "message": "Job Description found.",
+          "data": {
+            "matched": true,
+            "source": "match",
+            "name": "JD-2026-001",
+            "title": "Senior Engineer JD",
+            "description_html": "<p>...</p>",
+            "skills": ["Python", "Django"]
+          }
+        }
+
+    Default fallback (still HTTP 200):
+        {
+          "success": true,
+          "message": "No exact match — showing the default Job Description.",
+          "data": {
+            "matched": false,
+            "source": "default",
+            "name": "JD-DEFAULT",
+            "title": "Default JD",
+            "description_html": "<p>...</p>",
+            "skills": ["..."]
+          }
+        }
+
+    Nothing to show (still HTTP 200):
+        {
+          "success": true,
+          "message": "No Job Description found for this designation and department.",
+          "data": {
+            "matched": false,
+            "source": "none",
+            "name": null,
+            "title": null,
+            "description_html": "",
+            "skills": []
+          }
+        }
+
+    Error — missing inputs (HTTP 400):
+        {"success": false, "message": "...", "data": null}
+
+    Notes for the frontend
+    ----------------------
+    - Branch on `data.source`:
+        - "match"   → render preview as-is.
+        - "default" → render preview AND show a subtle banner like
+                      "Showing default JD — no exact match for this
+                      designation + department."
+        - "none"    → hide / placeholder the preview card.
+    - `description_html` is Text Editor HTML; render via
+      `dangerouslySetInnerHTML`. Sanitize if you do not trust authors.
+    - `skills` is a flat list of Skill IDs — drop-in for chips/tags.
+    """
+    try:
+        if not designation or not department:
+            return _err(
+                _("Both `designation` and `department` are required."),
+                http=400,
+            )
+
+        # 1) Try exact match on designation + department.
+        rows = frappe.db.sql(
+            """
+            SELECT jd.name
+            FROM `tabJob Description` jd
+            JOIN `tabJD Designations` jdg
+              ON jdg.parent = jd.name
+             AND jdg.parenttype = 'Job Description'
+             AND jdg.parentfield = 'designation'
+            JOIN `tabJD Department` jdp
+              ON jdp.parent = jd.name
+             AND jdp.parenttype = 'Job Description'
+             AND jdp.parentfield = 'department'
+            WHERE jdg.designation = %s
+              AND jdp.department = %s
+            ORDER BY jd.modified DESC
+            LIMIT 1
+            """,
+            (designation, department),
+        )
+
+        if rows:
+            return _ok(
+                message=_("Job Description found."),
+                data=_build_preview_payload(rows[0][0], source="match"),
+                http=200,
+            )
+
+        # 2) Fallback to the default Job Description, if one is configured.
+        default_name = frappe.db.get_value(
+            JOB_DESCRIPTION, {"is_default": 1}, "name"
+        )
+        if default_name:
+            return _ok(
+                message=_("No exact match — showing the default Job Description."),
+                data=_build_preview_payload(default_name, source="default"),
+                http=200,
+            )
+
+        # 3) Nothing to show.
+        return _ok(
+            message=_(
+                "No Job Description found for this designation and department."
+            ),
+            data={
+                "matched": False,
+                "source": "none",
+                "name": None,
+                "title": None,
+                "description_html": "",
+                "skills": [],
+            },
+            http=200,
+        )
+
+    except frappe.PermissionError as exc:
+        return _err(str(exc) or _("Not permitted."), http=403)
+    except frappe.ValidationError as exc:
+        return _err(str(exc), http=400)
+    except Exception as exc:
+        frappe.log_error(frappe.get_traceback(), "preview_job_description failed")
+        return _err(
+            _("Failed to preview job description: {0}").format(str(exc)),
+            http=500,
+        )
+
+
+def _build_preview_payload(jd_name, source):
+    """Shared JD → preview payload builder used by exact-match and
+    default-fallback paths. Honours read permission on the JD doc."""
+    doc = frappe.get_doc(JOB_DESCRIPTION, jd_name)
+    doc.check_permission("read")
+    skills = [
+        row.get("skill")
+        for row in (doc.get("skills") or [])
+        if row.get("skill")
+    ]
+    return {
+        "matched": source == "match",
+        "source": source,
+        "name": doc.name,
+        "title": doc.get("job_description_title") or doc.name,
+        "description_html": doc.get("description") or "",
+        "skills": skills,
+    }

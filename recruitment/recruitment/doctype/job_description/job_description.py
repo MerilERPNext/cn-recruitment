@@ -9,6 +9,7 @@ from frappe.model.document import Document
 class JobDescription(Document):
 	def validate(self):
 		self.filter_competencies()
+		self.enforce_single_default()
 
 	def filter_competencies(self):
 		"""Remove competencies where add_to_jd is unchecked before saving."""
@@ -17,6 +18,24 @@ class JobDescription(Document):
 				row for row in self.competencies
 				if row.add_to_jd
 			]
+
+	def enforce_single_default(self):
+		"""Only one Job Description may carry `is_default = 1`.
+
+		When this doc is marked default, clear the flag on every other
+		Job Description so the preview-fallback lookup is deterministic.
+		"""
+		if not self.get("is_default"):
+			return
+
+		frappe.db.sql(
+			"""
+			UPDATE `tabJob Description`
+			SET is_default = 0
+			WHERE name != %s AND is_default = 1
+			""",
+			(self.name,),
+		)
 
 
 @frappe.whitelist()
