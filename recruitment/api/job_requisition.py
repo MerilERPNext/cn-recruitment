@@ -74,7 +74,6 @@ PARENT_WRITABLE_FIELDS = (
     "custom_hiring_lead",
     "custom_additional_roles__responsibilities",
     # Requirement tab
-    "custom__employee_type",
     "custom_employment_type_link",
     "custom_location",
     "custom_work_experience",
@@ -293,6 +292,39 @@ def _apply_skills(doc, payload):
             doc.append("custom_skills", {"skill": skill_name})
 
 
+def _sanitize_cv(value):
+    """Normalize the candidate `cv` payload to a file URL or empty string.
+
+    Frontend clients have historically sent the `cv` field in three shapes:
+      1. A plain URL string  e.g. "/private/files/dummy.pdf"   (current UI)
+      2. The form.io file-widget array shape
+           [{"url": "...", "storage": "customfiles", ...}]
+      3. The bucket name only  e.g. "customfiles"
+         (this happened when an older `buildPayload` fell back to
+          `candidate.cv?.[0]?.storage` because the upload had no URL)
+
+    We only persist (1). Anything else is coerced to "" so the
+    `Attach` field never gets garbage like "customfiles" written to it.
+    """
+    if not value:
+        return ""
+
+    if isinstance(value, list):
+        first = value[0] if value and isinstance(value[0], dict) else {}
+        value = first.get("url") or first.get("file_url") or ""
+
+    if isinstance(value, dict):
+        value = value.get("url") or value.get("file_url") or ""
+
+    if not isinstance(value, str):
+        return ""
+
+    value = value.strip()
+    if value.startswith(("/files/", "/private/files/", "http://", "https://")):
+        return value
+    return ""
+
+
 def _apply_pre_screened(doc, payload):
     doc.set("custom_pre_screened_candidates", [])
     for cand in _list_field(payload, "custom_pre_screened_candidates"):
@@ -307,10 +339,25 @@ def _apply_pre_screened(doc, payload):
                 "candidate_name": name,
                 "email": cand.get("email"),
                 "phone": cand.get("phone"),
-                "cv": cand.get("cv"),
+                "cv": _sanitize_cv(cand.get("cv")),
                 "offer_directly": 1 if cand.get("offer_directly") else 0,
             },
         )
+
+
+def sync_no_of_positions(doc, method=None):
+    """`validate` hook — keep parent.no_of_positions in lock-step with the
+    actual row count in custom_position_details.
+
+    Fires on every save of Job Requisition, regardless of how the doc was
+    edited (our API, Desk UI, scripted update). Only acts when the table
+    has rows — leaves the field untouched for legacy / HRMS-standard flows
+    where `custom_position_details` is empty (those flows use the standard
+    `vacancies` table instead, which we don't want to override).
+    """
+    position_rows = doc.get("custom_position_details") or []
+    if position_rows:
+        doc.no_of_positions = len(position_rows)
 
 
 def _build_requisition_doc(payload, positions_for_location):
@@ -320,8 +367,11 @@ def _build_requisition_doc(payload, positions_for_location):
 
     _apply_parent_fields(doc, payload)
 
-    if not payload.get("no_of_positions"):
-        doc.no_of_positions = len(positions_for_location)
+    # Always derive `no_of_positions` from the actual rows in
+    # custom_position_details for THIS location group. The UI ships a single
+    # total across all locations, but location-grouping splits that total
+    # into multiple JRs, so the UI value would be wrong per-JR.
+    doc.no_of_positions = len(positions_for_location)
     if not doc.get("custom_hiring_lead"):
         doc.custom_hiring_lead = payload.get("requested_by")
 
@@ -400,7 +450,9 @@ def create_job_requisition(payload=None):
                             "custom_position_details",
                             _position_row(p, start_idx + offset, parent_vacancy, parent_functional_area),
                         )
-                    doc.no_of_positions = (doc.no_of_positions or 0) + len(group_positions)
+                    # Resync from the live child table after appending,
+                    # not from the payload-supplied total.
+                    doc.no_of_positions = len(doc.get("custom_position_details") or [])
                     doc.save(ignore_permissions=False)
                     action = "updated"
                 else:
@@ -450,11 +502,33 @@ ACTIVE_STATUSES = ("Open & Approved", "In-Progress", "Job Opening Created")
 CLOSED_STATUSES = ("Filled", "Cancelled", "Rejected")
 
 
-def _compute_global_summary():
+def _compute_global_summary(employee=None, requested_by_override=None):
     """Single aggregate query returning the 4 list-view card counts.
-    Always global — does NOT honor list filters by design."""
+
+    Scoped to one user when `employee` (Employee ID) or `requested_by_override`
+    (already-resolved JR.requested_by value) is supplied — counts then mirror
+    the same `requested_by` filter the list query uses (OR-matched against the
+    Employee ID and the linked User account).
+
+    When both args are None the counts are global (admin / unfiltered case).
+    """
+    candidates = []
+    if employee:
+        candidates.append(employee)
+        user_id = frappe.db.get_value("Employee", employee, "user_id")
+        if user_id and user_id not in candidates:
+            candidates.append(user_id)
+    if requested_by_override and requested_by_override not in candidates:
+        candidates.append(requested_by_override)
+
+    params = {"active": ACTIVE_STATUSES, "closed": CLOSED_STATUSES}
+    where_clause = ""
+    if candidates:
+        params["candidates"] = tuple(candidates)
+        where_clause = "WHERE requested_by IN %(candidates)s"
+
     row = frappe.db.sql(
-        """
+        f"""
         SELECT
             COUNT(*)                                        AS total_requisitions,
             COALESCE(SUM(no_of_positions), 0)               AS total_positions,
@@ -463,8 +537,9 @@ def _compute_global_summary():
             COALESCE(SUM(CASE WHEN status IN %(closed)s
                               THEN no_of_positions ELSE 0 END), 0) AS closed_positions
         FROM `tabJob Requisition`
+        {where_clause}
         """,
-        {"active": ACTIVE_STATUSES, "closed": CLOSED_STATUSES},
+        params,
         as_dict=True,
     )[0]
     return {
@@ -531,6 +606,9 @@ def _serialise_requisition(doc):
 
     out["custom_pre_screened_candidates"] = [
         {
+            # Child-row primary key — surfaced so the UI can identify the
+            # same row across refetches (edit/delete tracking).
+            "name": row.get("name"),
             "candidate_name": row.get("candidate_name"),
             "email": row.get("email"),
             "phone": row.get("phone"),
@@ -589,10 +667,16 @@ def get_job_requisition(
                 return _err(_("`filters` must be valid JSON."), http=400)
         filters = filters or {}
 
-        # Convenience: `employee` query param folds into filters.requested_by.
-        # Explicit `filters.requested_by` wins so callers can still override.
-        if employee and "requested_by" not in filters:
-            filters["requested_by"] = employee
+        # Security: `employee` is REQUIRED in list mode. Without it any caller
+        # could enumerate every requisition in the system. An explicit
+        # `filters.requested_by` from the caller is treated as an override
+        # (same person, just expressed via the filters object) and satisfies
+        # the requirement.
+        if not employee and "requested_by" not in filters:
+            return _err(
+                _("`employee` is required to list Job Requisitions."),
+                http=400,
+            )
 
         try:
             limit = max(1, min(int(limit), 100))
@@ -600,16 +684,47 @@ def get_job_requisition(
         except (TypeError, ValueError):
             return _err(_("`limit` and `start` must be integers."), http=400)
 
+        # Resolve `employee` against both representations the JR's
+        # `requested_by` field may hold:
+        #   - the Employee ID itself (e.g. "37001"), or
+        #   - the linked User account (e.g. "user@example.com").
+        # When both are known we OR-match — fixes the case where the JR was
+        # saved with the user email but the UI sends the Employee ID.
+        or_filters = None
+        if employee and "requested_by" not in filters:
+            candidates = [employee]
+            user_id = frappe.db.get_value("Employee", employee, "user_id")
+            if user_id and user_id not in candidates:
+                candidates.append(user_id)
+            if len(candidates) == 1:
+                filters["requested_by"] = candidates[0]
+            else:
+                or_filters = [["requested_by", "=", c] for c in candidates]
+
         names = frappe.get_list(
             JOB_REQUISITION,
             filters=filters,
+            or_filters=or_filters,
             fields=["name"],
             order_by=order_by,
             limit_page_length=limit,
             limit_start=start,
             pluck="name",
         )
-        total = frappe.db.count(JOB_REQUISITION, filters=filters)
+        if or_filters:
+            # frappe.db.count doesn't accept or_filters; pull all matching
+            # names (no pagination) and count them.
+            total = len(
+                frappe.get_list(
+                    JOB_REQUISITION,
+                    filters=filters,
+                    or_filters=or_filters,
+                    pluck="name",
+                    limit_page_length=0,
+                )
+            )
+        else:
+            total = frappe.db.count(JOB_REQUISITION, filters=filters)
         items = [_serialise_requisition(frappe.get_doc(JOB_REQUISITION, n)) for n in names]
 
         return _ok(
@@ -622,7 +737,14 @@ def get_job_requisition(
                     "start": start,
                     "returned": len(items),
                 },
-                "summary": _compute_global_summary(),
+                # Counts scoped to the same caller the list query is scoped to.
+                # If the caller passed an explicit `filters.requested_by`, that
+                # wins (admins listing for a specific user); else fall back to
+                # the resolved `employee`.
+                "summary": _compute_global_summary(
+                    employee=employee,
+                    requested_by_override=filters.get("requested_by"),
+                ),
             },
             http=200,
         )
@@ -689,8 +811,10 @@ def update_job_requisition(name=None, payload=None):
                     "custom_position_details",
                     _position_row(p, idx, parent_vacancy, parent_functional_area),
                 )
-            if not payload.get("no_of_positions"):
-                doc.no_of_positions = len(positions)
+            # Always sync from the live child table — the payload's
+            # `no_of_positions` is a UI-level total that may not match the
+            # rows we actually persist (location grouping, row removal, etc.).
+            doc.no_of_positions = len(positions)
 
         # Rewrite child tables if provided
         if "custom_qualifications" in payload:
@@ -892,9 +1016,22 @@ def preview_job_description(designation=None, department=None):
 
 def _build_preview_payload(jd_name, source):
     """Shared JD → preview payload builder used by exact-match and
-    default-fallback paths. Honours read permission on the JD doc."""
+    default-fallback paths. Honours read permission on the JD doc.
+
+    `description_html` is the RENDERED preview (Jinja resolved + line
+    breaks converted to <p>/<br>), not the raw template — so the React
+    Preview JD modal renders human-readable content via
+    `dangerouslySetInnerHTML` without exposing `{{ }}` placeholders.
+    """
+    from recruitment.recruitment.doctype.job_description.job_description import (
+        _render_preview,
+        plain_text_to_html,
+    )
+
     doc = frappe.get_doc(JOB_DESCRIPTION, jd_name)
     doc.check_permission("read")
+    _render_preview(doc)
+    description_html = plain_text_to_html(doc.get("preview") or "")
     skills = [
         row.get("skill")
         for row in (doc.get("skills") or [])
@@ -905,6 +1042,49 @@ def _build_preview_payload(jd_name, source):
         "source": source,
         "name": doc.name,
         "title": doc.get("job_description_title") or doc.name,
-        "description_html": doc.get("description") or "",
+        "description_html": description_html,
         "skills": skills,
     }
+
+
+# ---------------------------------------------------------------------------
+# LINK FIELD OPTIONS (mirrored from candidate_portal.get_link_field_options
+# but whitelisted for desk-session callers rather than candidate-portal users)
+# ---------------------------------------------------------------------------
+
+
+@frappe.whitelist()
+def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20):
+    """Returns [{id, label}] for a doctype; label uses title_field when set.
+    Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins).
+    Accessible to any authenticated Frappe user (desk session or API key/secret)."""
+    if not doctype:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Doctype is required.")}
+
+    try:
+        title_field = frappe.get_meta(doctype).get("title_field") or None
+    except Exception:
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _("Doctype '{0}' not found.").format(doctype)}
+
+    has_title = bool(title_field) and title_field != "name"
+    fields = ["name"] + ([title_field] if has_title else [])
+
+    search = (search_text or query or txt or "").strip()
+    or_filters = None
+    if search:
+        like = f"%{search}%"
+        or_filters = [["name", "like", like]] + ([[title_field, "like", like]] if has_title else [])
+
+    try:
+        records = frappe.get_all(
+            doctype, fields=fields, or_filters=or_filters,
+            limit=int(limit or 20), order_by=f"{title_field or 'name'} asc",
+        )
+    except Exception as e:
+        frappe.local.response["http_status_code"] = 500
+        return {"status": "error", "message": str(e)}
+
+    results = [{"id": r["name"], "label": (r.get(title_field) if has_title else None) or r["name"]} for r in records]
+    return {"status": "success", "doctype": doctype, "title_field": title_field, "total": len(results), "results": results}

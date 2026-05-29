@@ -307,3 +307,10 @@ body {
   color: #ef4444;
   font-weight: 600;
 }
+
+/* Hide mandatory red asterisk on select fields, showing only label */
+.formio-component-select .control-label.field-required::after,
+.formio-component-select .col-form-label.field-required::after {
+  content: "" !important;
+  display: none !important;
+}

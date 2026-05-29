@@ -160,9 +160,11 @@
    "options": "Job Requisition Skill"
   },
   {
+   "description": "Write Jinja. Use {{ fieldname }} for parent fields and {% for row in child_table %}{{ row.fieldname }}{% endfor %} for child tables. Preview renders live below.",
    "fieldname": "description",
-   "fieldtype": "Text Editor",
-   "label": "Description"
+   "fieldtype": "Code",
+   "label": "Description",
+   "options": "Jinja"
   },
   {
    "fieldname": "preview",

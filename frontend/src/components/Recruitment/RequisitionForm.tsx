@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import {
   requisitionSteps,
@@ -7,19 +7,19 @@ import {
   FormSchemaKeys,
 } from "./requisitionFormSchemas";
 import Button from "../shared/atoms/Button";
-import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
+import { useCurrentEmployeeDetails, useFileUpload } from "../../hooks/useEmployee";
+import { useDeleteDocument } from "../../hooks/payroll/UseDeleteDocuemt";
 import { useCreateJobRequisition } from "../../hooks/useRecruitment";
 import {
   JobRequisitionFormData,
   CreateJobRequisitionPayload,
-  PositionDetail,
-  ReplacementPositionDetail,
 } from "../../types/recruitment";
 import toast from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
 import FrappeAPI from "../../utils/frappeAPI";
 import { useQueryClient } from "@tanstack/react-query";
-import { Edit, X } from "lucide-react";
+import { Edit, X, FileText, Loader2 } from "lucide-react";
+import { IoMdCloudUpload } from "react-icons/io";
 
 // ---------------------------------------------------------------------------
 // Validation config per step index
@@ -36,11 +36,10 @@ const stepValidationRules: Record<number, { key: string; label: string }[]> = {
     { key: "salary_min", label: "Salary Range (Min)" },
     { key: "salary_max", label: "Salary Range (Max)" },
     { key: "salary_timeframe", label: "Salary Timeframe" },
-    { key: "hiring_lead", label: "Hiring Lead" },
     { key: "location", label: "Location" },
   ],
   2: [
-    // positions / replacement_positions validated dynamically below
+    // positions validated dynamically below
   ],
 };
 
@@ -60,25 +59,24 @@ function validateStep(
 
   // Step 2: validate position rows
   if (step === 2) {
-    const posType = (formData as any).position_type;
-
-    if (posType === "new") {
-      const positions: any[] = (formData as any).positions ?? [];
-      positions.forEach((pos, i) => {
-        if (!pos.reporting_manager)
-          errors.push(`Position ${i + 1}: Reporting Manager is required.`);
-        if (!pos.employee_type)
-          errors.push(`Position ${i + 1}: Employee Type is required.`);
-      });
-    } else if (posType === "replacement") {
-      const replacements: any[] = (formData as any).replacement_positions ?? [];
-      replacements.forEach((pos, i) => {
-        if (!pos.reporting_manager)
-          errors.push(`Replacement ${i + 1}: Reporting Manager is required.`);
-        if (!pos.employee_type)
-          errors.push(`Replacement ${i + 1}: Employee Type is required.`);
-      });
+    const positions: any[] = (formData as any).positions ?? [];
+    if (positions.length === 0) {
+      errors.push("At least one position is required.");
     }
+    positions.forEach((pos, i) => {
+      if (!pos.vacancy_type) {
+        errors.push(`Position ${i + 1}: Vacancy Type is required.`);
+      }
+      if (!pos.location) {
+        errors.push(`Position ${i + 1}: Location is required.`);
+      }
+      if (!pos.reporting_manager) {
+        errors.push(`Position ${i + 1}: Reporting Manager is required.`);
+      }
+      if (pos.vacancy_type === "Replacement" && !pos.replacement_for) {
+        errors.push(`Position ${i + 1}: Replacement for is required.`);
+      }
+    });
   }
 
   return errors;
@@ -88,10 +86,7 @@ function validateStep(
 // Helper: map an existing requisition (API shape) → JobRequisitionFormData
 // ---------------------------------------------------------------------------
 function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
-  const positions = req.custom_position_details || [];
-  const newPositions = positions.filter((p: any) => p.vacancy_type !== "Replacement");
-  const replacementPositions = positions.filter((p: any) => p.vacancy_type === "Replacement");
-  const isReplacement = replacementPositions.length > 0 && newPositions.length === 0;
+  const customPositionDetails = req.custom_position_details || [];
 
   // Work experience reverse-map
   let custom_work_experience_range: string | undefined;
@@ -116,26 +111,24 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
     job_description_template: req.custom_job_description_template,
 
     // Position
-    position_type: isReplacement ? "replacement" : "new",
-    number_of_new_positions: isReplacement ? undefined : req.no_of_positions,
-    number_of_replacement_positions: isReplacement ? req.no_of_positions : undefined,
-    positions: newPositions.map((p: any, i: number) => ({
+    number_of_positions: req.no_of_positions || customPositionDetails.length || 1,
+    number_of_new_positions: customPositionDetails.length
+      ? customPositionDetails.filter((p: any) => (p.vacancy_type || "New") === "New").length
+      : 1,
+    number_of_replacement_positions: customPositionDetails.length
+      ? customPositionDetails.filter((p: any) => p.vacancy_type === "Replacement").length
+      : 0,
+    positions: customPositionDetails.map((p: any, i: number) => ({
       position_number: i + 1,
+      vacancy_type: p.vacancy_type || "New",
       location: p.location,
       functional_area: p.functional_area,
       reporting_manager: p.reporting_manager,
-      employee_type: p.employee_type,
-    })),
-    replacement_positions: replacementPositions.map((p: any, i: number) => ({
-      position_number: i + 1,
-      location: p.location,
       replacement_for: p.replacement_for,
-      reporting_manager: p.reporting_manager,
-      employee_type: p.employee_type,
     })),
 
     // Requirements
-    custom__employee_type: req.custom__employee_type,
+    custom_employee_type: req.custom__employee_type,
     employment_type: req.custom_employment_type_link,
     custom_work_experience_range,
     experience_from: req.custom_experience_range_from,
@@ -177,9 +170,281 @@ const RequisitionForm = () => {
   const existingRequisition: any | null = (location.state as any)?.requisition ?? null;
   const isEditMode = Boolean(existingRequisition);
 
-  const [formData, setFormData] = useState<JobRequisitionFormData>({} as JobRequisitionFormData);
+  const [formData, setFormData] = useState<JobRequisitionFormData>({
+    number_of_positions: "",
+    number_of_new_positions: "",
+    number_of_replacement_positions: "",
+    positions: [
+      {
+        position_number: 1,
+        vacancy_type: "New",
+        location: "",
+        functional_area: "",
+        reporting_manager: "",
+        replacement_for: "",
+      }
+    ]
+  } as unknown as JobRequisitionFormData);
+
   const [isUpdating, setIsUpdating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  const prevTotalRef = useRef<any>(formData.number_of_positions);
+  const prevNewRef = useRef<any>(formData.number_of_new_positions);
+  const prevRepRef = useRef<any>(formData.number_of_replacement_positions);
+
+  useEffect(() => {
+    const total = parseInt(formData.number_of_positions as any) || 0;
+    const newP = parseInt(formData.number_of_new_positions as any) || 0;
+    const repP = parseInt(formData.number_of_replacement_positions as any) || 0;
+
+    const prevTotal = parseInt(prevTotalRef.current as any) || 0;
+    const prevNew = parseInt(prevNewRef.current as any) || 0;
+    const prevRep = parseInt(prevRepRef.current as any) || 0;
+
+    prevTotalRef.current = formData.number_of_positions;
+    prevNewRef.current = formData.number_of_new_positions;
+    prevRepRef.current = formData.number_of_replacement_positions;
+
+    const totalChanged = total !== prevTotal;
+    const newChanged = newP !== prevNew;
+    const repChanged = repP !== prevRep;
+
+    if (!totalChanged && !newChanged && !repChanged) {
+      const positions = formData.positions || [];
+      const actualNew = positions.filter((p) => p.vacancy_type === "New").length;
+      const actualRep = positions.filter((p) => p.vacancy_type === "Replacement").length;
+      const actualTotal = positions.length;
+
+      if (total !== actualTotal || newP !== actualNew || repP !== actualRep) {
+        setFormData((prev: any) => ({
+          ...prev,
+          number_of_positions: actualTotal,
+          number_of_new_positions: actualNew,
+          number_of_replacement_positions: actualRep,
+        }));
+        prevTotalRef.current = actualTotal;
+        prevNewRef.current = actualNew;
+        prevRepRef.current = actualRep;
+      }
+      return;
+    }
+
+    const handler = setTimeout(() => {
+      setFormData((prev: any) => {
+        const currentTotal = parseInt(prev.number_of_positions as any) || 0;
+        const currentNew = parseInt(prev.number_of_new_positions as any) || 0;
+        const currentRep = parseInt(prev.number_of_replacement_positions as any) || 0;
+
+        let finalTotal = currentTotal;
+        let finalNew = currentNew;
+        let finalRep = currentRep;
+
+        if (totalChanged) {
+          if (currentTotal >= currentRep) {
+            finalNew = currentTotal - currentRep;
+            finalRep = currentRep;
+          } else {
+            finalNew = currentTotal;
+            finalRep = 0;
+          }
+        } else if (newChanged) {
+          finalTotal = currentNew + currentRep;
+          if (finalTotal > 100) {
+            finalNew = 100 - currentRep;
+            finalTotal = 100;
+          }
+        } else if (repChanged) {
+          finalTotal = currentNew + currentRep;
+          if (finalTotal > 100) {
+            finalRep = 100 - currentNew;
+            finalTotal = 100;
+          }
+        }
+
+        let currentPositions = prev.positions || [];
+        if (currentPositions.length !== finalTotal) {
+          if (finalTotal > currentPositions.length) {
+            const extra = Array.from({ length: finalTotal - currentPositions.length }, (_, i) => ({
+              position_number: currentPositions.length + i + 1,
+              vacancy_type: "New",
+              location: "",
+              functional_area: "",
+              reporting_manager: "",
+              replacement_for: "",
+            }));
+            currentPositions = [...currentPositions, ...extra];
+          } else {
+            currentPositions = currentPositions.slice(0, finalTotal);
+          }
+        }
+
+        const updatedPositions = currentPositions.map((pos: any, idx: number) => {
+          const expectedType = idx < finalNew ? "New" : "Replacement";
+          return {
+            ...pos,
+            position_number: idx + 1,
+            vacancy_type: expectedType,
+            ...(expectedType === "New" ? { replacement_for: "" } : {}),
+          };
+        });
+
+        prevTotalRef.current = finalTotal;
+        prevNewRef.current = finalNew;
+        prevRepRef.current = finalRep;
+
+        return {
+          ...prev,
+          number_of_positions: finalTotal,
+          number_of_new_positions: finalNew,
+          number_of_replacement_positions: finalRep,
+          positions: updatedPositions,
+        };
+      });
+    }, 2200);
+
+    return () => clearTimeout(handler);
+  }, [
+    formData.number_of_positions,
+    formData.number_of_new_positions,
+    formData.number_of_replacement_positions,
+    formData.positions,
+  ]);
+
+  // JD Preview state
+  const [jdPreviewOpen, setJdPreviewOpen] = useState(false);
+  const [jdContent, setJdContent] = useState<string>("");
+  const [jdLoading, setJdLoading] = useState(false);
+
+  // ── Pre-Screened Candidate CV upload (same pattern as HraExemptio.tsx) ──
+  const uploadMutation = useFileUpload();
+  const { mutateAsync: deleteDoc } = useDeleteDocument();
+  const [candidateFileNames, setCandidateFileNames] = useState<Record<number, string>>({});
+  const [candidateFileIds, setCandidateFileIds] = useState<Record<number, string>>({});
+
+  const handleCandidateFileUpload = (index: number, file: File | null) => {
+    if (!file) return;
+    uploadMutation.mutate(file, {
+      onSuccess(data: any) {
+        setCandidateFileNames((prev) => ({ ...prev, [index]: file.name }));
+        if (data?.name) {
+          setCandidateFileIds((prev) => ({ ...prev, [index]: data.name }));
+        }
+        setFormData((prev: any) => {
+          const candidates = [...(prev.custom_pre_screened_candidates || [])];
+          if (candidates[index]) {
+            candidates[index] = { ...candidates[index], cv: data?.file_url };
+          }
+          return { ...prev, custom_pre_screened_candidates: candidates };
+        });
+      },
+      onError(err) {
+        console.error(err);
+        toast.error("File upload failed");
+      },
+    });
+  };
+
+  // ── Bulk set vacancy type across all positions ──
+  const setAllVacancyType = (type: "New" | "Replacement") => {
+    setFormData((prev: any) => {
+      const positions = (prev.positions || []).map((pos: any) => ({
+        ...pos,
+        vacancy_type: type,
+        // Clear stale replacement_for when switching everyone to New
+        ...(type === "New" ? { replacement_for: "" } : {}),
+      }));
+      const total = positions.length;
+      return {
+        ...prev,
+        positions,
+        number_of_new_positions: type === "New" ? total : 0,
+        number_of_replacement_positions: type === "Replacement" ? total : 0,
+      };
+    });
+  };
+
+  // ── Row-level mutations for the custom Pre-Screened Candidates table ──
+  const addCandidate = () => {
+    setFormData((prev: any) => ({
+      ...prev,
+      custom_pre_screened_candidates: [
+        ...(prev.custom_pre_screened_candidates || []),
+        {
+          candidate_name: "",
+          email: "",
+          phone: "",
+          cv: "",
+          offer_directly: false,
+        },
+      ],
+    }));
+  };
+
+  const removeCandidate = (index: number) => {
+    setFormData((prev: any) => {
+      const candidates = [...(prev.custom_pre_screened_candidates || [])];
+      candidates.splice(index, 1);
+      return { ...prev, custom_pre_screened_candidates: candidates };
+    });
+    // Drop tracked filename / file id for that row and shift higher indices down
+    const shift = (m: Record<number, string>) => {
+      const next: Record<number, string> = {};
+      Object.entries(m).forEach(([k, v]) => {
+        const i = Number(k);
+        if (i < index) next[i] = v;
+        else if (i > index) next[i - 1] = v;
+      });
+      return next;
+    };
+    setCandidateFileNames((prev) => shift(prev));
+    setCandidateFileIds((prev) => shift(prev));
+  };
+
+  const updateCandidateField = (index: number, field: string, value: any) => {
+    setFormData((prev: any) => {
+      const candidates = [...(prev.custom_pre_screened_candidates || [])];
+      if (!candidates[index]) return prev;
+      candidates[index] = { ...candidates[index], [field]: value };
+      return { ...prev, custom_pre_screened_candidates: candidates };
+    });
+  };
+
+  const handleCandidateRemoveFile = async (index: number) => {
+    const fileId = candidateFileIds[index];
+    const clearCv = () => {
+      setCandidateFileNames((prev) => {
+        const n = { ...prev };
+        delete n[index];
+        return n;
+      });
+      setCandidateFileIds((prev) => {
+        const n = { ...prev };
+        delete n[index];
+        return n;
+      });
+      setFormData((prev: any) => {
+        const candidates = [...(prev.custom_pre_screened_candidates || [])];
+        if (candidates[index]) {
+          candidates[index] = { ...candidates[index], cv: "" };
+        }
+        return { ...prev, custom_pre_screened_candidates: candidates };
+      });
+    };
+
+    if (!fileId) {
+      clearCv();
+      return;
+    }
+    if (!window.confirm("Delete this file?")) return;
+    try {
+      await deleteDoc({ doctype: "File", name: fileId });
+      clearCv();
+    } catch (err) {
+      console.error(err);
+      toast.error("Delete failed");
+    }
+  };
 
   // Pre-populate for edit mode
   useEffect(() => {
@@ -191,14 +456,95 @@ const RequisitionForm = () => {
 
   // Always set employee defaults (only when not overridden by edit data)
   useEffect(() => {
-    if (currentEmployee?.name && !isEditMode) {
+    if (currentEmployee?.name && !isEditMode && !formData.hiring_manager) {
       setFormData((prev: any) => ({
         ...prev,
         hiring_manager: currentEmployee.name,
         company: currentEmployee.company,
       }));
+
+      FrappeAPI.getDocument("Employee", currentEmployee.name, [
+        "department",
+        "designation",
+        "custom_functional_area",
+      ])
+        .then((employee: any) => {
+          if (employee) {
+            setFormData((prev: any) => ({
+              ...prev,
+              department: employee.department || "",
+              designation: employee.designation || "",
+              functional_area: employee.custom_functional_area || "",
+            }));
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching employee details:", err);
+        });
     }
-  }, [currentEmployee, isEditMode]);
+  }, [currentEmployee, isEditMode, formData.hiring_manager]);
+
+
+
+
+  // ---------------------------------------------------------------------------
+  // JD Preview handler
+  // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // JD Preview handler (FIXED to match API response structure)
+  // ---------------------------------------------------------------------------
+  const handlePreviewJD = async () => {
+    const designation = (formData as any).designation;
+    const department = (formData as any).department;
+
+    if (!designation || !department) {
+      toast.error("Please select both Designation and Department first.");
+      return;
+    }
+
+    setJdLoading(true);
+    setJdPreviewOpen(true);
+    setJdContent("");
+
+    try {
+      const message: any = await FrappeAPI.callMethod(
+        "recruitment.api.job_requisition.preview_job_description",
+        {
+          designation,
+          department,
+          fields: ["name", "description", "designation", "department"],
+          limit: 1,
+        }
+      );
+
+      // FrappeAPI.callMethod already unwraps response.data.message
+      const jdData = message?.data || message?.[0] || message;
+
+      // Extract the HTML string from description_html (fallback to description if needed)
+      const htmlContent = jdData?.description_html || jdData?.description;
+
+      if (htmlContent) {
+        setJdContent(htmlContent);
+      } else {
+        setJdContent(
+          `<p style="color:#6b7280;text-align:center;padding:32px 0;">
+            No job description found for <strong>${designation}</strong> in 
+            <strong>${department}</strong>.
+          </p>`
+        );
+      }
+    } catch (err) {
+      console.error("Error fetching JD:", err);
+
+      setJdContent(
+        `<p style="color:#ef4444;text-align:center;padding:32px 0;">
+          Failed to load job description. Please try again.
+        </p>`
+      );
+    } finally {
+      setJdLoading(false);
+    }
+  };
 
   const handleNext = () => {
     const errors = validateStep(currentStep, formData);
@@ -221,7 +567,6 @@ const RequisitionForm = () => {
   };
 
   const handleStepClick = (index: number) => {
-    // Allow going back freely; going forward requires passing current step validation
     if (index < currentStep) {
       setValidationErrors([]);
       setCurrentStep(index);
@@ -241,40 +586,31 @@ const RequisitionForm = () => {
 
   const handleChange = (changed: any) => {
     const newData = { ...formData, ...changed.data };
-    // Handle dynamic row generation for positions
-    if (changed.changed?.component?.key === "number_of_new_positions") {
-      const count = parseInt(changed.data.number_of_new_positions) || 0;
-      if (count > 0) {
-        newData.positions = Array.from({ length: count }, (_, i) => ({
-          position_number: i + 1,
-          location: newData.positions?.[i]?.location || "",
-          functional_area: newData.positions?.[i]?.functional_area || "",
-          reporting_manager: newData.positions?.[i]?.reporting_manager || "",
-          employee_type: newData.positions?.[i]?.employee_type || "",
-        }));
+
+    if (changed.changed?.component?.key === "hiring_manager") {
+      const managerId = changed.changed?.value;
+      if (managerId) {
+        FrappeAPI.getDocument("Employee", managerId, [
+          "department",
+          "designation",
+          "custom_functional_area",
+        ])
+          .then((employee: any) => {
+            if (employee) {
+              setFormData((prev: any) => ({
+                ...prev,
+                department: employee.department || "",
+                designation: employee.designation || "",
+                functional_area: employee.custom_functional_area || "",
+              }));
+            }
+          })
+          .catch((err) => {
+            console.error("Error fetching employee details:", err);
+          });
       }
     }
 
-    if (changed.changed?.component?.key === "number_of_replacement_positions") {
-      const count = parseInt(changed.data.number_of_replacement_positions) || 0;
-      if (count > 0) {
-        newData.replacement_positions = Array.from(
-          { length: count },
-          (_, i) => ({
-            position_number: i + 1,
-            location: newData.replacement_positions?.[i]?.location || "",
-            replacement_for:
-              newData.replacement_positions?.[i]?.replacement_for || "",
-            reporting_manager:
-              newData.replacement_positions?.[i]?.reporting_manager || "",
-            employee_type:
-              newData.replacement_positions?.[i]?.employee_type || "",
-          }),
-        );
-      }
-    }
-
-    // Clear validation errors as user fills fields
     if (validationErrors.length > 0) {
       setValidationErrors([]);
     }
@@ -282,6 +618,9 @@ const RequisitionForm = () => {
     setFormData(newData);
   };
 
+  // ---------------------------------------------------------------------------
+  // buildPayload — now includes custom_attachment_url
+  // ---------------------------------------------------------------------------
   const buildPayload = (finalData: any): CreateJobRequisitionPayload => {
     let custom_work_experience: string | undefined = undefined;
     let custom_work_experience_range: string | undefined = undefined;
@@ -301,11 +640,11 @@ const RequisitionForm = () => {
     }
 
     return {
-      requested_by: 
-      finalData.hiring_manager ||
-      existingRequisition?.requested_by ||
-      currentEmployee?.employee ||
-      currentEmployee?.name,
+      requested_by:
+        finalData.hiring_manager ||
+        existingRequisition?.requested_by ||
+        currentEmployee?.employee ||
+        currentEmployee?.name,
       company: finalData.company,
       department: finalData.department,
       designation: finalData.designation,
@@ -323,12 +662,8 @@ const RequisitionForm = () => {
         ? new Date(finalData.recruitment_start_date).toISOString().split("T")[0]
         : new Date().toISOString().split("T")[0],
       requested_by_dept: finalData.department,
-      custom_type_of_position:
-        finalData.position_type === "new" ? "New" : "Replacement",
-      no_of_positions:
-        finalData.position_type === "new"
-          ? finalData.number_of_new_positions
-          : finalData.number_of_replacement_positions,
+      custom_type_of_position: (finalData.positions || [])[0]?.vacancy_type || "New",
+      no_of_positions: finalData.number_of_positions || (finalData.positions || []).length || 1,
       custom_division: finalData.custom_division,
       status: finalData.status,
       expected_compensation: finalData.expected_compensation
@@ -338,12 +673,12 @@ const RequisitionForm = () => {
         ? new Date(finalData.expected_by).toISOString().split("T")[0]
         : undefined,
       custom_employment_type: ["Full Time", "Part Time", "Contract", "Intern", "Freelance"].includes(
-        finalData.custom__employee_type || ""
+        finalData.employment_type || ""
       )
-        ? finalData.custom__employee_type
+        ? finalData.employment_type
         : undefined,
       custom_employment_type_link: finalData.employment_type,
-      custom__employee_type: finalData.custom__employee_type,
+      custom__employee_type: finalData.custom_employee_type,
       custom_location: finalData.location,
       custom_work_experience,
       custom_work_experience_range,
@@ -356,32 +691,39 @@ const RequisitionForm = () => {
       reason_for_requesting: finalData.reason_for_requesting,
       custom_skills: finalData.custom_skills,
       custom_assign_to_recruiter: finalData.custom_assign_to_recruiter,
-      custom_pre_screened_candidates: finalData.custom_pre_screened_candidates,
-      custom_position_details:
-        finalData.position_type === "new"
-          ? (finalData.positions || []).map((pos: PositionDetail) => ({
-            vacancy_type: "New",
-            location: pos.location,
-            reporting_manager: pos.reporting_manager,
-            employee_type: pos.employee_type,
-            functional_area: pos.functional_area,
-          }))
-          : (finalData.replacement_positions || []).map((pos: ReplacementPositionDetail) => ({
-            vacancy_type: "Replacement",
-            location: pos.location,
-            replacement_for: pos.replacement_for,
-            reporting_manager: pos.reporting_manager,
-            employee_type: pos.employee_type,
-          })),
+      custom_pre_screened_candidates: (
+        finalData.custom_pre_screened_candidates || []
+      ).map((candidate: any) => ({
+        candidate_name: candidate.candidate_name,
+        email: candidate.email,
+        phone: candidate.phone,
+        offer_directly: candidate.offer_directly,
+
+        // 👇 CV URL
+        cv:
+          candidate.cv?.[0]?.url ||
+          candidate.cv?.[0]?.storage ||
+          candidate.cv ||
+          "",
+      })),
+      custom_position_details: (finalData.positions || []).map((pos: any) => ({
+        vacancy_type: pos.vacancy_type || "New",
+        location: pos.location,
+        reporting_manager: pos.reporting_manager,
+        functional_area: pos.functional_area,
+        replacement_for: pos.vacancy_type === "Replacement" ? pos.replacement_for : undefined,
+      })),
+      // ── Attachment URL (uploaded via useFileUpload, same as Invoice.tsx) ──
     };
   };
+
+
 
   const handleSubmit = async (submission: any) => {
     const finalData = { ...formData, ...submission.data };
     const payload = buildPayload(finalData);
 
     if (isEditMode) {
-      // UPDATE flow
       setIsUpdating(true);
       try {
         await FrappeAPI.callMethod(
@@ -396,18 +738,17 @@ const RequisitionForm = () => {
         navigate("/webapp/recruitment/requisition");
       } catch (error: any) {
         console.error("Error updating job requisition:", error);
-        toast.error(error?.message || "Failed to update requisition. Please try again.");
+        toast.error(error?.message || "Failed to  update requisition. Please try again.");
       } finally {
         setIsUpdating(false);
       }
     } else {
-      // CREATE flow
       try {
         await createJobRequisition.mutateAsync(payload);
         toast.success("Job requisition created successfully!");
         navigate("/webapp/recruitment/requisition");
       } catch (error) {
-        console.error("Error creating job requisition:", error);
+        console.error("Error  creating job requisition:", error);
       }
     }
   };
@@ -418,10 +759,14 @@ const RequisitionForm = () => {
   };
 
   const isBusy = isUpdating || createJobRequisition.isPending;
+  const canPreviewJD = !!(formData as any).designation && !!(formData as any).department;
+
+  // Last step = "Other Details" (index 3)
+  const isLastStep = currentStep === requisitionSteps.length - 1;
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-6 bg-white rounded-lg shadow">
-      {/* Edit mode banner */}
+      {/* Close button */}
       <div className="flex justify-end mb-4">
         <button
           onClick={() => navigate(-1)}
@@ -430,6 +775,8 @@ const RequisitionForm = () => {
           <X />
         </button>
       </div>
+
+      {/* Edit mode banner */}
       {isEditMode && (
         <div className="mb-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-sm">
           <span className="text-base text-gray-500"><Edit /></span>
@@ -453,6 +800,7 @@ const RequisitionForm = () => {
         </div>
       )}
 
+      {/* Step tabs */}
       <div className="mb-8 border-b overflow-x-auto scrollbar-hide">
         <div className="flex min-w-max md:min-w-0">
           {requisitionSteps.map((step, index) => (
@@ -472,9 +820,26 @@ const RequisitionForm = () => {
 
       {/* Form Content */}
       <div className="mb-6">
-        <h2 className="text-xl md:text-2xl font-semibold mb-6">
-          {requisitionSteps[currentStep].label}
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl md:text-2xl font-semibold">
+            {requisitionSteps[currentStep].label}
+          </h2>
+          {/* Preview JD button — only on Job Details step (index 1) */}
+          {currentStep === 1 && (
+            <button
+              onClick={handlePreviewJD}
+              disabled={!canPreviewJD}
+              title={canPreviewJD ? "Preview Job Description" : "Select Designation and Department first"}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md border text-sm font-medium transition ${canPreviewJD
+                ? "border-indigo-500 text-indigo-600 hover:bg-indigo-50 cursor-pointer"
+                : "border-gray-300 text-gray-400 cursor-not-allowed opacity-60"
+                }`}
+            >
+              <FileText size={16} />
+              Preview JD
+            </button>
+          )}
+        </div>
 
         <Form
           form={getCurrentSchema()}
@@ -482,6 +847,193 @@ const RequisitionForm = () => {
           onChange={handleChange}
           onSubmit={handleSubmit}
         />
+
+        {/* ── Position Selection summary bar (totals + bulk vacancy-type toggle) ── */}
+        {currentStep === 2 && (() => {
+          const positions: any[] = (formData as any).positions || [];
+          const total = positions.length;
+          const newCount = positions.filter((p) => p?.vacancy_type === "New").length;
+          const replacementCount = positions.filter(
+            (p) => p?.vacancy_type === "Replacement"
+          ).length;
+          return (
+            <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 py-2 border rounded-md bg-gray-50 text-sm">
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="font-semibold text-gray-800">
+                  {total} Total positions
+                </span>
+                <span className="flex items-center gap-1 text-gray-700">
+                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  <span className="font-semibold">{newCount}</span>
+                  <span className="text-gray-500">New</span>
+                </span>
+                <span className="flex items-center gap-1 text-gray-700">
+                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                  <span className="font-semibold">{replacementCount}</span>
+                  <span className="text-gray-500">Replacement</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-gray-500 text-xs uppercase tracking-wide">
+                  Set all to
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAllVacancyType("New")}
+                  disabled={total === 0}
+                  className="flex items-center gap-1 px-3 py-1 border border-green-500 text-green-700 rounded-lg text-xs hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                  New
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAllVacancyType("Replacement")}
+                  disabled={total === 0}
+                  className="flex items-center gap-1 px-3 py-1 border border-orange-500 text-orange-700 rounded-lg text-xs hover:bg-orange-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                  Replacement
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── Pre-Screened Candidates (custom table with inline Attachment column) ── */}
+        {currentStep === 3 && (
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Pre-Screened Candidates
+            </label>
+            <div className="overflow-x-auto border rounded-md">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50 text-gray-700">
+                  <tr>
+                    <th className="text-left font-medium px-3 py-2 border-b">Candidate Name</th>
+                    <th className="text-left font-medium px-3 py-2 border-b">Email</th>
+                    <th className="text-left font-medium px-3 py-2 border-b">Phone</th>
+                    <th className="text-left font-medium px-3 py-2 border-b">Attachment</th>
+                    <th className="text-left font-medium px-3 py-2 border-b">Offer Directly?</th>
+                    <th className="px-3 py-2 border-b w-10"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {((formData as any).custom_pre_screened_candidates || []).length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="text-center text-gray-400 px-3 py-4">
+                        No candidates added yet.
+                      </td>
+                    </tr>
+                  )}
+                  {((formData as any).custom_pre_screened_candidates || []).map(
+                    (candidate: any, index: number) => (
+                      <tr key={index} className="border-b last:border-b-0 align-top">
+                        <td className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={candidate?.candidate_name || ""}
+                            onChange={(e) =>
+                              updateCandidateField(index, "candidate_name", e.target.value)
+                            }
+                            placeholder="e.g., Maya Krishnan"
+                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="email"
+                            value={candidate?.email || ""}
+                            onChange={(e) =>
+                              updateCandidateField(index, "email", e.target.value)
+                            }
+                            placeholder="e.g., candidate@email.com"
+                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={candidate?.phone || ""}
+                            onChange={(e) =>
+                              updateCandidateField(index, "phone", e.target.value)
+                            }
+                            placeholder="e.g., +91..."
+                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="flex flex-col gap-1">
+                            <label className="flex items-center gap-2 border-2 border-dashed border-gray-300 px-2 py-1 cursor-pointer hover:border-gray-500 transition rounded">
+                              <span className="text-gray-500 text-lg shrink-0">
+                                <IoMdCloudUpload />
+                              </span>
+                              <span
+                                title={candidateFileNames[index] || candidate?.cv}
+                                className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-xs text-gray-700"
+                              >
+                                {candidateFileNames[index] ||
+                                  candidate?.cv ||
+                                  "Upload file"}
+                              </span>
+                              <input
+                                type="file"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0] || null;
+                                  if (!file) return;
+                                  handleCandidateFileUpload(index, file);
+                                  e.target.value = "";
+                                }}
+                                className="hidden"
+                              />
+                            </label>
+                            {(candidateFileNames[index] || candidate?.cv) && (
+                              <button
+                                type="button"
+                                onClick={() => handleCandidateRemoveFile(index)}
+                                className="text-xs text-gray-500 hover:text-red-600 self-start"
+                              >
+                                Remove file
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked={!!candidate?.offer_directly}
+                            onChange={(e) =>
+                              updateCandidateField(index, "offer_directly", e.target.checked)
+                            }
+                            className="w-4 h-4"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <button
+                            type="button"
+                            onClick={() => removeCandidate(index)}
+                            title="Remove candidate"
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <button
+              type="button"
+              onClick={addCandidate}
+              className="mt-2 px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition"
+            >
+              + Add Candidate
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Navigation Buttons */}
@@ -495,25 +1047,78 @@ const RequisitionForm = () => {
           Previous
         </Button>
 
-        {currentStep < requisitionSteps.length - 1 ? (
+        {!isLastStep ? (
           <Button size="md" onClick={handleNext} className="px-4 md:px-6 py-2">
             Next
           </Button>
         ) : (
           <Button
             size="md"
-            onClick={() => {
-              handleSubmit({ data: formData });
-            }}
-            disabled={isBusy}
+            onClick={() => handleSubmit({ data: formData })}
             className="px-4 md:px-6 py-2"
           >
             {isBusy
-              ? isEditMode ? "Saving..." : "Submitting..."
+              ? isEditMode ? "Saving…" : "Submitting…"
               : isEditMode ? "Save Changes" : "Submit"}
           </Button>
         )}
       </div>
+
+      {/* JD Preview Modal */}
+      {jdPreviewOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          onClick={() => setJdPreviewOpen(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">Job Description Preview</h3>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {(formData as any).designation}
+                  {(formData as any).department ? ` · ${(formData as any).department}` : ""}
+                </p>
+              </div>
+              <button
+                onClick={() => setJdPreviewOpen(false)}
+                className="p-2 rounded-md hover:bg-gray-100 text-gray-500 transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {jdLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="animate-spin text-indigo-500" size={32} />
+                  <span className="ml-3 text-gray-500 text-sm">Loading job description…</span>
+                </div>
+              ) : (
+                <div
+                  className="prose prose-sm max-w-none text-gray-700"
+                  dangerouslySetInnerHTML={{ __html: jdContent }}
+                />
+              )}
+            </div>
+
+            {/* Modal footer */}
+            <div className="flex justify-end px-6 py-4 border-t">
+              <button
+                onClick={() => setJdPreviewOpen(false)}
+                className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

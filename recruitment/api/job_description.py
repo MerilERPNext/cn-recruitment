@@ -73,8 +73,30 @@ def get_job_description_payload(name):
 def _serialise(name):
     doc = frappe.get_doc(JOB_DESCRIPTION, name)
     doc.check_permission("read")
+
+    # Return the RENDERED description (Jinja resolved against the JD's own
+    # fields) so the Job Requisition's `description` field gets ready-to-use
+    # content — not the raw `{{ company }}` style template. Re-render at
+    # fetch time rather than relying on the stored `preview` field so the
+    # output is always in sync, even if the JD was edited via API without
+    # triggering validate.
+    from recruitment.recruitment.doctype.job_description.job_description import (
+        _render_preview,
+        plain_text_to_html,
+    )
+
+    _render_preview(doc)
+    rendered = doc.get("preview") or ""
+
+    # Convert plain-text rendered output to structural HTML (<p>/<br>) so
+    # the line breaks survive being stuffed into the JR's Text Editor
+    # field — Text Editor strips the `white-space:pre-wrap` inline style
+    # we tried before, collapsing every `\n` into a single space. With
+    # proper <p> blocks the structure is preserved.
+    rendered = plain_text_to_html(rendered)
+
     return {
         "name": doc.name,
-        "description": doc.get("description"),
+        "description": rendered,
         "skills": [row.get("skill") for row in doc.get("skills") or [] if row.get("skill")],
     }

@@ -613,6 +613,23 @@ export const useGetEmpDesignationHierarchyCurrentDetails = (
   });
 };
 
+export const useUpdateEmploymentDetailsMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["updateEmploymentDetails"],
+    mutationFn: (body: Record<string, unknown>) =>
+      profileService.updateEmploymentDetails(body),
+    onError: (error) => {
+      console.error("Error updating employment details:", error);
+      toast.error(errorResponseFormater(error));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employment-history-data"] });
+      toast.success("Work location updated successfully");
+    },
+  });
+};
+
 export const useAddEmployeeHistoryMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({

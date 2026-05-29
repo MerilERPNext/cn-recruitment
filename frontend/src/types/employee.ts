@@ -282,6 +282,57 @@ export interface WorkRole {
   };
   is_promotion: boolean;
 }
+export interface WorkLocation {
+  from_date: string,
+  to_date: string | null,
+  is_current: boolean,
+  work_location: {
+    id: string,
+    name: string
+  },
+  office_area: {
+    id: string,
+    name: string
+  },
+  country: {
+    id: string,
+    name: string
+  },
+  state: {
+    id: string,
+    name: string
+  },
+  city: {
+    id: string,
+    name: string
+  }
+}
+export interface EmploymentTypes {
+  from_date: string;
+  to_date: string | null;
+  is_current: boolean;
+  is_promotion: boolean;
+  employment_type: {
+    name: string;
+    id: string
+  };
+  employee_subtype: {
+    name: string;
+    id: string
+  };
+}
+
+export interface EmployeeRole {
+  from_date: string;
+  to_date: string | null;
+  is_current: boolean;
+  is_promotion: boolean;
+  employee_role: {
+    id: string;
+    name: string;
+  }
+}
+
 export interface EmployeeSupplementary {
   designation_name?: string;
   department_display?: string;
@@ -298,6 +349,9 @@ export interface EmployeeSupplementary {
   /** Read-only custom field on some sites; see profile / Form.io mappings */
   custom_designation_name?: string;
   work_roles?: WorkRole[];
+  work_locations?: WorkLocation[];
+  employment_types?: EmploymentTypes[];
+  employee_roles?: EmployeeRole[];
 }
 
 export interface Employee extends EmployeeFromAPI, EmployeeSupplementary { }

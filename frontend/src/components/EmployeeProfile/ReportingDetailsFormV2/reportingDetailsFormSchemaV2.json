@@ -13,12 +13,12 @@
             "customClass": "bg-white rounded-lg",
             "components": [
                 {
-                    "label": "Reports to",
-                    "errorLabel": "Reports to",
+                    "label": "Select Value",
+                    "errorLabel": "Select Value",
                     "key": "reports_to",
                     "type": "select",
                     "input": true,
-                    "placeholder": "Select Reports to",
+                    "placeholder": "Select Value",
                     "customClass": "mb-4",
                     "dataSrc": "url",
                     "data": {

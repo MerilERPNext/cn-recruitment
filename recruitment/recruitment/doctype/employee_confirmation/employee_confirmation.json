@@ -84,6 +84,7 @@
    "fetch_from": "employee.employee_name",
    "fieldname": "employee_name",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "label": "Employee Name"
   },
   {
@@ -113,12 +114,14 @@
   {
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
    "label": "Status",
    "options": "Draft\nConfirmed\nProbation Extended\nInitiate Separation"
   },
   {
    "fieldname": "confirmation_policy",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Confirmation Policy",
    "options": "Confirmation Policy"
   },
@@ -366,7 +369,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-11 19:38:34.249498",
+ "modified": "2026-05-29 12:25:46.798888",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Employee Confirmation",

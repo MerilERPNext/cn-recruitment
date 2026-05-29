@@ -37,6 +37,14 @@ export function useRevokeEvent() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
       queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+      // Team attendance summary (not used on My Attendance calendar)
+      queryClient.invalidateQueries({ queryKey: ["employee-attendance-details"] });
+      // My Attendance calendar + details drawer
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-calendar-details"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
+      queryClient.invalidateQueries({ queryKey: ["custom-api"] });
     },
     onError: (err) => {
       const formatedError = errorResponseFormater(err);

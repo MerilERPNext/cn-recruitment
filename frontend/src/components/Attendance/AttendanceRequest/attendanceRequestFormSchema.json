@@ -190,8 +190,8 @@
           "input": true,
           "allowCalculateOverride": true,
           "validate": {
-            "customMessage": "From Time is required",
-            "custom": "valid = ['Clockin', 'Short Attendance Request', 'Attendance Adjustment'].includes(data.request_type) ? !!input : true;"
+            "customMessage": "Check-In Time must be before Check-Out Time on the same day",
+            "custom": "valid = (function() { var reqType = data.request_type || ''; var required = ['Clockin', 'Short Attendance Request', 'Attendance Adjustment'].includes(reqType); if (required && !input) return false; if (!input || !data.checkout_time) return true; if (!['Short Attendance Request', 'Attendance Adjustment'].includes(reqType)) return true; var getTimeMinutes = function(timeVal) { if (!timeVal) return null; if (timeVal instanceof Date) { return timeVal.getHours() * 60 + timeVal.getMinutes(); } if (typeof timeVal === 'string') { if (timeVal.includes('T')) { var d = new Date(timeVal); if (!isNaN(d.getTime())) { return d.getHours() * 60 + d.getMinutes(); } } var parts = timeVal.split(':'); if (parts.length >= 2) { var h = parseInt(parts[0], 10); var m = parseInt(parts[1], 10); if (!isNaN(h) && !isNaN(m)) { return h * 60 + m; } } } return null; }; var inM = getTimeMinutes(input); var outM = getTimeMinutes(data.checkout_time); if (inM === null || outM === null) return true; return inM < outM; })();"
           },
           "customConditional": "show = ['Attendance Adjustment', 'Short Attendance Request', 'Clockin'].includes(data.request_type || '');",
           "enableDate": false,
@@ -216,8 +216,8 @@
           "placeholder": "HH:mm",
           "customClass": "mb-4",
           "validate": {
-            "customMessage": "To Time is required",
-            "custom": "valid = ['Short Attendance Request', 'On Duty', 'Attendance Adjustment'].includes(data.request_type) ? !!input : true;"
+            "customMessage": "Check-Out Time must be after Check-In Time on the same day",
+            "custom": "valid = (function() { var reqType = data.request_type || ''; var required = ['Short Attendance Request', 'On Duty', 'Attendance Adjustment'].includes(reqType); if (required && !input) return false; if (!input || !data.checkin_time) return true; if (!['Short Attendance Request', 'Attendance Adjustment'].includes(reqType)) return true; var getTimeMinutes = function(timeVal) { if (!timeVal) return null; if (timeVal instanceof Date) { return timeVal.getHours() * 60 + timeVal.getMinutes(); } if (typeof timeVal === 'string') { if (timeVal.includes('T')) { var d = new Date(timeVal); if (!isNaN(d.getTime())) { return d.getHours() * 60 + d.getMinutes(); } } var parts = timeVal.split(':'); if (parts.length >= 2) { var h = parseInt(parts[0], 10); var m = parseInt(parts[1], 10); if (!isNaN(h) && !isNaN(m)) { return h * 60 + m; } } } return null; }; var outM = getTimeMinutes(input); var inM = getTimeMinutes(data.checkin_time); if (inM === null || outM === null) return true; return inM < outM; })();"
           },
           "customConditional": "show = ['Attendance Adjustment', 'Short Attendance Request'].includes(data.request_type || '');",
           "widget": {

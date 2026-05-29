@@ -33,12 +33,34 @@ const EditButton = ({ requisition, onClose }: { requisition: any; onClose: () =>
 const Requisition = () => {
   const { isDesktop } = useScreenSize();
   const { data: currentEmployee } = useCurrentEmployee();
-  const [summary, setSummary] = useState<{
+  const currentEmployeeName = currentEmployee?.employee_name;
+  // Persist the 4-card summary across navigations (e.g. edit → back) so the
+  // cards don't blank out when React Query returns cached row data without
+  // re-running the loader on remount.
+  const SUMMARY_STORAGE_KEY = "requisition-summary-cache";
+  type SummaryShape = {
     total_requisitions: number;
     total_positions: number;
     active_offer_positions: number;
     closed_positions: number;
-  } | null>(null);
+  };
+  const [summary, _setSummary] = useState<SummaryShape | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const cached = sessionStorage.getItem(SUMMARY_STORAGE_KEY);
+      return cached ? (JSON.parse(cached) as SummaryShape) : null;
+    } catch {
+      return null;
+    }
+  });
+  const setSummary = (next: SummaryShape) => {
+    _setSummary(next);
+    try {
+      sessionStorage.setItem(SUMMARY_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* sessionStorage unavailable — fall back to in-memory only */
+    }
+  };
   const titles = [
     "Requisition Code",
     "Designation, Department & Location",
@@ -521,7 +543,7 @@ const Requisition = () => {
           columnSortConfig={REQUISITION_SORT_CONFIG}
         >
           <DataListView
-            queryKey={["job-requisitions", currentEmployee?.name ?? ""]}
+            queryKey={["job-requisitions", currentEmployeeName || ""]}
             fetchFunction={fetchRequisitions}
             ItemComponent={ItemComponent}
             searchFields={["name", "designation", "department"]}
@@ -534,7 +556,7 @@ const Requisition = () => {
       ) : (
         <div className="space-y-3 px-1">
           <DataListView
-            queryKey={["job-requisitions"]}
+            queryKey={["job-requisitions", currentEmployeeName || ""]}
             fetchFunction={fetchRequisitions}
             ItemComponent={ItemComponent}
             searchFields={["name", "designation", "department"]}
@@ -724,6 +746,7 @@ const Requisition = () => {
                           <th className="px-4 py-2 text-left">Name</th>
                           <th className="px-4 py-2 text-left">Email</th>
                           <th className="px-4 py-2 text-left">Phone</th>
+                          <th className="px-4 py-2 text-left">Attachment</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-150 text-gray-900">
@@ -732,6 +755,20 @@ const Requisition = () => {
                             <td className="px-4 py-2 font-medium">{cand.candidate_name}</td>
                             <td className="px-4 py-2">{cand.email || "—"}</td>
                             <td className="px-4 py-2">{cand.phone || "—"}</td>
+                            <td className="px-4 py-2">
+                              {cand.cv ? (
+                                <a
+                                  href={cand.cv}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline font-semibold"
+                                >
+                                  View Attachment
+                                </a>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

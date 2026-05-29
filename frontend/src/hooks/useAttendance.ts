@@ -374,6 +374,7 @@ export function useMarkBulkAttendance() {
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
       queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
       queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-calendar-details"], });
       queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
     },
     onError: (e) => {
@@ -471,6 +472,7 @@ export function useCreateNewAttendanceRequest() {
       queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
       queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
       queryClient.invalidateQueries({ queryKey: ["attendance-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-calendar-details"], });
     },
     onError: (e) => {
       console.log(e);
@@ -490,6 +492,7 @@ export function useCreateNewAttendanceRequestBatch() {
       queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
       queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
       queryClient.invalidateQueries({ queryKey: ["attendance-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-calendar-details"], });
     },
     onError: (e) => {
       console.log(e);

@@ -261,6 +261,20 @@ export const profileService = {
       throw error;
     }
   },
+  updateEmploymentDetails: async (
+    body: Record<string, unknown>,
+  ): Promise<boolean> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.update_employee_fields",
+        body,
+      );
+      return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while clocking in:", error);
+      throw error;
+    }
+  },
   addEmployeeReportingDetails: async (
     body: Record<string, unknown>,
   ): Promise<boolean> => {

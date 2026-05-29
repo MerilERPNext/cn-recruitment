@@ -127,6 +127,15 @@
   display: none !important;
 }
 
+/* Show red asterisk for fields marked required-field in schema */
+.formio-component.required-field > label::after,
+.formio-component.required-field > .col-form-label::after {
+  content: " *";
+  color: #ef4444;
+  font-weight: 600;
+  display: inline !important;
+}
+
 chatnext-app .field-required::after,
 chatnext-app.field-required::after {
   display: initial !important;
@@ -193,15 +202,19 @@ chatnext-app.field-required::after {
   .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(1)::before {
     content: "Start Date";
   }
+
   .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(2)::before {
     content: "Start Time";
   }
+
   .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(3)::before {
     content: "End Date";
   }
+
   .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(4)::before {
     content: "End Time";
   }
+
   .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(5)::before {
     content: "Message";
   }
@@ -210,18 +223,23 @@ chatnext-app.field-required::after {
   .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(1)::before {
     content: "Leave Type";
   }
+
   .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(2)::before {
     content: "Reason";
   }
+
   .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(3)::before {
     content: "Message";
   }
+
   .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(4)::before {
     content: "From Date";
   }
+
   .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(5)::before {
     content: "To Date";
   }
+
   .bulk-leave-request-form .formio-component-leaveRequests table tbody td:nth-child(6)::before {
     content: "File";
   }
