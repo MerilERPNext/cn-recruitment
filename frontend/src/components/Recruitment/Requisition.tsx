@@ -534,7 +534,7 @@ const Requisition = () => {
       ) : (
         <div className="space-y-3 px-1">
           <DataListView
-            queryKey={["job-requisitions"]}
+            queryKey={["job-requisitions", currentEmployee?.name ?? ""]}
             fetchFunction={fetchRequisitions}
             ItemComponent={ItemComponent}
             searchFields={["name", "designation", "department"]}

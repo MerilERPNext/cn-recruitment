@@ -771,7 +771,7 @@ const RequisitionForm = () => {
                   type="button"
                   onClick={() => setAllVacancyType("New")}
                   disabled={total === 0}
-                  className="flex items-center gap-1 px-3 py-1 border border-green-500 text-green-700 rounded-full text-xs hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1 px-3 py-1 border border-green-500 text-green-700 rounded-lg text-xs hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="w-2 h-2 rounded-full bg-green-500"></span>
                   New
@@ -780,7 +780,7 @@ const RequisitionForm = () => {
                   type="button"
                   onClick={() => setAllVacancyType("Replacement")}
                   disabled={total === 0}
-                  className="flex items-center gap-1 px-3 py-1 border border-orange-500 text-orange-700 rounded-full text-xs hover:bg-orange-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-1 px-3 py-1 border border-orange-500 text-orange-700 rounded-lg text-xs hover:bg-orange-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="w-2 h-2 rounded-full bg-orange-500"></span>
                   Replacement
