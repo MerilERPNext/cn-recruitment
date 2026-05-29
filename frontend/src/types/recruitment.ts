@@ -65,8 +65,10 @@ export interface JobRequisitionFormData {
   position_type: "new" | "replacement";
   number_of_new_positions?: number;
   number_of_replacement_positions?: number;
+  number_of_positions?: number;
   positions?: PositionDetail[];
   replacement_positions?: ReplacementPositionDetail[];
+  custom_position_details?: any[];
 
   // Other Details
   comments_instructions?: string;

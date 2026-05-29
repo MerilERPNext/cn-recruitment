@@ -190,16 +190,6 @@ code {
   overflow: hidden !important;
   /* padding: 8px !important; */
 }
-/* Add this inside your CSS file to style the label asterisks securely */
-.required-field label {
-  position: relative;
-}
-/* If your framework auto-generates the text label */
-.required-field label::after {
-  content: " *";
-  color: #ef4444; /* Bright Red */
-  font-weight: bold;
-}
 
 .desktop-att-cal .react-datepicker__week {
   border: none !important;
@@ -213,7 +203,7 @@ code {
   border-right: 1px solid #e2e4e7 !important;
   padding: 0.4rem 0 !important;
   border-radius: 10px 10px 0 0 !important;
-  
+
 }
 
 .desktop-att-cal .react-datepicker__day-names {
