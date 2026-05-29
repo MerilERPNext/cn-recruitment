@@ -74,7 +74,6 @@ PARENT_WRITABLE_FIELDS = (
     "custom_hiring_lead",
     "custom_additional_roles__responsibilities",
     # Requirement tab
-    "custom__employee_type",
     "custom_employment_type_link",
     "custom_location",
     "custom_work_experience",

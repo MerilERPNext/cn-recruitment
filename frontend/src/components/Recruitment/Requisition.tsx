@@ -724,6 +724,7 @@ const Requisition = () => {
                           <th className="px-4 py-2 text-left">Name</th>
                           <th className="px-4 py-2 text-left">Email</th>
                           <th className="px-4 py-2 text-left">Phone</th>
+                          <th className="px-4 py-2 text-left">Attachment</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-150 text-gray-900">
@@ -732,6 +733,20 @@ const Requisition = () => {
                             <td className="px-4 py-2 font-medium">{cand.candidate_name}</td>
                             <td className="px-4 py-2">{cand.email || "—"}</td>
                             <td className="px-4 py-2">{cand.phone || "—"}</td>
+                            <td className="px-4 py-2">
+                              {cand.cv ? (
+                                <a
+                                  href={cand.cv}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline font-semibold"
+                                >
+                                  View Attachment
+                                </a>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
