@@ -2,6 +2,7 @@ import Button from "../shared/atoms/Button";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetAttendanceStatus } from "../../hooks/useLeaves";
 import Badge from "../shared/Badge";
+import { formatDateToDDMMYYYY } from "../../utils/helperUtils";
 
 const AttendanceStatusModal: React.FC<{
   isOpen: boolean;
@@ -111,9 +112,7 @@ const AttendanceStatusModal: React.FC<{
                     return (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-6 py-4 text-sm text-gray-900">
-                          {new Date(record.attendance_date).toLocaleDateString(
-                            "en-GB"
-                          )}
+                          {formatDateToDDMMYYYY(record.attendance_date)}
                         </td>
                         <td className="px-6 py-4">
                           <Badge

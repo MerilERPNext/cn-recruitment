@@ -207,6 +207,7 @@ export function useReplaceLeave() {
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
       queryClient.invalidateQueries({ queryKey: ["custom-api"] });
       queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-calendar-details"], });
       queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
     },
 
@@ -249,6 +250,7 @@ export function useRevokeApprovedLeave() {
       queryClient.invalidateQueries({ queryKey: ["custom-api"] });
       queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
       queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-calendar-details"], });
       queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
     },
 
@@ -455,6 +457,7 @@ export function useCreateLeaveApplication() {
         });
         queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
         queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+        queryClient.invalidateQueries({ queryKey: ["attendance-calendar-details"], });
         queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
       }, 1500);
     },

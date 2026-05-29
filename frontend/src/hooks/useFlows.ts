@@ -19,7 +19,7 @@ import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
 import { approvalListServices } from "../services/approvalListService";
 import {
-  FlowRequestItem,
+  FlowRequestDetailItem,
   FlowRequestResponse,
   FunnelActivityLogResponse,
 } from "../types/flows";
@@ -200,7 +200,7 @@ export const useGetFlowRequests = (
 export const useGetFlowRequestById = (
   funnel_activity_id: string
 ) => {
-  return useQuery<{ data: FlowRequestItem }>({
+  return useQuery<{ data: FlowRequestDetailItem }>({
     queryKey: [
       "employee-flow-request-details",
       funnel_activity_id
