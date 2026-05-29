@@ -76,7 +76,7 @@
    "label": "Auto"
   },
   {
-   "columns": 3,
+   "columns": 2,
    "fieldname": "notes",
    "fieldtype": "Small Text",
    "in_list_view": 1,

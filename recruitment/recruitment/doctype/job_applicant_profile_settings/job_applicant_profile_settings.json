@@ -1,0 +1,69 @@
+{
+ "actions": [],
+ "creation": "2026-05-28 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "description_block",
+  "default_fields_ui",
+  "default_application_fields",
+  "synced_field_refs"
+ ],
+ "fields": [
+  {
+   "fieldname": "description_block",
+   "fieldtype": "HTML",
+   "options": "<div style='padding:8px;color:#4B5563;font-size:13px;'>Configure the <b>default Job Applicant profile setup</b> that every new Job Opening inherits. Admins can override these per-opening on the Job Opening's <i>Job application</i> tab. The list auto-syncs from the Job Applicant doctype every time you open this page — new fields appear automatically.</div>"
+  },
+  {
+   "fieldname": "default_fields_ui",
+   "fieldtype": "HTML",
+   "options": "<div id='japs-fields-host'></div>"
+  },
+  {
+   "fieldname": "default_application_fields",
+   "fieldtype": "Table",
+   "label": "Default applicant profile fields",
+   "options": "Job Opening Application Field",
+   "hidden": 1
+  },
+  {
+   "fieldname": "synced_field_refs",
+   "fieldtype": "Long Text",
+   "label": "Synced field refs (internal)",
+   "hidden": 1,
+   "read_only": 1,
+   "description": "Newline-separated list of Job Applicant field refs that have already been imported. Anything in this list is never re-added by auto-sync — lets manual deletes stick while still picking up brand-new fields added to Job Applicant later."
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-05-28 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Job Applicant Profile Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "HR Manager",
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

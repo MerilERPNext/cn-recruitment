@@ -47,6 +47,19 @@ fixtures = [
             ["Custom Field", "module", "=", "Recruitment"],
         ],
     },
+    # Property Setters for Job Opening — capture all reorder / hide / label
+    # / collapsible changes we made via Customize Form so they ship as fixtures.
+    {
+        "doctype": "Property Setter",
+        "filters": [
+            ["Property Setter", "doc_type", "in", [
+                "Job Opening",
+                "Job Applicant",
+                "Job Offer",
+                "Job Requisition",
+            ]],
+        ],
+    },
 ]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
@@ -55,6 +68,7 @@ fixtures = [
 doctype_js = {
     "Job Offer": ["public/js/job_offer.js"],
     "Job Applicant": ["public/js/job_applicant.js"],
+    "Job Opening": ["public/js/job_opening.js"],
     "Job Requisition": ["public/js/job_requisition.js"],
     "Interview": ["public/js/interview.js"],
     "User": ["public/js/user.js"],
@@ -73,7 +87,9 @@ doctype_js = {
 
 doctype_list_js = {
     "Job Applicant": "public/js/job_applicant_list.js",
-    "Job Offer": "public/js/job_offer_list.js"
+    "Job Offer": "public/js/job_offer_list.js",
+    "Job Opening": "public/js/job_opening_list.js",
+    "Job Requisition": "public/js/job_requisition_list.js",
 }
 
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}

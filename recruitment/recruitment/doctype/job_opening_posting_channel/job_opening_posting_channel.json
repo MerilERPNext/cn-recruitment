@@ -19,7 +19,6 @@
    "in_list_view": 1,
    "label": "Post To",
    "options": "Careers Page\nRefer\nIJP",
-   "read_only": 1,
    "reqd": 1
   },
   {
@@ -43,8 +42,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Status",
-   "options": "Active\nInactive",
-   "read_only": 1
+   "options": "Active\nInactive"
   }
  ],
  "index_web_pages_for_search": 1,
