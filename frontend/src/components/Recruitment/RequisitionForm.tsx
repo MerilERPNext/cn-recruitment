@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect, } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import {
   requisitionSteps,
@@ -112,6 +112,12 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
 
     // Position
     number_of_positions: req.no_of_positions || customPositionDetails.length || 1,
+    number_of_new_positions: customPositionDetails.length
+      ? customPositionDetails.filter((p: any) => (p.vacancy_type || "New") === "New").length
+      : 1,
+    number_of_replacement_positions: customPositionDetails.length
+      ? customPositionDetails.filter((p: any) => p.vacancy_type === "Replacement").length
+      : 0,
     positions: customPositionDetails.map((p: any, i: number) => ({
       position_number: i + 1,
       vacancy_type: p.vacancy_type || "New",
@@ -165,7 +171,9 @@ const RequisitionForm = () => {
   const isEditMode = Boolean(existingRequisition);
 
   const [formData, setFormData] = useState<JobRequisitionFormData>({
-    number_of_positions: 1,
+    number_of_positions: "",
+    number_of_new_positions: "",
+    number_of_replacement_positions: "",
     positions: [
       {
         position_number: 1,
@@ -180,6 +188,128 @@ const RequisitionForm = () => {
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  const prevTotalRef = useRef<any>(formData.number_of_positions);
+  const prevNewRef = useRef<any>(formData.number_of_new_positions);
+  const prevRepRef = useRef<any>(formData.number_of_replacement_positions);
+
+  useEffect(() => {
+    const total = parseInt(formData.number_of_positions as any) || 0;
+    const newP = parseInt(formData.number_of_new_positions as any) || 0;
+    const repP = parseInt(formData.number_of_replacement_positions as any) || 0;
+
+    const prevTotal = parseInt(prevTotalRef.current as any) || 0;
+    const prevNew = parseInt(prevNewRef.current as any) || 0;
+    const prevRep = parseInt(prevRepRef.current as any) || 0;
+
+    prevTotalRef.current = formData.number_of_positions;
+    prevNewRef.current = formData.number_of_new_positions;
+    prevRepRef.current = formData.number_of_replacement_positions;
+
+    const totalChanged = total !== prevTotal;
+    const newChanged = newP !== prevNew;
+    const repChanged = repP !== prevRep;
+
+    if (!totalChanged && !newChanged && !repChanged) {
+      const positions = formData.positions || [];
+      const actualNew = positions.filter((p) => p.vacancy_type === "New").length;
+      const actualRep = positions.filter((p) => p.vacancy_type === "Replacement").length;
+      const actualTotal = positions.length;
+
+      if (total !== actualTotal || newP !== actualNew || repP !== actualRep) {
+        setFormData((prev: any) => ({
+          ...prev,
+          number_of_positions: actualTotal,
+          number_of_new_positions: actualNew,
+          number_of_replacement_positions: actualRep,
+        }));
+        prevTotalRef.current = actualTotal;
+        prevNewRef.current = actualNew;
+        prevRepRef.current = actualRep;
+      }
+      return;
+    }
+
+    const handler = setTimeout(() => {
+      setFormData((prev: any) => {
+        const currentTotal = parseInt(prev.number_of_positions as any) || 0;
+        const currentNew = parseInt(prev.number_of_new_positions as any) || 0;
+        const currentRep = parseInt(prev.number_of_replacement_positions as any) || 0;
+
+        let finalTotal = currentTotal;
+        let finalNew = currentNew;
+        let finalRep = currentRep;
+
+        if (totalChanged) {
+          if (currentTotal >= currentRep) {
+            finalNew = currentTotal - currentRep;
+            finalRep = currentRep;
+          } else {
+            finalNew = currentTotal;
+            finalRep = 0;
+          }
+        } else if (newChanged) {
+          finalTotal = currentNew + currentRep;
+          if (finalTotal > 100) {
+            finalNew = 100 - currentRep;
+            finalTotal = 100;
+          }
+        } else if (repChanged) {
+          finalTotal = currentNew + currentRep;
+          if (finalTotal > 100) {
+            finalRep = 100 - currentNew;
+            finalTotal = 100;
+          }
+        }
+
+        let currentPositions = prev.positions || [];
+        if (currentPositions.length !== finalTotal) {
+          if (finalTotal > currentPositions.length) {
+            const extra = Array.from({ length: finalTotal - currentPositions.length }, (_, i) => ({
+              position_number: currentPositions.length + i + 1,
+              vacancy_type: "New",
+              location: "",
+              functional_area: "",
+              reporting_manager: "",
+              replacement_for: "",
+            }));
+            currentPositions = [...currentPositions, ...extra];
+          } else {
+            currentPositions = currentPositions.slice(0, finalTotal);
+          }
+        }
+
+        const updatedPositions = currentPositions.map((pos: any, idx: number) => {
+          const expectedType = idx < finalNew ? "New" : "Replacement";
+          return {
+            ...pos,
+            position_number: idx + 1,
+            vacancy_type: expectedType,
+            ...(expectedType === "New" ? { replacement_for: "" } : {}),
+          };
+        });
+
+        prevTotalRef.current = finalTotal;
+        prevNewRef.current = finalNew;
+        prevRepRef.current = finalRep;
+
+        return {
+          ...prev,
+          number_of_positions: finalTotal,
+          number_of_new_positions: finalNew,
+          number_of_replacement_positions: finalRep,
+          positions: updatedPositions,
+        };
+      });
+    }, 2200);
+
+    return () => clearTimeout(handler);
+  }, [
+    formData.number_of_positions,
+    formData.number_of_new_positions,
+    formData.number_of_replacement_positions,
+    formData.positions,
+  ]);
 
   // JD Preview state
   const [jdPreviewOpen, setJdPreviewOpen] = useState(false);
@@ -224,7 +354,13 @@ const RequisitionForm = () => {
         // Clear stale replacement_for when switching everyone to New
         ...(type === "New" ? { replacement_for: "" } : {}),
       }));
-      return { ...prev, positions };
+      const total = positions.length;
+      return {
+        ...prev,
+        positions,
+        number_of_new_positions: type === "New" ? total : 0,
+        number_of_replacement_positions: type === "Replacement" ? total : 0,
+      };
     });
   };
 
@@ -354,7 +490,7 @@ const RequisitionForm = () => {
   // ---------------------------------------------------------------------------
   // JD Preview handler
   // ---------------------------------------------------------------------------
- // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // JD Preview handler (FIXED to match API response structure)
   // ---------------------------------------------------------------------------
   const handlePreviewJD = async () => {
@@ -386,7 +522,7 @@ const RequisitionForm = () => {
 
       // Extract the HTML string from description_html (fallback to description if needed)
       const htmlContent = jdData?.description_html || jdData?.description;
-    
+
       if (htmlContent) {
         setJdContent(htmlContent);
       } else {
@@ -399,7 +535,7 @@ const RequisitionForm = () => {
       }
     } catch (err) {
       console.error("Error fetching JD:", err);
-    
+
       setJdContent(
         `<p style="color:#ef4444;text-align:center;padding:32px 0;">
           Failed to load job description. Please try again.
@@ -472,30 +608,6 @@ const RequisitionForm = () => {
           .catch((err) => {
             console.error("Error fetching employee details:", err);
           });
-      }
-    }
-
-    if (changed.changed?.component?.key === "number_of_positions") {
-      const raw = changed.data.number_of_positions;
-      const count = parseInt(raw);
-      // Only regenerate when the user has typed a valid in-range number AND
-      // the count actually differs from current rows. Skipping empty / NaN /
-      // zero values prevents wiping rows mid-edit (the cause of the jank).
-      if (Number.isFinite(count) && count > 0 && count <= 100) {
-        const currentLength = (newData.positions || []).length;
-        if (count !== currentLength) {
-          newData.positions = Array.from({ length: count }, (_, i) => ({
-            position_number: i + 1,
-            vacancy_type: newData.positions?.[i]?.vacancy_type || "New",
-            location: newData.positions?.[i]?.location || "",
-            functional_area: newData.positions?.[i]?.functional_area || "",
-            reporting_manager: newData.positions?.[i]?.reporting_manager || "",
-            replacement_for: newData.positions?.[i]?.replacement_for || "",
-          }));
-        }
-      } else {
-        // Keep previous positions intact while the user is mid-type
-        newData.positions = formData.positions;
       }
     }
 
@@ -586,7 +698,7 @@ const RequisitionForm = () => {
         email: candidate.email,
         phone: candidate.phone,
         offer_directly: candidate.offer_directly,
-      
+
         // 👇 CV URL
         cv:
           candidate.cv?.[0]?.url ||
@@ -605,7 +717,7 @@ const RequisitionForm = () => {
     };
   };
 
-  
+
 
   const handleSubmit = async (submission: any) => {
     const finalData = { ...formData, ...submission.data };
@@ -640,7 +752,7 @@ const RequisitionForm = () => {
       }
     }
   };
-  
+
   const getCurrentSchema = () => {
     const stepKey = requisitionSteps[currentStep].key as FormSchemaKeys;
     return requisitionFormSchemas[stepKey];
@@ -694,11 +806,10 @@ const RequisitionForm = () => {
           {requisitionSteps.map((step, index) => (
             <div
               key={step.key}
-              className={`flex-1 min-w-[140px] md:min-w-0 text-center pb-4 px-2 cursor-pointer whitespace-nowrap ${
-                index === currentStep
-                  ? "text-primary-500 border-b-2 border-primary-500 font-semibold"
-                  : "text-gray-500"
-              }`}
+              className={`flex-1 min-w-[140px] md:min-w-0 text-center pb-4 px-2 cursor-pointer whitespace-nowrap ${index === currentStep
+                ? "text-primary-500 border-b-2 border-primary-500 font-semibold"
+                : "text-gray-500"
+                }`}
               onClick={() => handleStepClick(index)}
             >
               {step.label}
@@ -719,11 +830,10 @@ const RequisitionForm = () => {
               onClick={handlePreviewJD}
               disabled={!canPreviewJD}
               title={canPreviewJD ? "Preview Job Description" : "Select Designation and Department first"}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md border text-sm font-medium transition ${
-                canPreviewJD
-                  ? "border-indigo-500 text-indigo-600 hover:bg-indigo-50 cursor-pointer"
-                  : "border-gray-300 text-gray-400 cursor-not-allowed opacity-60"
-              }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md border text-sm font-medium transition ${canPreviewJD
+                ? "border-indigo-500 text-indigo-600 hover:bg-indigo-50 cursor-pointer"
+                : "border-gray-300 text-gray-400 cursor-not-allowed opacity-60"
+                }`}
             >
               <FileText size={16} />
               Preview JD
