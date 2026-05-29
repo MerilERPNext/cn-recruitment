@@ -1,13 +1,19 @@
 import React from "react";
 import { Typography } from "../shared/atoms/Typography";
-import EmploymentHistoryCard from "./EmploymentHistoryCard";
 import Button from "../shared/atoms/Button";
 import { PlusIcon } from "lucide-react";
 import EmploymentHistoryForm from "./EmploymentHistorForm";
+import WorkLocationForm from "./WorkLocationForm";
+import EmploymentTypeForm from "./EmploymentTypeForm";
+import EmployeeRoleForm from "./EmployeeRoleForm";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import { useGetEmploymentHistoryData } from "../../hooks/useEmployee";
-import { WorkRole } from "../../types/employee";
+import { EmployeeRole, EmploymentTypes, WorkLocation, WorkRole } from "../../types/employee";
+import EmploymentWorkLocationCard from "./EmploymentHistoryCards/EmploymentWorkLocationsCard";
+import EmploymentHistoryCard from "./EmploymentHistoryCards/EmploymentHistoryCard";
+import EmploymentTypesCard from "./EmploymentHistoryCards/EmploymentTypesCard";
+import EmployeeRolesCard from "./EmploymentHistoryCards/EmployeeRolesCard";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
@@ -37,6 +43,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 }) => {
   const { data, isLoading, error } = useGetEmploymentHistoryData(employeeId || "")
   const history = data?.work_roles || [];
+  const workLocation = data?.work_locations || [];
+  const employmentTypes = data?.employment_types || [];
+  const employeeRoles = data?.employee_roles || [];
   const hasEmploymentHistory = history.length > 0;
 
   const defaultStartDateForAdd = !hasEmploymentHistory
@@ -56,10 +65,13 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 
   const [isModalOpen, setIsModalOpen] = React.useState<boolean>(false);
   const [isEditing, setIsEditing] = React.useState<boolean>(false);
-  const [editItem, setEditItem] = React.useState<WorkRole | null>(null);
+  const [editItem, setEditItem] = React.useState<WorkRole | WorkLocation | EmploymentTypes | EmployeeRole | null>(null);
+  const [editType, setEditType] = React.useState<"work_role" | "work_location" | "employment_type" | "employee_role">("work_role");
 
-  const handleEditCard = (item: WorkRole) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleEditCard = (item: any, type: "work_role" | "work_location" | "employment_type" | "employee_role" = "work_role") => {
     setEditItem(item);
+    setEditType(type);
     setIsEditing(true);
     setIsModalOpen(true);
   };
@@ -125,49 +137,168 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
         {error && (
           <p className="p-4 text-red-500">Failed to load employment history</p>
         )}
+        <div className="flex flex-col gap-2">
 
-        <div className="flex gap-2 overflow-auto">
-          {history.map((item) => (
-            <div
-              key={item.from_date + item.designation}
-              className={`${history.length === 1 ? "max-w-md w-full" : ""
-                }`}
-            >
-              <EmploymentHistoryCard
-                company={item.company?.name}
-                department={item.department?.name}
-                band={item.band?.name}
-                grade={item.grade?.name}
-                start_date={item.from_date}
-                end_date={item.to_date}
-                isCurrent={item.is_current}
-                functionalArea={item.functional_area?.name}
-                is_promotion={item.is_promotion}
-                onEdit={canEditEmploymentHistory ? () => handleEditCard(item) : undefined}
-              />
-            </div>
-          ))}
+          <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+            Work Roles
+          </Typography>
+          <div className="flex gap-2 overflow-auto">
+            {history.map((item) => (
+              <div
+                key={item.from_date + item.designation}
+                className={`${history.length === 1 ? "max-w-md w-full" : ""
+                  }`}
+              >
+                <EmploymentHistoryCard
+                  company={item.company?.name}
+                  department={item.department?.name}
+                  band={item.band?.name}
+                  grade={item.grade?.name}
+                  start_date={item.from_date}
+                  end_date={item.to_date}
+                  isCurrent={item.is_current}
+                  functionalArea={item.functional_area?.name}
+                  is_promotion={item.is_promotion}
+                  onEdit={canEditEmploymentHistory ? () => handleEditCard(item) : undefined}
+                />
+              </div>
+            ))}
+          </div>
         </div>
+        <div className="flex flex-col gap-2 mt-6">
+          <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+            Work Locations
+          </Typography>
+          <div className="flex gap-2 overflow-auto">
+            {workLocation?.map((item) => (
+              <div
+                key={item.from_date + item?.to_date}
+                className={`${history.length === 1 ? "max-w-md w-full" : ""
+                  }`}
+              >
+                <EmploymentWorkLocationCard
+                  from_date={item.from_date}
+                  to_date={item.to_date}
+                  is_current={item.is_current}
+                  work_location={item.work_location}
+                  office_area={item.office_area}
+                  country={item.country}
+                  state={item.state}
+                  city={item.city}
+                  onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "work_location") : undefined}
+
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 mt-6">
+          <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+            Employment Type
+          </Typography>
+          <div className="flex gap-2 overflow-auto">
+            {employmentTypes?.map((item) => (
+              <div
+                key={item.from_date + item?.to_date}
+                className={`${history.length === 1 ? "max-w-md w-full" : ""
+                  }`}
+              >
+                <EmploymentTypesCard
+                  from_date={item.from_date}
+                  to_date={item.to_date}
+                  is_current={item.is_current}
+                  is_promotion={item.is_promotion}
+                  employment_type={item.employment_type}
+                  employee_subtype={item.employee_subtype}
+                  onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employment_type") : undefined}
+
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 mt-6">
+          <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+            Employment Roles
+          </Typography>
+          <div className="flex gap-2 overflow-auto">
+            {employeeRoles?.map((item) => (
+              <div
+                key={item.from_date + item?.to_date}
+                className={`${history.length === 1 ? "max-w-md w-full" : ""
+                  }`}
+              >
+                <EmployeeRolesCard
+                  from_date={item.from_date}
+                  to_date={item.to_date}
+                  is_current={item.is_current}
+                  is_promotion={item.is_promotion}
+                  employee_role={item.employee_role}
+                  onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employee_role") : undefined}
+
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
-      {isModalOpen && (
+      {isModalOpen && editType === "work_location" && (
+        <WorkLocationForm
+          key={editItem ? `wl-${editItem.from_date}` : "add-wl"}
+          onCancel={handleCloseModal}
+          isEdit={isEditing}
+          defaultStartDate={defaultStartDateForAdd}
+          initialEditData={editItem ? {
+            work_location: (editItem as WorkLocation).work_location?.id,
+            start_date: editItem.from_date,
+          } : undefined}
+        />
+      )}
+      {isModalOpen && editType === "work_role" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <EmploymentHistoryForm
-              key={editItem ? `${editItem.from_date}-${editItem.designation?.id}` : "add"}
+              key={editItem ? `${editItem.from_date}-${(editItem as WorkRole).designation?.id}` : "add"}
               onCancel={handleCloseModal}
               isEdit={isEditing}
               defaultStartDate={defaultStartDateForAdd}
               initialEditData={editItem ? {
-                company: editItem.company?.id,
-                department: editItem.department?.id,
-                designation: editItem.designation?.id,
-                functional_area: editItem.functional_area?.id,
+                company: (editItem as WorkRole).company?.id,
+                department: (editItem as WorkRole).department?.id,
+                designation: (editItem as WorkRole).designation?.id,
+                functional_area: (editItem as WorkRole).functional_area?.id,
                 start_date: editItem.from_date,
-                is_promotion: editItem.is_promotion,
+                is_promotion: (editItem as WorkRole).is_promotion,
               } : undefined}
             />
           </div>
         </div>
+      )}
+      {isModalOpen && editType === "employment_type" && (
+        <EmploymentTypeForm
+          key={editItem ? `et-${editItem.from_date}` : "add-et"}
+          onCancel={handleCloseModal}
+          isEdit={isEditing}
+          defaultStartDate={defaultStartDateForAdd}
+          initialEditData={editItem ? {
+            employment_type: (editItem as unknown as EmploymentTypes).employment_type?.id,
+            employee_subtype: (editItem as unknown as EmploymentTypes).employee_subtype?.id,
+            start_date: editItem.from_date,
+          } : undefined}
+        />
+      )}
+      {isModalOpen && editType === "employee_role" && (
+        <EmployeeRoleForm
+          key={editItem ? `er-${editItem.from_date}` : "add-er"}
+          onCancel={handleCloseModal}
+          isEdit={isEditing}
+          defaultStartDate={defaultStartDateForAdd}
+          initialEditData={editItem ? {
+            employee_role: (editItem as unknown as EmployeeRole).employee_role?.id,
+            start_date: editItem.from_date,
+          } : undefined}
+        />
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 import React from "react";
 import { Pencil, TrendingUp } from "lucide-react";
-import Tooltip from "../shared/Tooltip";
-import formatToIndianDate from "../../utils/formatToIndianDate";
+import Tooltip from "../../../components/shared/Tooltip";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 interface EmploymentHistoryCardProps {
   company: string;

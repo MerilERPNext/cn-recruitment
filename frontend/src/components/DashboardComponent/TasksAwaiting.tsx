@@ -29,13 +29,13 @@ const MyToDoItem: React.FC<{ item: ToDo; index?: number }> = ({ item }) => {
   return (
     <div
       key={item.name}
-      className="flex cursor-pointer items-center justify-between p-3 rounded-xl border border-transparent hover-lift transition-all group"
+      className="flex cursor-pointer items-center justify-between rounded-xl border border-transparent hover-lift transition-all group"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         <div className="w-10 h-10 min-w-[40px] min-h-[40px] flex-shrink-0 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
           <ClipboardList className="w-5 h-5" />
         </div>
-        <div className="mr-2">
+        <div className="mr-2 min-w-0 flex-1">
           <Typography
             variant="bodySmall"
             className="font-medium block line-clamp-1"
