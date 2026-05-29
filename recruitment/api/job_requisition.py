@@ -1016,9 +1016,22 @@ def preview_job_description(designation=None, department=None):
 
 def _build_preview_payload(jd_name, source):
     """Shared JD → preview payload builder used by exact-match and
-    default-fallback paths. Honours read permission on the JD doc."""
+    default-fallback paths. Honours read permission on the JD doc.
+
+    `description_html` is the RENDERED preview (Jinja resolved + line
+    breaks converted to <p>/<br>), not the raw template — so the React
+    Preview JD modal renders human-readable content via
+    `dangerouslySetInnerHTML` without exposing `{{ }}` placeholders.
+    """
+    from recruitment.recruitment.doctype.job_description.job_description import (
+        _render_preview,
+        plain_text_to_html,
+    )
+
     doc = frappe.get_doc(JOB_DESCRIPTION, jd_name)
     doc.check_permission("read")
+    _render_preview(doc)
+    description_html = plain_text_to_html(doc.get("preview") or "")
     skills = [
         row.get("skill")
         for row in (doc.get("skills") or [])
@@ -1029,7 +1042,7 @@ def _build_preview_payload(jd_name, source):
         "source": source,
         "name": doc.name,
         "title": doc.get("job_description_title") or doc.name,
-        "description_html": doc.get("description") or "",
+        "description_html": description_html,
         "skills": skills,
     }
 
