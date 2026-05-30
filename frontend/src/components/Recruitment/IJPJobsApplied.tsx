@@ -14,19 +14,7 @@ import {
   Sparkles
 } from "lucide-react";
 import toast from "react-hot-toast";
-
-interface Application {
-  id: string;
-  jobId: string;
-  jobTitle: string;
-  department: string;
-  location: string;
-  appliedDate: string;
-  experience: string;
-  sop: string;
-  cvName: string;
-  status: "Applied" | "Screening" | "Technical Round" | "Manager Round" | "Offered" | "Withdrawn";
-}
+import { Application } from "./IJPTypes";
 
 const DEFAULT_APPLICATIONS: Application[] = [
   {

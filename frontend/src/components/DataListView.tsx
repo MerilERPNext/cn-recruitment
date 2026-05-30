@@ -144,6 +144,7 @@ interface DataListViewProps<T extends BaseItem> {
   getItemKey?: (item: T, index: number) => string;
   enableUrlParams?: boolean;
   onFiltersChange?: (filters: Record<string, any>) => void;
+  onSearchChange?: (search: string) => void;
   clientFilterFn?: (data: T[]) => T[];
   clientSortFn?: (data: T[]) => T[];
   noRecordsScreen?:
@@ -181,6 +182,7 @@ const DataListView = <T extends BaseItem>({
   getItemKey,
   enableUrlParams = true,
   onFiltersChange,
+  onSearchChange,
   clientFilterFn,
   clientSortFn,
   noRecordsScreen,
@@ -258,6 +260,12 @@ const DataListView = <T extends BaseItem>({
       onFiltersChange(debouncedFilters);
     }
   }, [currentFiltersString, onFiltersChange]);
+
+  useEffect(() => {
+    if (onSearchChange) {
+      onSearchChange(debouncedSearchTerm);
+    }
+  }, [debouncedSearchTerm, onSearchChange]);
 
   useEffect(() => {
     if (showFilters && !isFilterApplied) {
