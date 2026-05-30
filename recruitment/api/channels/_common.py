@@ -104,6 +104,25 @@ def get_openings_active_on_channel(channel, opening_filters=None):
 	return result
 
 
+# Link fields on the opening card. Each value is rendered as its target
+# doctype's configured Title Field (e.g. Company → company_name "PenPencil"),
+# falling back to the raw id when the doctype has no title field. We keep the
+# raw link id under "<field>_id" for callers that still need the document name.
+_CARD_LINK_FIELDS = ("designation", "department", "location", "company")
+
+
+def _link_label(doctype, name):
+	"""Human-readable label for a link value: the target's Title Field value if it
+	has one, otherwise the id itself. Fully dynamic — no per-doctype hardcoding."""
+	if not name:
+		return None
+	title_field = frappe.get_meta(doctype).get_title_field()
+	if not title_field or title_field == "name":
+		return name
+	# get_cached_value avoids re-querying the same master across many cards.
+	return frappe.get_cached_value(doctype, name, title_field) or name
+
+
 def get_opening_card(opening_name):
 	"""Compact serialisation used in listing endpoints."""
 	row = frappe.db.get_value(
@@ -118,19 +137,26 @@ def get_opening_card(opening_name):
 	)
 	if not row:
 		return None
-	return {
+	card = {
 		"name": row.name,
 		"job_title": row.job_title,
-		"designation": row.designation,
-		"department": row.department,
-		"location": row.location,
-		"company": row.company,
 		"status": row.status,
 		"posted_on": row.posted_on,
 		"closes_on": row.closes_on,
 		"description": row.description,
 		"opening_code": row.custom_opening_code,
 	}
+	# Render each link field as its target's title field; keep the raw id too.
+	jo_meta = frappe.get_meta("Job Opening")
+	for field in _CARD_LINK_FIELDS:
+		link_id = row.get(field)
+		df = jo_meta.get_field(field)
+		if df and df.fieldtype == "Link" and df.options and link_id:
+			card[field] = _link_label(df.options, link_id)
+		else:
+			card[field] = link_id
+		card[f"{field}_id"] = link_id
+	return card
 
 
 # ---------------------------------------------------------------------------
