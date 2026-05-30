@@ -1,4 +1,3 @@
-import React from "react";
 import { propsDetailViewComponents } from "./IJPTypes";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import Button from "../shared/atoms/Button";
