@@ -27,7 +27,7 @@ export const getStageAssignedUsersCell = (
         roles={stage.role.split(',').map((r: string) => r.trim())}
         position={position}
       >
-        {textWrapper ? textWrapper(text) : <span>{text}</span>}
+        {textWrapper ? textWrapper(text) : <Typography color="primary" className="underline">{text}</Typography>}
       </AllocatedToTooltip>
     );
   }
