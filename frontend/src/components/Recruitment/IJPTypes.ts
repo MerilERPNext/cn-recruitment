@@ -37,42 +37,6 @@ export interface propscomponent {
   onSubmitDone: (jobId: string) => void;
 }
 
-export interface propsResumeComponent {
-  uploadedFile: string | null;
-  onUpload: (fileName: string) => void;
-  onNext: () => void;
-}
-
-export interface propsBiographicalStepComponent {
-  onBack: () => void;
-  onNext: () => void;
-}
-
-export interface propContactStep {
-  onBack: () => void;
-  onNext: () => void;
-}
-
-export interface propsAddressStepComponent {
-  onBack: () => void;
-  onNext: () => void;
-}
-
-export interface propWorkExperienceStepComponent {
-  onBack: () => void;
-  onNext: () => void;
-}
-
-export interface propsEducationStepComponent {
-  onBack: () => void;
-  onNext: () => void;
-}
-
-export interface propsLastSalaryStepComponent {
-  onBack: () => void;
-  onSubmit: () => void;
-}
-
 export interface Application {
   id: string;
   jobId: string;
@@ -84,5 +48,57 @@ export interface Application {
   sop: string;
   cvName: string;
   status: "Applied" | "Screening" | "Technical Round" | "Manager Round" | "Offered" | "Withdrawn";
+}
+
+export interface IJPTableField {
+  fieldname: string;
+  label: string;
+  fieldtype: string;
+  options: string;
+  reqd: number;
+  read_only: number;
+  in_list_view: number;
+  default: string | null;
+}
+
+export interface IJPField {
+  section: string;
+  reference_name: string;
+  display_name: string;
+  fieldtype: string;
+  options: string;
+  reqd: number;
+  ctq: number;
+  visibility: string;
+  editability: string;
+  table_fields?: IJPTableField[];
+}
+
+export type IJPApplicationValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | Record<string, unknown>
+  | Record<string, unknown>[]
+  | unknown[];
+
+export type IJPApplicationSubmitPayload = Record<string, IJPApplicationValue>;
+
+export interface IJPApplicationSubmitResponse {
+  message: {
+    name: string;
+    applicant_name: string;
+    email_id: string;
+    phone_number: string;
+    status: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface UseSubmitIJPApplicationVariables {
+  opening: string;
+  data: IJPApplicationSubmitPayload;
 }
 

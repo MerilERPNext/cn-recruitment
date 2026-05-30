@@ -153,3 +153,4 @@ export interface JobRequisition {
 export interface CreateJobRequisitionResponse {
   message: JobRequisition;
 }
+
