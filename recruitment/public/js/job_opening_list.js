@@ -325,13 +325,12 @@
 		});
 		updateSelectAllState(container);
 
-		// Row click → Job Applicant list filtered by this opening
+		// Row click → open the Job Opening form
 		container.querySelectorAll("tr[data-name]").forEach((tr) => {
 			tr.addEventListener("click", (e) => {
 				if (e.target && e.target.closest("input, button, a")) return;
 				const name = tr.getAttribute("data-name");
-				frappe.route_options = { job_title: name };
-				frappe.set_route("List", "Job Applicant");
+				frappe.set_route("Form", DOCTYPE, name);
 			});
 		});
 	}
