@@ -149,37 +149,37 @@ const Requisition = () => {
           onClick={handleRowClick}
         >
           <div className="flex items-center">
-            <Typography variant="bodySmall" className="font-medium text-gray-900">
+            <Typography variant="bodySmall" className="font-medium text-center text-gray-900">
               {code}
             </Typography>
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <Typography variant="bodySmall" className="font-medium text-blue-600">
+            <Typography variant="bodySmall" className="font-medium text-center  text-blue-600">
               {designation}
             </Typography>
-            <Typography variant="bodySmall" className="text-gray-600 text-xs">
+            <Typography variant="bodySmall" className="text-gray-600 text-center  text-xs">
               {department}
             </Typography>
-            <Typography variant="bodySmall" className="text-gray-600 text-xs">
+            <Typography variant="bodySmall" className="text-gray-600 text-center  text-xs">
               {location}
             </Typography>
           </div>
 
-          <div className="flex items-center">
+          <div className="flex justify-center  items-center">
             <Badge label={status} backgroundColor={statusColor} />
           </div>
 
           <div className="flex flex-col gap-0.5">
-            <Typography variant="bodySmall" className="font-semibold">
+            <Typography variant="bodySmall" className="font-semibold text-center ">
               {totalPositions}
             </Typography>
-            <Typography variant="bodySmall" className="text-gray-500 text-xs text-nowrap truncate">
+            <Typography variant="bodySmall" className="text-gray-500 text-center  text-xs text-nowrap truncate">
               {positionDetail}
             </Typography>
           </div>
 
-          <div className="flex items-center justify-center">
+          <div className="flex items-center text-center  justify-center">
             <Typography
               variant="bodySmall"
               className={activeEvaluation === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
@@ -188,7 +188,7 @@ const Requisition = () => {
             </Typography>
           </div>
 
-          <div className="flex items-center justify-center">
+          <div className="flex items-center text-center  justify-center">
             <Typography
               variant="bodySmall"
               className={activeOffer === "--" || activeOffer === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
