@@ -163,6 +163,35 @@ def get_opening_card(opening_name):
 # Application-fields lookup
 # ---------------------------------------------------------------------------
 
+# Layout/meta fieldtypes that carry no input and shouldn't be sent as columns.
+_NON_INPUT_FIELDTYPES = {
+	"Section Break", "Column Break", "Tab Break", "HTML", "Button", "Fold", "Heading",
+}
+
+
+def _child_table_fields(child_doctype):
+	"""Column definitions for a child (Table / Table MultiSelect) doctype so the
+	frontend can render the grid. Returns [] when there's no child doctype."""
+	if not child_doctype:
+		return []
+	cmeta = frappe.get_meta(child_doctype)
+	cols = []
+	for d in cmeta.fields:
+		if not d.fieldname or d.fieldtype in _NON_INPUT_FIELDTYPES:
+			continue
+		cols.append({
+			"fieldname": d.fieldname,
+			"label": d.label or d.fieldname,
+			"fieldtype": d.fieldtype,
+			"options": d.options or "",
+			"reqd": cint(d.reqd),
+			"read_only": cint(d.read_only),
+			"in_list_view": cint(d.in_list_view),
+			"default": d.default,
+		})
+	return cols
+
+
 def get_application_fields_for_channel(opening_name, channel):
 	"""Return the list of Job Applicant fields to render for `opening_name` on
 	`channel` ("careers" / "ijp" / "refer" / "preoffer").
@@ -212,7 +241,7 @@ def get_application_fields_for_channel(opening_name, channel):
 		df = meta_lookup.get(ref)
 		if not df:
 			continue
-		result.append({
+		entry = {
 			"section": r.get("section") or "General",
 			"reference_name": ref,
 			"display_name": r.get("display_name") or df.label or ref,
@@ -222,7 +251,12 @@ def get_application_fields_for_channel(opening_name, channel):
 			"ctq": cint(r.get("ctq_flag")),
 			"visibility": r.get("visibility") or "All",
 			"editability": r.get("editability") or "Editable",
-		})
+		}
+		# For child-table fields, ship the child doctype's columns so the
+		# frontend can render the grid (options alone is just the doctype name).
+		if df.fieldtype in ("Table", "Table MultiSelect"):
+			entry["table_fields"] = _child_table_fields(df.options)
+		result.append(entry)
 	return result
 
 

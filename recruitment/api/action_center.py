@@ -260,6 +260,128 @@ def send_pre_offer_form(job_applicant_id, form_name):
     }
 
 
+def _send_pre_offer_for_applicant(applicant):
+    """Form-less pre-offer send for one applicant (idempotent, no commit).
+
+    Pre-offer fields now come from the applicant's Job Opening, so no Portal Form
+    is selected. We anchor a single form-less row (empty portal_form) in
+    custom_pre_offer_forms and raise its Candidate Action Center Item.
+
+    Returns {"created": bool, "reason": str|None, "action_item": str|None}.
+    """
+    candidate_email = applicant.email_id
+    if not candidate_email:
+        return {"created": False, "reason": "missing email", "action_item": None}
+
+    # A form-less row (no portal_form) is the marker for an opening-config send.
+    def _formless_row():
+        return next(
+            (r for r in (applicant.get("custom_pre_offer_forms") or []) if not r.portal_form),
+            None,
+        )
+
+    existing = _formless_row()
+    if existing and existing.status in ("Sent", "Filled", "Reviewed"):
+        return {"created": False, "reason": "already sent", "action_item": existing.get("action_item")}
+
+    row = existing or applicant.append("custom_pre_offer_forms", {})
+    row.portal_form = None
+    row.status = "Sent"
+    row.sent_at = now_datetime()
+    row.filled_at = None
+    applicant.save(ignore_permissions=True)
+    applicant.reload()
+
+    row = _formless_row()
+    item = _upsert_minimal_item(
+        candidate_email=candidate_email,
+        reference_doctype="Job Applicant Pre Offer Form",
+        reference_docname=row.name,
+        redirect_url=build_pre_offer_redirect(applicant.name),
+        description=_("Pre Offer Form is ready. Please fill and submit the required details."),
+        commit=False,
+    )
+    if row.get("action_item") != item.name:
+        row.db_set("action_item", item.name, update_modified=False)
+
+    applicant.db_set("status", "Approvals", update_modified=False)
+    applicant.db_set("custom_substatus", "Pre Offer Form Sent", update_modified=False)
+    return {"created": True, "reason": None, "action_item": item.name}
+
+
+@frappe.whitelist()
+def send_pre_offer(job_applicant_id):
+    """HR sends the (form-less) pre-offer to a single candidate.
+
+    The form is rendered from the candidate's Job Opening pre-offer config, so no
+    Portal Form is selected — the caller just confirms. Idempotent: re-sending an
+    already-sent pre-offer is a no-op.
+    """
+    frappe.only_for(("System Manager", "HR Manager"))
+
+    if not job_applicant_id:
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Job Applicant ID is required.")}
+    if not frappe.db.exists("Job Applicant", job_applicant_id):
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
+
+    applicant = frappe.get_doc("Job Applicant", job_applicant_id)
+    result = _send_pre_offer_for_applicant(applicant)
+    frappe.db.commit()
+
+    if not result["created"] and result["reason"] == "missing email":
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Candidate email not found on the Job Applicant record.")}
+
+    return {
+        "status": "success",
+        "created": result["created"],
+        "already_sent": (not result["created"] and result["reason"] == "already sent"),
+        "action_item": result["action_item"],
+        "message": (
+            _("Pre Offer Form sent to candidate.")
+            if result["created"]
+            else _("Pre Offer Form already sent — no change.")
+        ),
+    }
+
+
+@frappe.whitelist()
+def send_bulk_pre_offer(applicants):
+    """HR sends the (form-less) pre-offer to many candidates at once.
+
+    `applicants` is a JSON list (or list) of Job Applicant names. Already-sent
+    applicants are skipped. Returns created / skipped / failed tallies.
+    """
+    frappe.only_for(("System Manager", "HR Manager"))
+
+    if isinstance(applicants, str):
+        applicants = frappe.parse_json(applicants or "[]")
+    applicants = applicants or []
+
+    created = skipped = failed = 0
+    for app in applicants:
+        try:
+            if not frappe.db.exists("Job Applicant", app):
+                failed += 1
+                continue
+            applicant = frappe.get_doc("Job Applicant", app)
+            res = _send_pre_offer_for_applicant(applicant)
+            if res["created"]:
+                created += 1
+            elif res["reason"] == "missing email":
+                failed += 1
+            else:
+                skipped += 1
+        except Exception:
+            failed += 1
+            frappe.log_error(frappe.get_traceback(), "Bulk Send Pre Offer")
+
+    frappe.db.commit()
+    return {"created": created, "skipped": skipped, "failed": failed}
+
+
 def build_pre_onboarding_redirect(job_applicant_id):
     return "/onboarding?{0}".format(urlencode({"appl": job_applicant_id}))
 

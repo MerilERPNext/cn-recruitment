@@ -466,6 +466,33 @@
 			renderPipelineTop();
 			renderTabs();
 
+			// Bulk "Send Pre Offer Form" — select many applicants and send the
+			// (form-less) pre-offer to each at once. Skips already-sent.
+			listview.page.add_action_item(__("Send Pre Offer Form"), function () {
+				const selected = listview.get_checked_items();
+				if (!selected.length) { frappe.msgprint(__("Please select Job Applicants")); return; }
+				frappe.confirm(
+					__("Send Pre Offer Forms to {0} selected applicant(s)?", [selected.length]),
+					function () {
+						frappe.call({
+							method: "recruitment.api.action_center.send_bulk_pre_offer",
+							args: { applicants: JSON.stringify(selected.map((d) => d.name)) },
+							freeze: true,
+							freeze_message: __("Sending Pre Offer Forms..."),
+							callback: function (r2) {
+								if (!r2.message) return;
+								frappe.msgprint(
+									__("Created: {0}<br>Skipped: {1}<br>Failed: {2}", [
+										r2.message.created, r2.message.skipped, r2.message.failed,
+									]),
+								);
+								listview.refresh();
+							},
+						});
+					},
+				);
+			});
+
 			// Preserve "Create Job Offer" bulk action (gated by Recruitment Settings).
 			frappe.call({
 				method: "frappe.client.get",
