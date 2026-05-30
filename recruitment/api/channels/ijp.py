@@ -28,6 +28,22 @@ from . import _common
 CHANNEL = "ijp"
 SOURCE_FALLBACK_NAME = "IJP"
 
+# Fixed 5-stage pipeline shown on "My Applied Internal Jobs". The applicant's
+# Job Applicant status maps onto a single current stage; earlier stages are
+# "done", later stages "upcoming".
+IJP_STAGES = ["Applied", "Screening", "Technical Round", "Manager Round", "Decision"]
+STATUS_TO_STAGE = {
+	"Draft": 0,
+	"Open": 0,
+	"Shortlisted": 1,
+	"Interview": 2,
+	"Hold": 2,
+	"Approvals": 3,
+	"Accepted": 4,
+	"Rejected": 4,
+}
+TERMINAL_STATUSES = ("Accepted", "Rejected")
+
 
 def _employee_doc(employee=None):
 	"""Resolve the current employee (or a passed-in one) and return the Doc."""
@@ -161,6 +177,7 @@ def submit_application(opening, data, employee=None):
 	applicant = frappe.new_doc("Job Applicant")
 	applicant.job_title = opening
 	applicant.source = source
+	applicant.custom_applied_employee = emp.name
 
 	# Sensible defaults from the employee record — only if not supplied.
 	cleaned.setdefault("applicant_name", emp.employee_name)
@@ -172,3 +189,86 @@ def submit_application(opening, data, employee=None):
 	applicant.insert(ignore_permissions=True)
 
 	return {"status": "ok", "name": applicant.name, "source": source, "employee": emp.name}
+
+
+def _build_pipeline(status):
+	"""Return the 5-stage pipeline with done/current/upcoming state for a status."""
+	current = STATUS_TO_STAGE.get(status, 0)
+	stages = []
+	for idx, label in enumerate(IJP_STAGES):
+		if idx < current:
+			state = "done"
+		elif idx == current:
+			state = "current"
+		else:
+			state = "upcoming"
+		stages.append({"label": label, "state": state})
+	return stages, current
+
+
+def _application_card(row):
+	"""Serialise one IJP Job Applicant into the My-Applied card shape."""
+	opening = frappe.db.get_value(
+		"Job Opening",
+		row.job_title,
+		["name", "job_title", "designation", "department", "location", "custom_opening_code"],
+		as_dict=True,
+	) or frappe._dict()
+
+	stages, current = _build_pipeline(row.status)
+
+	# Offer lookup — drives the "View Offer Letter" affordance (built later).
+	offer = frappe.db.get_value(
+		"Job Offer", {"job_applicant": row.name, "docstatus": ["!=", 2]}, "name"
+	)
+
+	if row.status == "Rejected":
+		badge = "Rejected"
+	elif row.status in ("Accepted", "Approvals") or offer:
+		badge = "Offered"
+	else:
+		badge = IJP_STAGES[current]
+
+	designation = row.designation or opening.designation
+	return {
+		"name": row.name,
+		"opening": opening.name,
+		"job_title": opening.job_title or row.job_title,
+		"opening_code": opening.custom_opening_code,
+		"designation": designation,
+		"designation_label": _common._link_label("Designation", designation) if designation else None,
+		"department": opening.department,
+		"department_label": _common._link_label("Department", opening.department) if opening.department else None,
+		"location": opening.location,
+		"location_label": _common._link_label("Branch", opening.location) if opening.location else None,
+		"status": row.status,
+		"status_badge": badge,
+		"current_stage": IJP_STAGES[current],
+		"pipeline": stages,
+		"experience_declared": row.custom_total_experience,
+		"resume": row.resume_attachment or row.resume_link,
+		"applied_on": row.creation,
+		"can_withdraw": row.status not in TERMINAL_STATUSES,
+		"has_offer": bool(offer),
+		"offer": offer,
+	}
+
+
+@frappe.whitelist()
+def my_applications(employee=None):
+	"""The current (or passed-in) employee's IJP applications, with pipeline state."""
+	emp = _employee_doc(employee)
+	rows = frappe.get_list(
+		"Job Applicant",
+		filters={"custom_applied_employee": emp.name},
+		fields=[
+			"name", "job_title", "designation", "status",
+			"custom_total_experience", "resume_attachment", "resume_link", "creation",
+		],
+		order_by="creation desc",
+		limit_page_length=0,
+	) or []
+
+	applications = [_application_card(r) for r in rows]
+	active_count = sum(1 for a in applications if a["status"] != "Rejected")
+	return {"active_count": active_count, "applications": applications}

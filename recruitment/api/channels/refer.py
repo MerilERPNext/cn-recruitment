@@ -24,6 +24,18 @@ from . import _common
 
 CHANNEL = "refer"
 
+# Job Applicant status -> referral status group shown on the My Referrals page.
+STATUS_GROUP = {
+	"Draft": "pending",
+	"Open": "pending",
+	"Shortlisted": "pending",
+	"Hold": "pending",
+	"Interview": "interview",
+	"Approvals": "accepted",
+	"Accepted": "accepted",
+	"Rejected": "rejected",
+}
+
 
 def _resolve_referrer(referrer_employee=None):
 	"""Resolve the referring employee — defaults to the current user's Employee."""
@@ -117,3 +129,55 @@ def submit_referral(opening, data, referrer_employee=None):
 		"source": source,
 		"referrer": referrer.name,
 	}
+
+
+@frappe.whitelist()
+def my_referrals(employee=None, status=None, search=None):
+	"""Candidates referred by the current (or passed-in) employee, with stat
+	groups for the My Referrals dashboard.
+
+	`status` optionally filters to one group (pending / interview / accepted /
+	rejected); `search` matches candidate name / email / designation. Stats are
+	always computed over the full (unfiltered) referral set.
+	"""
+	referrer = _resolve_referrer(employee)
+
+	rows = frappe.get_list(
+		"Job Applicant",
+		filters={"custom_referred_by": referrer.name},
+		fields=["name", "applicant_name", "email_id", "designation", "job_title", "status", "creation"],
+		order_by="creation desc",
+		limit_page_length=0,
+	) or []
+
+	stats = {"total": len(rows), "pending": 0, "interview": 0, "accepted": 0, "rejected": 0}
+	referrals = []
+	for r in rows:
+		group = STATUS_GROUP.get(r.status, "pending")
+		stats[group] += 1
+		referrals.append({
+			"name": r.name,
+			"candidate_name": r.applicant_name,
+			"email": r.email_id,
+			"designation": r.designation,
+			"designation_label": _common._link_label("Designation", r.designation) if r.designation else None,
+			"opening": r.job_title,
+			"opening_label": _common._link_label("Job Opening", r.job_title) if r.job_title else None,
+			"status": r.status,
+			"status_group": group,
+			"applied_on": r.creation,
+		})
+
+	# Optional server-side filtering (the page can also filter client-side).
+	if status and status != "all":
+		referrals = [x for x in referrals if x["status_group"] == status]
+	if search:
+		needle = search.strip().lower()
+		referrals = [
+			x for x in referrals
+			if needle in (x["candidate_name"] or "").lower()
+			or needle in (x["email"] or "").lower()
+			or needle in (x["designation_label"] or x["designation"] or "").lower()
+		]
+
+	return {"stats": stats, "referrals": referrals}
