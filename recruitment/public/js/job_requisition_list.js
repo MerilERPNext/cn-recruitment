@@ -153,6 +153,13 @@
 			.jr-expected-date { color: #111827; font-weight: 500; }
 			.jr-expected-hint { font-size: 11px; color: #6B7280; margin-top: 2px; }
 
+			/* Native activity meta (modified time · comment count · like) */
+			.jr-col-activity { width: 120px; white-space: nowrap; text-align: right; padding-right: 12px !important; }
+			.jr-activity { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; color: #9CA3AF; font-size: 12px; }
+			.jr-activity .comment-count { display: inline-flex; align-items: center; gap: 2px; }
+			.jr-activity .list-row-like, .jr-activity .like-action { cursor: pointer; display: inline-flex; align-items: center; }
+			.jr-activity svg.icon, .jr-activity .icon { width: 14px; height: 14px; }
+
 			/* Hide the loading skeleton rows (we render our own table). */
 			.jr-custom-active .frappe-list .result .list-row-container { display: none !important; }
 			/* Frappe's native column header is replaced by our <thead>, so it's hidden
@@ -213,7 +220,25 @@
 		});
 	}
 
-	function renderRow(doc) {
+	// Native Frappe row activity: relative modified time, comment count, and the
+	// interactive like/heart. We reuse listview.get_like_html so Frappe's own
+	// delegated like handler (bound on $result) toggles likes natively.
+	function renderActivity(doc, listview) {
+		let modified = "";
+		try { modified = frappe.datetime.comment_when(doc.modified, true); } catch (e) { /* noop */ }
+		const cc = doc._comment_count || 0;
+		let chat = "";
+		try { chat = frappe.utils.icon("es-line-chat-alt", "sm"); } catch (e) { /* noop */ }
+		let likeHtml = "";
+		try { likeHtml = (listview && listview.get_like_html) ? listview.get_like_html(doc) : ""; } catch (e) { /* noop */ }
+		return `<div class="jr-activity">
+			<span class="modified">${modified}</span>
+			<span class="comment-count">${chat} ${cc > 99 ? "99+" : cc}</span>
+			<span class="list-row-like">${likeHtml}</span>
+		</div>`;
+	}
+
+	function renderRow(doc, listview) {
 		const statusColor = getStatusColor(doc.status);
 		const reqName = doc.requested_by_name || doc.requested_by || "";
 		const currency = defaultCurrency();
@@ -243,6 +268,7 @@
 					<div class="jr-expected-date">${escapeHtml(formatDate(doc.expected_by) || "—")}</div>
 					${doc.expected_by ? `<div class="jr-expected-hint">${escapeHtml(relativeDate(doc.expected_by))}</div>` : ""}
 				</td>
+				<td class="jr-col-activity">${renderActivity(doc, listview)}</td>
 			</tr>`;
 	}
 
@@ -272,7 +298,7 @@
 
 		container.querySelectorAll("tr[data-name]").forEach((tr) => {
 			tr.addEventListener("click", (e) => {
-				if (e.target && e.target.closest("input, button, a")) return;
+				if (e.target && e.target.closest("input, button, a, .like-action, .jr-activity")) return;
 				frappe.set_route("Form", DOCTYPE, tr.getAttribute("data-name"));
 			});
 		});
@@ -301,13 +327,14 @@
 				<th class="jr-col-positions">Positions</th>
 				<th class="jr-col-compensation">Compensation</th>
 				<th class="jr-col-expected">Expected By</th>
+				<th class="jr-col-activity"></th>
 			</tr>`;
 
 		$host.html(`
 			<div class="jr-table-wrapper">
 				<table class="jr-table">
 					<thead>${head}</thead>
-					<tbody>${data.map(renderRow).join("")}</tbody>
+					<tbody>${data.map((d) => renderRow(d, listview)).join("")}</tbody>
 				</table>
 			</div>`);
 
@@ -371,7 +398,7 @@
 			"designation", "department", "status", "custom_employment_type",
 			"requested_by", "requested_by_name", "no_of_positions",
 			"expected_compensation", "expected_by", "company",
-			"modified", "creation",
+			"modified", "creation", "_liked_by",
 		],
 
 		onload(listview) {

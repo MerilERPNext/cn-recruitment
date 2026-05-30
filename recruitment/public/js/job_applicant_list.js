@@ -140,6 +140,13 @@
 
 			.ja-owner { display: inline-flex; align-items: center; gap: 6px; color: #374151; font-size: 12px; }
 
+			/* Native activity meta (modified time · comment count · like) */
+			.ja-col-activity { width: 120px; white-space: nowrap; text-align: right; padding-right: 12px !important; }
+			.ja-activity { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; color: #9CA3AF; font-size: 12px; }
+			.ja-activity .comment-count { display: inline-flex; align-items: center; gap: 2px; }
+			.ja-activity .list-row-like, .ja-activity .like-action { cursor: pointer; display: inline-flex; align-items: center; }
+			.ja-activity svg.icon, .ja-activity .icon { width: 14px; height: 14px; }
+
 			/* Hide the loading skeleton rows (we render our own table). */
 			.ja-custom-active .frappe-list .result .list-row-container { display: none !important; }
 			/* Frappe's native column header is replaced by our <thead>, so it's hidden
@@ -268,7 +275,25 @@
 		</span>`;
 	}
 
-	function renderRow(doc) {
+	// Native Frappe row activity: relative modified time, comment count, and the
+	// interactive like/heart (reusing listview.get_like_html so Frappe's delegated
+	// like handler toggles it natively).
+	function renderActivity(doc, listview) {
+		let modified = "";
+		try { modified = frappe.datetime.comment_when(doc.modified, true); } catch (e) { /* noop */ }
+		const cc = doc._comment_count || 0;
+		let chat = "";
+		try { chat = frappe.utils.icon("es-line-chat-alt", "sm"); } catch (e) { /* noop */ }
+		let likeHtml = "";
+		try { likeHtml = (listview && listview.get_like_html) ? listview.get_like_html(doc) : ""; } catch (e) { /* noop */ }
+		return `<div class="ja-activity">
+			<span class="modified">${modified}</span>
+			<span class="comment-count">${chat} ${cc > 99 ? "99+" : cc}</span>
+			<span class="list-row-like">${likeHtml}</span>
+		</div>`;
+	}
+
+	function renderRow(doc, listview) {
 		const statusColor = getStatusColor(doc.status);
 		const score = Math.max(0, Math.min(100, Math.round((Number(doc.applicant_rating) || 0) * 20)));
 		const applied = doc.creation ? frappe.datetime.global_date_format(doc.creation) : "";
@@ -300,6 +325,7 @@
 				<td class="ja-col-source">${escapeHtml(doc.source || doc.source_name || "—")}</td>
 				<td class="ja-col-applied">${escapeHtml(applied)}</td>
 				<td class="ja-col-owner" data-owner="${escapeHtml(doc.owner || "")}">${ownerCellHtml(doc.owner)}</td>
+				<td class="ja-col-activity">${renderActivity(doc, listview)}</td>
 			</tr>`;
 	}
 
@@ -328,7 +354,7 @@
 
 		container.querySelectorAll("tr[data-name]").forEach((tr) => {
 			tr.addEventListener("click", (e) => {
-				if (e.target && e.target.closest("input, button, a")) return;
+				if (e.target && e.target.closest("input, button, a, .like-action, .ja-activity")) return;
 				frappe.set_route("Form", DOCTYPE, tr.getAttribute("data-name"));
 			});
 		});
@@ -355,13 +381,14 @@
 				<th class="ja-col-source">Source</th>
 				<th class="ja-col-applied">Applied</th>
 				<th class="ja-col-owner">Owner</th>
+				<th class="ja-col-activity"></th>
 			</tr>`;
 
 		$host.html(`
 			<div class="ja-table-wrapper">
 				<table class="ja-table">
 					<thead>${head}</thead>
-					<tbody>${data.map(renderRow).join("")}</tbody>
+					<tbody>${data.map((d) => renderRow(d, listview)).join("")}</tbody>
 				</table>
 			</div>`);
 
@@ -453,7 +480,7 @@
 			"applicant_name", "email_id", "phone_number", "status",
 			"job_title", "designation", "source", "source_name",
 			"applicant_rating", "custom_total_experience",
-			"owner", "creation", "modified",
+			"owner", "creation", "modified", "_liked_by",
 		],
 
 		onload(listview) {
