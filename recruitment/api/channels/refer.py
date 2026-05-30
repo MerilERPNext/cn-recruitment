@@ -146,27 +146,50 @@ def my_referrals(employee=None, status=None, search=None):
 	rows = frappe.get_list(
 		"Job Applicant",
 		filters={"custom_referred_by": referrer.name},
-		fields=["name", "applicant_name", "email_id", "designation", "job_title", "status", "creation"],
+		fields=[
+			"name", "applicant_name", "email_id", "phone_number", "designation",
+			"job_title", "status", "custom_recruiter_remark", "creation",
+		],
 		order_by="creation desc",
 		limit_page_length=0,
 	) or []
+
+	opening_cache = {}
+
+	def _opening(name):
+		if name not in opening_cache:
+			opening_cache[name] = frappe.db.get_value(
+				"Job Opening", name,
+				["job_title", "custom_opening_code", "location", "status"],
+				as_dict=True,
+			) or frappe._dict()
+		return opening_cache[name]
 
 	stats = {"total": len(rows), "pending": 0, "interview": 0, "accepted": 0, "rejected": 0}
 	referrals = []
 	for r in rows:
 		group = STATUS_GROUP.get(r.status, "pending")
 		stats[group] += 1
+		op = _opening(r.job_title)
 		referrals.append({
 			"name": r.name,
 			"candidate_name": r.applicant_name,
 			"email": r.email_id,
+			"phone": r.phone_number,
+			"job_title": op.get("job_title") or r.job_title,
+			"opening": r.job_title,
+			"opening_code": op.get("custom_opening_code"),
+			"location": op.get("location"),
+			"location_label": _common._link_label("Branch", op.get("location")) if op.get("location") else None,
 			"designation": r.designation,
 			"designation_label": _common._link_label("Designation", r.designation) if r.designation else None,
-			"opening": r.job_title,
-			"opening_label": _common._link_label("Job Opening", r.job_title) if r.job_title else None,
+			"date_of_referral": r.creation,
 			"status": r.status,
 			"status_group": group,
-			"applied_on": r.creation,
+			"job_status": op.get("status"),          # opening OPEN/CLOSED
+			"referral_status": None,                 # no backing field yet (UI shows "-")
+			"referral_bonus": None,                  # no backing field yet (UI shows "N/A")
+			"comments": r.custom_recruiter_remark,   # recruiter comment (UI shows N/A when empty)
 		})
 
 	# Optional server-side filtering (the page can also filter client-side).
@@ -178,7 +201,61 @@ def my_referrals(employee=None, status=None, search=None):
 			x for x in referrals
 			if needle in (x["candidate_name"] or "").lower()
 			or needle in (x["email"] or "").lower()
+			or needle in (x["phone"] or "").lower()
 			or needle in (x["designation_label"] or x["designation"] or "").lower()
 		]
 
 	return {"stats": stats, "referrals": referrals}
+
+
+@frappe.whitelist()
+def get_referral_application(job_applicant):
+	"""Full application detail of a candidate the current employee referred —
+	the Refer-channel fields grouped by section, with the candidate's submitted
+	values, for the 'view application' screen."""
+	from recruitment.api.candidate_portal import _serialize_doc_field_value
+
+	referrer = _resolve_referrer()
+	if not job_applicant:
+		frappe.throw(frappe._("job_applicant is required"))
+
+	ja = frappe.db.get_value(
+		"Job Applicant", job_applicant,
+		["name", "applicant_name", "email_id", "phone_number", "job_title",
+		 "status", "custom_referred_by", "custom_recruiter_remark"],
+		as_dict=True,
+	)
+	if not ja:
+		frappe.throw(frappe._("Application not found."))
+	if ja.custom_referred_by != referrer.name:
+		frappe.throw(frappe._("You can only view applications you referred."), frappe.PermissionError)
+
+	fields = _common.get_application_fields_for_channel(ja.job_title, CHANNEL)
+	doc = frappe.get_doc("Job Applicant", job_applicant)
+
+	order, by_section = [], {}
+	for f in fields:
+		sec = f.get("section") or "General"
+		if sec not in by_section:
+			by_section[sec] = []
+			order.append(sec)
+		entry = dict(f)
+		entry["value"] = _serialize_doc_field_value(doc, f["reference_name"], f["fieldtype"])
+		by_section[sec].append(entry)
+
+	opening = frappe.db.get_value(
+		"Job Opening", ja.job_title,
+		["name", "job_title", "custom_opening_code", "designation", "department", "location", "status"],
+		as_dict=True,
+	) or frappe._dict()
+
+	return {
+		"job_applicant": ja.name,
+		"candidate_name": ja.applicant_name,
+		"email": ja.email_id,
+		"phone": ja.phone_number,
+		"status": ja.status,
+		"opening": opening,
+		"recruiter_comment": ja.custom_recruiter_remark,
+		"sections": [{"section": s, "fields": by_section[s]} for s in order],
+	}
