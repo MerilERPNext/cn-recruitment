@@ -55,15 +55,15 @@ def _resolve_referrer(referrer_employee=None):
 # ---------------------------------------------------------------------------
 
 @frappe.whitelist()
-def list_openings(employee=None, search=None):
-	"""Openings open for referral. `search` optionally filters by job code / title.
+def list_openings(employee=None, search_term=None):
+	"""Openings open for referral. `search_term` optionally filters by job code / title.
 	The employee arg is accepted for parity with the other channels but currently
 	doesn't gate the list (referrers can refer for any open Refer-active opening)."""
 	# Resolve the referrer so an unauthenticated call still 401s consistently.
 	_resolve_referrer(employee)
 	names = _common.get_openings_active_on_channel(CHANNEL)
 	cards = (_common.get_opening_card(n) for n in names)
-	return [c for c in cards if c and _common.card_matches_search(c, search)]
+	return [c for c in cards if c and _common.card_matches_search(c, search_term)]
 
 
 @frappe.whitelist()
@@ -133,12 +133,12 @@ def submit_referral(opening, data, referrer_employee=None):
 
 
 @frappe.whitelist()
-def my_referrals(employee=None, status=None, search=None):
+def my_referrals(employee=None, status=None, search_term=None):
 	"""Candidates referred by the current (or passed-in) employee, with stat
 	groups for the My Referrals dashboard.
 
 	`status` optionally filters to one group (pending / interview / accepted /
-	rejected); `search` matches candidate name / email / designation. Stats are
+	rejected); `search_term` matches candidate name / email / designation. Stats are
 	always computed over the full (unfiltered) referral set.
 	"""
 	referrer = _resolve_referrer(employee)
@@ -195,8 +195,8 @@ def my_referrals(employee=None, status=None, search=None):
 	# Optional server-side filtering (the page can also filter client-side).
 	if status and status != "all":
 		referrals = [x for x in referrals if x["status_group"] == status]
-	if search:
-		needle = search.strip().lower()
+	if search_term:
+		needle = search_term.strip().lower()
 		referrals = [
 			x for x in referrals
 			if needle in (x["candidate_name"] or "").lower()

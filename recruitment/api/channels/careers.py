@@ -22,16 +22,16 @@ CHANNEL = "careers"
 
 
 @candidate_required
-def list_openings(search=None):
+def list_openings(search_term=None):
 	"""List openings active on the Careers Page for the authenticated candidate.
 
-	`search` optionally filters by job code / title. Authentication is enforced
+	`search_term` optionally filters by job code / title. Authentication is enforced
 	via the `candidate_portal_session` cookie
 	(see `recruitment.api.candidate_auth.candidate_required`).
 	"""
 	names = _common.get_openings_active_on_channel(CHANNEL)
 	cards = (_common.get_opening_card(n) for n in names)
-	return [c for c in cards if c and _common.card_matches_search(c, search)]
+	return [c for c in cards if c and _common.card_matches_search(c, search_term)]
 
 
 @candidate_required

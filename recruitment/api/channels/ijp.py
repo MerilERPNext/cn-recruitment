@@ -119,10 +119,10 @@ def _is_eligible(opening_name, employee_doc):
 # ---------------------------------------------------------------------------
 
 @frappe.whitelist()
-def list_openings(employee=None, search=None):
+def list_openings(employee=None, search_term=None):
 	"""Openings posted on IJP that the (current or passed-in) employee can apply to.
 
-	`search` optionally filters by job code / title.
+	`search_term` optionally filters by job code / title.
 	"""
 	emp = _employee_doc(employee)
 	candidate_names = _common.get_openings_active_on_channel(CHANNEL)
@@ -132,7 +132,7 @@ def list_openings(employee=None, search=None):
 		if not eligible:
 			continue
 		card = _common.get_opening_card(name)
-		if card and _common.card_matches_search(card, search):
+		if card and _common.card_matches_search(card, search_term):
 			result.append(card)
 	return result
 
@@ -275,10 +275,10 @@ def _application_card(row):
 
 
 @frappe.whitelist()
-def my_applications(employee=None, search=None):
+def my_applications(employee=None, search_term=None):
 	"""The current (or passed-in) employee's IJP applications.
 
-	`search` optionally filters by job code (opening_code) or job title.
+	`search_term` optionally filters by job code (opening_code) or job title.
 	"""
 	emp = _employee_doc(employee)
 	rows = frappe.get_list(
@@ -295,8 +295,8 @@ def my_applications(employee=None, search=None):
 
 	applications = [_application_card(r) for r in rows]
 
-	if search:
-		needle = search.strip().lower()
+	if search_term:
+		needle = search_term.strip().lower()
 		applications = [
 			a for a in applications
 			if needle in (a["job_title"] or "").lower()
