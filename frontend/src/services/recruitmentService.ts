@@ -3,7 +3,7 @@ import {
   CreateJobRequisitionPayload,
   CreateJobRequisitionResponse,
 } from "../types/recruitment";
-import { IJPField, IJPApplicationSubmitPayload, IJPApplicationSubmitResponse } from "../components/Recruitment/IJPTypes";
+import { IJPField, IJPApplicationSubmitPayload, IJPApplicationSubmitResponse, MyApplicationsResponse, IJPApplicationWithdrawPayload, IJPApplicationWithdrawResponse } from "../components/Recruitment/IJPTypes";
 
 // Fields that Frappe manages via workflow — never send these from the client
 const FRAPPE_MANAGED_FIELDS = ["status", "workflow_state"];
@@ -65,5 +65,20 @@ export const recruitmentService = {
         data: JSON.stringify(data),
       }
     ) as Promise<IJPApplicationSubmitResponse>;
+  },
+
+  getMyApplications: async (): Promise<MyApplicationsResponse> => {
+    return FrappeAPI.callMethod(
+      "recruitment.api.channels.ijp.my_applications"
+    ) as Promise<MyApplicationsResponse>;
+  },
+
+  withdrawIJPApplication: async (
+    payload: IJPApplicationWithdrawPayload
+  ): Promise<IJPApplicationWithdrawResponse> => {
+    return FrappeAPI.callMethod(
+      "recruitment.api.channels.ijp.withdraw_application",
+      payload as unknown as Record<string, unknown>
+    ) as Promise<IJPApplicationWithdrawResponse>;
   },
 };

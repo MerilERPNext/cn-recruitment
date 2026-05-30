@@ -102,3 +102,55 @@ export interface UseSubmitIJPApplicationVariables {
   data: IJPApplicationSubmitPayload;
 }
 
+export interface IJPApplicationPipelineStep {
+  label: string;
+  state: "done" | "current" | "upcoming" | string;
+}
+
+export interface IJPApplication {
+  name: string;
+  opening: string | null;
+  job_title: string;
+  opening_code: string | null;
+  designation: string | null;
+  designation_label: string | null;
+  department: string | null;
+  department_label: string | null;
+  location: string | null;
+  location_label: string | null;
+  status: string;
+  status_badge: string;
+  current_stage: string;
+  pipeline: IJPApplicationPipelineStep[];
+  experience_declared: string | null;
+  resume: string | null;
+  applied_on: string;
+  can_withdraw: boolean;
+  has_offer: boolean;
+  offer: string | null;
+  job_status?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  sub_status?: string | null;
+  application_status?: string | null;
+  is_withdrawn?: boolean;
+}
+
+export interface MyApplicationsResponse {
+  active_count: number;
+  applications: IJPApplication[];
+}
+
+export interface IJPApplicationWithdrawPayload {
+  job_applicant: string;
+  reason: string;
+}
+
+export interface IJPApplicationWithdrawResponse {
+  status: string;
+  sub_status: string;
+  [key: string]: unknown;
+}
+
+
+

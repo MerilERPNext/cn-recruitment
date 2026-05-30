@@ -345,11 +345,55 @@ export default function ApplyView({
   ): IJPApplicationSubmitPayload => {
     const transformed: IJPApplicationSubmitPayload = {};
 
+    const attachmentFields = new Set<string>();
+    const tableAttachmentFields: Record<string, Set<string>> = {};
+
+    if (fields) {
+      fields.forEach((field) => {
+        if (field.fieldtype === "Attach" || field.fieldtype === "Attach Image") {
+          attachmentFields.add(field.reference_name);
+        }
+        if (field.fieldtype === "Table" && field.table_fields) {
+          const subSet = new Set<string>();
+          field.table_fields.forEach((sub) => {
+            if (sub.fieldtype === "Attach" || sub.fieldtype === "Attach Image") {
+              subSet.add(sub.fieldname);
+            }
+          });
+          tableAttachmentFields[field.reference_name] = subSet;
+        }
+      });
+    }
+
+    const extractFileUrl = (val: unknown): FormValue => {
+      if (Array.isArray(val) && val.length > 0) {
+        const first = val[0];
+        if (first && typeof first === "object") {
+          const obj = first as Record<string, unknown>;
+          const res = obj.url || obj.file_url || obj.name || "";
+          return typeof res === "string" ? res : "";
+        }
+      }
+      if (val && typeof val === "object" && !Array.isArray(val)) {
+        const obj = val as Record<string, unknown>;
+        const res = obj.url || obj.file_url || obj.name || "";
+        return typeof res === "string" ? res : "";
+      }
+      if (typeof val === "string") {
+        return val;
+      }
+      return "";
+    };
+
     // Copy non-table fields first
     Object.keys(data).forEach((key) => {
       const match = key.match(/^(.+)_(\d+)_(.+)$/);
       if (!match) {
-        transformed[key] = data[key];
+        if (attachmentFields.has(key)) {
+          transformed[key] = extractFileUrl(data[key]);
+        } else {
+          transformed[key] = data[key];
+        }
       }
     });
 
@@ -372,7 +416,12 @@ export default function ApplyView({
                   data[key] !== null &&
                   data[key] !== ""
                 ) {
-                  rowData[subField.fieldname] = data[key];
+                  const subAttachments = tableAttachmentFields[field.reference_name];
+                  if (subAttachments && subAttachments.has(subField.fieldname)) {
+                    rowData[subField.fieldname] = extractFileUrl(data[key]);
+                  } else {
+                    rowData[subField.fieldname] = data[key];
+                  }
                   hasValue = true;
                 }
               });
@@ -387,6 +436,10 @@ export default function ApplyView({
         }
       });
     }
+
+    // Set source of application to IJP
+    transformed.source = "IJP";
+    transformed.job_title = job.name;
 
     return transformed;
   };

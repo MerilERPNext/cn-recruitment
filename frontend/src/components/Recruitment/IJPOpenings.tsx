@@ -6,6 +6,7 @@ import CardTable from "../shared/CardTable";
 import DetailView from "./IJPDetailView";
 import ApplyView from "./IJPApplyView";
 import { JobType, propsListViewComponents } from "./IJPTypes";
+import { useMyApplications } from "../../hooks/useRecruitment";
 import { Employee } from "../../types/employee";
 import { Typography } from "../shared/atoms/Typography";
 import Badge from "../shared/Badge";
@@ -41,6 +42,28 @@ const renderStatusBadge = (status: string | null) => {
 
 // ─── Views ────────────────────────────────────────────────────────────────────
 
+const COLUMN_WIDTHS = [
+  "1.25fr",
+  "1.75fr",
+  "1.25fr",
+  "1.25fr",
+  "1.25fr",
+  "1.25fr",
+  "1fr",
+  "1fr",
+];
+
+const TITLES = [
+  "Opening ID",
+  "Job Title",
+  "Designation",
+  "Department",
+  "Company",
+  "Location",
+  "Posted On",
+  "Status",
+];
+
 function ListView({
   appliedIds,
   onSelectJob,
@@ -49,27 +72,6 @@ function ListView({
   const { isDesktop } = useScreenSize();
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
-
-  const columnWidths = [
-    "1.25fr",
-    "1.75fr",
-    "1.25fr",
-    "1.25fr",
-    "1.25fr",
-    "1.25fr",
-    "1fr",
-    "1fr",
-  ];
-  const titles = [
-    "Opening ID",
-    "Job Title",
-    "Designation",
-    "Department",
-    "Company",
-    "Location",
-    "Posted On",
-    "Status",
-  ];
 
   const filterFields: FilterField[] = useMemo(
     () => [
@@ -134,7 +136,7 @@ function ListView({
           return (
             <div
               className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer items-center min-w-max bg-white text-sm"
-              style={{ gridTemplateColumns: columnWidths.join(" ") }}
+              style={{ gridTemplateColumns: COLUMN_WIDTHS.join(" ") }}
               onClick={handleRowClick}
             >
               <div className="text-slate-800 font-medium truncate text-center">
@@ -206,7 +208,10 @@ function ListView({
               {/* Job Title */}
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Job Title</Typography>
-                <Typography variant="mobileCardValue" className="font-semibold text-gray-900">
+                <Typography
+                  variant="mobileCardValue"
+                  className="font-semibold text-gray-900"
+                >
                   {item.job_title}
                 </Typography>
               </div>
@@ -262,7 +267,7 @@ function ListView({
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden w-full max-w-full">
       {isDesktop ? (
-        <CardTable titles={titles} columnWidths={columnWidths}>
+        <CardTable titles={TITLES} columnWidths={COLUMN_WIDTHS}>
           <DataListView
             queryKey={["ijp-openings", currentEmployee?.name || ""]}
             customAPI={{
@@ -318,14 +323,14 @@ export default function IJPOpenings() {
     useCurrentEmployee();
   const [view, setView] = useState("list"); // "list" | "detail" | "apply"
   const [selectedJob, setSelectedJob] = useState<JobType | null>(null);
-  const [appliedIds, setAppliedIds] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem("ijp_applied_ids");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const { data: myAppsData } = useMyApplications();
+
+  const appliedIds = useMemo(() => {
+    if (!myAppsData?.applications) return [];
+    return myAppsData.applications
+      .filter((app) => app.opening && app.status.toLowerCase() !== "withdrawn")
+      .map((app) => app.opening as string);
+  }, [myAppsData]);
 
   const handleSelectJob = (job: JobType) => {
     setSelectedJob(job);
@@ -336,15 +341,8 @@ export default function IJPOpenings() {
   const handleBackToDetail = () => setView("detail");
 
   const handleSubmitDone = useCallback((jobId: string) => {
-    setAppliedIds((prev: string[]) => {
-      const next = [...prev, jobId];
-      try {
-        localStorage.setItem("ijp_applied_ids", JSON.stringify(next));
-      } catch {
-        /* empty */
-      }
-      return next;
-    });
+    // Handled dynamically by useMyApplications invalidation
+    console.log("Application submitted for job:", jobId);
   }, []);
 
   if (isEmployeeLoading) {
