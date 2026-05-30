@@ -1,6 +1,21 @@
-/* global frappe */
+/* global frappe, $ */
 
+/*
+ * Job Opening — custom list rendering on top of Frappe's native list view.
+ *
+ * Frappe owns data (`listview.data`), filtering, sorting, pagination, selection
+ * and the Actions menu. We override `render_list` to draw our styled table into
+ * Frappe's `$result`; each row checkbox uses the native `.list-row-checkbox`
+ * class so native selection / bulk actions work untouched.
+ *
+ * Pipeline counts / total applicants / active interviews / owner name are
+ * aggregates that aren't on the Job Opening doc, so after each render we fetch
+ * them for the visible rows (`get_job_openings_with_stats(names=...)`) and fill
+ * the cells. "Open For" days is computed client-side from posted_on/creation.
+ */
 (function () {
+	const DOCTYPE = "Job Opening";
+
 	const PIPELINE_STAGES = [
 		{ key: "Draft",       color: "#9CA3AF", label: "Draft" },
 		{ key: "Open",        color: "#374151", label: "Open" },
@@ -12,39 +27,57 @@
 		{ key: "Rejected",    color: "#FCA5A5", label: "Rejected" },
 	];
 
-	// Default dot colors for well-known statuses. Anything not listed gets a color
-	// derived from a hash of the status name, so new options in the doctype Just Work.
 	const STATUS_COLORS = {
-		Open: "#10B981",
-		Closed: "#9CA3AF",
-		Draft: "#F59E0B",
-		Hold: "#F59E0B",
-		Cancelled: "#EF4444",
+		Open: "#10B981", Closed: "#9CA3AF", Draft: "#F59E0B", Hold: "#F59E0B", Cancelled: "#EF4444",
 	};
 	const STATUS_FALLBACK_PALETTE = [
 		"#3B82F6", "#8B5CF6", "#EC4899", "#14B8A6",
 		"#F97316", "#0EA5E9", "#84CC16", "#EAB308",
 	];
-
-	function getStatusColor(status) {
-		if (!status) return "#9CA3AF";
-		if (STATUS_COLORS[status]) return STATUS_COLORS[status];
-		let h = 0;
-		for (let i = 0; i < status.length; i++) h = (h * 31 + status.charCodeAt(i)) >>> 0;
-		return STATUS_FALLBACK_PALETTE[h % STATUS_FALLBACK_PALETTE.length];
-	}
-
 	const OWNER_PALETTE = [
 		"#4F46E5", "#0EA5E9", "#10B981", "#F59E0B",
 		"#EF4444", "#8B5CF6", "#EC4899", "#14B8A6",
 	];
 
-	let state = {
-		activeTab: "All",
-		tabCounts: { All: 0, Open: 0, Draft: 0, Closed: 0 },
-		rows: [],
-		loading: false,
-	};
+	function hashStr(s) {
+		let h = 0;
+		for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+		return h;
+	}
+	function getStatusColor(status) {
+		if (!status) return "#9CA3AF";
+		if (STATUS_COLORS[status]) return STATUS_COLORS[status];
+		return STATUS_FALLBACK_PALETTE[hashStr(status) % STATUS_FALLBACK_PALETTE.length];
+	}
+	function avatarColor(name) {
+		if (!name) return OWNER_PALETTE[0];
+		return OWNER_PALETTE[hashStr(name) % OWNER_PALETTE.length];
+	}
+	function escapeHtml(s) {
+		if (s === null || s === undefined) return "";
+		return String(s)
+			.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+			.replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+	}
+	function initialsOf(name) {
+		const parts = String(name || "").replace(/@/g, " ").split(/\s+/).filter(Boolean);
+		if (!parts.length) return "?";
+		return ((parts[0][0] || "") + (parts[1] ? parts[1][0] : "")).toUpperCase() || "?";
+	}
+	function daysOpen(doc) {
+		const startStr = doc.posted_on || doc.creation;
+		if (!startStr) return 0;
+		try {
+			const start = frappe.datetime.str_to_obj(startStr);
+			const end = doc.closed_on
+				? frappe.datetime.str_to_obj(doc.closed_on)
+				: frappe.datetime.str_to_obj(frappe.datetime.get_today());
+			return Math.max(0, Math.round((end - start) / 86400000));
+		} catch (e) { return 0; }
+	}
+
+	let state = { activeTab: "All", tabCounts: {}, statusOptions: [], stats: {} };
+	let _listview = null;
 
 	function injectStyles() {
 		if (document.getElementById("job-opening-list-styles")) return;
@@ -75,10 +108,7 @@
 				background: #F9FAFB; padding: 10px 6px; border-bottom: 1px solid #E5E7EB;
 				white-space: nowrap;
 			}
-			.jo-table tbody td {
-				padding: 12px 6px; border-bottom: 1px solid #F3F4F6; vertical-align: middle;
-			}
-			/* Compact column widths so the row fits without horizontal scroll on narrow viewports */
+			.jo-table tbody td { padding: 12px 6px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
 			.jo-col-check     { width: 28px; padding-left: 10px !important; padding-right: 2px !important; }
 			.jo-col-opening   { min-width: 180px; }
 			.jo-col-status    { width: 72px;  white-space: nowrap; }
@@ -87,10 +117,11 @@
 			.jo-col-interviews{ width: 70px;  white-space: nowrap; }
 			.jo-col-days      { width: 52px;  white-space: nowrap; }
 			.jo-col-owner     { width: 110px; white-space: nowrap; }
-			.jo-col-actions   { width: 56px;  white-space: nowrap; padding-right: 10px !important; }
+			.jo-table tbody tr { cursor: pointer; }
 			.jo-table tbody tr:hover { background: #FAFAFA; }
 			.jo-table tbody tr:last-child td { border-bottom: none; }
 
+			.jo-check { width: 16px; height: 16px; cursor: pointer; }
 			.jo-opening-title { font-weight: 600; color: #111827; }
 			.jo-opening-sub { font-size: 12px; color: #6B7280; margin-top: 2px; }
 			.jo-status-pill {
@@ -124,75 +155,67 @@
 				font-size: 11px; font-weight: 600;
 			}
 
-			.jo-row-actions { display: inline-flex; gap: 6px; }
-			.jo-row-actions button {
-				border: none; background: transparent; padding: 4px; border-radius: 4px;
-				color: #6B7280; cursor: pointer;
-			}
-			.jo-row-actions button:hover { background: #F3F4F6; color: #111827; }
-
-			.jo-checkbox { width: 16px; height: 16px; cursor: pointer; }
-			.jo-empty { padding: 36px; text-align: center; color: #6B7280; }
-
-			/* Hide Frappe's default rendered rows; we render our own table */
-			.jo-custom-active .frappe-list .list-row-head,
-			.jo-custom-active .frappe-list .list-row-container,
-			.jo-custom-active .frappe-list .list-row,
-			.jo-custom-active .frappe-list .no-result,
-			.jo-custom-active .frappe-list .freeze,
-			.jo-custom-active .frappe-list .image-view-container,
-			.jo-custom-active .frappe-list .kanban-board { display: none !important; }
-			/* Our injected hosts must stay visible even though they sit inside .frappe-list */
-			.jo-custom-active #jo-tabs-container,
-			.jo-custom-active #jo-table-container { display: block !important; }
+			/* Hide the loading skeleton rows (we render our own table). */
+			.jo-custom-active .frappe-list .result .list-row-container { display: none !important; }
+			/* Frappe's native column header is replaced by our <thead>, so it's hidden
+			   by default — but we REVEAL it while rows are selected so Frappe's native
+			   selection bar shows ("N items selected", "X of Y", select-all). When
+			   selected, on_row_checked hides the column-label part itself, leaving just
+			   the selection bar. Native paging / no-result / Actions menu stay intact. */
+			.jo-custom-active .frappe-list .result .list-row-head { display: none !important; }
+			.jo-custom-active.jo-has-selection .frappe-list .result .list-row-head { display: flex !important; }
 		`;
 		document.head.appendChild(style);
 	}
 
-	function avatarColor(name) {
-		if (!name) return OWNER_PALETTE[0];
-		let h = 0;
-		for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-		return OWNER_PALETTE[h % OWNER_PALETTE.length];
+	function applyTabFilter(key) {
+		state.activeTab = key;
+		const lv = _listview;
+		if (!lv) return;
+		const field = lv.page && lv.page.fields_dict && lv.page.fields_dict.status;
+		if (field && typeof field.set_value === "function") {
+			// Status is a standard quick-filter: set it DIRECTLY to the target value.
+			// Switching Draft -> Open is a single value change with no intermediate
+			// "clear" step, so there's no stray "show all" fetch to race with.
+			Promise.resolve(field.set_value(key === "All" ? "" : key)).then(() => lv.refresh());
+		} else if (lv.filter_area) {
+			// Status isn't a standard filter (e.g. Job Requisition): mutate the filter
+			// list with refreshes suppressed, then fire a single refresh.
+			const fa = lv.filter_area;
+			fa.trigger_refresh = false;
+			Promise.resolve(fa.remove("status"))
+				.then(() => (key === "All" ? null : fa.add([[DOCTYPE, "status", "=", key]], false)))
+				.then(() => { fa.trigger_refresh = true; lv.refresh(); })
+				.catch(() => { fa.trigger_refresh = true; lv.refresh(); });
+		}
 	}
 
-	function escapeHtml(s) {
-		if (s === null || s === undefined) return "";
-		return String(s)
-			.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-			.replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-	}
-
-	function renderTabs(container) {
-		// Tab order: "All" first, then each status option from the doctype meta (returned by the API).
-		const tabKeys = ["All", ...Object.keys(state.tabCounts).filter((k) => k !== "All")];
+	function renderTabs() {
+		const container = document.getElementById("jo-tabs-container");
+		if (!container) return;
+		const tabKeys = ["All", ...(state.statusOptions || [])];
 		const tabs = tabKeys.map((key) => {
 			const isActive = state.activeTab === key;
 			const count = state.tabCounts[key] ?? 0;
-			const dot = key === "All"
-				? ""
-				: `<span class="jo-tab-dot" style="background:${getStatusColor(key)}"></span>`;
+			const dot = key === "All" ? "" : `<span class="jo-tab-dot" style="background:${getStatusColor(key)}"></span>`;
 			return `
 				<div class="jo-tab ${isActive ? "active" : ""}" data-tab="${escapeHtml(key)}">
 					${dot}<span>${escapeHtml(key)}</span>
 					<span class="jo-tab-count">${count}</span>
 				</div>`;
 		}).join("");
-
 		container.innerHTML = `<div class="jo-tabs">${tabs}</div>`;
-
 		container.querySelectorAll(".jo-tab").forEach((el) => {
 			el.addEventListener("click", () => {
 				const tab = el.getAttribute("data-tab");
 				if (tab === state.activeTab) return;
-				state.activeTab = tab;
-				refreshList();
+				applyTabFilter(tab);
 			});
 		});
 	}
 
-	function renderPipeline(row) {
-		const pipeline = row.pipeline || {};
+	function renderPipeline(pipeline) {
+		pipeline = pipeline || {};
 		const total = PIPELINE_STAGES.reduce((s, p) => s + (pipeline[p.key] || 0), 0);
 		const segments = PIPELINE_STAGES.map((p) => {
 			const v = pipeline[p.key] || 0;
@@ -200,7 +223,6 @@
 			const w = total ? (v / total) * 100 : 0;
 			return `<div class="jo-pipeline-seg" style="width:${w}%;background:${p.color}"></div>`;
 		}).join("");
-
 		const legend = PIPELINE_STAGES.map((p) => {
 			const v = pipeline[p.key] || 0;
 			return `<span class="jo-pipeline-legend-item">
@@ -208,7 +230,6 @@
 				${v} ${escapeHtml(p.label)}
 			</span>`;
 		}).join("");
-
 		return `
 			<div class="jo-pipeline">
 				<div class="jo-pipeline-bar">${segments || '<div class="jo-pipeline-seg" style="width:100%;background:#E5E7EB"></div>'}</div>
@@ -216,69 +237,119 @@
 			</div>`;
 	}
 
-	function renderStatusPill(displayStatus) {
-		if (!displayStatus) return `<span class="jo-status-pill" style="background:#F3F4F6;color:#6B7280">—</span>`;
-		const color = getStatusColor(displayStatus);
-		// Soft background derived from the dot color, dark text for contrast.
+	function renderStatusPill(status) {
+		if (!status) return `<span class="jo-status-pill" style="background:#F3F4F6;color:#6B7280">—</span>`;
+		const color = getStatusColor(status);
 		return `<span class="jo-status-pill" style="background:${color}1a;color:#111827">
-			<span class="jo-status-dot" style="background:${color}"></span>${escapeHtml(displayStatus)}
+			<span class="jo-status-dot" style="background:${color}"></span>${escapeHtml(status)}
 		</span>`;
 	}
 
-	function renderOwner(owner) {
-		if (!owner || !owner.id) {
-			return `<span class="jo-owner"><span class="jo-owner-avatar" style="background:#9CA3AF">?</span>—</span>`;
-		}
-		const color = avatarColor(owner.id);
-		return `
-			<span class="jo-owner">
-				<span class="jo-owner-avatar" style="background:${color}">${escapeHtml(owner.initials || "?")}</span>
-				${escapeHtml((owner.name || "").split(" ")[0])}
-			</span>`;
+	// Initial owner cell before stats arrive: fall back to the owner id's local part.
+	// Once stats load, fillStats() replaces this with the resolved full name.
+	function ownerCellHtml(ownerId) {
+		if (!ownerId) return `<span class="jo-owner"><span class="jo-owner-avatar" style="background:#9CA3AF">?</span>—</span>`;
+		const display = ownerId.split("@")[0] || ownerId;
+		return `<span class="jo-owner">
+			<span class="jo-owner-avatar" style="background:${avatarColor(ownerId)}">${escapeHtml(initialsOf(ownerId))}</span>${escapeHtml(display)}
+		</span>`;
 	}
 
-	function renderRow(row) {
-		const sub = [row.designation, row.department, row.location].filter(Boolean).map(escapeHtml).join("  ·  ");
-		const interviews = row.active_interviews || 0;
-		const interviewBadge = interviews
-			? `<span class="jo-interview-badge"><span>📅</span> ${interviews} active</span>`
+	function interviewBadge(n) {
+		return n
+			? `<span class="jo-interview-badge"><span>📅</span> ${n} active</span>`
 			: `<span class="jo-interview-badge is-empty">—</span>`;
+	}
 
+	function renderRow(doc) {
+		const sub = [doc.designation, doc.department, doc.location].filter(Boolean).map(escapeHtml).join("  ·  ");
 		return `
-			<tr data-name="${escapeHtml(row.name)}">
-				<td class="jo-col-check"><input type="checkbox" class="jo-checkbox jo-row-check" data-name="${escapeHtml(row.name)}"/></td>
+			<tr data-name="${escapeHtml(doc.name)}">
+				<td class="jo-col-check"><input type="checkbox" class="jo-check list-row-checkbox" data-doctype="${DOCTYPE}" data-name="${escapeHtml(doc.name)}"/></td>
 				<td class="jo-col-opening">
-					<div class="jo-opening-title">${escapeHtml(row.job_title || row.name)}</div>
-					<div class="jo-opening-sub">${escapeHtml(row.name)}${sub ? "  ·  " + sub : ""}</div>
+					<div class="jo-opening-title">${escapeHtml(doc.job_title || doc.name)}</div>
+					<div class="jo-opening-sub">${escapeHtml(doc.name)}${sub ? "  ·  " + sub : ""}</div>
 				</td>
-				<td class="jo-col-status">${renderStatusPill(row.display_status)}</td>
-				<td class="jo-col-applicants"><span class="jo-applicants">${row.total_applicants || 0}</span><span class="jo-applicants-sub">total</span></td>
-				<td class="jo-col-pipeline">${renderPipeline(row)}</td>
-				<td class="jo-col-interviews">${interviewBadge}</td>
-				<td class="jo-col-days"><span class="jo-days">${row.open_for_days || 0}d</span></td>
-				<td class="jo-col-owner">${renderOwner(row.owner)}</td>
-				<td class="jo-col-actions">
-					<div class="jo-row-actions">
-						<button data-action="open" title="Open in new tab">↗</button>
-						<button data-action="more" title="More">⋮</button>
-					</div>
-				</td>
+				<td class="jo-col-status">${renderStatusPill(doc.status)}</td>
+				<td class="jo-col-applicants" data-stat="applicants"><span class="jo-applicants">0</span><span class="jo-applicants-sub">total</span></td>
+				<td class="jo-col-pipeline" data-stat="pipeline">${renderPipeline(null)}</td>
+				<td class="jo-col-interviews" data-stat="interviews">${interviewBadge(0)}</td>
+				<td class="jo-col-days"><span class="jo-days">${daysOpen(doc)}d</span></td>
+				<td class="jo-col-owner" data-stat="owner" data-owner="${escapeHtml(doc.owner || "")}">${ownerCellHtml(doc.owner)}</td>
 			</tr>`;
 	}
 
-	function renderTable(container) {
-		if (state.loading) {
-			container.innerHTML = `<div class="jo-empty">Loading…</div>`;
-			return;
+	function fillStats() {
+		const $result = _listview && _listview.$result;
+		if (!$result || !$result.length) return;
+		$result.find("tr[data-name]").each(function () {
+			const name = this.getAttribute("data-name");
+			const s = state.stats[name];
+			if (!s) return;
+			const applicants = this.querySelector('[data-stat="applicants"]');
+			if (applicants) applicants.innerHTML = `<span class="jo-applicants">${s.total_applicants || 0}</span><span class="jo-applicants-sub">total</span>`;
+			const pipeline = this.querySelector('[data-stat="pipeline"]');
+			if (pipeline) pipeline.innerHTML = renderPipeline(s.pipeline);
+			const interviews = this.querySelector('[data-stat="interviews"]');
+			if (interviews) interviews.innerHTML = interviewBadge(s.active_interviews || 0);
+			const owner = this.querySelector('[data-stat="owner"]');
+			if (owner && s.owner && s.owner.id) {
+				const display = (s.owner.name || s.owner.id).split(" ")[0];
+				owner.innerHTML = `<span class="jo-owner">
+					<span class="jo-owner-avatar" style="background:${avatarColor(s.owner.id)}">${escapeHtml(s.owner.initials || "?")}</span>${escapeHtml(display)}
+				</span>`;
+			}
+		});
+	}
+
+	function updateSelectAllState(container) {
+		const selectAll = container.querySelector(".jo-select-all");
+		if (!selectAll) return;
+		const all = Array.from(container.querySelectorAll(".list-row-checkbox"));
+		selectAll.checked = all.length > 0 && all.every((c) => c.checked);
+		selectAll.indeterminate = !selectAll.checked && all.some((c) => c.checked);
+	}
+
+	function bindTable(container, listview) {
+		const selectAll = container.querySelector(".jo-select-all");
+		if (selectAll) {
+			selectAll.addEventListener("click", (e) => e.stopPropagation());
+			selectAll.addEventListener("change", () => {
+				container.querySelectorAll(".list-row-checkbox").forEach((cb) => { cb.checked = selectAll.checked; });
+				if (typeof listview.on_row_checked === "function") listview.on_row_checked();
+			});
 		}
-		if (!state.rows.length) {
-			container.innerHTML = `<div class="jo-empty">No job openings found.</div>`;
-			return;
+		container.querySelectorAll(".list-row-checkbox").forEach((cb) => {
+			cb.addEventListener("click", (e) => e.stopPropagation());
+			cb.addEventListener("change", () => updateSelectAllState(container));
+		});
+		updateSelectAllState(container);
+
+		// Row click → Job Applicant list filtered by this opening
+		container.querySelectorAll("tr[data-name]").forEach((tr) => {
+			tr.addEventListener("click", (e) => {
+				if (e.target && e.target.closest("input, button, a")) return;
+				const name = tr.getAttribute("data-name");
+				frappe.route_options = { job_title: name };
+				frappe.set_route("List", "Job Applicant");
+			});
+		});
+	}
+
+	function renderTableInto(listview) {
+		const $result = listview.$result;
+		if (!$result || !$result.length) return;
+		let $host = $result.find(".jo-host");
+		if (!$host.length) {
+			$host = $('<div class="jo-host"></div>');
+			$result.append($host);
 		}
+		const data = listview.data || [];
+		if (!data.length) { $host.html(""); return; }
 
 		const head = `
 			<tr>
-				<th class="jo-col-check"><input type="checkbox" class="jo-checkbox jo-select-all"/></th>
+				<th class="jo-col-check"><input type="checkbox" class="jo-check jo-select-all"/></th>
 				<th class="jo-col-opening">Opening</th>
 				<th class="jo-col-status">Status</th>
 				<th class="jo-col-applicants">Applicants</th>
@@ -286,171 +357,101 @@
 				<th class="jo-col-interviews">Interviews</th>
 				<th class="jo-col-days">Open For</th>
 				<th class="jo-col-owner">Owner</th>
-				<th class="jo-col-actions"></th>
 			</tr>`;
 
-		const body = state.rows.map(renderRow).join("");
-		container.innerHTML = `
+		$host.html(`
 			<div class="jo-table-wrapper">
 				<table class="jo-table">
 					<thead>${head}</thead>
-					<tbody>${body}</tbody>
+					<tbody>${data.map(renderRow).join("")}</tbody>
 				</table>
-			</div>`;
+			</div>`);
 
-		// Select-all checkbox in header toggles all row checkboxes
-		const selectAll = container.querySelector(".jo-select-all");
-		const rowChecks = container.querySelectorAll(".jo-row-check");
-		if (selectAll) {
-			selectAll.addEventListener("click", (e) => e.stopPropagation());
-			selectAll.addEventListener("change", () => {
-				rowChecks.forEach((cb) => { cb.checked = selectAll.checked; });
-			});
+		bindTable($host[0], listview);
+		if (typeof listview.set_rows_as_checked === "function") {
+			try { listview.set_rows_as_checked(); } catch (e) { /* noop */ }
 		}
-		rowChecks.forEach((cb) => {
-			cb.addEventListener("click", (e) => e.stopPropagation());
-			cb.addEventListener("change", () => {
-				if (!selectAll) return;
-				const all = Array.from(rowChecks);
-				selectAll.checked = all.every((c) => c.checked);
-				selectAll.indeterminate = !selectAll.checked && all.some((c) => c.checked);
-			});
-		});
-
-		// Row click → Job Applicant list filtered by this opening
-		container.querySelectorAll("tr[data-name]").forEach((tr) => {
-			tr.addEventListener("click", (e) => {
-				if (e.target && e.target.closest("input, button")) return;
-				const name = tr.getAttribute("data-name");
-				frappe.route_options = { job_title: name };
-				frappe.set_route("List", "Job Applicant");
-			});
-		});
-
-		// ↗ action → open Job Opening form in a NEW tab
-		// ⋮ action → open Job Opening form (same tab)
-		container.querySelectorAll("button[data-action]").forEach((btn) => {
-			btn.addEventListener("click", (e) => {
-				e.stopPropagation();
-				const tr = btn.closest("tr[data-name]");
-				const name = tr && tr.getAttribute("data-name");
-				const action = btn.getAttribute("data-action");
-				if (!name) return;
-				if (action === "open") {
-					window.open(`/app/job-opening/${encodeURIComponent(name)}`, "_blank");
-				} else if (action === "more") {
-					frappe.set_route("Form", "Job Opening", name);
-				}
-			});
-		});
+		fillStats();   // fill from cached stats immediately (if any), then refresh
+		fetchAux();
 	}
 
-	function getActiveListView() {
-		return frappe.views && frappe.views.list_view
-			? frappe.views.list_view["Job Opening"]
-			: null;
-	}
-
-	function getSearchTerm(listview) {
-		try {
-			const tagsInput = listview.page.page_form.find('input[data-fieldname="tag"]');
-			if (tagsInput.length) return tagsInput.val() || "";
-		} catch (e) { /* noop */ }
-		return "";
-	}
-
-	let pendingFetch = null;
-	function refreshList() {
-		const listview = getActiveListView();
-		if (!listview) return;
-
-		const tabsContainer = document.getElementById("jo-tabs-container");
-		const tableContainer = document.getElementById("jo-table-container");
-		if (!tableContainer) return;
-
-		state.loading = true;
-		renderTable(tableContainer);
-
-		const args = {
-			status: state.activeTab === "All" ? null : state.activeTab,
-			search: getSearchTerm(listview),
-			start: (listview.start || 0),
-			page_length: (listview.page_length || 20),
-			order_by: listview.sort_by ? `${listview.sort_by} ${listview.sort_order || "desc"}` : "modified desc",
-		};
-
-		if (pendingFetch) pendingFetch.aborted = true;
-		const token = { aborted: false };
-		pendingFetch = token;
-
+	let _auxToken = 0;
+	function fetchAux() {
+		const data = (_listview && _listview.data) || [];
+		const names = data.map((d) => d.name);
+		const token = ++_auxToken;
 		frappe.call({
 			method: "recruitment.api.job_opening_list.get_job_openings_with_stats",
-			args,
+			args: { names: JSON.stringify(names) },
 			callback: (r) => {
-				if (token.aborted) return;
-				const msg = (r && r.message) || { data: [], total_count: 0, tab_counts: state.tabCounts };
-				state.rows = msg.data || [];
-				state.tabCounts = msg.tab_counts || state.tabCounts;
-				state.loading = false;
-				if (tabsContainer) renderTabs(tabsContainer);
-				renderTable(tableContainer);
-			},
-			error: () => {
-				if (token.aborted) return;
-				state.loading = false;
-				renderTable(tableContainer);
+				if (token !== _auxToken) return;
+				const msg = (r && r.message) || {};
+				state.tabCounts = msg.tab_counts || {};
+				state.statusOptions = msg.status_options || [];
+				state.stats = Object.assign({}, state.stats, msg.stats || {});
+				renderTabs();
+				fillStats();
 			},
 		});
 	}
 
-	function mountCustomLayout(listview) {
-		const layoutMain = listview.$page.find(".layout-main-section");
-		if (!layoutMain.length) return;
-		if (layoutMain.find("#jo-tabs-container").length) return;
-
-		layoutMain.addClass("jo-custom-active");
-
-		const tabsHost = $('<div id="jo-tabs-container"></div>');
-		const tableHost = $('<div id="jo-table-container" style="margin-top:12px"></div>');
-
-		const resultEl = layoutMain.find(".frappe-list .result");
-		if (resultEl.length) {
-			resultEl.before(tabsHost);
-			resultEl.before(tableHost);
-		} else {
-			layoutMain.prepend(tableHost);
-			layoutMain.prepend(tabsHost);
-		}
-
-		renderTabs(tabsHost[0]);
-		renderTable(tableHost[0]);
+	function syncActiveTabFromFilters(listview) {
+		try {
+			const filters = (listview.filter_area && listview.filter_area.get()) || [];
+			const f = filters.find((arr) => arr && arr[1] === "status" && arr[2] === "=");
+			state.activeTab = f && f[3] ? f[3] : "All";
+		} catch (e) { state.activeTab = "All"; }
 	}
 
-	frappe.listview_settings["Job Opening"] = {
+	function mountAboveList(listview) {
+		const layoutMain = listview.$page.find(".layout-main-section");
+		if (!layoutMain.length) return;
+		layoutMain.addClass("jo-custom-active");
+		if (layoutMain.find("#jo-tabs-container").length) return;
+		const tabsHost = $('<div id="jo-tabs-container"></div>');
+		const resultEl = layoutMain.find(".frappe-list .result");
+		if (resultEl.length) resultEl.before(tabsHost);
+		else layoutMain.prepend(tabsHost);
+	}
+
+	function installRenderOverride(listview) {
+		if (listview._jo_render_patched) return;
+		listview._jo_render_patched = true;
+		listview.render_list = function () { renderTableInto(this); };
+		listview.render_header = function () { /* custom <thead> instead */ };
+
+		// Reveal Frappe's native selection bar only while rows are selected.
+		const origOnRowChecked = listview.on_row_checked.bind(listview);
+		listview.on_row_checked = function () {
+			origOnRowChecked();
+			const any = this.$result.find(".list-row-checkbox:checked").length > 0;
+			this.$page.find(".layout-main-section").toggleClass("jo-has-selection", any);
+		};
+	}
+
+	frappe.listview_settings[DOCTYPE] = {
 		hide_name_column: true,
 		add_fields: [
 			"job_title", "designation", "department", "location",
 			"status", "publish", "posted_on", "closes_on", "closed_on",
-			"owner", "modified", "name",
+			"owner", "creation", "modified", "name",
 		],
 
 		onload(listview) {
+			_listview = listview;
 			injectStyles();
-			mountCustomLayout(listview);
-
-			// Refresh our custom table whenever the user changes filters/search/page.
-			const debounced = frappe.utils.debounce(refreshList, 200);
-			listview.$page.on(
-				"change keyup",
-				".standard-filter-section input, .standard-filter-section select, .page-form input, .page-form select",
-				debounced,
-			);
-			refreshList();
+			mountAboveList(listview);
+			installRenderOverride(listview);
+			syncActiveTabFromFilters(listview);
+			renderTabs();
 		},
 
 		refresh(listview) {
-			mountCustomLayout(listview);
-			refreshList();
+			_listview = listview;
+			mountAboveList(listview);
+			installRenderOverride(listview);
+			syncActiveTabFromFilters(listview);
+			renderTabs();
 		},
 	};
 })();
