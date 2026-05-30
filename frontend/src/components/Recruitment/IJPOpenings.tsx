@@ -113,7 +113,7 @@ function ListView({
         ];
         filtered = filtered.filter((item) =>
           searchFields.some((field) =>
-            item[field]?.toString().toLowerCase().includes(s),
+            item[field] ? String(item[field]).toLowerCase().includes(s) : false,
           ),
         );
       }
@@ -328,7 +328,7 @@ export default function IJPOpenings() {
   const appliedIds = useMemo(() => {
     if (!myAppsData?.applications) return [];
     return myAppsData.applications
-      .filter((app) => app.opening && app.status.toLowerCase() !== "withdrawn")
+      .filter((app) => app.opening && app.status?.toLowerCase() !== "withdrawn")
       .map((app) => app.opening as string);
   }, [myAppsData]);
 

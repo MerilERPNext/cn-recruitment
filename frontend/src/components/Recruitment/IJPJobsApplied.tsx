@@ -135,7 +135,7 @@ export default function IJPJobsApplied() {
         ];
         filtered = filtered.filter((item) =>
           searchFields.some((field) =>
-            item[field]?.toString().toLowerCase().includes(s),
+            item[field] ? String(item[field]).toLowerCase().includes(s) : false,
           ),
         );
       }
@@ -177,7 +177,7 @@ export default function IJPJobsApplied() {
               </div>
               <div className="flex justify-center items-center">
                 {item.can_withdraw &&
-                item.status.toLowerCase() !== "withdrawn" ? (
+                item.status?.toLowerCase() !== "withdrawn" ? (
                   <Button
                     variant="outline"
                     className="border-red-200 hover:bg-red-50 text-red-600 p-1.5"
@@ -263,7 +263,7 @@ export default function IJPJobsApplied() {
 
               {/* Action Button on mobile card footer */}
               {item.can_withdraw &&
-                item.status.toLowerCase() !== "withdrawn" && (
+                item.status?.toLowerCase() !== "withdrawn" && (
                   <div className="flex justify-end pt-2 border-t border-gray-100 mt-2">
                     <Button
                       variant="outline"

@@ -100,7 +100,7 @@ export default function ApplyView({
 
       // ─── Table Fieldtype (Stacked Panels instead of Datagrid) ───
       if (field.fieldtype === "Table" && Array.isArray(field.table_fields)) {
-        const rowCount = rowCounts[field.reference_name] || 1;
+        const rowCount = rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
         const panels: Record<string, unknown>[] = [];
 
         for (let i = 0; i < rowCount; i++) {
@@ -631,7 +631,7 @@ export default function ApplyView({
                           setRowCounts((prev) => ({
                             ...prev,
                             [field.reference_name]:
-                              (prev[field.reference_name] || 1) + 1,
+                              (prev[field.reference_name] ?? (field.reqd === 1 ? 1 : 0)) + 1,
                           }));
                         }}
                       >
