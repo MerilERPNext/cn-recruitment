@@ -123,6 +123,21 @@ def _link_label(doctype, name):
 	return frappe.get_cached_value(doctype, name, title_field) or name
 
 
+def card_matches_search(card, search):
+	"""Case-insensitive match of an opening card against a search term (job code /
+	title / id / designation / location / department labels)."""
+	if not search:
+		return True
+	needle = str(search).strip().lower()
+	if not needle:
+		return True
+	haystack = " ".join(
+		str(card.get(k) or "")
+		for k in ("name", "job_title", "opening_code", "designation", "location", "department")
+	).lower()
+	return needle in haystack
+
+
 def get_opening_card(opening_name):
 	"""Compact serialisation used in listing endpoints."""
 	row = frappe.db.get_value(

@@ -119,8 +119,11 @@ def _is_eligible(opening_name, employee_doc):
 # ---------------------------------------------------------------------------
 
 @frappe.whitelist()
-def list_openings(employee=None):
-	"""Openings posted on IJP that the (current or passed-in) employee can apply to."""
+def list_openings(employee=None, search=None):
+	"""Openings posted on IJP that the (current or passed-in) employee can apply to.
+
+	`search` optionally filters by job code / title.
+	"""
 	emp = _employee_doc(employee)
 	candidate_names = _common.get_openings_active_on_channel(CHANNEL)
 	result = []
@@ -129,7 +132,7 @@ def list_openings(employee=None):
 		if not eligible:
 			continue
 		card = _common.get_opening_card(name)
-		if card:
+		if card and _common.card_matches_search(card, search):
 			result.append(card)
 	return result
 
@@ -206,16 +209,20 @@ def _build_pipeline(status):
 	return stages, current
 
 
+WITHDRAWN_SUBSTATUS = "Withdrawn by Candidate"
+
+
 def _application_card(row):
-	"""Serialise one IJP Job Applicant into the My-Applied card shape."""
+	"""Serialise one IJP Job Applicant into the My-Applied table-row shape."""
 	opening = frappe.db.get_value(
 		"Job Opening",
 		row.job_title,
-		["name", "job_title", "designation", "department", "location", "custom_opening_code"],
+		["name", "job_title", "designation", "department", "location", "custom_opening_code", "status"],
 		as_dict=True,
 	) or frappe._dict()
 
 	stages, current = _build_pipeline(row.status)
+	is_withdrawn = (row.custom_substatus or "") == WITHDRAWN_SUBSTATUS
 
 	# Offer lookup — drives the "View Offer Letter" affordance (built later).
 	offer = frappe.db.get_value(
@@ -229,46 +236,114 @@ def _application_card(row):
 	else:
 		badge = IJP_STAGES[current]
 
+	# Display status for the table's Status column: a withdrawal / explicit
+	# sub-status wins, otherwise fall back to the pipeline stage (e.g. "Screening").
+	if is_withdrawn:
+		status_display = WITHDRAWN_SUBSTATUS
+	else:
+		status_display = row.custom_substatus or IJP_STAGES[current]
+
 	designation = row.designation or opening.designation
 	return {
 		"name": row.name,
 		"opening": opening.name,
 		"job_title": opening.job_title or row.job_title,
 		"opening_code": opening.custom_opening_code,
+		"job_status": opening.status,                 # opening's OPEN/CLOSED status
+		"email": row.email_id,
+		"phone": row.phone_number,
+		"applied_on": row.creation,
+		"status": status_display,                     # value shown in the Status column
+		"sub_status": row.custom_substatus,
+		"application_status": row.status,             # raw Job Applicant status
+		"is_withdrawn": is_withdrawn,
+		"can_withdraw": (not is_withdrawn) and row.status not in TERMINAL_STATUSES,
 		"designation": designation,
 		"designation_label": _common._link_label("Designation", designation) if designation else None,
 		"department": opening.department,
 		"department_label": _common._link_label("Department", opening.department) if opening.department else None,
 		"location": opening.location,
 		"location_label": _common._link_label("Branch", opening.location) if opening.location else None,
-		"status": row.status,
 		"status_badge": badge,
 		"current_stage": IJP_STAGES[current],
 		"pipeline": stages,
 		"experience_declared": row.custom_total_experience,
 		"resume": row.resume_attachment or row.resume_link,
-		"applied_on": row.creation,
-		"can_withdraw": row.status not in TERMINAL_STATUSES,
 		"has_offer": bool(offer),
 		"offer": offer,
 	}
 
 
 @frappe.whitelist()
-def my_applications(employee=None):
-	"""The current (or passed-in) employee's IJP applications, with pipeline state."""
+def my_applications(employee=None, search=None):
+	"""The current (or passed-in) employee's IJP applications.
+
+	`search` optionally filters by job code (opening_code) or job title.
+	"""
 	emp = _employee_doc(employee)
 	rows = frappe.get_list(
 		"Job Applicant",
 		filters={"custom_applied_employee": emp.name},
 		fields=[
-			"name", "job_title", "designation", "status",
-			"custom_total_experience", "resume_attachment", "resume_link", "creation",
+			"name", "job_title", "designation", "status", "custom_substatus",
+			"email_id", "phone_number", "custom_total_experience",
+			"resume_attachment", "resume_link", "creation",
 		],
 		order_by="creation desc",
 		limit_page_length=0,
 	) or []
 
 	applications = [_application_card(r) for r in rows]
-	active_count = sum(1 for a in applications if a["status"] != "Rejected")
+
+	if search:
+		needle = search.strip().lower()
+		applications = [
+			a for a in applications
+			if needle in (a["job_title"] or "").lower()
+			or needle in (a["opening_code"] or "").lower()
+			or needle in (a["opening"] or "").lower()
+		]
+
+	active_count = sum(1 for a in applications if not a["is_withdrawn"] and a["application_status"] != "Rejected")
 	return {"active_count": active_count, "applications": applications}
+
+
+@frappe.whitelist()
+def withdraw_application(job_applicant, reason):
+	"""Candidate withdraws their own IJP application.
+
+	Sets the sub-status to "Withdrawn by Candidate" and records the reason on the
+	applicant's timeline. Only the employee who applied may withdraw.
+	"""
+	emp = _employee_doc()
+
+	if not job_applicant:
+		frappe.throw(frappe._("job_applicant is required"))
+	reason = (reason or "").strip()
+	if not reason:
+		frappe.throw(frappe._("Please provide a reason for withdrawal."))
+
+	applicant = frappe.db.get_value(
+		"Job Applicant", job_applicant,
+		["name", "custom_applied_employee", "custom_substatus", "status"], as_dict=True,
+	)
+	if not applicant:
+		frappe.throw(frappe._("Application not found."))
+	if applicant.custom_applied_employee != emp.name:
+		frappe.throw(frappe._("You can only withdraw your own application."), frappe.PermissionError)
+	if (applicant.custom_substatus or "") == WITHDRAWN_SUBSTATUS:
+		return {"status": "ok", "already_withdrawn": True}
+	if applicant.status in TERMINAL_STATUSES:
+		frappe.throw(frappe._("This application can no longer be withdrawn."))
+
+	frappe.db.set_value(
+		"Job Applicant", job_applicant,
+		{"custom_substatus": WITHDRAWN_SUBSTATUS, "custom_withdrawal_reason": reason},
+		update_modified=True,
+	)
+	# Timeline note too, for an audit trail.
+	frappe.get_doc("Job Applicant", job_applicant).add_comment(
+		"Comment", frappe._("Application withdrawn by candidate. Reason: {0}").format(reason)
+	)
+	frappe.db.commit()
+	return {"status": "ok", "sub_status": WITHDRAWN_SUBSTATUS}

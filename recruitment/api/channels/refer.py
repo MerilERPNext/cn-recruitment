@@ -55,14 +55,15 @@ def _resolve_referrer(referrer_employee=None):
 # ---------------------------------------------------------------------------
 
 @frappe.whitelist()
-def list_openings(employee=None):
-	"""Openings open for referral. employee arg is accepted for parity with the
-	other channels but currently doesn't gate the list (referrers can refer
-	for any open Refer-active opening)."""
+def list_openings(employee=None, search=None):
+	"""Openings open for referral. `search` optionally filters by job code / title.
+	The employee arg is accepted for parity with the other channels but currently
+	doesn't gate the list (referrers can refer for any open Refer-active opening)."""
 	# Resolve the referrer so an unauthenticated call still 401s consistently.
 	_resolve_referrer(employee)
 	names = _common.get_openings_active_on_channel(CHANNEL)
-	return [card for card in (_common.get_opening_card(n) for n in names) if card]
+	cards = (_common.get_opening_card(n) for n in names)
+	return [c for c in cards if c and _common.card_matches_search(c, search)]
 
 
 @frappe.whitelist()
