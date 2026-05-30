@@ -117,7 +117,7 @@ export default function IJPJobsApplied() {
 
       if (statusFilter) {
         filtered = filtered.filter((item) =>
-          (item.status_badge || item.status || "")
+          (item.status || "")
             .toLowerCase()
             .includes(statusFilter.toLowerCase()),
         );
@@ -131,7 +131,7 @@ export default function IJPJobsApplied() {
           "name",
           "email",
           "phone",
-          "status_badge",
+          "status",
         ];
         filtered = filtered.filter((item) =>
           searchFields.some((field) =>
@@ -173,7 +173,7 @@ export default function IJPJobsApplied() {
                 {item.applied_on ? formatToIndianDate(item.applied_on) : "--"}
               </div>
               <div className="flex justify-center items-center">
-                {renderStatusBadge(item.status_badge || item.status)}
+                {renderStatusBadge(item.status)}
               </div>
               <div className="flex justify-center items-center">
                 {item.can_withdraw &&
@@ -210,7 +210,7 @@ export default function IJPJobsApplied() {
                   </Typography>
                 </div>
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
-                  {renderStatusBadge(item.status_badge || item.status)}
+                  {renderStatusBadge(item.status)}
                 </div>
               </div>
 
@@ -291,7 +291,7 @@ export default function IJPJobsApplied() {
       {isDesktop && (
         <div className="flex-shrink-0">
           <div className="px-4 py-1 md:pb-4">
-            <Typography variant="h4">My Applications</Typography>
+            <Typography variant="h4">IJP Jobs Applied</Typography>
             <Typography variant="bodySmall" color="body2">
               View status and details of your submitted job applications
             </Typography>

@@ -62,14 +62,14 @@ export function useSubmitIJPApplication(): UseMutationResult<
     mutationFn: ({ opening, data }: UseSubmitIJPApplicationVariables) =>
       recruitmentService.submitIJPApplication(opening, data),
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    onSuccess: (_, { opening }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["ijp-openings"],
       });
       queryClient.invalidateQueries({
         queryKey: ["my-applications"],
       });
+      toast.success("Application submitted successfully");
     },
     onError: (error) => {
       toast.error(
