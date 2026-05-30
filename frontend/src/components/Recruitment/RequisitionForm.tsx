@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect,} from "react";
 import { Form } from "@tsed/react-formio";
 import {
   requisitionSteps,
@@ -60,8 +60,15 @@ function validateStep(
   // Step 2: validate position rows
   if (step === 2) {
     const positions: any[] = (formData as any).positions ?? [];
+    const total = Number((formData as any).number_of_positions) || 0;
+    const newPos = Number((formData as any).number_of_new_positions) || 0;
+    const repPos = Number((formData as any).number_of_replacement_positions) || 0;
+
     if (positions.length === 0) {
       errors.push("At least one position is required.");
+    }
+    if (total > 0 && newPos + repPos !== total) {
+      errors.push("New Positions + Replacement Positions must equal Total Positions.");
     }
     positions.forEach((pos, i) => {
       if (!pos.vacancy_type) {
@@ -189,127 +196,7 @@ const RequisitionForm = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-  const prevTotalRef = useRef<any>(formData.number_of_positions);
-  const prevNewRef = useRef<any>(formData.number_of_new_positions);
-  const prevRepRef = useRef<any>(formData.number_of_replacement_positions);
 
-  useEffect(() => {
-    const total = parseInt(formData.number_of_positions as any) || 0;
-    const newP = parseInt(formData.number_of_new_positions as any) || 0;
-    const repP = parseInt(formData.number_of_replacement_positions as any) || 0;
-
-    const prevTotal = parseInt(prevTotalRef.current as any) || 0;
-    const prevNew = parseInt(prevNewRef.current as any) || 0;
-    const prevRep = parseInt(prevRepRef.current as any) || 0;
-
-    prevTotalRef.current = formData.number_of_positions;
-    prevNewRef.current = formData.number_of_new_positions;
-    prevRepRef.current = formData.number_of_replacement_positions;
-
-    const totalChanged = total !== prevTotal;
-    const newChanged = newP !== prevNew;
-    const repChanged = repP !== prevRep;
-
-    if (!totalChanged && !newChanged && !repChanged) {
-      const positions = formData.positions || [];
-      const actualNew = positions.filter((p) => p.vacancy_type === "New").length;
-      const actualRep = positions.filter((p) => p.vacancy_type === "Replacement").length;
-      const actualTotal = positions.length;
-
-      if (total !== actualTotal || newP !== actualNew || repP !== actualRep) {
-        setFormData((prev: any) => ({
-          ...prev,
-          number_of_positions: actualTotal,
-          number_of_new_positions: actualNew,
-          number_of_replacement_positions: actualRep,
-        }));
-        prevTotalRef.current = actualTotal;
-        prevNewRef.current = actualNew;
-        prevRepRef.current = actualRep;
-      }
-      return;
-    }
-
-    const handler = setTimeout(() => {
-      setFormData((prev: any) => {
-        const currentTotal = parseInt(prev.number_of_positions as any) || 0;
-        const currentNew = parseInt(prev.number_of_new_positions as any) || 0;
-        const currentRep = parseInt(prev.number_of_replacement_positions as any) || 0;
-
-        let finalTotal = currentTotal;
-        let finalNew = currentNew;
-        let finalRep = currentRep;
-
-        if (totalChanged) {
-          if (currentTotal >= currentRep) {
-            finalNew = currentTotal - currentRep;
-            finalRep = currentRep;
-          } else {
-            finalNew = currentTotal;
-            finalRep = 0;
-          }
-        } else if (newChanged) {
-          finalTotal = currentNew + currentRep;
-          if (finalTotal > 100) {
-            finalNew = 100 - currentRep;
-            finalTotal = 100;
-          }
-        } else if (repChanged) {
-          finalTotal = currentNew + currentRep;
-          if (finalTotal > 100) {
-            finalRep = 100 - currentNew;
-            finalTotal = 100;
-          }
-        }
-
-        let currentPositions = prev.positions || [];
-        if (currentPositions.length !== finalTotal) {
-          if (finalTotal > currentPositions.length) {
-            const extra = Array.from({ length: finalTotal - currentPositions.length }, (_, i) => ({
-              position_number: currentPositions.length + i + 1,
-              vacancy_type: "New",
-              location: "",
-              functional_area: "",
-              reporting_manager: "",
-              replacement_for: "",
-            }));
-            currentPositions = [...currentPositions, ...extra];
-          } else {
-            currentPositions = currentPositions.slice(0, finalTotal);
-          }
-        }
-
-        const updatedPositions = currentPositions.map((pos: any, idx: number) => {
-          const expectedType = idx < finalNew ? "New" : "Replacement";
-          return {
-            ...pos,
-            position_number: idx + 1,
-            vacancy_type: expectedType,
-            ...(expectedType === "New" ? { replacement_for: "" } : {}),
-          };
-        });
-
-        prevTotalRef.current = finalTotal;
-        prevNewRef.current = finalNew;
-        prevRepRef.current = finalRep;
-
-        return {
-          ...prev,
-          number_of_positions: finalTotal,
-          number_of_new_positions: finalNew,
-          number_of_replacement_positions: finalRep,
-          positions: updatedPositions,
-        };
-      });
-    }, 2200);
-
-    return () => clearTimeout(handler);
-  }, [
-    formData.number_of_positions,
-    formData.number_of_new_positions,
-    formData.number_of_replacement_positions,
-    formData.positions,
-  ]);
 
   // JD Preview state
   const [jdPreviewOpen, setJdPreviewOpen] = useState(false);
@@ -586,6 +473,100 @@ const RequisitionForm = () => {
 
   const handleChange = (changed: any) => {
     const newData = { ...formData, ...changed.data };
+    const changedKey = changed.changed?.component?.key;
+
+    if (
+      changedKey === "number_of_positions" ||
+      changedKey === "number_of_new_positions" ||
+      changedKey === "number_of_replacement_positions"
+    ) {
+      let total = parseInt(newData.number_of_positions as any);
+      if (isNaN(total)) total = 0;
+      let newP = parseInt(newData.number_of_new_positions as any);
+      if (isNaN(newP)) newP = 0;
+      let repP = parseInt(newData.number_of_replacement_positions as any);
+      if (isNaN(repP)) repP = 0;
+
+      // 1. Enforce min value bounds to 0
+      if (total < 0) total = 0;
+      if (newP < 0) newP = 0;
+      if (repP < 0) repP = 0;
+
+      // 2. Enforce max value bounds of 100 for Total Position
+      if (total > 100) {
+        total = 100;
+      }
+
+      // 3. Enforce validation according to total position
+      if (changedKey === "number_of_positions") {
+        if (newP > total) {
+          newP = total;
+          repP = 0;
+        } else if (repP > total) {
+          repP = total;
+          newP = 0;
+        } else {
+          // Keep New and adjust Replacement to fill remainder
+          repP = Math.max(total - newP, 0);
+        }
+      } else if (changedKey === "number_of_new_positions") {
+        if (newP > total) {
+          newP = total;
+        }
+        repP = Math.max(total - newP, 0);
+      } else if (changedKey === "number_of_replacement_positions") {
+        if (repP > total) {
+          repP = total;
+        }
+        newP = Math.max(total - repP, 0);
+      }
+
+      newData.number_of_positions = total;
+      newData.number_of_new_positions = newP;
+      newData.number_of_replacement_positions = repP;
+
+      // Sync positions array rows to match new Total
+      let currentPositions = newData.positions || [];
+      if (currentPositions.length < total) {
+        const extra = Array.from(
+          { length: total - currentPositions.length },
+          (_, i) => ({
+            position_number: currentPositions.length + i + 1,
+            vacancy_type: "New",
+            location: "",
+            functional_area: "",
+            reporting_manager: "",
+            replacement_for: "",
+          })
+        );
+        currentPositions = [...currentPositions, ...extra];
+      } else if (currentPositions.length > total) {
+        currentPositions = currentPositions.slice(0, total);
+      }
+
+      newData.positions = currentPositions.map((pos: any, idx: number) => ({
+        ...pos,
+        position_number: idx + 1,
+        vacancy_type: idx < newP ? "New" : "Replacement",
+        ...(idx < newP ? { replacement_for: "" } : {}),
+      }));
+    } else {
+      // If a row in the datagrid changed directly, sync totals to parent fields
+      const positions = newData.positions || [];
+      const actualNew = positions.filter((p: any) => p.vacancy_type === "New").length;
+      const actualRep = positions.filter((p: any) => p.vacancy_type === "Replacement").length;
+      const actualTotal = positions.length;
+
+      const total = parseInt(newData.number_of_positions as any) || 0;
+      const newP = parseInt(newData.number_of_new_positions as any) || 0;
+      const repP = parseInt(newData.number_of_replacement_positions as any) || 0;
+
+      if (total !== actualTotal || newP !== actualNew || repP !== actualRep) {
+        newData.number_of_positions = actualTotal;
+        newData.number_of_new_positions = actualNew;
+        newData.number_of_replacement_positions = actualRep;
+      }
+    }
 
     if (changed.changed?.component?.key === "hiring_manager") {
       const managerId = changed.changed?.value;
