@@ -90,17 +90,21 @@ def submit_referral(opening, data, referrer_employee=None):
 	applicant.job_title = opening
 	applicant.source = source
 
-	# Stamp referrer attribution on whichever standard / custom fields exist
+	# Stamp referrer attribution on whichever standard / custom fields exist.
 	meta = frappe.get_meta("Job Applicant")
-	field_names = {df.fieldname for df in meta.fields}
+	field_map = {df.fieldname: df for df in meta.fields}
 
-	if "employee_referral" in field_names:
-		# Standard HRMS field — Link to Employee Referral if one exists,
-		# otherwise the employee name itself (some setups use Link → Employee).
+	# `employee_referral` is the standard HRMS field, but it Links to the
+	# "Employee Referral" doctype (a referral record) — NOT to Employee. Assigning
+	# the referrer's Employee id there raises LinkValidationError. Only set it when
+	# a setup has customised the field to Link → Employee; otherwise leave it unset
+	# (attribution is captured on the custom_referred_* fields below).
+	emp_ref = field_map.get("employee_referral")
+	if emp_ref and emp_ref.fieldtype == "Link" and emp_ref.options == "Employee":
 		applicant.employee_referral = referrer.name
-	if "custom_referred_by" in field_names:
+	if "custom_referred_by" in field_map:
 		applicant.custom_referred_by = referrer.name
-	if "custom_referred_employee_name" in field_names:
+	if "custom_referred_employee_name" in field_map:
 		applicant.custom_referred_employee_name = referrer.employee_name
 
 	for k, v in cleaned.items():
