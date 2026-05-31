@@ -89,14 +89,18 @@ def submit_application(job_applicant, data):
 		else:
 			doc.set(fieldname, value)
 
-	# Mark the form-less pre-offer row (empty portal_form) as Filled.
-	filled_row = None
+	# Mark every form-less pre-offer row as Filled — HR may have sent several
+	# rounds, but the field set is identical, so one submission satisfies them all.
+	# Collect each row's referenced action-center item so we can complete it.
+	filled_any = False
+	action_items = []
 	for row in (doc.get("custom_pre_offer_forms") or []):
 		if not row.portal_form:
 			row.status = "Filled"
 			row.filled_at = now_datetime()
-			filled_row = row
-			break
+			filled_any = True
+			if row.action_item:
+				action_items.append(row.action_item)
 
 	pre_offer_rows = doc.get("custom_pre_offer_forms") or []
 	if pre_offer_rows and all((r.status or "") == "Filled" for r in pre_offer_rows):
@@ -105,15 +109,12 @@ def submit_application(job_applicant, data):
 	doc.save(ignore_permissions=True)
 	frappe.db.commit()
 
-	# Complete the candidate's pre-offer action-center item.
-	if filled_row and doc.email_id:
-		from recruitment.api.action_center import mark_item_completed
-		mark_item_completed(
-			reference_doctype="Job Applicant Pre Offer Form",
-			reference_docname=filled_row.name,
-			candidate_email=doc.email_id,
-			commit=True,
-		)
+	# Complete the referenced pre-offer action-center item(s) for each filled row.
+	for action_item in action_items:
+		if frappe.db.exists("Candidate Action Center Item", action_item):
+			frappe.db.set_value("Candidate Action Center Item", action_item, "status", "Completed")
+	if action_items:
+		frappe.db.commit()
 
 	return {
 		"status": "ok",

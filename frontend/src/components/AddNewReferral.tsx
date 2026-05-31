@@ -338,8 +338,6 @@ const AddNewReferral: React.FC = () => {
         cleanData[key] = formatPayloadDates(value);
       }
     });
-   cleanData.job_title = selectedJob?.name || ""; // HR-OPN-2025-0004
-  cleanData.source = "Refer";
     try {
       setUploading(true);
       const params = new URLSearchParams();

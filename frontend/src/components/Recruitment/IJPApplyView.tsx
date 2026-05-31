@@ -442,10 +442,6 @@ export default function ApplyView({
       });
     }
 
-    // Set source of application to IJP
-    transformed.source = "IJP";
-    transformed.job_title = job.name;
-
     return transformed;
   };
 
