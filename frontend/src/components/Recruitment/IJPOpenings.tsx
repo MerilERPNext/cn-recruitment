@@ -140,7 +140,7 @@ function ListView({
               onClick={handleRowClick}
             >
               <div className="text-slate-800 font-medium truncate text-center">
-                {item.opening_code || item.name}
+                {item.name || "--"}
               </div>
               <div className="flex items-center justify-center gap-1.5 min-w-0">
                 <span className="text-blue-600 hover:text-blue-700 font-semibold cursor-pointer no-underline truncate block">
@@ -189,7 +189,7 @@ function ListView({
                 <div className="flex flex-col gap-1">
                   <Typography variant="mobileCardLabel">Opening ID</Typography>
                   <Typography variant="mobileCardValue">
-                    {item.opening_code || item.name}
+                    {item.name || "--"}
                   </Typography>
                 </div>
                 <div className="flex flex-col items-end gap-1.5 shrink-0">

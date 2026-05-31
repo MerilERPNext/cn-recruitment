@@ -1,6 +1,7 @@
 import { propsDetailViewComponents } from "./IJPTypes";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import Button from "../shared/atoms/Button";
+import DOMPurify from "dompurify";
 
 export default function DetailView({
   job,
@@ -20,13 +21,13 @@ export default function DetailView({
         </span>
         <span className="mx-1.5 opacity-50">/</span>
         <strong>
-          {job.job_title} ({job.opening_code || job.name})
+          {job.job_title} ({job.name || job.opening_code})
         </strong>
       </div>
       <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-wrap items-center justify-between gap-3 mb-4 w-full max-w-full">
         <div className="min-w-0 flex-1 pr-2">
           <span className="text-lg font-semibold text-[#1a1a2e] block md:inline truncate">
-            {job.job_title} ({job.opening_code || job.name})
+            {job.job_title} ({job.name || job.opening_code})
           </span>
           <span className="text-xs text-gray-500 md:ml-2.5 block md:inline mt-1 md:mt-0">
             (Open since {job.posted_on ? formatToIndianDate(job.posted_on) : ""}
@@ -50,9 +51,12 @@ export default function DetailView({
       </div>
       <div className="flex flex-col md:flex-row gap-4 w-full max-w-full">
         <div className="flex-1 bg-white border border-gray-200 rounded-xl p-5 min-w-0">
-          <p className="text-xs text-slate-700 leading-relaxed mb-3.5 break-words whitespace-pre-wrap">
-            {job.description}
-          </p>
+          <div
+            className="prose prose-sm max-w-none text-xs text-slate-700 leading-relaxed mb-3.5 break-words"
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(job.description || ""),
+            }}
+          />
         </div>
         <div className="w-full md:w-60 shrink-0 bg-white border border-gray-200 rounded-xl p-5">
           {[

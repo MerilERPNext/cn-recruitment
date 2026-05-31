@@ -101,6 +101,9 @@ export default function ApplyView({
       // ─── Table Fieldtype (Stacked Panels instead of Datagrid) ───
       if (field.fieldtype === "Table" && Array.isArray(field.table_fields)) {
         const rowCount = rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
+        if (rowCount === 0) {
+          return;
+        }
         const panels: Record<string, unknown>[] = [];
 
         for (let i = 0; i < rowCount; i++) {
@@ -208,9 +211,11 @@ export default function ApplyView({
             type: "panel",
             key: `${field.reference_name}_panel_${i}`,
             title: `${field.display_name} - Entry #${i + 1}`,
+            collapsible: true,
+            collapsed: i !== rowCount - 1,
             components: rowComponents,
             customClass:
-              "col-span-2 py-4 px-6 bg-slate-50 border border-slate-200 rounded-xl mb-4",
+              "col-span-2 py-4 px-6 bg-slate-50 border border-slate-200 rounded-xl mb-4 formio-section-panel",
           });
         }
 
@@ -401,7 +406,7 @@ export default function ApplyView({
     if (fields) {
       fields.forEach((field) => {
         if (field.fieldtype === "Table") {
-          const rowCount = rowCounts[field.reference_name] || 1;
+          const rowCount = rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
           const rows: Record<string, FormValue>[] = [];
 
           for (let i = 0; i < rowCount; i++) {
@@ -619,6 +624,13 @@ export default function ApplyView({
               {/* Add More button for Table fields */}
               {fieldsInActiveSection.map((field) => {
                 if (field.fieldtype === "Table") {
+                  const rowCount =
+                    rowCounts[field.reference_name] ??
+                    (field.reqd === 1 ? 1 : 0);
+                  const buttonLabel =
+                    rowCount === 0
+                      ? `+ Add ${field.display_name}`
+                      : `+ Add More ${field.display_name}`;
                   return (
                     <div
                       key={`add-more-${field.reference_name}`}
@@ -635,7 +647,7 @@ export default function ApplyView({
                           }));
                         }}
                       >
-                        + Add More {field.display_name}
+                        {buttonLabel}
                       </Button>
                     </div>
                   );
