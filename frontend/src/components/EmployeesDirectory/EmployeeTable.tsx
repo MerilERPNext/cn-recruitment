@@ -46,16 +46,19 @@ const EmployeeTable = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const actionButtonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
+  const selectableEmployees = employees.filter(emp => emp.status === "Active");
+  const showCheckboxColumn = selectableEmployees.length > 0;
+  
   const isAllSelected =
-    employees.length > 0 && selectedEmployees.length === employees.length;
+    selectableEmployees.length > 0 && selectedEmployees.length === selectableEmployees.length;
   const isSomeSelected =
-    selectedEmployees.length > 0 && selectedEmployees.length < employees.length;
+    selectedEmployees.length > 0 && selectedEmployees.length < selectableEmployees.length;
 
   const handleSelectAll = () => {
     if (isAllSelected) {
       setSelectedEmployees([]);
     } else {
-      setSelectedEmployees(employees);
+      setSelectedEmployees(selectableEmployees);
     }
   };
 
@@ -76,19 +79,21 @@ const EmployeeTable = ({
       <table className="min-w-full border-separate border-spacing-0">
         <thead className="bg-gray-50/80 backdrop-blur-sm">
           <tr className="sticky top-0 z-10">
-            <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 group first:rounded-tl-xl transition-colors hover:bg-gray-100/50">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={isAllSelected}
-                  ref={(el: HTMLInputElement | null) => {
-                    if (el) el.indeterminate = isSomeSelected;
-                  }}
-                  onChange={handleSelectAll}
-                  className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
-                />
-              </div>
-            </th>
+            {showCheckboxColumn && (
+              <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 group first:rounded-tl-xl transition-colors hover:bg-gray-100/50">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(el: HTMLInputElement | null) => {
+                      if (el) el.indeterminate = isSomeSelected;
+                    }}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
+                  />
+                </div>
+              </th>
+            )}
             <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 transition-colors hover:bg-gray-100/50">
               Employee
             </th>
@@ -120,14 +125,20 @@ const EmployeeTable = ({
                 key={item.name}
                 className={`group transition-all duration-200 ${isItemSelected ? "bg-primary-50/70" : "hover:bg-primary-50/40"}`}
               >
-                <td className="whitespace-nowrap border-r border-gray-100 px-4 py-4 text-sm font-medium border-b">
-                  <input
-                    type="checkbox"
-                    checked={isItemSelected}
-                    onChange={() => handleSelectOne(item)}
-                    className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
-                  />
-                </td>
+                {showCheckboxColumn && (
+                  <td className="whitespace-nowrap border-r border-gray-100 px-4 py-4 text-sm font-medium border-b">
+                    {item.status === "Active" ? (
+                      <input
+                        type="checkbox"
+                        checked={isItemSelected}
+                        onChange={() => handleSelectOne(item)}
+                        className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-4 h-4" />
+                    )}
+                  </td>
+                )}
                 <td className="whitespace-nowrap border-r border-gray-50 px-5 py-2.5 text-sm border-b border-gray-100">
                   <div className="flex items-center gap-3 justify-between w-full">
                     <Link
@@ -293,12 +304,18 @@ const EmployeeTable = ({
             {/* Top Selection + Avatar Section */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={isItemSelected}
-                  onChange={() => handleSelectOne(item)}
-                  className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm shrink-0"
-                />
+                {showCheckboxColumn && (
+                  item.status === "Active" ? (
+                    <input
+                      type="checkbox"
+                      checked={isItemSelected}
+                      onChange={() => handleSelectOne(item)}
+                      className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm shrink-0"
+                    />
+                  ) : (
+                    <div className="w-4 h-4 shrink-0" />
+                  )
+                )}
                 <Avatar name={item.employee_name} src={item.image} />
                 <div>
                   <Link
