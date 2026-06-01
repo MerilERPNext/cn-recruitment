@@ -121,8 +121,8 @@ const EmployeeSearch = ({
   };
 
   const clearAllFilters = () => {
-    setActiveFilters({});
-    setPendingFilters({});
+    setActiveFilters({ status: "Active" });
+    setPendingFilters({ status: "Active" });
     clearTableSelection();
   };
 
