@@ -228,7 +228,8 @@ def _bypass_hrms_duplicate_check(doc):
 # ---------------------------------------------------------------------------
 
 
-def _position_row(p, position_no, parent_vacancy_default, parent_functional_area):
+def _position_row(p, position_no, parent_vacancy_default, parent_functional_area,
+                  parent_employee_type=None):
     """Build a single child row dict for `custom_position_details`."""
     vacancy = (p.get("vacancy_type") or parent_vacancy_default or "New").strip() or "New"
     return {
@@ -238,7 +239,9 @@ def _position_row(p, position_no, parent_vacancy_default, parent_functional_area
         "reporting_manager": p.get("reporting_manager"),
         "location": p.get("location"),
         "functional_area": p.get("functional_area") or parent_functional_area,
-        "employee_type": p.get("employee_type"),
+        # `employee_type` is mandatory on the child row. The UI collects the
+        # employment type once at parent level, so inherit it per-position.
+        "employee_type": p.get("employee_type") or parent_employee_type,
     }
 
 
@@ -270,7 +273,23 @@ def _apply_parent_fields(doc, payload):
             )
 
 
+def _has_table_field(doc, fieldname):
+    """True only when `fieldname` is a real Table field on the doc's doctype.
+
+    `custom_qualifications`, `custom_skills` and `custom_pre_screened_candidates`
+    exist on Job Opening but were never added to Job Requisition. Appending to a
+    missing table field blows up inside Frappe with
+    "'NoneType' object has no attribute 'options'", so callers skip the field
+    entirely when it is absent. (If the table field is later added to the
+    doctype, persistence resumes automatically — no code change needed.)
+    """
+    df = doc.meta.get_field(fieldname)
+    return bool(df) and df.fieldtype in ("Table", "Table MultiSelect")
+
+
 def _apply_qualifications(doc, payload):
+    if not _has_table_field(doc, "custom_qualifications"):
+        return
     doc.set("custom_qualifications", [])
     for q in _list_field(payload, "custom_qualifications"):
         if not isinstance(q, dict) or not q.get("qualification"):
@@ -282,6 +301,8 @@ def _apply_qualifications(doc, payload):
 
 
 def _apply_skills(doc, payload):
+    if not _has_table_field(doc, "custom_skills"):
+        return
     doc.set("custom_skills", [])
     for skill in _list_field(payload, "custom_skills"):
         if not skill:
@@ -326,6 +347,8 @@ def _sanitize_cv(value):
 
 
 def _apply_pre_screened(doc, payload):
+    if not _has_table_field(doc, "custom_pre_screened_candidates"):
+        return
     doc.set("custom_pre_screened_candidates", [])
     for cand in _list_field(payload, "custom_pre_screened_candidates"):
         if not isinstance(cand, dict):
@@ -360,12 +383,71 @@ def sync_no_of_positions(doc, method=None):
         doc.no_of_positions = len(position_rows)
 
 
+def _resolve_jd_html(designation, department):
+    """Rendered Job Description HTML for (designation, department), or "".
+
+    Mirrors `preview_job_description`'s resolution (exact designation+department
+    match, else the default JD) so a saved requisition gets the same description
+    the React "Preview JD" card shows. The UI has no description field, yet the
+    parent field is mandatory — so this fills it from the linked JD on save.
+    """
+    if not designation or not department:
+        return ""
+    try:
+        rows = frappe.db.sql(
+            """
+            SELECT jd.name
+            FROM `tabJob Description` jd
+            JOIN `tabJD Designations` jdg
+              ON jdg.parent = jd.name
+             AND jdg.parenttype = 'Job Description'
+             AND jdg.parentfield = 'designation'
+            JOIN `tabJD Department` jdp
+              ON jdp.parent = jd.name
+             AND jdp.parenttype = 'Job Description'
+             AND jdp.parentfield = 'department'
+            WHERE jdg.designation = %s
+              AND jdp.department = %s
+            ORDER BY jd.modified DESC
+            LIMIT 1
+            """,
+            (designation, department),
+        )
+        jd_name = rows[0][0] if rows else None
+        if not jd_name and frappe.get_meta(JOB_DESCRIPTION).get_field("is_default"):
+            jd_name = frappe.db.get_value(JOB_DESCRIPTION, {"is_default": 1}, "name")
+        if not jd_name:
+            return ""
+        return _build_preview_payload(jd_name, "match").get("description_html") or ""
+    except Exception:
+        return ""
+
+
+def _ensure_description(doc, payload):
+    """Populate the mandatory parent `description` when the payload omits it.
+
+    Falls back from the linked Job Description → reason_for_requesting →
+    a minimal designation line, so submit never fails the mandatory check
+    while still preferring the real JD content shown in the UI preview.
+    """
+    if doc.get("description"):
+        return
+    html = _resolve_jd_html(payload.get("designation"), payload.get("department"))
+    if not html:
+        reason = payload.get("reason_for_requesting")
+        designation = payload.get("designation")
+        html = reason or (f"<p>{frappe.utils.escape_html(designation)}</p>" if designation else "")
+    if html:
+        doc.description = html
+
+
 def _build_requisition_doc(payload, positions_for_location):
     """Construct an unsaved Job Requisition for one location group."""
     doc = frappe.new_doc(JOB_REQUISITION)
     _bypass_hrms_duplicate_check(doc)
 
     _apply_parent_fields(doc, payload)
+    _ensure_description(doc, payload)
 
     # Always derive `no_of_positions` from the actual rows in
     # custom_position_details for THIS location group. The UI ships a single
@@ -381,8 +463,12 @@ def _build_requisition_doc(payload, positions_for_location):
 
     parent_vacancy = payload.get("custom_type_of_position")
     parent_functional_area = payload.get("custom_functional_area")
+    parent_employee_type = payload.get("custom_employment_type_link") or payload.get("custom__employee_type")
     for index, p in enumerate(positions_for_location, start=1):
-        doc.append("custom_position_details", _position_row(p, index, parent_vacancy, parent_functional_area))
+        doc.append(
+            "custom_position_details",
+            _position_row(p, index, parent_vacancy, parent_functional_area, parent_employee_type),
+        )
 
     return doc
 
@@ -427,6 +513,7 @@ def create_job_requisition(payload=None):
         groups = _group_positions_by_location(positions)
         parent_vacancy = payload.get("custom_type_of_position")
         parent_functional_area = payload.get("custom_functional_area")
+        parent_employee_type = payload.get("custom_employment_type_link") or payload.get("custom__employee_type")
 
         results = []
         savepoint = "create_job_requisition"
@@ -444,11 +531,12 @@ def create_job_requisition(payload=None):
                     doc = frappe.get_doc(JOB_REQUISITION, existing_name)
                     _bypass_hrms_duplicate_check(doc)
                     _apply_parent_fields(doc, payload)
+                    _ensure_description(doc, payload)
                     start_idx = len(doc.get("custom_position_details") or [])
                     for offset, p in enumerate(group_positions, start=1):
                         doc.append(
                             "custom_position_details",
-                            _position_row(p, start_idx + offset, parent_vacancy, parent_functional_area),
+                            _position_row(p, start_idx + offset, parent_vacancy, parent_functional_area, parent_employee_type),
                         )
                     # Resync from the live child table after appending,
                     # not from the payload-supplied total.
@@ -804,12 +892,13 @@ def update_job_requisition(name=None, payload=None):
         if positions:
             parent_vacancy = payload.get("custom_type_of_position")
             parent_functional_area = payload.get("custom_functional_area")
+            parent_employee_type = payload.get("custom_employment_type_link") or payload.get("custom__employee_type")
 
             doc.set("custom_position_details", [])
             for idx, p in enumerate(positions, start=1):
                 doc.append(
                     "custom_position_details",
-                    _position_row(p, idx, parent_vacancy, parent_functional_area),
+                    _position_row(p, idx, parent_vacancy, parent_functional_area, parent_employee_type),
                 )
             # Always sync from the live child table — the payload's
             # `no_of_positions` is a UI-level total that may not match the

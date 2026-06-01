@@ -80,13 +80,15 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation&department={{ data.department }}',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
         valueProperty: "id",
         template: "<span>{{ item.label }}</span>",
         validate: { required: true },
+        refreshOn: "department",
+        clearOnRefresh: true,
       },
 
       {
@@ -97,12 +99,14 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
         valueProperty: "id",
         template: "<span>{{ item.label }}</span>",
+        refreshOn: "designation",
+        clearOnRefresh: true,
       },
     ],
   },
@@ -282,6 +286,8 @@ export const requisitionFormSchemas = {
         format: "yyyy-MM-dd",
         enableDate: true,
         enableTime: false,
+        widget: { type: "calendar", minDate: new Date() },
+        datePicker: { minDate: new Date() },
       },
       {
         type: "htmlelement",
@@ -321,6 +327,8 @@ export const requisitionFormSchemas = {
                 enableDate: true,
                 enableTime: false,
                 validate: { required: true },
+                widget: { type: "calendar", minDate: new Date() },
+                datePicker: { minDate: new Date() },
               },
             ],
             width: 6,
@@ -475,57 +483,11 @@ export const requisitionFormSchemas = {
   },
   positionSelection: {
     components: [
-      {
-        type: "panel",
-        title: "Position Details",
-        key: "position_details_panel",
-        components: [
-          {
-            type: "textfield",
-            key: "number_of_positions",
-            label: "Total Position",
-            defaultValue: 0,
-            validate: { required: true, min: 0, max: 100 },
-            description: "(Max Allowed Positions per Requisition is 100)",
-          },
-          {
-            type: "columns",
-            customClass: "my-3",
-            columns: [
-              {
-                components: [
-                  {
-                    type: "textfield",
-                    key: "number_of_new_positions",
-                    label: "New",
-                    defaultValue: 0,
-                    validate: { required: false, min: 0 },
-                  },
-                ],
-                width: 6,
-                offset: 0,
-                push: 0,
-                pull: 0,
-              },
-              {
-                components: [
-                  {
-                    type: "textfield",
-                    key: "number_of_replacement_positions",
-                    label: "Replacement",
-                    defaultValue: 0,
-                    validate: { required: false, min: 0 },
-                  },
-                ],
-                width: 6,
-                offset: 0,
-                push: 0,
-                pull: 0,
-              },
-            ],
-          },
-        ],
-      },
+      // NOTE: "Total Position / New / Replacement" inputs are rendered as plain
+      // React inputs in RequisitionForm.tsx (outside formio). Keeping them inside
+      // the controlled formio form caused a Controlled Input Override: handleChange
+      // transforms their value (clamp + rebuild positions) and feeds it back, which
+      // makes @tsed/react-formio reset the whole submission mid-typing.
       {
         type: "panel",
         title: "Position Details Table",
