@@ -283,7 +283,7 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
           customMessage: "Attachment is required",
         },
         filePattern:
-          ".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.csv,.xls",
+          ".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.csv",
         customClass: "px-2 mb-4",
       });
     }
