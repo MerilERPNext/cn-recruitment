@@ -255,10 +255,18 @@ const EmployeeSearch = ({
         }}
         title="Filter"
         size="xl"
+        className="p-0 flex flex-col h-full !overflow-hidden"
       >
         <EmployeeDirectoryFilters
           onUpdate={handleFilterUpdate}
           data={pendingFilters}
+          onCancel={() => {
+            setIsFilterOpen(false);
+            setPendingFilters(activeFilters);
+          }}
+          onReset={() => {
+            setPendingFilters({ status: "Active" });
+          }}
         />
       </SideDrawer>
     </div>
