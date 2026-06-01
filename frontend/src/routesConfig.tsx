@@ -136,6 +136,10 @@ const ExpenseAdvanceForm = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseAdvance/ExpenseAdvanceForm"),
   "ExpenseAdvanceForm",
 );
+const ExpenseSummary = lazyWithRetry(
+  () => import("./components/Expenses-App/ExpenseSummary/ExpenseSummary"),
+  "ExpenseSummary",
+);
 const Holidays = lazyWithRetry(
   () => import("./components/Leaves/Holidays"),
   "Holidays",
@@ -937,6 +941,11 @@ export const routesConfig: AppRoute[] = [
         path: "team-advance-expense",
         element: <TeamAdvanceExpenseList />,
         permissionKey: "Team Advances",
+      },
+      {
+        path: "expense-summary",
+        element: <ExpenseSummary />,
+        permissionKey: "ExpenseSummary",
       },
     ],
   },
