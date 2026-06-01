@@ -572,16 +572,16 @@ const RequisitionForm = () => {
       const managerId = changed.changed?.value;
       if (managerId) {
         FrappeAPI.getDocument("Employee", managerId, [
-          "department",
-          "designation",
+          "department_name",
+          "designation_name",
           "custom_functional_area",
         ])
           .then((employee: any) => {
             if (employee) {
               setFormData((prev: any) => ({
                 ...prev,
-                department: employee.department || "",
-                designation: employee.designation || "",
+                department: employee.department_name || "",
+                designation: employee.designation_name  || "",
                 functional_area: employee.custom_functional_area || "",
               }));
             }
