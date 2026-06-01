@@ -106,13 +106,52 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
                     )
 
     def on_submit(self):
-        super().on_submit()
+        # Project and Tasks are intentionally NOT created on submit.
+        # They are created on demand via the "Create Onboarding Tasks"
+        # button (-> create_onboarding_tasks()). We deliberately bypass
+        # EmployeeBoardingController.on_submit(), which would create them.
+        pass
 
     def on_update_after_submit(self):
+        # HRMS re-creates tasks on every post-submit save; suppress that.
+        # Task metadata refresh is handled by the populate_onboarding_task_meta
+        # doc_event hook instead.
         pass
 
     def on_cancel(self):
         super().on_cancel()
+
+    def create_onboarding_tasks(self):
+        """Create the Project and Tasks for this onboarding on demand.
+
+        Mirrors HRMS EmployeeBoardingController.on_submit's project/task
+        creation, but is invoked explicitly from the "Create Onboarding
+        Tasks" button instead of automatically at submit time. Idempotent:
+        the Project is created only once, and create_task_and_notify_user()
+        skips activity rows that already have a linked Task.
+        """
+        if not self.project:
+            project_name = _(self.doctype) + " : " + (
+                self.job_applicant or self.employee_name or self.name
+            )
+            project = frappe.get_doc({
+                "doctype": "Project",
+                "project_name": project_name,
+                "expected_start_date": self.date_of_joining,
+                "department": self.department,
+                "company": self.company,
+            }).insert(ignore_permissions=True, ignore_mandatory=True)
+            self.db_set("project", project.name)
+            self.db_set("boarding_status", "Pending")
+            self.reload()
+
+        # HRMS helper: one Task per activity (skips already-linked rows) and
+        # assigns the configured users/roles.
+        self.create_task_and_notify_user()
+
+        # Stamp DOJ / days-to-join / priority on the freshly created Tasks.
+        from recruitment.recruitment.onboarding_extras import populate_onboarding_task_meta
+        populate_onboarding_task_meta(self)
 
     @frappe.whitelist()
     def mark_onboarding_as_completed(self):
@@ -125,7 +164,7 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
 @frappe.whitelist()
 def manually_create_onboarding_tasks(onboarding_name):
     doc = frappe.get_doc("Employee Onboarding", onboarding_name)
-    doc.on_submit()
+    doc.create_onboarding_tasks()
     return "Tasks created successfully"
 
 

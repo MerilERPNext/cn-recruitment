@@ -164,8 +164,15 @@ def build_onboarding_redirect(job_applicant_id, onboarding_name=None, section_na
     return "/onboarding?{0}".format(urlencode(params))
 
 
-def build_job_offer_redirect(candidate_email):
-    return "/job_offer?{0}".format(urlencode({"appl": candidate_email}))
+def build_job_offer_redirect(job_applicant_id):
+    # The /job_offer portal page resolves the offer by `appl` == Job Applicant ID
+    # (job_offer.py filters Job Offer.job_applicant == appl, and job_offer_update /
+    # get_job_offer_status / get_job_offer_summary / the PDF endpoints all do the same).
+    # When one candidate has several applications the Job Applicant names are versioned
+    # (email, email-1, …) while the email stays the same — so the redirect MUST carry the
+    # specific Job Applicant ID, not the email, or every offer would resolve to the same
+    # (first) application and the others would be unreachable.
+    return "/job_offer?{0}".format(urlencode({"appl": job_applicant_id}))
 
 
 def build_pre_offer_redirect(job_applicant_id, form_name=None):
@@ -641,7 +648,7 @@ def sync_job_offer_action_item(doc, method=None):
         candidate_email=candidate_email,
         reference_doctype=doc.doctype,
         reference_docname=doc.name,
-        redirect_url=build_job_offer_redirect(candidate_email),
+        redirect_url=build_job_offer_redirect(candidate_id or candidate_email),
         description="Job offer released. Open details from the action center.",
         attachment="",
         commit=False,
@@ -664,7 +671,9 @@ def _sync_onboarding_action_for_applicant(job_applicant_id, candidate_email):
     if not eo_name:
         eo_name = _auto_release_and_materialize_onboarding(job_applicant_id)
 
-    if not eo_name:
+    # Never let a missing/stale EO name break the Job Offer save — action-item
+    # bookkeeping is best-effort here (same contract as _auto_release_... below).
+    if not eo_name or not frappe.db.exists("Employee Onboarding", eo_name):
         return
 
     eo = frappe.get_doc("Employee Onboarding", eo_name)

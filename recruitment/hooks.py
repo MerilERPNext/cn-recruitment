@@ -77,17 +77,20 @@ doctype_js = {
         "public/js/employee_onboarding_portal_field_inspector.js",
         "public/js/emp_OB_verification_table.js",
         "public/js/emp_OB_field_level_approval.js",
+        "public/js/employee_onboarding_statutory.js",
     ],
     "Employee Separation": ["public/js/employee_separation.js"],
     "Employee Promotion": ["public/js/employee_promotion.js"],
     "Employee": ["public/js/employee.js"],
     "Exit Interview": ["public/js/exit_interview.js"],
     "Training Event": ["public/js/training_event.js"],
+    "Task": ["public/js/task_onboarding_form.js"],
 }
 
 doctype_list_js = {
     "Job Applicant": "public/js/job_applicant_list.js",
     "Job Offer": "public/js/job_offer_list.js",
+    "Task": "public/js/task_onboarding_listview.js",
     "Job Opening": "public/js/job_opening_list.js",
     "Job Requisition": "public/js/job_requisition_list.js",
 }
@@ -224,7 +227,16 @@ doc_events = {
     "Employee Onboarding": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
         # "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents",
-        "on_update": "recruitment.auto_fetch_fields.update_employee_fields",
+        "before_save": "recruitment.recruitment.onboarding_extras.auto_map_manager",
+        # Tasks are no longer created on submit (see overide_class.on_submit) —
+        # they're created via the "Create Onboarding Tasks" button, which stamps
+        # task metadata itself. This hook only keeps metadata fresh on post-submit
+        # edits (e.g. DOJ / Postponed changes).
+        "on_update_after_submit": "recruitment.recruitment.onboarding_extras.populate_onboarding_task_meta",
+        "on_update": [
+            "recruitment.auto_fetch_fields.update_employee_fields",
+            "recruitment.recruitment.onboarding_extras.handle_doj_outcome",
+        ],
     },
     "Employee Separation": {
         "before_insert": "recruitment.customizations.employee_separation.employee_separation.calculate_lwd_from_notice_period",
@@ -250,7 +262,10 @@ scheduler_events = {
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
             "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
             "recruitment.recruitment.scheduled_jobs.auto_confirm_employees_without_policy",
-        ]
+        ],
+        "0 1 * * *": [
+            "recruitment.recruitment.onboarding_extras.refresh_onboarding_task_days_to_join",
+        ],
     }
 }
 
