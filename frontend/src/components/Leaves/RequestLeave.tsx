@@ -46,8 +46,8 @@ import { buildRequestLeaveSchema } from "./requestLeaveSchema";
 import {
   findRecentLeaveApplicationTarget,
   getExistingAttachmentUrls,
-  getPendingAttachmentUploads,
   normalizeAttachments,
+  resolvePendingAttachmentUploads,
   resolveLeaveApplicationTarget,
 } from "./requestLeaveHelper";
 import { useFileUploader } from "../../hooks/useFileUploader";
@@ -125,7 +125,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       const retainedAttachmentUrls = new Set(
         getExistingAttachmentUrls(normalizedAttachments),
       );
-      const pendingUploads = getPendingAttachmentUploads(normalizedAttachments);
+      const pendingUploads = resolvePendingAttachmentUploads(
+        currentAttachments,
+        submission.data?.custom_attachment,
+      );
 
       const payload = buildLeavePayload({
         employee: currentEmployee.name,
@@ -436,20 +439,11 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       const filesFromForm =
         fileComponent?.dataValue || fileComponent?.value || [];
 
-      const normalizedAttachments = normalizeAttachments(
+      const pendingUploads = resolvePendingAttachmentUploads(
         currentAttachments,
         submission?.data?.custom_attachment,
         filesFromForm,
       );
-      const directPendingUploads = getPendingAttachmentUploads(
-        normalizedAttachments,
-      );
-      const pendingUploads =
-        directPendingUploads.length > 0
-          ? directPendingUploads
-          : normalizedAttachments.filter((attachment) =>
-            Boolean(attachment.file),
-          );
 
       const payload = buildLeavePayload({
         employee: currentEmployee.name,
