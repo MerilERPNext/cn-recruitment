@@ -631,3 +631,12 @@ export function useUpdateExpenseClaimStatusAPI() {
     },
   });
 }
+
+export const useAutoPopulatedCostCenter = (employeeId?: string) => {
+  return useQuery({
+    queryKey: ["autoPopulatedCostCenter", employeeId],
+    queryFn: () => expenseService.getAutoPopulatedCostCenter(employeeId || ""),
+    enabled: !!employeeId,
+    staleTime: 5 * 60 * 1000,
+  });
+};

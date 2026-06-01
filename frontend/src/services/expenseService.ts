@@ -70,6 +70,13 @@ export const expenseService = {
     return response;
   },
 
+  getAutoPopulatedCostCenter: async (employeeId: string): Promise<any> => {
+    return FrappeAPI.getMethod(
+      "chatnext_expense_trips.chatnext_expense_trips.doctype.reimbursement_settings.reimbursement_settings.get_auto_populated_cost_center",
+      { employee: employeeId },
+    );
+  },
+
   getExpenseClaims: async (filters?: FilterCondition[]): Promise<any> => {
     const result = await FrappeAPI.getDocumentList("Expense Claim", {
       fields: [
