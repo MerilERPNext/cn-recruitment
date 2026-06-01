@@ -10,6 +10,7 @@ import Button from "../shared/atoms/Button";
 import ChangeSelfServiceStatus from "./tools/ChangeSelfServiceStatus/ChangeSelfServiceStatus";
 import ChangeWeekOff from "./tools/ChangeWeekOff/ChangeWeekOff";
 import ResetPassword from "./tools/ResetPassword/ResetPassword";
+import ResetOtpLimit from "./tools/ResetOtpLimit/ResetOtpLimit";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 const EmployeeTable = ({
@@ -39,8 +40,14 @@ const EmployeeTable = ({
     "Employee Directory"
   );
 
+  const canResetOtpAuthLimit = isActionEnabled(
+    userUiPermission,
+    "reset_otp_auth_limit",
+    "Employee Directory"
+  );
+
   const { isDesktop } = useScreenSize();
-  const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | null>(null);
+  const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | 'otp_limit' | null>(null);
   const [selectedRowEmployee, setSelectedRowEmployee] = useState<Employee | null>(null);
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -74,9 +81,11 @@ const EmployeeTable = ({
       setSelectedEmployees((prev) => [...prev, employee]);
     }
   };
-  return isDesktop ? (
-    <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-      <table className="min-w-full border-separate border-spacing-0">
+  return (
+    <>
+      {isDesktop ? (
+        <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+          <table className="min-w-full border-separate border-spacing-0">
         <thead className="bg-gray-50/80 backdrop-blur-sm">
           <tr className="sticky top-0 z-10">
             {showCheckboxColumn && (
@@ -139,7 +148,7 @@ const EmployeeTable = ({
                     )}
                   </td>
                 )}
-                <td className="whitespace-nowrap border-r border-gray-50 px-5 py-2.5 text-sm border-b border-gray-100">
+                <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
                   <div className="flex items-center gap-3 justify-between w-full">
                     <Link
                       to={`/webapp/employee-profile?target_user=${item?.employee}`}
@@ -154,7 +163,7 @@ const EmployeeTable = ({
                     </Link>
 
                     <div>
-                      {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword) && <Button
+                      {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit) && <Button
                         ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                         variant="subtle"
                         size="sm"
@@ -212,25 +221,38 @@ const EmployeeTable = ({
                           >
                             Reset password
                           </Button>}
+                          {canResetOtpAuthLimit && <Button
+                            variant="subtle"
+                            size="md"
+                            contentAlign="start"
+                            fullWidth
+                            onClick={() => {
+                              setSelectedRowEmployee(item);
+                              setActiveTool('otp_limit');
+                              setOpenPopupId(null);
+                            }}
+                          >
+                            Reset otp auth limit
+                          </Button>}
                         </div>
                       </ContextualPopup>
                     </div>
                   </div>
                 </td>
-                <td className="whitespace-nowrap border-r border-gray-50 px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100">
+                <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100">
                   <span className="font-mono text-[11px] opacity-60">#</span>{item.employee}
                 </td>
-                <td className="whitespace-nowrap border-r border-gray-50 px-5 py-2.5 text-sm border-b border-gray-100">
+                <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
                   <div className="flex flex-col">
                     <span className="font-medium text-gray-700">{item.custom_designation_name || "-"}</span>
                   </div>
                 </td>
-                <td className="whitespace-nowrap border-r border-gray-50 px-5 py-2.5 text-sm border-b border-gray-100">
+                <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-50 text-gray-600 border border-gray-100">
                     {item.department || "-"}
                   </span>
                 </td>
-                <td className="whitespace-nowrap border-r border-gray-50 px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100 font-brand">
+                <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100 font-brand">
                   <div className="flex items-center gap-2 group/copy">
                     <span className="truncate max-w-[150px]">{item.user_id || "-"}</span>
                     {item.user_id && (
@@ -256,36 +278,6 @@ const EmployeeTable = ({
           })}
         </tbody>
       </table>
-
-      {selectedRowEmployee && (
-        <>
-          <ChangeWeekOff
-            isOpen={activeTool === 'week_off'}
-            onClose={() => {
-              setActiveTool(null);
-              setSelectedRowEmployee(null);
-            }}
-            current_week_off={selectedRowEmployee.custom_weekly_off as string}
-            employee_id={selectedRowEmployee.employee}
-          />
-          <ChangeSelfServiceStatus
-            isOpen={activeTool === 'self_service'}
-            onClose={() => {
-              setActiveTool(null);
-              setSelectedRowEmployee(null);
-            }}
-            employeeId={selectedRowEmployee.employee}
-          />
-          <ResetPassword
-            isOpen={activeTool === 'password'}
-            onClose={() => {
-              setActiveTool(null);
-              setSelectedRowEmployee(null);
-            }}
-            employeeId={selectedRowEmployee.employee}
-          />
-        </>
-      )}
     </div>
   ) : (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -334,7 +326,7 @@ const EmployeeTable = ({
               </div>
 
               <div className="relative">
-                {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword) && <Button
+                {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit) && <Button
                   ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                   variant="soft"
                   size="sm"
@@ -395,6 +387,20 @@ const EmployeeTable = ({
                     >
                       Reset password
                     </Button>}
+                    {canResetOtpAuthLimit && <Button
+                      variant="subtle"
+                      size="sm"
+                      contentAlign="start"
+                      fullWidth
+                      onClick={() => {
+                        setSelectedRowEmployee(item);
+                        setActiveTool('otp_limit');
+                        setOpenPopupId(null);
+                      }}
+                      className="text-xs py-2 px-3 hover:bg-primary-50"
+                    >
+                      Reset otp auth limit
+                    </Button>}
                   </div>
                 </ContextualPopup>
               </div>
@@ -432,6 +438,46 @@ const EmployeeTable = ({
         );
       })}
     </div>
+    )}
+
+      {selectedRowEmployee && (
+        <>
+          <ChangeWeekOff
+            isOpen={activeTool === 'week_off'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            current_week_off={selectedRowEmployee.custom_weekly_off as string}
+            employee_id={selectedRowEmployee.employee}
+          />
+          <ChangeSelfServiceStatus
+            isOpen={activeTool === 'self_service'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            employeeId={selectedRowEmployee.employee}
+          />
+          <ResetPassword
+            isOpen={activeTool === 'password'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            employeeId={selectedRowEmployee.employee}
+          />
+          <ResetOtpLimit
+            isOpen={activeTool === 'otp_limit'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            userId={selectedRowEmployee.user_id!}
+          />
+        </>
+      )}
+    </>
   );
 };
 

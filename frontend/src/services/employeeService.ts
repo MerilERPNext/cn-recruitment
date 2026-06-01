@@ -840,6 +840,16 @@ export class EmployeeService {
     const data = await response;
     return data as Employee[];
   }
+  static async resetOtpResendLimit(user_id: string) {
+    const response = FrappeAPI.callMethod(
+      "cn_hrms_core.api.reset_otp_resend_limit",
+      {
+        user: user_id,
+      },
+    );
+    const data = await response;
+    return data;
+  }
 }
 
 export default EmployeeService;
