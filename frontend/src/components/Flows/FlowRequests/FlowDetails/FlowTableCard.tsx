@@ -226,7 +226,6 @@ const FlowTableRow = ({
                                 <MobileAllocatedTo
                                     users={stage.allocated_to}
                                     roles={allocatedTo.roles}
-                                    role={stage.role || ""}
                                     showLabel={false}
                                     RoleAssignedUsers={stage?.role_assigned_users}
                                 />
