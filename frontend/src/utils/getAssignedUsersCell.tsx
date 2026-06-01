@@ -19,7 +19,7 @@ export const getStageAssignedUsersCell = (
         0,
       ) ?? 0;
 
-    const roles = stage.role.split(',').map((r: string) => r.trim());
+    const roles = stage.role ? stage.role.split(',').map((r: string) => r.trim()) : [];
 
     const text = totalUsers ? `Assign(${totalUsers})` : `${roles.length}`;
     return (
@@ -40,7 +40,8 @@ export const getStageAssignedUsersCell = (
       ? [{ name: stage.user, employee: stage.employee_id, designation_name: stage.designation_name }]
       : [];
 
-  const label = `${stage?.designation_name || stage?.stage_name || (users.length > 0 && `Assign(${users.length})`) || "Not Assigned"} `;
+  const label = (stage?.designation_name || stage?.stage_name || (users.length > 0 ? "Assign(" + users.length + ")" : "Not Assigned")) + " ";
+
   return (
     <AllocatedToTooltip
       title="Assigned To"

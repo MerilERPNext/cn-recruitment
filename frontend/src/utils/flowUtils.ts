@@ -12,7 +12,7 @@ export const extractRolesAndUsers = (stage: FlowRequestStage | WorkflowStage) =>
   }
 
   if (stage?.todo?.role && typeof stage?.todo?.role === "string") {
-    roles.push(...stage?.todo?.role?.split(",")?.map((role) => role.trim()) || []);
+    roles.push(...stage.todo.role.split(",").map((role) => role.trim()).filter(Boolean));
   }
 
   return {
