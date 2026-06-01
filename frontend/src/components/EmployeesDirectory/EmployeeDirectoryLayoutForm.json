@@ -58,7 +58,7 @@
             "clearOnRefresh": true,
             "selectValues": "message.data.departments",
             "valueProperty": "name",
-            "template": "<span>{{ item.name }} - ({{ item.department_name }})</span>",
+            "template": "<span>{{ item.department_name }} - ({{ item.name }})</span>",
             "lazyLoad": false
         },
         {
