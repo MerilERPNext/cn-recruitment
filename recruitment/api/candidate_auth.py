@@ -91,10 +91,18 @@ def enforce_candidate_identity(email=None, job_applicant_id=None):
         frappe.throw(_("Not allowed to access this resource."), frappe.PermissionError)
 
     if job_applicant_id:
+        # Primary link: the Candidate Portal User points at this applicant.
         linked = frappe.db.get_value("Candidate Portal User", session_email, "job_applicant")
-        if not linked or linked != job_applicant_id:
-            frappe.local.response["http_status_code"] = 403
-            frappe.throw(_("Not allowed to access this resource."), frappe.PermissionError)
+        if not (linked and linked == job_applicant_id):
+            # A candidate can have multiple Job Applicant records (one per
+            # application) while the CPU links only one. Fall back to email
+            # ownership: allow when the applicant's email_id matches the
+            # authenticated candidate. Secure — a candidate can only reach
+            # applicants carrying their own login email.
+            applicant_email = frappe.db.get_value("Job Applicant", job_applicant_id, "email_id")
+            if not applicant_email or applicant_email.strip().lower() != session_email.lower():
+                frappe.local.response["http_status_code"] = 403
+                frappe.throw(_("Not allowed to access this resource."), frappe.PermissionError)
 
     return session_email
 

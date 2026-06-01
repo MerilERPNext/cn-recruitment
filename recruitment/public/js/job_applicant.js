@@ -1024,32 +1024,21 @@ frappe.ui.form.on('Job Applicant', {
         if (frm.doc.__islocal) return;
 
         frm.add_custom_button(__('Send Pre Offer Form'), () => {
-            frappe.prompt(
-                [{
-                    label: __('Pre Offer Portal Form'),
-                    fieldname: 'form_name',
-                    fieldtype: 'Link',
-                    options: 'Job Applicant Portal Forms',
-                    reqd: 1,
-                    description: __('Tip: call this action again to send additional forms; each one creates its own action item for the candidate.'),
-                }],
-                ({ form_name }) => {
+            // Pre-offer fields come from the Job Opening config now — no form to pick,
+            // just confirm and send. The candidate gets a Pre Offer action center item.
+            frappe.confirm(
+                __('Are you sure you want to send the Pre Offer Form to this candidate?'),
+                () => {
                     frappe.call({
-                        method: 'recruitment.api.action_center.send_pre_offer_form',
-                        args: {
-                            job_applicant_id: frm.doc.name,
-                            form_name: form_name,
-                        },
+                        method: 'recruitment.api.action_center.send_pre_offer',
+                        args: { job_applicant_id: frm.doc.name },
                         freeze: true,
                         freeze_message: __('Sending Pre Offer Form...'),
                         callback(r) {
                             if (r.message && r.message.status === 'success') {
-                                const skipped = (r.message.skipped || []);
-                                const sent = (r.message.sent || []);
-                                let msg = __('Pre Offer Form sent to candidate.');
-                                if (sent.length === 0 && skipped.length) {
-                                    msg = __('Form already sent — no change.');
-                                }
+                                const msg = r.message.already_sent
+                                    ? __('Pre Offer Form already sent — no change.')
+                                    : __('Pre Offer Form sent to candidate.');
                                 frappe.show_alert({ message: msg, indicator: 'green' });
                                 frm.reload_doc();
                             } else {
@@ -1061,9 +1050,7 @@ frappe.ui.form.on('Job Applicant', {
                             }
                         },
                     });
-                },
-                __('Send Pre Offer Form'),
-                __('Send')
+                }
             );
         }, __('Actions'));
     }

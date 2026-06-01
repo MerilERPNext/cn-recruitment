@@ -104,6 +104,40 @@ def get_openings_active_on_channel(channel, opening_filters=None):
 	return result
 
 
+# Link fields on the opening card. Each value is rendered as its target
+# doctype's configured Title Field (e.g. Company → company_name "PenPencil"),
+# falling back to the raw id when the doctype has no title field. We keep the
+# raw link id under "<field>_id" for callers that still need the document name.
+_CARD_LINK_FIELDS = ("designation", "department", "location", "company")
+
+
+def _link_label(doctype, name):
+	"""Human-readable label for a link value: the target's Title Field value if it
+	has one, otherwise the id itself. Fully dynamic — no per-doctype hardcoding."""
+	if not name:
+		return None
+	title_field = frappe.get_meta(doctype).get_title_field()
+	if not title_field or title_field == "name":
+		return name
+	# get_cached_value avoids re-querying the same master across many cards.
+	return frappe.get_cached_value(doctype, name, title_field) or name
+
+
+def card_matches_search(card, search):
+	"""Case-insensitive match of an opening card against a search term (job code /
+	title / id / designation / location / department labels)."""
+	if not search:
+		return True
+	needle = str(search).strip().lower()
+	if not needle:
+		return True
+	haystack = " ".join(
+		str(card.get(k) or "")
+		for k in ("name", "job_title", "opening_code", "designation", "location", "department")
+	).lower()
+	return needle in haystack
+
+
 def get_opening_card(opening_name):
 	"""Compact serialisation used in listing endpoints."""
 	row = frappe.db.get_value(
@@ -118,24 +152,60 @@ def get_opening_card(opening_name):
 	)
 	if not row:
 		return None
-	return {
+	card = {
 		"name": row.name,
 		"job_title": row.job_title,
-		"designation": row.designation,
-		"department": row.department,
-		"location": row.location,
-		"company": row.company,
 		"status": row.status,
 		"posted_on": row.posted_on,
 		"closes_on": row.closes_on,
 		"description": row.description,
 		"opening_code": row.custom_opening_code,
 	}
+	# Render each link field as its target's title field; keep the raw id too.
+	jo_meta = frappe.get_meta("Job Opening")
+	for field in _CARD_LINK_FIELDS:
+		link_id = row.get(field)
+		df = jo_meta.get_field(field)
+		if df and df.fieldtype == "Link" and df.options and link_id:
+			card[field] = _link_label(df.options, link_id)
+		else:
+			card[field] = link_id
+		card[f"{field}_id"] = link_id
+	return card
 
 
 # ---------------------------------------------------------------------------
 # Application-fields lookup
 # ---------------------------------------------------------------------------
+
+# Layout/meta fieldtypes that carry no input and shouldn't be sent as columns.
+_NON_INPUT_FIELDTYPES = {
+	"Section Break", "Column Break", "Tab Break", "HTML", "Button", "Fold", "Heading",
+}
+
+
+def _child_table_fields(child_doctype):
+	"""Column definitions for a child (Table / Table MultiSelect) doctype so the
+	frontend can render the grid. Returns [] when there's no child doctype."""
+	if not child_doctype:
+		return []
+	cmeta = frappe.get_meta(child_doctype)
+	cols = []
+	for d in cmeta.fields:
+		if not d.fieldname or d.fieldtype in _NON_INPUT_FIELDTYPES:
+			continue
+		cols.append({
+			"fieldname": d.fieldname,
+			"label": d.label or d.fieldname,
+			"fieldtype": d.fieldtype,
+			"options": d.options or "",
+			"reqd": cint(d.reqd),
+			"read_only": cint(d.read_only),
+			"in_list_view": cint(d.in_list_view),
+			"default": d.default,
+		})
+	return cols
+
 
 def get_application_fields_for_channel(opening_name, channel):
 	"""Return the list of Job Applicant fields to render for `opening_name` on
@@ -186,7 +256,7 @@ def get_application_fields_for_channel(opening_name, channel):
 		df = meta_lookup.get(ref)
 		if not df:
 			continue
-		result.append({
+		entry = {
 			"section": r.get("section") or "General",
 			"reference_name": ref,
 			"display_name": r.get("display_name") or df.label or ref,
@@ -196,7 +266,12 @@ def get_application_fields_for_channel(opening_name, channel):
 			"ctq": cint(r.get("ctq_flag")),
 			"visibility": r.get("visibility") or "All",
 			"editability": r.get("editability") or "Editable",
-		})
+		}
+		# For child-table fields, ship the child doctype's columns so the
+		# frontend can render the grid (options alone is just the doctype name).
+		if df.fieldtype in ("Table", "Table MultiSelect"):
+			entry["table_fields"] = _child_table_fields(df.options)
+		result.append(entry)
 	return result
 
 

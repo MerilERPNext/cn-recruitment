@@ -15,12 +15,12 @@
  ],
  "fields": [
   {
+   "description": "Optional. Empty for opening-config (form-less) pre-offers; set only for legacy Portal Form sends.",
    "fieldname": "portal_form",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Portal Form",
-   "options": "Job Applicant Portal Forms",
-   "reqd": 1
+   "options": "Job Applicant Portal Forms"
   },
   {
    "default": "Sent",

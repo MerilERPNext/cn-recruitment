@@ -1,24 +1,25 @@
 /* global frappe, $ */
 
+/*
+ * Job Applicant — custom list rendering on top of Frappe's native list view.
+ *
+ * Frappe owns data (`listview.data`), filtering, sorting, pagination, selection
+ * and the Actions menu. We override `render_list` to draw our styled table into
+ * Frappe's `$result`; each row checkbox uses the native `.list-row-checkbox`
+ * class so native selection / bulk actions work untouched. A small aux API call
+ * supplies tab counts, the top pipeline bar, the scoped header and owner names.
+ */
 (function () {
+	const DOCTYPE = "Job Applicant";
+
 	const SOURCE_PALETTE = [
 		"#4F46E5", "#0EA5E9", "#10B981", "#F59E0B",
 		"#EF4444", "#8B5CF6", "#EC4899", "#14B8A6",
 	];
 	const STATUS_COLORS = {
-		Draft: "#9CA3AF",
-		Open: "#374151",
-		Shortlisted: "#93C5FD",
-		Interview: "#3B82F6",
-		Hold: "#F59E0B",
-		Approvals: "#F97316",
-		Accepted: "#10B981",
-		Rejected: "#FCA5A5",
-		// Common alternates
-		Applied: "#374151",
-		Screening: "#93C5FD",
-		Offer: "#F59E0B",
-		Hired: "#10B981",
+		Draft: "#9CA3AF", Open: "#374151", Shortlisted: "#93C5FD", Interview: "#3B82F6",
+		Hold: "#F59E0B", Approvals: "#F97316", Accepted: "#10B981", Rejected: "#FCA5A5",
+		Applied: "#374151", Screening: "#93C5FD", Offer: "#F59E0B", Hired: "#10B981",
 	};
 	const STATUS_FALLBACK_PALETTE = [
 		"#3B82F6", "#8B5CF6", "#EC4899", "#14B8A6",
@@ -30,23 +31,25 @@
 		for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
 		return h;
 	}
-
 	function getStatusColor(s) {
 		if (!s) return "#9CA3AF";
 		if (STATUS_COLORS[s]) return STATUS_COLORS[s];
 		return STATUS_FALLBACK_PALETTE[hash(s) % STATUS_FALLBACK_PALETTE.length];
 	}
-
 	function avatarColor(name) {
 		if (!name) return SOURCE_PALETTE[0];
 		return SOURCE_PALETTE[hash(name) % SOURCE_PALETTE.length];
 	}
-
 	function escapeHtml(s) {
 		if (s === null || s === undefined) return "";
 		return String(s)
 			.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 			.replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+	}
+	function initialsOf(name) {
+		const parts = String(name || "").replace(/@/g, " ").split(/\s+/).filter(Boolean);
+		if (!parts.length) return "?";
+		return ((parts[0][0] || "") + (parts[1] ? parts[1][0] : "")).toUpperCase() || "?";
 	}
 
 	let state = {
@@ -54,13 +57,8 @@
 		tabCounts: {},
 		statusOptions: [],
 		opening: null,
-		rows: [],
-		loading: false,
+		users: {},
 	};
-
-	// Cached reference to the active list view instance — set by onload/refresh
-	// hooks so refreshList can always reach the current filter_area, even when
-	// frappe.views.list_view["Job Applicant"] isn't populated yet (initial render).
 	let _listview = null;
 
 	function injectStyles() {
@@ -107,6 +105,7 @@
 				white-space: nowrap;
 			}
 			.ja-table tbody td { padding: 12px 8px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
+			.ja-table tbody tr { cursor: pointer; }
 			.ja-table tbody tr:hover { background: #FAFAFA; }
 			.ja-table tbody tr:last-child td { border-bottom: none; }
 
@@ -118,8 +117,8 @@
 			.ja-col-source    { width: 110px; white-space: nowrap; }
 			.ja-col-applied   { width: 110px; white-space: nowrap; }
 			.ja-col-owner     { width: 110px; white-space: nowrap; }
-			.ja-col-actions   { width: 60px; white-space: nowrap; padding-right: 10px !important; }
 
+			.ja-check { width: 16px; height: 16px; cursor: pointer; }
 			.ja-candidate { display: flex; align-items: center; gap: 10px; }
 			.ja-avatar { width: 30px; height: 30px; border-radius: 50%; color: #fff;
 				display: inline-flex; align-items: center; justify-content: center;
@@ -140,64 +139,46 @@
 			.ja-score-num { font-weight: 600; color: #111827; min-width: 24px; text-align: right; }
 
 			.ja-owner { display: inline-flex; align-items: center; gap: 6px; color: #374151; font-size: 12px; }
-			.ja-row-actions { display: inline-flex; gap: 6px; }
-			.ja-row-actions button {
-				border: none; background: transparent; padding: 4px; border-radius: 4px;
-				color: #6B7280; cursor: pointer;
-			}
-			.ja-row-actions button:hover { background: #F3F4F6; color: #111827; }
 
-			.ja-empty { padding: 36px; text-align: center; color: #6B7280; }
+			/* Native activity meta (modified time · comment count · like) */
+			.ja-col-activity { width: 120px; white-space: nowrap; text-align: right; padding-right: 12px !important; }
+			.ja-activity { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; color: #9CA3AF; font-size: 12px; }
+			.ja-activity .comment-count { display: inline-flex; align-items: center; gap: 2px; }
+			.ja-activity .list-row-like, .ja-activity .like-action { cursor: pointer; display: inline-flex; align-items: center; }
+			.ja-activity svg.icon, .ja-activity .icon { width: 14px; height: 14px; }
 
-			/* Hide Frappe's default rendered rows */
-			.ja-custom-active .frappe-list .list-row-head,
-			.ja-custom-active .frappe-list .list-row-container,
-			.ja-custom-active .frappe-list .list-row,
-			.ja-custom-active .frappe-list .no-result,
-			.ja-custom-active .frappe-list .freeze,
-			.ja-custom-active .frappe-list .image-view-container,
-			.ja-custom-active .frappe-list .kanban-board { display: none !important; }
-			.ja-custom-active #ja-header-container,
-			.ja-custom-active #ja-pipeline-container,
-			.ja-custom-active #ja-tabs-container,
-			.ja-custom-active #ja-table-container { display: block !important; }
+			/* Hide the loading skeleton rows (we render our own table). */
+			.ja-custom-active .frappe-list .result .list-row-container { display: none !important; }
+			/* Frappe's native column header is replaced by our <thead>, so it's hidden
+			   by default — but we REVEAL it while rows are selected so Frappe's native
+			   selection bar shows ("N items selected", "X of Y", select-all). When
+			   selected, on_row_checked hides the column-label part itself, leaving just
+			   the selection bar. Native paging / no-result / Actions menu stay intact. */
+			.ja-custom-active .frappe-list .result .list-row-head { display: none !important; }
+			.ja-custom-active.ja-has-selection .frappe-list .result .list-row-head { display: flex !important; }
 		`;
 		document.head.appendChild(style);
 	}
 
+	// Resolve the scoped opening strictly from the *live* filters so the header
+	// disappears the moment the job_title filter is cleared. (Frappe applies any
+	// route_options / URL ?job_title= into filter_area on load, so reading the
+	// filters covers deep-links too — and avoids the sticky route_options that
+	// used to keep the header around after the filter was removed.)
 	function resolveJobOpening() {
-		// 1. Simple URL param: ?job_title=X
-		const params = new URLSearchParams(window.location.search);
-		if (params.get("job_title")) return params.get("job_title");
-
-		// 2. ?filters=[["Job Applicant","job_title","=","XXX"]]
-		const fParam = params.get("filters");
-		if (fParam) {
-			try {
-				const parsed = JSON.parse(decodeURIComponent(fParam));
-				const f = (parsed || []).find((arr) => arr && arr[1] === "job_title");
-				if (f && f[3]) return f[3];
-			} catch (e) { /* noop */ }
-		}
-
-		// 3. Filter applied via the list view's filter_area widget (popup or quick filter)
-		const lv = _listview || (frappe.views && frappe.views.list_view && frappe.views.list_view["Job Applicant"]);
+		const lv = _listview || (frappe.views && frappe.views.list_view && frappe.views.list_view[DOCTYPE]);
 		try {
 			if (lv && lv.filter_area && typeof lv.filter_area.get === "function") {
-				const filters = lv.filter_area.get();
-				const f = (filters || []).find((arr) => arr && arr[1] === "job_title");
+				const f = (lv.filter_area.get() || []).find((arr) => arr && arr[1] === "job_title");
 				if (f && f[3]) return f[3];
 			}
 		} catch (e) { /* noop */ }
-
-		// 4. frappe.route_options (set when navigating with set_route options)
-		if (frappe.route_options && frappe.route_options.job_title) {
-			return frappe.route_options.job_title;
-		}
 		return null;
 	}
 
-	function renderHeader(container) {
+	function renderHeader() {
+		const container = document.getElementById("ja-header-container");
+		if (!container) return;
 		if (!state.opening) { container.innerHTML = ""; return; }
 		const op = state.opening;
 		const meta = [op.designation, op.department, op.location].filter(Boolean).map(escapeHtml).join(" · ");
@@ -214,7 +195,9 @@
 			</div>`;
 	}
 
-	function renderPipelineTop(container) {
+	function renderPipelineTop() {
+		const container = document.getElementById("ja-pipeline-container");
+		if (!container) return;
 		const tc = state.tabCounts || {};
 		const stages = state.statusOptions || [];
 		const total = stages.reduce((s, st) => s + (tc[st] || 0), 0);
@@ -229,7 +212,6 @@
 				<span class="ja-pipeline-top-legend-dot" style="background:${getStatusColor(st)}"></span>
 				${tc[st] || 0} ${escapeHtml(st)}
 			</span>`).join("");
-
 		container.innerHTML = `
 			<div class="ja-pipeline-top">
 				<div class="ja-pipeline-top-bar">${segs || '<div class="ja-pipeline-top-seg" style="width:100%;background:#E5E7EB"></div>'}</div>
@@ -237,8 +219,32 @@
 			</div>`;
 	}
 
-	function renderTabs(container) {
-		const tabKeys = ["All", ...Object.keys(state.tabCounts).filter((k) => k !== "All")];
+	function applyTabFilter(key) {
+		state.activeTab = key;
+		const lv = _listview;
+		if (!lv) return;
+		const field = lv.page && lv.page.fields_dict && lv.page.fields_dict.status;
+		if (field && typeof field.set_value === "function") {
+			// Status is a standard quick-filter: set it DIRECTLY to the target value.
+			// Switching Draft -> Open is a single value change with no intermediate
+			// "clear" step, so there's no stray "show all" fetch to race with.
+			Promise.resolve(field.set_value(key === "All" ? "" : key)).then(() => lv.refresh());
+		} else if (lv.filter_area) {
+			// Status isn't a standard filter (e.g. Job Requisition): mutate the filter
+			// list with refreshes suppressed, then fire a single refresh.
+			const fa = lv.filter_area;
+			fa.trigger_refresh = false;
+			Promise.resolve(fa.remove("status"))
+				.then(() => (key === "All" ? null : fa.add([[DOCTYPE, "status", "=", key]], false)))
+				.then(() => { fa.trigger_refresh = true; lv.refresh(); })
+				.catch(() => { fa.trigger_refresh = true; lv.refresh(); });
+		}
+	}
+
+	function renderTabs() {
+		const container = document.getElementById("ja-tabs-container");
+		if (!container) return;
+		const tabKeys = ["All", ...(state.statusOptions || [])];
 		const tabs = tabKeys.map((key) => {
 			const isActive = state.activeTab === key;
 			const count = state.tabCounts[key] ?? 0;
@@ -254,63 +260,120 @@
 			el.addEventListener("click", () => {
 				const tab = el.getAttribute("data-tab");
 				if (tab === state.activeTab) return;
-				state.activeTab = tab;
-				refreshList();
+				applyTabFilter(tab);
 			});
 		});
 	}
 
-	function renderRow(row) {
-		const statusColor = getStatusColor(row.status);
-		const score = Math.max(0, Math.min(100, row.score_pct || 0));
-		const applied = row.applied_on ? frappe.datetime.global_date_format(row.applied_on) : "";
-		const ownerHtml = row.owner && row.owner.id
-			? `<span class="ja-owner"><span class="ja-avatar" style="width:22px;height:22px;background:${avatarColor(row.owner.id)}">${escapeHtml(row.owner.initials)}</span>${escapeHtml(row.owner.first_name || "")}</span>`
-			: `<span class="ja-owner">—</span>`;
+	function ownerCellHtml(ownerId) {
+		if (!ownerId) return `<span class="ja-owner">—</span>`;
+		const u = state.users[ownerId];
+		const display = u ? (u.first_name || u.name || ownerId) : (ownerId.split("@")[0] || ownerId);
+		const ini = u ? u.initials : initialsOf(ownerId);
+		return `<span class="ja-owner">
+			<span class="ja-avatar" style="width:22px;height:22px;background:${avatarColor(ownerId)}">${escapeHtml(ini)}</span>${escapeHtml(display)}
+		</span>`;
+	}
 
+	// Native Frappe row activity: relative modified time, comment count, and the
+	// interactive like/heart (reusing listview.get_like_html so Frappe's delegated
+	// like handler toggles it natively).
+	function renderActivity(doc, listview) {
+		let modified = "";
+		try { modified = frappe.datetime.comment_when(doc.modified, true); } catch (e) { /* noop */ }
+		const cc = doc._comment_count || 0;
+		let chat = "";
+		try { chat = frappe.utils.icon("es-line-chat-alt", "sm"); } catch (e) { /* noop */ }
+		let likeHtml = "";
+		try { likeHtml = (listview && listview.get_like_html) ? listview.get_like_html(doc) : ""; } catch (e) { /* noop */ }
+		return `<div class="ja-activity">
+			<span class="modified">${modified}</span>
+			<span class="comment-count">${chat} ${cc > 99 ? "99+" : cc}</span>
+			<span class="list-row-like">${likeHtml}</span>
+		</div>`;
+	}
+
+	function renderRow(doc, listview) {
+		const statusColor = getStatusColor(doc.status);
+		const score = Math.max(0, Math.min(100, Math.round((Number(doc.applicant_rating) || 0) * 20)));
+		const applied = doc.creation ? frappe.datetime.global_date_format(doc.creation) : "";
+		const nameInitials = initialsOf(doc.applicant_name || doc.email_id || doc.name);
 		return `
-			<tr data-name="${escapeHtml(row.name)}">
-				<td class="ja-col-check"><input type="checkbox" class="ja-row-check" data-name="${escapeHtml(row.name)}"/></td>
+			<tr data-name="${escapeHtml(doc.name)}">
+				<td class="ja-col-check"><input type="checkbox" class="ja-check list-row-checkbox" data-doctype="${DOCTYPE}" data-name="${escapeHtml(doc.name)}"/></td>
 				<td class="ja-col-candidate">
 					<div class="ja-candidate">
-						<span class="ja-avatar" style="background:${avatarColor(row.name)}">${escapeHtml(row.initials || "?")}</span>
+						<span class="ja-avatar" style="background:${avatarColor(doc.name)}">${escapeHtml(nameInitials)}</span>
 						<div>
-							<div class="ja-cand-name">${escapeHtml(row.applicant_name || row.name)}</div>
-							<div class="ja-cand-email">${escapeHtml(row.email_id || "")}</div>
+							<div class="ja-cand-name">${escapeHtml(doc.applicant_name || doc.name)}</div>
+							<div class="ja-cand-email">${escapeHtml(doc.email_id || "")}</div>
 						</div>
 					</div>
 				</td>
 				<td class="ja-col-stage">
 					<span class="ja-status-pill" style="background:${statusColor}1a;color:#111827">
-						<span class="ja-status-dot" style="background:${statusColor}"></span>${escapeHtml(row.status || "")}
+						<span class="ja-status-dot" style="background:${statusColor}"></span>${escapeHtml(doc.status || "")}
 					</span>
 				</td>
-				<td class="ja-col-exp">${escapeHtml(row.experience || "—")}</td>
+				<td class="ja-col-exp">${escapeHtml(doc.custom_total_experience || "—")}</td>
 				<td class="ja-col-score">
 					<div class="ja-score">
 						<div class="ja-score-bar"><div class="ja-score-fill" style="width:${score}%"></div></div>
 						<span class="ja-score-num">${score}</span>
 					</div>
 				</td>
-				<td class="ja-col-source">${escapeHtml(row.source || row.source_name || "—")}</td>
+				<td class="ja-col-source">${escapeHtml(doc.source || doc.source_name || "—")}</td>
 				<td class="ja-col-applied">${escapeHtml(applied)}</td>
-				<td class="ja-col-owner">${ownerHtml}</td>
-				<td class="ja-col-actions">
-					<div class="ja-row-actions">
-						<button data-action="open" title="Open in new tab">↗</button>
-						<button data-action="more" title="More">⋮</button>
-					</div>
-				</td>
+				<td class="ja-col-owner" data-owner="${escapeHtml(doc.owner || "")}">${ownerCellHtml(doc.owner)}</td>
+				<td class="ja-col-activity">${renderActivity(doc, listview)}</td>
 			</tr>`;
 	}
 
-	function renderTable(container) {
-		if (state.loading) { container.innerHTML = `<div class="ja-empty">Loading…</div>`; return; }
-		if (!state.rows.length) { container.innerHTML = `<div class="ja-empty">No applicants found.</div>`; return; }
+	function updateSelectAllState(container) {
+		const selectAll = container.querySelector(".ja-select-all");
+		if (!selectAll) return;
+		const all = Array.from(container.querySelectorAll(".list-row-checkbox"));
+		selectAll.checked = all.length > 0 && all.every((c) => c.checked);
+		selectAll.indeterminate = !selectAll.checked && all.some((c) => c.checked);
+	}
+
+	function bindTable(container, listview) {
+		const selectAll = container.querySelector(".ja-select-all");
+		if (selectAll) {
+			selectAll.addEventListener("click", (e) => e.stopPropagation());
+			selectAll.addEventListener("change", () => {
+				container.querySelectorAll(".list-row-checkbox").forEach((cb) => { cb.checked = selectAll.checked; });
+				if (typeof listview.on_row_checked === "function") listview.on_row_checked();
+			});
+		}
+		container.querySelectorAll(".list-row-checkbox").forEach((cb) => {
+			cb.addEventListener("click", (e) => e.stopPropagation());
+			cb.addEventListener("change", () => updateSelectAllState(container));
+		});
+		updateSelectAllState(container);
+
+		container.querySelectorAll("tr[data-name]").forEach((tr) => {
+			tr.addEventListener("click", (e) => {
+				if (e.target && e.target.closest("input, button, a, .like-action, .ja-activity")) return;
+				frappe.set_route("Form", DOCTYPE, tr.getAttribute("data-name"));
+			});
+		});
+	}
+
+	function renderTableInto(listview) {
+		const $result = listview.$result;
+		if (!$result || !$result.length) return;
+		let $host = $result.find(".ja-host");
+		if (!$host.length) {
+			$host = $('<div class="ja-host"></div>');
+			$result.append($host);
+		}
+		const data = listview.data || [];
+		if (!data.length) { $host.html(""); return; }
 
 		const head = `
 			<tr>
-				<th class="ja-col-check"><input type="checkbox" class="ja-select-all"/></th>
+				<th class="ja-col-check"><input type="checkbox" class="ja-check ja-select-all"/></th>
 				<th class="ja-col-candidate">Candidate</th>
 				<th class="ja-col-stage">Stage</th>
 				<th class="ja-col-exp">Experience</th>
@@ -318,180 +381,146 @@
 				<th class="ja-col-source">Source</th>
 				<th class="ja-col-applied">Applied</th>
 				<th class="ja-col-owner">Owner</th>
-				<th class="ja-col-actions"></th>
+				<th class="ja-col-activity"></th>
 			</tr>`;
 
-		container.innerHTML = `
+		$host.html(`
 			<div class="ja-table-wrapper">
 				<table class="ja-table">
 					<thead>${head}</thead>
-					<tbody>${state.rows.map(renderRow).join("")}</tbody>
+					<tbody>${data.map((d) => renderRow(d, listview)).join("")}</tbody>
 				</table>
-			</div>`;
+			</div>`);
 
-		// Select-all
-		const selectAll = container.querySelector(".ja-select-all");
-		const rowChecks = container.querySelectorAll(".ja-row-check");
-		if (selectAll) {
-			selectAll.addEventListener("click", (e) => e.stopPropagation());
-			selectAll.addEventListener("change", () => {
-				rowChecks.forEach((cb) => { cb.checked = selectAll.checked; });
-			});
+		bindTable($host[0], listview);
+		if (typeof listview.set_rows_as_checked === "function") {
+			try { listview.set_rows_as_checked(); } catch (e) { /* noop */ }
 		}
-		rowChecks.forEach((cb) => {
-			cb.addEventListener("click", (e) => e.stopPropagation());
-			cb.addEventListener("change", () => {
-				if (!selectAll) return;
-				const all = Array.from(rowChecks);
-				selectAll.checked = all.every((c) => c.checked);
-				selectAll.indeterminate = !selectAll.checked && all.some((c) => c.checked);
-			});
-		});
+		fetchAux();
+	}
 
-		// Row click → form
-		container.querySelectorAll("tr[data-name]").forEach((tr) => {
-			tr.addEventListener("click", (e) => {
-				if (e.target && e.target.closest("input, button, a")) return;
-				const name = tr.getAttribute("data-name");
-				frappe.set_route("Form", "Job Applicant", name);
-			});
-		});
-
-		// Action buttons
-		container.querySelectorAll("button[data-action]").forEach((btn) => {
-			btn.addEventListener("click", (e) => {
-				e.stopPropagation();
-				const tr = btn.closest("tr[data-name]");
-				const name = tr && tr.getAttribute("data-name");
-				const action = btn.getAttribute("data-action");
-				if (!name) return;
-				if (action === "open") {
-					window.open(`/app/job-applicant/${encodeURIComponent(name)}`, "_blank");
-				} else if (action === "more") {
-					frappe.set_route("Form", "Job Applicant", name);
-				}
-			});
+	function patchOwnerCells() {
+		const $result = _listview && _listview.$result;
+		if (!$result || !$result.length) return;
+		$result.find("td[data-owner]").each(function () {
+			const id = this.getAttribute("data-owner");
+			if (id) this.innerHTML = ownerCellHtml(id);
 		});
 	}
 
-	let pendingFetch = null;
-	function refreshList() {
-		const listview = _listview
-			|| (frappe.views && frappe.views.list_view && frappe.views.list_view["Job Applicant"]);
-		if (!listview) return;
-		_listview = listview;
-
-		const headerHost = document.getElementById("ja-header-container");
-		const pipelineHost = document.getElementById("ja-pipeline-container");
-		const tabsHost = document.getElementById("ja-tabs-container");
-		const tableHost = document.getElementById("ja-table-container");
-		if (!tableHost) return;
-
-		state.loading = true;
-		renderTable(tableHost);
-
-		const args = {
-			job_opening: resolveJobOpening(),
-			status: state.activeTab === "All" ? null : state.activeTab,
-			start: listview.start || 0,
-			page_length: listview.page_length || 20,
-			order_by: listview.sort_by ? `${listview.sort_by} ${listview.sort_order || "desc"}` : "creation desc",
-		};
-
-		if (pendingFetch) pendingFetch.aborted = true;
-		const token = { aborted: false };
-		pendingFetch = token;
-
+	let _auxToken = 0;
+	function fetchAux() {
+		const data = (_listview && _listview.data) || [];
+		const owners = Array.from(new Set(data.map((d) => d.owner).filter(Boolean)));
+		const token = ++_auxToken;
 		frappe.call({
 			method: "recruitment.api.job_applicant_list.get_job_applicants_with_stats",
-			args,
+			args: { job_opening: resolveJobOpening(), owners: JSON.stringify(owners) },
 			callback: (r) => {
-				if (token.aborted) return;
-				const msg = (r && r.message) || { data: [], total_count: 0, tab_counts: {}, status_options: [], opening: null };
-				state.rows = msg.data || [];
+				if (token !== _auxToken) return;
+				const msg = (r && r.message) || {};
 				state.tabCounts = msg.tab_counts || {};
 				state.statusOptions = msg.status_options || [];
 				state.opening = msg.opening || null;
-				state.loading = false;
-				if (headerHost) renderHeader(headerHost);
-				if (pipelineHost) renderPipelineTop(pipelineHost);
-				if (tabsHost) renderTabs(tabsHost);
-				renderTable(tableHost);
-			},
-			error: () => {
-				if (token.aborted) return;
-				state.loading = false;
-				renderTable(tableHost);
+				state.users = msg.users || {};
+				renderHeader();
+				renderPipelineTop();
+				renderTabs();
+				patchOwnerCells();
 			},
 		});
 	}
 
-	function mountCustomLayout(listview) {
+	function syncActiveTabFromFilters(listview) {
+		try {
+			const filters = (listview.filter_area && listview.filter_area.get()) || [];
+			const f = filters.find((arr) => arr && arr[1] === "status" && arr[2] === "=");
+			state.activeTab = f && f[3] ? f[3] : "All";
+		} catch (e) { state.activeTab = "All"; }
+	}
+
+	function mountAboveList(listview) {
 		const layoutMain = listview.$page.find(".layout-main-section");
 		if (!layoutMain.length) return;
-		if (layoutMain.find("#ja-table-container").length) return;
-
 		layoutMain.addClass("ja-custom-active");
-
+		if (layoutMain.find("#ja-header-container").length) return;
 		const headerHost = $('<div id="ja-header-container"></div>');
 		const pipelineHost = $('<div id="ja-pipeline-container"></div>');
 		const tabsHost = $('<div id="ja-tabs-container"></div>');
-		const tableHost = $('<div id="ja-table-container" style="margin-top:8px"></div>');
-
 		const resultEl = layoutMain.find(".frappe-list .result");
 		if (resultEl.length) {
 			resultEl.before(headerHost);
 			resultEl.before(pipelineHost);
 			resultEl.before(tabsHost);
-			resultEl.before(tableHost);
 		} else {
-			layoutMain.prepend(tableHost);
 			layoutMain.prepend(tabsHost);
 			layoutMain.prepend(pipelineHost);
 			layoutMain.prepend(headerHost);
 		}
 	}
 
-	frappe.listview_settings["Job Applicant"] = {
+	function installRenderOverride(listview) {
+		if (listview._ja_render_patched) return;
+		listview._ja_render_patched = true;
+		listview.render_list = function () { renderTableInto(this); };
+		listview.render_header = function () { /* custom <thead> instead */ };
+
+		// Reveal Frappe's native selection bar only while rows are selected.
+		const origOnRowChecked = listview.on_row_checked.bind(listview);
+		listview.on_row_checked = function () {
+			origOnRowChecked();
+			const any = this.$result.find(".list-row-checkbox:checked").length > 0;
+			this.$page.find(".layout-main-section").toggleClass("ja-has-selection", any);
+		};
+	}
+
+	frappe.listview_settings[DOCTYPE] = {
 		hide_name_column: true,
 		add_fields: [
 			"applicant_name", "email_id", "phone_number", "status",
 			"job_title", "designation", "source", "source_name",
 			"applicant_rating", "custom_total_experience",
-			"owner", "creation", "modified",
+			"owner", "creation", "modified", "_liked_by",
 		],
 
 		onload(listview) {
 			_listview = listview;
 			injectStyles();
-			mountCustomLayout(listview);
+			mountAboveList(listview);
+			installRenderOverride(listview);
+			syncActiveTabFromFilters(listview);
+			renderHeader();
+			renderPipelineTop();
+			renderTabs();
 
-			const debounced = frappe.utils.debounce(refreshList, 200);
+			// Bulk "Send Pre Offer Form" — select many applicants and send the
+			// (form-less) pre-offer to each at once. Skips already-sent.
+			listview.page.add_action_item(__("Send Pre Offer Form"), function () {
+				const selected = listview.get_checked_items();
+				if (!selected.length) { frappe.msgprint(__("Please select Job Applicants")); return; }
+				frappe.confirm(
+					__("Send Pre Offer Forms to {0} selected applicant(s)?", [selected.length]),
+					function () {
+						frappe.call({
+							method: "recruitment.api.action_center.send_bulk_pre_offer",
+							args: { applicants: JSON.stringify(selected.map((d) => d.name)) },
+							freeze: true,
+							freeze_message: __("Sending Pre Offer Forms..."),
+							callback: function (r2) {
+								if (!r2.message) return;
+								frappe.msgprint(
+									__("Created: {0}<br>Skipped: {1}<br>Failed: {2}", [
+										r2.message.created, r2.message.skipped, r2.message.failed,
+									]),
+								);
+								listview.refresh();
+							},
+						});
+					},
+				);
+			});
 
-			// Standard top-row filter inputs (ID / Applicant Name / Status)
-			listview.$page.on(
-				"change keyup",
-				".standard-filter-section input, .standard-filter-section select, .page-form input, .page-form select",
-				debounced,
-			);
-
-			// Filter popup ("+ Add a Filter") changes go through filter_area / filter_list events.
-			// Subscribe so applying or clearing a filter immediately re-runs our fetch.
-			try {
-				if (listview.filter_area && listview.filter_area.filter_list) {
-					const fl = listview.filter_area.filter_list;
-					if (typeof fl.on_change === "function") {
-						const orig = fl.on_change.bind(fl);
-						fl.on_change = (...a) => { orig(...a); debounced(); };
-					}
-					// Frappe also bubbles up an apply event we can catch on the DOM
-					listview.$page.on("click", ".filter-popover-list .apply-filters, .filter-action-buttons .apply-btn", debounced);
-				}
-			} catch (e) { /* noop */ }
-
-			refreshList();
-
-			// Preserve existing "Create Job Offer" bulk action (unchanged behavior)
+			// Preserve "Create Job Offer" bulk action (gated by Recruitment Settings).
 			frappe.call({
 				method: "frappe.client.get",
 				args: { doctype: "Recruitment Settings", name: "Recruitment Settings" },
@@ -522,8 +551,12 @@
 
 		refresh(listview) {
 			_listview = listview;
-			mountCustomLayout(listview);
-			refreshList();
+			mountAboveList(listview);
+			installRenderOverride(listview);
+			syncActiveTabFromFilters(listview);
+			renderHeader();
+			renderPipelineTop();
+			renderTabs();
 		},
 	};
 })();

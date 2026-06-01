@@ -152,7 +152,7 @@ const FlowTableRow = ({
           (text) => (
             <Typography
               variant="bodySmall"
-              className="font-medium text-center text-primary-600 cursor-pointer"
+              className="font-medium text-center text-primary-600 cursor-pointer underline"
             >
               {text}
             </Typography>

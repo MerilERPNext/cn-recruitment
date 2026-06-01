@@ -1,146 +1,56 @@
 """
-Job Applicant list view API
-===========================
+Job Applicant list view — auxiliary data API
+============================================
 
-get_job_applicants_with_stats(job_opening=..., status=..., search=..., start=..., page_length=...)
-    Returns paginated applicants enriched with stats + tab counts. Used by the
-    customized Frappe desk list view at /app/job-applicant.
+The Job Applicant desk list is rendered by a custom table
+(`public/js/job_applicant_list.js`) on top of Frappe's native list view, which
+owns the row data, filtering, sorting, pagination, selection and Actions menu.
 
-    When `job_opening` is passed, the response also includes the parent opening's
-    title/name so the UI can render the "APPLICANTS FOR ..." header.
-
-The status options driving the tabs and pipeline bar are read from the
-Job Applicant doctype meta at runtime, so new options Just Work.
+This endpoint supplies only the bits the table can't get from the standard list
+query:
+  - tab_counts      : status group counts (All + each status), scoped to the
+                      opening when `job_opening` is given
+  - status_options  : status field options (drive the tabs + top pipeline bar)
+  - opening         : the parent opening's title/meta, for the "Applicants for…"
+                      header (only when scoped by `job_opening`)
+  - users           : display info (name / first_name / initials) for the owner
+                      ids of the visible rows (passed in via `owners`)
 """
 
+import json
+
 import frappe
-from frappe import _
-from frappe.utils import cint
-
-
-def _build_or_filters(search):
-	if not search:
-		return None
-	like = f"%{search}%"
-	return [
-		["applicant_name", "like", like],
-		["email_id", "like", like],
-		["name", "like", like],
-		["phone_number", "like", like],
-	]
 
 
 def _avatar_initials(name):
 	parts = [p for p in (name or "").replace("@", " ").split() if p]
 	if not parts:
 		return "?"
-	return ((parts[0][0] if parts else "") + (parts[1][0] if len(parts) > 1 else "")).upper()
+	return ((parts[0][0] if parts else "") + (parts[1][0] if len(parts) > 1 else "")).upper() or "?"
+
+
+def _status_options():
+	status_field = frappe.get_meta("Job Applicant").get_field("status")
+	return [s.strip() for s in (status_field.options or "").split("\n") if s and s.strip()]
 
 
 @frappe.whitelist()
-def get_job_applicants_with_stats(
-	job_opening=None,
-	status=None,
-	search=None,
-	start=0,
-	page_length=20,
-	order_by="creation desc",
-):
-	start = cint(start)
-	page_length = cint(page_length) or 20
+def get_job_applicants_with_stats(job_opening=None, owners=None):
+	"""Return tab counts + status options (+ opening header + owner display info)."""
 
-	status_field = frappe.get_meta("Job Applicant").get_field("status")
-	status_options = [
-		s.strip()
-		for s in (status_field.options or "").split("\n")
-		if s and s.strip()
-	]
+	status_options = _status_options()
 
-	# --- Filters ---
-	filters = {}
-	if job_opening:
-		filters["job_title"] = job_opening
-	if status and status != "All" and status in status_options:
-		filters["status"] = status
+	scoped = {"job_title": job_opening} if job_opening else {}
 
-	or_filters = _build_or_filters(search)
+	def _count(extra=None):
+		filters = dict(scoped)
+		if extra:
+			filters.update(extra)
+		return len(frappe.get_list("Job Applicant", filters=filters, fields=["name"], limit_page_length=0))
 
-	fields = [
-		"name",
-		"applicant_name",
-		"email_id",
-		"phone_number",
-		"status",
-		"job_title",
-		"designation",
-		"source",
-		"source_name",
-		"applicant_rating",
-		"custom_total_experience",
-		"owner",
-		"creation",
-		"modified",
-	]
-
-	rows = frappe.get_list(
-		"Job Applicant",
-		filters=filters,
-		or_filters=or_filters,
-		fields=fields,
-		start=start,
-		page_length=page_length,
-		order_by=order_by,
-	) or []
-
-	total_count = len(
-		frappe.get_list(
-			"Job Applicant",
-			filters=filters,
-			or_filters=or_filters,
-			fields=["name"],
-			limit_page_length=0,
-		)
-	)
-
-	# --- Tab counts (All + each status), scoped to the opening if given ---
-	scoped_filters = {}
-	if job_opening:
-		scoped_filters["job_title"] = job_opening
-
-	tab_counts = {
-		"All": len(
-			frappe.get_list(
-				"Job Applicant",
-				filters=scoped_filters,
-				or_filters=or_filters,
-				fields=["name"],
-				limit_page_length=0,
-			)
-		)
-	}
+	tab_counts = {"All": _count()}
 	for opt in status_options:
-		tab_counts[opt] = len(
-			frappe.get_list(
-				"Job Applicant",
-				filters={**scoped_filters, "status": opt},
-				or_filters=or_filters,
-				fields=["name"],
-				limit_page_length=0,
-			)
-		)
-
-	# --- Owner lookup cache (User.full_name) ---
-	owner_cache = {}
-
-	def owner_info(user_id):
-		if not user_id:
-			return {"id": None, "name": "", "initials": "?"}
-		if user_id not in owner_cache:
-			full_name = frappe.db.get_value("User", user_id, "full_name") or user_id
-			owner_cache[user_id] = full_name
-		full_name = owner_cache[user_id]
-		first = full_name.split()[0] if full_name else user_id
-		return {"id": user_id, "name": full_name, "first_name": first, "initials": _avatar_initials(full_name)}
+		tab_counts[opt] = _count({"status": opt})
 
 	# --- Opening header (when scoped) ---
 	opening_info = None
@@ -154,32 +64,29 @@ def get_job_applicants_with_stats(
 		if op:
 			opening_info = op
 
-	results = []
-	for r in rows:
-		results.append(
-			{
-				"name": r.name,
-				"applicant_name": r.applicant_name,
-				"email_id": r.email_id,
-				"phone_number": r.phone_number,
-				"status": r.status,
-				"job_opening": r.job_title,
-				"designation": r.designation,
-				"source": r.source,
-				"source_name": r.source_name,
-				"applicant_rating": float(r.applicant_rating or 0),
-				"score_pct": int(round(float(r.applicant_rating or 0) * 20)),  # 0–5 → 0–100
-				"experience": r.custom_total_experience,
-				"applied_on": r.creation,
-				"owner": owner_info(r.owner),
-				"initials": _avatar_initials(r.applicant_name or r.email_id or r.name),
+	# --- Owner display info for the visible rows ---
+	if isinstance(owners, str):
+		try:
+			owners = json.loads(owners)
+		except (ValueError, TypeError):
+			owners = [owners] if owners else []
+	owners = [o for o in (owners or []) if o]
+
+	users = {}
+	if owners:
+		for u in frappe.get_all(
+			"User", filters={"name": ["in", list(set(owners))]}, fields=["name", "full_name"]
+		):
+			full_name = u.full_name or u.name
+			users[u.name] = {
+				"name": full_name,
+				"first_name": full_name.split()[0] if full_name else u.name,
+				"initials": _avatar_initials(full_name),
 			}
-		)
 
 	return {
-		"data": results,
-		"total_count": total_count,
 		"tab_counts": tab_counts,
 		"status_options": status_options,
 		"opening": opening_info,
+		"users": users,
 	}
