@@ -11,6 +11,7 @@ import EmployeeDirectoryFilters from "./EmployeeDirectoryFilters";
 
 import { FilterCondition } from "../../types/frappe";
 import { Typography } from "../shared/atoms/Typography";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 export interface EmployeeDirectoryFilterData {
   employee_status?: string;
@@ -89,7 +90,13 @@ const EmployeeSearch = ({
 
   Object.entries(activeFilters).forEach(([key, value]) => {
     if (value) {
-      if (Array.isArray(value) && value.length > 0) {
+      if (key === "doj_from") {
+        const dateStr = typeof value === 'string' ? value.split('T')[0] : String(value);
+        filters.push(["date_of_joining", ">=", dateStr]);
+      } else if (key === "doj_to") {
+        const dateStr = typeof value === 'string' ? value.split('T')[0] : String(value);
+        filters.push(["date_of_joining", "<=", dateStr]);
+      } else if (Array.isArray(value) && value.length > 0) {
         filters.push([key, "in", value]);
       } else if (!Array.isArray(value)) {
         filters.push([key, "=", value]);
@@ -226,7 +233,13 @@ const EmployeeSearch = ({
             return (
               <Button key={key} variant="soft" size="sm">
                 <span className="font-medium text-gray-500">{label}:</span>
-                <span>{Array.isArray(value) ? value.join(", ") : String(value)}</span>
+                <span>
+                  {Array.isArray(value) 
+                    ? value.join(", ") 
+                    : (key === "doj_from" || key === "doj_to"
+                        ? formatToIndianDate(String(value))
+                        : String(value))}
+                </span>
                 <span
                   role="button"
                   onClick={() => clearFilter(key)}
