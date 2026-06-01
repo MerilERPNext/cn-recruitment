@@ -8,6 +8,7 @@ import {
   CalculateExpenseResponse,
   ExpenseTypeFieldsResponse,
 } from "../types/expenseAdvance";
+import { ReimbursementSummary } from "../types/expenseSummary";
 import { FilterCondition } from "../types/frappe";
 import { FrappeAPI } from "../utils/frappeAPI";
 
@@ -493,5 +494,16 @@ export const expenseService = {
       "chatnext_expense_trips.expense_claim.update_approval_status",
       { docname, approval_status: approvalStatus }
     );
+  },
+
+  /** Fetch reimbursement summary for a given employee */
+  getReimbursementSummary: async (
+    employeeId: string,
+  ): Promise<ReimbursementSummary> => {
+    const response = await FrappeAPI.getMethod(
+      "chatnext_expense_trips.expense_claim.get_reimbursement_summary",
+      { employee: employeeId },
+    );
+    return response as ReimbursementSummary;
   },
 };
