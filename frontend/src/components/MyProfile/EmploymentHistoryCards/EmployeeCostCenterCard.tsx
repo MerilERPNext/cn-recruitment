@@ -2,28 +2,32 @@ import React from "react";
 import { Pencil } from "lucide-react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 
-interface Field {
-    id: string | null;
-    name: string | null;
+interface CostCenter {
+    id: string;
+    name: string;
 }
 
-interface EmploymentRolesCardProps {
+interface Allocation {
+    cost_center: CostCenter;
+    percentage: number;
+}
+
+interface EmployeeCostCenterCardProps {
     from_date: string;
     to_date: string | null;
     is_current: boolean;
-    is_promotion: boolean;
-
-    employee_role?: Field | null;
+    total_percentage: number;
+    allocations: Allocation[];
 
     onEdit?: () => void;
 }
 
-const EmployeeRolesCard: React.FC<EmploymentRolesCardProps> = ({
+const EmployeeCostCenterCard: React.FC<EmployeeCostCenterCardProps> = ({
     from_date,
     to_date,
     is_current,
-    is_promotion,
-    employee_role,
+    total_percentage,
+    allocations,
     onEdit,
 }) => {
     return (
@@ -32,12 +36,6 @@ const EmployeeRolesCard: React.FC<EmploymentRolesCardProps> = ({
                 {is_current && (
                     <span className="bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-xl">
                         Current
-                    </span>
-                )}
-
-                {is_promotion && (
-                    <span className="bg-blue-100 text-blue-700 text-xs font-medium px-3 py-1 rounded-xl">
-                        Promotion
                     </span>
                 )}
 
@@ -54,12 +52,39 @@ const EmployeeRolesCard: React.FC<EmploymentRolesCardProps> = ({
             <div className="space-y-4 pr-20">
                 <div>
                     <p className="text-xs text-gray-500">
-                        Employee Role
+                        Total Allocation
                     </p>
 
                     <p className="font-semibold text-lg text-gray-900">
-                        {employee_role?.name || "-"}
+                        {total_percentage}%
                     </p>
+                </div>
+
+                <div>
+                    <p className="text-xs text-gray-500 mb-2">
+                        Cost Centers
+                    </p>
+
+                    <div className="space-y-2">
+                        {allocations.length > 0 ? (
+                            allocations.map((allocation, index) => (
+                                <div
+                                    key={`${allocation.cost_center.id}-${index}`}
+                                    className="flex items-center justify-between"
+                                >
+                                    <span className="text-gray-900 font-medium">
+                                        {allocation.cost_center.name}
+                                    </span>
+
+                                    <span className="text-sm text-gray-600">
+                                        {allocation.percentage}%
+                                    </span>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-gray-400">-</p>
+                        )}
+                    </div>
                 </div>
 
                 <div>
@@ -81,4 +106,4 @@ const EmployeeRolesCard: React.FC<EmploymentRolesCardProps> = ({
     );
 };
 
-export default EmployeeRolesCard;
+export default EmployeeCostCenterCard;

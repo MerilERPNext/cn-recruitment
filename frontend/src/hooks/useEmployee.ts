@@ -630,6 +630,28 @@ export const useUpdateEmploymentDetailsMutation = () => {
   });
 };
 
+
+export const useUpdateEmployeeCostCentersMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["updateEmployeeCostCenters"],
+    mutationFn: (body: Record<string, unknown>) =>
+      profileService.updateEmployeeCostCenters(body),
+    onError: (error) => {
+      console.error("Error updating employee cost centers:", error);
+      const message =
+        error instanceof Error ? error.message : errorResponseFormater(error);
+      toast.error(message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employment-history-data"] });
+      toast.success("Employee cost centers updated successfully");
+    },
+  });
+};
+
+
+
 export const useAddEmployeeHistoryMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -701,6 +723,15 @@ export const useUpdateEmpReportingDetailsRecordMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["getEmployeeReportingDetails"] });
       toast.success("Employee reporting details updated successfully");
     },
+  });
+};
+
+export const useGetAssignmentDetails = (module: string, employee: string) => {
+  return useQuery({
+    queryKey: ["assignment-details", module, employee],
+    queryFn: () => EmployeeService.getAssignmentDetails(module, employee),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!module && !!employee,
   });
 };
 

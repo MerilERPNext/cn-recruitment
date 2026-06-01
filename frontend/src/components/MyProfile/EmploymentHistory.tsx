@@ -2,18 +2,20 @@ import React from "react";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
 import { PlusIcon } from "lucide-react";
-import EmploymentHistoryForm from "./EmploymentHistorForm";
-import WorkLocationForm from "./WorkLocationForm";
-import EmploymentTypeForm from "./EmploymentTypeForm";
-import EmployeeRoleForm from "./EmployeeRoleForm";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import { useGetEmploymentHistoryData } from "../../hooks/useEmployee";
-import { EmployeeRole, EmploymentTypes, WorkLocation, WorkRole } from "../../types/employee";
+import { EmployeeCostCenter, EmployeeRole, EmploymentTypes, WorkLocation, WorkRole } from "../../types/employee";
 import EmploymentWorkLocationCard from "./EmploymentHistoryCards/EmploymentWorkLocationsCard";
 import EmploymentHistoryCard from "./EmploymentHistoryCards/EmploymentHistoryCard";
 import EmploymentTypesCard from "./EmploymentHistoryCards/EmploymentTypesCard";
 import EmployeeRolesCard from "./EmploymentHistoryCards/EmployeeRolesCard";
+import EmployeeCostCenterCard from "./EmploymentHistoryCards/EmployeeCostCenterCard";
+import CostCenterForm from "./EmploymentHistoryForms/CostCenterForm";
+import WorkLocationForm from "./EmploymentHistoryForms/WorkLocationForm";
+import EmploymentHistoryForm from "./EmploymentHistoryForms/EmploymentHistorForm";
+import EmploymentTypeForm from "./EmploymentHistoryForms/EmploymentTypeForm";
+import EmployeeRoleForm from "./EmploymentHistoryForms/EmployeeRoleForm";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
@@ -46,6 +48,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   const workLocation = data?.work_locations || [];
   const employmentTypes = data?.employment_types || [];
   const employeeRoles = data?.employee_roles || [];
+  const costCenters = data?.cost_centers || [];
   const hasEmploymentHistory = history.length > 0;
 
   const defaultStartDateForAdd = !hasEmploymentHistory
@@ -65,14 +68,21 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 
   const [isModalOpen, setIsModalOpen] = React.useState<boolean>(false);
   const [isEditing, setIsEditing] = React.useState<boolean>(false);
-  const [editItem, setEditItem] = React.useState<WorkRole | WorkLocation | EmploymentTypes | EmployeeRole | null>(null);
-  const [editType, setEditType] = React.useState<"work_role" | "work_location" | "employment_type" | "employee_role">("work_role");
+  const [editItem, setEditItem] = React.useState<WorkRole | WorkLocation | EmploymentTypes | EmployeeRole | EmployeeCostCenter | null>(null);
+  const [editType, setEditType] = React.useState<"work_role" | "work_location" | "employment_type" | "employee_role" | "cost_center">("work_role");
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleEditCard = (item: any, type: "work_role" | "work_location" | "employment_type" | "employee_role" = "work_role") => {
+  const handleEditCard = (item: any, type: "work_role" | "work_location" | "employment_type" | "employee_role" | "cost_center" = "work_role") => {
     setEditItem(item);
     setEditType(type);
     setIsEditing(true);
+    setIsModalOpen(true);
+  };
+
+  const handleAddCard = (type: "work_role" | "work_location" | "employment_type" | "employee_role" | "cost_center") => {
+    setEditItem(null);
+    setEditType(type);
+    setIsEditing(false);
     setIsModalOpen(true);
   };
 
@@ -94,7 +104,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               Your employment history and organizational information
             </Typography>
           </div>
-          <div className="flex">
+          {/* <div className="flex">
             {canAddEmploymentHistory && (
               <Button
                 onClick={() => setIsModalOpen(true)}
@@ -105,7 +115,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 Add
               </Button>
             )}
-          </div>
+          </div> */}
         </div>
         {!employeeId && (
           <p className="p-4 text-gray-500">No employee selected</p>
@@ -137,110 +147,169 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
         {error && (
           <p className="p-4 text-red-500">Failed to load employment history</p>
         )}
-        <div className="flex flex-col gap-2">
-
-          <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-            Work Roles
-          </Typography>
-          <div className="flex gap-2 overflow-auto">
-            {history.map((item) => (
-              <div
-                key={item.from_date + item.designation}
-                className={`${history.length === 1 ? "max-w-md w-full" : ""
-                  }`}
-              >
-                <EmploymentHistoryCard
-                  company={item.company?.name}
-                  department={item.department?.name}
-                  band={item.band?.name}
-                  grade={item.grade?.name}
-                  start_date={item.from_date}
-                  end_date={item.to_date}
-                  isCurrent={item.is_current}
-                  functionalArea={item.functional_area?.name}
-                  is_promotion={item.is_promotion}
-                  onEdit={canEditEmploymentHistory ? () => handleEditCard(item) : undefined}
-                />
-              </div>
-            ))}
+        {history.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                Work History
+              </Typography>
+              {canAddEmploymentHistory && (
+                <Button onClick={() => handleAddCard("work_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                  Add
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2 overflow-auto">
+              {history.map((item) => (
+                <div
+                  key={item.from_date + item.designation}
+                  className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
+                >
+                  <EmploymentHistoryCard
+                    company={item.company?.name}
+                    department={item.department?.name}
+                    band={item.band?.name}
+                    grade={item.grade?.name}
+                    start_date={item.from_date}
+                    end_date={item.to_date}
+                    isCurrent={item.is_current}
+                    functionalArea={item.functional_area?.name}
+                    is_promotion={item.is_promotion}
+                    onEdit={canEditEmploymentHistory ? () => handleEditCard(item) : undefined}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="flex flex-col gap-2 mt-6">
-          <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-            Work Locations
-          </Typography>
-          <div className="flex gap-2 overflow-auto">
-            {workLocation?.map((item) => (
-              <div
-                key={item.from_date + item?.to_date}
-                className={`${history.length === 1 ? "max-w-md w-full" : ""
-                  }`}
-              >
-                <EmploymentWorkLocationCard
-                  from_date={item.from_date}
-                  to_date={item.to_date}
-                  is_current={item.is_current}
-                  work_location={item.work_location}
-                  office_area={item.office_area}
-                  country={item.country}
-                  state={item.state}
-                  city={item.city}
-                  onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "work_location") : undefined}
-
-                />
-              </div>
-            ))}
+        )}
+        {workLocation.length > 0 && (
+          <div className="flex flex-col gap-2 mt-6">
+            <div className="flex items-center justify-between">
+              <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                Work Locations
+              </Typography>
+              {canAddEmploymentHistory && (
+                <Button onClick={() => handleAddCard("work_location")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                  Add
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2 overflow-auto">
+              {workLocation.map((item) => (
+                <div
+                  key={item.from_date + item?.to_date}
+                  className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
+                >
+                  <EmploymentWorkLocationCard
+                    from_date={item.from_date}
+                    to_date={item.to_date}
+                    is_current={item.is_current}
+                    work_location={item.work_location}
+                    office_area={item.office_area}
+                    country={item.country}
+                    state={item.state}
+                    city={item.city}
+                    onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "work_location") : undefined}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="flex flex-col gap-2 mt-6">
-          <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-            Employment Type
-          </Typography>
-          <div className="flex gap-2 overflow-auto">
-            {employmentTypes?.map((item) => (
-              <div
-                key={item.from_date + item?.to_date}
-                className={`${history.length === 1 ? "max-w-md w-full" : ""
-                  }`}
-              >
-                <EmploymentTypesCard
-                  from_date={item.from_date}
-                  to_date={item.to_date}
-                  is_current={item.is_current}
-                  is_promotion={item.is_promotion}
-                  employment_type={item.employment_type}
-                  employee_subtype={item.employee_subtype}
-                  onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employment_type") : undefined}
-
-                />
-              </div>
-            ))}
+        )}
+        {employmentTypes.length > 0 && (
+          <div className="flex flex-col gap-2 mt-6">
+            <div className="flex items-center justify-between">
+              <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                Employment Type
+              </Typography>
+              {canAddEmploymentHistory && (
+                <Button onClick={() => handleAddCard("employment_type")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                  Add
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2 overflow-auto">
+              {employmentTypes.map((item) => (
+                <div
+                  key={item.from_date + item?.to_date}
+                  className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
+                >
+                  <EmploymentTypesCard
+                    from_date={item.from_date}
+                    to_date={item.to_date}
+                    is_current={item.is_current}
+                    is_promotion={item.is_promotion}
+                    employment_type={item.employment_type}
+                    employee_subtype={item.employee_subtype}
+                    onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employment_type") : undefined}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="flex flex-col gap-2 mt-6">
-          <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-            Employment Roles
-          </Typography>
-          <div className="flex gap-2 overflow-auto">
-            {employeeRoles?.map((item) => (
-              <div
-                key={item.from_date + item?.to_date}
-                className={`${history.length === 1 ? "max-w-md w-full" : ""
-                  }`}
-              >
-                <EmployeeRolesCard
-                  from_date={item.from_date}
-                  to_date={item.to_date}
-                  is_current={item.is_current}
-                  is_promotion={item.is_promotion}
-                  employee_role={item.employee_role}
-                  onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employee_role") : undefined}
-
-                />
-              </div>
-            ))}
+        )}
+        {employeeRoles.length > 0 && (
+          <div className="flex flex-col gap-2 mt-6">
+            <div className="flex items-center justify-between">
+              <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                Employment Roles
+              </Typography>
+              {canAddEmploymentHistory && (
+                <Button onClick={() => handleAddCard("employee_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                  Add
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2 overflow-auto">
+              {employeeRoles.map((item) => (
+                <div
+                  key={item.from_date + item?.to_date}
+                  className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
+                >
+                  <EmployeeRolesCard
+                    from_date={item.from_date}
+                    to_date={item.to_date}
+                    is_current={item.is_current}
+                    is_promotion={item.is_promotion}
+                    employee_role={item.employee_role}
+                    onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employee_role") : undefined}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+        {costCenters.length > 0 && (
+          <div className="flex flex-col gap-2 mt-6">
+            <div className="flex items-center justify-between">
+              <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                Cost Center
+              </Typography>
+              {canAddEmploymentHistory && (
+                <Button onClick={() => handleAddCard("cost_center")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                  Add
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2 overflow-auto">
+              {costCenters.map((item) => (
+                <div
+                  key={item.from_date}
+                  className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
+                >
+                  <EmployeeCostCenterCard
+                    allocations={item.allocations}
+                    from_date={item.from_date}
+                    to_date={item.to_date}
+                    is_current={item.is_current}
+                    total_percentage={item.total_percentage}
+                    onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "cost_center") : undefined}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
       {isModalOpen && editType === "work_location" && (
@@ -297,6 +366,22 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           initialEditData={editItem ? {
             employee_role: (editItem as unknown as EmployeeRole).employee_role?.id,
             start_date: editItem.from_date,
+          } : undefined}
+        />
+      )}
+      {isModalOpen && editType === "cost_center" && (
+        <CostCenterForm
+          key={editItem ? `cc-${editItem.from_date}` : "add-cc"}
+          onCancel={handleCloseModal}
+          isEdit={isEditing}
+          defaultStartDate={defaultStartDateForAdd}
+          initialEditData={editItem ? {
+            allocations: (editItem as unknown as EmployeeCostCenter).allocations.map((a) => ({
+              cost_center_id: a.cost_center.id,
+              percentage: a.percentage,
+            })),
+            start_date: editItem.from_date,
+            end_date: (editItem as unknown as EmployeeCostCenter).to_date,
           } : undefined}
         />
       )}

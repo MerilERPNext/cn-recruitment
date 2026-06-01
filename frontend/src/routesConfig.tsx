@@ -492,6 +492,11 @@ const ScheduledImportsPage = lazyWithRetry(
   "ScheduledImportsPage",
 );
 
+const AssignmentDetailsPage = lazyWithRetry(
+  () => import("./components/EmployeeProfile/AssignmentDetailsPage"),
+  "AssignmentDetailsPage",
+);
+
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -910,6 +915,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/employee-profile",
     element: <EmployeeProfile />,
     permissionKey: "Employee Profile",
+  },
+  {
+    path: "/webapp/employee-profile/assignment-details",
+    element: <AssignmentDetailsPage />,
+    permissionKey: "Assignment Details",
   },
 
   // Nested Expenses App Routes

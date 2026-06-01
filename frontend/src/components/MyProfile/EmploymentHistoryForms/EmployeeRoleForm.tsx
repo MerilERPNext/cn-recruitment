@@ -3,32 +3,32 @@ import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import Button from "../shared/atoms/Button";
-import workLocationFormSchema from "./workLocationFormSchema.json";
+import Button from "../../shared/atoms/Button";
+import employeeRoleFormSchema from "./employeeRoleFormSchema.json";
 import {
   useCurrentEmployeeDetails,
   useUpdateEmploymentDetailsMutation,
-} from "../../hooks/useEmployee";
-import CircularLoader from "../shared/atoms/CircularLoader";
+} from "../../../hooks/useEmployee";
+import CircularLoader from "../../shared/atoms/CircularLoader";
 
-interface InitialWorkLocationData {
-  work_location: string;
+interface InitialEmployeeRoleData {
+  employee_role: string;
   start_date: string;
 }
 
-interface WorkLocationFormProps {
+interface EmployeeRoleFormProps {
   onCancel?: () => void;
   isEdit?: boolean;
   defaultStartDate?: string | null;
-  initialEditData?: InitialWorkLocationData;
+  initialEditData?: InitialEmployeeRoleData;
 }
 
-const WorkLocationForm = ({
+const EmployeeRoleForm = ({
   onCancel,
   isEdit = false,
   defaultStartDate,
   initialEditData,
-}: WorkLocationFormProps) => {
+}: EmployeeRoleFormProps) => {
   const [instance, setInstance] = useState<any>(null);
   const initialDataApplied = useRef(false);
 
@@ -46,11 +46,11 @@ const WorkLocationForm = ({
     let shouldUpdate = false;
 
     if (isEdit && initialEditData) {
-      newData.work_location = initialEditData.work_location;
+      newData.employee_role = initialEditData.employee_role;
       newData.startDate = initialEditData.start_date;
       shouldUpdate = true;
     } else if (!isEdit) {
-      newData.work_location = "";
+      newData.employee_role = "";
       if (defaultStartDate) {
         newData.startDate = defaultStartDate;
       }
@@ -74,7 +74,7 @@ const WorkLocationForm = ({
     if (!instance) return false;
 
     const requiredFields = [
-      { key: "work_location", label: "Work Location" },
+      { key: "employee_role", label: "Employee Role" },
       { key: "startDate", label: "Start Date" },
     ];
 
@@ -114,7 +114,7 @@ const WorkLocationForm = ({
 
       await updateEmploymentDetails({
         employee: currentEmployee?.employee,
-        fields: [{ field: "work_location", value: data.work_location }],
+        fields: [{ field: "employee_role", value: data.employee_role }],
         start_date: data.startDate,
       });
       onCancel?.();
@@ -136,7 +136,7 @@ const WorkLocationForm = ({
       <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">Work Location</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Employee Role</h2>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -152,7 +152,7 @@ const WorkLocationForm = ({
         {/* Form */}
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 pb-12 relative">
           <Form
-            form={workLocationFormSchema}
+            form={employeeRoleFormSchema}
             onFormReady={(form: any) => {
               setInstance(form);
               form.setPristine(true);
@@ -187,4 +187,4 @@ const WorkLocationForm = ({
   );
 };
 
-export default WorkLocationForm;
+export default EmployeeRoleForm;

@@ -3,32 +3,33 @@ import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import Button from "../shared/atoms/Button";
-import employeeRoleFormSchema from "./employeeRoleFormSchema.json";
+import Button from "../../shared/atoms/Button";
+import employmentTypeFormSchema from "./employmentTypeFormSchema.json";
 import {
   useCurrentEmployeeDetails,
   useUpdateEmploymentDetailsMutation,
-} from "../../hooks/useEmployee";
-import CircularLoader from "../shared/atoms/CircularLoader";
+} from "../../../hooks/useEmployee";
+import CircularLoader from "../../shared/atoms/CircularLoader";
 
-interface InitialEmployeeRoleData {
-  employee_role: string;
+interface InitialEmploymentTypeData {
+  employment_type: string;
+  employee_subtype: string;
   start_date: string;
 }
 
-interface EmployeeRoleFormProps {
+interface EmploymentTypeFormProps {
   onCancel?: () => void;
   isEdit?: boolean;
   defaultStartDate?: string | null;
-  initialEditData?: InitialEmployeeRoleData;
+  initialEditData?: InitialEmploymentTypeData;
 }
 
-const EmployeeRoleForm = ({
+const EmploymentTypeForm = ({
   onCancel,
   isEdit = false,
   defaultStartDate,
   initialEditData,
-}: EmployeeRoleFormProps) => {
+}: EmploymentTypeFormProps) => {
   const [instance, setInstance] = useState<any>(null);
   const initialDataApplied = useRef(false);
 
@@ -46,11 +47,13 @@ const EmployeeRoleForm = ({
     let shouldUpdate = false;
 
     if (isEdit && initialEditData) {
-      newData.employee_role = initialEditData.employee_role;
+      newData.employment_type = initialEditData.employment_type;
+      newData.employee_subtype = initialEditData.employee_subtype;
       newData.startDate = initialEditData.start_date;
       shouldUpdate = true;
     } else if (!isEdit) {
-      newData.employee_role = "";
+      newData.employment_type = "";
+      newData.employee_subtype = "";
       if (defaultStartDate) {
         newData.startDate = defaultStartDate;
       }
@@ -74,7 +77,7 @@ const EmployeeRoleForm = ({
     if (!instance) return false;
 
     const requiredFields = [
-      { key: "employee_role", label: "Employee Role" },
+      { key: "employment_type", label: "Employment Type" },
       { key: "startDate", label: "Start Date" },
     ];
 
@@ -112,9 +115,16 @@ const EmployeeRoleForm = ({
         return;
       }
 
+      const fields: { field: string; value: string }[] = [
+        { field: "employment_type", value: data.employment_type },
+      ];
+      if (data.employee_subtype) {
+        fields.push({ field: "employee_subtype", value: data.employee_subtype });
+      }
+
       await updateEmploymentDetails({
         employee: currentEmployee?.employee,
-        fields: [{ field: "employee_role", value: data.employee_role }],
+        fields,
         start_date: data.startDate,
       });
       onCancel?.();
@@ -136,7 +146,9 @@ const EmployeeRoleForm = ({
       <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">Employee Role</h2>
+          <h2 className="text-lg font-semibold text-gray-800">
+            Employment Type
+          </h2>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -152,10 +164,19 @@ const EmployeeRoleForm = ({
         {/* Form */}
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 pb-12 relative">
           <Form
-            form={employeeRoleFormSchema}
+            form={employmentTypeFormSchema}
             onFormReady={(form: any) => {
               setInstance(form);
               form.setPristine(true);
+
+              form.on("change", (event: any) => {
+                if (event.changed?.component?.key === "employment_type") {
+                  form
+                    .getComponent("employee_subtype")
+                    ?.setValue("", { noValidate: true });
+                  form.getComponent("employee_subtype")?.setPristine(true);
+                }
+              });
             }}
             options={{
               builder: { styles: false },
@@ -187,4 +208,4 @@ const EmployeeRoleForm = ({
   );
 };
 
-export default EmployeeRoleForm;
+export default EmploymentTypeForm;

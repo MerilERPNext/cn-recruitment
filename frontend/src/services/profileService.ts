@@ -275,6 +275,29 @@ export const profileService = {
       throw error;
     }
   },
+
+
+  updateEmployeeCostCenters: async (
+    body: Record<string, unknown>,
+  ): Promise<boolean> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.update_employee_cost_centers",
+        body,
+      ) as { success: boolean; message?: string } | boolean;
+
+      // API returns { success: false, message: "..." } for business-logic errors
+      if (response && typeof response === "object" && response.success === false) {
+        throw new Error(response.message || "Failed to update cost centers");
+      }
+
+      return true;
+    } catch (error) {
+      console.error("📡 Error while updating employee cost centers:", error);
+      throw error;
+    }
+  },
+
   addEmployeeReportingDetails: async (
     body: Record<string, unknown>,
   ): Promise<boolean> => {
