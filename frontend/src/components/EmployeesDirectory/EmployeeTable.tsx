@@ -147,6 +147,7 @@ const EmployeeTable = ({
                         ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                         variant="subtle"
                         size="sm"
+                        disabled={selectedEmployees.length > 0}
                         onClick={() => setOpenPopupId(openPopupId === item.name ? null : item.name)}
                         className="p-1"
                       >
@@ -316,10 +317,11 @@ const EmployeeTable = ({
               </div>
 
               <div className="relative">
-                {canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword && <Button
+                {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword) && <Button
                   ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                   variant="soft"
                   size="sm"
+                  disabled={selectedEmployees.length > 0}
                   onClick={() => setOpenPopupId(openPopupId === item.name ? null : item.name)}
                   className="p-1.5 rounded-lg hover:bg-gray-100"
                 >
