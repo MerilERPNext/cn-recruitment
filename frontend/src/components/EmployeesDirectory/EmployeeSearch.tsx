@@ -14,9 +14,9 @@ import { Typography } from "../shared/atoms/Typography";
 
 export interface EmployeeDirectoryFilterData {
   employee_status?: string;
-  company?: string;
+  company?: string | string[];
   departments?: string;
-  [key: string]: string | undefined;
+  [key: string]: string | string[] | undefined;
 }
 
 // custom dropdown option UI
@@ -89,7 +89,11 @@ const EmployeeSearch = ({
 
   Object.entries(activeFilters).forEach(([key, value]) => {
     if (value) {
-      filters.push([key, "=", value]);
+      if (Array.isArray(value) && value.length > 0) {
+        filters.push([key, "in", value]);
+      } else if (!Array.isArray(value)) {
+        filters.push([key, "=", value]);
+      }
     }
   });
 
@@ -139,7 +143,7 @@ const EmployeeSearch = ({
   const hasPendingChanges = JSON.stringify(pendingEmployees.map(e => e.name).sort()) !== JSON.stringify(appliedSearchEmployees.map(e => e.name).sort());
 
   const activeFilterCount = Object.keys(activeFilters).filter(
-    (key) => activeFilters[key],
+    (key) => activeFilters[key] && (!Array.isArray(activeFilters[key]) || (activeFilters[key] as string[]).length > 0),
   ).length;
 
   return (
@@ -215,14 +219,14 @@ const EmployeeSearch = ({
             Active Filters:
           </span>
           {Object.entries(activeFilters).map(([key, value]) => {
-            if (!value) return null;
+            if (!value || (Array.isArray(value) && value.length === 0)) return null;
             const label = key
               .replace(/_/g, " ")
               .replace(/\b\w/g, (l) => l.toUpperCase());
             return (
               <Button key={key} variant="soft" size="sm">
                 <span className="font-medium text-gray-500">{label}:</span>
-                <span>{String(value)}</span>
+                <span>{Array.isArray(value) ? value.join(", ") : String(value)}</span>
                 <span
                   role="button"
                   onClick={() => clearFilter(key)}

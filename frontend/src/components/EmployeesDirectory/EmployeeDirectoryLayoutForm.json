@@ -31,6 +31,7 @@
             "key": "company",
             "type": "select",
             "input": true,
+            "multiple": true,
             "placeholder": "Select Company",
             "customClass": "mb-4",
             "dataSrc": "url",
