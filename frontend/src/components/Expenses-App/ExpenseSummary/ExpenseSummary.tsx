@@ -10,6 +10,8 @@ import SideDrawer from "../../shared/SideDrawer";
 import Badge from "../../shared/Badge";
 import NoDataFound from "../../shared/atoms/NoDataFound";
 import { Clock, CheckCircle, XCircle } from "lucide-react";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { formatCurrency } from "../../../utils/currency";
 
 /* ───────────────────────── helpers ───────────────────────── */
 
@@ -18,15 +20,6 @@ const formatINR = (amount: number): string =>
 
 const padCount = (count: number): string => String(count).padStart(2, "0");
 
-const formatDate = (dateString: string): string => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
 
 /* ───────────────────────── sub-components ────────────────── */
 
@@ -65,7 +58,7 @@ const PendingItem: React.FC<PendingItemProps> = ({
         component="span"
         className="relative pl-2.5 before:content-['|'] before:absolute before:left-0 before:text-gray-300 before:font-normal font-semibold"
       >
-        {formatINR(category.amount)}
+        {formatCurrency(category.amount)}
       </Typography>
     </div>
     <Typography
@@ -106,7 +99,7 @@ const RecordCard: React.FC<{ record: ReimbursementRecord }> = ({ record }) => {
           size="sm"
         />
         <Typography variant="caption" color="body2" className="font-medium text-[13px]">
-          Updated on {formatDate(record.request_date)}
+          Updated on {formatToIndianDate(record.request_date)}
         </Typography>
       </div>
 
@@ -208,7 +201,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({ onRetry }) => (
 /* ───────────────────── main component ───────────────────── */
 
 const ExpenseSummary: React.FC = () => {
-  const { data: currentEmployee } = useCurrentEmployeeDetails({
+  const { data: currentEmployee, isLoading: isLoadingEmployee, isError: isErrorEmployee, refetch: refetchEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
 
@@ -237,13 +230,13 @@ const ExpenseSummary: React.FC = () => {
   };
 
   /* Loading */
-  if (isLoading || !currentEmployee) {
+  if (isLoading || isLoadingEmployee) {
     return <SummarySkeleton />;
   }
 
   /* Error */
-  if (isError || !summary) {
-    return <ErrorState onRetry={() => refetch()} />;
+  if (isError || !summary || isErrorEmployee || !employeeId) {
+    return <ErrorState onRetry={() => { refetch(); refetchEmployee(); }} />;
   }
 
   return (
