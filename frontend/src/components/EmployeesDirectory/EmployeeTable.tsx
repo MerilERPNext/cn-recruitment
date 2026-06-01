@@ -11,6 +11,7 @@ import ChangeSelfServiceStatus from "./tools/ChangeSelfServiceStatus/ChangeSelfS
 import ChangeWeekOff from "./tools/ChangeWeekOff/ChangeWeekOff";
 import ResetPassword from "./tools/ResetPassword/ResetPassword";
 import ResetOtpLimit from "./tools/ResetOtpLimit/ResetOtpLimit";
+import PlatformAccessControls from "./tools/PlatformAccessControls/PlatformAccessControls";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 const EmployeeTable = ({
@@ -45,9 +46,14 @@ const EmployeeTable = ({
     "reset_otp_auth_limit",
     "Employee Directory"
   );
+  const canChangePlatformAccess = isActionEnabled(
+    userUiPermission,
+    "change_platform_access",
+    "Employee Directory"
+  );
 
   const { isDesktop } = useScreenSize();
-  const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | 'otp_limit' | null>(null);
+  const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | 'otp_limit' | 'platform_access' | null>(null);
   const [selectedRowEmployee, setSelectedRowEmployee] = useState<Employee | null>(null);
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -163,7 +169,7 @@ const EmployeeTable = ({
                     </Link>
 
                     <div>
-                      {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit) && <Button
+                      {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
                         ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                         variant="subtle"
                         size="sm"
@@ -233,6 +239,19 @@ const EmployeeTable = ({
                             }}
                           >
                             Reset otp auth limit
+                          </Button>}
+                          {canChangePlatformAccess && <Button
+                            variant="subtle"
+                            size="md"
+                            contentAlign="start"
+                            fullWidth
+                            onClick={() => {
+                              setSelectedRowEmployee(item);
+                              setActiveTool('platform_access');
+                              setOpenPopupId(null);
+                            }}
+                          >
+                            Platform access
                           </Button>}
                         </div>
                       </ContextualPopup>
@@ -326,7 +345,7 @@ const EmployeeTable = ({
               </div>
 
               <div className="relative">
-                {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit) && <Button
+                {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
                   ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                   variant="soft"
                   size="sm"
@@ -401,6 +420,20 @@ const EmployeeTable = ({
                     >
                       Reset otp auth limit
                     </Button>}
+                    {canChangePlatformAccess && <Button
+                      variant="subtle"
+                      size="sm"
+                      contentAlign="start"
+                      fullWidth
+                      onClick={() => {
+                        setSelectedRowEmployee(item);
+                        setActiveTool('platform_access');
+                        setOpenPopupId(null);
+                      }}
+                      className="text-xs py-2 px-3 hover:bg-primary-50"
+                    >
+                      Platform access
+                    </Button>}
                   </div>
                 </ContextualPopup>
               </div>
@@ -474,6 +507,16 @@ const EmployeeTable = ({
               setSelectedRowEmployee(null);
             }}
             userId={selectedRowEmployee.user_id!}
+          />
+          <PlatformAccessControls
+            isOpen={activeTool === 'platform_access'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            employeeName={selectedRowEmployee.employee_name}
+            employeeId={selectedRowEmployee.employee}
+            userEmail={selectedRowEmployee.user_id || ""}
           />
         </>
       )}
