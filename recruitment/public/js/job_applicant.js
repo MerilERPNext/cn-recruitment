@@ -1023,36 +1023,40 @@ frappe.ui.form.on('Job Applicant', {
     refresh(frm) {
         if (frm.doc.__islocal) return;
 
-        frm.add_custom_button(__('Send Pre Offer Form'), () => {
-            // Pre-offer fields come from the Job Opening config now — no form to pick,
-            // just confirm and send. The candidate gets a Pre Offer action center item.
-            frappe.confirm(
-                __('Are you sure you want to send the Pre Offer Form to this candidate?'),
-                () => {
-                    frappe.call({
-                        method: 'recruitment.api.action_center.send_pre_offer',
-                        args: { job_applicant_id: frm.doc.name },
-                        freeze: true,
-                        freeze_message: __('Sending Pre Offer Form...'),
-                        callback(r) {
-                            if (r.message && r.message.status === 'success') {
-                                const msg = r.message.already_sent
-                                    ? __('Pre Offer Form already sent — no change.')
-                                    : __('Pre Offer Form sent to candidate.');
-                                frappe.show_alert({ message: msg, indicator: 'green' });
-                                frm.reload_doc();
-                            } else {
-                                frappe.msgprint({
-                                    title: __('Error'),
-                                    indicator: 'red',
-                                    message: (r.message && r.message.message) || __('Failed to send Pre Offer Form.'),
-                                });
-                            }
-                        },
-                    });
-                }
-            );
-        }, __('Actions'));
+        // Gated by Recruitment Settings -> Enable Pre Offer Form Button.
+        frappe.db.get_single_value('Recruitment Settings', 'enable_pre_offer_form').then((enabled) => {
+            if (!enabled) return;
+            frm.add_custom_button(__('Send Pre Offer Form'), () => {
+                // Pre-offer fields come from the Job Opening config now — no form to pick,
+                // just confirm and send. The candidate gets a Pre Offer action center item.
+                frappe.confirm(
+                    __('Are you sure you want to send the Pre Offer Form to this candidate?'),
+                    () => {
+                        frappe.call({
+                            method: 'recruitment.api.action_center.send_pre_offer',
+                            args: { job_applicant_id: frm.doc.name },
+                            freeze: true,
+                            freeze_message: __('Sending Pre Offer Form...'),
+                            callback(r) {
+                                if (r.message && r.message.status === 'success') {
+                                    const msg = r.message.already_sent
+                                        ? __('Pre Offer Form already sent — no change.')
+                                        : __('Pre Offer Form sent to candidate.');
+                                    frappe.show_alert({ message: msg, indicator: 'green' });
+                                    frm.reload_doc();
+                                } else {
+                                    frappe.msgprint({
+                                        title: __('Error'),
+                                        indicator: 'red',
+                                        message: (r.message && r.message.message) || __('Failed to send Pre Offer Form.'),
+                                    });
+                                }
+                            },
+                        });
+                    }
+                );
+            }, __('Actions'));
+        });
     }
 });
 
@@ -1061,13 +1065,17 @@ frappe.ui.form.on('Job Applicant', {
     refresh(frm) {
         if (frm.doc.__islocal || frm.doc.status !== 'Accepted') return;
 
-        const label = frm.doc.custom_pre_onboarding_status === 'Released'
-            ? __('Update Pre Onboarding Release')
-            : __('Send Pre Onboarding Form');
+        // Gated by Recruitment Settings -> Enable Pre Onboarding Form Button.
+        frappe.db.get_single_value('Recruitment Settings', 'enable_pre_onboarding_form').then((enabled) => {
+            if (!enabled) return;
+            const label = frm.doc.custom_pre_onboarding_status === 'Released'
+                ? __('Update Pre Onboarding Release')
+                : __('Send Pre Onboarding Form');
 
-        frm.add_custom_button(label, () => {
-            recruitment.open_pre_onboarding_dialog(frm.doc.name, frm.doc, () => frm.reload_doc());
-        }, __('Actions'));
+            frm.add_custom_button(label, () => {
+                recruitment.open_pre_onboarding_dialog(frm.doc.name, frm.doc, () => frm.reload_doc());
+            }, __('Actions'));
+        });
     }
 });
 
