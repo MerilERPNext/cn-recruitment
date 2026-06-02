@@ -22,6 +22,9 @@ type MapperContext = {
   unitFieldLabel?: string;
   hasParticipants?: boolean;
   isUnitsReadonly?: boolean;
+  isCostCenterReadonly?: boolean;
+  autoCostCenterId?: string;
+  autoCostCenterName?: string;
 };
 
 const buildLabel = (label?: string) => {
@@ -161,28 +164,44 @@ const mapFieldToFormio = (field: FieldConfig, ctx: MapperContext) => {
       }
 
       if (field.fieldname === "project" || field.fieldname === "cost_center") {
+        const doctype = field.options || (field.fieldname === "project" ? "Project" : "Cost Center");
+        const nameField = field.fieldname === "project" ? "project_name" : "cost_center_name";
+        const isAutopopulated = field.fieldname === "cost_center" && ctx.isCostCenterReadonly && ctx.autoCostCenterId;
+
         return {
           type: "select",
           key: field.fieldname,
           label,
           input: true,
-          dataSrc: "url",
-          data: {
-            url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?doctype=${field.options || ""}`,
-          },
-          template:
-            "<span>{{ item.reference_name || item.name || item }}</span>",
+          dataSrc: isAutopopulated ? "json" : "url",
+          data: isAutopopulated
+            ? {
+                json: [
+                  {
+                    name: ctx.autoCostCenterId,
+                    cost_center_name: ctx.autoCostCenterName || ctx.autoCostCenterId,
+                  },
+                ],
+              }
+            : {
+                url: `/api/resource/${doctype}?fields=["name","${nameField}"]&limit_page_length=100`,
+              },
+          template: `<span>{{ item.${nameField} || item.name || item }}</span>`,
           valueProperty: "name",
-          selectValues: "message",
+          selectValues: isAutopopulated ? "" : "data",
           validate: buildValidation(field.label, required),
           validateOn: "blur",
           html: true,
+          ...(field.fieldname === "cost_center" && ctx.isCostCenterReadonly
+            ? { disabled: true }
+            : {}),
+          ...(field.fieldname === "cost_center" && ctx.autoCostCenterId
+            ? { defaultValue: ctx.autoCostCenterId }
+            : {}),
         };
       }
 
-      if (
-        field.fieldname === "custom_location"
-      ) {
+      if (field.fieldname === "custom_location") {
         return {
           type: "select",
           key: field.fieldname,
@@ -220,7 +239,10 @@ const mapFieldToFormio = (field: FieldConfig, ctx: MapperContext) => {
       };
 
     case "Data":
-      if (field.fieldname === "odometer_from" || field.fieldname === "odometer_to") {
+      if (
+        field.fieldname === "odometer_from" ||
+        field.fieldname === "odometer_to"
+      ) {
         return {
           type: "number",
           key: field.fieldname,

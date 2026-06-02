@@ -198,6 +198,10 @@ export function useReplaceLeave() {
       new_leave_type?: string;
       first_half_leave_type?: string;
       second_half_leave_type?: string;
+      reason?: string;
+      description?: string;
+      attachment?: unknown;
+      replaceBoth?: boolean;
     }) => leaveService.replaceLeave(params),
 
     onSuccess: () => {
@@ -213,24 +217,9 @@ export function useReplaceLeave() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
-      let errorMsg = "Submission failed. Please try again.";
-
-      try {
-        const raw = err?.response?.data?._server_messages;
-        if (raw) {
-          const messages = JSON.parse(raw);
-          if (Array.isArray(messages) && messages.length > 0) {
-            const firstMessage = JSON.parse(messages[0]);
-            if (firstMessage?.message) {
-              errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse server error message:", e);
-      }
-
-      toast.error(errorMsg);
+      toast.error(
+        errorResponseFormater(err, "Failed to replace leave. Please try again.")
+      );
     },
   });
 }

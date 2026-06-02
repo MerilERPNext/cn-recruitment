@@ -12,13 +12,14 @@ import ExpenseFormModal from "./ExpenseFormModal";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useCheckAdvancePolicy } from "../../hooks/useEmployeeAdvances";
 
-type TabName = "Expenses" | "Team" | "My Advances" | "Team Advances";
+type TabName = "Expenses" | "Team" | "My Advances" | "Team Advances" | "Summary";
 
 const tabRoutes: Record<TabName, string> = {
   Expenses: "/webapp/expenses-app/expenses-list",
   Team: "/webapp/expenses-app/team-requests",
   "My Advances": "/webapp/expenses-app/my-advance-expense",
   "Team Advances": "/webapp/expenses-app/team-advance-expense",
+  Summary: "/webapp/expenses-app/expense-summary",
 };
 
 const ExpensesApp: React.FC = () => {
@@ -62,6 +63,11 @@ const ExpensesApp: React.FC = () => {
         key: "Team Advances",
         label: "Team Advances",
         permissionKey: "Team Advances",
+      },
+      {
+        key: "Summary",
+        label: "Summary",
+        permissionKey: "ExpenseSummary",
       },
     ];
 

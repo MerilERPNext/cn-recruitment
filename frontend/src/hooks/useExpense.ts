@@ -23,6 +23,7 @@ import {
   ExpenseTypeFieldsResponse,
   ParticipantUpdateItem,
 } from "../types/expenseAdvance";
+import { ReimbursementSummary } from "../types/expenseSummary";
 import { FilterCondition } from "../types/frappe";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
 
@@ -631,3 +632,25 @@ export function useUpdateExpenseClaimStatusAPI() {
     },
   });
 }
+
+export const useAutoPopulatedCostCenter = (employeeId?: string) => {
+  return useQuery({
+    queryKey: ["autoPopulatedCostCenter", employeeId],
+    queryFn: () => expenseService.getAutoPopulatedCostCenter(employeeId || ""),
+    enabled: !!employeeId,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+/** Hook to fetch reimbursement summary for a given employee */
+export const useReimbursementSummary = (employeeId?: string) => {
+  return useQuery<ReimbursementSummary>({
+    queryKey: ["reimbursement-summary", employeeId],
+    queryFn: () => expenseService.getReimbursementSummary(employeeId || ""),
+    enabled: !!employeeId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+};
+

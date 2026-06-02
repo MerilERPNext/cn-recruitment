@@ -23,6 +23,7 @@ import {
   useValidateExpense,
   useDeleteExpenseAttachment,
   useUpdateFileAttachment,
+  useAutoPopulatedCostCenter,
 } from "../../../hooks/useExpense";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -288,6 +289,19 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     setDataVersion((v) => v + 1);
   }, [calculatedAmount, setDynamicFormData]);
 
+  const { data: autoCostCenter } = useAutoPopulatedCostCenter(currentEmployee?.name);
+
+  useEffect(() => {
+    if (isEditingExistingExpense || !autoCostCenter?.auto_populate_cost_center) return;
+    if (autoCostCenter.cost_center_id) {
+      setDynamicFormData((prev) => {
+        if (prev?.cost_center === autoCostCenter.cost_center_id) return prev;
+        return { ...prev, cost_center: autoCostCenter.cost_center_id };
+      });
+      setDataVersion((v) => v + 1);
+    }
+  }, [autoCostCenter, isEditingExistingExpense, setDynamicFormData]);
+
   const isAmountReadonly = useMemo(() => {
     return expenseTypePayload?.is_amount_readonly ?? false;
   }, [expenseTypePayload]);
@@ -325,8 +339,19 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
         isAmountReadonly,
         unitFieldLabel,
         isUnitsReadonly: isUnitsFromOdometer,
+        isCostCenterReadonly: autoCostCenter?.auto_populate_cost_center || false,
+        autoCostCenterId: autoCostCenter?.cost_center_id || undefined,
+        autoCostCenterName: autoCostCenter?.cost_center_name || undefined,
       }),
-    [expenseTypePayload, currentEmployee?.name, selectedExpenseType, isAmountReadonly, unitFieldLabel, isUnitsFromOdometer],
+    [
+      expenseTypePayload,
+      currentEmployee?.name,
+      selectedExpenseType,
+      isAmountReadonly,
+      unitFieldLabel,
+      isUnitsFromOdometer,
+      autoCostCenter,
+    ],
   );
 
   const mainSubmission = useMemo(() => {
