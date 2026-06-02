@@ -17,13 +17,13 @@ interface HeroCardProps {
 
 const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
   return (
-    <section className="bg-white rounded-xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden p-6">
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:p-6">
       <div
-        className={`flex ${isCompact ? "flex-col gap-4" : "items-start justify-between"} mb-6`}
+        className={`mb-5 flex ${isCompact ? "flex-col gap-4" : "items-start justify-between"} lg:mb-6`}
       >
         <div className="space-y-2 min-w-0">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest text-blue-600 bg-blue-50 rounded-full px-2 py-0.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
               CYCLE LIVE
             </div>
@@ -32,7 +32,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
             </Typography>
           </div>
           <div className="pt-0.5">
-            <h1 className="text-xl font-bold text-gray-900 mb-1">
+            <h1 className="mb-1 text-xl font-bold leading-tight text-slate-950">
               FY26 Annual Performance Cycle
             </h1>
             <Typography
@@ -44,7 +44,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
           </div>
         </div>
         <div
-          className={`flex ${isCompact ? "w-full flex-col sm:flex-row items-start sm:items-center" : "items-end"} gap-4 shrink-0`}
+          className={`flex ${isCompact ? "w-full flex-col sm:flex-row items-start sm:items-center sm:justify-between" : "items-end"} gap-4 shrink-0`}
         >
           <div className="flex flex-col items-start sm:items-center">
             <Typography
@@ -70,7 +70,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center gap-0 overflow-x-auto pb-1 scrollbar-hide">
         {steps.map((step, idx) => (
           <React.Fragment key={step.label}>
             {idx > 0 && <div className="h-px w-10 shrink-0 bg-gray-200 mx-3" />}

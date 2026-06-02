@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Filter } from 'lucide-react';
+import { Filter, Plus, Target, Timer, Weight } from 'lucide-react';
 import { Typography } from '../../shared/atoms/Typography';
 import Badge, { type BadgeVariant } from '../../shared/Badge';
 import Button from '../../shared/atoms/Button';
@@ -17,165 +17,180 @@ const getStatusVariant = (status: GoalStatus): BadgeVariant => {
 
 const MyGoals: React.FC = () => {
   const navigate = useNavigate();
-  const { isMobile, isDesktop } = useScreenSize();
+  const { isMobile, isTablet, isDesktop } = useScreenSize();
+  const isCompact = isMobile || isTablet;
 
   return (
-    <div className="min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] px-3 py-4 font-sans sm:px-4 sm:py-5 lg:px-6 lg:py-6">
-      <div className="mx-auto w-full max-w-[1440px] min-w-0 space-y-4 sm:space-y-6">
-        
-        {/* Header Section */}
-        <div className="mb-4 flex min-w-0 flex-col gap-4 sm:mb-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0">
-            <Typography variant="h3" className="text-xl leading-tight text-gray-900 sm:text-2xl">My Goals &middot; FY26</Typography>
-            <Typography variant="bodySmall" className="mt-1 block break-words text-gray-500">
-              5 goals &middot; 100% weightage &middot; Goal lock 21 May 2026
-            </Typography>
+    <div className="min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] px-3 py-4 font-sans sm:px-4 sm:py-5 lg:px-6 lg:py-6">
+      <div className="mx-auto w-full  min-w-0 space-y-4 sm:space-y-5">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex min-w-0 flex-col gap-4 border-b border-slate-100 p-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between">
+            <div className="min-w-0">
+              <Typography variant="h3" className="text-xl leading-tight text-slate-950 sm:text-2xl">
+                My Goals &middot; FY26
+              </Typography>
+              <Typography variant="bodySmall" className="mt-1 block break-words text-slate-500">
+                5 goals &middot; 100% weightage &middot; Goal lock 21 May 2026
+              </Typography>
+            </div>
+
+            <div className="grid min-w-0 grid-cols-3 gap-2 sm:max-w-[520px]">
+              {[
+                { icon: Target, label: 'Goals', value: '5' },
+                { icon: Weight, label: 'Weightage', value: '100%' },
+                { icon: Timer, label: 'Locked', value: '21 May' },
+              ].map(({ icon: Icon, label, value }) => (
+                <div key={label} className="min-w-0 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2 sm:px-3">
+                  <div className="flex items-center gap-1.5 text-slate-500">
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <Typography variant="caption" className="truncate text-slate-500">
+                      {label}
+                    </Typography>
+                  </div>
+                  <Typography variant="bodySmall" className="mt-1 block truncate font-semibold text-slate-950">
+                    {value}
+                  </Typography>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex w-full min-w-0 flex-col gap-3 lg:w-auto lg:flex-row lg:flex-wrap lg:items-center">
-            {!isMobile && (
-              <div className="flex h-9 items-center overflow-hidden rounded-lg border border-gray-200 bg-white text-sm">
-                <button className="px-4 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors" aria-label="Show goals as list">List</button>
-                <button className="px-4 h-full bg-blue-500 text-white font-medium transition-colors" aria-label="Show goals as tree">Tree</button>
-                <button className="px-4 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors" aria-label="Show goal alignment">Alignment</button>
-              </div>
-            )}
+
+          <div className="flex min-w-0 flex-col gap-3 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex h-10 w-full items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-1 text-sm lg:w-auto">
+              <button className="h-full min-w-0 flex-1 rounded-md px-3 font-medium text-slate-600 transition-colors hover:bg-white lg:flex-none" aria-label="Show goals as list">
+                List
+              </button>
+              <button className="h-full min-w-0 flex-1 rounded-md bg-white px-3 font-semibold text-blue-600 shadow-sm ring-1 ring-slate-200 lg:flex-none" aria-label="Show goals as tree">
+                Tree
+              </button>
+              <button className="h-full min-w-0 flex-1 rounded-md px-3 font-medium text-slate-600 transition-colors hover:bg-white lg:flex-none" aria-label="Show goal alignment">
+                {isCompact ? 'Align' : 'Alignment'}
+              </button>
+            </div>
+
             <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:items-center lg:w-auto">
-              <Button variant="outline" bgColor="text" size="sm" icon={<Filter className="h-4 w-4" />} className="h-10 w-full justify-center bg-white sm:h-9 sm:w-auto">
+              <Button variant="outline" bgColor="text" size="sm" icon={<Filter className="h-4 w-4" />} className="h-10 w-full justify-center bg-white sm:w-auto">
                 Filter
               </Button>
-              <Button onClick={() => navigate("/webapp/performance-app/my-goals/new-goal")} variant="contain" bgColor="primary" size="sm" icon={<Plus className="h-4 w-4" />} className="h-10 w-full justify-center sm:h-9 sm:w-auto">
+              <Button onClick={() => navigate('/webapp/performance-app/my-goals/new-goal')} variant="contain" bgColor="primary" size="sm" icon={<Plus className="h-4 w-4" />} className="h-10 w-full justify-center sm:w-auto">
                 New Goal
               </Button>
             </div>
-            {isMobile && (
-              <div className="mt-1 flex h-10 w-full items-center overflow-hidden rounded-lg border border-gray-200 bg-white text-sm">
-                <button className="min-w-0 flex-1 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors" aria-label="Show goals as list">List</button>
-                <button className="min-w-0 flex-1 h-full bg-blue-500 text-white font-medium transition-colors" aria-label="Show goals as tree">Tree</button>
-                <button className="min-w-0 flex-1 h-full text-gray-600 hover:bg-gray-50 font-medium transition-colors" aria-label="Show goal alignment">Align</button>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Main Card */}
-        <div className="min-h-[70vh] min-w-0 rounded-xl border border-gray-100 bg-white p-3 shadow-sm sm:p-4 lg:p-6">
-          
-          {/* Parent Goal Box */}
-          <div className="relative z-10 mb-4 flex min-w-0 flex-col gap-3 rounded-xl border border-blue-100 bg-[#f0f7ff] p-3 sm:mb-6 sm:p-4 md:flex-row md:items-center md:justify-between">
-             <div className="flex min-w-0 items-start gap-3">
-               <div className="shrink-0 mt-1">
-                 <Badge label="ORG" variant="blue" size="md" />
-               </div>
-               <div className="min-w-0">
-                 <Typography variant="bodyMedium" className="mb-0.5 block break-words font-semibold leading-snug text-gray-900">
-                  PW FY26 &middot; Become the #1 EdTech platform in India by Q4
-                 </Typography>
-                 <Typography variant="caption" className="block break-words leading-relaxed text-gray-500">
-                  Cascaded from Alakh Pandey &middot; OKR &middot; 8 org-level KRs
-                 </Typography>
-               </div>
-             </div>
-             <div className="self-start md:self-center">
-               <Badge label="Aligned" variant="white" size="sm" />
-             </div>
+        <div className="relative z-10 flex min-w-0 flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4 shadow-sm sm:p-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="shrink-0">
+              <Badge label="ORG" variant="blue" size="md" />
+            </div>
+            <div className="min-w-0">
+              <Typography variant="bodyMedium" className="mb-0.5 block break-words font-semibold leading-snug text-slate-950">
+                PW FY26 &middot; Become the #1 EdTech platform in India by Q4
+              </Typography>
+              <Typography variant="caption" className="block break-words leading-relaxed text-slate-600">
+                Cascaded from Alakh Pandey &middot; OKR &middot; 8 org-level KRs
+              </Typography>
+            </div>
           </div>
+          <div className="self-start md:self-center">
+            <Badge label="Aligned" variant="white" size="sm" />
+          </div>
+        </div>
 
-          {/* Tree Section */}
-          <div className="relative min-w-0 space-y-4 sm:space-y-6 md:pl-10">
-             {/* Main Vertical Tree Line */}
-             {!isMobile && <div className="absolute left-[20px] top-[0px] bottom-[40px] w-px bg-gray-200 z-0"></div>}
+        <div className="relative min-w-0 rounded-xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 lg:p-5">
+          {!isCompact && <div className="absolute bottom-8 left-[38px] top-5 w-px bg-slate-200" />}
 
-             {goals.map((goal, index) => (
-                <div 
-                  key={index} 
-                  onClick={() => navigate(`/webapp/performance-app/my-goals/${index}`)}
-                  className="relative z-10 min-w-0 cursor-pointer overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
-                >
-                   {/* Horizontal Tree Line to OKR */}
-                   {!isMobile && <div className="absolute left-[-20px] top-[40px] w-[20px] h-px bg-gray-200 z-0"></div>}
-                   
-                   {/* OKR Row */}
-                   <div className="relative z-10 flex min-w-0 flex-col gap-4 bg-white p-3 sm:p-4 lg:flex-row lg:items-center lg:justify-between">
-                      {/* Left Side: Info */}
-                      <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
-                         <div className="mt-0.5 flex shrink-0 flex-wrap items-center gap-2 sm:w-[100px] sm:flex-col sm:items-start sm:gap-1">
-                            <div className="self-start">
-                               <Badge label={goal.type} variant="purple" size="sm" />
-                            </div>
-                            <Typography variant="caption" className="text-gray-500 sm:ml-1">{goal.label}</Typography>
-                         </div>
-                         <div className="min-w-0 flex-1">
-                            <Typography variant="bodyMedium" className="mb-1 block break-words font-semibold leading-snug text-gray-900">
-                              {goal.title}
-                            </Typography>
-                            <Typography variant="caption" className="block break-words leading-relaxed text-gray-500">
-                              {goal.subtitle}
-                            </Typography>
-                         </div>
+          <div className="relative min-w-0 space-y-3 sm:space-y-4 md:pl-9 lg:pl-12">
+            {goals.map((goal, index) => (
+              <div
+                key={index}
+                onClick={() => navigate(`/webapp/performance-app/my-goals/${index}`)}
+                className="relative z-10 min-w-0 cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
+              >
+                {!isCompact && <div className="absolute left-[-28px] top-12 h-px w-[28px] bg-slate-200" />}
+
+                <div className="relative z-10 flex min-w-0 flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
+                  <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start">
+                    <div className="flex shrink-0 flex-wrap items-center gap-2 sm:w-[104px] sm:flex-col sm:items-start sm:gap-1">
+                      <Badge label={goal.type} variant="purple" size="sm" />
+                      <Typography variant="caption" className="text-slate-500 sm:ml-1">
+                        {goal.label}
+                      </Typography>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <Typography variant="bodyMedium" className="mb-1 block break-words font-semibold leading-snug text-slate-950">
+                        {goal.title}
+                      </Typography>
+                      <Typography variant="caption" className="block break-words leading-relaxed text-slate-500">
+                        {goal.subtitle}
+                      </Typography>
+                    </div>
+                  </div>
+
+                  <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 rounded-lg bg-slate-50 p-3 md:flex-row md:items-center md:justify-between lg:w-[400px] lg:bg-transparent lg:p-0">
+                    <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 lg:border-r lg:border-slate-100 lg:pr-5">
+                      <div className="min-w-0">
+                        <Typography variant="bodyMedium" className="block whitespace-nowrap font-bold text-slate-950">
+                          {goal.current} <span className="font-normal text-slate-500">/ {goal.target}</span>
+                        </Typography>
+                        <Typography variant="caption" className="mt-0.5 block break-words text-slate-500">
+                          {goal.unit}
+                        </Typography>
                       </div>
-
-                      {/* Right Side: Progress & Badges */}
-                      <div className="mt-1 flex w-full min-w-0 shrink-0 flex-col gap-3 sm:mt-2 md:flex-row md:items-center md:justify-end lg:w-[400px]">
-                         <div className="grid w-full min-w-0 grid-cols-[minmax(76px,96px)_minmax(0,1fr)] items-center gap-3 md:mr-4 lg:mr-6 lg:border-r lg:border-gray-100 lg:pr-6">
-                            <div className="min-w-0 md:text-right">
-                               <Typography variant="bodyMedium" className="block whitespace-nowrap font-bold text-gray-900">
-                                {goal.current} <span className="font-normal text-gray-500">/ {goal.target}</span>
-                               </Typography>
-                               <Typography variant="caption" className="mt-0.5 block break-words text-gray-500">{goal.unit}</Typography>
-                            </div>
-                            <div className="flex min-w-0 flex-col gap-1.5 md:w-[128px] md:shrink-0">
-                               <Typography variant="caption" className="text-gray-500 text-right">{goal.percentage}% - {goal.weight}w</Typography>
-                               <div className="w-full bg-gray-100 rounded-md h-1.5 overflow-hidden">
-                                  <div className={`h-1.5 rounded-md ${goal.barColor}`} style={{ width: `${goal.percentage}%` }} />
-                               </div>
-                            </div>
-                         </div>
-                         <div className="flex w-full min-w-0 shrink-0 flex-wrap gap-2 md:w-auto md:min-w-fit md:flex-col md:items-end md:justify-center">
-                            <Badge label={goal.status} variant={getStatusVariant(goal.status)} size="sm" pulse={{ show: true }} />
-                            <Badge label={goal.state} variant="info" size="sm" />
-                         </div>
+                      <div className="flex min-w-0 flex-col gap-1.5">
+                        <Typography variant="caption" className="text-right text-slate-500">
+                          {goal.percentage}% - {goal.weight}w
+                        </Typography>
+                        <div className="h-2 w-full overflow-hidden rounded-md bg-slate-200">
+                          <div className={`h-2 rounded-md ${goal.barColor}`} style={{ width: `${goal.percentage}%` }} />
+                        </div>
                       </div>
-                   </div>
-
-                   {/* KRs Row (if any) */}
-                   {goal.krs && (
-                      <div className="relative z-10 border-t border-gray-100 bg-gray-50/50 p-3 sm:p-4">
-                         <div className="relative min-w-0 space-y-3 sm:space-y-4 md:pl-12">
-                            {/* Vertical line for KRs */}
-                            {!isMobile && <div className="absolute left-[24px] top-[-16px] bottom-4 w-px bg-gray-200 z-0" />}
-                            {goal.krs.map((kr: GoalKeyResult, kIdx: number) => (
-                               <div key={kIdx} className="relative flex min-w-0 flex-col gap-2 rounded-lg bg-white p-3 lg:flex-row lg:items-center lg:bg-transparent lg:p-0">
-                                  {/* Horizontal line to KR */}
-                                  {!isMobile && <div className="absolute left-[-24px] top-[14px] w-[24px] h-px bg-gray-200 z-0" />}
-                                  
-                                  <div className="flex min-w-0 flex-1 items-start gap-3 md:pl-4 lg:items-center">
-                                     <div className="mt-0.5 flex-shrink-0">
-                                        <Badge label={kr.id} variant="purple-outline" size="sm" />
-                                     </div>
-                                     <Typography variant="caption" className="min-w-0 break-words leading-relaxed text-gray-600">{kr.title}</Typography>
-                                  </div>
-                                  
-                                  <div className="flex w-full min-w-0 shrink-0 items-center justify-start lg:w-[400px] xl:justify-end">
-                                     <div className="flex w-full min-w-0 items-center gap-4 lg:mr-6 lg:pr-6">
-                                        <div className="w-[90px] hidden xl:block"></div>
-                                        <div className="mt-1 flex min-w-0 flex-1 flex-col gap-1 lg:w-[128px] lg:flex-none">
-                                           {!isDesktop && <Typography variant="caption" className="text-gray-500 text-right">{kr.percentage}%</Typography>}
-                                           <div className="w-full bg-gray-200 rounded-md h-1.5 overflow-hidden">
-                                              <div className="h-1.5 rounded-md bg-blue-500" style={{ width: `${kr.percentage}%` }} />
-                                           </div>
-                                        </div>
-                                     </div>
-                                     <div className="w-[90px] shrink-0 hidden xl:block" />
-                                  </div>
-                               </div>
-                            ))}
-                         </div>
-                      </div>
-                   )}
+                    </div>
+                    <div className="flex shrink-0 flex-wrap gap-2 md:flex-col md:items-end">
+                      <Badge label={goal.status} variant={getStatusVariant(goal.status)} size="sm" pulse={{ show: true }} />
+                      <Badge label={goal.state} variant="info" size="sm" />
+                    </div>
+                  </div>
                 </div>
-             ))}
-          </div>
 
+                {goal.krs && (
+                  <div className="relative z-10 border-t border-slate-100 bg-slate-50/70 p-3 sm:p-4">
+                    <div className="relative min-w-0 space-y-3 md:pl-8">
+                      {!isCompact && <div className="absolute bottom-4 left-[16px] top-[-16px] w-px bg-slate-200" />}
+                      {goal.krs.map((kr: GoalKeyResult, kIdx: number) => (
+                        <div key={kIdx} className="relative flex min-w-0 flex-col gap-2 rounded-lg border border-slate-100 bg-white p-3 lg:flex-row lg:items-center">
+                          {!isCompact && <div className="absolute left-[-16px] top-[18px] h-px w-[16px] bg-slate-200" />}
+
+                          <div className="flex min-w-0 flex-1 items-start gap-3 lg:items-center">
+                            <div className="mt-0.5 flex-shrink-0">
+                              <Badge label={kr.id} variant="purple-outline" size="sm" />
+                            </div>
+                            <Typography variant="caption" className="min-w-0 break-words leading-relaxed text-slate-600">
+                              {kr.title}
+                            </Typography>
+                          </div>
+
+                          <div className="flex w-full min-w-0 shrink-0 items-center justify-start lg:w-[240px] xl:w-[320px]">
+                            <div className="flex w-full min-w-0 flex-col gap-1">
+                              {!isDesktop && (
+                                <Typography variant="caption" className="text-right text-slate-500">
+                                  {kr.percentage}%
+                                </Typography>
+                              )}
+                              <div className="h-1.5 w-full overflow-hidden rounded-md bg-slate-200">
+                                <div className="h-1.5 rounded-md bg-blue-500" style={{ width: `${kr.percentage}%` }} />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

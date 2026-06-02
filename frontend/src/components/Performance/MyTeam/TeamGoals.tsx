@@ -4,6 +4,9 @@ import {
   CornerDownRight,
   Plus,
   Sparkles,
+  Target,
+  Users,
+  Weight,
   X,
 } from "lucide-react";
 import React, { useState } from "react";
@@ -330,42 +333,61 @@ const TeamGoals: React.FC = () => {
 
   return (
     <main
-      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] font-sans ${isMobile ? "p-4" : "p-6"}`}
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] font-sans ${isMobile ? "px-3 py-4" : isTablet ? "px-4 py-5" : "p-6"}`}
     >
-      <div className="mx-auto w-full max-w-screen space-y-5">
+      <div className="mx-auto w-full  space-y-4 sm:space-y-5">
         {/* Page Header */}
-        <header
-          className={`flex min-w-0 ${isCompact ? "flex-col gap-4" : "items-center justify-between gap-4"}`}
-        >
-          <div className="min-w-0">
-            <Typography variant="h3" className="text-gray-900">
-              Team Goals
-            </Typography>
-            <Typography variant="bodySmall" className="text-gray-500">
-              {totalGoals} goals across {totalReportees} reportees -{" "}
-              {pendingApproval} pending your approval
-            </Typography>
+        <header className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className={`flex min-w-0 ${isCompact ? "flex-col gap-4" : "items-center justify-between gap-4"} border-b border-slate-100 p-4 sm:p-5`}>
+            <div className="min-w-0">
+              <Typography variant="h3" className="text-xl leading-tight text-slate-950 sm:text-2xl">
+                Team Goals
+              </Typography>
+              <Typography variant="bodySmall" className="mt-1 block break-words text-slate-500">
+                {totalGoals} goals across {totalReportees} reportees ·{" "}
+                {pendingApproval} pending your approval
+              </Typography>
+            </div>
+            <div
+              className={`flex ${isCompact ? "w-full flex-col sm:flex-row" : "shrink-0 items-center"} gap-3`}
+            >
+              <Button
+                variant="outline"
+                bgColor="text"
+                size="sm"
+                className={`h-10 justify-center bg-white ${isCompact ? "w-full sm:w-fit" : ""}`}
+              >
+                Cascade from Org
+              </Button>
+              <Button
+                variant="contain"
+                bgColor="primary"
+                size="sm"
+                icon={<Plus className="h-4 w-4" />}
+                className={`h-10 justify-center ${isCompact ? "w-full sm:w-fit" : ""}`}
+              >
+                Assign Goal
+              </Button>
+            </div>
           </div>
-          <div
-            className={`flex ${isCompact ? "w-full flex-col sm:flex-row" : "shrink-0 items-center"} gap-3`}
-          >
-            <Button
-              variant="outline"
-              bgColor="text"
-              size="sm"
-              className={isCompact ? "w-full sm:w-fit" : ""}
-            >
-              Cascade from Org
-            </Button>
-            <Button
-              variant="contain"
-              bgColor="primary"
-              size="sm"
-              icon={<Plus className="h-4 w-4" />}
-              className={isCompact ? "w-full sm:w-fit" : ""}
-            >
-              Assign Goal
-            </Button>
+          <div className="grid grid-cols-3 gap-2 p-4 sm:p-5">
+            {[
+              { icon: Target, label: "Goals", value: totalGoals },
+              { icon: Users, label: "Reportees", value: totalReportees },
+              { icon: Weight, label: "Pending", value: pendingApproval },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="min-w-0 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2 sm:px-3">
+                <div className="flex items-center gap-1.5 text-slate-500">
+                  <Icon className="h-3.5 w-3.5 shrink-0" />
+                  <Typography variant="caption" className="truncate text-slate-500">
+                    {label}
+                  </Typography>
+                </div>
+                <Typography variant="bodySmall" className="mt-1 block font-semibold text-slate-950">
+                  {value}
+                </Typography>
+              </div>
+            ))}
           </div>
         </header>
 
@@ -374,7 +396,7 @@ const TeamGoals: React.FC = () => {
           <div
             className={`flex ${
               isCompact ? "flex-col gap-3" : "items-center justify-between"
-            } border-b border-amber-100 bg-amber-50 px-5 py-4`}
+            } border-b border-amber-100 bg-amber-50 px-4 py-4 sm:px-5`}
           >
             <div className="flex min-w-0 items-start gap-3 sm:items-center">
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 sm:mt-0" />
@@ -415,15 +437,15 @@ const TeamGoals: React.FC = () => {
             </div>
           </div>
 
-          <div className="divide-y divide-gray-100">
+          <div className={isCompact ? "space-y-3 bg-slate-50/60 p-3 sm:p-4" : "divide-y divide-gray-100"}>
             {APPROVAL_GOALS.map((goal) => (
               <article
                 key={goal.id}
                 onClick={() => handleGoalClick(goal)}
-                className={`grid gap-4 px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                className={`grid cursor-pointer gap-4 transition-colors hover:bg-gray-50 ${
                   isCompact
-                    ? "grid-cols-[auto_1fr]"
-                    : "grid-cols-[auto_minmax(0,1fr)_120px_110px_260px] items-center"
+                    ? "grid-cols-[auto_1fr] rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                    : "grid-cols-[auto_minmax(0,1fr)_120px_110px_260px] items-center px-5 py-4"
                 }`}
               >
                 <label
@@ -474,10 +496,10 @@ const TeamGoals: React.FC = () => {
                   </Typography>
                 </div>
 
-                <div className={isCompact ? "col-start-2" : ""}>
+                <div className={isCompact ? "col-start-2 rounded-lg bg-slate-50 p-3" : ""}>
                   <Typography
                     variant="label"
-                    className="text-gray-500 uppercase tracking-wider block mb-0.5 font-semibold"
+                    className="mb-0.5 block font-semibold uppercase text-slate-500"
                   >
                     Weightage
                   </Typography>
@@ -534,20 +556,20 @@ const TeamGoals: React.FC = () => {
         </section>
 
         {/* All Team Goals Section */}
-        <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <header
             className={`mb-4 flex min-w-0 ${isCompact ? "flex-col gap-3" : "items-start justify-between gap-4"}`}
           >
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-3">
-                <Typography variant="h4" className="font-bold text-gray-900">
+                <Typography variant="h4" className="font-bold text-slate-950">
                   All Team Goals
                 </Typography>
-                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
                   {totalGoals}
                 </span>
               </div>
-              <Typography variant="caption" className="text-gray-500">
+              <Typography variant="caption" className="text-slate-500">
                 Approved & in progress · grouped by reportee
               </Typography>
             </div>
@@ -571,13 +593,13 @@ const TeamGoals: React.FC = () => {
               return (
                 <article
                   key={member.id}
-                  className="overflow-hidden rounded-xl border border-gray-100"
+                  className="overflow-hidden rounded-xl border border-slate-200"
                 >
                   <button
                     type="button"
                     aria-label={`${isExpanded ? "Collapse" : "Expand"} ${member.name} goals`}
                     onClick={() => toggleMember(member.id)}
-                    className="flex w-full items-start justify-between gap-3 bg-blue-50/60 px-4 py-3 text-left transition-colors hover:bg-blue-50 sm:items-center"
+                    className="flex w-full items-start justify-between gap-3 bg-blue-50/70 px-4 py-3 text-left transition-colors hover:bg-blue-50 sm:items-center"
                   >
                     <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
                       <Avatar
@@ -595,27 +617,35 @@ const TeamGoals: React.FC = () => {
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                           <Typography
                             variant="bodySmall"
-                            className="font-semibold text-gray-900"
+                            className="font-semibold text-slate-950"
                           >
                             {member.name}
                           </Typography>
                           <Typography
                             variant="caption"
-                            className="text-gray-500"
+                            className="text-slate-500"
                           >
                             {member.designation} · {member.goalCount} goals ·{" "}
                             {member.avgProgress}% avg
                           </Typography>
                         </div>
+                        {isCompact && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <div className="h-1.5 w-28 overflow-hidden rounded-md bg-blue-100">
+                              <div className="h-full rounded-md bg-blue-500" style={{ width: `${member.avgProgress}%` }} />
+                            </div>
+                            <span className="text-xs font-semibold text-blue-700">{member.avgProgress}%</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <ChevronRight
-                      className={`mt-2 h-4 w-4 shrink-0 text-gray-500 sm:mt-0 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                      className={`mt-2 h-4 w-4 shrink-0 text-slate-500 transition-transform sm:mt-0 ${isExpanded ? "rotate-90" : ""}`}
                     />
                   </button>
 
                   {isExpanded && (
-                    <div className="divide-y divide-gray-50 px-4 py-2">
+                    <div className={isCompact ? "space-y-2 bg-slate-50/60 p-3" : "divide-y divide-gray-50 px-4 py-2"}>
                       {member.goals.map((goal) => (
                         <div
                           key={goal.id}
@@ -626,14 +656,14 @@ const TeamGoals: React.FC = () => {
                               employeeInitials: member.initials,
                             })
                           }
-                          className={`grid gap-3 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                          className={`grid cursor-pointer gap-3 transition-colors hover:bg-slate-50 ${
                             isCompact
-                              ? "grid-cols-1"
-                              : "grid-cols-[minmax(0,1fr)_220px] items-center"
+                              ? "grid-cols-1 rounded-lg border border-slate-100 bg-white p-3 shadow-sm"
+                              : "grid-cols-[minmax(0,1fr)_220px] items-center py-3"
                           }`}
                         >
                           <div className="flex min-w-0 items-center gap-3">
-                            <CornerDownRight className="h-4 w-4 shrink-0 text-gray-300" />
+                            <CornerDownRight className="h-4 w-4 shrink-0 text-slate-300" />
                             <Badge
                               label={goal.type}
                               variant="purple"
@@ -641,13 +671,13 @@ const TeamGoals: React.FC = () => {
                             />
                             <Typography
                               variant="bodySmall"
-                              className={`min-w-0 text-gray-700 ${isCompact ? "break-words" : "truncate"}`}
+                              className={`min-w-0 text-slate-700 ${isCompact ? "break-words" : "truncate"}`}
                             >
                               {goal.title}
                             </Typography>
                           </div>
                           <div className="flex min-w-0 items-center gap-4">
-                            <div className="h-1.5 flex-1 overflow-hidden rounded-md bg-gray-100">
+                            <div className="h-2 flex-1 overflow-hidden rounded-md bg-slate-200">
                               <div
                                 className={`h-full rounded-md ${statusBarColor[goal.status]}`}
                                 style={{ width: `${goal.progress}%` }}

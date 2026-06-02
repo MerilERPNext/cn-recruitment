@@ -11,9 +11,9 @@ const TeamOverview: React.FC = () => {
 
   return (
     <main
-      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] font-sans ${isMobile ? "p-4" : "p-8"}`}
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] font-sans ${isMobile ? "px-3 py-4" : isTablet ? "px-4 py-5" : "p-8"}`}
     >
-      <div className="mx-auto w-full max-w-screen space-y-5">
+      <div className="mx-auto w-full  space-y-4 sm:space-y-5">
         <HeroCard isCompact={isCompact} />
         <OverviewStats isCompact={isCompact} stats={OVERVIEW_STATS} />
         <TeamTable isCompact={isCompact} members={OVERVIEW_TEAM_MEMBERS} />

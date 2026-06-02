@@ -15,26 +15,26 @@ interface OverviewStatsProps {
 
 const OverviewStats: React.FC<OverviewStatsProps> = ({ isCompact, stats }) => {
   return (
-    <section className={`grid ${isCompact ? "grid-cols-2" : "grid-cols-5"} gap-4`}>
+    <section className={`grid ${isCompact ? "grid-cols-2" : "grid-cols-5"} gap-3 sm:gap-4`}>
       {stats.map((stat, idx) => (
         <div
           key={idx}
-          className="bg-white rounded-xl border border-gray-200 p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between min-h-[100px]"
+          className="flex min-h-[96px] min-w-0 flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:min-h-[104px] sm:p-5"
         >
           <Typography
             variant="caption"
-            className="text-gray-400 uppercase tracking-wider block font-semibold text-[10px] mb-2"
+            className="mb-2 block break-words text-[10px] font-semibold uppercase text-slate-400"
           >
             {stat.label}
           </Typography>
           <div>
             <Typography
               variant="h2"
-              className={`${stat.valueColor} leading-none mb-1 font-bold tracking-tight text-2xl`}
+              className={`${stat.valueColor} mb-1 text-2xl font-bold leading-none`}
             >
               {stat.value}
             </Typography>
-            <Typography variant="caption" className="text-gray-500">
+            <Typography variant="caption" className="break-words text-slate-500">
               {stat.sub}
             </Typography>
           </div>
