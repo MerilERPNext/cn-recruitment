@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import assignmentDetailsFormSchema from "./assignmentDetailsFormSchema.json";
 import {
   useCurrentEmployeeDetails,
+  useEmployee,
   useGetAssignmentDetails,
 } from "../../hooks/useEmployee";
 import { useTargetUser } from "../../context/ViewedUserContext";
@@ -23,7 +24,9 @@ const AssignmentDetailsPage = () => {
   });
 
   const employeeId = targetEmployeeId || currentUser?.employee || "";
-  const employeeName = currentUser?.employee_name || "";
+  const { data: targetEmployee } = useEmployee(employeeId);
+
+  const employeeName = targetEmployee?.employee_name || "";
 
   const [selectedModule, setSelectedModule] = useState("Separation");
   const instanceRef = useRef<any>(null);
