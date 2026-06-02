@@ -6,9 +6,8 @@ create_job_requisition(payload)
     Submit endpoint for the React "Raise a Requisition" form.
     Accepts a FLAT payload using DocType field names directly.
     Positions arrive in `custom_position_details` and are grouped by
-    `location` on the backend: one Job Requisition per unique location,
-    upserting (appending positions) when an open JR for the same
-    (designation, department, requested_by, location) already exists.
+    `location` on the backend: one fresh Job Requisition per unique location
+    in the submission, each carrying only that location's positions.
 
 get_job_requisition(name=..., filters=..., limit=..., start=..., order_by=...)
     - With `name`        →  one Job Requisition (flat shape)
@@ -216,26 +215,6 @@ def _group_positions_by_location(positions):
             order.append(loc)
         groups[loc].append(p)
     return [(loc, groups[loc]) for loc in order]
-
-
-def _find_existing_requisition(designation, department, requested_by, location):
-    """Open JR (same designation+department+requested_by) that already has a
-    position at this `location`, or None."""
-    rows = frappe.db.sql(
-        """
-        SELECT jr.name
-        FROM `tabJob Requisition` jr
-        JOIN `tabPosition Details` pd ON pd.parent = jr.name
-        WHERE jr.designation = %s
-          AND jr.department = %s
-          AND jr.requested_by = %s
-          AND COALESCE(jr.status, '') NOT IN ('Cancelled', 'Filled')
-          AND pd.location = %s
-        LIMIT 1
-        """,
-        (designation, department, requested_by, location),
-    )
-    return rows[0][0] if rows else None
 
 
 def _bypass_hrms_duplicate_check(doc):
@@ -509,14 +488,15 @@ def create_job_requisition(payload=None):
     """
     Submit a Job Requisition.
 
-    Groups `custom_position_details` rows by `location`; creates one JR per
-    unique location, OR appends positions to an open JR with the same
-    (designation, department, requested_by, location) — true upsert.
+    Groups `custom_position_details` rows by `location` and creates one fresh
+    JR per unique location, each holding only that location's positions. Each
+    submission is independent — positions are never merged into requisitions
+    created by an earlier submission.
 
     Returns:
         {
           "success": true,
-          "message": "Created X, updated Y requisition(s).",
+          "message": "Created X requisition(s).",
           "data": {
             "requisitions": [
               {"name": "HR-HIREQ-...", "location": "Pune", "positions_count": 2, "action": "created"},
@@ -537,49 +517,25 @@ def create_job_requisition(payload=None):
 
         positions = _list_field(payload, "custom_position_details")
         groups = _group_positions_by_location(positions)
-        parent_vacancy = payload.get("custom_type_of_position")
-        parent_functional_area = payload.get("custom_functional_area")
-        parent_employee_type = payload.get("custom_employment_type_link") or payload.get("custom__employee_type")
 
         results = []
         savepoint = "create_job_requisition"
         frappe.db.savepoint(savepoint)
         try:
+            # One fresh Job Requisition per unique location in THIS submission.
+            # Each location group carries only its own positions (e.g. 5 openings
+            # across BLR×2 / Mumbai / Kolkata / Noida → 4 requisitions, the BLR one
+            # holding 2 positions). We deliberately do NOT merge into requisitions
+            # from earlier submissions — every submit stands on its own.
             for location, group_positions in groups:
-                existing_name = _find_existing_requisition(
-                    payload.get("designation"),
-                    payload.get("department"),
-                    payload.get("requested_by"),
-                    location,
-                )
-
-                if existing_name:
-                    doc = frappe.get_doc(JOB_REQUISITION, existing_name)
-                    _bypass_hrms_duplicate_check(doc)
-                    _apply_parent_fields(doc, payload)
-                    _ensure_description(doc, payload)
-                    start_idx = len(doc.get("custom_position_details") or [])
-                    for offset, p in enumerate(group_positions, start=1):
-                        doc.append(
-                            "custom_position_details",
-                            _position_row(p, start_idx + offset, parent_vacancy, parent_functional_area, parent_employee_type),
-                        )
-                    # Resync from the live child table after appending,
-                    # not from the payload-supplied total.
-                    doc.no_of_positions = len(doc.get("custom_position_details") or [])
-                    doc.save(ignore_permissions=False)
-                    action = "updated"
-                else:
-                    doc = _build_requisition_doc(payload, group_positions)
-                    doc.insert(ignore_permissions=False)
-                    action = "created"
-
+                doc = _build_requisition_doc(payload, group_positions)
+                doc.insert(ignore_permissions=False)
                 results.append(
                     {
                         "name": doc.name,
                         "location": location,
                         "positions_count": len(group_positions),
-                        "action": action,
+                        "action": "created",
                     }
                 )
         except Exception:
@@ -588,10 +544,9 @@ def create_job_requisition(payload=None):
 
         frappe.db.commit()
 
-        created_count = sum(1 for r in results if r["action"] == "created")
-        updated_count = sum(1 for r in results if r["action"] == "updated")
+        created_count = len(results)
         return _ok(
-            message=_("Created {0}, updated {1} requisition(s).").format(created_count, updated_count),
+            message=_("Created {0} requisition(s).").format(created_count),
             data={"requisitions": results},
             http=201 if created_count else 200,
         )
@@ -1018,8 +973,52 @@ def update_job_requisition(name=None, payload=None):
 JOB_DESCRIPTION = "Job Description"
 
 
+def _match_jd_name(designation, department, functional_area=None):
+    """Best-matching Job Description name for the given applicability.
+
+    Tiered: prefer a JD whose applicability matches designation + department +
+    functional area; fall back to designation + department. Most recently
+    modified JD wins within a tier. Returns the JD name or None.
+    """
+    if functional_area:
+        rows = frappe.db.sql(
+            """
+            SELECT jd.name
+            FROM `tabJob Description` jd
+            JOIN `tabJD Designations` jdg
+              ON jdg.parent = jd.name AND jdg.parenttype = 'Job Description' AND jdg.parentfield = 'designation'
+            JOIN `tabJD Department` jdp
+              ON jdp.parent = jd.name AND jdp.parenttype = 'Job Description' AND jdp.parentfield = 'department'
+            JOIN `tabJD Functional Area` jdf
+              ON jdf.parent = jd.name AND jdf.parenttype = 'Job Description' AND jdf.parentfield = 'functional_area'
+            WHERE jdg.designation = %s AND jdp.department = %s AND jdf.functional_area = %s
+            ORDER BY jd.modified DESC
+            LIMIT 1
+            """,
+            (designation, department, functional_area),
+        )
+        if rows:
+            return rows[0][0]
+
+    rows = frappe.db.sql(
+        """
+        SELECT jd.name
+        FROM `tabJob Description` jd
+        JOIN `tabJD Designations` jdg
+          ON jdg.parent = jd.name AND jdg.parenttype = 'Job Description' AND jdg.parentfield = 'designation'
+        JOIN `tabJD Department` jdp
+          ON jdp.parent = jd.name AND jdp.parenttype = 'Job Description' AND jdp.parentfield = 'department'
+        WHERE jdg.designation = %s AND jdp.department = %s
+        ORDER BY jd.modified DESC
+        LIMIT 1
+        """,
+        (designation, department),
+    )
+    return rows[0][0] if rows else None
+
+
 @frappe.whitelist()
-def preview_job_description(designation=None, department=None):
+def preview_job_description(designation=None, department=None, data=None, functional_area=None):
     """
     Return a preview payload for the Job Description that best matches the
     given (designation, department) pair, or the system-wide default JD
@@ -1048,6 +1047,10 @@ def preview_job_description(designation=None, department=None):
     ----
     designation : str   (required)  Designation ID.
     department  : str   (required)  Department ID.
+    data        : dict|json (optional)  In-progress requisition values keyed
+        by the template's placeholder names. Used to fill the matched JD
+        template's placeholders for the preview; any token not present here
+        renders empty.
 
     Returns
     -------
@@ -1115,31 +1118,25 @@ def preview_job_description(designation=None, department=None):
                 http=400,
             )
 
-        # 1) Try exact match on designation + department.
-        rows = frappe.db.sql(
-            """
-            SELECT jd.name
-            FROM `tabJob Description` jd
-            JOIN `tabJD Designations` jdg
-              ON jdg.parent = jd.name
-             AND jdg.parenttype = 'Job Description'
-             AND jdg.parentfield = 'designation'
-            JOIN `tabJD Department` jdp
-              ON jdp.parent = jd.name
-             AND jdp.parenttype = 'Job Description'
-             AND jdp.parentfield = 'department'
-            WHERE jdg.designation = %s
-              AND jdp.department = %s
-            ORDER BY jd.modified DESC
-            LIMIT 1
-            """,
-            (designation, department),
-        )
+        # Optional: in-progress requisition values the frontend has filled.
+        # These fill the JD template's placeholders for the preview; anything
+        # absent renders empty. Accepts a JSON string or a dict.
+        filled_data = data
+        if isinstance(filled_data, str):
+            try:
+                filled_data = json.loads(filled_data or "{}")
+            except (TypeError, ValueError):
+                filled_data = {}
+        if not isinstance(filled_data, dict):
+            filled_data = {}
 
-        if rows:
+        # 1) Best applicability match: designation + department (+ functional
+        #    area when supplied), tiered inside the helper.
+        matched_name = _match_jd_name(designation, department, functional_area)
+        if matched_name:
             return _ok(
                 message=_("Job Description found."),
-                data=_build_preview_payload(rows[0][0], source="match"),
+                data=_build_preview_payload(matched_name, source="match", filled_data=filled_data),
                 http=200,
             )
 
@@ -1150,7 +1147,7 @@ def preview_job_description(designation=None, department=None):
         if default_name:
             return _ok(
                 message=_("No exact match — showing the default Job Description."),
-                data=_build_preview_payload(default_name, source="default"),
+                data=_build_preview_payload(default_name, source="default", filled_data=filled_data),
                 http=200,
             )
 
@@ -1182,7 +1179,7 @@ def preview_job_description(designation=None, department=None):
         )
 
 
-def _build_preview_payload(jd_name, source):
+def _build_preview_payload(jd_name, source, filled_data=None):
     """Shared JD → preview payload builder used by exact-match and
     default-fallback paths. Honours read permission on the JD doc.
 
@@ -1190,16 +1187,43 @@ def _build_preview_payload(jd_name, source):
     breaks converted to <p>/<br>), not the raw template — so the React
     Preview JD modal renders human-readable content via
     `dangerouslySetInnerHTML` without exposing `{{ }}` placeholders.
+
+    When `filled_data` (the in-progress requisition values) is supplied, the
+    template's placeholders are resolved against the JD doc's own fields
+    OVERLAID with those filled values — so e.g. `{{ office_location }}` shows
+    what the user typed on the requisition form. Tokens with no supplied value
+    render empty. Scalar overrides never clobber the JD's child-table fields
+    (designation/department/skills/…) so their `{% for %}` loops keep working.
     """
     from recruitment.recruitment.doctype.job_description.job_description import (
         _render_preview,
         plain_text_to_html,
+        render_with_context,
+        substitute_field_tokens,
     )
 
     doc = frappe.get_doc(JOB_DESCRIPTION, jd_name)
     doc.check_permission("read")
-    _render_preview(doc)
-    description_html = plain_text_to_html(doc.get("preview") or "")
+
+    if filled_data is not None:
+        # Two placeholder formats coexist:
+        #   1. Jinja `{{ field }}` (seeded default template) — resolved against
+        #      the JD doc's own fields, overlaid with the filled values.
+        #   2. Builder tokens `#*Field*#` — substituted from the filled values.
+        context = doc.as_dict()
+        for key, value in filled_data.items():
+            # Don't let a scalar requisition value overwrite a JD child table
+            # (would break the template's `{% for %}` loops).
+            if isinstance(context.get(key), list):
+                continue
+            context[key] = value
+        rendered = render_with_context(doc.get("description") or "", context)
+        rendered = substitute_field_tokens(rendered, filled_data)
+    else:
+        _render_preview(doc)
+        rendered = doc.get("preview") or ""
+
+    description_html = plain_text_to_html(rendered)
     skills = [
         row.get("skill")
         for row in (doc.get("skills") or [])
@@ -1222,9 +1246,12 @@ def _build_preview_payload(jd_name, source):
 
 
 @frappe.whitelist()
-def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20):
+def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20, include=None):
     """Returns [{id, label}] for a doctype; label uses title_field when set.
     Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins).
+    `include` is an id (or comma-separated ids) that must always appear in the
+    results — used so a pre-selected value renders its label even when it falls
+    outside the fetched/searched page (e.g. one designation out of thousands).
     Accessible to any authenticated Frappe user (desk session or API key/secret)."""
     if not doctype:
         frappe.local.response["http_status_code"] = 400
@@ -1254,5 +1281,22 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
         frappe.local.response["http_status_code"] = 500
         return {"status": "error", "message": str(e)}
 
-    results = [{"id": r["name"], "label": (r.get(title_field) if has_title else None) or r["name"]} for r in records]
+    def _to_option(r):
+        return {"id": r["name"], "label": (r.get(title_field) if has_title else None) or r["name"]}
+
+    results = [_to_option(r) for r in records]
+
+    # Always surface the pre-selected value(s) so the dropdown can label them,
+    # even when they're not part of the current (searched/paginated) page.
+    include_ids = [i.strip() for i in str(include or "").split(",") if i and i.strip()]
+    if include_ids:
+        present = {r["id"] for r in results}
+        missing = [i for i in include_ids if i not in present]
+        if missing:
+            try:
+                extra = frappe.get_all(doctype, fields=fields, filters={"name": ["in", missing]})
+            except Exception:
+                extra = []
+            results = [_to_option(r) for r in extra] + results
+
     return {"status": "success", "doctype": doctype, "title_field": title_field, "total": len(results), "results": results}

@@ -2477,7 +2477,7 @@
    "name": "Job Requisition-custom_preferred_company",
    "no_copy": 0,
    "non_negative": 0,
-   "options": "Company",
+   "options": "Preferred Target Company",
    "owner": "Administrator",
    "permlevel": 0,
    "placeholder": null,

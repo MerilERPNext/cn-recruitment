@@ -139,6 +139,8 @@ def _render_preview(doc):
 		doc.preview = ""
 		return
 
+	template = detokenize_pills(template)
+
 	# Reject server-script-style attribute access the same way
 	# frappe.render_template does, without using its throw path.
 	if ".__" in template:
@@ -149,9 +151,106 @@ def _render_preview(doc):
 		from frappe.utils.jinja import get_jenv
 		jenv = get_jenv()  # SandboxedEnvironment with Frappe's safe filters
 		compiled = jenv.from_string(template)
-		doc.preview = compiled.render(doc.as_dict())
+		doc.preview = _blank_undefined(compiled.render(doc.as_dict()))
 	except Exception as exc:
 		doc.preview = _err_html(str(exc))
+
+
+import re as _re
+import html as _stdhtml
+
+# A "pill" the JD builder drops into the body: a non-editable span carrying the
+# Jinja token in `data-token`, displaying a friendly label. Before rendering we
+# strip the pill back to its raw token so Jinja/loops resolve normally.
+_PILL_RE = _re.compile(r'<span\b[^>]*\bdata-token="([^"]*)"[^>]*>.*?</span>', _re.IGNORECASE | _re.DOTALL)
+
+
+_UNDEFINED_RE = _re.compile(r"{{.*?}}", _re.DOTALL)
+
+
+def _blank_undefined(text):
+	"""Frappe's Jinja env uses DebugUndefined, which leaves unresolved
+	`{{ token }}` as a literal. Blank those out so a field with no value renders
+	empty — the preview contract ("if the value isn't there we consider it
+	empty"). Runs only after rendering, so resolved tokens are already values."""
+	if not text:
+		return text or ""
+	return _UNDEFINED_RE.sub("", text)
+
+
+def detokenize_pills(text):
+	"""Replace builder pills `<span data-token="{{ x }}" …>Label</span>` with
+	their raw token (`{{ x }}`), HTML-unescaped, so the downstream Jinja render
+	sees real template syntax. No-op when there are no pills."""
+	if not text or "data-token" not in text:
+		return text or ""
+	return _PILL_RE.sub(lambda m: _stdhtml.unescape(m.group(1) or ""), text)
+
+
+# Placeholder format the JD builder writes into the description, e.g.
+# `#*Office Location*#`, `#*Required Skills*#`. The token inside is the field's
+# display label (or fieldname) the user dragged in.
+_FIELD_TOKEN_RE = _re.compile(r"#\*(.+?)\*#")
+
+
+def _normalize_token_key(s):
+    """Loose key for matching a token against supplied values — case- and
+    separator-insensitive, so "Office Location", "office_location" and
+    "office location" all collide."""
+    return _re.sub(r"[^a-z0-9]+", "_", (s or "").strip().lower()).strip("_")
+
+
+def substitute_field_tokens(html, values):
+    """Replace JD-builder placeholders `#*Field*#` with the matching value from
+    `values`.
+
+    Matching is forgiving: a token is looked up by its exact text first, then by
+    a normalized key (lowercase, non-alphanumerics → underscore) so the frontend
+    can key the payload by either the label ("Office Location") or the fieldname
+    ("office_location"). Any token with no supplied (non-empty) value resolves to
+    an empty string — per the preview contract "if the value is not there we
+    consider it empty". Inserted values are HTML-escaped (the surrounding
+    description is HTML)."""
+    if not html or "#*" not in html:
+        return html or ""
+
+    values = values or {}
+    norm = {}
+    for k, v in values.items():
+        norm.setdefault(_normalize_token_key(k), v)
+
+    def _repl(match):
+        token = match.group(1).strip()
+        val = values.get(token)
+        if val in (None, ""):
+            val = norm.get(_normalize_token_key(token))
+        return frappe.utils.escape_html(str(val)) if val not in (None, "") else ""
+
+    return _FIELD_TOKEN_RE.sub(_repl, html)
+
+
+def render_with_context(template, context):
+	"""Render a JD `description` Jinja template against an arbitrary context
+	dict, instead of a Job Description doc's own fields.
+
+	Used by the Requisition "Preview JD" flow: the matched JD template is the
+	skeleton, but the placeholder values come from the in-progress requisition
+	the frontend sends. Any token missing from `context` resolves to empty
+	(Jinja's default Undefined renders as ""); broken templates surface inline
+	the same way `_render_preview` handles them. Never raises.
+	"""
+	if not (template or "").strip():
+		return ""
+	template = detokenize_pills(template)
+	if ".__" in template:
+		return _err_html("Illegal template")
+	try:
+		from frappe.utils.jinja import get_jenv
+		jenv = get_jenv()  # SandboxedEnvironment with Frappe's safe filters
+		compiled = jenv.from_string(template)
+		return _blank_undefined(compiled.render(context or {}))
+	except Exception as exc:
+		return _err_html(str(exc))
 
 
 @frappe.whitelist()
@@ -173,6 +272,75 @@ def render_description(description=None, doc=None):
 	shim.description = description or ""
 	_render_preview(shim)
 	return shim.preview or ""
+
+
+# Fieldtypes that carry no insertable value (layout / system).
+_NON_INSERTABLE_FIELDTYPES = frozenset({
+	"Section Break", "Column Break", "Tab Break", "HTML", "HTML Editor",
+	"Button", "Fold", "Heading", "Image", "Geolocation", "Signature",
+})
+# JD fields that are builder mechanics, not content.
+_JD_SKIP_FIELDS = frozenset({"description", "preview", "is_default"})
+
+
+def _primary_child_fieldname(child_doctype):
+	"""The main display field of a child doctype (first in-list-view field, else
+	first data/link field) — used to build a `{% for %}` loop token."""
+	if not child_doctype or not frappe.db.exists("DocType", child_doctype):
+		return "name"
+	cmeta = frappe.get_meta(child_doctype)
+	listed = [f for f in cmeta.fields if f.in_list_view and f.fieldtype not in _NON_INSERTABLE_FIELDTYPES]
+	if listed:
+		return listed[0].fieldname
+	for f in cmeta.fields:
+		if f.fieldtype in ("Data", "Link", "Select", "Small Text"):
+			return f.fieldname
+	return "name"
+
+
+def _fields_as_tokens(doctype):
+	"""Insertable fields of `doctype` as {label, token} — scalars become
+	`{{ fieldname }}`, child tables become a comma-joined `{% for %}` loop."""
+	out = []
+	for df in frappe.get_meta(doctype).fields:
+		if not df.fieldname or df.fieldtype in _NON_INSERTABLE_FIELDTYPES:
+			continue
+		if doctype == "Job Description" and df.fieldname in _JD_SKIP_FIELDS:
+			continue
+		if df.fieldtype in ("Table", "Table MultiSelect"):
+			child_fn = _primary_child_fieldname(df.options)
+			token = (
+				"{% for row in " + df.fieldname + " %}{{ row." + child_fn + " }}"
+				"{% if not loop.last %}, {% endif %}{% endfor %}"
+			)
+		else:
+			token = "{{ " + df.fieldname + " }}"
+		out.append({
+			"label": (df.label or df.fieldname).strip(),
+			"fieldname": df.fieldname,
+			"fieldtype": df.fieldtype,
+			"token": token,
+		})
+	return out
+
+
+@frappe.whitelist()
+def get_jd_template_fields():
+	"""Insertable fields for the JD template builder, grouped.
+
+	Each item: {label, fieldname, fieldtype, token}. `token` is the Jinja
+	snippet to drop into the JD body (Frappe Email Template style):
+	  - Job Description fields  → resolved from the JD doc itself.
+	  - Job Requisition fields  → resolved from the in-progress requisition the
+	    frontend posts to `preview_job_description` (missing ⇒ empty).
+	"""
+	frappe.has_permission("Job Description", "read", throw=True)
+	return {
+		"groups": [
+			{"group": "Job Description Fields", "fields": _fields_as_tokens("Job Description")},
+			{"group": "Job Requisition Fields", "fields": _fields_as_tokens("Job Requisition")},
+		]
+	}
 
 
 class JobDescription(Document):

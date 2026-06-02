@@ -207,7 +207,32 @@ def _child_table_fields(child_doctype):
 	return cols
 
 
-def get_application_fields_for_channel(opening_name, channel):
+def _serialize_field_value(doc, fieldname, fieldtype):
+	"""Current value of `fieldname` on `doc`, JSON-friendly.
+
+	Child-table fields are returned as a list of plain dicts (framework/meta
+	columns stripped); everything else is returned as-is.
+	"""
+	value = doc.get(fieldname)
+	if fieldtype in ("Table", "Table MultiSelect"):
+		if not value:
+			return []
+		rows = []
+		for row in value:
+			row_dict = row.as_dict() if hasattr(row, "as_dict") else dict(row)
+			rows.append({
+				k: v
+				for k, v in row_dict.items()
+				if not k.startswith("_") and k not in {
+					"doctype", "parent", "parenttype", "parentfield",
+					"docstatus", "owner", "creation", "modified", "modified_by", "idx",
+				}
+			})
+		return rows
+	return value
+
+
+def get_application_fields_for_channel(opening_name, channel, job_applicant=None):
 	"""Return the list of Job Applicant fields to render for `opening_name` on
 	`channel` ("careers" / "ijp" / "refer" / "preoffer").
 
@@ -217,6 +242,11 @@ def get_application_fields_for_channel(opening_name, channel):
 	  - keep only rows where view_<channel> = 1
 	Each row is enriched with the Job Applicant field's fieldtype + options
 	pulled from the doctype meta, so the frontend can render the right input.
+
+	When `job_applicant` is given (the channels where an applicant already
+	exists, e.g. pre-offer), each field also carries the applicant's current
+	`value` so the form can pre-fill. Without it, `value` is the empty default
+	([] for tables, otherwise None).
 
 	Output shape:
 	    [{
@@ -229,6 +259,7 @@ def get_application_fields_for_channel(opening_name, channel):
 	      "ctq": 0,
 	      "visibility": "All",
 	      "editability": "Editable",
+	      "value": <current value>,
 	    }, ...]
 	"""
 	if channel not in ("careers", "ijp", "refer", "preoffer"):
@@ -248,6 +279,11 @@ def get_application_fields_for_channel(opening_name, channel):
 	meta = frappe.get_meta("Job Applicant")
 	meta_lookup = {df.fieldname: df for df in meta.fields if df.fieldname}
 
+	# Load the applicant once so each field can surface its current value.
+	applicant_doc = None
+	if job_applicant and frappe.db.exists("Job Applicant", job_applicant):
+		applicant_doc = frappe.get_doc("Job Applicant", job_applicant)
+
 	result = []
 	for r in rows:
 		if not cint(r.get(view_col)):
@@ -256,6 +292,7 @@ def get_application_fields_for_channel(opening_name, channel):
 		df = meta_lookup.get(ref)
 		if not df:
 			continue
+		is_table = df.fieldtype in ("Table", "Table MultiSelect")
 		entry = {
 			"section": r.get("section") or "General",
 			"reference_name": ref,
@@ -266,10 +303,15 @@ def get_application_fields_for_channel(opening_name, channel):
 			"ctq": cint(r.get("ctq_flag")),
 			"visibility": r.get("visibility") or "All",
 			"editability": r.get("editability") or "Editable",
+			"value": (
+				_serialize_field_value(applicant_doc, ref, df.fieldtype)
+				if applicant_doc is not None
+				else ([] if is_table else None)
+			),
 		}
 		# For child-table fields, ship the child doctype's columns so the
 		# frontend can render the grid (options alone is just the doctype name).
-		if df.fieldtype in ("Table", "Table MultiSelect"):
+		if is_table:
 			entry["table_fields"] = _child_table_fields(df.options)
 		result.append(entry)
 	return result
