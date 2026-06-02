@@ -232,6 +232,7 @@ const EmployeeTable = ({
                             size="md"
                             contentAlign="start"
                             fullWidth
+                            disabled={!item.user_id}
                             onClick={() => {
                               setSelectedRowEmployee(item);
                               setActiveTool('otp_limit');
@@ -411,6 +412,7 @@ const EmployeeTable = ({
                       size="sm"
                       contentAlign="start"
                       fullWidth
+                      disabled={!item.user_id}
                       onClick={() => {
                         setSelectedRowEmployee(item);
                         setActiveTool('otp_limit');

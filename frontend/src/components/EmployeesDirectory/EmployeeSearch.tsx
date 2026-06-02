@@ -110,8 +110,12 @@ const EmployeeSearch = ({
     }
   });
 
-  if (activeTab === 'my_reportees' && effectiveEmployeeId) {
-    filters.push(["reports_to", "=", effectiveEmployeeId]);
+  if (activeTab === 'my_reportees') {
+    if (effectiveEmployeeId) {
+      filters.push(["reports_to", "=", effectiveEmployeeId]);
+    } else {
+      filters.push(["name", "=", "__NONE__"]);
+    }
   }
 
   const { data = [], isLoading } = useGetAllEmployees(

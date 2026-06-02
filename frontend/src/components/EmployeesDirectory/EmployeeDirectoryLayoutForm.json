@@ -85,7 +85,7 @@
             "customClass": "mb-4",
             "dataSrc": "url",
             "data": {
-                "url": "/api/resource/Branch?fields=[\"*\"]&limit_page_length=0{{ data.company && data.company.length > 0 ? '&filters=[[\"custom_company\",\"in\",' + JSON.stringify(data.company) + ']]' : '&filters=[[\"name\",\"=\",\"__NONE__\"]]' }}"
+                "url": "/api/resource/Branch?fields=[\"*\"]&limit_page_length=0{{ data.company && data.company.length > 0 ? '&filters=' + encodeURIComponent(JSON.stringify([[\"custom_company\",\"in\",data.company]])) : '&filters=' + encodeURIComponent(JSON.stringify([[\"name\",\"=\",\"__NONE__\"]])) }}"
             },
             "refreshOn": "company",
             "clearOnRefresh": true,
@@ -103,7 +103,7 @@
             "customClass": "mb-4",
             "dataSrc": "url",
             "data": {
-                "url": "/api/resource/Business Unit?fields=[\"*\"]&limit_page_length=0{{ data.company && data.company.length > 0 ? '&filters=[[\"company\",\"in\",' + JSON.stringify(data.company) + ']]' : '&filters=[[\"name\",\"=\",\"__NONE__\"]]' }}"
+                "url": "/api/resource/Business Unit?fields=[\"*\"]&limit_page_length=0{{ data.company && data.company.length > 0 ? '&filters=' + encodeURIComponent(JSON.stringify([[\"company\",\"in\",data.company]])) : '&filters=' + encodeURIComponent(JSON.stringify([[\"name\",\"=\",\"__NONE__\"]])) }}"
             },
             "refreshOn": "company",
             "clearOnRefresh": true,

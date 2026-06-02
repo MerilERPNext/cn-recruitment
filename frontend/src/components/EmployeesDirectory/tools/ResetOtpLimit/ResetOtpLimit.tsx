@@ -12,23 +12,18 @@ interface ResetOtpLimitProps {
 }
 
 const ResetOtpLimit: React.FC<ResetOtpLimitProps> = ({ isOpen, onClose, userId }) => {
-    const { mutate: resetOtpMutation, isPending } = useResetOtpResendLimitMutation();
+    const { mutateAsync: resetOtpMutation, isPending } = useResetOtpResendLimitMutation();
     const loading = useLoadingOverlay();
 
     const handleConfirm = async () => {
         await loading?.wrap(async () => {
-            await new Promise<void>((resolve, reject) => {
-                resetOtpMutation(userId, {
-                    onSuccess: () => {
-                        onClose();
-                        resolve();
-                    },
-                    onError: (e: any) => {
-                        reject(e);
-                        onClose();
-                    },
-                });
-            });
+            try {
+                await resetOtpMutation(userId);
+                onClose();
+            } catch (e) {
+                onClose();
+                throw e;
+            }
         }, "Resetting OTP Limit...");
     };
 
