@@ -7,7 +7,7 @@ from frappe.utils import add_months, add_days, getdate, today
 
 def calculate_final_confirmation_date(doc, method=None):
   
-    if not doc.date_of_joining or not doc.custom_probation_period:
+    if not doc.date_of_joining or not doc.custom_notice_period:
         return
 
     probation_period = frappe.get_doc("Probation Period", doc.custom_probation_period)

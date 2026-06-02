@@ -1,4 +1,5 @@
 import FrappeAPI from "../utils/frappeAPI";
+import { uploadReplaceLeaveAttachments } from "../components/Leaves/replaceLeaveHelper";
 import type {
   AccrualJournalEntriesResponse,
   AccrualJournalMetadataResponse,
@@ -183,41 +184,76 @@ export const leaveService = {
     new_leave_type?: string;
     first_half_leave_type?: string;
     second_half_leave_type?: string;
+    reason?: string;
+    description?: string;
+    attachment?: unknown;
+    replaceBoth?: boolean;
   }) => {
     const {
       leave_application,
       new_leave_type,
       first_half_leave_type,
       second_half_leave_type,
+      reason,
+      description,
+      attachment,
+      replaceBoth,
     } = params;
 
     if (!leave_application) {
       throw new Error("leave_application is required");
     }
 
+    // Upload first; backend receives File doc `name` only, never Form.io file objects
+    const uploadedFileDocNames = await uploadReplaceLeaveAttachments(
+      attachment,
+      Boolean(replaceBoth),
+    );
+
+    const optionalFields: Record<string, string> = {};
+    if (reason) {
+      optionalFields.reason = reason;
+    }
+    if (description) {
+      optionalFields.description = description;
+    }
+
     if (new_leave_type && !first_half_leave_type && !second_half_leave_type) {
+      const apiPayload: Record<string, string> = {
+        leave_application,
+        new_leave_type,
+        ...optionalFields,
+      };
+      if (uploadedFileDocNames.attatchment) {
+        apiPayload.attatchment = uploadedFileDocNames.attatchment;
+      }
       return FrappeAPI.callMethod(
         "cn_leave_shift_managment.custom_apis.replace_leave_application",
-        {
-          leave_application,
-          new_leave_type,
-        }
+        apiPayload,
       );
     }
 
     if (first_half_leave_type && second_half_leave_type && !new_leave_type) {
+      const apiPayload: Record<string, string> = {
+        leave_application,
+        first_half_leave_type,
+        second_half_leave_type,
+        ...optionalFields,
+      };
+      if (uploadedFileDocNames.attatchment1) {
+        apiPayload.attatchment1 = uploadedFileDocNames.attatchment1;
+      }
+      if (uploadedFileDocNames.attatchment2) {
+        apiPayload.attatchment2 = uploadedFileDocNames.attatchment2;
+      }
       return FrappeAPI.callMethod(
         "cn_leave_shift_managment.custom_apis.replace_half_day_leave_application",
-        {
-          leave_application,
-          first_half_leave_type,
-          second_half_leave_type,
-        }
+        apiPayload,
       );
     }
 
     throw new Error(
-      "Invalid parameters provided. Pass either new_leave_type OR both first_half_leave_type and second_half_leave_type."
+      "Invalid parameters provided. Pass either new_leave_type OR both first_half_leave_type and second_half_leave_type.",
     );
   },
 

@@ -341,37 +341,20 @@ const RequisitionForm = () => {
     }
   }, [isEditMode]);
 
-  // Always set employee defaults (only when not overridden by edit data)
+  // Always set employee defaults from the logged-in employee (only when not
+  // overridden by edit data). Uses the currentEmployee data directly — no extra API call.
   useEffect(() => {
     if (currentEmployee?.name && !isEditMode && !formData.hiring_manager) {
       setFormData((prev: any) => ({
         ...prev,
         hiring_manager: currentEmployee.name,
         company: currentEmployee.company,
+        department: currentEmployee.department_name || "",
+        designation: currentEmployee.designation_name || "",
+        functional_area: (currentEmployee as any).custom_functional_area || "",
       }));
-
-      FrappeAPI.getDocument("Employee", currentEmployee.name, [
-        "department",
-        "designation",
-        "custom_functional_area",
-      ])
-        .then((employee: any) => {
-          if (employee) {
-            setFormData((prev: any) => ({
-              ...prev,
-              department: employee.department || "",
-              designation: employee.designation || "",
-              functional_area: employee.custom_functional_area || "",
-            }));
-          }
-        })
-        .catch((err) => {
-          console.error("Error fetching employee details:", err);
-        });
     }
   }, [currentEmployee, isEditMode, formData.hiring_manager]);
-
-
 
 
   // ---------------------------------------------------------------------------
@@ -471,7 +454,7 @@ const RequisitionForm = () => {
     }
   };
 
-  const handleChange = (changed: any) => {
+  const handleChange = (changed: { data: any; changed?: { component?: { key?: string }; value?: any } }) => {
     const newData = { ...formData, ...changed.data };
     const changedKey = changed.changed?.component?.key;
 
@@ -572,16 +555,16 @@ const RequisitionForm = () => {
       const managerId = changed.changed?.value;
       if (managerId) {
         FrappeAPI.getDocument("Employee", managerId, [
-          "department",
-          "designation",
+          "department_name",
+          "designation_name",
           "custom_functional_area",
         ])
           .then((employee: any) => {
             if (employee) {
               setFormData((prev: any) => ({
                 ...prev,
-                department: employee.department || "",
-                designation: employee.designation || "",
+                department: employee.department_name || "",
+                designation: employee.designation_name  || "",
                 functional_area: employee.custom_functional_area || "",
               }));
             }

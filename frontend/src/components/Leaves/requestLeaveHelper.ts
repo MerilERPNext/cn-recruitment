@@ -95,6 +95,40 @@ const resolveAttachmentFile = (fileCandidate: unknown) => {
   return undefined;
 };
 
+export const hasValidAttachmentFile = (attachment: NormalizedAttachment) =>
+  attachment.file instanceof File || attachment.file instanceof Blob;
+
+/** Read live file rows from a Form.io file component (avoids JSON-serialized submission). */
+export const getFormioAttachmentFileItems = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  formInstance: { getComponent?: (key: string) => any } | null,
+  componentKey: string,
+): unknown[] => {
+  const component = formInstance?.getComponent?.(componentKey);
+  if (!component) {
+    return [];
+  }
+
+  const candidates = [component.dataValue, component.value, component._data];
+
+  for (const candidate of candidates) {
+    if (!candidate) {
+      continue;
+    }
+
+    const items = Array.isArray(candidate) ? candidate : [candidate];
+    const hasLiveFile = items.some(
+      (item) => isRecord(item) && item.file instanceof File,
+    );
+
+    if (hasLiveFile) {
+      return items;
+    }
+  }
+
+  return [];
+};
+
 const expandAttachmentGroup = (group: unknown): unknown[] => {
   if (Array.isArray(group)) {
     return group;
@@ -228,11 +262,27 @@ export const getPendingAttachmentUploads = (
 ) =>
   attachments.filter(
     (attachment) =>
-      Boolean(attachment.file) &&
+      hasValidAttachmentFile(attachment) &&
       !attachment.url &&
       !attachment.file_url &&
       !attachment.data?.message?.file_url,
   );
+
+/** Same resolution as RequestLeave / BulkLeaveModal before calling upload. */
+export const resolvePendingAttachmentUploads = (
+  ...attachmentGroups: unknown[]
+): NormalizedAttachment[] => {
+  const normalizedAttachments = normalizeAttachments(...attachmentGroups);
+  const directPendingUploads = getPendingAttachmentUploads(
+    normalizedAttachments,
+  );
+
+  if (directPendingUploads.length > 0) {
+    return directPendingUploads;
+  }
+
+  return normalizedAttachments.filter(hasValidAttachmentFile);
+};
 
 export const getExistingAttachmentUrls = (attachments: NormalizedAttachment[]) =>
   attachments

@@ -110,14 +110,18 @@ frappe.ui.form.on('Job Offer', {
     refresh(frm) {
         if (frm.doc.__islocal || frm.doc.status !== 'Accepted' || !frm.doc.job_applicant) return;
 
-        frm.add_custom_button(__('Send Pre Onboarding Form'), () => {
-            frappe.db.get_doc('Job Applicant', frm.doc.job_applicant).then((applicant) => {
-                if (window.recruitment && typeof window.recruitment.open_pre_onboarding_dialog === 'function') {
-                    window.recruitment.open_pre_onboarding_dialog(frm.doc.job_applicant, applicant);
-                } else {
-                    frappe.set_route('Form', 'Job Applicant', frm.doc.job_applicant);
-                }
-            });
-        }, __('Actions'));
+        // Gated by Recruitment Settings -> Enable Pre Onboarding Form Button.
+        frappe.db.get_single_value('Recruitment Settings', 'enable_pre_onboarding_form').then((enabled) => {
+            if (!enabled) return;
+            frm.add_custom_button(__('Send Pre Onboarding Form'), () => {
+                frappe.db.get_doc('Job Applicant', frm.doc.job_applicant).then((applicant) => {
+                    if (window.recruitment && typeof window.recruitment.open_pre_onboarding_dialog === 'function') {
+                        window.recruitment.open_pre_onboarding_dialog(frm.doc.job_applicant, applicant);
+                    } else {
+                        frappe.set_route('Form', 'Job Applicant', frm.doc.job_applicant);
+                    }
+                });
+            }, __('Actions'));
+        });
     }
 });

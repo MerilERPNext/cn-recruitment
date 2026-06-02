@@ -15,6 +15,7 @@ import { Typography } from "../shared/atoms/Typography";
 import { FilePreview } from "../shared/molecules/FilePreview";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { getFileNameFromUrl } from "../../utils/urlFormating";
 
 const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
@@ -149,11 +150,10 @@ const DocumentLibrary = () => {
               variant="subtle"
               size="sm"
               onClick={() => setActiveTab(tab.key)}
-              className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap ${
-                activeTab === tab.key
-                  ? "bg-primary-50 text-header-active"
-                  : "text-header-inactive hover:text-header-active"
-              }`}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap ${activeTab === tab.key
+                ? "bg-primary-50 text-header-active"
+                : "text-header-inactive hover:text-header-active"
+                }`}
             >
               {tab.label}
               <span className="ml-1">({tab.count})</span>
@@ -184,7 +184,7 @@ const DocumentLibrary = () => {
                     key={i}
                     className="border-t hover:bg-gray-50 transition-colors"
                   >
-                    <td className="py-4 px-6 font-medium">{doc.file_name}</td>
+                    <td className="py-4 px-6 font-medium">{getFileNameFromUrl(doc.file_name)}</td>
                     <td className="py-4 px-6 text-gray-600">
                       {doc.employee_name}
                     </td>
@@ -205,7 +205,7 @@ const DocumentLibrary = () => {
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex gap-2 items-center">
-                        {(doc.type === "Personal" || doc.status === "Approved") && (
+                        {(doc.status === "Approved") && (
                           <>
                             {canViewDocument && (
                               <Button
