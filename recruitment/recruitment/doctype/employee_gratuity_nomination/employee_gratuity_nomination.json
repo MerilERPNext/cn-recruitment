@@ -1,0 +1,237 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "format:GRAT-NOM-{employee_onboarding}",
+ "creation": "2026-05-13 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "ref_section",
+  "employee_onboarding",
+  "status",
+  "col_break_ref",
+  "generated_on",
+  "generated_pdf",
+  "statement_section",
+  "employee_name",
+  "sex",
+  "religion",
+  "marital_status",
+  "col_break_stmt",
+  "department",
+  "branch",
+  "designation",
+  "ticket_or_serial_no",
+  "date_of_appointment",
+  "permanent_address",
+  "family_section",
+  "has_family",
+  "parents_dependent",
+  "nominees_section",
+  "nominees",
+  "ack_section",
+  "place_of_signing",
+  "date_of_signing"
+ ],
+ "fields": [
+  {
+   "fieldname": "ref_section",
+   "fieldtype": "Section Break",
+   "label": "Reference"
+  },
+  {
+   "fieldname": "employee_onboarding",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employee Onboarding",
+   "options": "Employee Onboarding",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nGenerated\nSigned\nFiled"
+  },
+  {
+   "fieldname": "col_break_ref",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "generated_on",
+   "fieldtype": "Datetime",
+   "label": "Generated On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "generated_pdf",
+   "fieldtype": "Attach",
+   "label": "Generated PDF",
+   "read_only": 1
+  },
+  {
+   "fieldname": "statement_section",
+   "fieldtype": "Section Break",
+   "label": "Employee Statement"
+  },
+  {
+   "fieldname": "employee_name",
+   "fieldtype": "Data",
+   "label": "Name of Employee in Full"
+  },
+  {
+   "fieldname": "sex",
+   "fieldtype": "Select",
+   "label": "Sex",
+   "options": "\nMale\nFemale\nOther"
+  },
+  {
+   "fieldname": "religion",
+   "fieldtype": "Data",
+   "label": "Religion"
+  },
+  {
+   "fieldname": "marital_status",
+   "fieldtype": "Select",
+   "label": "Marital Status",
+   "options": "\nUnmarried\nMarried\nWidow\nWidower"
+  },
+  {
+   "fieldname": "col_break_stmt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department"
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "label": "Branch / Section",
+   "options": "Branch"
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Post Held / Designation",
+   "options": "Designation"
+  },
+  {
+   "fieldname": "ticket_or_serial_no",
+   "fieldtype": "Data",
+   "label": "Ticket or Serial No"
+  },
+  {
+   "fieldname": "date_of_appointment",
+   "fieldtype": "Date",
+   "label": "Date of Appointment"
+  },
+  {
+   "fieldname": "permanent_address",
+   "fieldtype": "Small Text",
+   "label": "Permanent Address (Village, Thana, Sub-division, Post Office)"
+  },
+  {
+   "fieldname": "family_section",
+   "fieldtype": "Section Break",
+   "label": "Family Declaration"
+  },
+  {
+   "default": "1",
+   "fieldname": "has_family",
+   "fieldtype": "Check",
+   "label": "I have family within the meaning of clause (h) of section (2) of the Payment of Gratuity Act, 1972"
+  },
+  {
+   "default": "0",
+   "fieldname": "parents_dependent",
+   "fieldtype": "Check",
+   "label": "My father/mother/parents are dependent on me"
+  },
+  {
+   "fieldname": "nominees_section",
+   "fieldtype": "Section Break",
+   "label": "Nominee(s)"
+  },
+  {
+   "fieldname": "nominees",
+   "fieldtype": "Table",
+   "label": "Nominees",
+   "options": "Employee Gratuity Nominee"
+  },
+  {
+   "fieldname": "ack_section",
+   "fieldtype": "Section Break",
+   "label": "Acknowledgment"
+  },
+  {
+   "fieldname": "place_of_signing",
+   "fieldtype": "Data",
+   "label": "Place"
+  },
+  {
+   "fieldname": "date_of_signing",
+   "fieldtype": "Date",
+   "label": "Date of Signing"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-13 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Employee Gratuity Nomination",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "employee_onboarding",
+ "track_changes": 1
+}

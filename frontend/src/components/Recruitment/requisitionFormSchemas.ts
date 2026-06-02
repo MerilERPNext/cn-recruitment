@@ -80,13 +80,15 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation&department={{ data.department }}',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
         valueProperty: "id",
         template: "<span>{{ item.label }}</span>",
         validate: { required: true },
+        refreshOn: "department",
+        clearOnRefresh: true,
       },
 
       {
@@ -97,12 +99,14 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
         valueProperty: "id",
         template: "<span>{{ item.label }}</span>",
+        refreshOn: "designation",
+        clearOnRefresh: true,
       },
     ],
   },

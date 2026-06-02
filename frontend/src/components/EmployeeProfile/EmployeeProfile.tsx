@@ -69,6 +69,11 @@ const EmployeeProfile: React.FC = () => {
     "show_employee_status",
     "Employee Profile",
   );
+  const canShowAssignmentDetailsButton = isActionEnabled(
+    userUiPermission,
+    "show_assignment_details_button",
+    "Employee Profile",
+  );
   const canAppreciate = isActionEnabled(
     userUiPermission,
     "can_appreciate",
@@ -422,7 +427,7 @@ const EmployeeProfile: React.FC = () => {
                     <Badge
                       label={
                         EMPLOYEMENT_STATUS[
-                          user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
+                        user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
                         ] || user?.custom_employment_status
                       }
                       size="sm"
@@ -473,6 +478,15 @@ const EmployeeProfile: React.FC = () => {
                   Future Transactions
                 </Button>
               )}
+              {canShowAssignmentDetailsButton &&
+                <Button
+                  variant="soft"
+                  size="sm"
+                  icon={<History size={14} />}
+                  onClick={() => window.open("/webapp/employee-profile/assignment-details", "_blank")}
+                >
+                  Assignment Details
+                </Button>}
             </div>
             <AwardsSection isDesktop={false} />
           </div>
@@ -485,11 +499,10 @@ const EmployeeProfile: React.FC = () => {
                 key={tab.key}
                 variant="subtle"
                 onClick={() => scrollToSection(tab.key)}
-                className={`whitespace-nowrap px-4 py-2 rounded-none text-sm font-medium transition-all duration-200 border-b-2 ${
-                  activeTab === tab.key
-                    ? "border-primary-600 text-primary-600"
-                    : "border-transparent text-gray-600 hover:text-primary-600"
-                }`}
+                className={`whitespace-nowrap px-4 py-2 rounded-none text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
+                  ? "border-primary-600 text-primary-600"
+                  : "border-transparent text-gray-600 hover:text-primary-600"
+                  }`}
               >
                 {tab.label}
               </Button>
@@ -557,7 +570,7 @@ const EmployeeProfile: React.FC = () => {
                       aria-label="Upload new avatar"
                     >
                       {updateDocMutation.isPending ||
-                      uploadMutation.isPending ? (
+                        uploadMutation.isPending ? (
                         <CircularLoader size="sm" color="white" />
                       ) : (
                         <Pencil size={18} />
@@ -590,7 +603,7 @@ const EmployeeProfile: React.FC = () => {
                             <Badge
                               label={
                                 EMPLOYEMENT_STATUS[
-                                  user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
+                                user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
                                 ] || user?.custom_employment_status
                               }
                               size="md"
@@ -672,6 +685,15 @@ const EmployeeProfile: React.FC = () => {
                               </Button>
                             )} */}
                           {canAppreciate && <Appreciations />}
+                          {canShowAssignmentDetailsButton &&
+                            <Button
+                              variant="soft"
+                              size="sm"
+                              icon={<History size={14} />}
+                              onClick={() => window.open("/webapp/employee-profile/assignment-details", "_blank")}
+                            >
+                              Assignment Details
+                            </Button>}
                         </div>
                       </div>
                     </div>
@@ -692,11 +714,10 @@ const EmployeeProfile: React.FC = () => {
                     <button
                       key={tab.key}
                       onClick={() => scrollToSection(tab.key)}
-                      className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
-                        activeTab === tab.key
-                          ? "border-primary text-primary"
-                          : "border-transparent text-gray-600 hover:text-primary"
-                      }`}
+                      className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
+                        ? "border-primary text-primary"
+                        : "border-transparent text-gray-600 hover:text-primary"
+                        }`}
                     >
                       {tab.label}
                     </button>

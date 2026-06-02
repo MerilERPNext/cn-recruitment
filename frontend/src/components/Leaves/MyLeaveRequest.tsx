@@ -136,14 +136,29 @@ const MyLeaveRequests = ({
     });
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleReplace = (data: any) => {
+  const handleReplace = (data: {
+    newLeaveType?: string;
+    firstHalfType?: string;
+    secondHalfType?: string;
+    replaceBoth?: boolean;
+    description?: string;
+    custom_reason?: string;
+    attachment?: unknown;
+  }) => {
+    const replaceBoth = data.replaceBoth === true;
     replaceLeave.mutate(
       {
         leave_application: replaceModalData.leaveData ?? "",
-        new_leave_type: data.newLeaveType,
-        first_half_leave_type: data.firstHalfType,
-        second_half_leave_type: data.secondHalfType,
+        ...(replaceBoth
+          ? {
+              first_half_leave_type: data.firstHalfType,
+              second_half_leave_type: data.secondHalfType,
+              replaceBoth: true,
+            }
+          : { new_leave_type: data.newLeaveType }),
+        reason: data.custom_reason,
+        description: data.description,
+        attachment: data.attachment,
       },
       {
         onSuccess: () => {

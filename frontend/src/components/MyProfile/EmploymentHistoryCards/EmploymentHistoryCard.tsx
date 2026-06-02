@@ -19,7 +19,7 @@ interface EmploymentHistoryCardProps {
 
 const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({ company, functionalArea, department, band, grade, start_date, end_date, isCurrent, is_promotion = false, onEdit }) => {
   return (
-    <div className="bg-white rounded-xl p-6 relative max-w-[90vw] min-w-[90vw] md:min-w-[400px] md:max-w-[400px]">
+    <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift  max-w-[90vw] min-w-[90vw]  md:min-w-[400px] md:max-w-[400px]">
       <div className="absolute top-4 right-4 flex items-center gap-2">
         {isCurrent && <span className="bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-xl">
           Current
@@ -61,7 +61,9 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({ company, 
         </div>
         <div>
           <p className="text-xs text-gray-500">Functional Area</p>
-          <p className="font-semibold text-gray-900">{functionalArea || "-"}</p>
+          <Tooltip content={functionalArea || "-"}>
+            <p className="font-semibold text-gray-900 line-clamp-1">{functionalArea || "-"}</p>
+          </Tooltip>
         </div>
         <div>
           <p className="text-xs text-gray-500">From - To</p>

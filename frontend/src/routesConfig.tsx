@@ -136,6 +136,10 @@ const ExpenseAdvanceForm = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseAdvance/ExpenseAdvanceForm"),
   "ExpenseAdvanceForm",
 );
+const ExpenseSummary = lazyWithRetry(
+  () => import("./components/Expenses-App/ExpenseSummary/ExpenseSummary"),
+  "ExpenseSummary",
+);
 const Holidays = lazyWithRetry(
   () => import("./components/Leaves/Holidays"),
   "Holidays",
@@ -490,6 +494,11 @@ const LeaderboardPage = lazyWithRetry(
 const ScheduledImportsPage = lazyWithRetry(
   () => import("./components/ScheduledImports/ScheduledImportsPage"),
   "ScheduledImportsPage",
+);
+
+const AssignmentDetailsPage = lazyWithRetry(
+  () => import("./components/EmployeeProfile/AssignmentDetailsPage"),
+  "AssignmentDetailsPage",
 );
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -911,6 +920,11 @@ export const routesConfig: AppRoute[] = [
     element: <EmployeeProfile />,
     permissionKey: "Employee Profile",
   },
+  {
+    path: "/webapp/employee-profile/assignment-details",
+    element: <AssignmentDetailsPage />,
+    permissionKey: "Assignment Details",
+  },
 
   // Nested Expenses App Routes
   {
@@ -937,6 +951,11 @@ export const routesConfig: AppRoute[] = [
         path: "team-advance-expense",
         element: <TeamAdvanceExpenseList />,
         permissionKey: "Team Advances",
+      },
+      {
+        path: "expense-summary",
+        element: <ExpenseSummary />,
+        permissionKey: "ExpenseSummary",
       },
     ],
   },

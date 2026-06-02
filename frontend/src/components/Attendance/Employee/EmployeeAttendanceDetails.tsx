@@ -202,15 +202,27 @@ const EmployeeAttendanceDetails = ({
     newLeaveType?: string;
     firstHalfType?: string;
     secondHalfType?: string;
+    replaceBoth?: boolean;
+    description?: string;
+    custom_reason?: string;
+    attachment?: unknown;
   }) => {
     if (!data?.leave_application_name) return;
 
+    const replaceBoth = formData.replaceBoth === true;
     replaceLeave.mutate(
       {
         leave_application: data.leave_application_name,
-        new_leave_type: formData.newLeaveType,
-        first_half_leave_type: formData.firstHalfType,
-        second_half_leave_type: formData.secondHalfType,
+        ...(replaceBoth
+          ? {
+              first_half_leave_type: formData.firstHalfType,
+              second_half_leave_type: formData.secondHalfType,
+              replaceBoth: true,
+            }
+          : { new_leave_type: formData.newLeaveType }),
+        reason: formData.custom_reason,
+        description: formData.description,
+        attachment: formData.attachment,
       },
       {
         onSuccess: () => {

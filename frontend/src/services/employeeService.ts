@@ -1,5 +1,6 @@
 import { EmployeeDetilsType } from "../hooks/useEmployee";
 import {
+  AssignmentDetailsResponse,
   AttendanceFieldPermissions,
   Employee,
   EmployeeIdCard,
@@ -717,6 +718,16 @@ export class EmployeeService {
     const data = await response;
     return data as Employee[];
   }
+  static async getAssignmentDetails(
+    module: string,
+    employee: string,
+  ): Promise<AssignmentDetailsResponse> {
+    return FrappeAPI.getMethod(
+      "cn_hrms_core.cn_hrms_core.apis.assignment_details.get_assignment_details",
+      { module, employee },
+    ) as Promise<AssignmentDetailsResponse>;
+  }
+
   static async getAttendanceFieldReasonAndMessagePermissions(): Promise<AttendanceFieldPermissions> {
     const response = FrappeAPI.getMethod(
       "cn_leave_shift_managment.api.get_attendance_field_settings",

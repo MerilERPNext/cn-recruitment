@@ -8,6 +8,9 @@
 "bulk_operations_section",
 "allow_bulk_job_offer",
 "allow_bulk_job_offer_email",
+"action_buttons_section",
+"enable_pre_offer_form",
+"enable_pre_onboarding_form",
 "section_break_xbvj",
 "job_offer_print_format",
 "job_offer_template",
@@ -37,6 +40,25 @@
 "fieldname": "allow_bulk_job_offer_email",
 "fieldtype": "Check",
 "label": "Allow Bulk Job Offer Email"
+},
+{
+"fieldname": "action_buttons_section",
+"fieldtype": "Section Break",
+"label": "Action Buttons"
+},
+{
+"default": "0",
+"description": "Show the \"Send Pre Offer Form\" button on the Job Applicant form and the bulk action in the Job Applicant list. When unticked, the button/action is hidden for everyone.",
+"fieldname": "enable_pre_offer_form",
+"fieldtype": "Check",
+"label": "Enable Pre Offer Form Button"
+},
+{
+"default": "0",
+"description": "Show the \"Send Pre Onboarding Form\" button on the Job Applicant form and the Job Offer form. When unticked, the button is hidden for everyone.",
+"fieldname": "enable_pre_onboarding_form",
+"fieldtype": "Check",
+"label": "Enable Pre Onboarding Form Button"
 },
 {
 "fieldname": "section_break_xbvj",
