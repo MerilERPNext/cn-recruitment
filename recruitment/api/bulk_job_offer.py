@@ -2,6 +2,43 @@ import frappe
 import json
 from frappe.utils import now, get_url, validate_email_address
 
+
+def _get_support_email():
+    """Org-wide support address used by the offer/onboarding email templates
+    (referenced as {{ support_email }}).
+
+    Sourced from the default outgoing Email Account so we never hardcode an
+    address; falls back to `support_email` in site config, else empty string.
+    """
+    return (
+        frappe.db.get_value("Email Account", {"default_outgoing": 1}, "email_id")
+        or frappe.conf.get("support_email")
+        or ""
+    )
+
+
+def _job_offer_email_context(job_offer, applicant):
+    """Single source of truth for the variables available to the Job Offer
+    email template. Add new template variables here so every send path
+    (bulk / single) stays in sync.
+    """
+    site_url = get_url()
+    offer_url = f"{site_url}/job_offer?appl={applicant.name}"
+    applicant_name = job_offer.applicant_name or applicant.applicant_name
+    first_name = (applicant_name or "Candidate").split(" ")[0]
+
+    return {
+        # full doc so templates may also use {{ doc.<fieldname> }}
+        "doc": job_offer,
+        # flat variables the configured templates use directly
+        "first_name": first_name,
+        "applicant_name": applicant_name,
+        "applicant_email": job_offer.get("applicant_email") or applicant.email_id,
+        "offer_url": offer_url,
+        "portal_link": offer_url,
+        "support_email": _get_support_email(),
+    }
+
 @frappe.whitelist()
 def create_bulk_job_offer(applicants):
 
@@ -121,14 +158,7 @@ def send_bulk_job_offer(job_offers):
             # ----------------------------
             # Dynamic Context
             # ----------------------------
-            site_url = get_url()
-            offer_url = f"{site_url}/job_offer?appl={applicant.name}"
-            first_name = (job_offer.applicant_name or "Candidate").split(" ")[0]
-
-            email_context = {
-                "first_name": first_name,
-                "offer_url": offer_url
-            }
+            email_context = _job_offer_email_context(job_offer, applicant)
 
             # ----------------------------
             # Render Template
