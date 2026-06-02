@@ -80,15 +80,13 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation&department={{ data.department }}',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
         valueProperty: "id",
         template: "<span>{{ item.label }}</span>",
         validate: { required: true },
-        refreshOn: "department",
-        clearOnRefresh: true,
       },
 
       {
@@ -99,14 +97,12 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
         valueProperty: "id",
         template: "<span>{{ item.label }}</span>",
-        refreshOn: "designation",
-        clearOnRefresh: true,
       },
     ],
   },
@@ -286,8 +282,9 @@ export const requisitionFormSchemas = {
         format: "yyyy-MM-dd",
         enableDate: true,
         enableTime: false,
-        widget: { type: "calendar", minDate: new Date() },
-        datePicker: { minDate: new Date() },
+        // Default to today and disable any date before today.
+        customDefaultValue: "value = moment().format('YYYY-MM-DD')",
+        datePicker: { minDate: "moment()" },
       },
       {
         type: "htmlelement",
@@ -324,11 +321,11 @@ export const requisitionFormSchemas = {
                 label: "Expected By Date",
                 customClass: "required-field",
                 format: "yyyy-MM-dd",
-                enableDate: true,
-                enableTime: false,
+          
                 validate: { required: true },
-                widget: { type: "calendar", minDate: new Date() },
-                datePicker: { minDate: new Date() },
+                // Default to today and disable any date before today.
+                customDefaultValue: "value = moment().format('YYYY-MM-DD')",
+                datePicker: { minDate: "moment()" },
               },
             ],
             width: 6,
@@ -483,11 +480,10 @@ export const requisitionFormSchemas = {
   },
   positionSelection: {
     components: [
-      // NOTE: "Total Position / New / Replacement" inputs are rendered as plain
-      // React inputs in RequisitionForm.tsx (outside formio). Keeping them inside
-      // the controlled formio form caused a Controlled Input Override: handleChange
-      // transforms their value (clamp + rebuild positions) and feeds it back, which
-      // makes @tsed/react-formio reset the whole submission mid-typing.
+      // NOTE: The Total / New / Replacement count inputs are rendered as plain
+      // React inputs in RequisitionForm.tsx (currentStep === 2) to avoid the
+      // form.io controlled-input override issue. They must NOT be duplicated as
+      // a form.io panel here or the fields render twice.
       {
         type: "panel",
         title: "Position Details Table",
