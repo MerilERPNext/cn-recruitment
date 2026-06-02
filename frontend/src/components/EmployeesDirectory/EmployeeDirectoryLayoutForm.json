@@ -85,8 +85,10 @@
             "customClass": "mb-4",
             "dataSrc": "url",
             "data": {
-                "url": "/api/resource/Branch?fields=[\"*\"]"
+                "url": "/api/resource/Branch?fields=[\"*\"]&limit_page_length=0{{ data.company && data.company.length > 0 ? '&filters=[[\"custom_company\",\"in\",' + JSON.stringify(data.company) + ']]' : '&filters=[[\"name\",\"=\",\"__NONE__\"]]' }}"
             },
+            "refreshOn": "company",
+            "clearOnRefresh": true,
             "valueProperty": "name",
             "template": "<span>{{item.branch}}</span>",
             "selectValues": "data",
@@ -101,8 +103,10 @@
             "customClass": "mb-4",
             "dataSrc": "url",
             "data": {
-                "url": "/api/resource/Business Unit?fields=[\"*\"]"
+                "url": "/api/resource/Business Unit?fields=[\"*\"]&limit_page_length=0{{ data.company && data.company.length > 0 ? '&filters=[[\"company\",\"in\",' + JSON.stringify(data.company) + ']]' : '&filters=[[\"name\",\"=\",\"__NONE__\"]]' }}"
             },
+            "refreshOn": "company",
+            "clearOnRefresh": true,
             "valueProperty": "name",
             "template": "<span>{{ item.business_unit }}</span>",
             "selectValues": "data",
