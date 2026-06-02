@@ -483,7 +483,7 @@ const EmployeeProfile: React.FC = () => {
                   variant="soft"
                   size="sm"
                   icon={<History size={14} />}
-                  onClick={() => window.open("/webapp/employee-profile/assignment-details", "_blank")}
+                  onClick={() => navigate("/webapp/employee-profile/assignment-details")}
                 >
                   Assignment Details
                 </Button>}
@@ -690,7 +690,7 @@ const EmployeeProfile: React.FC = () => {
                               variant="soft"
                               size="sm"
                               icon={<History size={14} />}
-                              onClick={() => window.open("/webapp/employee-profile/assignment-details", "_blank")}
+                              onClick={() => navigate("/webapp/employee-profile/assignment-details")}
                             >
                               Assignment Details
                             </Button>}
