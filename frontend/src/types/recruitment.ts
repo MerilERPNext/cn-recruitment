@@ -127,6 +127,8 @@ export interface CreateJobRequisitionPayload {
   custom_skills?: string[];
   custom_assign_to_recruiter?: string;
   custom_pre_screened_candidates?: { candidate_name: string; email: string; phone: string; cv?: any; offer_directly: boolean }[];
+  job_title?: string;
+  custom_source?: string;
 }
 
 // API Response Types

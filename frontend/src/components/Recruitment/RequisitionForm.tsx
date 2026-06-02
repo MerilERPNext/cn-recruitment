@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useMemo,} from "react";
 import { Form } from "@tsed/react-formio";
@@ -6,6 +5,7 @@ import {
   requisitionSteps,
   requisitionFormSchemas,
   FormSchemaKeys,
+  jobDetailsPreviewFields,
 } from "./requisitionFormSchemas";
 import Button from "../shared/atoms/Button";
 import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
@@ -129,13 +129,23 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
     number_of_replacement_positions: customPositionDetails.length
       ? customPositionDetails.filter((p: any) => p.vacancy_type === "Replacement").length
       : 0,
+    // Keep the link id as each select's value (so buildPayload sends ids), and
+    // carry the human-readable title alongside in a `_title` field for display.
     positions: customPositionDetails.map((p: any, i: number) => ({
       position_number: i + 1,
       vacancy_type: p.vacancy_type || "New",
+
       location: p.location,
+      location_title: p.location_title,
+
       functional_area: p.functional_area,
+      functional_area_title: p.functional_area_title,
+
       reporting_manager: p.reporting_manager,
+      reporting_manager_title: p.reporting_manager_title,
+
       replacement_for: p.replacement_for,
+      replacement_for_title: p.replacement_for_title,
     })),
 
     // Requirements
@@ -177,31 +187,39 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
 // backend supports a `search_text` filter) so its label resolves even when the
 // value isn't in the first page of results. Applied recursively so nested
 // datagrid / columns selects (position rows) are covered too.
+//
+// Inside a datagrid, eager-loading fires one request + builds one Choices widget
+// per row × per select, so a very large grid (100 rows → hundreds of
+// simultaneous loads) can freeze the page. To both resolve labels (so the
+// position rows show titles, not ids) AND stay safe, grid selects eager-load
+// only when the grid is reasonably small (eagerGrid); above that they stay lazy
+// (form.io's default) and only fetch when the user opens the dropdown.
 // ---------------------------------------------------------------------------
-function enableUrlSelectLabels(components: any[], insideGrid = false): any[] {
+function enableUrlSelectLabels(
+  components: any[],
+  insideGrid = false,
+  eagerGrid = false
+): any[] {
   if (!Array.isArray(components)) return components;
   return components.map((c) => {
     const next: any = { ...c };
     if (next.type === "select" && next.dataSrc === "url") {
-      // Eager-load (lazyLoad:false) only for top-level selects so their saved
-      // value resolves to a label on remount. Inside a datagrid this would fire
-      // one request + build one Choices widget per row × per select (100 rows →
-      // hundreds of simultaneous loads), freezing the page — so keep those lazy
-      // (form.io's default): they only fetch when the user opens the dropdown.
-      if (!insideGrid) next.lazyLoad = false;
+      // Eager-load top-level selects always; grid selects only when the grid is
+      // small enough (eagerGrid) — so their saved id resolves to a label.
+      if (!insideGrid || eagerGrid) next.lazyLoad = false;
       if (!next.searchField) next.searchField = "search_text";
     }
     // Selects nested in a datagrid/editgrid are repeated per row — flag them so
-    // descendants stay lazy.
+    // descendants follow the same grid eager/lazy decision.
     const childInsideGrid =
       insideGrid || next.type === "datagrid" || next.type === "editgrid";
     if (Array.isArray(next.components)) {
-      next.components = enableUrlSelectLabels(next.components, childInsideGrid);
+      next.components = enableUrlSelectLabels(next.components, childInsideGrid, eagerGrid);
     }
     if (Array.isArray(next.columns)) {
       next.columns = next.columns.map((col: any) => ({
         ...col,
-        components: enableUrlSelectLabels(col.components || [], childInsideGrid),
+        components: enableUrlSelectLabels(col.components || [], childInsideGrid, eagerGrid),
       }));
     }
     if (Array.isArray(next.rows)) {
@@ -209,7 +227,7 @@ function enableUrlSelectLabels(components: any[], insideGrid = false): any[] {
         Array.isArray(row)
           ? row.map((cell: any) => ({
               ...cell,
-              components: enableUrlSelectLabels(cell.components || [], childInsideGrid),
+              components: enableUrlSelectLabels(cell.components || [], childInsideGrid, eagerGrid),
             }))
           : row
       );
@@ -345,6 +363,15 @@ const RequisitionForm = () => {
   const [jdPreviewOpen, setJdPreviewOpen] = useState(false);
   const [jdContent, setJdContent] = useState<string>("");
   const [jdLoading, setJdLoading] = useState(false);
+
+  // Job Details tab "Preview" popup state. Holds the human-readable rows shown
+  // in the popup plus the payload that will be POSTed to the API later (feature
+  // not built yet — the preview/toast surfaces exactly what will be sent).
+  const [jobDetailsPreviewOpen, setJobDetailsPreviewOpen] = useState(false);
+  const [jobDetailsPreview, setJobDetailsPreview] = useState<{
+    rows: { label: string; value: string }[];
+    payload: Record<string, any>;
+  }>({ rows: [], payload: {} });
 
   // ── Pre-Screened Candidate CV upload (same pattern as HraExemptio.tsx) ──
   const uploadMutation = useFileUpload();
@@ -584,6 +611,95 @@ const RequisitionForm = () => {
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // Job Details tab "Preview" — collects only the Job Details (JD) tab fields,
+  // builds the payload that will be sent to the API later (feature, not now),
+  // shows it in a toast, and opens a read-only preview popup.
+  // ---------------------------------------------------------------------------
+  const buildJobDetailsPayload = (finalData: any): Record<string, any> => {
+    // Reuse the same Work Experience mapping as buildPayload so this future API
+    // call stays consistent with the full-submit payload.
+    let custom_work_experience: string | undefined;
+    let custom_work_experience_range: string | undefined;
+    const expVal = finalData.custom_work_experience_range;
+    if (expVal === "Fresher") {
+      custom_work_experience = "Fresher";
+    } else if (expVal === "1 - 3 Years") {
+      custom_work_experience = "1 - 3 Years";
+      custom_work_experience_range = "1 - 3 years";
+    } else if (expVal === "4 - 5 Years") {
+      custom_work_experience = "4 - 5 years";
+      custom_work_experience_range = "3 - 5 years";
+    } else if (expVal === "5 - 10 Years") {
+      custom_work_experience = "5 - 10 years";
+      custom_work_experience_range = "5 - 10 years";
+    }
+
+    return {
+      custom_experience_range_from: finalData.experience_from?.toString(),
+      custom_experience_range_to: finalData.experience_to?.toString(),
+      custom_experience_unit: finalData.experience_unit,
+      custom_salary_range_currency: finalData.salary_currency,
+      custom_salary_range_min: finalData.salary_min,
+      custom_salary_range_max: finalData.salary_max,
+      custom_salary_timeframe: finalData.salary_timeframe,
+      posting_date: finalData.recruitment_start_date
+        ? new Date(finalData.recruitment_start_date).toISOString().split("T")[0]
+        : undefined,
+      expected_compensation: finalData.expected_compensation
+        ? Number(finalData.expected_compensation)
+        : undefined,
+      expected_by: finalData.expected_by
+        ? new Date(finalData.expected_by).toISOString().split("T")[0]
+        : undefined,
+      custom_employment_type_link: finalData.employment_type,
+      custom_location: finalData.location,
+      custom_work_experience,
+      custom_work_experience_range,
+      custom_preferred_notice_period: finalData.custom_preferred_notice_period,
+      custom_preferred_company: finalData.preferred_company,
+      custom_other_preferred_companies: finalData.custom_other_preferred_companies,
+      custom_skills: finalData.custom_skills,
+    };
+  };
+
+  const handlePreviewJobDetails = () => {
+    // Render any field value (incl. url-select objects and multi-select arrays)
+    // as a readable string for the popup.
+    const formatValue = (v: any): string => {
+      if (v === undefined || v === null || v === "") return "—";
+      if (Array.isArray(v)) {
+        return v.length
+          ? v
+              .map((item) =>
+                item && typeof item === "object"
+                  ? item.label ?? item.value ?? JSON.stringify(item)
+                  : item
+              )
+              .join(", ")
+          : "—";
+      }
+      if (typeof v === "object") return v.label ?? v.value ?? JSON.stringify(v);
+      return String(v);
+    };
+
+    const rows = jobDetailsPreviewFields.map((f) => ({
+      label: f.label,
+      value: formatValue((formData as any)[f.key]),
+    }));
+
+    const payload = buildJobDetailsPayload(formData);
+
+    setJobDetailsPreview({ rows, payload });
+    setJobDetailsPreviewOpen(true);
+
+    // Surface the payload that will be sent to the API (future feature) in a toast.
+    toast.success(`Job Details payload:\n${JSON.stringify(payload, null, 2)}`, {
+      duration: 6000,
+      style: { maxWidth: "480px", whiteSpace: "pre-wrap", fontSize: "12px" },
+    });
+  };
+
   const handleNext = () => {
     const errors = validateStep(currentStep, formData);
     if (errors.length > 0) {
@@ -708,6 +824,10 @@ const RequisitionForm = () => {
     }
 
     return {
+      // Requisition name (e.g. "HR-HIREQ-00013") — dynamic; present on edit.
+      job_title: finalData.name || existingRequisition?.name,
+      // Source is always "Refer" for this form.
+      custom_source: "Refer",
       requested_by:
         finalData.hiring_manager ||
         existingRequisition?.requested_by ||
@@ -821,6 +941,11 @@ const RequisitionForm = () => {
     }
   };
 
+  // Eager-load the position-grid url-selects (so saved ids render as titles)
+  // only when the grid is small enough that per-row loads won't freeze the page.
+  const positionRowCount = ((formData as any).positions || []).length;
+  const eagerGrid = positionRowCount > 0 && positionRowCount <= 25;
+
   const currentSchema = useMemo(() => {
     const stepKey = requisitionSteps[currentStep].key as FormSchemaKeys;
     const schema = requisitionFormSchemas[stepKey];
@@ -837,8 +962,8 @@ const RequisitionForm = () => {
       );
     }
 
-    return { ...schema, components: enableUrlSelectLabels(components) };
-  }, [currentStep, canEditEmployeeField]);
+    return { ...schema, components: enableUrlSelectLabels(components, false, eagerGrid) };
+  }, [currentStep, canEditEmployeeField, eagerGrid]);
 
   const isBusy = isUpdating || createJobRequisition.isPending;
   const canPreviewJD = !!(formData as any).designation && !!(formData as any).department;
@@ -1191,9 +1316,22 @@ const RequisitionForm = () => {
         </Button>
 
         {!isLastStep ? (
-          <Button size="md" onClick={handleNext} className="px-4 md:px-6 py-2">
-            Next
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* Preview button — only on the Job Details tab (index 1), left of Next */}
+            {currentStep === 1 && (
+              <Button
+                variant="outline"
+                size="md"
+                onClick={handlePreviewJobDetails}
+                className="px-4 md:px-6 py-2"
+              >
+                Preview
+              </Button>
+            )}
+            <Button size="md" onClick={handleNext} className="px-4 md:px-6 py-2">
+              Next
+            </Button>
+          </div>
         ) : (
           <Button
             size="md"
@@ -1254,6 +1392,72 @@ const RequisitionForm = () => {
             <div className="flex justify-end px-6 py-4 border-t">
               <button
                 onClick={() => setJdPreviewOpen(false)}
+                className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Job Details Preview Modal */}
+      {jobDetailsPreviewOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          onClick={() => setJobDetailsPreviewOpen(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">Job Details Preview</h3>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Review the Job Details before continuing
+                </p>
+              </div>
+              <button
+                onClick={() => setJobDetailsPreviewOpen(false)}
+                className="p-2 rounded-md hover:bg-gray-100 text-gray-500 transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              <table className="min-w-full text-sm">
+                <tbody>
+                  {jobDetailsPreview.rows.map((row) => (
+                    <tr key={row.label} className="border-b last:border-b-0">
+                      <td className="py-2 pr-4 font-medium text-gray-600 align-top w-1/2">
+                        {row.label}
+                      </td>
+                      <td className="py-2 text-gray-800 break-words">{row.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Payload that will be sent to the API (future feature) */}
+              <div className="mt-5">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  API Payload (preview)
+                </p>
+                <pre className="text-xs bg-gray-50 border rounded-md p-3 overflow-x-auto text-gray-700">
+                  {JSON.stringify(jobDetailsPreview.payload, null, 2)}
+                </pre>
+              </div>
+            </div>
+
+            {/* Modal footer */}
+            <div className="flex justify-end px-6 py-4 border-t">
+              <button
+                onClick={() => setJobDetailsPreviewOpen(false)}
                 className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition"
               >
                 Close
