@@ -625,7 +625,7 @@ export const useUpdateEmploymentDetailsMutation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employment-history-data"] });
-      toast.success("Work location updated successfully");
+      toast.success("Employment details updated successfully");
     },
   });
 };
