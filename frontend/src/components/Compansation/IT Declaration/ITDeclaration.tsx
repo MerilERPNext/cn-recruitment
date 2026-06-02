@@ -286,7 +286,7 @@ const ITDeclarationForm = () => {
   // Register action button in central SalarySlipApp via ref pattern
 
   return (
-    <div className="bg-white min-h-screen bg-app font-brand flex flex-col">
+    <div className="bg-white min-h-screen font-brand flex flex-col">
       {/* ── Top bar ──────────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10 w-full">
         {/* Desktop top bar (hidden on mobile) */}
