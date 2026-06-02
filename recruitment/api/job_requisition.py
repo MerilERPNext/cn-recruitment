@@ -228,13 +228,32 @@ def _bypass_hrms_duplicate_check(doc):
 # ---------------------------------------------------------------------------
 
 
+def _row_vacancy_type(row):
+    """Single source of truth for a position's New / Replacement type.
+
+    A position is a *Replacement* exactly when it names someone to replace
+    (`replacement_for` is set); otherwise it is *New*. `replacement_for` is the
+    reliable signal — validation requires it for Replacement, and the UI doesn't
+    always send `vacancy_type`, which used to leave replacement rows mislabelled
+    as "New". Deriving the type from `replacement_for` keeps the flag in
+    lock-step with the data on both write and read. `row` may be a payload dict
+    or a Frappe child row (both support `.get`).
+    """
+    return "Replacement" if row.get("replacement_for") else "New"
+
+
 def _position_row(p, position_no, parent_vacancy_default, parent_functional_area,
                   parent_employee_type=None):
-    """Build a single child row dict for `custom_position_details`."""
-    vacancy = (p.get("vacancy_type") or parent_vacancy_default or "New").strip() or "New"
+    """Build a single child row dict for `custom_position_details`.
+
+    `vacancy_type` is derived from `replacement_for` (see _row_vacancy_type), so
+    a position that names a replacement is always stored as "Replacement" even
+    when the UI omits `vacancy_type`. `parent_vacancy_default` is retained for
+    signature compatibility but no longer needed for typing.
+    """
     return {
         "position_no": position_no,
-        "vacancy_type": vacancy,
+        "vacancy_type": _row_vacancy_type(p),
         "replacement_for": p.get("replacement_for"),
         "reporting_manager": p.get("reporting_manager"),
         "location": p.get("location"),
@@ -652,6 +671,27 @@ def _with_link_titles(source_doctype, data):
     return out
 
 
+def _resolve_type_of_position(doc):
+    """Parent "Type of Position" (New / Replacement) for the GET response.
+
+    The stored parent `custom_type_of_position` is unreliable — it defaults to
+    "New" on insert and the create/update API never writes it — so we derive the
+    real value from the position rows, which ARE saved correctly:
+      - all rows same type        -> that type
+      - mixed rows                -> "Replacement" if any row is a replacement, else "New"
+      - no rows (shouldn't happen) -> fall back to the stored parent value
+    This keeps GET correct in every scenario (create or update) without changing
+    how anything is written.
+    """
+    types = [_row_vacancy_type(row) for row in (doc.get("custom_position_details") or [])]
+    if not types:
+        return doc.get("custom_type_of_position")
+    unique = set(types)
+    if len(unique) == 1:
+        return types[0]
+    return "Replacement" if "Replacement" in unique else "New"
+
+
 def _serialise_requisition(doc):
     """Flat round-trip representation of a JR.
     All parent fields keep their DocType field names so the UI can bind
@@ -679,10 +719,17 @@ def _serialise_requisition(doc):
     # then shows the stored value instead of an empty box.
     out["custom_work_experience"] = out.get("custom_work_experience_range")
 
+    # Parent "Type of Position" (New / Replacement). The stored parent field is
+    # an unwritten default, so derive it from the position rows (source of
+    # truth). Without this the UI's type selector is null on GET / edit.
+    out["custom_type_of_position"] = _resolve_type_of_position(doc)
+
     out["custom_position_details"] = [
         {
             "position_no": row.get("position_no"),
-            "vacancy_type": row.get("vacancy_type"),
+            # Derived from replacement_for so already-saved rows that were
+            # mislabelled "New" still report the correct type. See _row_vacancy_type.
+            "vacancy_type": _row_vacancy_type(row),
             "location": row.get("location"),
             "reporting_manager": row.get("reporting_manager"),
             "replacement_for": row.get("replacement_for"),

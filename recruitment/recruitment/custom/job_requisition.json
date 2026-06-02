@@ -3501,7 +3501,7 @@
    "name": "Job Requisition-custom_work_experience_range",
    "no_copy": 0,
    "non_negative": 0,
-   "options": "0 - 1 years\n1 - 3 years\n3 - 5 years\n5 - 10 years\n10+ years",
+   "options": "\nFresher\n0 - 1 years\n1 - 3 years\n3 - 5 years\n5 - 10 years\n10+ years",
    "owner": "Administrator",
    "permlevel": 0,
    "placeholder": null,
