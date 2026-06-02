@@ -46,8 +46,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
     const style: React.CSSProperties = {
       position: "fixed",
       zIndex: 99999,
-      minWidth: 160,
-      width: "max-content",
+      minWidth: 160
     };
 
     if (isTop) {
@@ -114,33 +113,33 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
 
   const menu = isOpen
     ? ReactDOM.createPortal(
-        <div
-          ref={menuRef}
-          style={menuStyle}
-          className="bg-white rounded-lg shadow-lg border border-gray-200 py-1 max-h-60 overflow-y-auto"
-        >
-          {options.length === 0 ? (
-            <div className="px-4 py-2.5 text-sm text-gray-500 whitespace-nowrap">
-              {emptyMessage}
-            </div>
-          ) : (
-            options.map((option) => (
-              <Button
-                size="md"
-                variant={value === option.value ? "soft" : "subtle"}
-                bgColor={value === option.value ? "primary" : "disabled"}
-                key={option.value}
-                onClick={() => handleSelect(option.value)}
-                contentAlign={contentAlign}
-                className="block whitespace-nowrap w-full text-left px-4 py-2.5 hover:bg-primary-50 transition-colors"
-              >
-                {option.label}
-              </Button>
-            ))
-          )}
-        </div>,
-        document.body
-      )
+      <div
+        ref={menuRef}
+        style={menuStyle}
+        className="bg-white rounded-lg shadow-lg border border-gray-200 py-1 max-h-60 overflow-y-auto"
+      >
+        {options.length === 0 ? (
+          <div className="px-4 py-2.5 text-sm text-gray-500 whitespace-nowrap">
+            {emptyMessage}
+          </div>
+        ) : (
+          options.map((option) => (
+            <Button
+              size="md"
+              variant={value === option.value ? "soft" : "subtle"}
+              bgColor={value === option.value ? "primary" : "disabled"}
+              key={option.value}
+              onClick={() => handleSelect(option.value)}
+              contentAlign={contentAlign}
+              className="block whitespace-nowrap w-full text-left px-4 py-2.5 hover:bg-primary-50 transition-colors"
+            >
+              {option.label}
+            </Button>
+          ))
+        )}
+      </div>,
+      document.body
+    )
     : null;
 
   return (
