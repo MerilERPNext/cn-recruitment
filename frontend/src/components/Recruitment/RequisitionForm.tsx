@@ -508,7 +508,7 @@ const RequisitionForm = () => {
     return () => {
       cancelled = true;
     };
-  }, [isEditMode]);
+  }, [existingRequisition, isEditMode]);
 
   // Set only Hiring Manager + Company defaults from the logged-in employee.
   // Department / Designation / Functional Area are NOT auto-filled — the user
