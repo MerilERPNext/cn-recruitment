@@ -215,6 +215,7 @@ const EmploymentHistoryForm = ({
         start_date: data.startDate,
         functional_area: data.functional_area,
         is_promotion: data.is_promotion,
+        mode: isEdit ? "update" : "new",
       });
       onCancel?.();
     } catch (err) {

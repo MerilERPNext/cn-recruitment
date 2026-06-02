@@ -69,6 +69,11 @@ const EmployeeProfile: React.FC = () => {
     "show_employee_status",
     "Employee Profile",
   );
+  const canShowAssignmentDetailsButton = isActionEnabled(
+    userUiPermission,
+    "show_assignment_details_button",
+    "Employee Profile",
+  );
   const canAppreciate = isActionEnabled(
     userUiPermission,
     "can_appreciate",
@@ -473,11 +478,11 @@ const EmployeeProfile: React.FC = () => {
                   Future Transactions
                 </Button>
               )}
-              <Button variant="subtle" size="sm" icon={<History size={14} />}>
+              {canShowAssignmentDetailsButton && <Button variant="subtle" size="sm" icon={<History size={14} />}>
                 <Link to="/webapp/employee-profile/assignment-details" target="_blank" rel="noopener noreferrer" >
                   Assignment Details
                 </Link>
-              </Button>
+              </Button>}
             </div>
             <AwardsSection isDesktop={false} />
           </div>
@@ -676,11 +681,11 @@ const EmployeeProfile: React.FC = () => {
                               </Button>
                             )} */}
                           {canAppreciate && <Appreciations />}
-                          <Button variant="soft" size="sm" icon={<History size={14} />}>
+                          {canShowAssignmentDetailsButton && <Button variant="soft" size="sm" icon={<History size={14} />}>
                             <Link to="/webapp/employee-profile/assignment-details" >
                               Assignment Details
                             </Link>
-                          </Button>
+                          </Button>}
                         </div>
                       </div>
                     </div>

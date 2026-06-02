@@ -116,6 +116,7 @@ const WorkLocationForm = ({
         employee: currentEmployee?.employee,
         fields: [{ field: "work_location", value: data.work_location }],
         start_date: data.startDate,
+        mode: isEdit ? "update" : "new",
       });
       onCancel?.();
     } catch (err) {

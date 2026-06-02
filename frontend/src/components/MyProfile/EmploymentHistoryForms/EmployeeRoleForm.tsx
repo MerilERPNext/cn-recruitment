@@ -116,6 +116,7 @@ const EmployeeRoleForm = ({
         employee: currentEmployee?.employee,
         fields: [{ field: "employee_role", value: data.employee_role }],
         start_date: data.startDate,
+        mode: isEdit ? "update" : "new",
       });
       onCancel?.();
     } catch (err) {

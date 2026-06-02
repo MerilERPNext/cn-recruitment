@@ -147,6 +147,7 @@ const CostCenterForm = ({
           start_date: a.start_date,
           ...(a.end_date ? { end_date: a.end_date } : {}),
         })),
+        mode: isEdit ? "update" : "new",
       });
       onCancel?.();
     } catch (err) {

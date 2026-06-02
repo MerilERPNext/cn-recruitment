@@ -126,6 +126,7 @@ const EmploymentTypeForm = ({
         employee: currentEmployee?.employee,
         fields,
         start_date: data.startDate,
+        mode: isEdit ? "update" : "new",
       });
       onCancel?.();
     } catch (err) {

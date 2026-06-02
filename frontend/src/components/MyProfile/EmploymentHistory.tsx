@@ -16,6 +16,7 @@ import WorkLocationForm from "./EmploymentHistoryForms/WorkLocationForm";
 import EmploymentHistoryForm from "./EmploymentHistoryForms/EmploymentHistorForm";
 import EmploymentTypeForm from "./EmploymentHistoryForms/EmploymentTypeForm";
 import EmployeeRoleForm from "./EmploymentHistoryForms/EmployeeRoleForm";
+import EmploymentSegmentsCard from "./EmploymentHistoryCards/EmploymentSegmentsCard";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
@@ -49,6 +50,12 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   const employmentTypes = data?.employment_types || [];
   const employeeRoles = data?.employee_roles || [];
   const costCenters = data?.cost_centers || [];
+  const segmentTotals = costCenters.map(item =>
+    Object.fromEntries(
+      Object.entries(item).filter(([key]) => key !== 'allocations')
+    )
+  );
+
   const hasEmploymentHistory = history.length > 0;
 
   const defaultStartDateForAdd = !hasEmploymentHistory
@@ -304,6 +311,31 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                     is_current={item.is_current}
                     total_percentage={item.total_percentage}
                     onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "cost_center") : undefined}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {segmentTotals.length > 0 && (
+          <div className="flex flex-col gap-2 mt-6">
+            <div className="flex items-center justify-between">
+              <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                Segments
+              </Typography>
+            </div>
+            <div className="flex gap-2 overflow-auto">
+              {segmentTotals.map((item) => (
+                <div
+                  key={item.from_date}
+                  className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
+                >
+                  <EmploymentSegmentsCard
+                    from_date={item.from_date}
+                    to_date={item.to_date}
+                    is_current={item.is_current}
+                    segment_totals={item.segment_totals}
+                    total_percentage={item.total_percentage}
                   />
                 </div>
               ))}

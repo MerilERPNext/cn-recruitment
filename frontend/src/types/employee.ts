@@ -349,6 +349,7 @@ export interface EmployeeCostCenter {
   is_current: boolean;
   total_percentage: number;
   allocations: CostCenterAllocation[];
+  segment_totals: Record<string, number>;
 }
 
 export interface EmployeeSupplementary {
