@@ -13,6 +13,7 @@ import type { FetchParams } from "../../services/customApiService";
 import type { FrappePageResponse } from "../../types/frappe";
 import CardTable, { ColumnSortConfig } from "../shared/CardTable";
 import { Briefcase, CheckCircle, Edit, FileText, FolderOpen } from "lucide-react";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 const EditButton = ({ requisition, onClose }: { requisition: any; onClose: () => void }) => {
   const navigate = useNavigate();
@@ -218,7 +219,7 @@ const Requisition = () => {
 
           <div className="flex items-center">
             <Typography variant="bodySmall" className="text-gray-600">
-              {lastUpdated}
+              {formatToIndianDate(lastUpdated)}
             </Typography>
           </div>
 
@@ -229,7 +230,7 @@ const Requisition = () => {
               onMouseLeave={() => setShowRequesterCard(false)}
             >
               <Typography variant="bodySmall" className="text-gray-600">
-                {initiated}
+                {formatToIndianDate(initiated)}
               </Typography>
               <Typography variant="bodySmall" className="text-gray-500 text-xs hover:underline cursor-pointer">
                 {item.requested_by_name || item.requested_by}
@@ -613,7 +614,7 @@ const Requisition = () => {
                     Hiring Lead
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {selectedRequisition.custom_hiring_lead || "—"}
+                    {selectedRequisition.custom_hiring_lead_title || "—"}
                   </Typography>
                 </div>
                 <div>
@@ -639,7 +640,7 @@ const Requisition = () => {
                     Posting Date
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {selectedRequisition.posting_date || "—"}
+                    {formatToIndianDate(selectedRequisition.posting_date) || "—"}
                   </Typography>
                 </div>
                 <div>
@@ -647,7 +648,7 @@ const Requisition = () => {
                     Expected By
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {selectedRequisition.expected_by || "—"}
+                    {formatToIndianDate(selectedRequisition.expected_by) || "—"}
                   </Typography>
                 </div>
               </div>

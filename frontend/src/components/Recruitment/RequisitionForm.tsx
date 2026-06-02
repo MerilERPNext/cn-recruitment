@@ -5,7 +5,6 @@ import {
   requisitionSteps,
   requisitionFormSchemas,
   FormSchemaKeys,
-  jobDetailsPreviewFields,
 } from "./requisitionFormSchemas";
 import Button from "../shared/atoms/Button";
 import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
@@ -364,14 +363,17 @@ const RequisitionForm = () => {
   const [jdContent, setJdContent] = useState<string>("");
   const [jdLoading, setJdLoading] = useState(false);
 
-  // Job Details tab "Preview" popup state. Holds the human-readable rows shown
-  // in the popup plus the payload that will be POSTed to the API later (feature
-  // not built yet — the preview/toast surfaces exactly what will be sent).
+  // "Preview" popup state. Sends ALL tab data to preview_job_description and
+  // renders the returned Job Description (title + html) in the modal. `payload`
+  // keeps the exact request body that was sent (shown in a toast + the modal).
   const [jobDetailsPreviewOpen, setJobDetailsPreviewOpen] = useState(false);
   const [jobDetailsPreview, setJobDetailsPreview] = useState<{
-    rows: { label: string; value: string }[];
+    loading: boolean;
+    title: string;
+    source: string;
+    html: string;
     payload: Record<string, any>;
-  }>({ rows: [], payload: {} });
+  }>({ loading: false, title: "", source: "", html: "", payload: {} });
 
   // ── Pre-Screened Candidate CV upload (same pattern as HraExemptio.tsx) ──
   const uploadMutation = useFileUpload();
@@ -612,92 +614,79 @@ const RequisitionForm = () => {
   };
 
   // ---------------------------------------------------------------------------
-  // Job Details tab "Preview" — collects only the Job Details (JD) tab fields,
-  // builds the payload that will be sent to the API later (feature, not now),
-  // shows it in a toast, and opens a read-only preview popup.
+  // "Preview" — collects ALL tab data (via buildPayload), POSTs it to
+  // preview_job_description, and renders the returned Job Description in the
+  // modal. The request body shape is:
+  //   { designation, department, functional_area, data: <all-tab payload> }
   // ---------------------------------------------------------------------------
-  const buildJobDetailsPayload = (finalData: any): Record<string, any> => {
-    // Reuse the same Work Experience mapping as buildPayload so this future API
-    // call stays consistent with the full-submit payload.
-    let custom_work_experience: string | undefined;
-    let custom_work_experience_range: string | undefined;
-    const expVal = finalData.custom_work_experience_range;
-    if (expVal === "Fresher") {
-      custom_work_experience = "Fresher";
-    } else if (expVal === "1 - 3 Years") {
-      custom_work_experience = "1 - 3 Years";
-      custom_work_experience_range = "1 - 3 years";
-    } else if (expVal === "4 - 5 Years") {
-      custom_work_experience = "4 - 5 years";
-      custom_work_experience_range = "3 - 5 years";
-    } else if (expVal === "5 - 10 Years") {
-      custom_work_experience = "5 - 10 years";
-      custom_work_experience_range = "5 - 10 years";
+  const handlePreviewJobDetails = async () => {
+    const designation = (formData as any).designation;
+    const department = (formData as any).department;
+    const functional_area = (formData as any).functional_area;
+
+    if (!designation || !department) {
+      toast.error("Please select Designation and Department first.");
+      return;
     }
 
-    return {
-      custom_experience_range_from: finalData.experience_from?.toString(),
-      custom_experience_range_to: finalData.experience_to?.toString(),
-      custom_experience_unit: finalData.experience_unit,
-      custom_salary_range_currency: finalData.salary_currency,
-      custom_salary_range_min: finalData.salary_min,
-      custom_salary_range_max: finalData.salary_max,
-      custom_salary_timeframe: finalData.salary_timeframe,
-      posting_date: finalData.recruitment_start_date
-        ? new Date(finalData.recruitment_start_date).toISOString().split("T")[0]
-        : undefined,
-      expected_compensation: finalData.expected_compensation
-        ? Number(finalData.expected_compensation)
-        : undefined,
-      expected_by: finalData.expected_by
-        ? new Date(finalData.expected_by).toISOString().split("T")[0]
-        : undefined,
-      custom_employment_type_link: finalData.employment_type,
-      custom_location: finalData.location,
-      custom_work_experience,
-      custom_work_experience_range,
-      custom_preferred_notice_period: finalData.custom_preferred_notice_period,
-      custom_preferred_company: finalData.preferred_company,
-      custom_other_preferred_companies: finalData.custom_other_preferred_companies,
-      custom_skills: finalData.custom_skills,
-    };
-  };
+    // Whole-form payload — every tab's data — sent under `data`.
+    const payload = buildPayload(formData);
+    const requestBody = { designation, department, functional_area, data: payload };
 
-  const handlePreviewJobDetails = () => {
-    // Render any field value (incl. url-select objects and multi-select arrays)
-    // as a readable string for the popup.
-    const formatValue = (v: any): string => {
-      if (v === undefined || v === null || v === "") return "—";
-      if (Array.isArray(v)) {
-        return v.length
-          ? v
-              .map((item) =>
-                item && typeof item === "object"
-                  ? item.label ?? item.value ?? JSON.stringify(item)
-                  : item
-              )
-              .join(", ")
-          : "—";
-      }
-      if (typeof v === "object") return v.label ?? v.value ?? JSON.stringify(v);
-      return String(v);
-    };
-
-    const rows = jobDetailsPreviewFields.map((f) => ({
-      label: f.label,
-      value: formatValue((formData as any)[f.key]),
-    }));
-
-    const payload = buildJobDetailsPayload(formData);
-
-    setJobDetailsPreview({ rows, payload });
+    setJobDetailsPreview({ loading: true, title: "", source: "", html: "", payload: requestBody });
     setJobDetailsPreviewOpen(true);
 
-    // Surface the payload that will be sent to the API (future feature) in a toast.
-    toast.success(`Job Details payload:\n${JSON.stringify(payload, null, 2)}`, {
-      duration: 6000,
-      style: { maxWidth: "480px", whiteSpace: "pre-wrap", fontSize: "12px" },
-    });
+    // Surface the exact payload being sent in a toast.
+
+    try {
+      // callMethod posts the body as JSON and unwraps response.data.message →
+      // { success, message, data }.
+      const res: any = await FrappeAPI.callMethod(
+        "recruitment.api.job_requisition.preview_job_description",
+        requestBody
+      );
+
+      const jd = res?.data ?? res ?? {};
+      const html = jd?.description_html || jd?.description || "";
+      const skills = Array.isArray(jd?.skills) ? jd.skills : undefined;
+      // A "default"/"match" JD still carries html even when matched === false —
+      // only treat it as missing when source is "none" or there's no html.
+      const noJd = jd?.source === "none" || !html;
+
+      setJobDetailsPreview((prev) => ({
+        ...prev,
+        loading: false,
+        title: jd?.title || jd?.name || "",
+        source: jd?.source || "",
+        html: noJd
+          ? `<p style="color:#6b7280;text-align:center;padding:32px 0;">
+              No job description found for <strong>${designation}</strong> in
+              <strong>${department}</strong>.
+            </p>`
+          : html,
+      }));
+
+      // Persist the previewed JD into the form so the final submit/update sends
+      // the same html in `description` + `custom_job_description_template`, and
+      // the returned skills in `custom_skills`.
+      if (!noJd) {
+        setFormData((prev: any) => ({
+          ...prev,
+          description: html,
+          job_description_template: html,
+          ...(skills ? { custom_skills: skills } : {}),
+        }));
+      }
+    } catch (err) {
+      console.error("Error fetching job description preview:", err);
+      setJobDetailsPreview((prev) => ({
+        ...prev,
+        loading: false,
+        html: `<p style="color:#ef4444;text-align:center;padding:32px 0;">
+            Failed to load job description preview. Please try again.
+          </p>`,
+      }));
+    }
   };
 
   const handleNext = () => {
@@ -939,6 +928,53 @@ const RequisitionForm = () => {
         console.error("Error  creating job requisition:", error);
       }
     }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Submit button flow: FIRST call preview_job_description (silently — no modal),
+  // capture its JD html/skills, THEN run the final submit with those merged in.
+  // Single button, single click. The Preview button keeps its own modal flow
+  // (handlePreviewJobDetails) — this one never opens the modal.
+  // ---------------------------------------------------------------------------
+  const handleSubmitWithPreview = async () => {
+    let jdFields: Record<string, any> = {};
+
+    try {
+      const designation = (formData as any).designation;
+      const department = (formData as any).department;
+      const functional_area = (formData as any).functional_area;
+
+      if (designation && department) {
+        const payload = buildPayload(formData);
+        const requestBody = { designation, department, functional_area, data: payload };
+
+        const res: any = await FrappeAPI.callMethod(
+          "recruitment.api.job_requisition.preview_job_description",
+          requestBody
+        );
+
+        const jd = res?.data ?? res ?? {};
+        const html = jd?.description_html || jd?.description || "";
+        const skills = Array.isArray(jd?.skills) ? jd.skills : undefined;
+        const noJd = jd?.source === "none" || !html;
+
+        if (!noJd) {
+          jdFields = {
+            description: html,
+            job_description_template: html,
+            ...(skills ? { custom_skills: skills } : {}),
+          };
+          // Keep the form state in sync too (does NOT open the preview modal).
+          setFormData((prev: any) => ({ ...prev, ...jdFields }));
+        }
+      }
+    } catch (err) {
+      // Don't block submit if the preview call fails — just submit as-is.
+      console.error("Preview before submit failed:", err);
+    }
+
+    // Final submit with the previewed JD fields merged over the current form data.
+    await handleSubmit({ data: jdFields });
   };
 
   // Eager-load the position-grid url-selects (so saved ids render as titles)
@@ -1318,7 +1354,7 @@ const RequisitionForm = () => {
         {!isLastStep ? (
           <div className="flex items-center gap-3">
             {/* Preview button — only on the Job Details tab (index 1), left of Next */}
-            {currentStep === 1 && (
+         
               <Button
                 variant="outline"
                 size="md"
@@ -1327,7 +1363,7 @@ const RequisitionForm = () => {
               >
                 Preview
               </Button>
-            )}
+           
             <Button size="md" onClick={handleNext} className="px-4 md:px-6 py-2">
               Next
             </Button>
@@ -1335,7 +1371,7 @@ const RequisitionForm = () => {
         ) : (
           <Button
             size="md"
-            onClick={() => handleSubmit({ data: formData })}
+            onClick={handleSubmitWithPreview}
             className="px-4 md:px-6 py-2"
           >
             {isBusy
@@ -1415,9 +1451,13 @@ const RequisitionForm = () => {
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <div>
-                <h3 className="text-lg font-semibold text-gray-800">Job Details Preview</h3>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  {jobDetailsPreview.title || "Job Description Preview"}
+                </h3>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  Review the Job Details before continuing
+                  {(formData as any).designation}
+                  {(formData as any).department ? ` · ${(formData as any).department}` : ""}
+                  {jobDetailsPreview.source ? ` · ${jobDetailsPreview.source}` : ""}
                 </p>
               </div>
               <button
@@ -1430,28 +1470,21 @@ const RequisitionForm = () => {
 
             {/* Modal body */}
             <div className="flex-1 overflow-y-auto px-6 py-5">
-              <table className="min-w-full text-sm">
-                <tbody>
-                  {jobDetailsPreview.rows.map((row) => (
-                    <tr key={row.label} className="border-b last:border-b-0">
-                      <td className="py-2 pr-4 font-medium text-gray-600 align-top w-1/2">
-                        {row.label}
-                      </td>
-                      <td className="py-2 text-gray-800 break-words">{row.value}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {jobDetailsPreview.loading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="animate-spin text-indigo-500" size={32} />
+                  <span className="ml-3 text-gray-500 text-sm">Loading job description…</span>
+                </div>
+              ) : (
+                <>
+                  <div
+                    className="prose prose-sm max-w-none text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: jobDetailsPreview.html }}
+                  />
 
-              {/* Payload that will be sent to the API (future feature) */}
-              <div className="mt-5">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                  API Payload (preview)
-                </p>
-                <pre className="text-xs bg-gray-50 border rounded-md p-3 overflow-x-auto text-gray-700">
-                  {JSON.stringify(jobDetailsPreview.payload, null, 2)}
-                </pre>
-              </div>
+                  {/* The exact payload that was sent to the API */}
+                </>
+              )}
             </div>
 
             {/* Modal footer */}
