@@ -1,5 +1,5 @@
 // import HRLetters from "./HRLetters";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import defaultProfile from "../../assets/face-rec.png";
 import {
   useCurrentEmployeeDetails,
@@ -478,11 +478,15 @@ const EmployeeProfile: React.FC = () => {
                   Future Transactions
                 </Button>
               )}
-              {canShowAssignmentDetailsButton && <Button variant="subtle" size="sm" icon={<History size={14} />}>
-                <Link to="/webapp/employee-profile/assignment-details" target="_blank" rel="noopener noreferrer" >
+              {canShowAssignmentDetailsButton &&
+                <Button
+                  variant="soft"
+                  size="sm"
+                  icon={<History size={14} />}
+                  onClick={() => window.open("/webapp/employee-profile/assignment-details", "_blank")}
+                >
                   Assignment Details
-                </Link>
-              </Button>}
+                </Button>}
             </div>
             <AwardsSection isDesktop={false} />
           </div>
@@ -681,11 +685,15 @@ const EmployeeProfile: React.FC = () => {
                               </Button>
                             )} */}
                           {canAppreciate && <Appreciations />}
-                          {canShowAssignmentDetailsButton && <Button variant="soft" size="sm" icon={<History size={14} />}>
-                            <Link to="/webapp/employee-profile/assignment-details" >
+                          {canShowAssignmentDetailsButton &&
+                            <Button
+                              variant="soft"
+                              size="sm"
+                              icon={<History size={14} />}
+                              onClick={() => window.open("/webapp/employee-profile/assignment-details", "_blank")}
+                            >
                               Assignment Details
-                            </Link>
-                          </Button>}
+                            </Button>}
                         </div>
                       </div>
                     </div>

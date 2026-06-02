@@ -131,7 +131,10 @@ const CostCenterForm = ({
 
   const handleSubmit = async () => {
     if (!instance) return;
-
+    if (!currentEmployee?.employee) {
+      toast.error("Employee details are not loaded yet.");
+      return;
+    }
     try {
       const submission = await instance.submit();
       const data = submission?.data || {};
@@ -188,8 +191,7 @@ const CostCenterForm = ({
           {/* Hide the datagrid "Add Row" button while keeping per-row delete */}
           <style>{`
             /* Hide add-row button */
-            .formio-button-add-row, [ref="addRow"] { display: ${isEdit ? 'none' : 'block'} !important; }
-
+            .cost-center-form .formio-button-add-row, .cost-center-form [ref="addRow"] { display: ${isEdit ? 'none' : 'block'} !important; };
             /* Strip all default table borders */
             .formio-component-allocations table {
               border: none !important;

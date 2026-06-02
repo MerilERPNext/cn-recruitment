@@ -169,7 +169,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             <div className="flex gap-2 overflow-auto">
               {history.map((item) => (
                 <div
-                  key={item.from_date + item.designation}
+                  key={item?.from_date + item?.designation?.id}
                   className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
                 >
                   <EmploymentHistoryCard
