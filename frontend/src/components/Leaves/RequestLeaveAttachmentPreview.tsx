@@ -119,13 +119,16 @@ const AttachmentItem: React.FC<{
               onClick={() => onPreview({ url: finalUrl, name: fileName })}
               dangerouslySetInnerHTML={{ __html: EYE_ICON_SVG }}
             />
-            <a
-              href={finalUrl}
-              download={fileName}
-              title="Download"
-              className="inline-flex items-center justify-center rounded-md border shadow-sm border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 transition-colors"
-              dangerouslySetInnerHTML={{ __html: DOWNLOAD_ICON_SVG }}
-            />
+            {/* Blob URLs are not downloadable inside a React Native WebView */}
+            {!(window.isApp && finalUrl.startsWith("blob:")) && (
+              <a
+                href={finalUrl}
+                download={fileName}
+                title="Download"
+                className="inline-flex items-center justify-center rounded-md border shadow-sm border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 transition-colors"
+                dangerouslySetInnerHTML={{ __html: DOWNLOAD_ICON_SVG }}
+              />
+            )}
           </>
         )}
         <button
