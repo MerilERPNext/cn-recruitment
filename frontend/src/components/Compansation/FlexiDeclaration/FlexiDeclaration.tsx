@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGetYearFilterOptions } from "../../../hooks/useBenefit";
@@ -14,6 +15,8 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import toast from "react-hot-toast";
 import { getCurrentPeriod } from "../../Benefits/shared/logic";
 import NoDataFound from "../../shared/atoms/NoDataFound";
+import { getActionsEnabled } from "../../../utils/uiPermission";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
 
 function formatINR(num: string | number | undefined | null) {
   if (num === undefined || num === null || num === "") return "";
@@ -44,6 +47,12 @@ export default function FlexiDeclaration() {
   const [selectedPeriod, setSelectedPeriod] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { isDesktop } = useScreenSize();
+  const { data: userUiPermission } = useGetUiPermission("Compensation");
+  const actionsEnabled = getActionsEnabled(
+    userUiPermission,
+    ["edit_flexi_locking_period"],
+    "Flexi Declaration"
+  );
   const { data: currentEmployee, isLoading: isEmployeeLoading } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: yearOptions, isLoading: isYearOptionsLoading } = useGetYearFilterOptions(currentEmployee?.company || "");
 
@@ -268,7 +277,7 @@ export default function FlexiDeclaration() {
       {/* ── Main content ─────────────────────────────────────────────────────── */}
       {isLoading ? (
         /* Single loader covers both panels */
-        <div className="flex flex-col items-center justify-center min-h-[220px] py-12">
+        <div className="flex flex-col items-center justify-center h-screen py-12">
           <NoDataFound loading />
         </div>
       ) : (
@@ -283,12 +292,14 @@ export default function FlexiDeclaration() {
               <span className={`${isClosed ? "bg-error-50 text-error" : "bg-success-50 text-success"} text-[10px] font-bold px-2 py-0.5 rounded tracking-widest uppercase`}>
                 {lockingPeriodData?.status || "OPEN"}
               </span>
-              <span
-                className="text-text-body2 cursor-pointer text-[14px]"
-                onClick={() => setIsEditModalOpen(true)}
-              >
-                <SquarePen size={14} />
-              </span>
+              {actionsEnabled?.edit_flexi_locking_period && (
+                <span
+                  className="text-text-body2 cursor-pointer text-[14px]"
+                  onClick={() => setIsEditModalOpen(true)}
+                >
+                  <SquarePen size={14} />
+                </span>
+              )}
             </div>
 
             <div className="flex flex-col gap-4">
