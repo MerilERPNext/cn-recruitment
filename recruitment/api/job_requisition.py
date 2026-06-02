@@ -108,6 +108,27 @@ PARENT_READONLY_FIELDS = (
 FRAPPE_MANAGED_FIELDS = {"status", "workflow_state"}
 
 
+# Link-field title resolution.
+# ----------------------------
+# These linked DocTypes don't have `title_field` configured, so HR supplied the
+# field that holds each one's human-readable title. Keyed by TARGET doctype, so
+# every Link field that points at one of these — on the parent JR *and* on its
+# child tables — gets a title automatically. For each such Link field `X`, GET
+# adds a sibling key `X_title` right after the id; the original `X` (the id) is
+# left untouched.
+LINK_TITLE_BY_DOCTYPE = {
+    "Designation": "custom_designation_title",
+    "Division": "division_name",
+    "Company": "company_name",
+    "Department": "department_name",
+    "Functional Area": "functional_area_name",
+    "Employee": "employee_name",
+    "Job Description": "job_description_title",
+    "Employment Type": "employee_type_name",
+    "Branch": "branch",
+}
+
+
 # ---------------------------------------------------------------------------
 # Response helpers
 # ---------------------------------------------------------------------------
@@ -257,6 +278,11 @@ def _apply_parent_fields(doc, payload):
     - Wraps each set() in a try/except so a bad value produces a clear error
       message ('field X = value Y') instead of a cryptic NoneType traceback.
     """
+    # Map the legacy `custom_work_experience` alias onto the real field so a
+    # value sent under either name persists to `custom_work_experience_range`.
+    if payload.get("custom_work_experience") and not payload.get("custom_work_experience_range"):
+        payload["custom_work_experience_range"] = payload["custom_work_experience"]
+
     for field in PARENT_WRITABLE_FIELDS:
         if field in FRAPPE_MANAGED_FIELDS:
             continue  # safety guard — should never be in PARENT_WRITABLE_FIELDS
@@ -638,10 +664,47 @@ def _compute_global_summary(employee=None, requested_by_override=None):
     }
 
 
+def _link_title_value(target_doctype, value):
+    """Title of the linked record for `value`, using LINK_TITLE_BY_DOCTYPE.
+    Returns None when unmapped / empty / the row is missing (never raises)."""
+    title_field = LINK_TITLE_BY_DOCTYPE.get(target_doctype)
+    if not value or not title_field:
+        return None
+    try:
+        return frappe.get_cached_value(target_doctype, value, title_field) or None
+    except Exception:
+        return None
+
+
+def _with_link_titles(source_doctype, data):
+    """Return a copy of `data` where each Link field is immediately followed by
+    a `<field>_title` sibling holding the linked record's title.
+
+    Only Link fields whose target DocType is in LINK_TITLE_BY_DOCTYPE get a
+    title. The original (id) keys/values are never modified — we only ADD keys,
+    so the existing response contract is preserved.
+    """
+    try:
+        meta = frappe.get_meta(source_doctype)
+    except Exception:
+        return data
+    out = {}
+    for key, value in data.items():
+        out[key] = value
+        df = meta.get_field(key)
+        if df and df.fieldtype == "Link" and df.options in LINK_TITLE_BY_DOCTYPE:
+            out[f"{key}_title"] = _link_title_value(df.options, value)
+    return out
+
+
 def _serialise_requisition(doc):
     """Flat round-trip representation of a JR.
     All parent fields keep their DocType field names so the UI can bind
-    directly without a translation layer."""
+    directly without a translation layer.
+
+    Every Link field is accompanied by a `<field>_title` sibling (the linked
+    record's title) so the UI never has to show a raw id. The id keys are
+    unchanged — see _with_link_titles / LINK_TITLE_BY_DOCTYPE."""
     out = {
         "name": doc.name,
         "status": doc.get("status"),
@@ -654,6 +717,12 @@ def _serialise_requisition(doc):
         out[field] = doc.get(field)
     for field in PARENT_READONLY_FIELDS:
         out[field] = doc.get(field)
+
+    # `custom_work_experience` is a legacy alias for the real Select field
+    # `custom_work_experience_range`. The real field doesn't exist under the
+    # alias name, so echo its value under both keys — a UI bound to either name
+    # then shows the stored value instead of an empty box.
+    out["custom_work_experience"] = out.get("custom_work_experience_range")
 
     out["custom_position_details"] = [
         {
@@ -705,6 +774,16 @@ def _serialise_requisition(doc):
         }
         for row in doc.get("custom_pre_screened_candidates") or []
     ]
+
+    # Add `<field>_title` siblings for every mapped Link field (id kept as-is).
+    out = _with_link_titles(JOB_REQUISITION, out)
+    for table_field, child_doctype in (
+        ("custom_position_details", "Position Details"),
+        ("custom_position_summary", "Job Requisition Position"),
+        ("custom_qualifications", "Job Requisition Qualification"),
+    ):
+        if out.get(table_field):
+            out[table_field] = [_with_link_titles(child_doctype, row) for row in out[table_field]]
 
     return out
 
