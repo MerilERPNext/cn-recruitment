@@ -29,7 +29,7 @@ const EmploymentTypesCard: React.FC<EmploymentTypesCardProps> = ({
     onEdit,
 }) => {
     return (
-        <div className="bg-white rounded-xl p-6 relative max-w-[90vw] min-w-[90vw] md:min-w-[400px] md:max-w-[400px]">
+        <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift  max-w-[90vw] min-w-[90vw]  md:min-w-[400px] md:max-w-[400px]">
             <div className="absolute top-4 right-4 flex items-center gap-2">
                 {is_current && (
                     <span className="bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-xl">

@@ -3,15 +3,15 @@ import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import Button from "../shared/atoms/Button";
+import Button from "../../shared/atoms/Button";
 import employmentHistoryFormSchema from "./employmentHistoryFormSchema.json";
 import {
   useAddEmployeeHistoryMutation,
   useCurrentEmployeeDetails,
   useGetDesignationHierarchy,
   useGetEmpDesignationHierarchyCurrentDetails,
-} from "../../hooks/useEmployee";
-import CircularLoader from "../shared/atoms/CircularLoader";
+} from "../../../hooks/useEmployee";
+import CircularLoader from "../../shared/atoms/CircularLoader";
 
 interface InitialEditData {
   company: string;
@@ -215,6 +215,7 @@ const EmploymentHistoryForm = ({
         start_date: data.startDate,
         functional_area: data.functional_area,
         is_promotion: data.is_promotion,
+        mode: isEdit ? "update" : "new",
       });
       onCancel?.();
     } catch (err) {

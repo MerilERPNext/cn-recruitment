@@ -3,13 +3,13 @@ import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import Button from "../shared/atoms/Button";
+import Button from "../../shared/atoms/Button";
 import workLocationFormSchema from "./workLocationFormSchema.json";
 import {
   useCurrentEmployeeDetails,
   useUpdateEmploymentDetailsMutation,
-} from "../../hooks/useEmployee";
-import CircularLoader from "../shared/atoms/CircularLoader";
+} from "../../../hooks/useEmployee";
+import CircularLoader from "../../shared/atoms/CircularLoader";
 
 interface InitialWorkLocationData {
   work_location: string;
@@ -116,6 +116,7 @@ const WorkLocationForm = ({
         employee: currentEmployee?.employee,
         fields: [{ field: "work_location", value: data.work_location }],
         start_date: data.startDate,
+        mode: isEdit ? "update" : "new",
       });
       onCancel?.();
     } catch (err) {
