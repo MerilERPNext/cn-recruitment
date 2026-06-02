@@ -235,7 +235,7 @@ const MultiSelect = <T extends Option>({
             </Button>
 
             {/* Loading */}
-            {isLoading && (
+            {isLoading && open && (
                 <div
                     className="
             absolute z-50 mt-2 w-full

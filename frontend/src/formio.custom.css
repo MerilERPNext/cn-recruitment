@@ -119,8 +119,13 @@
 }
 
 [data-testid="formioContainer"].profile-form .choices__item .choices__button {
-  filter: invert(1) !important;
+  filter: none !important;
   border: none !important;
+  opacity: 0.6 !important;
+}
+
+[data-testid="formioContainer"].profile-form .choices__item .choices__button:hover {
+  opacity: 1 !important;
 }
 
 .field-required:after {

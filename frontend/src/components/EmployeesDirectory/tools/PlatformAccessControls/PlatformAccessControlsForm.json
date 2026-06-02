@@ -1,0 +1,68 @@
+{
+    "title": "Platform Access Controls",
+    "name": "platformAccessControlsForm",
+    "path": "platform-access-controls-form",
+    "display": "form",
+    "components": [
+        {
+            "label": "Self Service Status",
+            "errorLabel": "Self Service Status",
+            "key": "self_service_status",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Self Service Status",
+            "customClass": "mb-4",
+            "validate": {
+                "required": true
+            },
+            "data": {
+                "values": [
+                    {
+                        "label": "Yes",
+                        "value": "Yes"
+                    },
+                    {
+                        "label": "No",
+                        "value": "No"
+                    }
+                ]
+            }
+        },
+        {
+            "label": "Email",
+            "errorLabel": "Email",
+            "key": "email",
+            "type": "email",
+            "input": true,
+            "placeholder": "Enter Email",
+            "customClass": "mb-4",
+            "validate": {
+                "required": true
+            }
+        },
+        {
+            "label": "Allow Mobile Access",
+            "errorLabel": "Allow Mobile Access",
+            "key": "allow_mobile_access",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Allow Mobile Access",
+            "customClass": "mb-4",
+            "validate": {
+                "required": true
+            },
+            "data": {
+                "values": [
+                    {
+                        "label": "Yes",
+                        "value": "Yes"
+                    },
+                    {
+                        "label": "No",
+                        "value": "No"
+                    }
+                ]
+            }
+        }
+    ]
+}
