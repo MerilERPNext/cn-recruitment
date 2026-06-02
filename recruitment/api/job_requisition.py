@@ -393,18 +393,40 @@ def _apply_pre_screened(doc, payload):
 
 
 def sync_no_of_positions(doc, method=None):
-    """`validate` hook — keep parent.no_of_positions in lock-step with the
-    actual row count in custom_position_details.
+    """`validate` hook — keep parent fields in lock-step with the
+    custom_position_details rows on every save (our API, Desk UI, scripted).
 
-    Fires on every save of Job Requisition, regardless of how the doc was
-    edited (our API, Desk UI, scripted update). Only acts when the table
-    has rows — leaves the field untouched for legacy / HRMS-standard flows
-    where `custom_position_details` is empty (those flows use the standard
-    `vacancies` table instead, which we don't want to override).
+    1. `no_of_positions`         = number of position rows.
+    2. `custom_type_of_position` = "New" / "Replacement" / "Mixed", derived from
+       the rows (a row is a Replacement when it has a `replacement_for` — see
+       _row_vacancy_type). Stored so PRINT and any field reader show the correct
+       type, including "Mixed" when the requisition holds both. The value is
+       assigned only when it is a valid Select option, so a save can never fail
+       (e.g. before the "Mixed" option has been migrated into the field).
+
+    Only acts when the table has rows — leaves fields untouched for legacy /
+    HRMS-standard flows where `custom_position_details` is empty (those use the
+    standard `vacancies` table, which we don't want to override).
     """
     position_rows = doc.get("custom_position_details") or []
-    if position_rows:
-        doc.no_of_positions = len(position_rows)
+    if not position_rows:
+        return
+
+    doc.no_of_positions = len(position_rows)
+
+    new = sum(1 for r in position_rows if _row_vacancy_type(r) == "New")
+    replacement = len(position_rows) - new
+    if new and replacement:
+        vtype = "Mixed"
+    elif replacement:
+        vtype = "Replacement"
+    else:
+        vtype = "New"
+
+    df = doc.meta.get_field("custom_type_of_position")
+    allowed = (df.options or "").split("\n") if df else []
+    if vtype in allowed:
+        doc.custom_type_of_position = vtype
 
 
 def _resolve_jd_html(designation, department):
@@ -671,25 +693,33 @@ def _with_link_titles(source_doctype, data):
     return out
 
 
-def _resolve_type_of_position(doc):
-    """Parent "Type of Position" (New / Replacement) for the GET response.
+def _vacancy_breakdown(doc):
+    """New / Replacement breakdown for a requisition, derived from its positions.
 
-    The stored parent `custom_type_of_position` is unreliable — it defaults to
-    "New" on insert and the create/update API never writes it — so we derive the
-    real value from the position rows, which ARE saved correctly:
-      - all rows same type        -> that type
-      - mixed rows                -> "Replacement" if any row is a replacement, else "New"
-      - no rows (shouldn't happen) -> fall back to the stored parent value
-    This keeps GET correct in every scenario (create or update) without changing
-    how anything is written.
+    A single requisition can hold BOTH New and Replacement positions, which
+    makes the parent "Type of Position" Select ambiguous. So rather than forcing
+    one value, we expose explicit counts plus a clear 3-state `type`:
+        - all positions New          -> "New"
+        - all positions Replacement  -> "Replacement"
+        - a mix of both              -> "Mixed"
+        - no positions (edge case)   -> the stored parent value
+
+    Per-row `vacancy_type` is itself derived from `replacement_for`
+    (see _row_vacancy_type), so this stays correct on create and update alike.
+    Returns: {"total": int, "new": int, "replacement": int, "type": str}
     """
-    types = [_row_vacancy_type(row) for row in (doc.get("custom_position_details") or [])]
-    if not types:
-        return doc.get("custom_type_of_position")
-    unique = set(types)
-    if len(unique) == 1:
-        return types[0]
-    return "Replacement" if "Replacement" in unique else "New"
+    rows = doc.get("custom_position_details") or []
+    new = sum(1 for r in rows if _row_vacancy_type(r) == "New")
+    replacement = sum(1 for r in rows if _row_vacancy_type(r) == "Replacement")
+    if new and replacement:
+        vtype = "Mixed"
+    elif replacement:
+        vtype = "Replacement"
+    elif new:
+        vtype = "New"
+    else:
+        vtype = doc.get("custom_type_of_position")
+    return {"total": new + replacement, "new": new, "replacement": replacement, "type": vtype}
 
 
 def _serialise_requisition(doc):
@@ -719,10 +749,13 @@ def _serialise_requisition(doc):
     # then shows the stored value instead of an empty box.
     out["custom_work_experience"] = out.get("custom_work_experience_range")
 
-    # Parent "Type of Position" (New / Replacement). The stored parent field is
-    # an unwritten default, so derive it from the position rows (source of
-    # truth). Without this the UI's type selector is null on GET / edit.
-    out["custom_type_of_position"] = _resolve_type_of_position(doc)
+    # Vacancy mix. A requisition may contain BOTH New and Replacement positions,
+    # so a single type is ambiguous — expose explicit counts plus a 3-state type
+    # ("New" / "Replacement" / "Mixed"). `custom_type_of_position` mirrors the
+    # type so existing bindings keep working; new UI should prefer the breakdown.
+    _breakdown = _vacancy_breakdown(doc)
+    out["custom_type_of_position"] = _breakdown["type"]
+    out["custom_vacancy_breakdown"] = _breakdown
 
     out["custom_position_details"] = [
         {
