@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import useDebounce from "../../hooks/useDebounce";
-import { useGetAllEmployees } from "../../hooks/useEmployee";
+import { useGetAllEmployees, useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import MultiSelect from "../shared/molecules/MultiSelect";
 import { Employee } from "../../types/employee";
 import { Filter, X, Check, RefreshCw } from "lucide-react";
 import Button from "../shared/atoms/Button";
 import SideDrawer from "../shared/SideDrawer";
 import EmployeeDirectoryFilters from "./EmployeeDirectoryFilters";
+import { useTargetUser } from "../../context/ViewedUserContext";
 
 import { FilterCondition } from "../../types/frappe";
 import { Typography } from "../shared/atoms/Typography";
@@ -63,6 +64,7 @@ export interface EmployeeSearchProps {
   pendingFilters: EmployeeDirectoryFilterData;
   setPendingFilters: React.Dispatch<React.SetStateAction<EmployeeDirectoryFilterData>>;
   clearTableSelection: () => void;
+  activeTab: 'directory' | 'my_reportees';
 }
 
 const EmployeeSearch = ({
@@ -78,10 +80,14 @@ const EmployeeSearch = ({
   pendingFilters,
   setPendingFilters,
   clearTableSelection,
+  activeTab,
 }: EmployeeSearchProps) => {
   const { isDesktop } = useScreenSize();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const debouncedQuery = useDebounce(searchQuery, 350);
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { targetEmployeeId } = useTargetUser();
+  const effectiveEmployeeId = targetEmployeeId || currentEmployee?.name;
 
   const filters: FilterCondition[] = [];
   if (debouncedQuery) {
@@ -103,6 +109,10 @@ const EmployeeSearch = ({
       }
     }
   });
+
+  if (activeTab === 'my_reportees' && effectiveEmployeeId) {
+    filters.push(["reports_to", "=", effectiveEmployeeId]);
+  }
 
   const { data = [], isLoading } = useGetAllEmployees(
     ["*"],
