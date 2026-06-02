@@ -21,6 +21,7 @@ import FrappeAPI from "../../utils/frappeAPI";
 import { useQueryClient } from "@tanstack/react-query";
 import { Edit, X, FileText, Loader2 } from "lucide-react";
 import { IoMdCloudUpload } from "react-icons/io";
+import "../../formio.custom.css";
 
 // ---------------------------------------------------------------------------
 // Validation config per step index
@@ -162,6 +163,58 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
     recruitment_start_date: req.posting_date,
     expected_by: req.expected_by,
   } as Partial<JobRequisitionFormData>;
+}
+
+// ---------------------------------------------------------------------------
+// Make form.io URL <select> fields display the selected option's LABEL (not the
+// raw id) after a step is unmounted/remounted on tab switch.
+//
+// By default url selects lazy-load their options, so on remount they only have
+// the stored value (id) and render it verbatim — e.g. "DEP_472" instead of the
+// department name. Disabling lazyLoad loads the options on mount, and setting
+// searchField lets form.io re-fetch the option for the current value (the
+// backend supports a `search_text` filter) so its label resolves even when the
+// value isn't in the first page of results. Applied recursively so nested
+// datagrid / columns selects (position rows) are covered too.
+// ---------------------------------------------------------------------------
+function enableUrlSelectLabels(components: any[], insideGrid = false): any[] {
+  if (!Array.isArray(components)) return components;
+  return components.map((c) => {
+    const next: any = { ...c };
+    if (next.type === "select" && next.dataSrc === "url") {
+      // Eager-load (lazyLoad:false) only for top-level selects so their saved
+      // value resolves to a label on remount. Inside a datagrid this would fire
+      // one request + build one Choices widget per row × per select (100 rows →
+      // hundreds of simultaneous loads), freezing the page — so keep those lazy
+      // (form.io's default): they only fetch when the user opens the dropdown.
+      if (!insideGrid) next.lazyLoad = false;
+      if (!next.searchField) next.searchField = "search_text";
+    }
+    // Selects nested in a datagrid/editgrid are repeated per row — flag them so
+    // descendants stay lazy.
+    const childInsideGrid =
+      insideGrid || next.type === "datagrid" || next.type === "editgrid";
+    if (Array.isArray(next.components)) {
+      next.components = enableUrlSelectLabels(next.components, childInsideGrid);
+    }
+    if (Array.isArray(next.columns)) {
+      next.columns = next.columns.map((col: any) => ({
+        ...col,
+        components: enableUrlSelectLabels(col.components || [], childInsideGrid),
+      }));
+    }
+    if (Array.isArray(next.rows)) {
+      next.rows = next.rows.map((row: any) =>
+        Array.isArray(row)
+          ? row.map((cell: any) => ({
+              ...cell,
+              components: enableUrlSelectLabels(cell.components || [], childInsideGrid),
+            }))
+          : row
+      );
+    }
+    return next;
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -455,7 +508,7 @@ const RequisitionForm = () => {
     return () => {
       cancelled = true;
     };
-  }, [isEditMode]);
+  }, [existingRequisition, isEditMode]);
 
   // Set only Hiring Manager + Company defaults from the logged-in employee.
   // Department / Designation / Functional Area are NOT auto-filled — the user
@@ -771,19 +824,19 @@ const RequisitionForm = () => {
     const stepKey = requisitionSteps[currentStep].key as FormSchemaKeys;
     const schema = requisitionFormSchemas[stepKey];
 
+    let components = schema.components as any[];
+
     // Basic Details: the Hiring Manager (employee) field is editable only for
     // System Manager / Administrator; read-only for everyone else.
     if (stepKey === "basicDetails") {
-      return {
-        ...schema,
-        components: (schema.components as any[]).map((c) =>
-          c.key === "hiring_manager"
-            ? { ...c, disabled: !canEditEmployeeField }
-            : c
-        ),
-      };
+      components = components.map((c) =>
+        c.key === "hiring_manager"
+          ? { ...c, disabled: !canEditEmployeeField }
+          : c
+      );
     }
-    return schema;
+
+    return { ...schema, components: enableUrlSelectLabels(components) };
   }, [currentStep, canEditEmployeeField]);
 
   const isBusy = isUpdating || createJobRequisition.isPending;
