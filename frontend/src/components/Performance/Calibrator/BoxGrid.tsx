@@ -159,7 +159,7 @@ const BoxGrid = () => {
 
   return (
     <main className="min-h-dvh overflow-x-hidden bg-[#f4f7fb] p-2 font-sans text-gray-900 sm:p-3 lg:p-4">
-      <div className="mx-auto grid max-w-[1390px] gap-4 xl:grid-cols-[minmax(0,1fr)_330px]">
+      <div className="mx-auto grid  gap-4 xl:grid-cols-[minmax(0,1fr)_330px]">
         <div className="min-w-0 space-y-4">
           {savedOverride && (
             <Card

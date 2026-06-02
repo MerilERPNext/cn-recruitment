@@ -79,7 +79,7 @@ const CalibratorSession = () => {
 
   return (
     <div className="min-h-dvh bg-[#f4f7fb] font-sans text-gray-900">
-      <main className="mx-auto flex max-w-[1440px] flex-col gap-3 p-3 sm:gap-4 sm:p-4">
+      <main className="mx-auto flex  flex-col gap-3 p-3 sm:gap-4 sm:p-4">
         <Suspense fallback={sectionFallback}>
           <SessionHeader
             getBadgeColor={generatePastelColor}
