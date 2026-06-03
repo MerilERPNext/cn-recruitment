@@ -113,7 +113,7 @@ const TasksAwaiting: React.FC = () => {
   const categoryKeys = useMemo(() => Object.keys(categoryCounts), [categoryCounts]);
 
   React.useEffect(() => {
-    if (!activeCategory && categoryKeys.length > 0) {
+    if (categoryKeys.length > 0 && (!activeCategory || !categoryKeys.includes(activeCategory))) {
       setActiveCategory(categoryKeys[0]);
     }
   }, [categoryKeys, activeCategory]);
