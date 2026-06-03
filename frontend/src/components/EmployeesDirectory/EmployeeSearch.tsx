@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import useDebounce from "../../hooks/useDebounce";
-import { useGetAllEmployees, useCurrentEmployeeDetails } from "../../hooks/useEmployee";
+import { useGetEmployeesForDirectory, useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import MultiSelect from "../shared/molecules/MultiSelect";
 import { Employee } from "../../types/employee";
 import { Filter, X, Check, RefreshCw } from "lucide-react";
@@ -118,10 +118,26 @@ const EmployeeSearch = ({
     }
   }
 
-  const { data = [], isLoading } = useGetAllEmployees(
-    ["*"],
-    50,
+  const { data = [], isLoading } = useGetEmployeesForDirectory(
     filters.length > 0 ? filters : undefined,
+    undefined,
+    [
+      "name",
+      "employee",
+      "employee_name",
+      "status",
+      "image",
+      "custom_weekly_off",
+      "user_id",
+      "custom_designation_name",
+      "designation",
+      "department",
+      "branch",
+      "company",
+      "employment_type",
+      "date_of_joining",
+      "custom_business_unit",
+    ],
   );
 
   const employeeOptions: Employee[] = data.map((emp: Employee) => ({

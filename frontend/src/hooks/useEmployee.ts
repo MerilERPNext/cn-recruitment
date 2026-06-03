@@ -442,6 +442,19 @@ export const useGetAllEmployees = (
   });
 };
 
+export const useGetEmployeesForDirectory = (
+  filters?: FilterCondition[],
+  employee_self_service?: boolean,
+  fields?: string[],
+): UseQueryResult<Employee[], Error> => {
+  return useQuery<Employee[], Error>({
+    queryKey: ["directory-employees", filters, employee_self_service, fields],
+    queryFn: () =>
+      EmployeeService.getEmployeesForDirectory(filters, employee_self_service, fields),
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
 export const useGetAllReasons = (requestType: string) => {
   return useQuery({
     queryKey: ["all-reasons-list", requestType],

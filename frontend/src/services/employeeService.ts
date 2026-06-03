@@ -703,6 +703,29 @@ export class EmployeeService {
     }
     return data?.data as Employee[];
   }
+
+  static async getEmployeesForDirectory(
+    filters?: FilterCondition[],
+    employee_self_service?: boolean,
+    fields?: string[],
+  ): Promise<Employee[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const params: Record<string, any> = {};
+    if (filters && filters.length > 0) {
+      params.filters = JSON.stringify(filters);
+    }
+    if (employee_self_service !== undefined) {
+      params.employee_self_service = employee_self_service;
+    }
+    if (fields && fields.length > 0) {
+      params.fields = JSON.stringify(fields);
+    }
+    const response = await FrappeAPI.getMethod(
+      "cn_hrms_core.cn_hrms_core.apis.employee.get_employees",
+      params
+    );
+    return response as Employee[];
+  }
   static async getSearchMembers(
     filters?: string,
     limit?: number,
