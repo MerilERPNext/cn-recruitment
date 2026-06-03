@@ -117,6 +117,28 @@
             "lazyLoad": false
         },
         {
+            "label": "Self Service",
+            "widget": "choicesjs",
+            "tableView": true,
+            "data": {
+                "values": [
+                    {
+                        "label": "Yes",
+                        "value": 1
+                    },
+                    {
+                        "label": "No",
+                        "value": 0
+                    }
+                ]
+            },
+            "key": "employee_self_service",
+            "type": "select",
+            "input": true,
+            "placeholder": "Self Service",
+            "customClass": "mb-4"
+        },
+        {
             "content": "<label class=\"mb-1 font-medium text-gray-700 block\">DOJ Date</label>",
             "key": "doj_date_label",
             "type": "htmlelement",

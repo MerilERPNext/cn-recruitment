@@ -706,7 +706,7 @@ export class EmployeeService {
 
   static async getEmployeesForDirectory(
     filters?: FilterCondition[],
-    employee_self_service?: boolean,
+    employee_self_service?: 1 | 0,
     fields?: string[],
   ): Promise<Employee[]> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

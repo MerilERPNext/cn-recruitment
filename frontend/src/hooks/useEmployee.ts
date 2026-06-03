@@ -444,7 +444,7 @@ export const useGetAllEmployees = (
 
 export const useGetEmployeesForDirectory = (
   filters?: FilterCondition[],
-  employee_self_service?: boolean,
+  employee_self_service?: 1 | 0,
   fields?: string[],
 ): UseQueryResult<Employee[], Error> => {
   return useQuery<Employee[], Error>({
