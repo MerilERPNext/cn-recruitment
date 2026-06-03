@@ -325,8 +325,8 @@ export const requisitionFormSchemas = {
                 label: "Expected By Date",
                 customClass: "required-field",
                 format: "yyyy-MM-dd",
-          
                 validate: { required: true },
+                enableTime: false,
                 // Default to today and disable any date before today.
                 customDefaultValue: "value = moment().format('YYYY-MM-DD')",
                 datePicker: { minDate: "moment()" },
