@@ -288,6 +288,10 @@ override_whitelisted_methods = {
 override_doctype_class = {
     "Employee Onboarding": "recruitment.customizations.employee_onboarding.overide_class.CustomEmployeeOnboarding",
     "Job Offer": "recruitment.customizations.job_offer.CustomJobOffer",
+    # Disable HRMS's (designation, department, requested_by) duplicate check —
+    # our flow raises one requisition per location, so those siblings are valid.
+    # See recruitment.customizations.job_requisition.CustomJobRequisition.
+    "Job Requisition": "recruitment.customizations.job_requisition.CustomJobRequisition",
 }
 #
 # each overriding function accepts a `data` argument;

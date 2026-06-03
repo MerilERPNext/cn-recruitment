@@ -766,14 +766,23 @@ def sync_onboarding_field_rejection_action(onboarding_doc, approval_list=None):
     if not candidate_email:
         return
 
-    # Read rejection count from child table rows (approval_list param ignored — source of truth is child table)
-    rejected_count = 0
+    # Tally approval states from child table rows (approval_list param ignored — source of
+    # truth is the child table). Hidden rows are excluded: they are never set to "Approved"
+    # by the FLA endpoints, so counting them would block completion forever.
+    total = approved = rejected_count = 0
     for row in (onboarding_doc.get("custom_candidate_portal_fields") or []):
-        if (row.get("approval_status") or "") == "Rejected":
+        if row.get("hidden"):
+            continue
+        total += 1
+        status = row.get("approval_status") or "Pending"
+        if status == "Approved":
+            approved += 1
+        elif status == "Rejected":
             rejected_count += 1
 
-    if rejected_count <= 0:
-        from recruitment.api.action_center import mark_item_completed
+    # Complete the action item ONLY when there is at least one field and every field is
+    # Approved. Any field still Pending/Filled/Rejected keeps the item as "Action Required".
+    if total > 0 and approved == total:
         mark_item_completed(
             reference_doctype="Employee Onboarding",
             reference_docname=onboarding_doc.name,
@@ -782,15 +791,24 @@ def sync_onboarding_field_rejection_action(onboarding_doc, approval_list=None):
         )
         return
 
-    _upsert_minimal_item(
+    if rejected_count > 0:
+        description = "{0} field(s) rejected. Please correct and resubmit from candidate portal.".format(rejected_count)
+    else:
+        description = "Onboarding under review. {0} of {1} field(s) approved.".format(approved, total)
+
+    item = _upsert_minimal_item(
         candidate_email=candidate_email,
         reference_doctype="Employee Onboarding",
         reference_docname=onboarding_doc.name,
         redirect_url=build_onboarding_redirect(onboarding_doc.job_applicant, onboarding_doc.name),
-        description="{0} field(s) rejected. Please correct and resubmit from candidate portal.".format(rejected_count),
+        description=description,
         attachment="",
         commit=False,
     )
+    # _upsert_minimal_item leaves status untouched on an existing row, so force it back to
+    # "Action Required" in case this item was already Completed on an earlier full-approval
+    # pass and HR has since rejected (or reset) a field.
+    frappe.db.set_value(ACTION_DOCTYPE, item.name, "status", "Action Required")
 
 
 def sync_pre_offer_field_rejection_action(applicant_doc):
