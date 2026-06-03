@@ -1,9 +1,12 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import {
   propscomponent,
   IJPTableField,
   IJPApplicationSubmitPayload,
 } from "./IJPTypes";
+import IJPReviewStep from "./IJPReviewStep";
+import IJPSidebar from "./IJPSidebar";
+import IJPValidationBanner from "./IJPValidationBanner";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import {
   useIJPApplicationFields,
@@ -50,7 +53,15 @@ export default function ApplyView({
   const [formData, setFormData] = useState<Record<string, FormValue>>({});
   const [rowCounts, setRowCounts] = useState<Record<string, number>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [acknowledged, setAcknowledged] = useState(false);
   const formRef = useRef<FormioInstance | null>(null);
+  const [stepValidationErrors, setStepValidationErrors] = useState<string[]>(
+    [],
+  );
+
+  useEffect(() => {
+    setStepValidationErrors([]);
+  }, [currentStep]);
 
   // Group unique sections in order of appearance
   const sections = useMemo(() => {
@@ -61,7 +72,11 @@ export default function ApplyView({
         unique.add(f.section);
       }
     });
-    return Array.from(unique);
+    const sectList = Array.from(unique);
+    if (!unique.has("Review")) {
+      sectList.push("Review");
+    }
+    return sectList;
   }, [fields]);
 
   const activeSection = sections[currentStep];
@@ -100,7 +115,8 @@ export default function ApplyView({
 
       // ─── Table Fieldtype (Stacked Panels instead of Datagrid) ───
       if (field.fieldtype === "Table" && Array.isArray(field.table_fields)) {
-        const rowCount = rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
+        const rowCount =
+          rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
         if (rowCount === 0) {
           return;
         }
@@ -113,7 +129,6 @@ export default function ApplyView({
               const subLabel = subField.label;
               const subKey = `${field.reference_name}_${i}_${subField.fieldname}`;
               const subReadOnly = subField.read_only === 1;
-
               const subBase = {
                 key: subKey,
                 label: subLabel,
@@ -335,6 +350,18 @@ export default function ApplyView({
   };
 
   const handleNextClick = () => {
+    const missing = getMissingRequiredInSection(activeSection);
+    if (missing.length > 0) {
+      setStepValidationErrors(missing);
+      setTimeout(() => {
+        document
+          .getElementById("validation-banner")
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+      return;
+    }
+    setStepValidationErrors([]);
+
     if (formRef.current) {
       formRef.current.submit();
     }
@@ -355,13 +382,19 @@ export default function ApplyView({
 
     if (fields) {
       fields.forEach((field) => {
-        if (field.fieldtype === "Attach" || field.fieldtype === "Attach Image") {
+        if (
+          field.fieldtype === "Attach" ||
+          field.fieldtype === "Attach Image"
+        ) {
           attachmentFields.add(field.reference_name);
         }
         if (field.fieldtype === "Table" && field.table_fields) {
           const subSet = new Set<string>();
           field.table_fields.forEach((sub) => {
-            if (sub.fieldtype === "Attach" || sub.fieldtype === "Attach Image") {
+            if (
+              sub.fieldtype === "Attach" ||
+              sub.fieldtype === "Attach Image"
+            ) {
               subSet.add(sub.fieldname);
             }
           });
@@ -406,7 +439,8 @@ export default function ApplyView({
     if (fields) {
       fields.forEach((field) => {
         if (field.fieldtype === "Table") {
-          const rowCount = rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
+          const rowCount =
+            rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
           const rows: Record<string, FormValue>[] = [];
 
           for (let i = 0; i < rowCount; i++) {
@@ -421,8 +455,12 @@ export default function ApplyView({
                   data[key] !== null &&
                   data[key] !== ""
                 ) {
-                  const subAttachments = tableAttachmentFields[field.reference_name];
-                  if (subAttachments && subAttachments.has(subField.fieldname)) {
+                  const subAttachments =
+                    tableAttachmentFields[field.reference_name];
+                  if (
+                    subAttachments &&
+                    subAttachments.has(subField.fieldname)
+                  ) {
                     rowData[subField.fieldname] = extractFileUrl(data[key]);
                   } else {
                     rowData[subField.fieldname] = data[key];
@@ -465,6 +503,138 @@ export default function ApplyView({
           },
         },
       );
+    }
+  };
+
+  const missingRequiredFields = useMemo(() => {
+    if (!fields) return [];
+    const missing: string[] = [];
+
+    fields.forEach((field) => {
+      if (field.visibility === "Hidden") return;
+
+      if (field.fieldtype === "Table") {
+        const rowCount =
+          rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
+        if (field.reqd === 1 && rowCount === 0) {
+          missing.push(field.display_name);
+        } else if (field.table_fields) {
+          for (let i = 0; i < rowCount; i++) {
+            field.table_fields.forEach((subField) => {
+              if (subField.reqd === 1) {
+                const key = `${field.reference_name}_${i}_${subField.fieldname}`;
+                const val = formData[key];
+                if (val === undefined || val === null || val === "") {
+                  missing.push(
+                    `${field.display_name} (Row ${i + 1}): ${subField.label}`,
+                  );
+                }
+              }
+            });
+          }
+        }
+      } else {
+        if (field.reqd === 1) {
+          const val = formData[field.reference_name];
+          if (val === undefined || val === null || val === "") {
+            missing.push(field.display_name);
+          }
+        }
+      }
+    });
+
+    return missing;
+  }, [fields, formData, rowCounts]);
+
+  const hasMissingRequiredFields = missingRequiredFields.length > 0;
+
+  const handleSubmitApplication = () => {
+    if (hasMissingRequiredFields || !acknowledged) return;
+
+    const transformedPayload = transformFormDataForSubmit(formData);
+    submitMutation.mutate(
+      {
+        opening: job.name,
+        data: transformedPayload,
+      },
+      {
+        onSuccess: () => {
+          setSubmitted(true);
+          onSubmitDone(job.name);
+        },
+      },
+    );
+  };
+
+  const getMissingRequiredInSection = (sectionName: string): string[] => {
+    if (!fields) return [];
+    const missing: string[] = [];
+
+    fields.forEach((field) => {
+      if (field.section !== sectionName || field.visibility === "Hidden")
+        return;
+
+      if (field.fieldtype === "Table") {
+        const rowCount =
+          rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
+        if (field.reqd === 1 && rowCount === 0) {
+          missing.push(field.display_name);
+        } else if (field.table_fields) {
+          for (let i = 0; i < rowCount; i++) {
+            field.table_fields.forEach((subField) => {
+              if (subField.reqd === 1) {
+                const key = `${field.reference_name}_${i}_${subField.fieldname}`;
+                const val = formData[key];
+                if (val === undefined || val === null || val === "") {
+                  missing.push(
+                    `${field.display_name} (Row ${i + 1}): ${subField.label}`,
+                  );
+                }
+              }
+            });
+          }
+        }
+      } else {
+        if (field.reqd === 1) {
+          const val = formData[field.reference_name];
+          if (val === undefined || val === null || val === "") {
+            missing.push(field.display_name);
+          }
+        }
+      }
+    });
+
+    return missing;
+  };
+
+  const handleStepClick = (targetStep: number) => {
+    if (targetStep === currentStep) return;
+
+    if (targetStep < currentStep) {
+      setStepValidationErrors([]);
+      setCurrentStep(targetStep);
+      return;
+    }
+
+    // Moving forward: validate every step from currentStep up to targetStep - 1
+    let canJump = true;
+    for (let s = currentStep; s < targetStep; s++) {
+      const missing = getMissingRequiredInSection(sections[s]);
+      if (missing.length > 0) {
+        setStepValidationErrors(missing);
+        setTimeout(() => {
+          document
+            .getElementById("validation-banner")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 50);
+        canJump = false;
+        break;
+      }
+    }
+
+    if (canJump) {
+      setStepValidationErrors([]);
+      setCurrentStep(targetStep);
     }
   };
 
@@ -531,43 +701,16 @@ export default function ApplyView({
       {/* Main Grid */}
       <div className="flex flex-col md:flex-row gap-4 w-full max-w-full">
         {!submitted && (
-          <div className="w-full md:w-56 shrink-0 bg-white border border-gray-200 rounded-xl p-4">
-            <div className="text-xs font-semibold mb-3 text-gray-700">
-              Apply for IJP
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {sections.map((step, i) => {
-                const active = i === currentStep;
-                const done = i < currentStep;
-                return (
-                  <div
-                    key={step}
-                    className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer text-xs whitespace-normal ${
-                      active
-                        ? "text-blue-600 font-semibold bg-blue-50/50"
-                        : done
-                          ? "text-emerald-800 font-normal hover:bg-slate-50"
-                          : "text-gray-500 font-normal hover:bg-slate-50"
-                    }`}
-                    onClick={() => setCurrentStep(i)}
-                  >
-                    <div
-                      className={`w-[22px] h-[22px] rounded-full border-1.5 flex items-center justify-center text-[11px] shrink-0 ${
-                        active
-                          ? "border-blue-600 text-blue-600 font-semibold"
-                          : done
-                            ? "border-green-500 bg-emerald-100 text-emerald-800 font-semibold"
-                            : "border-gray-300 text-gray-400 font-normal"
-                      }`}
-                    >
-                      {done ? "✓" : active ? "→" : "○"}
-                    </div>
-                    <span>{step}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <IJPSidebar
+            sections={sections}
+            currentStep={currentStep}
+            fields={fields}
+            formData={formData}
+            rowCounts={rowCounts}
+            stepValidationErrors={stepValidationErrors}
+            onStepClick={handleStepClick}
+            getMissingRequiredInSection={getMissingRequiredInSection}
+          />
         )}
 
         {/* Content Box */}
@@ -589,93 +732,121 @@ export default function ApplyView({
             </div>
           ) : (
             <div>
-              <div className="text-sm font-semibold mb-5 pb-2.5 border-b border-gray-100 text-[#1a1a2e]">
-                {activeSection}
-              </div>
+              {activeSection === "Review" ? (
+                <IJPReviewStep
+                  sections={sections}
+                  fields={fields}
+                  rowCounts={rowCounts}
+                  formData={formData}
+                  acknowledged={acknowledged}
+                  setAcknowledged={setAcknowledged}
+                  missingRequiredFields={missingRequiredFields}
+                  hasMissingRequiredFields={hasMissingRequiredFields}
+                  onSubmit={handleSubmitApplication}
+                  onBack={handleBack}
+                  submitPending={submitMutation.isPending}
+                />
+              ) : (
+                <div>
+                  <div className="text-sm font-semibold mb-5 pb-2.5 border-b border-gray-100 text-[#1a1a2e]">
+                    {activeSection}
+                  </div>
 
-              <Form
-                key={`${activeSection}-${currentStep}-${JSON.stringify(rowCounts)}`}
-                form={dynamicSchema}
-                submission={{ data: formData }}
-                onChange={handleFormChange}
-                onSubmit={handleFormSubmit}
-                onFormReady={(instance: FormioInstance) => {
-                  formRef.current = instance;
-                }}
-                options={{
-                  builder: { styles: false },
-                  submitButton: false,
-                  alerts: false,
-                  validateOnInit: false,
-                  validateOnBlur: true,
-                  validateOnChange: false,
-                  formClass: "space-y-4",
-                  rowClass: "grid grid-cols-2 gap-4",
-                  labelClass: "mb-1 text-xs text-slate-500 font-medium",
-                  inputClass:
-                    "w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-slate-900 font-semibold outline-none focus:border-blue-400",
-                }}
-              />
+                  {stepValidationErrors.length > 0 && (
+                    <div id="validation-banner" className="mb-5 animate-shake">
+                      <IJPValidationBanner
+                        fields={stepValidationErrors}
+                        onDismiss={() => setStepValidationErrors([])}
+                      />
+                    </div>
+                  )}
 
-              {/* Add More button for Table fields */}
-              {fieldsInActiveSection.map((field) => {
-                if (field.fieldtype === "Table") {
-                  const rowCount =
-                    rowCounts[field.reference_name] ??
-                    (field.reqd === 1 ? 1 : 0);
-                  const buttonLabel =
-                    rowCount === 0
-                      ? `+ Add ${field.display_name}`
-                      : `+ Add More ${field.display_name}`;
-                  return (
-                    <div
-                      key={`add-more-${field.reference_name}`}
-                      className="mt-4 mb-6 flex justify-start"
-                    >
+                  <Form
+                    key={`${activeSection}-${currentStep}-${JSON.stringify(rowCounts)}`}
+                    form={dynamicSchema}
+                    submission={{ data: formData }}
+                    onChange={handleFormChange}
+                    onSubmit={handleFormSubmit}
+                    onFormReady={(instance: FormioInstance) => {
+                      formRef.current = instance;
+                    }}
+                    options={{
+                      builder: { styles: false },
+                      submitButton: false,
+                      alerts: false,
+                      validateOnInit: false,
+                      validateOnBlur: true,
+                      validateOnChange: false,
+                      formClass: "space-y-4",
+                      rowClass: "grid grid-cols-2 gap-4",
+                      labelClass: "mb-1 text-xs text-slate-500 font-medium",
+                      inputClass:
+                        "w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-slate-900 font-semibold outline-none focus:border-blue-400",
+                    }}
+                  />
+
+                  {/* Add More button for Table fields */}
+                  {fieldsInActiveSection.map((field) => {
+                    if (field.fieldtype === "Table") {
+                      const rowCount =
+                        rowCounts[field.reference_name] ??
+                        (field.reqd === 1 ? 1 : 0);
+                      const buttonLabel =
+                        rowCount === 0
+                          ? `+ Add ${field.display_name}`
+                          : `+ Add More ${field.display_name}`;
+                      return (
+                        <div
+                          key={`add-more-${field.reference_name}`}
+                          className="mt-4 mb-6 flex justify-start"
+                        >
+                          <Button
+                            variant="outline"
+                            bgColor="primary"
+                            onClick={() => {
+                              setRowCounts((prev) => ({
+                                ...prev,
+                                [field.reference_name]:
+                                  (prev[field.reference_name] ??
+                                    (field.reqd === 1 ? 1 : 0)) + 1,
+                              }));
+                            }}
+                          >
+                            {buttonLabel}
+                          </Button>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+
+                  {/* Navigation Buttons */}
+                  <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-100">
+                    {currentStep > 0 && (
                       <Button
                         variant="outline"
-                        bgColor="primary"
-                        onClick={() => {
-                          setRowCounts((prev) => ({
-                            ...prev,
-                            [field.reference_name]:
-                              (prev[field.reference_name] ?? (field.reqd === 1 ? 1 : 0)) + 1,
-                          }));
-                        }}
+                        bgColor="secondary"
+                        onClick={handleBack}
                       >
-                        {buttonLabel}
+                        Back
                       </Button>
-                    </div>
-                  );
-                }
-                return null;
-              })}
-
-              {/* Navigation Buttons */}
-              <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-100">
-                {currentStep > 0 && (
-                  <Button
-                    variant="outline"
-                    bgColor="secondary"
-                    onClick={handleBack}
-                  >
-                    Back
-                  </Button>
-                )}
-                {currentStep < sections.length - 1 ? (
-                  <Button bgColor="primary" onClick={handleNextClick}>
-                    Save &amp; Next
-                  </Button>
-                ) : (
-                  <Button
-                    bgColor="primary"
-                    onClick={handleNextClick}
-                    loading={submitMutation.isPending}
-                  >
-                    Submit Application
-                  </Button>
-                )}
-              </div>
+                    )}
+                    {currentStep < sections.length - 1 ? (
+                      <Button bgColor="primary" onClick={handleNextClick}>
+                        Save &amp; Next
+                      </Button>
+                    ) : (
+                      <Button
+                        bgColor="primary"
+                        onClick={handleNextClick}
+                        loading={submitMutation.isPending}
+                      >
+                        Submit Application
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -6,6 +6,7 @@ import {
   requisitionFormSchemas,
   FormSchemaKeys,
 } from "./requisitionFormSchemas";
+import RequisitionReviewStep from "./RequisitionReviewStep";
 import Button from "../shared/atoms/Button";
 import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails, useFileUpload } from "../../hooks/useEmployee";
@@ -85,6 +86,19 @@ function validateStep(
       }
       if (pos.vacancy_type === "Replacement" && !pos.replacement_for) {
         errors.push(`Position ${i + 1}: Replacement for is required.`);
+      }
+    });
+  }
+
+  // Step 3: validate qualifications
+  if (step === 3) {
+    const qualifications = (formData as any).custom_qualifications ?? [];
+    qualifications.forEach((q: any, i: number) => {
+      if (!q.qualification || !q.qualification.trim()) {
+        errors.push(`Qualification ${i + 1}: Qualification is required.`);
+      }
+      if (!q.mandatory) {
+        errors.push(`Qualification ${i + 1}: Mandatory? selection is required.`);
       }
     });
   }
@@ -318,6 +332,11 @@ function applyPositionCounts(newData: any, changedKey: string) {
 // Component
 // ---------------------------------------------------------------------------
 const RequisitionForm = () => {
+  const steps = useMemo(() => {
+    const list = [...requisitionSteps];
+    list.push({ label: "Review", key: "review" as FormSchemaKeys });
+    return list;
+  }, []);
   const [currentStep, setCurrentStep] = useState(0);
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: currentUser } = useCurrentUser();
@@ -342,6 +361,24 @@ const RequisitionForm = () => {
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  const allValidationErrors = useMemo(() => {
+    const errors: string[] = [];
+    for (let s = 0; s < steps.length - 1; s++) {
+      errors.push(...validateStep(s, formData));
+    }
+    return errors;
+  }, [formData, steps]);
+
+  const isStepDisabled = (index: number) => {
+    if (index <= currentStep) return false;
+    for (let s = 0; s < index; s++) {
+      if (validateStep(s, formData).length > 0) {
+        return true;
+      }
+    }
+    return false;
+  };
 
   // Raw draft strings for the Total / New / Replacement number inputs while the
   // user is typing. Keeping the in-progress text here (instead of coercing it to
@@ -620,11 +657,9 @@ const RequisitionForm = () => {
   //   { designation, department, functional_area, data: <all-tab payload> }
   // ---------------------------------------------------------------------------
   const handlePreviewJobDetails = async () => {
-    // Send the human-readable title; fall back to the id so the preview still
-    // works even if a title wasn't captured (e.g. unchanged value in edit mode).
-    const designation = (formData as any).designation_title || (formData as any).designation;
-    const department = (formData as any).department_title || (formData as any).department;
-    const functional_area = (formData as any).functional_area_title || (formData as any).functional_area;
+    const designation = (formData as any).designation;
+    const department = (formData as any).department;
+    const functional_area = (formData as any).functional_area;
 
     if (!designation || !department) {
       toast.error("Please select Designation and Department first.");
@@ -708,7 +743,7 @@ const RequisitionForm = () => {
       return;
     }
     setValidationErrors([]);
-    if (currentStep < requisitionSteps.length - 1) {
+    if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -721,21 +756,28 @@ const RequisitionForm = () => {
   };
 
   const handleStepClick = (index: number) => {
+    if (index === currentStep) return;
+
     if (index < currentStep) {
       setValidationErrors([]);
       setCurrentStep(index);
       return;
     }
-    if (index > currentStep) {
-      const errors = validateStep(currentStep, formData);
-      if (errors.length > 0) {
-        setValidationErrors(errors);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        return;
-      }
-      setValidationErrors([]);
-      setCurrentStep(index);
+
+    // Moving forward: validate every intermediate step
+    const allErrors: string[] = [];
+    for (let s = currentStep; s < index; s++) {
+      allErrors.push(...validateStep(s, formData));
     }
+
+    if (allErrors.length > 0) {
+      setValidationErrors(allErrors);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    setValidationErrors([]);
+    setCurrentStep(index);
   };
 
   type CountKey =
@@ -775,21 +817,8 @@ const RequisitionForm = () => {
     return val === undefined || val === null ? "" : String(val);
   };
 
-  const handleChange = (changed: { data: any; metadata?: any; changed?: { component?: { key?: string }; value?: any } }) => {
+  const handleChange = (changed: { data: any; changed?: { component?: { key?: string }; value?: any } }) => {
     const newData = { ...formData, ...changed.data };
-
-    // Capture the human-readable title for the url-select fields so the JD
-    // preview payload can send titles (not ids). formio keeps the selected
-    // option under submission.metadata.selectData, keyed by component.
-    const selectData = changed.metadata?.selectData;
-    if (selectData) {
-      const labelOf = (v: any) =>
-        v && typeof v === "object" ? (v.label ?? v.name ?? v.title) : v;
-      (["designation", "department", "functional_area"] as const).forEach((k) => {
-        const lbl = labelOf(selectData[k]);
-        if (lbl) (newData as any)[`${k}_title`] = lbl;
-      });
-    }
 
     // If a row in the positions datagrid changed directly, sync totals to the
     // Total / New / Replacement counts so the summary inputs stay accurate.
@@ -1021,7 +1050,11 @@ const RequisitionForm = () => {
   const eagerGrid = positionRowCount > 0 && positionRowCount <= 25;
 
   const currentSchema = useMemo(() => {
-    const stepKey = requisitionSteps[currentStep].key as FormSchemaKeys;
+    const activeKey = steps[currentStep].key;
+    if (activeKey === "review") {
+      return { components: [] };
+    }
+    const stepKey = activeKey as FormSchemaKeys;
     const schema = requisitionFormSchemas[stepKey];
 
     let components = schema.components as any[];
@@ -1042,8 +1075,8 @@ const RequisitionForm = () => {
   const isBusy = isUpdating || createJobRequisition.isPending;
   const canPreviewJD = !!(formData as any).designation && !!(formData as any).department;
 
-  // Last step = "Other Details" (index 3)
-  const isLastStep = currentStep === requisitionSteps.length - 1;
+  // Last step = "Review" (index 4)
+  const isLastStep = currentStep === steps.length - 1;
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-6 bg-white rounded-lg shadow">
@@ -1084,18 +1117,36 @@ const RequisitionForm = () => {
       {/* Step tabs */}
       <div className="mb-8 border-b overflow-x-auto scrollbar-hide">
         <div className="flex min-w-max md:min-w-0">
-          {requisitionSteps.map((step, index) => (
-            <div
-              key={step.key}
-              className={`flex-1 min-w-[140px] md:min-w-0 text-center pb-4 px-2 cursor-pointer whitespace-nowrap ${index === currentStep
-                ? "text-primary-500 border-b-2 border-primary-500 font-semibold"
-                : "text-gray-500"
+          {steps.map((step, index) => {
+            const disabled = isStepDisabled(index);
+            return (
+              <div
+                key={step.key}
+                className={`flex-1 min-w-[140px] md:min-w-0 text-center pb-4 px-2 whitespace-nowrap transition-colors ${
+                  index === currentStep
+                    ? "text-primary-500 border-b-2 border-primary-500 font-semibold"
+                    : disabled
+                    ? "text-gray-300 cursor-not-allowed opacity-60"
+                    : "text-gray-500 cursor-pointer hover:text-gray-700"
                 }`}
-              onClick={() => handleStepClick(index)}
-            >
-              {step.label}
-            </div>
-          ))}
+                onClick={() => {
+                  if (!disabled) {
+                    handleStepClick(index);
+                  } else {
+                    // Triggers validation messages for visual feedback
+                    const allErrors: string[] = [];
+                    for (let s = 0; s < index; s++) {
+                      allErrors.push(...validateStep(s, formData));
+                    }
+                    setValidationErrors(allErrors);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                }}
+              >
+                {step.label}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -1103,7 +1154,7 @@ const RequisitionForm = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl md:text-2xl font-semibold">
-            {requisitionSteps[currentStep].label}
+            {steps[currentStep].label}
           </h2>
           {/* Preview JD button — only on Job Details step (index 1) */}
           {currentStep === 1 && (
@@ -1122,272 +1173,282 @@ const RequisitionForm = () => {
           )}
         </div>
 
-        {/* ── Position counts (plain React inputs, kept out of formio to avoid
-             the controlled-input override issue) ── */}
-        {currentStep === 2 && (
-          <div className="mb-4 border rounded-md p-4">
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Total Position <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={positionCountValue("number_of_positions")}
-                onChange={(e) =>
-                  handlePositionCountChange("number_of_positions", e.target.value)
-                }
-                onBlur={() => commitPositionCount("number_of_positions")}
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                (Max Allowed Positions per Requisition is 100)
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  New
+        {steps[currentStep].key === "review" ? (
+          <RequisitionReviewStep
+            formData={formData}
+            onSubmit={() => handleSubmit({ data: formData })}
+            onBack={handlePrevious}
+            submitPending={isBusy}
+            isEditMode={isEditMode}
+            validationErrors={allValidationErrors}
+          />
+        ) : (
+          <>
+            {/* ── Position counts (plain React inputs, kept out of formio to avoid
+                 the controlled-input override issue) ── */}
+            {currentStep === 2 && (
+              <div className="mb-4 border rounded-md p-4">
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Total Position <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={positionCountValue("number_of_positions")}
+                    onChange={(e) =>
+                      handlePositionCountChange("number_of_positions", e.target.value)
+                    }
+                    onBlur={() => commitPositionCount("number_of_positions")}
+                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    (Max Allowed Positions per Requisition is 100)
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      New
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={positionCountValue("number_of_new_positions")}
+                      onChange={(e) =>
+                        handlePositionCountChange("number_of_new_positions", e.target.value)
+                      }
+                      onBlur={() => commitPositionCount("number_of_new_positions")}
+                      className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Replacement
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={positionCountValue("number_of_replacement_positions")}
+                      onChange={(e) =>
+                        handlePositionCountChange(
+                          "number_of_replacement_positions",
+                          e.target.value
+                        )
+                      }
+                      onBlur={() => commitPositionCount("number_of_replacement_positions")}
+                      className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Form
+              form={currentSchema}
+              submission={{ data: formData }}
+              onChange={handleChange}
+              onSubmit={handleSubmit}
+            />
+
+            {/* ── Position Selection summary bar (totals + bulk vacancy-type toggle) ── */}
+            {currentStep === 2 && (() => {
+              const positions: any[] = (formData as any).positions || [];
+              const total = positions.length;
+              const newCount = positions.filter((p) => p?.vacancy_type === "New").length;
+              const replacementCount = positions.filter(
+                (p) => p?.vacancy_type === "Replacement"
+              ).length;
+              return (
+                <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 py-2 border rounded-md bg-gray-50 text-sm">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <span className="font-semibold text-gray-800">
+                      {total} Total positions
+                    </span>
+                    <span className="flex items-center gap-1 text-gray-700">
+                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                      <span className="font-semibold">{newCount}</span>
+                      <span className="text-gray-500">New</span>
+                    </span>
+                    <span className="flex items-center gap-1 text-gray-700">
+                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                      <span className="font-semibold">{replacementCount}</span>
+                      <span className="text-gray-500">Replacement</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-gray-500 text-xs uppercase tracking-wide">
+                      Set all to
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setAllVacancyType("New")}
+                      disabled={total === 0}
+                      className="flex items-center gap-1 px-3 py-1 border border-green-500 text-green-700 rounded-lg text-xs hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                      New
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAllVacancyType("Replacement")}
+                      disabled={total === 0}
+                      className="flex items-center gap-1 px-3 py-1 border border-orange-500 text-orange-700 rounded-lg text-xs hover:bg-orange-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                      Replacement
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Pre-Screened Candidates (custom table with inline Attachment column) ── */}
+            {currentStep === 3 && (
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pre-Screened Candidates
                 </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={positionCountValue("number_of_new_positions")}
-                  onChange={(e) =>
-                    handlePositionCountChange("number_of_new_positions", e.target.value)
-                  }
-                  onBlur={() => commitPositionCount("number_of_new_positions")}
-                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Replacement
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={positionCountValue("number_of_replacement_positions")}
-                  onChange={(e) =>
-                    handlePositionCountChange(
-                      "number_of_replacement_positions",
-                      e.target.value
-                    )
-                  }
-                  onBlur={() => commitPositionCount("number_of_replacement_positions")}
-                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        <Form
-          form={currentSchema}
-          submission={{ data: formData }}
-          onChange={handleChange}
-          onSubmit={handleSubmit}
-        />
-
-        {/* ── Position Selection summary bar (totals + bulk vacancy-type toggle) ── */}
-        {currentStep === 2 && (() => {
-          const positions: any[] = (formData as any).positions || [];
-          const total = positions.length;
-          const newCount = positions.filter((p) => p?.vacancy_type === "New").length;
-          const replacementCount = positions.filter(
-            (p) => p?.vacancy_type === "Replacement"
-          ).length;
-          return (
-            <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 py-2 border rounded-md bg-gray-50 text-sm">
-              <div className="flex items-center gap-4 flex-wrap">
-                <span className="font-semibold text-gray-800">
-                  {total} Total positions
-                </span>
-                <span className="flex items-center gap-1 text-gray-700">
-                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                  <span className="font-semibold">{newCount}</span>
-                  <span className="text-gray-500">New</span>
-                </span>
-                <span className="flex items-center gap-1 text-gray-700">
-                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                  <span className="font-semibold">{replacementCount}</span>
-                  <span className="text-gray-500">Replacement</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-gray-500 text-xs uppercase tracking-wide">
-                  Set all to
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setAllVacancyType("New")}
-                  disabled={total === 0}
-                  className="flex items-center gap-1 px-3 py-1 border border-green-500 text-green-700 rounded-lg text-xs hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                  New
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAllVacancyType("Replacement")}
-                  disabled={total === 0}
-                  className="flex items-center gap-1 px-3 py-1 border border-orange-500 text-orange-700 rounded-lg text-xs hover:bg-orange-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                  Replacement
-                </button>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* ── Pre-Screened Candidates (custom table with inline Attachment column) ── */}
-        {currentStep === 3 && (
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Pre-Screened Candidates
-            </label>
-            <div className="overflow-x-auto border rounded-md">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 text-gray-700">
-                  <tr>
-                    <th className="text-left font-medium px-3 py-2 border-b">Candidate Name</th>
-                    <th className="text-left font-medium px-3 py-2 border-b">Email</th>
-                    <th className="text-left font-medium px-3 py-2 border-b">Phone</th>
-                    <th className="text-left font-medium px-3 py-2 border-b">Attachment</th>
-                    <th className="text-left font-medium px-3 py-2 border-b">Offer Directly?</th>
-                    <th className="px-3 py-2 border-b w-10"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {((formData as any).custom_pre_screened_candidates || []).length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="text-center text-gray-400 px-3 py-4">
-                        No candidates added yet.
-                      </td>
-                    </tr>
-                  )}
-                  {((formData as any).custom_pre_screened_candidates || []).map(
-                    (candidate: any, index: number) => (
-                      <tr key={index} className="border-b last:border-b-0 align-top">
-                        <td className="px-3 py-2">
-                          <input
-                            type="text"
-                            value={candidate?.candidate_name || ""}
-                            onChange={(e) =>
-                              updateCandidateField(index, "candidate_name", e.target.value)
-                            }
-                            placeholder="e.g., Maya Krishnan"
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="email"
-                            value={candidate?.email || ""}
-                            onChange={(e) =>
-                              updateCandidateField(index, "email", e.target.value)
-                            }
-                            placeholder="e.g., candidate@email.com"
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="text"
-                            value={candidate?.phone || ""}
-                            onChange={(e) =>
-                              updateCandidateField(index, "phone", e.target.value)
-                            }
-                            placeholder="e.g., +91..."
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <div className="flex flex-col gap-1">
-                            <label className="flex items-center gap-2 border-2 border-dashed border-gray-300 px-2 py-1 cursor-pointer hover:border-gray-500 transition rounded">
-                              <span className="text-gray-500 text-lg shrink-0">
-                                <IoMdCloudUpload />
-                              </span>
-                              <span
-                                title={candidateFileNames[index] || candidate?.cv}
-                                className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-xs text-gray-700"
-                              >
-                                {candidateFileNames[index] ||
-                                  candidate?.cv ||
-                                  "Upload file"}
-                              </span>
+                <div className="overflow-x-auto border rounded-md">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50 text-gray-700">
+                      <tr>
+                        <th className="text-left font-medium px-3 py-2 border-b">Candidate Name</th>
+                        <th className="text-left font-medium px-3 py-2 border-b">Email</th>
+                        <th className="text-left font-medium px-3 py-2 border-b">Phone</th>
+                        <th className="text-left font-medium px-3 py-2 border-b">Attachment</th>
+                        <th className="text-left font-medium px-3 py-2 border-b">Offer Directly?</th>
+                        <th className="px-3 py-2 border-b w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {((formData as any).custom_pre_screened_candidates || []).length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="text-center text-gray-400 px-3 py-4">
+                            No candidates added yet.
+                          </td>
+                        </tr>
+                      )}
+                      {((formData as any).custom_pre_screened_candidates || []).map(
+                        (candidate: any, index: number) => (
+                          <tr key={index} className="border-b last:border-b-0 align-top">
+                            <td className="px-3 py-2">
                               <input
-                                type="file"
-                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0] || null;
-                                  if (!file) return;
-                                  handleCandidateFileUpload(index, file);
-                                  e.target.value = "";
-                                }}
-                                className="hidden"
+                                type="text"
+                                value={candidate?.candidate_name || ""}
+                                onChange={(e) =>
+                                  updateCandidateField(index, "candidate_name", e.target.value)
+                                }
+                                placeholder="e.g., Maya Krishnan"
+                                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
                               />
-                            </label>
-                            {(candidateFileNames[index] || candidate?.cv) && (
+                            </td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="email"
+                                value={candidate?.email || ""}
+                                onChange={(e) =>
+                                  updateCandidateField(index, "email", e.target.value)
+                                }
+                                placeholder="e.g., candidate@email.com"
+                                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="text"
+                                value={candidate?.phone || ""}
+                                onChange={(e) =>
+                                  updateCandidateField(index, "phone", e.target.value)
+                                }
+                                placeholder="e.g., +91..."
+                                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <div className="flex flex-col gap-1">
+                                <label className="flex items-center gap-2 border-2 border-dashed border-gray-300 px-2 py-1 cursor-pointer hover:border-gray-500 transition rounded">
+                                  <span className="text-gray-500 text-lg shrink-0">
+                                    <IoMdCloudUpload />
+                                  </span>
+                                  <span
+                                    title={candidateFileNames[index] || candidate?.cv}
+                                    className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-xs text-gray-700"
+                                  >
+                                    {candidateFileNames[index] ||
+                                      candidate?.cv ||
+                                      "Upload file"}
+                                  </span>
+                                  <input
+                                    type="file"
+                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0] || null;
+                                      if (!file) return;
+                                      handleCandidateFileUpload(index, file);
+                                      e.target.value = "";
+                                    }}
+                                    className="hidden"
+                                  />
+                                </label>
+                                {(candidateFileNames[index] || candidate?.cv) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCandidateRemoveFile(index)}
+                                    className="text-xs text-gray-500 hover:text-red-600 self-start"
+                                  >
+                                    Remove file
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="checkbox"
+                                checked={!!candidate?.offer_directly}
+                                onChange={(e) =>
+                                  updateCandidateField(index, "offer_directly", e.target.checked)
+                                }
+                                className="w-4 h-4"
+                              />
+                            </td>
+                            <td className="px-3 py-2 text-center">
                               <button
                                 type="button"
-                                onClick={() => handleCandidateRemoveFile(index)}
-                                className="text-xs text-gray-500 hover:text-red-600 self-start"
+                                onClick={() => removeCandidate(index)}
+                                title="Remove candidate"
+                                className="text-red-500 hover:text-red-700"
                               >
-                                Remove file
+                                <X size={16} />
                               </button>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="checkbox"
-                            checked={!!candidate?.offer_directly}
-                            onChange={(e) =>
-                              updateCandidateField(index, "offer_directly", e.target.checked)
-                            }
-                            className="w-4 h-4"
-                          />
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          <button
-                            type="button"
-                            onClick={() => removeCandidate(index)}
-                            title="Remove candidate"
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <X size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <button
-              type="button"
-              onClick={addCandidate}
-              className="mt-2 px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition"
-            >
-              + Add Candidate
-            </button>
-          </div>
-        )}
-      </div>
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <button
+                  type="button"
+                  onClick={addCandidate}
+                  className="mt-2 px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition"
+                >
+                  + Add Candidate
+                </button>
+              </div>
+            )}
 
-      {/* Navigation Buttons */}
-      <div className="flex justify-between mt-8 gap-4">
-        <Button
-          variant="outline"
-          onClick={handlePrevious}
-          disabled={currentStep === 0}
-          size="md"
-        >
-          Previous
-        </Button>
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-8 gap-4">
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentStep === 0}
+                size="md"
+              >
+                Previous
+              </Button>
 
         {!isLastStep ? (
           <div className="flex items-center gap-3">
@@ -1418,6 +1479,10 @@ const RequisitionForm = () => {
           </Button>
         )}
       </div>
+          </>
+        )}
+      </div>
+
 
       {/* JD Preview Modal */}
       {jdPreviewOpen && (
