@@ -28,7 +28,7 @@ export interface EmployeeFromAPI {
   image?: string;
 
   // Status
-  status: "Active" | "Inactive" | "Suspended" | "Left";
+  status: "Active" | "Inactive" | "Suspended" | "Left" | "Pending";
   custom_employment_status?: "On Probation" | "Confirmation" | "Probation Extended" | "On Notice Period";
 
   // Organization

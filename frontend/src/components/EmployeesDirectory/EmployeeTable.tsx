@@ -59,7 +59,8 @@ const EmployeeTable = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const actionButtonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
-  const selectableEmployees = employees.filter(emp => emp.status === "Active");
+  const isSelectableStatus = (status: string) => status === "Active" || status === "Pending";
+  const selectableEmployees = employees.filter(emp => isSelectableStatus(emp.status));
   const showCheckboxColumn = selectableEmployees.length > 0;
   
   const isAllSelected =
@@ -142,7 +143,7 @@ const EmployeeTable = ({
               >
                 {showCheckboxColumn && (
                   <td className="whitespace-nowrap border-r border-gray-100 px-4 py-4 text-sm font-medium border-b">
-                    {item.status === "Active" ? (
+                    {isSelectableStatus(item.status) ? (
                       <input
                         type="checkbox"
                         checked={isItemSelected}
@@ -317,7 +318,7 @@ const EmployeeTable = ({
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 {showCheckboxColumn && (
-                  item.status === "Active" ? (
+                  isSelectableStatus(item.status) ? (
                     <input
                       type="checkbox"
                       checked={isItemSelected}
