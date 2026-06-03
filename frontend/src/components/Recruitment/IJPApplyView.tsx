@@ -345,7 +345,22 @@ export default function ApplyView({
 
   const handleFormChange = (changed: FormioChangeEvent) => {
     if (changed.data) {
-      setFormData((prev) => ({ ...prev, ...changed.data }));
+      setFormData((prev) => {
+        const next = { ...prev, ...changed.data };
+        const metadata = (changed as any).metadata;
+        const selectData = metadata?.selectData;
+        if (selectData) {
+          const labelOf = (v: any) =>
+            v && typeof v === "object" ? (v.label ?? v.name ?? v.title) : v;
+          Object.keys(selectData).forEach((k) => {
+            const lbl = labelOf(selectData[k]);
+            if (lbl) {
+              (next as any)[`${k}_title`] = lbl;
+            }
+          });
+        }
+        return next;
+      });
     }
   };
 

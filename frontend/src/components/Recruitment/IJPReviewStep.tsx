@@ -51,7 +51,7 @@ export default function IJPReviewStep({
         return name;
       }
     }
-    if (val && typeof val === "object" && val !== null) {
+    if (val && typeof val === "object" && val !== null && !Array.isArray(val)) {
       const obj = val as Record<string, unknown>;
       const name = String(obj.name || "File uploaded");
       const url = String(obj.url || obj.file_url || "");
@@ -169,12 +169,13 @@ export default function IJPReviewStep({
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                   {subFields.map((sub) => {
                                     const key = `${field.reference_name}_${row.index}_${sub.fieldname}`;
-                                    const val = formData[key];
+                                    const rawVal = formData[key];
                                     const isMissing =
                                       sub.reqd === 1 &&
-                                      (val === undefined ||
-                                        val === null ||
-                                        val === "");
+                                      (rawVal === undefined ||
+                                        rawVal === null ||
+                                        rawVal === "");
+                                    const val = formData[`${key}_title`] || rawVal;
 
                                     return (
                                       <div
@@ -216,12 +217,13 @@ export default function IJPReviewStep({
                       </div>
                     );
                   } else {
-                    const val = formData[field.reference_name];
+                    const rawVal = formData[field.reference_name];
                     const isMissing =
                       field.reqd === 1 &&
-                      (val === undefined ||
-                        val === null ||
-                        val === "");
+                      (rawVal === undefined ||
+                        rawVal === null ||
+                        rawVal === "");
+                    const val = formData[`${field.reference_name}_title`] || rawVal;
 
                     return (
                       <div
