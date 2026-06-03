@@ -620,9 +620,11 @@ const RequisitionForm = () => {
   //   { designation, department, functional_area, data: <all-tab payload> }
   // ---------------------------------------------------------------------------
   const handlePreviewJobDetails = async () => {
-    const designation = (formData as any).designation;
-    const department = (formData as any).department;
-    const functional_area = (formData as any).functional_area;
+    // Send the human-readable title; fall back to the id so the preview still
+    // works even if a title wasn't captured (e.g. unchanged value in edit mode).
+    const designation = (formData as any).designation_title || (formData as any).designation;
+    const department = (formData as any).department_title || (formData as any).department;
+    const functional_area = (formData as any).functional_area_title || (formData as any).functional_area;
 
     if (!designation || !department) {
       toast.error("Please select Designation and Department first.");
@@ -773,8 +775,21 @@ const RequisitionForm = () => {
     return val === undefined || val === null ? "" : String(val);
   };
 
-  const handleChange = (changed: { data: any; changed?: { component?: { key?: string }; value?: any } }) => {
+  const handleChange = (changed: { data: any; metadata?: any; changed?: { component?: { key?: string }; value?: any } }) => {
     const newData = { ...formData, ...changed.data };
+
+    // Capture the human-readable title for the url-select fields so the JD
+    // preview payload can send titles (not ids). formio keeps the selected
+    // option under submission.metadata.selectData, keyed by component.
+    const selectData = changed.metadata?.selectData;
+    if (selectData) {
+      const labelOf = (v: any) =>
+        v && typeof v === "object" ? (v.label ?? v.name ?? v.title) : v;
+      (["designation", "department", "functional_area"] as const).forEach((k) => {
+        const lbl = labelOf(selectData[k]);
+        if (lbl) (newData as any)[`${k}_title`] = lbl;
+      });
+    }
 
     // If a row in the positions datagrid changed directly, sync totals to the
     // Total / New / Replacement counts so the summary inputs stay accurate.

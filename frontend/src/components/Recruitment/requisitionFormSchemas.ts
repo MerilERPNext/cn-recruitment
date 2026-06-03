@@ -96,6 +96,7 @@ export const requisitionFormSchemas = {
         key: "functional_area",
         label: "Functional Area",
         placeholder: "Select Functional Area",
+        customClass: "required-field",
         input: true,
         dataSrc: "url",
         data: {
@@ -106,6 +107,7 @@ export const requisitionFormSchemas = {
         valueProperty: "id",
         template: "<span>{{ item.label }}</span>",
         refreshOn: "designation",
+        validate: { required: true },
         clearOnRefresh: true,
       },
     ],
@@ -524,7 +526,6 @@ export const requisitionFormSchemas = {
                 type: "select",
                 key: "location",
                 label: "Location",
-                customClass: "required-field",
                 placeholder: "Select Location",
                 dataSrc: "url",
                 data: {
@@ -549,6 +550,7 @@ export const requisitionFormSchemas = {
                 selectValues: "message.results",
                 valueProperty: "id",
                 template: "<span>{{ item.label }}</span>",
+                validate: { required: true },
               },
               {
                 type: "select",
@@ -570,7 +572,6 @@ export const requisitionFormSchemas = {
                 type: "select",
                 key: "replacement_for",
                 label: "Replacement for",
-                customClass: "required-field",
                 placeholder: "Search Employees",
                 dataSrc: "url",
                 data: {
