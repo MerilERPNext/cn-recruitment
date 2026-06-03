@@ -28,7 +28,7 @@ type FrappeUploadFileResponse = {
 /**
  * Standalone upload (no doctype/docname) — same pattern as RequestIssueModal /
  * HelpDesk ChatInput: FrappeAPI.uploadFile with is_private "1".
- * Returns File doctype `name` for replace_leave_application APIs.
+ * Returns `file_url` for replace_leave_application APIs.
  */
 const uploadStandaloneFile = async (
   file: File,
@@ -43,11 +43,11 @@ const uploadStandaloneFile = async (
     "1",
   );
 
-  if (!result?.name) {
-    throw new Error("File upload failed: File document name was not returned");
+  if (!result?.file_url) {
+    throw new Error("File upload failed: file_url was not returned");
   }
 
-  return result.name;
+  return result.file_url;
 };
 
 const getFileFromAttachment = (
@@ -63,7 +63,7 @@ const getFileFromAttachment = (
 /**
  * Upload replace-form attachment(s) on submit.
  * Uses customfiles + resolvePendingAttachmentUploads (same as RequestLeave).
- * Returns File doc `name` values for attatchment / attatchment1 / attatchment2.
+ * Returns `file_url` values for attatchment / attatchment1 / attatchment2.
  */
 export async function uploadReplaceLeaveAttachments(
   attachment: unknown,
@@ -94,11 +94,11 @@ export async function uploadReplaceLeaveAttachments(
       `${uploadFileName}_attachment2`,
     );
 
-    if (attatchment1 === attatchment2) {
-      throw new Error(
-        "First and second half attachments must be separate File records",
-      );
-    }
+    // if (attatchment1 === attatchment2) {
+    //   throw new Error(
+    //     "First and second half attachments must be separate File records",
+    //   );
+    // }
 
     return { attatchment1, attatchment2 };
   }
