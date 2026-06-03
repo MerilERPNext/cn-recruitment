@@ -52,11 +52,11 @@
             "placeholder": "Select Departments",
             "dataSrc": "url",
             "data": {
-                "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.employee_history.get_designation_hierarchy_options?company={{ data.company }}"
+                "url": "/api/resource/Department?fields=[\"*\"]&limit_page_length=0{{ data.company && data.company.length > 0 ? '&filters=' + encodeURIComponent(JSON.stringify([[\"company\",\"in\",data.company]])) : '&filters=' + encodeURIComponent(JSON.stringify([[\"name\",\"=\",\"__NONE__\"]])) }}"
             },
             "refreshOn": "company",
             "clearOnRefresh": true,
-            "selectValues": "message.data.departments",
+            "selectValues": "data",
             "valueProperty": "name",
             "template": "<span>{{ item.department_name }} - ({{ item.name }})</span>",
             "lazyLoad": false
