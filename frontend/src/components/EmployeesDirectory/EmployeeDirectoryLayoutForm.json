@@ -18,6 +18,10 @@
                     {
                         "label": "Inactive Employees",
                         "value": "Inactive"
+                    },
+                    {
+                        "label": "Pending Employees",
+                        "value": "Pending"
                     }
                 ]
             },

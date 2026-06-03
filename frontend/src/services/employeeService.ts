@@ -63,7 +63,7 @@ function isEmployee(obj: unknown): obj is Employee {
 
   if (
     employee.status &&
-    !["Active", "Inactive", "Suspended", "Left"].includes(
+    !["Active", "Inactive", "Suspended", "Left", "Pending"].includes(
       employee.status as string,
     )
   ) {
