@@ -2,7 +2,6 @@ import {
   ArrowDownUp,
   ArrowUpDown,
   Award,
-  Award,
   BadgeIndianRupee,
   BriefcaseBusiness,
   Calculator,
@@ -26,12 +25,9 @@ import {
   ListTodo,
   ReceiptIndianRupee,
   SeparatorHorizontal,
-  Share2,
+  
   Sheet,
-  Shield,
   SlidersHorizontal,
-  SquarePlus,
-  Telescope,
   Timer,
   User,
   Users,
@@ -43,6 +39,7 @@ import {
   SquarePlus,
   UserSearch,
   UserPlus,
+  Upload,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -90,22 +87,19 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const location = useLocation();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [openSubDropdown, setOpenSubDropdown] = useState<string | null>(null);
-
+  const { data: uiPermissions, isLoading: isUiPermissionsLoading } =
+    useGetUiPermission();
   // const { data: companyLogo } = useCompanyLogo();
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
-  const { data: currentEmployee } = useCurrentEmployeeDetails({
-    logged_in_employee_details: true,
-  });
-  const { data: uiPermissions, isLoading: isUiPermissionsLoading } =
-    useGetUiPermission();
-
+  
+ 
   const currentEmployeeCompany = currentEmployee?.company;
   const { data: singleCompanyLogo } = useSingleCompanyLogo(
     
     currentEmployeeCompany || "",
-  ,
+  
   );
 
   const logoToShow = singleCompanyLogo?.company_logo || "logo not found";

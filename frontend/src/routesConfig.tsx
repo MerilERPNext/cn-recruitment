@@ -25,16 +25,8 @@ import {
   buildExpenseNavigationState,
 } from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
 import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
-import {
-  ExpenseNavigationState,
-  buildExpenseNavigationState,
-} from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
-import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
-import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
-import Onboarding from "./components/Onboarding/Onboarding";
-import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
 import Onboarding from "./components/Onboarding/Onboarding";
 import Requests from "./components/Requests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
@@ -53,6 +45,7 @@ import ReviewLaunch from "./components/Performance/AppraisalCycleWizard/ReviewLa
 
 import CalibratorSession from "./components/Performance/Calibrator/Calibrator.tsx";
 import BoxGrid from "./components/Performance/Calibrator/BoxGrid.tsx";
+import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval.tsx";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
