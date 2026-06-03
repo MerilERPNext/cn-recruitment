@@ -1,6 +1,62 @@
 import { CheckCircle, Clock } from "lucide-react";
 import { Typography } from "../../../shared/atoms/Typography";
 
+const reviewSteps = [
+  { id: 1, label: "Goals & KRs", questions: "5Q", status: "done" },
+  { id: 2, label: "Achievements", questions: "3Q", status: "active" },
+  { id: 3, label: "Development Plan", questions: "4Q", status: "upcoming" },
+  { id: 4, label: "Career Aspirations", questions: "2Q", status: "upcoming" },
+  { id: 5, label: "Overall Comments", questions: "1Q", status: "upcoming" },
+] as const;
+
+type ReviewStep = (typeof reviewSteps)[number];
+
+interface ReviewStepItemProps {
+  step: ReviewStep;
+}
+
+const ReviewStepItem = ({ step }: ReviewStepItemProps) => {
+  const isActive = step.status === "active";
+  const isDone = step.status === "done";
+
+  return (
+    <div
+      className={`flex min-w-max cursor-pointer items-center gap-2 border-b-2 px-1 pb-2 text-left transition-colors hover:text-blue-600 xl:min-w-0 xl:justify-between xl:gap-3 xl:rounded-lg xl:border-b-0 xl:p-2 ${
+        isActive
+          ? "border-blue-500 text-blue-600 xl:bg-blue-50"
+          : "border-transparent text-gray-600 hover:border-gray-200 xl:hover:bg-gray-50"
+      }`}
+    >
+      <div className="flex min-w-0 items-center gap-2 xl:gap-3">
+        <div className="hidden xl:block">
+          {isDone ? (
+            <CheckCircle className="h-5 w-5 text-green-500" />
+          ) : (
+            <div
+              className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${
+                isActive ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-500"
+              }`}
+            >
+              {step.id}
+            </div>
+          )}
+        </div>
+        <Typography
+          variant="bodyMedium"
+          className={`whitespace-nowrap text-sm xl:whitespace-normal xl:text-base ${
+            isActive ? "font-semibold text-blue-700" : "text-inherit"
+          }`}
+        >
+          {step.label}
+        </Typography>
+      </div>
+      <Typography variant="caption" className={isActive ? "text-blue-500" : "text-gray-400"}>
+        {step.questions}
+      </Typography>
+    </div>
+  );
+};
+
 export const SelfReviewSidebar = () => {
   return (
     <div className="w-full shrink-0 xl:w-64">
@@ -12,82 +68,10 @@ export const SelfReviewSidebar = () => {
           SELF-REVIEW
         </Typography>
 
-        <div className="flex gap-2 overflow-x-auto pb-1 xl:flex-col xl:overflow-visible xl:pb-0 xl:gap-1">
-          {/* Step 1 */}
-          <div className="flex min-w-[150px] items-center justify-between rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors xl:min-w-0">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              <Typography variant="bodyMedium" className="text-gray-700">
-                Goals & KRs
-              </Typography>
-            </div>
-            <Typography variant="caption" className="text-gray-400">
-              5Q
-            </Typography>
-          </div>
-
-          {/* Step 2 (Active) */}
-          <div className="flex min-w-[165px] items-center justify-between rounded-lg bg-blue-50 p-2 cursor-pointer xl:min-w-0">
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">
-                2
-              </div>
-              <Typography
-                variant="bodyMedium"
-                className="text-blue-700 font-semibold"
-              >
-                Achievements
-              </Typography>
-            </div>
-            <Typography variant="caption" className="text-blue-500">
-              3Q
-            </Typography>
-          </div>
-
-          {/* Step 3 */}
-          <div className="flex min-w-[190px] items-center justify-between rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors xl:min-w-0">
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">
-                3
-              </div>
-              <Typography variant="bodyMedium" className="text-gray-600">
-                Development Plan
-              </Typography>
-            </div>
-            <Typography variant="caption" className="text-gray-400">
-              4Q
-            </Typography>
-          </div>
-
-          {/* Step 4 */}
-          <div className="flex min-w-[190px] items-center justify-between rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors xl:min-w-0">
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">
-                4
-              </div>
-              <Typography variant="bodyMedium" className="text-gray-600">
-                Career Aspirations
-              </Typography>
-            </div>
-            <Typography variant="caption" className="text-gray-400">
-              2Q
-            </Typography>
-          </div>
-
-          {/* Step 5 */}
-          <div className="flex min-w-[180px] items-center justify-between rounded-lg p-2 cursor-pointer hover:bg-gray-50 transition-colors xl:min-w-0">
-            <div className="flex items-center gap-3">
-              <div className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">
-                5
-              </div>
-              <Typography variant="bodyMedium" className="text-gray-600">
-                Overall Comments
-              </Typography>
-            </div>
-            <Typography variant="caption" className="text-gray-400">
-              1Q
-            </Typography>
-          </div>
+        <div className="flex gap-5 overflow-x-auto pb-1 xl:flex-col xl:gap-1 xl:overflow-visible xl:pb-0">
+          {reviewSteps.map((step) => (
+            <ReviewStepItem key={step.id} step={step} />
+          ))}
         </div>
 
         <div className="mt-4 pt-4 border-t border-gray-100 xl:mt-8">

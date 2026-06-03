@@ -15,22 +15,22 @@ export const PeerNominationFilterBar: React.FC<PeerNominationFilterBarProps> = (
   aiSuggestionCount = 8
 }) => {
   return (
-    <div className="p-4 bg-white border-b border-gray-100 flex flex-col sm:flex-row gap-3 items-center">
-      <div className="flex-1 w-full flex border border-gray-200 rounded-lg overflow-hidden h-10 items-center focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all bg-white">
+    <div className="flex min-w-0 flex-col gap-3 border-b border-gray-100 bg-white p-4 sm:flex-row sm:items-center">
+      <div className="flex h-10 w-full min-w-0 flex-1 items-center overflow-hidden rounded-lg border border-gray-200 bg-white transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
         <div className="pl-3 pr-2 text-gray-400">
           <Search className="w-4 h-4" />
         </div>
         <input 
           aria-label="Search peer nominees"
           type="text" 
-          placeholder="Search PW employees by name, team or BU..." 
-          className="flex-1 h-full outline-none text-sm text-gray-900 placeholder:text-gray-400 bg-transparent w-full"
+          placeholder="Search employees" 
+          className="h-full min-w-0 flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
         />
       </div>
-      <div className="flex gap-3 w-full sm:w-auto">
-        <div className="w-[140px] shrink-0">
+      <div className="grid w-full min-w-0 grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:flex sm:w-auto">
+        <div className="min-w-0 sm:w-[140px] sm:shrink-0">
           <Select 
             options={[{label: "India Tech BU", value: "india_tech"}]} 
             value={{label: "India Tech BU", value: "india_tech"}} 
@@ -40,10 +40,10 @@ export const PeerNominationFilterBar: React.FC<PeerNominationFilterBarProps> = (
         </div>
         <Button 
           variant="soft" 
-          className="whitespace-nowrap text-purple-700 bg-purple-50 hover:bg-purple-100 h-10 px-4" 
+          className="h-10 w-full justify-center bg-purple-50 px-3 text-purple-700 hover:bg-purple-100 sm:w-auto sm:whitespace-nowrap sm:px-4" 
           icon={<Sparkles className="w-4 h-4 text-purple-500" />}
         >
-          AI suggestions ({aiSuggestionCount})
+          AI suggestions<span className="hidden min-[360px]:inline"> ({aiSuggestionCount})</span>
         </Button>
       </div>
     </div>

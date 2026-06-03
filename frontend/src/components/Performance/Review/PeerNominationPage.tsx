@@ -102,10 +102,10 @@ const PeerNominationPage = () => {
   };
 
   return (
-    <div className="min-h-full bg-[#f8fafc] overflow-y-scroll p-4 sm:p-6 font-sans">
-      <div className="max-w-5xl mx-auto flex flex-col">
+    <div className="min-h-full overflow-y-scroll overflow-x-hidden bg-[#f8fafc] p-2 font-sans sm:p-6">
+      <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col">
         {/* Main Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col mb-6">
+        <div className="mb-6 flex min-w-0 flex-col rounded-xl border border-gray-100 bg-white shadow-sm">
           <Suspense
             fallback={
               <div className="p-6 text-center text-gray-500">Loading...</div>
@@ -119,7 +119,7 @@ const PeerNominationPage = () => {
             />
 
             {/* List Header */}
-            <div className="bg-gray-50/50 p-4 border-b border-gray-100 flex justify-between items-center">
+            <div className="flex flex-col gap-1 border-b border-gray-100 bg-gray-50/50 p-4 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
               <Typography
                 variant="caption"
                 className="font-semibold text-gray-500 tracking-wider"
