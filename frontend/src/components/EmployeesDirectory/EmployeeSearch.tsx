@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import useDebounce from "../../hooks/useDebounce";
-import { useGetAllEmployees, useCurrentEmployeeDetails } from "../../hooks/useEmployee";
+import { useGetEmployeesForDirectory, useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import MultiSelect from "../shared/molecules/MultiSelect";
 import { Employee } from "../../types/employee";
 import { Filter, X, Check, RefreshCw } from "lucide-react";
@@ -18,7 +18,7 @@ export interface EmployeeDirectoryFilterData {
   employee_status?: string;
   company?: string | string[];
   departments?: string;
-  [key: string]: string | string[] | undefined;
+  [key: string]: string | string[] | number | boolean | undefined;
 }
 
 // custom dropdown option UI
@@ -94,9 +94,13 @@ const EmployeeSearch = ({
     filters.push(["employee_name", "like", `%${debouncedQuery}%`]);
   }
 
+  let employeeSelfService: 1 | 0 | undefined = undefined;
+
   Object.entries(activeFilters).forEach(([key, value]) => {
-    if (value) {
-      if (key === "doj_from") {
+    if (value !== undefined && value !== null && value !== "") {
+      if (key === "employee_self_service") {
+        employeeSelfService = (value === 1 || value === "1" || value === true || value === "Yes") ? 1 : 0;
+      } else if (key === "doj_from") {
         const dateStr = typeof value === 'string' ? value.split('T')[0] : String(value);
         filters.push(["date_of_joining", ">=", dateStr]);
       } else if (key === "doj_to") {
@@ -118,10 +122,26 @@ const EmployeeSearch = ({
     }
   }
 
-  const { data = [], isLoading } = useGetAllEmployees(
-    ["*"],
-    50,
+  const { data = [], isLoading } = useGetEmployeesForDirectory(
     filters.length > 0 ? filters : undefined,
+    employeeSelfService,
+    [
+      "name",
+      "employee",
+      "employee_name",
+      "status",
+      "image",
+      "custom_weekly_off",
+      "user_id",
+      "custom_designation_name",
+      "designation",
+      "department",
+      "branch",
+      "company",
+      "employment_type",
+      "date_of_joining",
+      "custom_business_unit",
+    ],
   );
 
   const employeeOptions: Employee[] = data.map((emp: Employee) => ({
@@ -164,7 +184,7 @@ const EmployeeSearch = ({
   const hasPendingChanges = JSON.stringify(pendingEmployees.map(e => e.name).sort()) !== JSON.stringify(appliedSearchEmployees.map(e => e.name).sort());
 
   const activeFilterCount = Object.keys(activeFilters).filter(
-    (key) => activeFilters[key] && (!Array.isArray(activeFilters[key]) || (activeFilters[key] as string[]).length > 0),
+    (key) => activeFilters[key] !== undefined && activeFilters[key] !== null && activeFilters[key] !== "" && (!Array.isArray(activeFilters[key]) || (activeFilters[key] as string[]).length > 0),
   ).length;
 
   return (
@@ -240,7 +260,7 @@ const EmployeeSearch = ({
             Active Filters:
           </span>
           {Object.entries(activeFilters).map(([key, value]) => {
-            if (!value || (Array.isArray(value) && value.length === 0)) return null;
+            if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) return null;
             const label = key
               .replace(/_/g, " ")
               .replace(/\b\w/g, (l) => l.toUpperCase());
@@ -252,7 +272,9 @@ const EmployeeSearch = ({
                     ? value.join(", ") 
                     : (key === "doj_from" || key === "doj_to"
                         ? formatToIndianDate(String(value))
-                        : String(value))}
+                        : key === "employee_self_service"
+                            ? (value === 1 || value === "1" || value === true || value === "Yes" ? "Yes" : "No")
+                            : String(value))}
                 </span>
                 <span
                   role="button"

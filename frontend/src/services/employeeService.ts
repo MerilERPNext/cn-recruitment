@@ -8,6 +8,7 @@ import {
   EmployeeListItem,
   EmployeeNode,
   IReason,
+  EmployeeSeparationDetails,
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
 import {
@@ -63,7 +64,7 @@ function isEmployee(obj: unknown): obj is Employee {
 
   if (
     employee.status &&
-    !["Active", "Inactive", "Suspended", "Left"].includes(
+    !["Active", "Inactive", "Suspended", "Left", "Pending"].includes(
       employee.status as string,
     )
   ) {
@@ -703,6 +704,29 @@ export class EmployeeService {
     }
     return data?.data as Employee[];
   }
+
+  static async getEmployeesForDirectory(
+    filters?: FilterCondition[],
+    employee_self_service?: 1 | 0,
+    fields?: string[],
+  ): Promise<Employee[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const params: Record<string, any> = {};
+    if (filters && filters.length > 0) {
+      params.filters = JSON.stringify(filters);
+    }
+    if (employee_self_service !== undefined) {
+      params.employee_self_service = employee_self_service;
+    }
+    if (fields && fields.length > 0) {
+      params.fields = JSON.stringify(fields);
+    }
+    const response = await FrappeAPI.getMethod(
+      "cn_hrms_core.cn_hrms_core.apis.employee.get_employees",
+      params
+    );
+    return response as Employee[];
+  }
   static async getSearchMembers(
     filters?: string,
     limit?: number,
@@ -860,6 +884,13 @@ export class EmployeeService {
     );
     const data = await response;
     return data;
+  }
+  static async getSeparationDetails(employeeId: string): Promise<EmployeeSeparationDetails> {
+    const response = await FrappeAPI.getMethod(
+      "cn_hrms_core.cn_hrms_core.apis.separation_details.get_separation_details",
+      { employee: employeeId }
+    );
+    return response as EmployeeSeparationDetails;
   }
 }
 

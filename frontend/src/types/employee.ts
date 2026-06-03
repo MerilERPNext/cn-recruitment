@@ -28,7 +28,7 @@ export interface EmployeeFromAPI {
   image?: string;
 
   // Status
-  status: "Active" | "Inactive" | "Suspended" | "Left";
+  status: "Active" | "Inactive" | "Suspended" | "Left" | "Pending";
   custom_employment_status?: "On Probation" | "Confirmation" | "Probation Extended" | "On Notice Period";
 
   // Organization
@@ -545,4 +545,12 @@ export interface AssignmentDetailsResponse {
   module: string;
   employee: string;
   data: AssignmentSection[] | AssignmentFlatItem[];
+}
+
+export interface EmployeeSeparationDetails {
+  employee: string;
+  exit_date: string | null;
+  date_of_approval: string | null;
+  separation_approved_by: string | null;
+  de_activated_by: string | null;
 }
