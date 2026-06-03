@@ -546,3 +546,11 @@ export interface AssignmentDetailsResponse {
   employee: string;
   data: AssignmentSection[] | AssignmentFlatItem[];
 }
+
+export interface EmployeeSeparationDetails {
+  employee: string;
+  exit_date: string | null;
+  date_of_approval: string | null;
+  separation_approved_by: string | null;
+  de_activated_by: string | null;
+}

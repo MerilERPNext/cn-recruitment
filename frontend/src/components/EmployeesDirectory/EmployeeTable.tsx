@@ -3,8 +3,9 @@ import { Employee } from "../../types/employee";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Avatar from "../shared/Avatar";
-import { Copy, CopyCheck, EllipsisVertical } from "lucide-react";
-import { useState, useRef } from "react";
+import { Copy, CopyCheck, EllipsisVertical, ChevronDown, ChevronRight } from "lucide-react";
+import SeparationDetailsView from "./SeparationDetailsView";
+import React, { useState, useRef } from "react";
 import ContextualPopup from "../shared/molecules/ContextualPopup";
 import Button from "../shared/atoms/Button";
 import ChangeSelfServiceStatus from "./tools/ChangeSelfServiceStatus/ChangeSelfServiceStatus";
@@ -57,11 +58,21 @@ const EmployeeTable = ({
   const [selectedRowEmployee, setSelectedRowEmployee] = useState<Employee | null>(null);
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const actionButtonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
+
+  const toggleRow = (employeeName: string) => {
+    setExpandedRows(prev => 
+      prev.includes(employeeName) 
+        ? prev.filter(name => name !== employeeName) 
+        : [...prev, employeeName]
+    );
+  };
 
   const isSelectableStatus = (status: string) => status === "Active" || status === "Pending";
   const selectableEmployees = employees.filter(emp => isSelectableStatus(emp.status));
   const showCheckboxColumn = selectableEmployees.length > 0;
+  const hasCheckboxesOrChevrons = employees.some(emp => isSelectableStatus(emp.status) || emp.status === "Inactive");
   
   const isAllSelected =
     selectableEmployees.length > 0 && selectedEmployees.length === selectableEmployees.length;
@@ -95,19 +106,21 @@ const EmployeeTable = ({
           <table className="min-w-full border-separate border-spacing-0">
         <thead className="bg-gray-50/80 backdrop-blur-sm">
           <tr className="sticky top-0 z-10">
-            {showCheckboxColumn && (
-              <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 group first:rounded-tl-xl transition-colors hover:bg-gray-100/50">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    ref={(el: HTMLInputElement | null) => {
-                      if (el) el.indeterminate = isSomeSelected;
-                    }}
-                    onChange={handleSelectAll}
-                    className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
-                  />
-                </div>
+            {hasCheckboxesOrChevrons && (
+              <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 group first:rounded-tl-xl transition-colors hover:bg-gray-100/50 w-[48px]">
+                {showCheckboxColumn ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      ref={(el: HTMLInputElement | null) => {
+                        if (el) el.indeterminate = isSomeSelected;
+                      }}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
+                    />
+                  </div>
+                ) : <div className="w-4 h-4" />}
               </th>
             )}
             <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 transition-colors hover:bg-gray-100/50">
@@ -137,11 +150,11 @@ const EmployeeTable = ({
               (emp) => emp.name === item.name,
             );
             return (
+              <React.Fragment key={item.name}>
               <tr
-                key={item.name}
                 className={`group transition-all duration-200 ${isItemSelected ? "bg-primary-50/70" : "hover:bg-primary-50/40"}`}
               >
-                {showCheckboxColumn && (
+                {hasCheckboxesOrChevrons && (
                   <td className="whitespace-nowrap border-r border-gray-100 px-4 py-4 text-sm font-medium border-b">
                     {isSelectableStatus(item.status) ? (
                       <input
@@ -151,7 +164,16 @@ const EmployeeTable = ({
                         className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
                       />
                     ) : (
-                      <div className="w-4 h-4" />
+                      item.status === "Inactive" ? (
+                        <button
+                          onClick={() => toggleRow(item.name)}
+                          className="p-1 text-gray-500 hover:text-primary-600 transition-colors rounded-full hover:bg-primary-50"
+                        >
+                          {expandedRows.includes(item.name) ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        </button>
+                      ) : (
+                        <div className="w-4 h-4" />
+                      )
                     )}
                   </td>
                 )}
@@ -295,6 +317,16 @@ const EmployeeTable = ({
                 </td>
 
               </tr>
+              {item.status === "Inactive" && expandedRows.includes(item.name) && (
+                <tr className="bg-gray-50/50 border-b border-gray-100">
+                  <td colSpan={7} className="p-0">
+                    <div className="border-l-4 border-l-primary-500">
+                      <SeparationDetailsView employeeId={item.employee} />
+                    </div>
+                  </td>
+                </tr>
+              )}
+              </React.Fragment>
             );
           })}
         </tbody>
@@ -317,7 +349,7 @@ const EmployeeTable = ({
             {/* Top Selection + Avatar Section */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                {showCheckboxColumn && (
+                {hasCheckboxesOrChevrons && (
                   isSelectableStatus(item.status) ? (
                     <input
                       type="checkbox"
@@ -326,7 +358,16 @@ const EmployeeTable = ({
                       className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm shrink-0"
                     />
                   ) : (
-                    <div className="w-4 h-4 shrink-0" />
+                    item.status === "Inactive" ? (
+                      <button
+                        onClick={() => toggleRow(item.name)}
+                        className="p-1 text-gray-500 hover:text-primary-600 transition-colors rounded-full hover:bg-primary-50 shrink-0"
+                      >
+                        {expandedRows.includes(item.name) ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      </button>
+                    ) : (
+                      <div className="w-4 h-4 shrink-0" />
+                    )
                   )
                 )}
                 <Avatar name={item.employee_name} src={item.image} />
@@ -469,6 +510,12 @@ const EmployeeTable = ({
               </div>
 
             </div>
+
+            {item.status === "Inactive" && expandedRows.includes(item.name) && (
+              <div className="mt-4 border-t border-gray-100 pt-4">
+                <SeparationDetailsView employeeId={item.employee} />
+              </div>
+            )}
           </div>
 
         );

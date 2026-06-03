@@ -917,3 +917,12 @@ export const useResetOtpResendLimitMutation = () => {
     },
   });
 };
+
+export const useGetSeparationDetails = (employeeId: string, enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ["separationDetails", employeeId],
+    queryFn: () => EmployeeService.getSeparationDetails(employeeId),
+    enabled: !!employeeId && enabled,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+};

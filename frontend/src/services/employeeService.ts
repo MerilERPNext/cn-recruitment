@@ -8,6 +8,7 @@ import {
   EmployeeListItem,
   EmployeeNode,
   IReason,
+  EmployeeSeparationDetails,
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
 import {
@@ -883,6 +884,13 @@ export class EmployeeService {
     );
     const data = await response;
     return data;
+  }
+  static async getSeparationDetails(employeeId: string): Promise<EmployeeSeparationDetails> {
+    const response = await FrappeAPI.getMethod(
+      "cn_hrms_core.cn_hrms_core.apis.separation_details.get_separation_details",
+      { employee: employeeId }
+    );
+    return response as EmployeeSeparationDetails;
   }
 }
 
