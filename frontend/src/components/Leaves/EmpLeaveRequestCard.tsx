@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useRevokeEvent } from "../../hooks/userApprovalList";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
-import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { queryClient } from "../../providers/QueryProvider";
 import { LeaveCardProps } from "../../types/leaves";
@@ -12,7 +11,7 @@ import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../utils/sanitizeToPlainText";
-import { isActionEnabled } from "../../utils/uiPermission";
+
 import Button from "../shared/atoms/Button";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../shared/atoms/statusBadge";
@@ -33,6 +32,7 @@ const EmpLeaveRequestCard = ({
   buttonStatus,
   onOpenReplaceModal,
   showRejectReason,
+  onRevokeApproved,
 }: EmpLeaveRequestCardProps) => {
   const { isDesktop } = useScreenSize();
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
@@ -45,12 +45,6 @@ const EmpLeaveRequestCard = ({
   const { openModal } = useRequestLeaveModal();
   const { data: currentUser } = useCurrentUser();
 
-  const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
-  const canRequestLeave = isActionEnabled(
-    userUiPermission,
-    "revoke_replace_edit",
-    "My Requests",
-  );
 
   const leaveButtonConfig = buttonStatus?.leave_applications?.find(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,14 +54,26 @@ const EmpLeaveRequestCard = ({
   const isPending = data?.reference_document?.status === "Open";
   const isApproved = data?.reference_document?.status === "Approved";
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const fromDate = data?.reference_document?.from_date ? new Date(data.reference_document.from_date) : new Date();
+  fromDate.setHours(0, 0, 0, 0);
+  const isFutureLeave = fromDate > today;
+
   const isResubmit =
     isPending &&
     data?.can_edit &&
     data?.send_back_user === currentUser?.name;
   const allowEdit = leaveButtonConfig?.show_edit_button || isResubmit;
   const allowReplace = leaveButtonConfig?.show_replace_button;
+  const allowRevoke = leaveButtonConfig?.show_revoke_button;
 
-  const handleRevokeClick = () => {
+  const executeRevoke = () => {
+    if (isApproved && onRevokeApproved) {
+      onRevokeApproved();
+      setIsActed(true);
+      return;
+    }
     if (data?.todo_id) {
       revokeEventMutation.mutate(
         {
@@ -79,6 +85,10 @@ const EmpLeaveRequestCard = ({
           onSuccess: () => {
             setIsActed(true);
             queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
+            queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+            queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
+            queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+            queryClient.invalidateQueries({ queryKey: ["custom-api"] });
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 2000);
@@ -231,15 +241,23 @@ const EmpLeaveRequestCard = ({
           )}
           <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
-              isPending={isPending}
+              uiPermission={{
+                app: "Leaves and Holidays",
+                page: "My Requests",
+                actionKeysMap: {
+                  revoke: "revoke",
+                  replace: "replace",
+                  edit: "edit",
+                }
+              }}
               canRevoke={
-                isPending && data?.custom_allow_revoke && canRequestLeave && !isActed
+                ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && !isActed
               }
               canEdit={allowEdit && !isActed}
               isResubmit={isResubmit}
               canReplace={allowReplace && (isPending || isApproved) && !isActed}
               revokeLoading={revokeEventMutation.isPending}
-              onRevoke={handleRevokeClick}
+              onRevoke={executeRevoke}
               onEdit={handleEditClick}
               onReplace={handleReplaceClick}
             />
@@ -271,7 +289,7 @@ const EmpLeaveRequestCard = ({
                   {data?.reference_document?.custom_leave_type_name}
                 </Typography>
               </div>
-              
+
               <div className="flex flex-col gap-1 text-right">
                 <Typography variant="mobileCardLabel">Leave Days</Typography>
                 <Typography variant="mobileCardValue">
@@ -335,25 +353,33 @@ const EmpLeaveRequestCard = ({
                 </Typography>
               </div>
             )}
-              <div>
-                <Typography variant="mobileCardLabel">Assigned To</Typography>
-                <Typography variant="mobileCardValue">
-                  {getAssignedUsersCell(data)}
-                </Typography>
-              </div>
+            <div>
+              <Typography variant="mobileCardLabel">Assigned To</Typography>
+              <Typography variant="mobileCardValue">
+                {getAssignedUsersCell(data)}
+              </Typography>
+            </div>
 
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
+                uiPermission={{
+                  app: "Leaves and Holidays",
+                  page: "My Requests",
+                  actionKeysMap: {
+                    revoke: "revoke",
+                    replace: "replace",
+                    edit: "edit",
+                  }
+                }}
                 variant="buttons"
-                isPending={isPending}
                 canRevoke={
-                  isPending && data?.custom_allow_revoke && canRequestLeave && !isActed
+                  ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && !isActed
                 }
                 canEdit={allowEdit && !isActed}
                 isResubmit={isResubmit}
                 canReplace={allowReplace && (isPending || isApproved) && !isActed}
                 revokeLoading={revokeEventMutation.isPending}
-                onRevoke={handleRevokeClick}
+                onRevoke={executeRevoke}
                 onEdit={handleEditClick}
                 onReplace={handleReplaceClick}
               />
@@ -382,6 +408,7 @@ const EmpLeaveRequestCard = ({
           )}
         </div>
       )}
+
     </>
   );
 };

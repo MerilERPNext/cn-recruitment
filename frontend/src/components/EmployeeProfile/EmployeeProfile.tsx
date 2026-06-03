@@ -1,39 +1,42 @@
 // import HRLetters from "./HRLetters";
-import HeaderBar from "../HeaderBar";
 import { useNavigate } from "react-router-dom";
+import defaultProfile from "../../assets/face-rec.png";
 import {
   useCurrentEmployeeDetails,
   useFileUpload,
   useGetEmployeeDetailsByEmpIdForProfile,
+  useGetFutureFieldTransactions,
 } from "../../hooks/useEmployee";
 import { Employee } from "../../types/employee";
-import defaultProfile from "../../assets/face-rec.png";
+import HeaderBar from "../HeaderBar";
 
-import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import { Building, History, IdCard, Mail, MapPin, Pencil } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import { Building, IdCard, Mail, MapPin, Pencil } from "lucide-react";
-import { Tab } from "../NavigationTab";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import EmploymentHistory from "../MyProfile/EmploymentHistory";
+import { Tab } from "../NavigationTab";
 import Button from "../shared/atoms/Button";
+import SideDrawer from "../shared/SideDrawer";
+import FutureTransactionsTable from "./FutureTransactionsTable";
 // import AttendanceAssignments from "../Attendance/AttendanceAssignments";
 // import ShowHolidays from "./ShowHolidays";
 
-import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
 import toast from "react-hot-toast";
-import CircularLoader from "../shared/atoms/CircularLoader";
-import DocumentLibrary from "../Library/Library";
-import Tooltip from "../shared/Tooltip";
 import { useTargetUser } from "../../context/ViewedUserContext";
+import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
+import DocumentLibrary from "../Library/Library";
+import CircularLoader from "../shared/atoms/CircularLoader";
+import Tooltip from "../shared/Tooltip";
 // import { useQueryClient } from "@tanstack/react-query";
+import { Card } from "../shared/atoms/Card";
+import { Typography } from "../shared/atoms/Typography";
+import Badge from "../shared/Badge";
 import EmployeeProfileSections from "./EmployeeProfileSections";
 import ReportingDetails from "./ReportingDetails";
-import { Typography } from "../shared/atoms/Typography";
-import { Card } from "../shared/atoms/Card";
-import Badge from "../shared/Badge";
 
-import { AwardsSection } from "./EmployeeAwards";
 import Appreciations from "./Appreciations";
+import { AwardsSection } from "./EmployeeAwards";
 
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
@@ -66,11 +69,23 @@ const EmployeeProfile: React.FC = () => {
     "show_employee_status",
     "Employee Profile",
   );
+  const canShowAssignmentDetailsButton = isActionEnabled(
+    userUiPermission,
+    "show_assignment_details_button",
+    "Employee Profile",
+  );
   const canAppreciate = isActionEnabled(
     userUiPermission,
     "can_appreciate",
     "Employee Profile",
   );
+
+  const canShowFutureTransactions = isActionEnabled(
+    userUiPermission,
+    "show_future_transactions",
+    "Employee Profile",
+  );
+
   const { data: currentUser, isLoading: isCurrentUserLoading } =
     useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
@@ -90,10 +105,16 @@ const EmployeeProfile: React.FC = () => {
   } = useGetEmployeeDetailsByEmpIdForProfile(employeeId);
   const user = empData?.employee;
 
+  const { data: futureTransactionsData } =
+    useGetFutureFieldTransactions(employeeId);
+  const hasFutureTransactions = (futureTransactionsData?.length ?? 0) > 0;
+
   // const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
   //   useState(false);
   const navigate = useNavigate();
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [isFutureTransactionsOpen, setIsFutureTransactionsOpen] =
+    useState(false);
 
   const uploadMutation = useFileUpload();
   const updateDocMutation = useUpdateFrappeDocument();
@@ -137,16 +158,30 @@ const EmployeeProfile: React.FC = () => {
     }
   };
 
-
-
   const tabs: Tab[] = useMemo(
     () => [
-      { key: "overview", label: "Overview", permissionKey: 'show_overview' },
-      { key: "personal-information", label: "Personal Information", permissionKey: "show_personal_information" },
-      { key: "employment-history", label: "Employment History", permissionKey: "show_employment_history" },
-      { key: "reporting-details", label: "Reporting Details", permissionKey: "show_reporting_details" },
+      { key: "overview", label: "Overview", permissionKey: "show_overview" },
+      {
+        key: "personal-information",
+        label: "Personal Information",
+        permissionKey: "show_personal_information",
+      },
+      {
+        key: "employment-history",
+        label: "Employment History",
+        permissionKey: "show_employment_history",
+      },
+      {
+        key: "reporting-details",
+        label: "Reporting Details",
+        permissionKey: "show_reporting_details",
+      },
       // { key: "employee-holidays", label: "Employee Holidays", permissionKey: "show_employee_holidays" },
-      { key: "employee-documents", label: "Employee Documents", permissionKey: "show_employee_documents" },
+      {
+        key: "employee-documents",
+        label: "Employee Documents",
+        permissionKey: "show_employee_documents",
+      },
     ],
     [],
   );
@@ -177,7 +212,7 @@ const EmployeeProfile: React.FC = () => {
 
   const tabContent: Record<string, React.ReactNode> = useMemo(
     () => ({
-      "overview": <Overview />,
+      overview: <Overview />,
       "personal-information": <EmployeeProfileSections />,
       "employment-history": <EmploymentHistory employeeId={user?.employee} />,
       // "employee-holidays": <ShowHolidays />,
@@ -361,9 +396,10 @@ const EmployeeProfile: React.FC = () => {
                   >
                     <MapPin size={14} className="text-primary-500" />
                     <Tooltip content={user?.branch_display}>
-                      <span className="line-clamp-1">{user?.branch_display}</span>
+                      <span className="line-clamp-1">
+                        {user?.branch_display}
+                      </span>
                     </Tooltip>
-
                   </Typography>
                 )}
                 {user?.employee && (
@@ -412,7 +448,6 @@ const EmployeeProfile: React.FC = () => {
                       }
                     />
                   )}
-
                 </div>
               </div>
             </div>
@@ -432,6 +467,26 @@ const EmployeeProfile: React.FC = () => {
                     Attendance Assignment
                   </Button>
                 )} */}
+              {canShowFutureTransactions && hasFutureTransactions && (
+                <Button
+                  icon={<History size={14} />}
+                  size="sm"
+                  variant="soft"
+                  onClick={() => setIsFutureTransactionsOpen(true)}
+                  className="text-[10px] font-bold uppercase tracking-wider h-full px-4 py-2"
+                >
+                  Future Transactions
+                </Button>
+              )}
+              {canShowAssignmentDetailsButton &&
+                <Button
+                  variant="soft"
+                  size="sm"
+                  icon={<History size={14} />}
+                  onClick={() => navigate("/webapp/employee-profile/assignment-details")}
+                >
+                  Assignment Details
+                </Button>}
             </div>
             <AwardsSection isDesktop={false} />
           </div>
@@ -543,35 +598,38 @@ const EmployeeProfile: React.FC = () => {
                         )}
                       </div>
                       <div className="flex flex-col justify-start items-start gap-2 mt-4">
-                        {canShowEmployeeStatus && user?.custom_employment_status && (
-                          <Badge
-                            label={
-                              EMPLOYEMENT_STATUS[
-                              user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
-                              ] || user?.custom_employment_status
-                            }
-                            size="md"
-                            backgroundColor={
-                              user?.status === "Active"
-                                ? "bg-success-100/50"
-                                : "bg-gray-100"
-                            }
-                            textColor={
-                              user?.status === "Active"
-                                ? "text-success"
-                                : "text-gray-600"
-                            }
-                            pulse={
-                              user?.status === "Active"
-                                ? { show: true, color: "bg-success" }
-                                : undefined
-                            }
-                          />
-                        )}
+                        {canShowEmployeeStatus &&
+                          user?.custom_employment_status && (
+                            <Badge
+                              label={
+                                EMPLOYEMENT_STATUS[
+                                user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
+                                ] || user?.custom_employment_status
+                              }
+                              size="md"
+                              backgroundColor={
+                                user?.status === "Active"
+                                  ? "bg-success-100/50"
+                                  : "bg-gray-100"
+                              }
+                              textColor={
+                                user?.status === "Active"
+                                  ? "text-success"
+                                  : "text-gray-600"
+                              }
+                              pulse={
+                                user?.status === "Active"
+                                  ? { show: true, color: "bg-success" }
+                                  : undefined
+                              }
+                            />
+                          )}
                       </div>
                       <div className="flex flex-col justify-start items-start gap-2 mt-4">
                         {user?.department_display && (
-                          <Tooltip content={"Department : " + user?.department_display}>
+                          <Tooltip
+                            content={"Department : " + user?.department_display}
+                          >
                             <Typography
                               variant="bodySmall"
                               className="font-medium text-primary-600 flex gap-2 items-center"
@@ -590,9 +648,10 @@ const EmployeeProfile: React.FC = () => {
                             >
                               <MapPin size={16} />
                               <Tooltip content={user?.branch_display}>
-                                <span className="line-clamp-1">{user?.branch_display}</span>
+                                <span className="line-clamp-1">
+                                  {user?.branch_display}
+                                </span>
                               </Tooltip>
-
                             </Typography>
                           )}
 
@@ -626,6 +685,15 @@ const EmployeeProfile: React.FC = () => {
                               </Button>
                             )} */}
                           {canAppreciate && <Appreciations />}
+                          {canShowAssignmentDetailsButton &&
+                            <Button
+                              variant="soft"
+                              size="sm"
+                              icon={<History size={14} />}
+                              onClick={() => navigate("/webapp/employee-profile/assignment-details")}
+                            >
+                              Assignment Details
+                            </Button>}
                         </div>
                       </div>
                     </div>
@@ -640,19 +708,32 @@ const EmployeeProfile: React.FC = () => {
           {/* Horizontal Tabs - Sticky inside scroll container */}
           <div className="rounded-md">
             <div className="bg-white sticky top-0 rounded-t-md z-10">
-              <div className="flex overflow-x-auto scrollbar-hide px-6 py-2 tracking-wide">
-                {permittedTabs?.map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => scrollToSection(tab.key)}
-                    className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                      ? "border-primary text-primary"
-                      : "border-transparent text-gray-600 hover:text-primary"
-                      }`}
+              <div className="flex items-center justify-between overflow-x-auto scrollbar-hide px-6 py-2 tracking-wide">
+                <div className="flex overflow-x-auto scrollbar-hide">
+                  {permittedTabs?.map((tab) => (
+                    <button
+                      key={tab.key}
+                      onClick={() => scrollToSection(tab.key)}
+                      className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
+                        ? "border-primary text-primary"
+                        : "border-transparent text-gray-600 hover:text-primary"
+                        }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                {canShowFutureTransactions && hasFutureTransactions && (
+                  <Button
+                    icon={<History size={14} />}
+                    size="sm"
+                    variant="soft"
+                    onClick={() => setIsFutureTransactionsOpen(true)}
+                    className="uppercase tracking-wider shrink-0 px-4 py-2 font-medium"
                   >
-                    {tab.label}
-                  </button>
-                ))}
+                    Future Transactions
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -678,7 +759,22 @@ const EmployeeProfile: React.FC = () => {
     </DesktopLayoutWrapper>
   );
 
-  return isDesktop ? desktopLayout : mobileLayout;
+  return (
+    <>
+      {isDesktop ? desktopLayout : mobileLayout}
+      {isFutureTransactionsOpen && (
+        <SideDrawer
+          open={isFutureTransactionsOpen}
+          onClose={() => setIsFutureTransactionsOpen(false)}
+          size={isDesktop ? "xxl" : "full"}
+          title="Future Transactions"
+          className="p-0"
+        >
+          <FutureTransactionsTable />
+        </SideDrawer>
+      )}
+    </>
+  );
 };
 
 export default EmployeeProfile;

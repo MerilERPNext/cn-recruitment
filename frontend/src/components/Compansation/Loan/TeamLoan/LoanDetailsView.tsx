@@ -27,6 +27,7 @@ type Props = {
   documentName?: string;
   referenceName?: string;
   onClose: () => void;
+  actionsEnabled?: boolean;
 };
 
 const LoanDetailsModal = ({
@@ -35,6 +36,7 @@ const LoanDetailsModal = ({
   open,
   item,
   onClose,
+  actionsEnabled = true,
 }: Props) => {
   if (!open) return null;
 
@@ -276,7 +278,7 @@ const LoanDetailsModal = ({
 
           {/* ACTION BUTTONS — sticky at bottom */}
           <div className="border-t bg-white p-4">
-           {data.todo_status != "Closed" &&  <TeamApprovalActionPill
+           {actionsEnabled && data.todo_status != "Closed" &&  <TeamApprovalActionPill
               variant={isDesktop ? "modal" : "buttons"}
               actions={actions}
               status={ref?.status || data?.status || ""}

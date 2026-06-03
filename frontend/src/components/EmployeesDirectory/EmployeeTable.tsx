@@ -10,6 +10,8 @@ import Button from "../shared/atoms/Button";
 import ChangeSelfServiceStatus from "./tools/ChangeSelfServiceStatus/ChangeSelfServiceStatus";
 import ChangeWeekOff from "./tools/ChangeWeekOff/ChangeWeekOff";
 import ResetPassword from "./tools/ResetPassword/ResetPassword";
+import ResetOtpLimit from "./tools/ResetOtpLimit/ResetOtpLimit";
+import PlatformAccessControls from "./tools/PlatformAccessControls/PlatformAccessControls";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 const EmployeeTable = ({
@@ -39,23 +41,37 @@ const EmployeeTable = ({
     "Employee Directory"
   );
 
+  const canResetOtpAuthLimit = isActionEnabled(
+    userUiPermission,
+    "reset_otp_auth_limit",
+    "Employee Directory"
+  );
+  const canChangePlatformAccess = isActionEnabled(
+    userUiPermission,
+    "change_platform_access",
+    "Employee Directory"
+  );
+
   const { isDesktop } = useScreenSize();
-  const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | null>(null);
+  const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | 'otp_limit' | 'platform_access' | null>(null);
   const [selectedRowEmployee, setSelectedRowEmployee] = useState<Employee | null>(null);
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const actionButtonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
 
+  const selectableEmployees = employees.filter(emp => emp.status === "Active");
+  const showCheckboxColumn = selectableEmployees.length > 0;
+  
   const isAllSelected =
-    employees.length > 0 && selectedEmployees.length === employees.length;
+    selectableEmployees.length > 0 && selectedEmployees.length === selectableEmployees.length;
   const isSomeSelected =
-    selectedEmployees.length > 0 && selectedEmployees.length < employees.length;
+    selectedEmployees.length > 0 && selectedEmployees.length < selectableEmployees.length;
 
   const handleSelectAll = () => {
     if (isAllSelected) {
       setSelectedEmployees([]);
     } else {
-      setSelectedEmployees(employees);
+      setSelectedEmployees(selectableEmployees);
     }
   };
 
@@ -71,24 +87,28 @@ const EmployeeTable = ({
       setSelectedEmployees((prev) => [...prev, employee]);
     }
   };
-  return isDesktop ? (
-    <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-      <table className="min-w-full border-separate border-spacing-0">
+  return (
+    <>
+      {isDesktop ? (
+        <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+          <table className="min-w-full border-separate border-spacing-0">
         <thead className="bg-gray-50/80 backdrop-blur-sm">
           <tr className="sticky top-0 z-10">
-            <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 group first:rounded-tl-xl transition-colors hover:bg-gray-100/50">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={isAllSelected}
-                  ref={(el: HTMLInputElement | null) => {
-                    if (el) el.indeterminate = isSomeSelected;
-                  }}
-                  onChange={handleSelectAll}
-                  className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
-                />
-              </div>
-            </th>
+            {showCheckboxColumn && (
+              <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 group first:rounded-tl-xl transition-colors hover:bg-gray-100/50">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(el: HTMLInputElement | null) => {
+                      if (el) el.indeterminate = isSomeSelected;
+                    }}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
+                  />
+                </div>
+              </th>
+            )}
             <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 transition-colors hover:bg-gray-100/50">
               Employee
             </th>
@@ -120,15 +140,21 @@ const EmployeeTable = ({
                 key={item.name}
                 className={`group transition-all duration-200 ${isItemSelected ? "bg-primary-50/70" : "hover:bg-primary-50/40"}`}
               >
-                <td className="whitespace-nowrap border-r border-gray-100 px-4 py-4 text-sm font-medium border-b">
-                  <input
-                    type="checkbox"
-                    checked={isItemSelected}
-                    onChange={() => handleSelectOne(item)}
-                    className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
-                  />
-                </td>
-                <td className="whitespace-nowrap border-r border-gray-50 px-5 py-2.5 text-sm border-b border-gray-100">
+                {showCheckboxColumn && (
+                  <td className="whitespace-nowrap border-r border-gray-100 px-4 py-4 text-sm font-medium border-b">
+                    {item.status === "Active" ? (
+                      <input
+                        type="checkbox"
+                        checked={isItemSelected}
+                        onChange={() => handleSelectOne(item)}
+                        className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-4 h-4" />
+                    )}
+                  </td>
+                )}
+                <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
                   <div className="flex items-center gap-3 justify-between w-full">
                     <Link
                       to={`/webapp/employee-profile?target_user=${item?.employee}`}
@@ -143,10 +169,11 @@ const EmployeeTable = ({
                     </Link>
 
                     <div>
-                      {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword) && <Button
+                      {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
                         ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                         variant="subtle"
                         size="sm"
+                        disabled={selectedEmployees.length > 0}
                         onClick={() => setOpenPopupId(openPopupId === item.name ? null : item.name)}
                         className="p-1"
                       >
@@ -200,25 +227,52 @@ const EmployeeTable = ({
                           >
                             Reset password
                           </Button>}
+                          {canResetOtpAuthLimit && <Button
+                            variant="subtle"
+                            size="md"
+                            contentAlign="start"
+                            fullWidth
+                            disabled={!item.user_id}
+                            onClick={() => {
+                              setSelectedRowEmployee(item);
+                              setActiveTool('otp_limit');
+                              setOpenPopupId(null);
+                            }}
+                          >
+                            Reset otp auth limit
+                          </Button>}
+                          {canChangePlatformAccess && <Button
+                            variant="subtle"
+                            size="md"
+                            contentAlign="start"
+                            fullWidth
+                            onClick={() => {
+                              setSelectedRowEmployee(item);
+                              setActiveTool('platform_access');
+                              setOpenPopupId(null);
+                            }}
+                          >
+                            Platform access
+                          </Button>}
                         </div>
                       </ContextualPopup>
                     </div>
                   </div>
                 </td>
-                <td className="whitespace-nowrap border-r border-gray-50 px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100">
+                <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100">
                   <span className="font-mono text-[11px] opacity-60">#</span>{item.employee}
                 </td>
-                <td className="whitespace-nowrap border-r border-gray-50 px-5 py-2.5 text-sm border-b border-gray-100">
+                <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
                   <div className="flex flex-col">
                     <span className="font-medium text-gray-700">{item.custom_designation_name || "-"}</span>
                   </div>
                 </td>
-                <td className="whitespace-nowrap border-r border-gray-50 px-5 py-2.5 text-sm border-b border-gray-100">
+                <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-50 text-gray-600 border border-gray-100">
                     {item.department || "-"}
                   </span>
                 </td>
-                <td className="whitespace-nowrap border-r border-gray-50 px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100 font-brand">
+                <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100 font-brand">
                   <div className="flex items-center gap-2 group/copy">
                     <span className="truncate max-w-[150px]">{item.user_id || "-"}</span>
                     {item.user_id && (
@@ -244,36 +298,6 @@ const EmployeeTable = ({
           })}
         </tbody>
       </table>
-
-      {selectedRowEmployee && (
-        <>
-          <ChangeWeekOff
-            isOpen={activeTool === 'week_off'}
-            onClose={() => {
-              setActiveTool(null);
-              setSelectedRowEmployee(null);
-            }}
-            current_week_off={selectedRowEmployee.custom_weekly_off as string}
-            employee_id={selectedRowEmployee.employee}
-          />
-          <ChangeSelfServiceStatus
-            isOpen={activeTool === 'self_service'}
-            onClose={() => {
-              setActiveTool(null);
-              setSelectedRowEmployee(null);
-            }}
-            employeeId={selectedRowEmployee.employee}
-          />
-          <ResetPassword
-            isOpen={activeTool === 'password'}
-            onClose={() => {
-              setActiveTool(null);
-              setSelectedRowEmployee(null);
-            }}
-            employeeId={selectedRowEmployee.employee}
-          />
-        </>
-      )}
     </div>
   ) : (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -292,12 +316,18 @@ const EmployeeTable = ({
             {/* Top Selection + Avatar Section */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={isItemSelected}
-                  onChange={() => handleSelectOne(item)}
-                  className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm shrink-0"
-                />
+                {showCheckboxColumn && (
+                  item.status === "Active" ? (
+                    <input
+                      type="checkbox"
+                      checked={isItemSelected}
+                      onChange={() => handleSelectOne(item)}
+                      className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm shrink-0"
+                    />
+                  ) : (
+                    <div className="w-4 h-4 shrink-0" />
+                  )
+                )}
                 <Avatar name={item.employee_name} src={item.image} />
                 <div>
                   <Link
@@ -316,10 +346,11 @@ const EmployeeTable = ({
               </div>
 
               <div className="relative">
-                {canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword && <Button
+                {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
                   ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                   variant="soft"
                   size="sm"
+                  disabled={selectedEmployees.length > 0}
                   onClick={() => setOpenPopupId(openPopupId === item.name ? null : item.name)}
                   className="p-1.5 rounded-lg hover:bg-gray-100"
                 >
@@ -376,6 +407,35 @@ const EmployeeTable = ({
                     >
                       Reset password
                     </Button>}
+                    {canResetOtpAuthLimit && <Button
+                      variant="subtle"
+                      size="sm"
+                      contentAlign="start"
+                      fullWidth
+                      disabled={!item.user_id}
+                      onClick={() => {
+                        setSelectedRowEmployee(item);
+                        setActiveTool('otp_limit');
+                        setOpenPopupId(null);
+                      }}
+                      className="text-xs py-2 px-3 hover:bg-primary-50"
+                    >
+                      Reset otp auth limit
+                    </Button>}
+                    {canChangePlatformAccess && <Button
+                      variant="subtle"
+                      size="sm"
+                      contentAlign="start"
+                      fullWidth
+                      onClick={() => {
+                        setSelectedRowEmployee(item);
+                        setActiveTool('platform_access');
+                        setOpenPopupId(null);
+                      }}
+                      className="text-xs py-2 px-3 hover:bg-primary-50"
+                    >
+                      Platform access
+                    </Button>}
                   </div>
                 </ContextualPopup>
               </div>
@@ -413,6 +473,56 @@ const EmployeeTable = ({
         );
       })}
     </div>
+    )}
+
+      {selectedRowEmployee && (
+        <>
+          <ChangeWeekOff
+            isOpen={activeTool === 'week_off'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            current_week_off={selectedRowEmployee.custom_weekly_off as string}
+            employee_id={selectedRowEmployee.employee}
+          />
+          <ChangeSelfServiceStatus
+            isOpen={activeTool === 'self_service'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            employeeId={selectedRowEmployee.employee}
+          />
+          <ResetPassword
+            isOpen={activeTool === 'password'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            employeeId={selectedRowEmployee.employee}
+          />
+          <ResetOtpLimit
+            isOpen={activeTool === 'otp_limit'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            userId={selectedRowEmployee.user_id!}
+          />
+          <PlatformAccessControls
+            isOpen={activeTool === 'platform_access'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            employeeName={selectedRowEmployee.employee_name}
+            employeeId={selectedRowEmployee.employee}
+            userEmail={selectedRowEmployee.user_id || ""}
+          />
+        </>
+      )}
+    </>
   );
 };
 

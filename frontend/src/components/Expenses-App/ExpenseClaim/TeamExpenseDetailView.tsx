@@ -1,14 +1,18 @@
 import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import { useEmployee } from "../../../hooks/useEmployee";
 import {
   useExpenseCommentUpdate,
   useExpenseLineItemUpdate,
   useGetExpenseAttachments,
+  useUpdateExpenseClaimStatusAPI,
 } from "../../../hooks/useExpense";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useApprovalListActions } from "../../../hooks/userApprovalList";
-import { Participant, Expense } from "../../../types/expenseAdvance";
+import { Expense, Participant } from "../../../types/expenseAdvance";
+import { AllowRequestsOnHoldResponse } from "../../../types/expense";
+import { Employee } from "../../../types/employee";
 
 interface CustomFile {
   data?: {
@@ -50,13 +54,16 @@ import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 export function TeamExpenseDetailView({
+  actionsEnabled,
   documentName,
   referenceName,
   data: propsData,
   onClose,
   onAction,
   label = "Expense Claim",
+  allowHoldData,
 }: {
+  actionsEnabled?: boolean;
   documentName?: string;
   referenceName?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,9 +71,11 @@ export function TeamExpenseDetailView({
   onClose: () => void;
   onAction?: () => void;
   label?: string;
+  allowHoldData?: AllowRequestsOnHoldResponse;
 }) {
   const updateMutation = useExpenseLineItemUpdate();
   const mutation = useApprovalListActions();
+  const updateStatusMutation = useUpdateExpenseClaimStatusAPI();
   const commentMutation = useExpenseCommentUpdate();
   const { setRefetchAttendance } = useGlobalStore();
   const { data: user } = useCurrentUser();
@@ -78,12 +87,22 @@ export function TeamExpenseDetailView({
     error,
   } = useGetToDoWithReferenceDoc(documentName, referenceName);
 
-
-  const data = (documentName || referenceName) ? fetchedData : propsData;
+  const data = documentName || referenceName ? fetchedData : propsData;
   const ref = data?.reference_document || {};
 
+  const employeeId = ref?.employee;
+  const showNoticeFlag = allowHoldData?.show_on_notice_flag_in_process_and_pay_reimbursement_page;
+  const { data: employeeDetails } = useEmployee(showNoticeFlag && employeeId ? employeeId : null);
+  const isOnNotice = (employeeDetails as Employee)?.custom_employment_status === "On Notice Period";
+  const shouldShowNoticeText = showNoticeFlag && isOnNotice;
+
   const todoId = useMemo(() => {
-    return data?.todo_id || (data?.doctype === "ToDo" ? data?.name : null) || documentName || "";
+    return (
+      data?.todo_id ||
+      (data?.doctype === "ToDo" ? data?.name : null) ||
+      documentName ||
+      ""
+    );
   }, [data, documentName]);
 
   console.log(ref);
@@ -100,38 +119,64 @@ export function TeamExpenseDetailView({
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [rejectionComment, setRejectionComment] = useState<string>("");
   const [showCommentModal, setShowCommentModal] = useState(false);
+  const [pendingHoldAction, setPendingHoldAction] = useState<string | null>(null);
 
   const loading = useLoadingOverlay();
-  const { data: claimAttachments } = useGetExpenseAttachments(claimId || undefined);
+  const { data: claimAttachments } = useGetExpenseAttachments(
+    claimId || undefined,
+  );
 
-  const getCustomFileUrl = (file: CustomFile) => file.data?.message?.file_url || file.file_url || file.url || "";
-  const getCustomFileName = (file: CustomFile) => file.originalName || file.name || file.file_name || undefined;
+  const getCustomFileUrl = (file: CustomFile) =>
+    file.data?.message?.file_url || file.file_url || file.url || "";
+  const getCustomFileName = (file: CustomFile) =>
+    file.originalName || file.name || file.file_name || undefined;
 
-  const renderAdditionalDetails = (customFormData: string | null | undefined) => {
+  const renderAdditionalDetails = (
+    customFormData: string | null | undefined,
+  ) => {
     if (!customFormData) return null;
     let parsed: Record<string, unknown> = {};
     try {
-      parsed = typeof customFormData === 'string' ? JSON.parse(customFormData) : customFormData as Record<string, unknown>;
+      parsed =
+        typeof customFormData === "string"
+          ? JSON.parse(customFormData)
+          : (customFormData as Record<string, unknown>);
     } catch {
       return null;
     }
 
     const keysToSkip = [
-      "uid", "name", "expenseCategory", "categoryType", "expenseType",
-      "custom_attach_receipt", "start_datetime", "end_datetime", "location"
+      "uid",
+      "name",
+      "expenseCategory",
+      "categoryType",
+      "expenseType",
+      "custom_attach_receipt",
+      "start_datetime",
+      "end_datetime",
+      "location",
     ];
 
     const isFileObject = (obj: unknown): obj is CustomFile => {
-      if (typeof obj !== 'object' || obj === null) return false;
+      if (typeof obj !== "object" || obj === null) return false;
       const o = obj as Record<string, unknown>;
-      return 'url' in o || 'originalName' in o || ('data' in o && typeof o.data === 'object');
+      return (
+        "url" in o ||
+        "originalName" in o ||
+        ("data" in o && typeof o.data === "object")
+      );
     };
 
-    const isFileArray = (arr: unknown): arr is CustomFile[] => 
+    const isFileArray = (arr: unknown): arr is CustomFile[] =>
       Array.isArray(arr) && arr.length > 0 && isFileObject(arr[0]);
 
     const entries = Object.entries(parsed).filter(
-      ([key, value]) => !keysToSkip.includes(key) && value !== null && value !== "" && value !== undefined && !(Array.isArray(value) && value.length === 0)
+      ([key, value]) =>
+        !keysToSkip.includes(key) &&
+        value !== null &&
+        value !== "" &&
+        value !== undefined &&
+        !(Array.isArray(value) && value.length === 0),
     );
 
     if (entries.length === 0) return null;
@@ -139,12 +184,20 @@ export function TeamExpenseDetailView({
     const formatKey = (key: string) => {
       let formatted = key.replace(/_/g, " ");
       formatted = formatted.replace(/([A-Z])/g, " $1").trim();
-      return formatted.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+      return formatted
+        .split(" ")
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+        )
+        .join(" ");
     };
 
     return (
       <div className="mt-4 pt-4 border-t border-gray-100">
-        <Typography variant="mobileCardLabel" className="block mb-3 font-semibold text-gray-700 uppercase">
+        <Typography
+          variant="mobileCardLabel"
+          className="block mb-3 font-semibold text-gray-700 uppercase"
+        >
           Additional Details
         </Typography>
         <div className="grid grid-cols-2 gap-x-6 gap-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -152,12 +205,20 @@ export function TeamExpenseDetailView({
             if (isFileArray(value)) {
               return (
                 <div key={key} className="flex flex-col gap-2 col-span-2 mt-1">
-                  <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
+                  <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                    {formatKey(key)}
+                  </span>
                   <div className="flex flex-col gap-2">
                     {(value as CustomFile[]).map((file, idx) => {
                       const fileUrl = getCustomFileUrl(file);
                       const fileName = getCustomFileName(file);
-                      return fileUrl ? <AttachmentCard key={idx} fileUrl={fileUrl} fileName={fileName} /> : null;
+                      return fileUrl ? (
+                        <AttachmentCard
+                          key={idx}
+                          fileUrl={fileUrl}
+                          fileName={fileName}
+                        />
+                      ) : null;
                     })}
                   </div>
                 </div>
@@ -166,8 +227,16 @@ export function TeamExpenseDetailView({
 
             return (
               <div key={key} className="flex flex-col gap-1">
-                <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
-                <span className="text-sm text-gray-800 break-words font-medium">{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}</span>
+                <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                  {formatKey(key)}
+                </span>
+                <span className="text-sm text-gray-800 break-words font-medium">
+                  {typeof value === "boolean"
+                    ? value
+                      ? "Yes"
+                      : "No"
+                    : String(value)}
+                </span>
               </div>
             );
           })}
@@ -255,6 +324,11 @@ export function TeamExpenseDetailView({
 
   const handleAction = useCallback(
     async (action: string) => {
+      if (action.toLowerCase() === "hold" || action.toLowerCase() === "unhold") {
+        setPendingHoldAction(action);
+        return;
+      }
+
       if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
         setShowCommentModal(true);
         setPendingAction(action);
@@ -297,12 +371,16 @@ export function TeamExpenseDetailView({
         (data?.custom_approval_type === "Multi Actions" &&
           data?.custom_open_chatnext_assistant_on_action)
       ) {
-        const triggerAssistant = (window as unknown as { trigger_chatnext_assistant?: (show: boolean, session: unknown) => void }).trigger_chatnext_assistant;
+        const triggerAssistant = (
+          window as unknown as {
+            trigger_chatnext_assistant?: (
+              show: boolean,
+              session: unknown,
+            ) => void;
+          }
+        ).trigger_chatnext_assistant;
         if (triggerAssistant) {
-          triggerAssistant(
-            true,
-            responseWithSession?.session,
-          );
+          triggerAssistant(true, responseWithSession?.session);
         }
       } else {
         setTimeout(() => {
@@ -385,6 +463,30 @@ export function TeamExpenseDetailView({
     setPendingAction(null);
   };
 
+  const handleConfirmHoldAction = async () => {
+    if (!pendingHoldAction) return;
+    if (claimId) {
+      const newStatus = pendingHoldAction.toLowerCase() === "hold" ? "On Hold" : "Pending";
+      try {
+        await loading?.wrap(
+          () => updateStatusMutation.mutateAsync({ docname: claimId, approvalStatus: newStatus }),
+          pendingHoldAction.toLowerCase() === "hold" ? "Putting on hold..." : "Unholding..."
+        );
+        toast.success(`Request ${newStatus === "On Hold" ? "put on hold" : "unheld"} successfully`);
+        if (onAction) {
+          onAction();
+        }
+      } catch (e) {
+        console.error("Failed to update status", e);
+      }
+    }
+    setPendingHoldAction(null);
+  };
+
+  const handleCancelHoldAction = () => {
+    setPendingHoldAction(null);
+  };
+
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open" || status === "Draft") {
       return {
@@ -434,39 +536,73 @@ export function TeamExpenseDetailView({
     );
   };
 
-  const actions = data?.custom_doctype_actions
-    ? JSON.parse(data?.custom_doctype_actions)
-    : [];
-
-  const { totalAmount } =
-    useMemo(() => {
-      const approved = expenseItems.filter(
-        (item) => item.custom_approval_staus === "Approved",
-      );
-
-      let totalReimbursed;
-
-      if (approved.length > 0) {
-        totalReimbursed = approved.reduce(
-          (sum, item) => sum + item.sanctionedAmount,
-          0,
-        );
+  const actions = (() => {
+    let parsedActions: string[] = [];
+    if (data?.custom_doctype_actions) {
+      if (Array.isArray(data.custom_doctype_actions)) {
+        parsedActions = data.custom_doctype_actions;
       } else {
-        const itemsToCount = expenseItems.filter(
-          (item) => item.custom_approval_staus !== "Rejected",
-        );
-        totalReimbursed = itemsToCount.reduce(
-          (sum, item) => sum + item.sanctionedAmount,
-          0,
+        try {
+          const parsed = JSON.parse(data.custom_doctype_actions);
+          if (Array.isArray(parsed)) {
+            parsedActions = parsed;
+          }
+        } catch (e) {
+          console.error("Failed to parse custom_doctype_actions:", e);
+        }
+      }
+    }
+
+    if (allowHoldData) {
+      if (!allowHoldData.show_approval_buttons) {
+        parsedActions = parsedActions.filter(
+          (a) => !["Approve", "Reject", "Send Back"].includes(a)
         );
       }
+      if (allowHoldData.allow_requests_to_be_put_on_hold) {
+        const currentApprovalStatus = ref?.approval_status || data?.approval_status;
+        if (currentApprovalStatus === "On Hold") {
+          if (!parsedActions.includes("Unhold")) {
+            parsedActions.push("Unhold");
+          }
+        } else {
+          if (!parsedActions.includes("Hold")) {
+            parsedActions.push("Hold");
+          }
+        }
+      }
+    }
+    return parsedActions;
+  })();
 
-      const total = totalReimbursed;
+  const { totalAmount } = useMemo(() => {
+    const approved = expenseItems.filter(
+      (item) => item.custom_approval_staus === "Approved",
+    );
 
-      return {
-        totalAmount: total,
-      };
-    }, [expenseItems]);
+    let totalReimbursed;
+
+    if (approved.length > 0) {
+      totalReimbursed = approved.reduce(
+        (sum, item) => sum + item.sanctionedAmount,
+        0,
+      );
+    } else {
+      const itemsToCount = expenseItems.filter(
+        (item) => item.custom_approval_staus !== "Rejected",
+      );
+      totalReimbursed = itemsToCount.reduce(
+        (sum, item) => sum + item.sanctionedAmount,
+        0,
+      );
+    }
+
+    const total = totalReimbursed;
+
+    return {
+      totalAmount: total,
+    };
+  }, [expenseItems]);
 
   if (isLoading && documentName) {
     return <LoadingView onClose={onClose} label={label} />;
@@ -640,7 +776,6 @@ export function TeamExpenseDetailView({
           {/* Body */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1 min-w-0">
                   <Typography
@@ -649,10 +784,20 @@ export function TeamExpenseDetailView({
                   >
                     {ref?.employee_name ? "Employee Name" : "Employee ID"}
                   </Typography>
-                  <Typography variant="mobileCardValue" className="truncate hover:text-primary cursor-pointer">
-                    <WrapperHoverCard employeeId={ref?.employee}>
-                      {ref?.employee_name || ref?.employee}
-                    </WrapperHoverCard>
+                  <Typography
+                    variant="mobileCardValue"
+                    className="hover:text-primary cursor-pointer flex flex-col md:flex-row md:items-center gap-0.5 md:gap-1.5 min-w-0"
+                  >
+                    <div className="truncate min-w-0">
+                      <WrapperHoverCard employeeId={ref?.employee}>
+                        {ref?.employee_name || ref?.employee}
+                      </WrapperHoverCard>
+                    </div>
+                    {shouldShowNoticeText && (
+                      <span className="text-amber-500 font-semibold text-xs flex-shrink-0">
+                        (On notice period)
+                      </span>
+                    )}
                   </Typography>
                 </div>
                 <div className="flex flex-col gap-1 min-w-0">
@@ -661,7 +806,6 @@ export function TeamExpenseDetailView({
                     {ref?.employee || "N/A"}
                   </Typography>
                 </div>
-
               </div>
             </div>
 
@@ -686,7 +830,10 @@ export function TeamExpenseDetailView({
                             <Typography variant="mobileCardLabel">
                               EXPENSE DATE
                             </Typography>
-                            <Typography variant="mobileCardValue" className="truncate">
+                            <Typography
+                              variant="mobileCardValue"
+                              className="truncate"
+                            >
                               {formatToIndianDate(
                                 item.expense_date || item.creation,
                               )}
@@ -696,17 +843,21 @@ export function TeamExpenseDetailView({
                             <Typography variant="mobileCardLabel">
                               CLAIMED DATE
                             </Typography>
-                            <Typography variant="mobileCardValue" className="truncate">
-                              {formatToIndianDate(
-                                item?.creation,
-                              )}
+                            <Typography
+                              variant="mobileCardValue"
+                              className="truncate"
+                            >
+                              {formatToIndianDate(item?.creation)}
                             </Typography>
                           </div>
                           <div className="flex flex-col gap-1 min-w-0">
                             <Typography variant="mobileCardLabel">
                               EXPENSE CATEGORY
                             </Typography>
-                            <Typography variant="mobileCardValue" className="truncate">
+                            <Typography
+                              variant="mobileCardValue"
+                              className="truncate"
+                            >
                               {ref?.custom_expense_category_name || "--"}
                             </Typography>
                           </div>
@@ -714,7 +865,10 @@ export function TeamExpenseDetailView({
                             <Typography variant="mobileCardLabel">
                               EXPENSE TYPE
                             </Typography>
-                            <Typography variant="mobileCardValue" className="truncate">
+                            <Typography
+                              variant="mobileCardValue"
+                              className="truncate"
+                            >
                               {item?.custom_claim_type_name || "--"}
                             </Typography>
                           </div>
@@ -780,6 +934,33 @@ export function TeamExpenseDetailView({
                               </Typography>
                             </div>
                           )}
+
+                          {item.custom_odometer_from !== undefined &&
+                            item.custom_odometer_from !== null &&
+                            item.custom_odometer_from !== "" && (
+                              <div className="flex flex-col gap-1">
+                                <Typography variant="mobileCardLabel">
+                                  ODOMETER FROM
+                                </Typography>
+                                <Typography variant="mobileCardValue">
+                                  {String(item.custom_odometer_from)}
+                                </Typography>
+                              </div>
+                            )}
+
+                          {item.custom_odometer_to !== undefined &&
+                            item.custom_odometer_to !== null &&
+                            item.custom_odometer_to !== "" && (
+                              <div className="flex flex-col gap-1">
+                                <Typography variant="mobileCardLabel">
+                                  ODOMETER TO
+                                </Typography>
+                                <Typography variant="mobileCardValue">
+                                  {String(item.custom_odometer_to)}
+                                </Typography>
+                              </div>
+                            )}
+
 
                           {item.custom_start_datetime && (
                             <div className="flex flex-col gap-1">
@@ -849,18 +1030,27 @@ export function TeamExpenseDetailView({
                             Attachments
                           </Typography>
                           <div className="flex flex-col gap-2">
-                            {claimAttachments?.map((file: { file_url: string }, i: number) => (
-                              <AttachmentCard key={i} fileUrl={file.file_url} />
-                            ))}
+                            {claimAttachments?.map(
+                              (file: { file_url: string }, i: number) => (
+                                <AttachmentCard
+                                  key={i}
+                                  fileUrl={file.file_url}
+                                />
+                              ),
+                            )}
                             {item.custom_attach_receipt && (
                               <AttachmentCard
                                 fileUrl={item.custom_attach_receipt}
                                 compact={false}
                               />
                             )}
-                            {(!claimAttachments || claimAttachments.length === 0) && !item.custom_attach_receipt && (
-                              <span className="text-gray-400 text-xs italic">No attachments found</span>
-                            )}
+                            {(!claimAttachments ||
+                              claimAttachments.length === 0) &&
+                              !item.custom_attach_receipt && (
+                                <span className="text-gray-400 text-xs italic">
+                                  No attachments found
+                                </span>
+                              )}
                           </div>
                         </div>
 
@@ -938,7 +1128,6 @@ export function TeamExpenseDetailView({
           {/* Footer totals */}
           <div className="border-t bg-white px-6 py-4">
             <div className="space-y-2 text-sm">
-
               <div className="flex justify-between pt-2">
                 <span className="font-semibold text-lg text-gray-900">
                   Total Approved Amount
@@ -951,18 +1140,18 @@ export function TeamExpenseDetailView({
           </div>
 
           {actions?.length > 0 &&
-            status?.label === "Pending" &&
-            data?.todo_status !== "Closed" && !isActed ? (
+            (status?.label === "Pending" || status?.label === "On Hold") &&
+            data?.todo_status !== "Closed" &&
+            !isActed ? (
             <div className="w-full bg-white border-t shadow-md p-4 z-20">
               <TeamApprovalActionPill
+                actionsEnabled={actionsEnabled}
                 variant={isDesktop ? "modal" : "buttons"}
                 actions={actions}
                 status={data?.status || ref?.approval_status || ""}
                 recordId={todoId}
                 loadingAction={
-                  currentAction
-                    ? { id: todoId, action: currentAction }
-                    : null
+                  currentAction ? { id: todoId, action: currentAction } : null
                 }
                 onAction={(action) => handleAction(action)}
               />
@@ -1018,7 +1207,8 @@ export function TeamExpenseDetailView({
                     size="sm"
                     bgColor="primary"
                     disabled={
-                      rejectionComment.trim().length < 15 || commentMutation.isPending
+                      rejectionComment.trim().length < 15 ||
+                      commentMutation.isPending
                     }
                   >
                     {commentMutation.isPending ? (
@@ -1089,6 +1279,41 @@ export function TeamExpenseDetailView({
                     bgColor="error"
                   >
                     Proceed Anyway
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Hold/Unhold confirmation modal */}
+          {pendingHoldAction && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
+              <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Confirm Action
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">
+                  Are you sure you want to {pendingHoldAction.toLowerCase() === "hold" ? "put this request on hold" : "unhold this request"}?
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    onClick={handleCancelHoldAction}
+                    size="sm"
+                    bgColor="disabled"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleConfirmHoldAction}
+                    size="sm"
+                    bgColor="primary"
+                    disabled={updateStatusMutation.isPending}
+                  >
+                    {updateStatusMutation.isPending ? (
+                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      "Confirm"
+                    )}
                   </Button>
                 </div>
               </div>

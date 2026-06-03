@@ -24,6 +24,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useGetEmployeeSeparationType, useGetSeparationFunnelDetails } from "../../../hooks/useSeparation";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { FlowRequestItem } from "../../../types/flows";
+import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
 
 type cardDataType = {
   icon: React.ReactNode;
@@ -78,6 +79,7 @@ const Separation = () => {
 
 
   const [isTriggeringChat, setIsTriggeringChat] = useState(false);
+  const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
 
 
   const isLoading = isLoadingSeparationFunnelDetails || isLoadingSeparationType;
@@ -273,17 +275,32 @@ const Separation = () => {
             View Your Separation Process
           </Typography>
         </div>
+        <Button
+          variant="outline"
+          onClick={() => setIsActivityLogOpen(true)}
+          className="flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm ml-auto mr-2"
+          disabled={!item?.request_id}
+        >
+          Activity Log
+        </Button>
         {canViewWorkflow && (
           <Button
             onClick={handleShowWorkflow}
             size="md"
             bgColor="primary"
-            className="hover:bg-primary my-2 text-white ml-auto mr-4"
+            className="hover:bg-primary my-2 text-white mr-4"
           >
             View Workflow
           </Button>
         )}
       </div>
+      <ActivityLogDrawer
+        open={isActivityLogOpen}
+        onClose={() => setIsActivityLogOpen(false)}
+        funnelActivityId={item?.request_id || ""}
+        title="Activity Log"
+        size="xxl"
+      />
       {showRequestPage ? (
         <main className="mb-2">
           <div className="max-w-full">

@@ -1,13 +1,40 @@
 import DOMPurify from "dompurify";
+import { toast } from "react-hot-toast";
+
+interface ErrorResponseFormaterOptions {
+  showToast?: boolean;
+}
 
 export const errorResponseFormater = (
   error: any,
-  fallback = "Something went wrong, please try again."
+  fallback = "Something went wrong, please try again.",
+  options?: ErrorResponseFormaterOptions
 ) => {
   let err = null;
 
   if (!error) {
-    return <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fallback) }} />;
+    return <div className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fallback) }} />;
+  }
+
+  // Show success_message and error_message toasts if showToast is enabled
+  const messageData = error?.response?.data?.message;
+  if (options?.showToast) {
+    try {
+      if (messageData && typeof messageData === "object") {
+        if (messageData.error_message) {
+          toast.error(
+            <div className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(messageData.error_message) }} />
+          );
+        }
+        if (messageData.success_message) {
+          toast.success(
+            <div className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(messageData.success_message) }} />
+          );
+        }
+      }
+    } catch {
+      // non-fatal: toast display failure should not break error formatting
+    }
   }
 
   try {
@@ -34,5 +61,11 @@ export const errorResponseFormater = (
 
   if (err == null) err = fallback;
   // ❗ Always return sanitized HTML ReactNode
-  return <span className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(err) }} />;
+
+  if (options?.showToast && !messageData?.success_message && !messageData?.error_message) {
+    toast.error(
+      <div className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(err) }} />
+    );
+  }
+  return <div className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(err) }} />;
 };

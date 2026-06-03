@@ -144,6 +144,7 @@ interface DataListViewProps<T extends BaseItem> {
   getItemKey?: (item: T, index: number) => string;
   enableUrlParams?: boolean;
   onFiltersChange?: (filters: Record<string, any>) => void;
+  onSearchChange?: (search: string) => void;
   clientFilterFn?: (data: T[]) => T[];
   clientSortFn?: (data: T[]) => T[];
   noRecordsScreen?:
@@ -181,6 +182,7 @@ const DataListView = <T extends BaseItem>({
   getItemKey,
   enableUrlParams = true,
   onFiltersChange,
+  onSearchChange,
   clientFilterFn,
   clientSortFn,
   noRecordsScreen,
@@ -258,6 +260,12 @@ const DataListView = <T extends BaseItem>({
       onFiltersChange(debouncedFilters);
     }
   }, [currentFiltersString, onFiltersChange]);
+
+  useEffect(() => {
+    if (onSearchChange) {
+      onSearchChange(debouncedSearchTerm);
+    }
+  }, [debouncedSearchTerm, onSearchChange]);
 
   useEffect(() => {
     if (showFilters && !isFilterApplied) {
@@ -669,7 +677,7 @@ const DataListView = <T extends BaseItem>({
     clientFilterFn,
     clientSortFn,
   ]);
- 
+
   // Handle accumulating data for load more pagination
   useEffect(() => {
     if (loadMorePagination && loadMoreQueryResult.data?.data) {
@@ -1081,8 +1089,8 @@ const DataListView = <T extends BaseItem>({
     <div>
       {/* Header — sticky top, constrained to visible width */}
       <div
-        className="sticky left-0 z-10 bg-white pb-2"
-        style={{ width: 'var(--card-table-visible-width, 100%)', top: 'var(--search-bar-offset, 0px)' }}
+        className={`${isDesktop ? "sticky" : "static"} left-0 z-10 bg-white pb-2`}
+        style={isDesktop ? { width: 'var(--card-table-visible-width, 100%)', top: 'var(--search-bar-offset, 0px)' } : undefined}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
@@ -1230,7 +1238,7 @@ const DataListView = <T extends BaseItem>({
                   onClick={() => onItemClick?.(item)}
                   className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
                     }`}
-                > 
+                >
                   {ItemComponent ? (
                     <ItemComponent item={item} index={index} />
                   ) : renderItem ? (
@@ -1251,7 +1259,7 @@ const DataListView = <T extends BaseItem>({
           </div>
         )}
       </div>
- 
+
       {/* Sticky Footer — Actions & Pagination */}
       {!isListLoading &&
         !error &&

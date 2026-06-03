@@ -8,8 +8,8 @@ import { EllipsisVertical } from "lucide-react";
 import ChangeHrbp from "./tools/ChangeHrbp/ChangeHrbp";
 import { Employee } from "../../types/employee";
 
-import { EmployeeSearchProps } from "./EmployeeSearch";
-import { useState } from "react";
+import { EmployeeDirectoryFilterData } from "./EmployeeSearch";
+import { useState, useRef } from "react";
 import ChangeDottedLineManager from "./tools/ChangeDottedLineManager/ChangeDottedLineManager";
 import ChangeProbationPeriod from "./tools/ChangeProbationPeriod/ChangeProbationPeriod";
 import DeactivateEmployee from "./tools/DeactivateEmployee/DeactivateEmployee";
@@ -17,31 +17,38 @@ import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 
 type Props = {
-    employees: Employee[];
-    selectedEmployees: Employee[];
-    setSelectedEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
-    searchState: EmployeeSearchProps;
-    uiState: {
-        isPopupOpen: boolean;
-        setIsPopupOpen: React.Dispatch<React.SetStateAction<boolean>>;
-        buttonRef: React.RefObject<HTMLButtonElement>;
-    };
+    activeTab: 'directory' | 'my_reportees';
 };
 
 type ToolType = 'hrbp' | 'dotted_line_manager' | 'attendance_assignments' | 'probation_period' | 'deactivate_employee' | null;
 
-const EmployeeDirectoryContent = ({
-    employees,
-    selectedEmployees,
-    setSelectedEmployees,
-    searchState,
-    uiState,
-}: Props) => {
-    const {
-        isPopupOpen,
-        setIsPopupOpen,
-        buttonRef,
-    } = uiState;
+const EmployeeDirectoryContent = ({ activeTab }: Props) => {
+    // STATE LIVES HERE
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [selectedEmployees, setSelectedEmployees] = useState<Employee[]>([]);
+    const [isPopupOpen, setIsPopupOpen] = useState(false);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [pendingEmployees, setPendingEmployees] = useState<Employee[]>([]);
+    const [appliedSearchEmployees, setAppliedSearchEmployees] = useState<Employee[]>([]);
+    const [activeFilters, setActiveFilters] = useState<EmployeeDirectoryFilterData>({ status: "Active" });
+    const [pendingFilters, setPendingFilters] = useState<EmployeeDirectoryFilterData>({ status: "Active" });
+
+    const searchState = {
+        setEmployees,
+        searchQuery,
+        setSearchQuery,
+        pendingEmployees,
+        setPendingEmployees,
+        appliedSearchEmployees,
+        setAppliedSearchEmployees,
+        activeFilters,
+        setActiveFilters,
+        pendingFilters,
+        setPendingFilters,
+        activeTab,
+        clearTableSelection: () => setSelectedEmployees([]),
+    };
     const { data: userUiPermission } = useGetUiPermission("Employee Directory");
     const canChangeHrbp = isActionEnabled(
         userUiPermission,

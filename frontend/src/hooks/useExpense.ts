@@ -13,6 +13,7 @@ import {
   UnitPriceResponse,
 } from "../services/expenseService";
 import {
+  AllowRequestsOnHoldResponse,
   ExpenseCategoryType,
   ExpensePolicyQuestionsResponse,
 } from "../types/expense";
@@ -22,6 +23,7 @@ import {
   ExpenseTypeFieldsResponse,
   ParticipantUpdateItem,
 } from "../types/expenseAdvance";
+import { ReimbursementSummary } from "../types/expenseSummary";
 import { FilterCondition } from "../types/frappe";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
 
@@ -600,3 +602,55 @@ export function useDeleteExpenseClaim() {
     },
   });
 }
+
+export const useGetAllowRequestsToBePutOnHold = () => {
+  return useQuery<AllowRequestsOnHoldResponse>({
+    queryKey: ["allow-requests-to-be-put-on-hold"],
+    queryFn: () => expenseService.getAllowRequestsToBePutOnHold(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useUpdateExpenseClaimStatusAPI() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ docname, approvalStatus }: { docname: string; approvalStatus: string }) =>
+      expenseService.updateExpenseClaimStatusAPI(docname, approvalStatus),
+    onSuccess: () => {
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ["custom-api"] });
+        queryClient.invalidateQueries({ queryKey: ["custom-api-infinite"] });
+        queryClient.invalidateQueries({ queryKey: ["expense-claims-all"] });
+        queryClient.invalidateQueries({ queryKey: ["todo-refdocs"] });
+      }, 500);
+    },
+    onError: (err: any) => {
+      toast.error(
+        errorResponseFormater(err, "Failed to update expense status."),
+      );
+    },
+  });
+}
+
+export const useAutoPopulatedCostCenter = (employeeId?: string) => {
+  return useQuery({
+    queryKey: ["autoPopulatedCostCenter", employeeId],
+    queryFn: () => expenseService.getAutoPopulatedCostCenter(employeeId || ""),
+    enabled: !!employeeId,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+/** Hook to fetch reimbursement summary for a given employee */
+export const useReimbursementSummary = (employeeId?: string) => {
+  return useQuery<ReimbursementSummary>({
+    queryKey: ["reimbursement-summary", employeeId],
+    queryFn: () => expenseService.getReimbursementSummary(employeeId || ""),
+    enabled: !!employeeId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+};
+

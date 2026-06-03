@@ -8,11 +8,13 @@
  "field_order": [
   "applicability_section",
   "job_description_title",
+  "is_default",
   "company",
   "business_unit",
   "column_break_ueon",
   "department",
   "designation",
+  "functional_area",
   "education_and_experience_section",
   "education_column",
   "category",
@@ -26,7 +28,9 @@
   "max_preferred_work_experience_years",
   "competencies_section",
   "competencies",
-  "skills"
+  "skills",
+  "jd_builder",
+  "description"
  ],
  "fields": [
   {
@@ -43,6 +47,13 @@
    "unique": 1
   },
   {
+   "description": "Use this Job Description as the fallback when no other JD matches the designation + department on a Job Requisition. Only one Job Description can be marked default at a time.",
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Use as Default Job Description"
+  },
+  {
    "fieldname": "company",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -56,6 +67,12 @@
    "label": "Designation",
    "options": "JD Designations",
    "reqd": 1
+  },
+  {
+   "fieldname": "functional_area",
+   "fieldtype": "Table MultiSelect",
+   "label": "Functional Area",
+   "options": "JD Functional Area"
   },
   {
    "fieldname": "business_unit",
@@ -145,15 +162,27 @@
   },
   {
    "fieldname": "skills",
-   "fieldtype": "Table",
+   "fieldtype": "Table MultiSelect",
    "label": "Skills",
-   "options": "Candidate Skills"
+   "options": "Job Requisition Skill"
+  },
+  {
+   "fieldname": "jd_builder",
+   "fieldtype": "HTML",
+   "label": "Description"
+  },
+  {
+   "description": "Stored JD template (HTML + Jinja). Managed by the builder above.",
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description (stored)",
+   "hidden": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-20 16:36:00.877013",
+ "modified": "2026-05-28 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Job Description",

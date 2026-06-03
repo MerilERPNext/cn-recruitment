@@ -19,6 +19,9 @@ import EmpShiftRequestCard from "./EmpShiftRequestCard";
 import { ShiftDetailView } from "./ShiftDetailView";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 import NoDataFound from "../shared/atoms/NoDataFound";
+import { BulkSelectProvider } from "../shared/BulkSelectContext";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
   {
@@ -141,6 +144,11 @@ const MyShifts: React.FC = () => {
       <div className="max-h-96 overflow-y-auto my-shifts-dashboard">
         {isLoading ? (
           <CardSkeleton rows={3} />
+        ) : myShifts.length === 0 ? (
+          <NoDataFound
+            title="No Shift Assignment"
+            subtitle="No Shift Assignments Found"
+          />
         ) : (
           <ul>
             {myShifts.map((shift, idx) => (
@@ -218,6 +226,7 @@ const TeamShiftList = () => {
   );
 };
 
+
 const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
@@ -289,6 +298,16 @@ export default function AllShiftsDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
   const referenceName = searchParams.get("reference_name");
+
+
+  const uiPermission = {
+    app: "Attendance",
+    page: "All Shifts",
+    actionKey: "team_actions_enabled"
+  }
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const actionsEnabled = isActionEnabled(uiPermissionData, uiPermission?.actionKey ?? "", uiPermission?.page);
+
 
   const handleRequestClick = useCallback(
     (request: any) => {
@@ -363,36 +382,40 @@ export default function AllShiftsDashboard() {
                 }
               />
               <div className="border border-gray-100 rounded-lg overflow-x-auto">
-                <CardTable
-                  titles={tableTitles}
-                  columnWidths={tableColumnWidths}
-                  columnSortConfig={columnSortConfig}
-                >
-                  <ApprovalList
-                    status="Draft"
-                    doctype={"Shift Request"}
-                    pageSize={4}
-                    showPagination={false}
-                    refetch={refetchApprovalList}
-                    setRefetch={setRefetchApprovalList}
-                    onApprovalRefetchComplete={handleApprovalRefetchComplete}
+                <BulkSelectProvider>
+                  <CardTable
+                    titles={tableTitles}
                     columnWidths={tableColumnWidths}
-                    SkeletonComponent={() => <CardSkeleton rows={3} />}
-                    onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-                    renderCardContent={(item) => (
-                      <ApprovalRejectionQueue
-                        isSelected={item?.isSelected}
-                        onToggleSelect={item?.onToggleSelect}
-                        data={item?.data}
-                        onAction={item?.onAction}
-                        onClick={handleRequestClick}
-                        loadingAction={item?.loadingAction}
-                        isBulkSelectEnabled={isBulkSelectEnabled}
-                        isActed={item?.isActed}
-                      />
-                    )}
-                  />
-                </CardTable>
+                    columnSortConfig={columnSortConfig}
+                  >
+                    <ApprovalList
+                      bulkSelectVisible={actionsEnabled}
+                      status="Draft"
+                      doctype={"Shift Request"}
+                      pageSize={4}
+                      showPagination={false}
+                      refetch={refetchApprovalList}
+                      setRefetch={setRefetchApprovalList}
+                      onApprovalRefetchComplete={handleApprovalRefetchComplete}
+                      columnWidths={tableColumnWidths}
+                      SkeletonComponent={() => <CardSkeleton rows={3} />}
+                      onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+                      renderCardContent={(item) => (
+                        <ApprovalRejectionQueue
+                          actionsEnabled={actionsEnabled}
+                          isSelected={item?.isSelected}
+                          onToggleSelect={item?.onToggleSelect}
+                          data={item?.data}
+                          onAction={item?.onAction}
+                          onClick={handleRequestClick}
+                          loadingAction={item?.loadingAction}
+                          isBulkSelectEnabled={isBulkSelectEnabled}
+                          isActed={item?.isActed}
+                        />
+                      )}
+                    />
+                  </CardTable>
+                </BulkSelectProvider>
               </div>
             </Card>
             {(requestId || referenceName) && (

@@ -2,7 +2,7 @@ import { FC, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 
-type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
+type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
 
 type ModalProps = {
     isOpen: boolean;
@@ -24,7 +24,8 @@ const Modal: FC<ModalProps> = ({ isOpen, onClose, children, size = 'md', classNa
             sm: isDesktop ? 'max-w-md' : 'max-w-xs',
             md: isDesktop ? 'max-w-2xl' : 'max-w-md',
             lg: isDesktop ? 'max-w-4xl' : 'max-w-lg',
-            xl: isDesktop ? 'max-w-6xl' : 'max-w-xl'
+            xl: isDesktop ? 'max-w-6xl' : 'max-w-xl',
+            '2xl': isDesktop ? 'max-w-[90vw]' : 'max-w-2xl'
         };
 
         return `${sizeMap[size]} w-full`;

@@ -374,6 +374,8 @@ export function useMarkBulkAttendance() {
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
       queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
       queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-calendar-details"], });
+      queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
     },
     onError: (e) => {
       console.log(e);
@@ -468,7 +470,29 @@ export function useCreateNewAttendanceRequest() {
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
       queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
       queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
       queryClient.invalidateQueries({ queryKey: ["attendance-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-calendar-details"], });
+    },
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}
+export function useCreateNewAttendanceRequestBatch() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      attendanceService.createAttendanceRequestBatchWithCustomAPI(body),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-calendar-details"], });
     },
     onError: (e) => {
       console.log(e);
@@ -645,6 +669,7 @@ export function useCreatePlannedOvertimeRequest() {
       queryClient.invalidateQueries({ queryKey: ["planned-overtime-request"] });
       queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
       queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
     },
     onError: (e) => {
       console.log(e);
@@ -663,6 +688,7 @@ export function useUpdatePlannedOvertimeRequest() {
       queryClient.invalidateQueries({ queryKey: ["planned-overtime-request"] });
       queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
       queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
     },
     onError: (e) => {
       console.log(e);

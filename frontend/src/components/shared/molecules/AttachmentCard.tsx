@@ -24,6 +24,9 @@ export function AttachmentCard({
   const [showPreview, setShowPreview] = useState(false);
   const { category, label, iconColor, bgColor } = getFileTypeInfo(fileName);
 
+  // Blob URLs are not downloadable inside a React Native WebView
+  const hideDownload = window.isApp && fileUrl.startsWith("blob:");
+
   const ActionButtons = (
     <div className="flex gap-2 items-center">
       <Tooltip content={"View"}>
@@ -36,13 +39,15 @@ export function AttachmentCard({
         </Button>
       </Tooltip>
 
-      <Tooltip content={"Download"}>
-        <a href={fileUrl} download={fileName}>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4" />
-          </Button>
-        </a>
-      </Tooltip>
+      {!hideDownload && (
+        <Tooltip content={"Download"}>
+          <a href={fileUrl} download={fileName}>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4" />
+            </Button>
+          </a>
+        </Tooltip>
+      )}
     </div>
   );
 

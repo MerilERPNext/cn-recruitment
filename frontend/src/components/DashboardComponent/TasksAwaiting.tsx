@@ -29,16 +29,16 @@ const MyToDoItem: React.FC<{ item: ToDo; index?: number }> = ({ item }) => {
   return (
     <div
       key={item.name}
-      className="flex cursor-pointer items-center justify-between p-3 rounded-xl border border-transparent hover-lift transition-all group"
+      className="flex cursor-pointer items-center justify-between rounded-xl border border-transparent hover-lift transition-all group"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         <div className="w-10 h-10 min-w-[40px] min-h-[40px] flex-shrink-0 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
           <ClipboardList className="w-5 h-5" />
         </div>
-        <div className="mr-2">
+        <div className="mr-2 min-w-0 flex-1">
           <Typography
             variant="bodySmall"
-            className="font-medium block line-clamp-1 break-all"
+            className="font-medium block line-clamp-1"
           >
             {cleanDescription || "Task"}
           </Typography>
@@ -64,7 +64,7 @@ const MyToDoItem: React.FC<{ item: ToDo; index?: number }> = ({ item }) => {
 
 const TasksAwaiting: React.FC = () => {
   const { data: fullData = [], isLoading } = useTodoList();
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCategory, setActiveCategory] = useState<string>("");
 
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
@@ -86,45 +86,44 @@ const TasksAwaiting: React.FC = () => {
   };
 
 
+  // Get only categorized entries (exclude uncategorized)
+  const categorizedData = useMemo(() => {
+    return fullData.filter((item: { custom_todo_type: string; }) => !!item.custom_todo_type);
+  }, [fullData]);
+
   const filtered = useMemo(() => {
-    if (activeCategory === "All") return fullData;
-
-    if (activeCategory === "Uncategorized") {
-      return fullData.filter((item) => !item.custom_todo_type);
-    }
-
-    return fullData.filter((item) => item.custom_todo_type === activeCategory);
-  }, [activeCategory, fullData]);
+    if (!activeCategory) return categorizedData;
+    return categorizedData.filter((item: { custom_todo_type: string; }) => item.custom_todo_type === activeCategory);
+  }, [activeCategory, categorizedData]);
 
   const categoryCounts = useMemo(() => {
     const grouped: Record<string, number> = {};
 
-    fullData.forEach((item) => {
-      const cat = item.custom_todo_type || "Uncategorized";
-      grouped[cat] = (grouped[cat] || 0) + 1;
+    categorizedData.forEach((item: { custom_todo_type: string; }) => {
+      const cat = item.custom_todo_type;
+      if (cat) {
+        grouped[cat] = (grouped[cat] || 0) + 1;
+      }
     });
 
     return grouped;
-  }, [fullData]);
+  }, [categorizedData]);
 
-  const totalCount = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
+  // Set default active category to the first available category
+  const categoryKeys = useMemo(() => Object.keys(categoryCounts), [categoryCounts]);
+
+  React.useEffect(() => {
+    if (categoryKeys.length > 0 && (!activeCategory || !categoryKeys.includes(activeCategory))) {
+      setActiveCategory(categoryKeys[0]);
+    }
+  }, [categoryKeys, activeCategory]);
 
   const filterOptions = useMemo(() => {
-    const entries = Object.entries(categoryCounts);
-
-    const sorted = [
-      ...entries.filter(([cat]) => cat !== "Uncategorized"),
-      ...entries.filter(([cat]) => cat === "Uncategorized"),
-    ];
-
-    return [
-      { label: `All Tasks (${totalCount})`, value: "All" },
-      ...sorted.map(([cat, count]) => ({
-        label: `${cat} (${count})`,
-        value: cat,
-      })),
-    ];
-  }, [categoryCounts, totalCount]);
+    return Object.entries(categoryCounts).map(([cat, count]) => ({
+      label: `${cat} (${count})`,
+      value: cat,
+    }));
+  }, [categoryCounts]);
 
   return (
     <Card shadow="sm" className="h-fit md:h-full flex flex-col">
@@ -142,33 +141,18 @@ const TasksAwaiting: React.FC = () => {
             value={activeCategory}
             options={filterOptions}
             onChange={(e) => setActiveCategory(e.target.value)}
-            label="All"
+            label="Select Category"
             variant="soft"
+            contentAlign="start"
+            position="bottom-right"
             className="w-full [&>button]:w-full [&>button]:justify-between"
           />
         </div>
       )}
 
-      {isDesktop && !isLoading && totalCount > 0 && (
+      {isDesktop && !isLoading && categoryKeys.length > 0 && (
         <div className="flex gap-3 mb-4 p-2 max-w-full overflow-x-auto">
-          <button
-            onClick={() => setActiveCategory("All")}
-            className={`px-4 py-2 rounded-2xl whitespace-nowrap h-fit text-sm font-semibold shadow ${activeCategory === "All"
-              ? "bg-primary text-white scale-105"
-              : "bg-primary-100 text-primary-700 hover:bg-primary-300"
-              } transition-all`}
-          >
-            All Tasks ({totalCount})
-          </button>
-
-          {[
-            ...Object.entries(categoryCounts).filter(
-              ([cat]) => cat !== "Uncategorized",
-            ),
-            ...Object.entries(categoryCounts).filter(
-              ([cat]) => cat === "Uncategorized",
-            ),
-          ].map(([cat, count], idx) => {
+          {Object.entries(categoryCounts).map(([cat, count], idx) => {
             const isActive = activeCategory === cat;
             const colors = generatePastelColor(idx);
 
@@ -196,7 +180,7 @@ const TasksAwaiting: React.FC = () => {
         ) : filtered.length > 0 ? (
           filtered
             .slice(0, 3)
-            .map((item) => <MyToDoItem key={item.name} item={item} />)
+            .map((item: ToDo) => <MyToDoItem key={item.name} item={item} />)
         ) : (
           <NoDataFound
             title="You're all caught up 🎉"

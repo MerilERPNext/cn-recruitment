@@ -1,22 +1,24 @@
 import { useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import useDebounce from "../../hooks/useDebounce";
-import { useGetAllEmployees } from "../../hooks/useEmployee";
+import { useGetAllEmployees, useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import MultiSelect from "../shared/molecules/MultiSelect";
 import { Employee } from "../../types/employee";
 import { Filter, X, Check, RefreshCw } from "lucide-react";
 import Button from "../shared/atoms/Button";
 import SideDrawer from "../shared/SideDrawer";
 import EmployeeDirectoryFilters from "./EmployeeDirectoryFilters";
+import { useTargetUser } from "../../context/ViewedUserContext";
 
 import { FilterCondition } from "../../types/frappe";
 import { Typography } from "../shared/atoms/Typography";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 export interface EmployeeDirectoryFilterData {
   employee_status?: string;
-  company?: string;
+  company?: string | string[];
   departments?: string;
-  [key: string]: string | undefined;
+  [key: string]: string | string[] | undefined;
 }
 
 // custom dropdown option UI
@@ -33,10 +35,18 @@ const EmployeeOption = ({ employee }: { employee: Employee }) => {
         <span className="text-sm font-medium text-gray-900">
           {employee.employee_name}
         </span>
+        <div className="flex gap-2">
+          {employee.designation && (
+            <span className="text-xs text-gray-500">{employee.designation},</span>
+          )}
+          {employee.department && (
+            <span className="text-xs text-gray-500">{employee.department},</span>
+          )}
+          {employee.branch && (
+            <span className="text-xs text-gray-500">{employee.branch}</span>
+          )}
 
-        {employee.designation && (
-          <span className="text-xs text-gray-500">{employee.designation}</span>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -54,6 +64,7 @@ export interface EmployeeSearchProps {
   pendingFilters: EmployeeDirectoryFilterData;
   setPendingFilters: React.Dispatch<React.SetStateAction<EmployeeDirectoryFilterData>>;
   clearTableSelection: () => void;
+  activeTab: 'directory' | 'my_reportees';
 }
 
 const EmployeeSearch = ({
@@ -69,10 +80,14 @@ const EmployeeSearch = ({
   pendingFilters,
   setPendingFilters,
   clearTableSelection,
+  activeTab,
 }: EmployeeSearchProps) => {
   const { isDesktop } = useScreenSize();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const debouncedQuery = useDebounce(searchQuery, 350);
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { targetEmployeeId } = useTargetUser();
+  const effectiveEmployeeId = targetEmployeeId || currentEmployee?.name;
 
   const filters: FilterCondition[] = [];
   if (debouncedQuery) {
@@ -81,9 +96,27 @@ const EmployeeSearch = ({
 
   Object.entries(activeFilters).forEach(([key, value]) => {
     if (value) {
-      filters.push([key, "=", value]);
+      if (key === "doj_from") {
+        const dateStr = typeof value === 'string' ? value.split('T')[0] : String(value);
+        filters.push(["date_of_joining", ">=", dateStr]);
+      } else if (key === "doj_to") {
+        const dateStr = typeof value === 'string' ? value.split('T')[0] : String(value);
+        filters.push(["date_of_joining", "<=", dateStr]);
+      } else if (Array.isArray(value) && value.length > 0) {
+        filters.push([key, "in", value]);
+      } else if (!Array.isArray(value)) {
+        filters.push([key, "=", value]);
+      }
     }
   });
+
+  if (activeTab === 'my_reportees') {
+    if (effectiveEmployeeId) {
+      filters.push(["reports_to", "=", effectiveEmployeeId]);
+    } else {
+      filters.push(["name", "=", "__NONE__"]);
+    }
+  }
 
   const { data = [], isLoading } = useGetAllEmployees(
     ["*"],
@@ -113,8 +146,8 @@ const EmployeeSearch = ({
   };
 
   const clearAllFilters = () => {
-    setActiveFilters({});
-    setPendingFilters({});
+    setActiveFilters({ status: "Active" });
+    setPendingFilters({ status: "Active" });
     clearTableSelection();
   };
 
@@ -131,7 +164,7 @@ const EmployeeSearch = ({
   const hasPendingChanges = JSON.stringify(pendingEmployees.map(e => e.name).sort()) !== JSON.stringify(appliedSearchEmployees.map(e => e.name).sort());
 
   const activeFilterCount = Object.keys(activeFilters).filter(
-    (key) => activeFilters[key],
+    (key) => activeFilters[key] && (!Array.isArray(activeFilters[key]) || (activeFilters[key] as string[]).length > 0),
   ).length;
 
   return (
@@ -207,14 +240,20 @@ const EmployeeSearch = ({
             Active Filters:
           </span>
           {Object.entries(activeFilters).map(([key, value]) => {
-            if (!value) return null;
+            if (!value || (Array.isArray(value) && value.length === 0)) return null;
             const label = key
               .replace(/_/g, " ")
               .replace(/\b\w/g, (l) => l.toUpperCase());
             return (
               <Button key={key} variant="soft" size="sm">
                 <span className="font-medium text-gray-500">{label}:</span>
-                <span>{String(value)}</span>
+                <span>
+                  {Array.isArray(value) 
+                    ? value.join(", ") 
+                    : (key === "doj_from" || key === "doj_to"
+                        ? formatToIndianDate(String(value))
+                        : String(value))}
+                </span>
                 <span
                   role="button"
                   onClick={() => clearFilter(key)}
@@ -243,10 +282,18 @@ const EmployeeSearch = ({
         }}
         title="Filter"
         size="xl"
+        className="p-0 flex flex-col h-full !overflow-hidden"
       >
         <EmployeeDirectoryFilters
           onUpdate={handleFilterUpdate}
           data={pendingFilters}
+          onCancel={() => {
+            setIsFilterOpen(false);
+            setPendingFilters(activeFilters);
+          }}
+          onReset={() => {
+            setPendingFilters({ status: "Active" });
+          }}
         />
       </SideDrawer>
     </div>

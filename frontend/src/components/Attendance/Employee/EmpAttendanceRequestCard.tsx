@@ -19,6 +19,7 @@ import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import Tooltip from "../../shared/Tooltip";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
+import { useQueryClient } from "@tanstack/react-query";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -33,6 +34,8 @@ const EmpAttendanceRequestCard = ({
   const [isActed, setIsActed] = useState(false);
   const { isDesktop } = useScreenSize();
   const loading = useLoadingOverlay();
+  const queryClient = useQueryClient();
+
   const handleRevokeClick = () => {
     if (data?.todo_id) {
       loading?.show("Revoking Request...");
@@ -49,6 +52,13 @@ const EmpAttendanceRequestCard = ({
               setRefetchAttendance(true);
             }, 2000);
             toast.success("Attendance Request Revoked Successfully!");
+            queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+            queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+            queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+            queryClient.invalidateQueries({ queryKey: ["attendance-calendar-details"] });
+            queryClient.invalidateQueries({ queryKey: ["attendance-requests"] });
+            queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
+            queryClient.invalidateQueries({ queryKey: ["employee-attendance-details"] });
           },
           onError: (error) => {
             const formatedError = errorResponseFormater(error);
@@ -102,7 +112,7 @@ const EmpAttendanceRequestCard = ({
           <div className="flex items-center justify-center">
             {getAssignedUsersCell(data)}
           </div>
-          {/* From Date */} 
+          {/* From Date */}
           <Typography variant="bodySmall" className="font-medium text-center">
             {formattedFromDate}
           </Typography>
@@ -140,7 +150,14 @@ const EmpAttendanceRequestCard = ({
           </div>
           <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
-              isPending={type === "pending"}
+              uiPermission={{
+                app: "Attendance",
+                page: "My Attendance",
+                actionKeysMap: {
+                  edit: "edit",
+                  revoke: "revoke",
+                }
+              }}
               canRevoke={!!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}
               canEdit={!!data?.can_edit && !isActed}
               revokeLoading={revokeEventMutation.isPending}
@@ -209,8 +226,15 @@ const EmpAttendanceRequestCard = ({
             {/* Actions */}
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
+                uiPermission={{
+                  app: "Attendance",
+                  page: "My Attendance",
+                  actionKeysMap: {
+                    edit: "edit",
+                    revoke: "revoke",
+                  }
+                }}
                 variant="buttons"
-                isPending={type === "pending"}
                 canRevoke={type === "pending" && !!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}
                 canEdit={type === "pending" && !!data?.can_edit && !isActed}
                 revokeLoading={revokeEventMutation.isPending}

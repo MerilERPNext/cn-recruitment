@@ -6,18 +6,27 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import Button from "../shared/atoms/Button";
 import NavigationTabs, { Tab } from "../NavigationTab";
 
-type TabName = "Overview" | "Requisition";
+type TabName =
+  | "Requisitions"
+  | "Refer"
+  | "My Referrals"
+  | "IJP Openings"
+  | "IJP Jobs Applied"
+
 
 const tabRoutes: Record<TabName, string> = {
-  Overview: "/webapp/recruitment/overview",
-  Requisition: "/webapp/recruitment/requisition",
+  "Requisitions": "/webapp/recruitment/requisition",
+  "Refer": "/webapp/recruitment/refer",
+  "My Referrals": "/webapp/recruitment/referrals",
+  "IJP Openings": "/webapp/recruitment/ijp-openings",
+  "IJP Jobs Applied": "/webapp/recruitment/ijp-applied",
 };
 
 const RecruitmentApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabName>("Overview");
+  const [activeTab, setActiveTab] = useState<TabName>("Requisitions");
 
   const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
     key,
@@ -35,8 +44,8 @@ const RecruitmentApp: React.FC = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (location.pathname === "/webapp/recruitment") {
-      const fallback = "Overview";
+    if (location.pathname === "/webapp/recruitment" || location.pathname === "/webapp/recruitment/") {
+      const fallback = "Requisitions";
       setActiveTab(fallback);
       navigate(tabRoutes[fallback], { replace: true });
     }
@@ -48,15 +57,35 @@ const RecruitmentApp: React.FC = () => {
     navigate(tabRoutes[tab]);
   };
 
-  const isFormPage = location.pathname === "/webapp/recruitment/requisition/new";
+  const isFormPage =
+    location.pathname === "/webapp/recruitment/requisition/new" ||
+    location.pathname.startsWith("/webapp/recruitment/requisition/edit") ||
+    location.pathname === "/webapp/recruitment/refer";
 
   const shouldShowActionButton = () => {
     if (isFormPage) return false;
-    return true;
+    return (
+      location.pathname === "/webapp/recruitment/requisition" ||
+      location.pathname === "/webapp/recruitment/referrals"
+    );
   };
 
-  const handleAddNew = () => {
-    navigate("/webapp/recruitment/requisition/new");
+  const handleAction = () => {
+    if (location.pathname === "/webapp/recruitment/requisition") {
+      navigate("/webapp/recruitment/requisition/new");
+    } else if (location.pathname === "/webapp/recruitment/referrals") {
+      navigate("/webapp/recruitment/refer");
+    }
+  };
+
+  const getActionButtonText = () => {
+    if (location.pathname === "/webapp/recruitment/requisition") {
+      return "+ Raise Requisition Request";
+    }
+    if (location.pathname === "/webapp/recruitment/referrals") {
+      return "+ Refer Candidate";
+    }
+    return "";
   };
 
   const title = useMemo(() => {
@@ -64,9 +93,32 @@ const RecruitmentApp: React.FC = () => {
 
     const routeTitles: Record<string, string> = {
       "/webapp/recruitment/overview": "Overview",
-      "/webapp/recruitment/requisition": "Requisition",
+      "/webapp/recruitment/job-openings": "Job Openings",
+      "/webapp/recruitment/candidates": "Candidates",
+      "/webapp/recruitment/requisition": "Requisitions",
       "/webapp/recruitment/requisition/new": "New Requisition",
+      "/webapp/recruitment/interviews": "My Interviews",
+      "/webapp/recruitment/refer": "Refer Candidate",
+      "/webapp/recruitment/referrals": "My Referrals",
+      "/webapp/recruitment/ijp-openings": "IJP Openings",
+      "/webapp/recruitment/ijp-applied": "IJP Jobs Applied",
+      "/webapp/recruitment/offer-letter": "Offer Letter",
+      "/webapp/recruitment/link-accounts": "Link Accounts",
+      "/webapp/recruitment/configure-job-boards": "Configure Job Boards",
     };
+
+    if (path.startsWith("/webapp/recruitment/candidates/detail")) {
+      return "Candidate Detail";
+    }
+    if (path.startsWith("/webapp/recruitment/interviews/")) {
+      return "Interview Details";
+    }
+    if (path.startsWith("/webapp/recruitment/referrals/")) {
+      return "Referral Details";
+    }
+    if (path.startsWith("/webapp/recruitment/requisition/edit")) {
+      return "Edit Requisition";
+    }
 
     return routeTitles[path] || "Recruitment";
   }, [location.pathname]);
@@ -93,10 +145,10 @@ const RecruitmentApp: React.FC = () => {
           <div className="max-w-4xl mx-auto flex space-x-4">
             <Button
               size="lg"
-              onClick={handleAddNew}
+              onClick={handleAction}
               className="hover:bg-blue-700 flex-1"
             >
-              + Raise Requisition Request
+              {getActionButtonText()}
             </Button>
           </div>
         </div>
@@ -105,8 +157,8 @@ const RecruitmentApp: React.FC = () => {
   );
 
   const actionButton = shouldShowActionButton() ? (
-    <Button size="lg" onClick={handleAddNew} className="hover:bg-blue-700">
-      + New Requisition
+    <Button size="lg" onClick={handleAction} className="hover:bg-blue-700">
+      {getActionButtonText()}
     </Button>
   ) : null;
 

@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Attachment } from "../../../../types/flows";
 import HeaderBar from "../../../HeaderBar";
 
-import { ChevronDown, Eye, Pencil, Save } from "lucide-react";
+import { ChevronDown, Eye, Pencil, RotateCcw, Save } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetFlowRequestById, useUpdateInitiatorFormSubmission } from "../../../../hooks/useFlows";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { FormIOComponent } from "../../../../types/formio";
 import { FormIOForm } from "../../../../utils/flowUtils";
+import { FrappeAPI } from "../../../../utils/frappeAPI";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import Button from "../../../shared/atoms/Button";
 import NoDataFound from "../../../shared/atoms/NoDataFound";
@@ -20,10 +21,12 @@ import ReviewForm from "../../Separation/components/ReviewForm";
 import AttachmentPreview from "./AttachmentPreview";
 import FlowTable from "./FlowTable";
 import WorkflowTable from "./WorkflowTable";
+import ActivityLogDrawer from "../../../shared/ActivityLogDrawer";
 
 import { useQueryClient } from "@tanstack/react-query";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import toast from "react-hot-toast";
+import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 
 type JsonToFormData = {
   form?: { components?: FormIOComponent[] };
@@ -39,6 +42,7 @@ const RequestDetails: React.FC = () => {
   const [workflowExpanded, setWorkflowExpanded] = useState(false);
   const [showSelfForm, setShowSelfForm] = useState(false);
   const [isEditingForm, setIsEditingForm] = useState(false);
+  const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const [responseData, setResponseData] = useState<{
     addAttachment?: Attachment[];
   } | null>(null);
@@ -48,9 +52,40 @@ const RequestDetails: React.FC = () => {
   const editedSubmissionDataRef = useRef<Record<string, unknown>>({});
 
   const updateInitiatorMutation = useUpdateInitiatorFormSubmission();
+  const [isRetriggering, setIsRetriggering] = useState(false);
 
   const haveInitiatorForm =
     data?.initiator_forms && data.initiator_forms.length > 0;
+
+  const retriggerDefinitionName = data?.retrigger_definition_name || "";
+  const retriggerFunnel = data?.funnel || data?.category || "";
+  const retriggerEmployee = data?.initiated_for_employee_id || "";
+  const showRetriggerButton = !!retriggerDefinitionName && !!retriggerFunnel && !!retriggerEmployee;
+
+  const handleRetrigger = async () => {
+    if (!retriggerDefinitionName) return;
+    setIsRetriggering(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const res: any = await FrappeAPI.callMethod(
+        "nextai.funnel.doctype.funnel_task.triggers.chatnext_assistant_trigger.trigger",
+        {
+          definition_name: retriggerDefinitionName,
+          variables: { docname: retriggerEmployee, funnel: retriggerFunnel },
+        },
+      );
+      const session = res?.session;
+      if (session && typeof window.trigger_chatnext_assistant === "function") {
+        window.trigger_chatnext_assistant(true, session);
+      }
+    } catch (e) {
+      const formatedError = errorResponseFormater(e, "Retrigger Failed");
+      toast.error(formatedError);
+      console.log("Flow Retrigger Error: ", e);
+    } finally {
+      setIsRetriggering(false);
+    }
+  };
 
   const handleShowSelfForm = () => {
     let displayData: JsonToFormData;
@@ -151,10 +186,10 @@ const RequestDetails: React.FC = () => {
     let rawData: JsonToFormData;
     try {
       displayData = JSON.parse(
-        data.initiator_forms[0]?.form_data_display || "{}",
+        data?.initiator_forms?.[0]?.form_data_display || "{}",
       );
       rawData = JSON.parse(
-        data.initiator_forms[0]?.form_data || "{}",
+        data?.initiator_forms?.[0]?.form_data || "{}",
       );
     } catch (e: unknown) {
       console.error("Failed to parse form data", (e as Error)?.message);
@@ -277,19 +312,57 @@ const RequestDetails: React.FC = () => {
             title={data?.flow_name}
             onBack={handleNavigateBack}
             rightSlot={
-              haveInitiatorForm ? (
+              <div className="flex items-center gap-2">
+                {haveInitiatorForm && (
+                  <Button
+                    variant="outline"
+                    onClick={handleShowSelfForm}
+                    className={`flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm ${isDesktop ? "px-3" : "px-2"}`}
+                  >
+                    <Eye size={16} className="text-primary-600" />
+                    {isDesktop && <span>Initiation Form</span>}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
-                  onClick={handleShowSelfForm}
+                  onClick={() => setIsActivityLogOpen(true)}
                   className={`flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm ${isDesktop ? "px-3" : "px-2"}`}
                 >
-                  <Eye size={16} className="text-primary-600" />
-                  {isDesktop && <span>Initiation Form</span>}
+                  {isDesktop && <span>Activity Log</span>}
+                  {!isDesktop && <span>Log</span>}
                 </Button>
-              ) : null
+                {isDesktop && showRetriggerButton && (
+                  <Button
+                    bgColor="blue-600"
+                    size="md"
+                    className="hover:bg-blue-700 text-white flex items-center gap-2"
+                    onClick={handleRetrigger}
+                    disabled={isRetriggering}
+                  >
+                    <RotateCcw size={15} className={isRetriggering ? "animate-spin" : ""} />
+                    {isRetriggering ? "Retriggering..." : "Retrigger Flow"}
+                  </Button>
+                )}
+              </div>
             }
           />
         </div>
+        {/* Retrigger button - mobile only (above metadata) */}
+        {!isDesktop && showRetriggerButton && (
+          <div className="px-4 mt-1 mb-2">
+            <Button
+              bgColor="blue-600"
+              size="md"
+              fullWidth
+              className="hover:bg-blue-700 text-white flex items-center justify-center gap-2"
+              onClick={handleRetrigger}
+              disabled={isRetriggering}
+            >
+              <RotateCcw size={15} className={isRetriggering ? "animate-spin" : ""} />
+              {isRetriggering ? "Retriggering..." : "Retrigger Flow"}
+            </Button>
+          </div>
+        )}
         <div className="px-4 sm:px-8 flex flex-row flex-wrap items-center gap-3 mb-5 mt-1">
           <div className="flex items-center gap-2.5 min-w-0 bg-white border border-gray-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.02)] rounded-lg px-3 py-1.5 transition-all hover:shadow-md hover:border-gray-300/80">
             <span className="font-medium text-gray-500 text-[10px] sm:text-[11px] uppercase tracking-wider whitespace-nowrap">
@@ -327,8 +400,16 @@ const RequestDetails: React.FC = () => {
               </span>
             </div>
           )}
+
         </div>
       </div>
+      <ActivityLogDrawer
+        open={isActivityLogOpen}
+        onClose={() => setIsActivityLogOpen(false)}
+        funnelActivityId={id || ""}
+        title="Activity Log"
+        size="xxl"
+      />
       <div className="overflow-y-auto flex-1">
         <div className="flex flex-col gap-3 px-4 sm:px-7 py-4 pb-8">
           {/* Overall Stats Card */}
@@ -449,7 +530,7 @@ const RequestDetails: React.FC = () => {
                 }`}
             >
               <div className="border-t border-gray-100">
-                <FlowTable data={data} />
+                <FlowTable data={data} noPadding={true} />
               </div>
             </div>
           </div>
@@ -506,7 +587,7 @@ const RequestDetails: React.FC = () => {
                   }`}
               >
                 <div className="border-t border-gray-200">
-                  <WorkflowTable data={data} />
+                  <WorkflowTable data={data} noPadding={true} />
                 </div>
               </div>
             </div>

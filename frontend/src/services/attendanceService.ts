@@ -7,6 +7,7 @@ import type {
   AttendanceRequest,
   AttendanceRequestValidations,
   AuditReportResponse,
+  BulkAttendanceAdjustmentResponse,
   CanShowClockIn,
   EmployeeAllCheckin,
   EmployeeCheckInLog,
@@ -675,6 +676,20 @@ export const attendanceService = {
         { attendance_data: body }
       );
       return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while Adding attendance request in:", error);
+      throw error;
+    }
+  },
+  createAttendanceRequestBatchWithCustomAPI: async (
+    body: Record<string, unknown>
+  ): Promise<BulkAttendanceAdjustmentResponse> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.api.create_attendance_request_batch",
+        { attendance_data: body }
+      );
+      return response as BulkAttendanceAdjustmentResponse;
     } catch (error) {
       console.error("📡 Error while Adding attendance request in:", error);
       throw error;

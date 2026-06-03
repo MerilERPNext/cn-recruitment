@@ -17,16 +17,17 @@ export const requisitionFormSchemas = {
         type: "select",
         key: "hiring_manager",
         label: "Hiring Manager",
+        customClass: "required-field",
         placeholder: "Select Hiring Manager",
         dataSrc: "url",
         data: {
-          url: '/api/resource/Employee?fields=["name","employee_name"]',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',
           headers: [{ key: "Accept", value: "application/json" }],
         },
-        selectValues: "data",
-        valueProperty: "name",
+        selectValues: "message.results",
+        valueProperty: "id",
         template:
-          "<span>{{ item.employee_name }} <span style='color:#7f8c8d'>({{item.name}})</span></span>",
+          "<span>{{ item.label }} <span style='color:#7f8c8d'>({{item.id}})</span></span>",
         validate: {
           required: true,
         },
@@ -36,16 +37,17 @@ export const requisitionFormSchemas = {
         type: "select",
         key: "company",
         label: "Company",
+        customClass: "required-field",
         placeholder: "Select Company",
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/resource/Company?fields=["name"]',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Company',
           headers: [{ key: "Accept", value: "application/json" }],
         },
-        selectValues: "data",
-        valueProperty: "name",
-        template: "<span>{{ item.name }}</span>",
+        selectValues: "message.results",
+        valueProperty: "id",
+        template: "<span>{{ item.label }}</span>",
         validate: { required: true },
       },
 
@@ -53,16 +55,17 @@ export const requisitionFormSchemas = {
         type: "select",
         key: "department",
         label: "Department",
+        customClass: "required-field",
         placeholder: "Select Department",
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/resource/Department?filters=[["company","=","{{ data.company }}"]]',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Department&company={{ data.company }}',
           headers: [{ key: "Accept", value: "application/json" }],
         },
-        selectValues: "data",
-        valueProperty: "name",
-        template: "<span>{{ item.name }}</span>",
+        selectValues: "message.results",
+        valueProperty: "id",
+        template: "<span>{{ item.label }}</span>",
         validate: { required: true },
         refreshOn: "company",
         clearOnRefresh: true,
@@ -72,16 +75,17 @@ export const requisitionFormSchemas = {
         type: "select",
         key: "designation",
         label: "Designation",
+        customClass: "required-field",
         placeholder: "Select Designation",
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/resource/Designation?filters=[["custom_department","=","{{ data.department }}"]]',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation&department={{ data.department }}',
           headers: [{ key: "Accept", value: "application/json" }],
         },
-        selectValues: "data",
-        valueProperty: "name",
-        template: "<span>{{ item.name }}</span>",
+        selectValues: "message.results",
+        valueProperty: "id",
+        template: "<span>{{ item.label }}</span>",
         validate: { required: true },
         refreshOn: "department",
         clearOnRefresh: true,
@@ -95,15 +99,14 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/resource/Functional Area?filters=[["designation","=","{{ data.designation }}"]]',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}',
           headers: [{ key: "Accept", value: "application/json" }],
         },
-        selectValues: "data",
-        valueProperty: "name",
-        template: "<span>{{ item.name }}</span>",
+        selectValues: "message.results",
+        valueProperty: "id",
+        template: "<span>{{ item.label }}</span>",
         refreshOn: "designation",
         clearOnRefresh: true,
-        customConditional: "show = !!data.designation",
       },
     ],
   },
@@ -198,14 +201,15 @@ export const requisitionFormSchemas = {
                 type: "select",
                 key: "salary_currency",
                 label: "Salary Range (Currency)",
+                customClass: "required-field",
                 dataSrc: "url",
                 data: {
-                  url: '/api/resource/Currency?fields=["name"]',
+                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Currency',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
-                selectValues: "data",
-                valueProperty: "name",
-                template: "<span>{{ item.name }}</span>",
+                selectValues: "message.results",
+                valueProperty: "id",
+                template: "<span>{{ item.label }}</span>",
                 defaultValue: "INR",
                 validate: { required: true },
               },
@@ -221,6 +225,7 @@ export const requisitionFormSchemas = {
                 type: "textfield",
                 key: "salary_min",
                 label: "Salary Range (Min)",
+                customClass: "required-field",
                 placeholder: "Min Salary",
                 validate: { required: true },
               },
@@ -236,6 +241,7 @@ export const requisitionFormSchemas = {
                 type: "textfield",
                 key: "salary_max",
                 label: "Salary Range (Max)",
+                customClass: "required-field",
                 placeholder: "Max Salary",
                 validate: { required: true },
               },
@@ -251,6 +257,7 @@ export const requisitionFormSchemas = {
                 type: "select",
                 key: "salary_timeframe",
                 label: "Salary Timeframe",
+                customClass: "required-field",
                 data: {
                   values: [
                     { label: "Hourly", value: "Hourly" },
@@ -273,18 +280,102 @@ export const requisitionFormSchemas = {
         ],
       },
       {
+        type: "datetime",
+        key: "recruitment_start_date",
+        label: "Recruitment Start Date",
+        format: "yyyy-MM-dd",
+        enableDate: true,
+        enableTime: false,
+        // Default to today and disable any date before today.
+        customDefaultValue: "value = moment().format('YYYY-MM-DD')",
+        datePicker: { minDate: "moment()" },
+      },
+      {
+        type: "htmlelement",
+        tag: "div",
+        className: "alert alert-info mt-4 rounded-md",
+        content:
+          '<i class="fa fa-info-circle mr-2"></i> Fill below sections if you have any specific instruction for recruiters',
+      },
+      {
         type: "columns",
         customClass: "my-3",
         columns: [
           {
             components: [
               {
+                type: "number",
+                key: "expected_compensation",
+                label: "Expected Compensation",
+                customClass: "required-field",
+                placeholder: "e.g., 600000",
+                validate: { required: true },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
                 type: "datetime",
-                key: "recruitment_start_date",
-                label: "Recruitment Start Date",
-                format: "dd-MM-yyyy",
-                enableDate: true,
+                key: "expected_by",
+                label: "Expected By Date",
+                customClass: "required-field",
+                format: "yyyy-MM-dd",
+                validate: { required: true },
                 enableTime: false,
+                // Default to today and disable any date before today.
+                customDefaultValue: "value = moment().format('YYYY-MM-DD')",
+                datePicker: { minDate: "moment()" },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
+      {
+        type: "select",
+        key: "employment_type",
+        label: "Employment Type (Link)",
+        customClass: "required-field",
+        placeholder: "Select Employment Type",
+        dataSrc: "url",
+        data: {
+          url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employment Type",
+          headers: [{ key: "Accept", value: "application/json" }],
+        },
+        selectValues: "message.results",
+        valueProperty: "id",
+        template: "<span>{{ item.label }}</span>",
+        validate: { required: true },
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "select",
+                key: "location",
+                label: "Work Location",
+                customClass: "required-field",
+                placeholder: "Select Branch",
+                dataSrc: "url",
+                data: {
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "message.results",
+                valueProperty: "id",
+                template: "<span>{{ item.label }}</span>",
+                validate: { required: true },
               },
             ],
             width: 6,
@@ -296,20 +387,17 @@ export const requisitionFormSchemas = {
             components: [
               {
                 type: "select",
-                key: "hiring_lead",
-                label: "Hiring lead",
-                placeholder: "Select Hiring Lead",
-                dataSrc: "url",
+                key: "custom_work_experience_range",
+                label: "Work Experience Range",
+                placeholder: "Select Work Experience Range",
                 data: {
-                  url: '/api/resource/Employee?fields=["name","employee_name"]',
-                  headers: [{ key: "Accept", value: "application/json" }],
+                  values: [
+                    { label: "Fresher", value: "Fresher" },
+                    { label: "1 - 3 Years", value: "1 - 3 Years" },
+                    { label: "4 - 5 Years", value: "4 - 5 Years" },
+                    { label: "5 - 10 Years", value: "5 - 10 Years" },
+                  ],
                 },
-                selectValues: "data",
-                valueProperty: "name",
-                template:
-                  "<span>{{ item.employee_name }} <span style='color:#7f8c8d'>({{item.name}})</span></span>",
-                validate: { required: true },
-                tooltip: "Select the hiring lead for this position",
               },
             ],
             width: 6,
@@ -320,24 +408,25 @@ export const requisitionFormSchemas = {
         ],
       },
       {
-        type: "htmlelement",
-        tag: "div",
-        className: "alert alert-info mt-4 rounded-md",
-        content:
-          '<i class="fa fa-info-circle mr-2"></i> Fill below sections if you have any specific instruction for recruiters',
-      },
-      {
         type: "columns",
+        customClass: "my-3",
         columns: [
           {
             components: [
               {
-                type: "textarea",
-                key: "additional_roles_responsibilities",
-                label: "Additional Roles & Responsibilities",
-                placeholder:
-                  "Please add the additional roles and responsibilities of the candidates you want to hire for this role",
-                rows: 5,
+                type: "select",
+                key: "custom_preferred_notice_period",
+                label: "Preferred Notice Period",
+                placeholder: "Select Notice Period",
+                data: {
+                  values: [
+                    { label: "Immediate", value: "Immediate" },
+                    { label: "15 Days", value: "15 Days" },
+                    { label: "30 Days", value: "30 Days" },
+                    { label: "60 Days", value: "60 Days" },
+                    { label: "90 Days", value: "90 Days" },
+                  ],
+                },
               },
             ],
             width: 6,
@@ -348,12 +437,18 @@ export const requisitionFormSchemas = {
           {
             components: [
               {
-                type: "textarea",
-                key: "additional_skills",
-                label: "Additional Skills",
-                placeholder:
-                  "Please Add the additional skills of the candidates you want to hire for this role",
-                rows: 5,
+                type: "select",
+                key: "preferred_company",
+                label: "Preferred Target Company",
+                placeholder: "Select Company",
+                dataSrc: "url",
+                data: {
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Preferred Target Company",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "message.results",
+                valueProperty: "id",
+                template: "<span>{{ item.label }}</span>",
               },
             ],
             width: 6,
@@ -362,60 +457,40 @@ export const requisitionFormSchemas = {
             pull: 0,
           },
         ],
+      },
+      {
+        type: "textfield",
+        key: "custom_other_preferred_companies",
+        label: "Other Preferred Companies",
+        placeholder: "e.g., Razorpay, Cred, Postman",
+      },
+      {
+        type: "select",
+        key: "custom_skills",
+        label: "Required Skills",
+        placeholder: "Select Skills",
+        multiple: true,
+        input: true,
+        dataSrc: "url",
+        data: {
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Skill',
+          headers: [{ key: "Accept", value: "application/json" }],
+        },
+        selectValues: "message.results",
+        valueProperty: "id",
+        template: "<span>{{ item.label }}</span>",
       },
     ],
   },
   positionSelection: {
     components: [
+      // NOTE: The Total / New / Replacement count inputs are rendered as plain
+      // React inputs in RequisitionForm.tsx (currentStep === 2) to avoid the
+      // form.io controlled-input override issue. They must NOT be duplicated as
+      // a form.io panel here or the fields render twice.
       {
         type: "panel",
-        title: "Position Details",
-        key: "position_details_panel",
-        components: [
-          {
-            type: "radio",
-            key: "position_type",
-            label: "Type of Position",
-            values: [
-              { label: "New", value: "new" },
-              { label: "Replacement", value: "replacement" },
-            ],
-            customClass: "inline-radio-group",
-            defaultValue: "new",
-            validate: { required: true },
-          },
-          {
-            type: "number",
-            key: "number_of_new_positions",
-            label: "Number of New Position(s)",
-            conditional: {
-              show: true,
-              when: "position_type",
-              eq: "new",
-            },
-          },
-          {
-            type: "number",
-            key: "number_of_replacement_positions",
-            label: "Number of Replacement Position(s)",
-            conditional: {
-              show: true,
-              when: "position_type",
-              eq: "replacement",
-            },
-          },
-          {
-            type: "number",
-            key: "number_of_positions",
-            label: "Number of Position(s)",
-            defaultValue: 1,
-            description: "(Max Allowed Positions per Requisition is 100)",
-          },
-        ],
-      },
-      {
-        type: "panel",
-        title: "Position Details",
+        title: "Position Details Table",
         key: "position_details_table",
         components: [
           {
@@ -434,32 +509,46 @@ export const requisitionFormSchemas = {
               },
               {
                 type: "select",
+                key: "vacancy_type",
+                label: "Vacancy Type",
+                data: {
+                  values: [
+                    { label: "New", value: "New" },
+                    { label: "Replacement", value: "Replacement" },
+                  ],
+                },
+                defaultValue: "New",
+                validate: { required: true },
+              },
+              {
+                type: "select",
                 key: "location",
                 label: "Location",
+                customClass: "required-field",
                 placeholder: "Select Location",
                 dataSrc: "url",
                 data: {
-                  url: "/api/resource/Branch",
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
-                selectValues: "data",
-                valueProperty: "name",
-                template: "<span>{{ item.name }}</span>",
+                selectValues: "message.results",
+                valueProperty: "id",
+                template: "<span>{{ item.label }}</span>",
                 validate: { required: true },
               },
               {
                 type: "select",
                 key: "functional_area",
                 label: "Functional Area",
-                placeholder: "Select",
+                placeholder: "Select Area",
                 dataSrc: "url",
                 data: {
-                  url: '/api/resource/Functional Area?fields=["name"]',
+                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
-                selectValues: "data",
-                valueProperty: "name",
-                template: "<span>{{ item.name }}</span>",
+                selectValues: "message.results",
+                valueProperty: "id",
+                template: "<span>{{ item.label }}</span>",
               },
               {
                 type: "select",
@@ -468,118 +557,34 @@ export const requisitionFormSchemas = {
                 placeholder: "Search Employees",
                 dataSrc: "url",
                 data: {
-                  url: '/api/resource/Employee?fields=["name","employee_name"]',
+                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
-                selectValues: "data",
-                valueProperty: "name",
+                selectValues: "message.results",
+                valueProperty: "id",
                 template:
-                  "<span>{{ item.employee_name }} <span style='color:#7f8c8d'>({{item.name}})</span></span>",
-                validate: { required: true },
-              },
-              {
-                type: "select",
-                key: "employee_type",
-                label: "Employee Type",
-                placeholder: "Select",
-                dataSrc: "url",
-                data: {
-                  url: "/api/resource/Employment Type",
-                  headers: [{ key: "Accept", value: "application/json" }],
-                },
-                selectValues: "data",
-                valueProperty: "name",
-                template: "<span>{{ item.name }}</span>",
-                validate: { required: true },
-              },
-            ],
-            conditional: {
-              show: true,
-              when: "position_type",
-              eq: "new",
-            },
-          },
-          {
-            type: "datagrid",
-            key: "replacement_positions",
-            label: "Position Details",
-            disableAddingRemovingRows: true,
-            addAnother: "",
-            removeRow: "",
-            components: [
-              {
-                type: "number",
-                key: "position_number",
-                label: "Position Number",
-                disabled: true,
-              },
-              {
-                type: "select",
-                key: "location",
-                label: "Location",
-                placeholder: "Select Location",
-                data: {
-                  values: [
-                    {
-                      label: "Corporate Office, Uttar Pradesh",
-                      value: "corporate_up",
-                    },
-                  ],
-                },
+                  "<span>{{ item.label }} <span style='color:#7f8c8d'>({{item.id}})</span></span>",
                 validate: { required: true },
               },
               {
                 type: "select",
                 key: "replacement_for",
                 label: "Replacement for",
+                customClass: "required-field",
                 placeholder: "Search Employees",
                 dataSrc: "url",
                 data: {
-                  url: '/api/resource/Employee?fields=["name","employee_name"]',
+                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
-                selectValues: "data",
-                valueProperty: "name",
+                selectValues: "message.results",
+                valueProperty: "id",
                 template:
-                  "<span>{{ item.employee_name }} <span style='color:#7f8c8d'>({{item.name}})</span></span>",
+                  "<span>{{ item.label }} <span style='color:#7f8c8d'>({{item.id}})</span></span>",
                 validate: { required: true },
-              },
-              {
-                type: "select",
-                key: "reporting_manager",
-                label: "Reporting manager",
-                placeholder: "Search Employees",
-                dataSrc: "url",
-                data: {
-                  url: '/api/resource/Employee?fields=["name","employee_name"]',
-                  headers: [{ key: "Accept", value: "application/json" }],
-                },
-                selectValues: "data",
-                valueProperty: "name",
-                template:
-                  "<span>{{ item.employee_name }} <span style='color:#7f8c8d'>({{item.name}})</span></span>",
-                validate: { required: true },
-              },
-              {
-                type: "select",
-                key: "employee_type",
-                label: "Employee Type",
-                placeholder: "Select",
-                data: {
-                  values: [
-                    { label: "Full Time", value: "full_time" },
-                    { label: "Part Time", value: "part_time" },
-                    { label: "Contract", value: "contract" },
-                  ],
-                },
-                validate: { required: true },
+                customConditional: "show = row.vacancy_type === 'Replacement'",
               },
             ],
-            conditional: {
-              show: true,
-              when: "position_type",
-              eq: "replacement",
-            },
           },
         ],
       },
@@ -588,24 +593,70 @@ export const requisitionFormSchemas = {
   otherDetails: {
     components: [
       {
-        type: "textarea",
-        key: "comments_instructions",
-        label: "Comments / Instructions",
-        rows: 4,
-      },
-      {
-        type: "textfield",
-        key: "cost_centre",
-        label: "Cost Centre",
-        validate: { required: true },
-      },
-      {
-        type: "textfield",
-        key: "designation_change",
-        label: "Designation Change",
+        type: "datagrid",
+        key: "custom_qualifications",
+        label: "Qualifications",
+        addAnother: "Add Qualification",
+        components: [
+          {
+            type: "textfield",
+            key: "qualification",
+            label: "Qualification",
+            placeholder: "e.g., B.Com, B.Tech",
+            validate: { required: true },
+          },
+          {
+            type: "select",
+            key: "mandatory",
+            label: "Mandatory?",
+            data: {
+              values: [
+                { label: "Required", value: "Required" },
+                { label: "Preferred", value: "Preferred" },
+              ],
+            },
+            defaultValue: "Required",
+            validate: { required: true },
+          },
+        ],
       },
     ],
   },
 };
 
 export type FormSchemaKeys = keyof typeof requisitionFormSchemas;
+
+// ---------------------------------------------------------------------------
+// Job Details (JD) tab — field list driving the in-form "Preview" popup.
+// Ordered to mirror the on-screen layout.
+//   key        → the formData key the value is read from
+//   label      → what the preview popup shows
+//   backendKey → the Job Requisition field this value maps to when the preview
+//                payload is wired to the API later (feature, not now)
+// Keep this in sync with the `jobDetails` schema above.
+// ---------------------------------------------------------------------------
+export interface JobDetailsPreviewField {
+  key: string;
+  label: string;
+  backendKey: string;
+}
+
+export const jobDetailsPreviewFields: JobDetailsPreviewField[] = [
+  { key: "experience_from", label: "Experience Range - From", backendKey: "custom_experience_range_from" },
+  { key: "experience_to", label: "Experience Range - To", backendKey: "custom_experience_range_to" },
+  { key: "experience_unit", label: "Experience Unit", backendKey: "custom_experience_unit" },
+  { key: "salary_currency", label: "Salary Range (Currency)", backendKey: "custom_salary_range_currency" },
+  { key: "salary_min", label: "Salary Range (Min)", backendKey: "custom_salary_range_min" },
+  { key: "salary_max", label: "Salary Range (Max)", backendKey: "custom_salary_range_max" },
+  { key: "salary_timeframe", label: "Salary Timeframe", backendKey: "custom_salary_timeframe" },
+  { key: "recruitment_start_date", label: "Recruitment Start Date", backendKey: "posting_date" },
+  { key: "expected_compensation", label: "Expected Compensation", backendKey: "expected_compensation" },
+  { key: "expected_by", label: "Expected By Date", backendKey: "expected_by" },
+  { key: "employment_type", label: "Employment Type", backendKey: "custom_employment_type_link" },
+  { key: "location", label: "Work Location", backendKey: "custom_location" },
+  { key: "custom_work_experience_range", label: "Work Experience Range", backendKey: "custom_work_experience_range" },
+  { key: "custom_preferred_notice_period", label: "Preferred Notice Period", backendKey: "custom_preferred_notice_period" },
+  { key: "preferred_company", label: "Preferred Target Company", backendKey: "custom_preferred_company" },
+  { key: "custom_other_preferred_companies", label: "Other Preferred Companies", backendKey: "custom_other_preferred_companies" },
+  { key: "custom_skills", label: "Required Skills", backendKey: "custom_skills" },
+];

@@ -2,6 +2,7 @@ import {
   ArrowDownUp,
   ArrowUpDown,
   Award,
+  Award,
   BadgeIndianRupee,
   BriefcaseBusiness,
   Calculator,
@@ -36,6 +37,12 @@ import {
   Users,
   Wallet,
   Workflow,
+  Telescope,
+  Shield,
+  Share2,
+  SquarePlus,
+  UserSearch,
+  UserPlus,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -88,16 +95,22 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
+  const { data: currentEmployee } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
   const { data: uiPermissions, isLoading: isUiPermissionsLoading } =
     useGetUiPermission();
 
   const currentEmployeeCompany = currentEmployee?.company;
   const { data: singleCompanyLogo } = useSingleCompanyLogo(
+    
     currentEmployeeCompany || "",
+  ,
   );
 
   const logoToShow = singleCompanyLogo?.company_logo || "logo not found";
   const originalCompanyName =
+    currentEmployeeCompany || "Company name not found";
     currentEmployeeCompany || "Company name not found";
   const getTruncatedCompanyName = (name: string, maxLength: number = 20) => {
     if (name.length <= maxLength) {
@@ -231,6 +244,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: BadgeIndianRupee,
           href: "/webapp/salary-slip-app/it-declaration-form",
           permissionKey: "IT Declaration",
+        },
+        {
+          name: "Flexi Declaration",
+          icon: BadgeIndianRupee,
+          href: "/webapp/salary-slip-app/flexi-declaration-form",
+          permissionKey: "Flexi Declaration",
         },
 
         {
@@ -370,6 +389,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: ArrowUpDown,
           href: "/webapp/expenses-app/team-advance-expense",
           permissionKey: "Team Advances",
+        },
+        {
+          name: "Expense Summary",
+          icon: FileSpreadsheet,
+          href: "/webapp/expenses-app/expense-summary",
+          permissionKey: "ExpenseSummary",
         },
       ],
     },
@@ -532,22 +557,40 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Employee Directory",
     },
     {
-      icon: BriefcaseBusiness,
+      icon: UserSearch,
       label: "Recruitment",
-      path: "/webapp/recruitment/",
-      permissionKey: "Recruitment",
+      path: "/webapp/recruitment",
+      permissionKey: "Recruitments",
       subItems: [
-        {
-          name: "Overview",
-          icon: Telescope,
-          href: "/webapp/recruitment/overview",
-          permissionKey: "Overview",
-        },
         {
           name: "Requisitions",
           icon: FileText,
           href: "/webapp/recruitment/requisition",
           permissionKey: "Requisitions",
+        },
+        {
+          name: "Refer",
+          icon: UserPlus,
+          href: "/webapp/recruitment/refer",
+          permissionKey: "Referrals",
+        },
+        {
+          name: "My Referrals",
+          icon: Share2,
+          href: "/webapp/recruitment/referrals",
+          permissionKey: "My Referrals",
+        },
+        {
+          name: "IJP Openings",
+          icon: BriefcaseBusiness,
+          href: "/webapp/recruitment/ijp-openings",
+          permissionKey: "IJP Openings",
+        },
+        {
+          name: "IJP Jobs Applied",
+          icon: CircleCheckBig,
+          href: "/webapp/recruitment/ijp-applied",
+          permissionKey: "IJP Jobs Applied",
         },
       ],
     },
@@ -574,6 +617,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Todo",
       path: ROUTES.TODO,
       permissionKey: "Todo",
+    },
+    {
+      icon: Upload,
+      label: "Scheduled Imports",
+      path: "/webapp/scheduled-imports",
+      permissionKey: "Scheduled Imports",
     },
     {
       icon: HelpCircle,
@@ -612,7 +661,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           const pagePermission = appPermission.pages?.find(
             (page) => page.page_name === subItem.permissionKey,
           );
-          return pagePermission && pagePermission.enabled;
+          return pagePermission ? pagePermission.enabled : false;
         });
 
         if (filteredSubItems.length === 0) {

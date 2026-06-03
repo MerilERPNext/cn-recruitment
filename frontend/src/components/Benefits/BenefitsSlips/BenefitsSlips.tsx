@@ -29,12 +29,26 @@ import { getCurrentPeriod } from "../shared/logic";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 const BenefitsSlips = () => {
   const { data: employeeIdCard } = useCurrentEmployeeIdCard();
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
   const { isDesktop } = useScreenSize();
+
+  const uiPermission = useMemo(() => ({
+    app: "Benefits",
+    page: "Benefit Slips",
+    actionKey: "view_slip",
+  }), []);
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const viewSlipEnabled = isActionEnabled(
+    uiPermissionData,
+    uiPermission?.actionKey ?? "",
+    uiPermission?.page,
+  );
 
   const effectiveEmployee = isViewingOtherUser
     ? targetEmployee
@@ -115,7 +129,9 @@ const BenefitsSlips = () => {
               },
             }}
             getItemKey={(item: any, _: number) => item.name}
-            ItemComponent={BenefitSlipItem}
+            ItemComponent={(props: { item: BenefitPayslip }) => (
+              <BenefitSlipItem item={props?.item} viewSlipEnabled={viewSlipEnabled} />
+            )}
             SkeletonComponent={CardSkeleton}
             // refetchTrigger={refetchAttendance}
             // onRefetchComplete={() => setRefetchAttendance(false)}
@@ -149,7 +165,7 @@ const BenefitsSlips = () => {
 
 export default BenefitsSlips;
 
-const BenefitSlipItem = ({ item }: { item: BenefitPayslip }) => {
+const BenefitSlipItem = ({ item, viewSlipEnabled }: { item: BenefitPayslip, viewSlipEnabled: boolean }) => {
   const { data, isLoading } = useGetBenefitSlipHTML(item.name);
   const [showPDF, setShowPDF] = useState<boolean>(false);
   const benefitSlipDate = item?.claim_date;
@@ -166,20 +182,22 @@ const BenefitSlipItem = ({ item }: { item: BenefitPayslip }) => {
             <StatusBadge status={item?.custom_status} />
           </div>
           <div className="flex items-center justify-center">
-            <DropdownMenu
-              placement="center-left"
-              items={[
-                {
-                  label: "View",
-                  icon: <FaRegEye className="h-4 w-4" />,
-                  onClick: () => setShowPDF(true),
-                },
-              ]}
-            >
-              <button className="p-2 border-1 rounded-lg hover:bg-gray-200">
-                <MoreVertical className="h-5 w-5" />
-              </button>
-            </DropdownMenu>
+            {viewSlipEnabled && (
+              <DropdownMenu
+                placement="center-left"
+                items={[
+                  {
+                    label: "View",
+                    icon: <FaRegEye className="h-4 w-4" />,
+                    onClick: () => setShowPDF(true),
+                  },
+                ]}
+              >
+                <button className="p-2 border-1 rounded-lg hover:bg-gray-200">
+                  <MoreVertical className="h-5 w-5" />
+                </button>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       ) : (
@@ -200,16 +218,17 @@ const BenefitSlipItem = ({ item }: { item: BenefitPayslip }) => {
                   <StatusBadge status={item?.custom_status} />
                 </div>
               </div>
-
               {/* Action */}
               <div className="mt-4 flex justify-end">
-                <button
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
-                  onClick={() => setShowPDF(true)}
-                >
-                  <FaRegEye className="h-4 w-4" />
-                  View Slip
-                </button>
+                {viewSlipEnabled && (
+                  <button
+                    className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+                    onClick={() => setShowPDF(true)}
+                  >
+                    <FaRegEye className="h-4 w-4" />
+                    View Slip
+                  </button>
+                )}
               </div>
             </div>
           </div>

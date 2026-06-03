@@ -21,6 +21,9 @@ import DataListView from "../../DataListView";
 import NoDataFound from "../../shared/atoms/NoDataFound";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import CustomDropdown from "../../shared/CustomDropdown";
+import { useQueryClient } from "@tanstack/react-query";
+import FrappeAPI from "../../../utils/frappeAPI";
+import { RiDeleteBinLine } from "react-icons/ri";
 
 type PayrollPeriod = {
   name: string;
@@ -61,6 +64,8 @@ export default function Invoice() {
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const uploadMutation = useFileUpload();
   const updateSalarySlipMutation = useUpdateSalarySlip();
+  const queryClient = useQueryClient();
+  const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
 
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
@@ -111,6 +116,9 @@ export default function Invoice() {
           {
             onSuccess() {
               toast.success("File uploaded & attached successfully");
+              queryClient.invalidateQueries({
+                queryKey: ["invoice-salary-slips", user?.employee, user?.company],
+              });
             },
             onError(err) {
               console.error("Salary Slip update failed", err);
@@ -124,6 +132,57 @@ export default function Invoice() {
         toast.error("File upload failed");
       },
     });
+  };
+
+  const handleDeleteAttachment = async (invoiceName: string) => {
+    if (!user?.employee || !user?.company) return;
+    setDeleteLoading((prev) => ({ ...prev, [invoiceName]: true }));
+    if (!window.confirm('Are you sure you want to delete the attached file?')) {
+      setDeleteLoading((prev) => ({ ...prev, [invoiceName]: false }));
+      return;
+    }
+    try {
+      // 1. Find the file document(s) attached to this Salary Slip
+      const { data: files } = await FrappeAPI.getDocumentList("File", {
+        filters: [
+          ["attached_to_doctype", "=", "Salary Slip"],
+          ["attached_to_name", "=", invoiceName],
+        ],
+        fields: ["name"],
+      });
+
+      // 2. Delete the file document using Resource API
+      if (files && files.length > 0) {
+        for (const file of files) {
+          const fileDoc = file as { name: string };
+          await FrappeAPI.deleteDocument("File", fileDoc.name);
+        }
+      }
+
+      // 3. Clear the field in the Salary Slip document
+      updateSalarySlipMutation.mutate(
+        { salarySlipName: invoiceName, fileUrl: "" },
+        {
+          onSuccess() {
+            toast.success("Attachment deleted successfully");
+            queryClient.invalidateQueries({
+              queryKey: ["invoice-salary-slips", user.employee, user.company],
+            });
+          },
+          onError(err) {
+            console.error("Salary Slip update failed", err);
+            toast.error("Failed to clear attachment reference");
+          },
+          onSettled() {
+            setDeleteLoading((prev) => ({ ...prev, [invoiceName]: false }));
+          }
+        }
+      );
+    } catch (err) {
+      console.error("Failed to delete attachment", err);
+      toast.error("Failed to delete attachment");
+      setDeleteLoading((prev) => ({ ...prev, [invoiceName]: false }));
+    }
   };
 
   // Don't render until we have employee + company info
@@ -242,13 +301,23 @@ export default function Invoice() {
           {/* Upload */}
           <div className="flex justify-center">
             {inv?.custom_attach ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.open(inv.custom_attach, "_blank")}
-              >
-                View PDF
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(inv.custom_attach, "_blank")}
+                >
+                  View PDF
+                </Button>
+                <button
+                  onClick={() => handleDeleteAttachment(invoiceNo)}
+                  disabled={deleteLoading[invoiceNo]}
+                  className="flex items-center justify-center p-1.5 rounded-md border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                  title="Delete Uploaded File"
+                >
+                  <RiDeleteBinLine className="w-4 h-4" />
+                </button>
+              </div>
             ) : (
               <>
                 <input
@@ -351,14 +420,24 @@ export default function Invoice() {
           {/* Footer: Upload + View */}
           <div className="flex gap-3 pt-2 border-t border-primary/10">
             {inv?.custom_attach ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => window.open(inv.custom_attach, "_blank")}
-              >
-                View PDF
-              </Button>
+              <div className="flex items-center gap-2 w-full">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => window.open(inv.custom_attach, "_blank")}
+                >
+                  View PDF
+                </Button>
+                <button
+                  onClick={() => handleDeleteAttachment(invoiceNo)}
+                  disabled={deleteLoading[invoiceNo]}
+                  className="flex items-center justify-center p-2 rounded-md border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors shrink-0"
+                  title="Delete Uploaded File"
+                >
+                  <RiDeleteBinLine className="w-4 h-4" />
+                </button>
+              </div>
             ) : (
               <>
                 <input
@@ -399,46 +478,67 @@ export default function Invoice() {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex-shrink-0 max-sm:mb-2">
-        <div className="px-1 md:px-6 py-1 md:py-4">
-          <div className="flex items-center justify-between">
-            {isDesktop ? (
-              <div>
-                <Typography variant="h4">Invoices</Typography>
-                <Typography variant="bodySmall" color="body2">
-                  Track and manage your invoices
-                </Typography>
-              </div>
-            ) : (
-              <Typography variant="h4">My Invoices</Typography>
-            )}
-            <div className="flex  items-center gap-4">
+    <div className="flex flex-col h-full bg-app font-brand">
+      {/* ── Top bar ──────────────────────────────────────────────────────────── */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-10 w-full">
+        {/* Desktop top bar (hidden on mobile) */}
+        {isDesktop && (
+          <div className="sm:flex items-center justify-between h-[52px] px-7">
+            <span className="font-bold text-[17px] text-text-title tracking-tight">Invoices</span>
+            <div className="flex items-center gap-3.5">
               <ShowHideButton
                 showAmount={hideAmount}
                 onToggleAmount={() => setHideAmount((prev) => !prev)}
               />
-              <CustomDropdown
-                value={selectedPeriod}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                  setSelectedPeriod(e.target.value)
-                }
-                options={
-                  payrollPeriods?.map((p) => ({
-                    value: p.name,
-                    label: p.name,
-                  })) || []
-                }
-              />
+              <div className="flex items-center gap-1.5">
+                <span className="text-[13px] text-text-body2">Payroll Period</span>
+                <CustomDropdown
+                  value={selectedPeriod}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                    setSelectedPeriod(e.target.value)
+                  }
+                  options={
+                    payrollPeriods?.map((p) => ({
+                      value: p.name,
+                      label: p.name,
+                    })) || []
+                  }
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
+        {/* Mobile top bar (hidden on sm+) */}
+        {!isDesktop && (
+          <div className="flex flex-col px-4 pt-3 pb-3 gap-2.5">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-[16px] text-text-title tracking-tight">My Invoices</span>
+              <div className="flex items-center gap-2">
+                <ShowHideButton
+                  showAmount={hideAmount}
+                  onToggleAmount={() => setHideAmount((prev) => !prev)}
+                />
+                <CustomDropdown
+                  value={selectedPeriod}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                    setSelectedPeriod(e.target.value)
+                  }
+                  options={
+                    payrollPeriods?.map((p) => ({
+                      value: p.name,
+                      label: p.name,
+                    })) || []
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+      <div className="flex-1 overflow-visibles md:px-4 pb-5 md:pb-20">
         {isDesktop ? (
           <CardTable titles={titles} columnWidths={columnWidths} columnSortConfig={SALARY_SORT_CONFIG}>
             <DataListView

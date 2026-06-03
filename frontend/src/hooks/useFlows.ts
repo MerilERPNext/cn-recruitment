@@ -12,12 +12,17 @@ import {
   postSelectEventFromOptions,
   getDifinitionNameForSeparation,
   getFlowRequestById,
-  updateInitiatorFormSubmission
+  updateInitiatorFormSubmission,
+  getFunnelActivityLog,
 } from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
 import { approvalListServices } from "../services/approvalListService";
-import { FlowRequestItem, FlowRequestResponse } from "../types/flows";
+import {
+  FlowRequestDetailItem,
+  FlowRequestResponse,
+  FunnelActivityLogResponse,
+} from "../types/flows";
 
 export const useDifinitaionNameForSeparation = () => {
   return useQuery<string | AssistantTriggerResponse>({
@@ -195,13 +200,24 @@ export const useGetFlowRequests = (
 export const useGetFlowRequestById = (
   funnel_activity_id: string
 ) => {
-  return useQuery<{ data: FlowRequestItem }>({
+  return useQuery<{ data: FlowRequestDetailItem }>({
     queryKey: [
       "employee-flow-request-details",
       funnel_activity_id
     ],
     queryFn: () => getFlowRequestById(funnel_activity_id),
     enabled: !!funnel_activity_id
+  });
+};
+
+export const useGetFunnelActivityLog = (
+  funnel_activity_id: string,
+  enabled = true,
+) => {
+  return useQuery<FunnelActivityLogResponse>({
+    queryKey: ["funnel-activity-log", funnel_activity_id],
+    queryFn: () => getFunnelActivityLog(funnel_activity_id),
+    enabled: !!funnel_activity_id && enabled,
   });
 };
 

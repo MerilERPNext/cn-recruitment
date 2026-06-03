@@ -264,7 +264,53 @@ body {
   box-shadow: none !important;
 }
 
-.simplified-chat-view-quoted-message-a li a:hover{
+.simplified-chat-view-quoted-message-a li a:hover {
   color: white !important;
   font-weight: 400;
+}
+
+
+/* Toast custom styles */
+.custom-toast-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-toast-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-toast-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.custom-toast-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.custom-toast-scrollbar {
+  max-height: 220px;
+  /* Highly compact height limit on mobile */
+}
+
+@media (min-width: 768px) {
+  .custom-toast-scrollbar {
+    max-height: 280px;
+    /* Highly compact height limit on desktop */
+  }
+}
+
+.formio-component .control-label.field-required::after,
+.formio-component .col-form-label.field-required::after {
+  content: " *";
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* Hide mandatory red asterisk on select fields, showing only label (unless explicitly requested via show-req-astrik) */
+.formio-component-select:not(.show-req-astrik) .control-label.field-required::after,
+.formio-component-select:not(.show-req-astrik) .col-form-label.field-required::after {
+  content: "" !important;
+  display: none !important;
 }

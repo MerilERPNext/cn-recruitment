@@ -251,6 +251,107 @@ export interface IEmployeeWorkHistory {
 /**
  * Enriched / list-view / legacy UI fields not always present on the raw Employee doc.
  */
+
+export interface WorkRole {
+  from_date: string;
+  to_date: string;
+  is_current: boolean;
+  company: {
+    id: string;
+    name: string;
+  };
+  department: {
+    id: string;
+    name: string;
+  };
+  designation: {
+    id: string;
+    name: string;
+  };
+  functional_area: {
+    id: string;
+    name: string;
+  };
+  band: {
+    id: string;
+    name: string;
+  };
+  grade: {
+    id: string;
+    name: string;
+  };
+  is_promotion: boolean;
+}
+export interface WorkLocation {
+  from_date: string,
+  to_date: string | null,
+  is_current: boolean,
+  work_location: {
+    id: string,
+    name: string
+  },
+  office_area: {
+    id: string,
+    name: string
+  },
+  country: {
+    id: string,
+    name: string
+  },
+  state: {
+    id: string,
+    name: string
+  },
+  city: {
+    id: string,
+    name: string
+  }
+}
+export interface EmploymentTypes {
+  from_date: string;
+  to_date: string | null;
+  is_current: boolean;
+  is_promotion: boolean;
+  employment_type: {
+    name: string;
+    id: string
+  };
+  employee_subtype: {
+    name: string;
+    id: string
+  };
+}
+
+export interface EmployeeRole {
+  from_date: string;
+  to_date: string | null;
+  is_current: boolean;
+  is_promotion: boolean;
+  employee_role: {
+    id: string;
+    name: string;
+  }
+}
+
+export interface CostCenter {
+  id: string;
+  name: string;
+}
+
+export interface CostCenterAllocation {
+  cost_center: CostCenter;
+  percentage: number;
+}
+
+export interface EmployeeCostCenter {
+  from_date: string;
+  to_date: string | null;
+  is_current: boolean;
+  total_percentage: number;
+  allocations: CostCenterAllocation[];
+  segment_totals: Record<string, number>;
+}
+
 export interface EmployeeSupplementary {
   designation_name?: string;
   department_display?: string;
@@ -266,6 +367,11 @@ export interface EmployeeSupplementary {
   custom_designation_title?: string;
   /** Read-only custom field on some sites; see profile / Form.io mappings */
   custom_designation_name?: string;
+  work_roles?: WorkRole[];
+  work_locations?: WorkLocation[];
+  employment_types?: EmploymentTypes[];
+  employee_roles?: EmployeeRole[];
+  cost_centers?: EmployeeCostCenter[];
 }
 
 export interface Employee extends EmployeeFromAPI, EmployeeSupplementary { }
@@ -413,4 +519,30 @@ export interface IGetEmpDesignationHierarchyCurrentDetails {
 export interface AttendanceFieldPermissions {
   make_attendance_message_optional: boolean;
   make_reason_non_mandate: boolean;
+}
+
+// Assignment Details types
+// Each item in a section — has dynamic string fields plus an optional link
+export interface AssignmentItem {
+  link?: string;
+  [key: string]: string | undefined;
+}
+
+// One section in the section-based response (e.g. Separation, Confirmation)
+export interface AssignmentSection {
+  section: string;
+  items: AssignmentItem[];
+}
+
+// Flat item format used by some modules (e.g. Travel & Reimbursement)
+// Fields like `reimbursement_type_link` sit alongside their base fields
+export interface AssignmentFlatItem {
+  [key: string]: string;
+}
+
+// Top-level envelope returned by get_assignment_details
+export interface AssignmentDetailsResponse {
+  module: string;
+  employee: string;
+  data: AssignmentSection[] | AssignmentFlatItem[];
 }

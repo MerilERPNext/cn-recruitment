@@ -166,6 +166,32 @@ export type FlowRequestItem = {
   request_id: string;
   flow_name: string;
   category: string;
+  initiated_on: string;
+  initiated_by: string;
+  initiated_for: string;
+  initiated_by_emp_id: string;
+  initiated_for_emp_id: string;
+  approval_status: string;
+  workflow_status: string;
+  overall_flow_status: string;
+  approval_stages: FlowRequestStage[];
+  initiator_forms: {
+    conversation_doc: string;
+    form_data: string;
+    form_data_display?: string;
+    status: string;
+    target: string;
+    target_name: string;
+  }[];
+  workflow_stages: WorkflowStage[];
+};
+
+export type FlowRequestDetailItem = {
+  request_id: string;
+  funnel?: string;
+  retrigger_definition_name?: string;
+  flow_name: string;
+  category: string;
   effective_date: string | null;
   initiated_on: string;
   can_edit_initiator_form: boolean;
@@ -245,3 +271,30 @@ export type FlowRequestResponse = {
 };
 
 export type SeparationFunnelDetails = FlowRequestResponse;
+
+export type FunnelActivityLogDetail = {
+  label: string;
+  value: string;
+};
+
+export type FunnelActivityLogEntry = {
+  activity_type: string;
+  category: string;
+  title: string;
+  timestamp: string;
+  details: FunnelActivityLogDetail[];
+};
+
+export type FunnelActivityLogData = {
+  request_id: string;
+  flow_name: string;
+  entries: FunnelActivityLogEntry[];
+  total: number;
+  page: number;
+  limit: number;
+  has_more: boolean;
+};
+
+export type FunnelActivityLogResponse = {
+  data: FunnelActivityLogData;
+};

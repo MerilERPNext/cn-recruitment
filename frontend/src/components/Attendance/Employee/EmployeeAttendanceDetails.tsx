@@ -43,6 +43,7 @@ interface EmployeeAttendanceDetailsProps {
   onClose?: () => void;
   data?: AttendanceRecord;
   events?: AttendanceRecord[];
+  isWeeklyOff?: boolean;
 }
 
 const EmployeeAttendanceDetails = ({
@@ -51,6 +52,7 @@ const EmployeeAttendanceDetails = ({
   data,
   events,
   onClose,
+  isWeeklyOff,
 }: EmployeeAttendanceDetailsProps = {}) => {
   const { search } = useLocation();
   const query = new URLSearchParams(search);
@@ -99,7 +101,6 @@ const EmployeeAttendanceDetails = ({
     "Leave Application",
     isLeaveRecord && leaveApplicationName ? leaveApplicationName : null!,
   ) as { data: LeaveApplication | undefined };
-
   const effectiveEmployeeId =
     data?.employee || targetEmployeeId || currentEmployee?.employee;
 
@@ -201,15 +202,27 @@ const EmployeeAttendanceDetails = ({
     newLeaveType?: string;
     firstHalfType?: string;
     secondHalfType?: string;
+    replaceBoth?: boolean;
+    description?: string;
+    custom_reason?: string;
+    attachment?: unknown;
   }) => {
     if (!data?.leave_application_name) return;
 
+    const replaceBoth = formData.replaceBoth === true;
     replaceLeave.mutate(
       {
         leave_application: data.leave_application_name,
-        new_leave_type: formData.newLeaveType,
-        first_half_leave_type: formData.firstHalfType,
-        second_half_leave_type: formData.secondHalfType,
+        ...(replaceBoth
+          ? {
+              first_half_leave_type: formData.firstHalfType,
+              second_half_leave_type: formData.secondHalfType,
+              replaceBoth: true,
+            }
+          : { new_leave_type: formData.newLeaveType }),
+        reason: formData.custom_reason,
+        description: formData.description,
+        attachment: formData.attachment,
       },
       {
         onSuccess: () => {
@@ -443,7 +456,7 @@ const EmployeeAttendanceDetails = ({
     }
     return (
       <div className="flex-grow overflow-y-auto p-4 space-y-6 ">
-        {status === "week off" && renderWeekOffMessage()}
+        {(status === "week off" || isWeeklyOff) && renderWeekOffMessage()}
         {isLoading ? (
           renderLoadingState()
         ) : (
@@ -509,7 +522,7 @@ const EmployeeAttendanceDetails = ({
             Leave Request
           </Button>
         )}
-        {showAttendanceBtn && (
+        {(showAttendanceBtn || leaveDetailsFromButtonStatusData?.some(leave => leave.status === 'Open')) && (
           <Button
             variant="soft"
             fullWidth

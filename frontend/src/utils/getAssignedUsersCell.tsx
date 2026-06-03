@@ -2,6 +2,7 @@
 import { ReactNode } from "react";
 import AllocatedToTooltip from "../components/shared/AllocatedToTooltip";
 import { RoleAssignedUsersType } from "../types/flows";
+import { Typography } from "../components/shared/atoms/Typography";
 
 export const getStageAssignedUsersCell = (
   stage: any,
@@ -11,22 +12,24 @@ export const getStageAssignedUsersCell = (
 ) => {
   if (!stage) return textWrapper ? textWrapper("—") : <span>—</span>;
 
-  if (stage.role) {
+  if (roleAssignedUsers.length > 0) {
     const totalUsers =
       roleAssignedUsers?.reduce(
         (acc: number, r: any) => acc + (r.users?.length || r.user?.length || 0),
         0,
       ) ?? 0;
 
-    const text = `Assign(${totalUsers})`;
+    const roles = stage.role ? stage.role.split(',').map((r: string) => r.trim()) : [];
+
+    const text = totalUsers ? `Assign(${totalUsers})` : `${roles.length}`;
     return (
       <AllocatedToTooltip
         title="Assigned To"
         RoleAssignedUsers={roleAssignedUsers}
-        roles={stage.role.split(',').map((r: string) => r.trim())}
+        roles={roles}
         position={position}
       >
-        {textWrapper ? textWrapper(text) : <span>{text}</span>}
+        {textWrapper ? textWrapper(text) : <Typography color="primary" className="underline">{text}</Typography>}
       </AllocatedToTooltip>
     );
   }
@@ -37,14 +40,18 @@ export const getStageAssignedUsersCell = (
       ? [{ name: stage.user, employee: stage.employee_id, designation_name: stage.designation_name }]
       : [];
 
-  const label = `${stage?.designation_name || stage?.stage_name || "Not Assigned"} `;
+  const label = (stage?.designation_name || stage?.stage_name || (users.length > 0 ? "Assign(" + users.length + ")" : "Not Assigned")) + " ";
+
   return (
     <AllocatedToTooltip
       title="Assigned To"
       users={users}
       position={position}
     >
-      {textWrapper ? textWrapper(label) : <span>{label}</span>}
+      <Typography color="primary" className="underline">
+
+        {textWrapper ? textWrapper(label) : <span>{label}</span>}
+      </Typography>
     </AllocatedToTooltip>
   );
 };

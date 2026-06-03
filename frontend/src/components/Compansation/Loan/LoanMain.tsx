@@ -4,7 +4,6 @@ import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { isActionEnabled } from "../../../utils/uiPermission";
-import { Typography } from "../../shared/atoms/Typography";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import CreateLoanDialog from "./component/CreateLoanDailog";
 import { LoantItem } from "./component/ListViewOfLoanForMobile";
@@ -97,7 +96,7 @@ const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
 
 export default function LoansPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
- const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { isDesktop } = useScreenSize();
   const { data: user, isFetching: userLoading } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
@@ -147,20 +146,27 @@ export default function LoansPage() {
 
   return (
     <>
-      <div className="flex flex-col h-full">
-        <div className="flex-shrink-0">
-          <div className="px-1 md:px-6 py-1 md:py-4">
-            <div className="flex items-center justify-between">
-              {isDesktop && (
-                <div>
-                  <Typography variant="h4">My Loan Requests</Typography>
-                  <Typography variant="bodySmall" color="body2">
-                    Track and manage your loan requests
-                  </Typography>
-                </div>
-              )}
+      <div className="flex flex-col h-full bg-app font-brand">
+        {/* ── Top bar ──────────────────────────────────────────────────────────── */}
+        <div className="bg-white border-b mb-6 border-gray-100 sticky top-0 z-10 w-full">
+          {/* Desktop top bar (hidden on mobile) */}
+          {isDesktop && (
+            <div className="sm:flex items-center justify-between h-[52px] px-7">
+              <span className="font-bold text-[17px] text-text-title tracking-tight">My Loan Requests</span>
+              <div className="flex items-center gap-3.5">
+                {/* No other buttons inside header */}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Mobile top bar (hidden on sm+) */}
+          {!isDesktop && (
+            <div className="flex flex-col px-4 pt-3 pb-3 gap-2.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[16px] text-text-title tracking-tight">My Loan Requests</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto md:px-4 pb-10 md:pb-20">
@@ -236,8 +242,8 @@ export default function LoansPage() {
                       },
                     ],
                     emptyValueConfig: {
-                    filterValue: ["!=", "Cancelled"],
-                  },
+                      filterValue: ["!=", "Cancelled"],
+                    },
                   },
                 ]}
                 pageSize={10}

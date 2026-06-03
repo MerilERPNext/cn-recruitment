@@ -9,21 +9,21 @@ const TodoPage = () => {
   const navigate = useNavigate();
 
   const content = (
-    <div className="bg-white">
+    <div className="bg-white h-full w-full">
       <TodoAppShadowWrapper />
     </div>
   );
 
   const mobileLayout = (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col h-screen bg-white">
       <HeaderBar title="Todo" onBack={() => navigate("/webapp/")} />
-      <main className="md:p-4 z-100 flex-grow overflow-y-auto">{content}</main>
+      <main className="flex-1 overflow-y-auto z-100">{content}</main>
     </div>
   );
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Todo">
-      <div className="p-8 md:p-0 overflow-y-auto h-full">{content}</div>
+      <div className="h-full w-full overflow-y-auto">{content}</div>
     </DesktopLayoutWrapper>
   );
 

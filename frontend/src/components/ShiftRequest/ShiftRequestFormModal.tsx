@@ -267,7 +267,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
   useEffect(() => {
     if (propSchema) {
-      setFormSchema(propSchema);
+      setFormSchema(propSchema || defaultFormSchema);
     }
   }, [propSchema]);
 
@@ -333,7 +333,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose();

@@ -14,15 +14,6 @@
  ],
  "fields": [
   {
-   "fieldname": "location",
-   "fieldtype": "Link",
-   "ignore_user_permissions": 1,
-   "in_list_view": 1,
-   "label": "Location",
-   "options": "Branch",
-   "reqd": 1
-  },
-  {
    "depends_on": "doc.custom_type_of_position===\"Replacement\"",
    "fieldname": "replacement_for",
    "fieldtype": "Link",
@@ -43,14 +34,12 @@
    "reqd": 1
   },
   {
-   "depends_on": "doc.custom_type_of_position==\"Replacement\"",
-   "fieldname": "employee_type",
+   "fieldname": "location",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
    "in_list_view": 1,
-   "label": "Employee Type",
-   "options": "Employment Type",
-   "read_only_depends_on": "doc.custom_type_of_position==\"New\"",
+   "label": "Location",
+   "options": "Branch",
    "reqd": 1
   },
   {
@@ -59,13 +48,23 @@
    "ignore_user_permissions": 1,
    "label": "Functional Area",
    "options": "Functional Area"
+  },
+  {
+   "depends_on": "doc.custom_type_of_position==\"Replacement\"",
+   "fieldname": "employee_type",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_list_view": 1,
+   "label": "Employee Type",
+   "options": "Employment Type",
+   "read_only_depends_on": "doc.custom_type_of_position==\"New\""
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-01-16 12:17:44.898806",
+ "modified": "2026-06-01 22:46:45.614209",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Position Details",

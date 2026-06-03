@@ -8,9 +8,11 @@ import { EmployeeDirectoryFilterData } from "./EmployeeSearch";
 interface EmployeeDirectoryFiltersProps {
     onUpdate: (data: EmployeeDirectoryFilterData) => void;
     data: EmployeeDirectoryFilterData;
+    onCancel: () => void;
+    onReset: () => void;
 }
 
-const EmployeeDirectoryFilters: React.FC<EmployeeDirectoryFiltersProps> = ({ onUpdate, data }) => {
+const EmployeeDirectoryFilters: React.FC<EmployeeDirectoryFiltersProps> = ({ onUpdate, data, onCancel, onReset }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formInstance = useRef<any>(null);
 
@@ -29,10 +31,10 @@ const EmployeeDirectoryFilters: React.FC<EmployeeDirectoryFiltersProps> = ({ onU
     };
 
     return (
-        <div>
-            <div className="pb-16 overflow-hidden">
+        <div className="flex flex-col h-full w-full bg-gray-50/30">
+            <div className="flex-1 overflow-y-auto p-4 pb-8">
                 <Form
-                    className="profile-form w-full max-w-full bg-white"
+                    className="profile-form w-full max-w-full bg-transparent"
                     form={schema}
                     submission={{ data: data }}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,12 +55,33 @@ const EmployeeDirectoryFilters: React.FC<EmployeeDirectoryFiltersProps> = ({ onU
                         validateOnChange: false,
                     }}
                 />
-                {/* Submit button */}
-                <div className="w-full bg-white mt-4">
+            </div>
+            {/* Submit button */}
+            <div className="flex justify-between items-center w-full bg-white border-t px-4 py-4 mt-auto shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <Button
+                    onClick={() => {
+                        if (formInstance.current) {
+                            formInstance.current.emit('resetForm');
+                        }
+                        onReset();
+                    }}
+                    size="md"
+                    variant="outline"
+                >
+                    Reset
+                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        onClick={onCancel}
+                        size="md"
+                        variant="outline"
+                    >
+                        Cancel
+                    </Button>
                     <Button
                         onClick={handleSubmit}
                         size="md"
-                        fullWidth
+                        variant="contain"
                     >
                         Apply
                     </Button>

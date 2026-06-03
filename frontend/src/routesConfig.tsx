@@ -25,8 +25,15 @@ import {
   buildExpenseNavigationState,
 } from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
 import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
+import {
+  ExpenseNavigationState,
+  buildExpenseNavigationState,
+} from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
+import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
+import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
+import Onboarding from "./components/Onboarding/Onboarding";
 import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
 import Onboarding from "./components/Onboarding/Onboarding";
 import Requests from "./components/Requests";
@@ -57,6 +64,9 @@ const TeamApprovalListExemptionTable = lazyWithRetry(
 const Expenses = lazyWithRetry(
   () => import("./components/Expenses"),
   "Expenses",
+);
+const FlexiDeclaration = lazyWithRetry(
+  () => import("./components/Compansation/FlexiDeclaration/FlexiDeclaration"),
 );
 const RecruitmentApp = lazyWithRetry(
   () => import("./components/RecruitmentApp"),
@@ -216,6 +226,10 @@ const ExpenseAdvanceForm = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseAdvance/ExpenseAdvanceForm"),
   "ExpenseAdvanceForm",
 );
+const ExpenseSummary = lazyWithRetry(
+  () => import("./components/Expenses-App/ExpenseSummary/ExpenseSummary"),
+  "ExpenseSummary",
+);
 const Holidays = lazyWithRetry(
   () => import("./components/Leaves/Holidays"),
   "Holidays",
@@ -298,6 +312,10 @@ const Policies = lazyWithRetry(
 const PoliciesEnforced = lazyWithRetry(
   () => import("./components/PoliciesEnforced"),
   "PoliciesEnforced",
+);
+const MandatoryHrProcessEnforced = lazyWithRetry(
+  () => import("./components/MandatoryHrProcessEnforced"),
+  "MandatoryHrProcessEnforced",
 );
 const PolicySignOff = lazyWithRetry(
   () => import("./components/PolicySignOff"),
@@ -531,6 +549,26 @@ const RequisitionForm = lazyWithRetry(
   () => import("./components/Recruitment/RequisitionForm"),
   "RequisitionForm",
 );
+const IJPOpenings = lazyWithRetry(
+  () => import("./components/Recruitment/IJPOpenings"),
+  "IJPOpenings",
+);
+const IJPJobsApplied = lazyWithRetry(
+  () => import("./components/Recruitment/IJPJobsApplied"),
+  "IJPJobsApplied",
+);
+const OfferLetter = lazyWithRetry(
+  () => import("./components/Recruitment/OfferLetterPage"),
+  "OfferLetter",
+);
+const LinkAccounts = lazyWithRetry(
+  () => import("./components/Recruitment/LinkAccounts"),
+  "LinkAccounts",
+);
+const ConfigureJobBoards = lazyWithRetry(
+  () => import("./components/Recruitment/ConfigureJobBoards"),
+  "ConfigureJobBoards",
+);
 const RecognitionPage = lazyWithRetry(
   () => import("./components/Recognition/RecognitionPage"),
   "RecognitionPage",
@@ -542,6 +580,15 @@ const HallOfFamePage = lazyWithRetry(
 const LeaderboardPage = lazyWithRetry(
   () => import("./components/Recognition/LeaderboardPage"),
   "LeaderboardPage",
+);
+const ScheduledImportsPage = lazyWithRetry(
+  () => import("./components/ScheduledImports/ScheduledImportsPage"),
+  "ScheduledImportsPage",
+);
+
+const AssignmentDetailsPage = lazyWithRetry(
+  () => import("./components/EmployeeProfile/AssignmentDetailsPage"),
+  "AssignmentDetailsPage",
 );
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -723,6 +770,11 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Policies",
   },
   {
+    path: "/webapp/hr-process-mandatory",
+    element: <MandatoryHrProcessEnforced />,
+    permissionKey: "HR Process Mandatory",
+  },
+  {
     path: "/webapp/recruitment-app/job-applicant-detail/:id",
     element: <JobApplicantDetails />,
     permissionKey: "Recruitment",
@@ -786,6 +838,11 @@ export const routesConfig: AppRoute[] = [
         path: "it-declaration-form",
         element: <ITDeclarationForm />,
         permissionKey: "IT Declaration",
+      },
+      {
+        path: "flexi-declaration-form",
+        element: <FlexiDeclaration />,
+        permissionKey: "Flexi Declaration",
       },
       {
         path: "team-approval-it-declaration/:proofId",
@@ -953,6 +1010,11 @@ export const routesConfig: AppRoute[] = [
     element: <EmployeeProfile />,
     permissionKey: "Employee Profile",
   },
+  {
+    path: "/webapp/employee-profile/assignment-details",
+    element: <AssignmentDetailsPage />,
+    permissionKey: "Assignment Details",
+  },
 
   // Nested Expenses App Routes
   {
@@ -979,6 +1041,11 @@ export const routesConfig: AppRoute[] = [
         path: "team-advance-expense",
         element: <TeamAdvanceExpenseList />,
         permissionKey: "Team Advances",
+      },
+      {
+        path: "expense-summary",
+        element: <ExpenseSummary />,
+        permissionKey: "ExpenseSummary",
       },
     ],
   },
@@ -1149,6 +1216,21 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Overview",
       },
       {
+        path: "job-openings",
+        element: <JobOpeningsUI />,
+        permissionKey: "Job Openings",
+      },
+      {
+        path: "candidates",
+        element: <JobApplicantList />,
+        permissionKey: "Job Applicant List",
+      },
+      {
+        path: "candidates/detail/:id",
+        element: <JobApplicantDetails />,
+        permissionKey: "Recruitment",
+      },
+      {
         path: "requisition",
         element: <Requisition />,
         permissionKey: "Requisitions",
@@ -1157,6 +1239,61 @@ export const routesConfig: AppRoute[] = [
         path: "requisition/new",
         element: <RequisitionForm />,
         permissionKey: "Requisitions",
+      },
+      {
+        path: "requisition/edit",
+        element: <RequisitionForm />,
+        permissionKey: "Requisitions",
+      },
+      {
+        path: "interviews",
+        element: <InterviewList />,
+        permissionKey: "Interviews",
+      },
+      {
+        path: "interviews/:id",
+        element: <InterviewPage />,
+        permissionKey: "Interviews",
+      },
+      {
+        path: "refer",
+        element: <AddNewReferral />,
+        permissionKey: "Referrals",
+      },
+      {
+        path: "referrals",
+        element: <ReferralList />,
+        permissionKey: "Referrals",
+      },
+      {
+        path: "referrals/:id",
+        element: <ReferralDetails />,
+        permissionKey: "Referrals",
+      },
+      {
+        path: "ijp-openings",
+        element: <IJPOpenings />,
+        permissionKey: "IJP Openings",
+      },
+      {
+        path: "ijp-applied",
+        element: <IJPJobsApplied />,
+        permissionKey: "IJP Jobs Applied",
+      },
+      {
+        path: "offer-letter",
+        element: <OfferLetter />,
+        permissionKey: "Offer Letter",
+      },
+      {
+        path: "link-accounts",
+        element: <LinkAccounts />,
+        permissionKey: "Link Accounts",
+      },
+      {
+        path: "configure-job-boards",
+        element: <ConfigureJobBoards />,
+        permissionKey: "Configure Job Boards",
       },
     ],
   },
@@ -1452,6 +1589,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/todo-app",
     element: <TodoPage />,
     permissionKey: "Todo",
+  },
+  {
+    path: "/webapp/scheduled-imports",
+    element: <ScheduledImportsPage />,
+    permissionKey: "Scheduled Imports",
   },
   {
     path: "/webapp/recognition",

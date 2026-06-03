@@ -866,12 +866,13 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           };
 
           const handleError = (error: CustomError) => {
-            const formatedError = errorResponseFormater(
+            errorResponseFormater(
               error,
               "Submission failed. Please try again.",
+              { showToast: true },
             );
             reject(error);
-            toast.error(formatedError);
+            // toast.error(formatedError);
             console.error(error);
           };
 

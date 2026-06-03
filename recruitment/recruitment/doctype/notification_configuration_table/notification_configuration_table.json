@@ -1,57 +1,109 @@
 {
- "actions": [],
- "allow_rename": 1,
- "creation": "2025-10-16 16:06:52.158133",
- "doctype": "DocType",
- "editable_grid": 1,
- "engine": "InnoDB",
- "field_order": [
-  "type",
-  "default_recipient",
-  "template",
-  "roles"
- ],
- "fields": [
-  {
-   "fieldname": "type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "label": "Type",
-   "options": "Initiation\nAuto Confirmed\nAuto Extended"
-  },
-  {
-   "fieldname": "default_recipient",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Default Recipient"
-  },
-  {
-   "fieldname": "template",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Template",
-   "options": "Confirmation Policy Templates"
-  },
-  {
-   "fieldname": "roles",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Roles",
-   "options": "Role Configuration"
-  }
- ],
- "grid_page_length": 50,
- "index_web_pages_for_search": 1,
- "istable": 1,
- "links": [],
- "modified": "2025-10-16 16:26:48.194347",
- "modified_by": "Administrator",
- "module": "Recruitment",
- "name": "Notification Configuration Table",
- "owner": "Administrator",
- "permissions": [],
- "row_format": "Dynamic",
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": []
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2025-10-16 16:06:52.158133",
+    "doctype": "DocType",
+    "editable_grid": 1,
+    "engine": "InnoDB",
+    "field_order": [
+        "type",
+        "default_recipient",
+        "template",
+        "roles",
+        "recipient_type",
+        "recipient_employee_field",
+        "recipient_level",
+        "select_roles",
+        "select_users",
+        "assignee_user_field",
+        "select_assignees"
+    ],
+    "fields": [
+        {
+            "fieldname": "type",
+            "fieldtype": "Select",
+            "in_list_view": 1,
+            "label": "Type",
+            "options": "Initiation\nConfirmed\nExtended"
+        },
+        {
+            "fieldname": "default_recipient",
+            "fieldtype": "Data",
+            "hidden": 1,
+            "in_list_view": 1,
+            "label": "Default Recipient"
+        },
+        {
+            "fieldname": "template",
+            "fieldtype": "Link",
+            "in_list_view": 1,
+            "label": "Template",
+            "options": "Email Template"
+        },
+        {
+            "fieldname": "roles",
+            "fieldtype": "Link",
+            "hidden": 1,
+            "in_list_view": 1,
+            "label": "Roles",
+            "options": "Role Configuration"
+        },
+        {
+            "default": "Manual",
+            "fieldname": "recipient_type",
+            "fieldtype": "Select",
+            "hidden": 1,
+            "label": "Recipient Type",
+            "options": "Manual\nFrom Document\nLevel"
+        },
+        {
+            "fieldname": "recipient_employee_field",
+            "fieldtype": "Small Text",
+            "label": "Recipient Employee Field",
+            "read_only": 1
+        },
+        {
+            "fieldname": "recipient_level",
+            "fieldtype": "Small Text",
+            "label": "Recipient Level",
+            "read_only": 1
+        },
+        {
+            "fieldname": "select_roles",
+            "fieldtype": "Small Text",
+            "label": "Roles",
+            "read_only": 1
+        },
+        {
+            "fieldname": "select_users",
+            "fieldtype": "Small Text",
+            "label": "Users",
+            "read_only": 1
+        },
+        {
+            "fieldname": "assignee_user_field",
+            "fieldtype": "Small Text",
+            "label": "Assignee User Field",
+            "read_only": 1
+        },
+        {
+            "fieldname": "select_assignees",
+            "fieldtype": "Button",
+            "label": "Select Assignees"
+        }
+    ],
+    "grid_page_length": 50,
+    "index_web_pages_for_search": 1,
+    "istable": 1,
+    "links": [],
+    "modified": "2026-05-21 12:30:47.738617",
+    "modified_by": "Administrator",
+    "module": "Recruitment",
+    "name": "Notification Configuration Table",
+    "owner": "Administrator",
+    "permissions": [],
+    "row_format": "Dynamic",
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": []
 }

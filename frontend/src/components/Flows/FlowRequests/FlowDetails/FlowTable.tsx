@@ -24,9 +24,10 @@ const titles = [
 
 interface FlowTableProps {
   data: FlowRequestItem;
+  noPadding?: boolean;
 }
 
-const FlowTable: React.FC<FlowTableProps> = ({ data }) => {
+const FlowTable: React.FC<FlowTableProps> = ({ data, noPadding = false }) => {
   const { isDesktop } = useScreenSize();
   const activeStageIndex =
     data.approval_status === "Pending"
@@ -42,8 +43,13 @@ const FlowTable: React.FC<FlowTableProps> = ({ data }) => {
   const { handleAction } = useApprovalAction(triggerRefetch);
 
   return (
-    <div className="sm:px-7 px-4 max-sm:pb-8">
-      <CardTable titles={titles}>
+    <div className={noPadding ? "px-4 sm:px-0 max-sm:pb-8" : "sm:px-7 px-4 max-sm:pb-8"}>
+      <CardTable
+        titles={titles}
+        noBorder={noPadding}
+        noShadow={noPadding}
+        noRound={noPadding}
+      >
         <StaticListView
           data={data.approval_stages}
           ItemComponent={(index, item) =>

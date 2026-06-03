@@ -8,3 +8,6 @@
 # Patches added in this section will be executed after doctypes are migrated
 recruitment.patches.interviewfeedback_funnel
 recruitment.patches.add_client_script
+recruitment.patches.candidate_portal_auth_defaults
+recruitment.patches.candidate_portal_feature_flag_defaults
+recruitment.patches.delete_onboarding_custom_fields

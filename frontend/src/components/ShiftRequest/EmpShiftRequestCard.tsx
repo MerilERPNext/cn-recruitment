@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useShiftTypes } from "../../hooks/useShift";
 import { useRevokeEvent } from "../../hooks/userApprovalList";
 import { MyShiftRequest } from "../../types/shift";
 import formatToIndianDate from "../../utils/formatToIndianDate";
-import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../shared/MobileAllocatedTo";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
@@ -16,12 +14,15 @@ import StatusBadge from "../shared/atoms/statusBadge";
 import ShiftRequestFormModal from "./ShiftRequestFormModal";
 import { getAssignedUsersCell } from "../../utils/getAssignedUsersCell";
 
-const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
+interface EmpShiftRequestCardProps {
+  data: MyShiftRequest;
+}
+
+const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
   const { isDesktop } = useScreenSize();
   const revokeEventMutation = useRevokeEvent()
   const { setRefetchAttendance } = useGlobalStore();
   const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation);
-  const navigate = useNavigate();
   const [edit, setEdit] = useState(false);
   const [isActed, setIsActed] = useState(false);
   const {
@@ -31,9 +32,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   } = useShiftTypes();
 
   const handleEditClick = () => {
-    navigate(
-      `/webapp/shift-request/shift-change-form/${data?.reference_document?.name}`,
-    );
+    setEdit(true);
   };
 
   const handleRevokeClick = () => {
@@ -102,12 +101,12 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           {/* <div className="flex items-center justify-center">
             {getAssignedUsersCell(data)}
           </div> */}
-         
+
           {/* From Date */}
           <Typography variant="bodySmall" className="font-medium text-center">
-  
-              {getAssignedUsersCell(data)}
-            
+
+            {getAssignedUsersCell(data)}
+
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.from_date || "")}
@@ -117,10 +116,10 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.to_date || "")}
           </Typography>
-            <Typography variant="bodySmall" className="font-medium text-center">
-              {formattedCreationDate}
-            </Typography>
-          
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formattedCreationDate}
+          </Typography>
+
 
           {/* Status */}
 
@@ -137,9 +136,16 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           </div>
           <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
+              uiPermission={{
+                app: "Attendance",
+                page: "All Shifts",
+                actionKeysMap: {
+                  edit: "edit_shift_request",
+                  revoke: "revoke_shift_request"
+                }
+              }}
               canEdit={canEdit}
               canRevoke={canRevoke}
-              isPending={false}
               revokeLoading={revokeEventMutation.isPending}
               onEdit={handleEditClick}
               onRevoke={handleRevokeClick}
@@ -200,19 +206,26 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               </div>
             </div>
 
-              <div>
-                <Typography variant="mobileCardLabel">Assigned To</Typography>
-                <Typography variant="mobileCardValue">
-                  {getAssignedUsersCell(data)}
-                </Typography>
-              </div>
+            <div>
+              <Typography variant="mobileCardLabel">Assigned To</Typography>
+              <Typography variant="mobileCardValue">
+                {getAssignedUsersCell(data)}
+              </Typography>
+            </div>
             {/* Actions */}
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
+                uiPermission={{
+                  app: "Attendance",
+                  page: "All Shifts",
+                  actionKeysMap: {
+                    edit: "edit_shift_request",
+                    revoke: "revoke_shift_request"
+                  }
+                }}
                 variant="buttons"
                 canEdit={canEdit}
                 canRevoke={canRevoke}
-                isPending={false}
                 revokeLoading={revokeEventMutation.isPending}
                 onEdit={handleEditClick}
                 onRevoke={handleRevokeClick}
@@ -222,19 +235,13 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
         </div>
       )}
       {edit &&
-        isDesktop &&
         createPortal(
-          <ExpenseFormModal
-            isOpen={edit}
+          <ShiftRequestFormModal
             onClose={() => setEdit(false)}
-            title="Request Shift Change"
-          >
-            <ShiftRequestFormModal
-              onClose={() => setEdit(false)}
-              defaultShiftRequestData={data?.reference_document}
-              forActionType="edit"
-            />
-          </ExpenseFormModal>,
+            defaultShiftRequestData={data?.reference_document}
+            forActionType="edit"
+            isOpen={edit}
+          />,
           document.body,
         )}
     </>

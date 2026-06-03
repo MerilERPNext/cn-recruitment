@@ -32,9 +32,91 @@ frappe.ui.form.on("Job Description", {
     },
 
     refresh(frm) {
-        // Nothing extra on refresh — competencies are already saved in the table
+        render_description_preview(frm);
     },
+
+    description(frm) {
+        render_description_preview(frm);
+    },
+
+    // Parent-field updates that may be referenced by the template — re-render
+    // the preview so the manager sees the new value immediately.
+    company:            render_description_preview,
+    preferred_role:     render_description_preview,
+    preferred_company:  render_description_preview,
+    min_preferred_work_experience_years: render_description_preview,
+    max_preferred_work_experience_years: render_description_preview,
 });
+
+// Re-render the preview whenever any child-table row that the template may
+// reference gets added / edited / removed.
+const _CHILD_DOCTYPES_TO_WATCH = [
+    "JD Designations", "JD Department", "JD Business Unit",
+    "Education Category Table", "Education Degree Table", "Education Specialization Table",
+    "Experience Sector Table", "Job Requisition Skill", "Competencies Table",
+];
+_CHILD_DOCTYPES_TO_WATCH.forEach((child_dt) => {
+    frappe.ui.form.on(child_dt, {
+        "*"(frm) { render_description_preview(frm); },
+    });
+});
+
+// ─────────────────────────────────────────────────────────────
+// Live preview — debounced server-side Jinja render.
+// ─────────────────────────────────────────────────────────────
+//
+// Single source of truth: the server's `render_description` endpoint
+// renders the Jinja template against the in-progress doc state. The JS
+// just debounces the call (so typing into the Code field doesn't fire
+// 50 requests/second) and drops the resulting HTML into the preview
+// field's wrapper.
+let _preview_timer = null;
+function render_description_preview(frm) {
+    const wrapper = frm.fields_dict.preview && frm.fields_dict.preview.$wrapper;
+    if (!wrapper) return;
+
+    if (_preview_timer) clearTimeout(_preview_timer);
+    _preview_timer = setTimeout(() => _fetch_and_paint_preview(frm, wrapper), 300);
+}
+
+function _fetch_and_paint_preview(frm, wrapper) {
+    const description = frm.doc.description || "";
+    if (!description.trim()) {
+        _paint(wrapper, "");
+        return;
+    }
+    frappe.call({
+        method: "recruitment.recruitment.doctype.job_description.job_description.render_description",
+        args: {
+            description: description,
+            doc: JSON.stringify(frm.doc),
+        },
+        callback: (r) => {
+            _paint(wrapper, (r && r.message) || "");
+        },
+    });
+}
+
+function _paint(wrapper, html) {
+    // NOTE: the inner content must sit IMMEDIATELY after the opening tag —
+    // any whitespace in the template literal would be preserved by
+    // `white-space: pre-wrap` and shift the first line right.
+    const style = [
+        "border: 1px solid var(--border-color, #d1d8dd)",
+        "border-radius: 6px",
+        "padding: 14px 18px",
+        "background: var(--bg-color, #fff)",
+        "min-height: 60px",
+        "line-height: 1.55",
+        "font-size: 14px",
+        "color: var(--text-color, #1F272E)",
+        "white-space: pre-wrap",
+    ].join(";");
+    const placeholder = `<span style="color: var(--text-muted, #6c7680);">${__("Preview will appear here once a description is filled in.")}</span>`;
+    const inner = (html && html.trim()) || placeholder;
+    wrapper.empty();
+    wrapper.append(`<div class="jd-preview" style="${style}">${inner}</div>`);
+}
 
 // ─────────────────────────────────────────────────────────────
 // Competency Auto-Fill: Listen to Designation child table events

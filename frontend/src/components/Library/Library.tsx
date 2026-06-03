@@ -15,13 +15,15 @@ import { Typography } from "../shared/atoms/Typography";
 import { FilePreview } from "../shared/molecules/FilePreview";
 import toast from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { getFileNameFromUrl } from "../../utils/urlFormating";
 
 const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
+  const [isMobile, setIsMobile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const { targetEmployeeId } = useTargetUser();
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const employeeId = useMemo(() => {
     if (targetEmployeeId && targetEmployeeId.trim() !== "") {
@@ -31,7 +33,6 @@ const DocumentLibrary = () => {
   }, [targetEmployeeId, user?.employee]);
 
   const { data, isLoading } = useEmployeeDocument(employeeId);
-  const [isMobile, setIsMobile] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
 
   const { mutate: submitAcknowledgement } = useSubmitAcknowledgement();
@@ -57,7 +58,7 @@ const DocumentLibrary = () => {
         setSelectedFile(null);
         setSelectedDocId(null);
         setAcknowledged(false);
-        queryClient.invalidateQueries({ queryKey: ["employee-documents"] })
+        queryClient.invalidateQueries({ queryKey: ["employee-documents"] });
       },
     });
   };
@@ -66,28 +67,25 @@ const DocumentLibrary = () => {
     setAcknowledged(e.target.checked);
   };
 
-  const documents = data || [];
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 900);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const documents = useMemo(() => data || [], [data]);
+
   const filteredDocuments = documents.filter((doc: any) => {
-    if (activeTab === "awaiting") {
-      return doc.type === "Personal";
-    } else if (activeTab === "mydocs") {
-      return doc.status === "Acknowledgement Required";
-    } else if (activeTab === "approved") {
-      return doc.type !== "Personal" && doc.status === "Approved";
-    }
+    if (activeTab === "awaiting") return doc.type === "Personal";
+    if (activeTab === "mydocs") return doc.status === "Acknowledgement Required";
+    if (activeTab === "approved") return doc.type !== "Personal" && doc.status === "Approved";
     return true;
   });
 
   const closeModal = () => setSelectedFile(null);
 
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 900);
-    handleResize(); // Initial check
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const showAcknowledgement = filteredDocuments.some(
+  const showAcknowledgement = documents.some(
     (doc: any) =>
       doc.file_name === selectedFile &&
       doc.status === "Acknowledgement Required",
@@ -98,6 +96,24 @@ const DocumentLibrary = () => {
     if (path.startsWith("http")) return path;
     return `${window.location.origin}${path}`;
   };
+
+  const tabs = [
+    {
+      key: "awaiting",
+      label: "My Documents",
+      count: documents.filter((doc: any) => doc.type === "Personal").length,
+    },
+    {
+      key: "mydocs",
+      label: "Awaiting My Acknowledgment",
+      count: documents.filter((doc: any) => doc.status === "Acknowledgement Required").length,
+    },
+    {
+      key: "approved",
+      label: "Documents Approved",
+      count: documents.filter((doc: any) => doc.type?.trim().toLowerCase() !== "personal" && doc.status === "Approved").length,
+    },
+  ];
 
   return (
     <div className="bg-white px-0 py-3 md:p-6">
@@ -111,82 +127,40 @@ const DocumentLibrary = () => {
           </Typography>
         </div>
       </div>
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        {/* MOBILE VIEW */}
-        {isMobile ? (
-          <div className="w-full">
-            <select
-              value={activeTab}
-              onChange={(e) => setActiveTab(e.target.value)}
-              className="w-full border border-gray-300 rounded-md p-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="awaiting">
-                My Documents (
-                {documents.filter((doc) => doc.status === "Draft").length})
-              </option>
-              <option value="mydocs">
-                Awaiting My Acknowledgment (
-                {
-                  documents.filter(
-                    (doc) => doc.status === "Acknowledgement Required",
-                  ).length
-                }
-                )
-              </option>
-              <option value="approved">
-                Documents Approved (
-                {documents.filter((doc) => doc.status === "Approved").length})
-              </option>
-            </select>
-          </div>
-        ) : (
-          // DESKTOP VIEW
-          <div className="flex flex-col md:flex-row gap-2">
-            <Button
-              variant={activeTab === "awaiting" ? "contain" : "subtle"}
-              className={`px-5 py-2 rounded-md font-medium transition-all border border-primary/40`}
-              onClick={() => setActiveTab("awaiting")}
-            >
-              My Documents{" "}
-              <span className="ml-2 inline-block bg-white text-blue-600 rounded-full px-2 text-sm">
-                {documents.filter((doc) => doc.type === "Personal").length}
-              </span>
-            </Button>
 
+      {isMobile ? (
+        <div className="w-full mb-4">
+          <select
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value)}
+            className="w-full border border-gray-300 rounded-md p-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {tabs.map((tab) => (
+              <option key={tab.key} value={tab.key}>
+                {tab.label} ({tab.count})
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <div className="flex overflow-x-auto gap-1 py-2 mb-4 scrollbar-hide">
+          {tabs.map((tab) => (
             <Button
-              variant={activeTab === "mydocs" ? "contain" : "subtle"}
-              className={`px-5 py-2 rounded-md font-medium transition-all border border-primary/40`}
-              onClick={() => setActiveTab("mydocs")}
+              key={tab.key}
+              variant="subtle"
+              size="sm"
+              onClick={() => setActiveTab(tab.key)}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold whitespace-nowrap ${activeTab === tab.key
+                ? "bg-primary-50 text-header-active"
+                : "text-header-inactive hover:text-header-active"
+                }`}
             >
-              Awaiting My Acknowledgment{" "}
-              <span className="ml-2 inline-block bg-white text-blue-600 rounded-full px-2 text-sm">
-                {
-                  documents.filter(
-                    (doc) => doc.status === "Acknowledgement Required",
-                  ).length
-                }
-              </span>
+              {tab.label}
+              <span className="ml-1">({tab.count})</span>
             </Button>
-
-            <Button
-              variant={activeTab === "approved" ? "contain" : "subtle"}
-              className={`px-5 py-2 rounded-md font-medium transition-all border border-primary/40`}
-              onClick={() => setActiveTab("approved")}
-            >
-              Documents Approved{" "}
-              <span className="ml-2 inline-block bg-white text-blue-600 rounded-full px-2 text-sm">
-                {
-                  documents.filter(
-                    (doc) =>
-                      doc.type?.trim().toLowerCase() !== "personal" &&
-                      doc.status === "Approved",
-                  ).length
-                }
-              </span>
-            </Button>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       <div className="bg-white border rounded-xl overflow-scroll shadow-sm min-h-[45vh]">
         <table className="w-full text-left">
@@ -210,7 +184,7 @@ const DocumentLibrary = () => {
                     key={i}
                     className="border-t hover:bg-gray-50 transition-colors"
                   >
-                    <td className="py-4 px-6 font-medium">{doc.file_name}</td>
+                    <td className="py-4 px-6 font-medium">{getFileNameFromUrl(doc.file_name)}</td>
                     <td className="py-4 px-6 text-gray-600">
                       {doc.employee_name}
                     </td>
@@ -231,10 +205,7 @@ const DocumentLibrary = () => {
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex gap-2 items-center">
-
-
-                        {/* Personal or Approved → show View + Download buttons */}
-                        {(doc.type === "Personal" || doc.status === "Approved") && (
+                        {(doc.status === "Approved") && (
                           <>
                             {canViewDocument && (
                               <Button
@@ -245,19 +216,14 @@ const DocumentLibrary = () => {
                               </Button>
                             )}
                             {canDownloadDocument && (
-                              <a
-                                href={getFileUrl(doc.file_name)}
-                                download
-                              // className="inline-flex items-center px-4 py-1 rounded-md bg-primary-500 hover:bg-primary-600 text-white hover:text-white transition-colors text-xs font-brand"
-                              >
-                                <Button variant="contain" >
+                              <a href={getFileUrl(doc.file_name)} download>
+                                <Button variant="contain">
                                   Download
                                 </Button>
                               </a>
                             )}
                           </>
                         )}
-                        {/* Acknowledgement Required → show Acknowledge button */}
                         {doc.status === "Acknowledgement Required" && (
                           <Button
                             variant="contain"

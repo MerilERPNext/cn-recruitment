@@ -71,6 +71,7 @@ frappe.ui.form.on("Job Offer", {
 		}
 	},
 	custom_ctc_per_annum:function(frm){
+		if (!frm.fields_dict.custom_ctc_per_month) return;
 		if(frm.doc.custom_ctc_per_annum){
 			frm.set_value("custom_ctc_per_month", Math.round(frm.doc.custom_ctc_per_annum / 12));
 		}else{
@@ -79,29 +80,48 @@ frappe.ui.form.on("Job Offer", {
 	},
 	job_applicant: function(frm) {
 		if (frm.doc.job_applicant) {
-			if(frm.doc.job_applicant){
-				frappe.call({
-					method: "recruitment.auto_fetch_fields.job_applicant_fields",
-					args: {
-						"job_applicant": frm.doc.job_applicant,
-					},
-					callback: function(r) {
-						if (r.message) {
-							frm.set_value(r.message);
-							// var doclist = frappe.model.sync(r.message);
-							// frappe.set_route("Form", doclist[0].doctype, doclist[0].name);
+			frappe.call({
+				method: "recruitment.auto_fetch_fields.job_applicant_fields",
+				args: {
+					"job_applicant": frm.doc.job_applicant,
+				},
+				callback: function(r) {
+					if (r.message) {
+						frm.set_value(r.message);
+					}
+				}
+			});
+			if (frm.fields_dict.custom_ctc_per_annum) {
+				frappe.db.get_value("Job Applicant", frm.doc.job_applicant, "custom_ctc_finalized")
+					.then(r => {
+						if (r && r.message) {
+							frm.set_value("custom_ctc_per_annum", r.message.custom_ctc_finalized);
 						}
-					}
-				});
+					});
 			}
-			frappe.db.get_value("Job Applicant", frm.doc.job_applicant, "custom_ctc_finalized")
-				.then(r => {
-					if (r && r.message) {
-						frm.set_value("custom_ctc_per_annum", r.message.custom_ctc_finalized);
-					}
-				});
-		} else {
+		} else if (frm.fields_dict.custom_ctc_per_annum) {
 			frm.set_value("custom_ctc_per_annum", null);
 		}
-	}	
+	}
 })
+
+
+frappe.ui.form.on('Job Offer', {
+    refresh(frm) {
+        if (frm.doc.__islocal || frm.doc.status !== 'Accepted' || !frm.doc.job_applicant) return;
+
+        // Gated by Recruitment Settings -> Enable Pre Onboarding Form Button.
+        frappe.db.get_single_value('Recruitment Settings', 'enable_pre_onboarding_form').then((enabled) => {
+            if (!enabled) return;
+            frm.add_custom_button(__('Send Pre Onboarding Form'), () => {
+                frappe.db.get_doc('Job Applicant', frm.doc.job_applicant).then((applicant) => {
+                    if (window.recruitment && typeof window.recruitment.open_pre_onboarding_dialog === 'function') {
+                        window.recruitment.open_pre_onboarding_dialog(frm.doc.job_applicant, applicant);
+                    } else {
+                        frappe.set_route('Form', 'Job Applicant', frm.doc.job_applicant);
+                    }
+                });
+            }, __('Actions'));
+        });
+    }
+});

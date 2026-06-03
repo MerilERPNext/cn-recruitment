@@ -20,6 +20,7 @@ import {
 import { FilterCondition } from "../types/frappe";
 import { AddressInfoData } from "../types/profile";
 import { useLoggedInUser } from "./useLoggedInUser";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
 
 // Hook to get a single employee by ID
 const defaultQueryOptions = {
@@ -179,20 +180,24 @@ export interface EmployeeDetilsType {
   grade_name: string;
 }
 
-
 export const useCurrentEmployeeDetails = ({
   employeeId,
-  logged_in_employee_details
+  logged_in_employee_details,
 }: {
   employeeId?: string;
   logged_in_employee_details?: boolean;
 }) => {
   return useQuery<EmployeeDetilsType | null, Error>({
-    queryKey: ["currentEmployeeDetails", employeeId, logged_in_employee_details],
-    queryFn: async () => EmployeeService.getCurrnetEmployeeDetails({
+    queryKey: [
+      "currentEmployeeDetails",
       employeeId,
       logged_in_employee_details,
-    }),
+    ],
+    queryFn: async () =>
+      EmployeeService.getCurrnetEmployeeDetails({
+        employeeId,
+        logged_in_employee_details,
+      }),
     select: (data: EmployeeDetilsType | null) => {
       if (data) {
         if (data && data.employee && data.employee === data.name) return data;
@@ -215,14 +220,12 @@ export const useCurrentEmployeeDetails = ({
  * or pass fields in params.
  */
 export const useCurrentEmployeeAllDetails = <
-  T extends keyof Employee = never
->(
-  params?: {
-    user_id?: string;
-    name?: string;
-    fields?: T[];
-  }
-) => {
+  T extends keyof Employee = never,
+>(params?: {
+  user_id?: string;
+  name?: string;
+  fields?: T[];
+}) => {
   // Internally resolve the logged-in user when no user_id is supplied
   const { data: loggedInUserId } = useLoggedInUser({
     enabled: !params?.user_id || params.user_id.trim() === "",
@@ -230,19 +233,27 @@ export const useCurrentEmployeeAllDetails = <
 
   // The effective user id: prefer the explicit arg, fall back to logged-in user
   const effectiveUserId =
-    params?.user_id && params.user_id.trim() !== "" ? params.user_id : (loggedInUserId ?? "");
+    params?.user_id && params.user_id.trim() !== ""
+      ? params.user_id
+      : (loggedInUserId ?? "");
 
   // Resolve the fields to fetch: prefer explicit fields, fallback to centralized defaults
-  const effectiveFields = params?.fields && params.fields.length > 0
-    ? params.fields
-    : (DEFAULT_EMPLOYEE_FIELDS as unknown as T[]);
+  const effectiveFields =
+    params?.fields && params.fields.length > 0
+      ? params.fields
+      : (DEFAULT_EMPLOYEE_FIELDS as unknown as T[]);
 
   type ResultType = [T] extends [never]
     ? Pick<Employee, (typeof DEFAULT_EMPLOYEE_FIELDS)[number]>
     : Pick<Employee, T>;
 
   return useQuery<ResultType | null, Error>({
-    queryKey: ["currentEmployeeAllDetails", effectiveUserId, params?.name, effectiveFields],
+    queryKey: [
+      "currentEmployeeAllDetails",
+      effectiveUserId,
+      params?.name,
+      effectiveFields,
+    ],
     queryFn: async () => {
       if (
         !effectiveUserId ||
@@ -489,10 +500,14 @@ export const useGetEmployeeFieldPermissions = ({
     enabled: !!doctype,
   });
 };
-export const useGetEmployeeDetailsByEmpId = (employee_id: string, fields?: string[]) => {
+export const useGetEmployeeDetailsByEmpId = (
+  employee_id: string,
+  fields?: string[],
+) => {
   return useQuery({
     queryKey: ["all-emp-details-by-employee-id", employee_id, fields],
-    queryFn: () => profileService.getEmployeeDetailsByEmpId(employee_id, fields),
+    queryFn: () =>
+      profileService.getEmployeeDetailsByEmpId(employee_id, fields),
     staleTime: 1000 * 60 * 5,
     enabled: !!employee_id,
   });
@@ -598,13 +613,57 @@ export const useGetEmpDesignationHierarchyCurrentDetails = (
   });
 };
 
+export const useUpdateEmploymentDetailsMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["updateEmploymentDetails"],
+    mutationFn: (body: Record<string, unknown>) =>
+      profileService.updateEmploymentDetails(body),
+    onError: (error) => {
+      console.error("Error updating employment details:", error);
+      toast.error(errorResponseFormater(error));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employment-history-data"] });
+      toast.success("Employment details updated successfully");
+    },
+  });
+};
+
+
+export const useUpdateEmployeeCostCentersMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["updateEmployeeCostCenters"],
+    mutationFn: (body: Record<string, unknown>) =>
+      profileService.updateEmployeeCostCenters(body),
+    onError: (error) => {
+      console.error("Error updating employee cost centers:", error);
+      const message =
+        error instanceof Error ? error.message : errorResponseFormater(error);
+      toast.error(message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employment-history-data"] });
+      toast.success("Employee cost centers updated successfully");
+    },
+  });
+};
+
+
+
 export const useAddEmployeeHistoryMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["addEmployeeHistory"],
     mutationFn: (body: Record<string, unknown>) =>
       profileService.addEmployeeHistory(body),
     onError: (error) => {
       console.error("Error adding employee history:", error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employment-history-data"] });
+      toast.success("Employee history added successfully");
     },
   });
 };
@@ -632,6 +691,54 @@ export const useGetEmployeeHierarchyHistory = (employee: string) => {
   return useQuery({
     queryKey: ["getEmployeeHierarchyHistory", employee],
     queryFn: () => profileService.getEmployeeHierarchyHistory(employee),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee,
+  });
+};
+export const useDeleteEmpReportingDetailsRecordMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["deleteEmpReportingDetailsRecord"],
+    mutationFn: (name: string) => profileService.deleteEmpReportingDetailsRecord(name),
+    onError: (error) => {
+      toast.error(errorResponseFormater(error));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getEmployeeHierarchyHistory"] });
+      toast.success("Employee reporting details deleted successfully");
+    },
+  });
+};
+
+export const useUpdateEmpReportingDetailsRecordMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["updateEmpReportingDetailsRecord"],
+    mutationFn: ({ employee, field, value, start_date }: { employee: string, field: string, value: string, start_date: string }) => profileService.updateEmpReportingDetailsRecord(employee, field, value, start_date),
+    onError: (error) => {
+      toast.error(errorResponseFormater(error));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["getEmployeeHierarchyHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["getEmployeeReportingDetails"] });
+      toast.success("Employee reporting details updated successfully");
+    },
+  });
+};
+
+export const useGetAssignmentDetails = (module: string, employee: string) => {
+  return useQuery({
+    queryKey: ["assignment-details", module, employee],
+    queryFn: () => EmployeeService.getAssignmentDetails(module, employee),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!module && !!employee,
+  });
+};
+
+export const useGetFutureFieldTransactions = (employee: string) => {
+  return useQuery({
+    queryKey: ["getFutureFieldTransactions", employee],
+    queryFn: () => profileService.getFutureFieldTransactions(employee),
     staleTime: 1000 * 60 * 5,
     enabled: !!employee,
   });
@@ -779,6 +886,21 @@ export const useDeactivateEmployeeMutation = () => {
       ),
     onError: (error) => {
       console.error("Error deactivating employee:", error);
+    },
+  });
+};
+
+export const useResetOtpResendLimitMutation = () => {
+  return useMutation({
+    mutationKey: ["resetOtpResendLimit"],
+    mutationFn: (user_id: string) => EmployeeService.resetOtpResendLimit(user_id),
+    onSuccess: (data: any) => {
+      const msg = data?.message?.message || "OTP resend limit reset successfully";
+      toast.success(msg);
+    },
+    onError: (error) => {
+      console.error("Error resetting OTP resend limit:", error);
+      toast.error(errorResponseFormater(error) || "Failed to reset OTP resend limit");
     },
   });
 };

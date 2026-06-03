@@ -37,6 +37,7 @@ import AttachmentPreview from "./AttachmentPreview";
 
 interface WorkflowTableProps {
   data: FlowRequestItem;
+  noPadding?: boolean;
 }
 
 const titles = [
@@ -49,7 +50,7 @@ const titles = [
   "Actions",
 ];
 
-const WorkflowTable: React.FC<WorkflowTableProps> = ({ data }) => {
+const WorkflowTable: React.FC<WorkflowTableProps> = ({ data, noPadding = false }) => {
   const { isDesktop } = useScreenSize();
   const queryClient = useQueryClient();
 
@@ -73,10 +74,15 @@ const WorkflowTable: React.FC<WorkflowTableProps> = ({ data }) => {
   const workflowPending = data?.workflow_status === "Pending";
 
   return (
-    <div className="sm:px-7 px-4">
-      <CardTable titles={titles}>
+    <div className={noPadding ? "px-4 sm:px-0" : "sm:px-7 px-4"}>
+      <CardTable
+        titles={titles}
+        noBorder={noPadding}
+        noShadow={noPadding}
+        noRound={noPadding}
+      >
         {isDesktop ? (
-          <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className={noPadding ? "w-full overflow-x-auto bg-white" : "w-full overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm"}>
             <div className="w-full">
               {data.workflow_stages.length > 0 ? (
                 data.workflow_stages.map((stage, idx) => (
@@ -308,7 +314,7 @@ const WorkflowCard = ({
               (text) => (
                 <Typography
                   variant="bodySmall"
-                  className="font-medium text-center text-primary-600 cursor-pointer"
+                  className="font-medium text-center text-primary-600 cursor-pointer underline"
                 >
                   {text}
                 </Typography>

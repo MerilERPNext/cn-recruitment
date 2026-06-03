@@ -152,7 +152,7 @@ const FlowTableRow = ({
           (text) => (
             <Typography
               variant="bodySmall"
-              className="font-medium text-center text-primary-600 cursor-pointer"
+              className="font-medium text-center text-primary-600 cursor-pointer underline"
             >
               {text}
             </Typography>
@@ -188,7 +188,6 @@ const FlowTableRow = ({
           position="right"
           users={stage.allocated_to}
           roles={allocatedTo.roles}
-          role={stage.role || ""}
           RoleAssignedUsers={stage?.role_assigned_users || []}
         >
           <StatusBadge status={stage.status || "-"} />

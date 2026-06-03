@@ -36,8 +36,6 @@ const ApprovalStageTooltip: React.FC<ApprovalStageTooltipProps> = ({
     const tooltipRect = tooltipRef.current.getBoundingClientRect();
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const scrollY = window.scrollY;
-    const scrollX = window.scrollX;
     const PADDING = 8;
 
     let resolvedPosition = position;
@@ -60,60 +58,56 @@ const ApprovalStageTooltip: React.FC<ApprovalStageTooltipProps> = ({
 
     switch (resolvedPosition) {
       case "bottom":
-        top = triggerRect.bottom + scrollY + PADDING;
+        top = triggerRect.bottom + PADDING;
         left =
           triggerRect.left +
-          scrollX +
           triggerRect.width / 2 -
           tooltipRect.width / 2;
         break;
       case "left":
         top =
           triggerRect.top +
-          scrollY +
           triggerRect.height / 2 -
           tooltipRect.height / 2;
-        left = triggerRect.left + scrollX - tooltipRect.width - PADDING;
+        left = triggerRect.left - tooltipRect.width - PADDING;
         break;
       case "right":
         top =
           triggerRect.top +
-          scrollY +
           triggerRect.height / 2 -
           tooltipRect.height / 2;
-        left = triggerRect.right + scrollX + PADDING;
+        left = triggerRect.right + PADDING;
         break;
       case "tl":
-        top = triggerRect.top + scrollY - tooltipRect.height - PADDING;
-        left = triggerRect.left + scrollX;
+        top = triggerRect.top - tooltipRect.height - PADDING;
+        left = triggerRect.left;
         break;
       case "tr":
-        top = triggerRect.top + scrollY - tooltipRect.height - PADDING;
+        top = triggerRect.top - tooltipRect.height - PADDING;
         left =
-          triggerRect.right + scrollX - tooltipRect.width + triggerRect.width;
+          triggerRect.right - tooltipRect.width + triggerRect.width;
         break;
       case "top":
       default:
-        top = triggerRect.top + scrollY - tooltipRect.height - PADDING;
+        top = triggerRect.top - tooltipRect.height - PADDING;
         left =
           triggerRect.left +
-          scrollX +
           triggerRect.width / 2 -
           tooltipRect.width / 2;
     }
 
     // Clamp horizontally to window bounds
-    const maxLeft = vw + scrollX - tooltipRect.width - PADDING;
-    const minLeft = scrollX + PADDING;
+    const maxLeft = vw - tooltipRect.width - PADDING;
+    const minLeft = PADDING;
     const clampedLeft = Math.max(minLeft, Math.min(left, maxLeft));
 
     // Clamp vertically (just in case)
-    const maxTop = vh + scrollY - tooltipRect.height - PADDING;
-    const minTop = scrollY + PADDING;
+    const maxTop = vh - tooltipRect.height - PADDING;
+    const minTop = PADDING;
     top = Math.max(minTop, Math.min(top, maxTop));
 
     // Dynamic arrow positioning
-    const triggerCenterX = triggerRect.left + scrollX + triggerRect.width / 2;
+    const triggerCenterX = triggerRect.left + triggerRect.width / 2;
     let arrowLeft = triggerCenterX - clampedLeft;
     arrowLeft = Math.max(12, Math.min(arrowLeft, tooltipRect.width - 12));
 
@@ -299,16 +293,16 @@ const ApprovalStageTooltip: React.FC<ApprovalStageTooltipProps> = ({
             filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.06))",
             left:
               actualPosition === "top" ||
-              actualPosition === "bottom" ||
-              actualPosition === "tl" ||
-              actualPosition === "tr"
+                actualPosition === "bottom" ||
+                actualPosition === "tl" ||
+                actualPosition === "tr"
                 ? `${coords.arrowLeft}px`
                 : undefined,
             marginLeft:
               actualPosition === "top" ||
-              actualPosition === "bottom" ||
-              actualPosition === "tl" ||
-              actualPosition === "tr"
+                actualPosition === "bottom" ||
+                actualPosition === "tl" ||
+                actualPosition === "tr"
                 ? "-6px"
                 : undefined,
             top:

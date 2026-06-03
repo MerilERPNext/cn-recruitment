@@ -292,3 +292,4 @@ export const FrappeAPI = {
 };
 
 export default FrappeAPI;
+export { apiClient };

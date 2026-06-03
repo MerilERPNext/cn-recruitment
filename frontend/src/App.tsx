@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Navigate,
   Route,
@@ -34,6 +34,7 @@ import { LoadingOverlayProvider } from "./context/OverlayContext";
 import GlobalLeaveRequestModal from "./components/Leaves/GlobalLeaveRequestModal";
 
 import { useWebsiteBranding } from "./hooks/useBranding";
+import MandatoryHrProcessHandler from "./components/MandatoryHrProcessHandler";
 
 // Component to sync ViewedUserContext with frappeAPI
 // NOTE: Must be defined BEFORE App to avoid Vite HMR evaluating it outside the provider tree.
@@ -147,7 +148,16 @@ const App: React.FC = () => {
             <LoadingOverlayProvider>
               <RequestLeaveModalProvider>
                 <GlobalLeaveRequestModal />
-                <Toaster position="top-center" containerClassName="z-50">
+                <Toaster
+                  position="top-center"
+                  containerClassName="z-50 !top-4 md:!top-6"
+                  toastOptions={{
+                    style: {
+                      maxWidth: "90vw",
+                      width: "380px",
+                    }
+                  }}
+                >
                   {(t) => (
                     <ToastBar
                       toast={t}
@@ -160,42 +170,50 @@ const App: React.FC = () => {
                             : "4px solid #EF4444",
                         boxShadow:
                           "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                        minWidth: "260px",
-                        padding: "1rem",
+                        minWidth: "280px",
+                        maxWidth: "90vw",
+                        padding: "0.75rem 1rem",
                         borderRadius: "0.5rem",
                         transition:
                           "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
                       }}
                     >
                       {({ message }: { message: React.ReactNode }) => (
-                        <>
+                        <div className="flex items-start w-full min-w-0">
                           {t.type === "success" ? (
                             <CheckCircle2
-                              className="h-6 w-6 text-green-500 mr-2"
+                              className="h-5 w-5 text-green-500 mr-2 shrink-0 mt-0.5"
                               strokeWidth={2}
                             />
                           ) : (
                             <CircleX
-                              className="h-6 w-6 text-red-500 mr-2"
+                              className="h-5 w-5 text-red-500 mr-2 shrink-0 mt-0.5"
                               strokeWidth={2}
                             />
                           )}
-                          {message
-                          }
+                          <div
+                            className="flex-1 min-w-0 overflow-y-auto pr-1 text-sm text-gray-700 break-words custom-toast-scrollbar"
+                            style={{
+                              scrollbarWidth: "thin",
+                            }}
+                          >
+                            {message}
+                          </div>
                           {t.type !== "loading" && (
                             <button
-                              className="ml-4 p-1 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-700 focus:outline-none transition-colors duration-200"
+                              className="ml-3 p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:outline-none transition-colors duration-200 shrink-0"
                               onClick={() => toast.dismiss(t.id)}
                             >
                               <X className="h-4 w-4" />
                             </button>
                           )}
-                        </>
+                        </div>
                       )}
                     </ToastBar>
                   )}
                 </Toaster>
                 <MandatoryPoliciesHandler />
+                <MandatoryHrProcessHandler />
 
                 <div
                   className="min-h-screen bg-app"
@@ -222,9 +240,13 @@ export default App;
 const SESSION_POLICY_SHOWN_KEY = "policy_page_shown";
 const SESSION_POLICY_REDIRECT_TO_KEY = "policy_redirect_to";
 const SESSION_POLICY_AUTO_OPENED_KEY = "policy_is_auto_opened";
+const SESSION_NON_MANDATORY_POLICY_REDIRECTED_KEY =
+  "non_mandatory_policy_redirected";
+
 
 const MandatoryPoliciesHandler = () => {
   const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { isViewingOtherUser } = useTargetUser();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -254,11 +276,30 @@ const MandatoryPoliciesHandler = () => {
     }
   );
 
+  const {
+    data: NonMandatoryPoliciesCount,
+    isFetching: isNonMandatoryPoliciesCountFetching,
+  } = useFrappeDocumentCount(
+    {
+      doctype: "Policy Details",
+      filters: [
+        ["status", "=", "Pending"],
+        ["employee_id", "=", currentEmployee?.name || ""],
+        ["triggered_from_flow", "!=", 1],
+        ["due_date", ">=", new Date().toLocaleDateString('en-CA')],
+      ],
+    },
+    {
+      enabled: !!currentEmployee,
+    }
+  );
+
   useEffect(() => {
     if (
       isCurrentEmployeeFetching ||
       isMandatoryPoliciesCountFetching ||
-      mandatoryPoliciesCount === undefined
+      mandatoryPoliciesCount === undefined ||
+      isViewingOtherUser
     ) {
       return;
     }
@@ -302,6 +343,64 @@ const MandatoryPoliciesHandler = () => {
     isAutoOpened,
     redirectTo,
     location.pathname,
+    isViewingOtherUser,
+  ]);
+
+  // One-time redirect per page reload for non-mandatory policies
+  const hasRedirectedForNonMandatory = useRef(false);
+
+  // If a different employee logs in without a full reload, ensure we don't
+  // suppress their redirect due to a previous user's in-memory ref state.
+  useEffect(() => {
+    hasRedirectedForNonMandatory.current = false;
+  }, [currentEmployee?.name]);
+
+  useEffect(() => {
+    if (
+      isCurrentEmployeeFetching ||
+      isMandatoryPoliciesCountFetching ||
+      isNonMandatoryPoliciesCountFetching ||
+      mandatoryPoliciesCount === undefined ||
+      NonMandatoryPoliciesCount === undefined ||
+      isViewingOtherUser
+    ) {
+      return;
+    }
+
+    // Skip if mandatory policies are present (mandatory flow takes priority)
+    if (mandatoryPoliciesCount > 0) {
+      return;
+    }
+
+    const sessionRedirectKey = currentEmployee?.name
+      ? `${SESSION_NON_MANDATORY_POLICY_REDIRECTED_KEY}_${currentEmployee.name}`
+      : SESSION_NON_MANDATORY_POLICY_REDIRECTED_KEY;
+
+    // Skip if already redirected once in this session (or since last reload)
+    if (
+      hasRedirectedForNonMandatory.current ||
+      sessionStorage.getItem(sessionRedirectKey) === "true"
+    ) {
+      return;
+    }
+
+    const onPolicyPage = window.location.pathname.includes("/webapp/policies-enforced");
+
+    if (NonMandatoryPoliciesCount > 0 && !onPolicyPage) {
+      hasRedirectedForNonMandatory.current = true;
+      sessionStorage.setItem(sessionRedirectKey, "true");
+      navigate("/webapp/policies-enforced");
+    }
+  }, [
+    NonMandatoryPoliciesCount,
+    isNonMandatoryPoliciesCountFetching,
+    mandatoryPoliciesCount,
+    isCurrentEmployeeFetching,
+    isMandatoryPoliciesCountFetching,
+    navigate,
+    location.pathname,
+    isViewingOtherUser,
+    currentEmployee?.name,
   ]);
 
   return null;
