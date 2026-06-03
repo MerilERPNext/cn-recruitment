@@ -84,6 +84,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const loading = useLoadingOverlay();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [currentAttachments, setCurrentAttachments] = useState<any[]>([]);
+
   const [isFileProcessing, setIsFileProcessing] = useState(false);
   const [previewFile, setPreviewFile] = useState<{
     url: string;
@@ -432,8 +433,26 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       return;
     }
 
+    // Snapshot File blobs before submit() — Form.io strips them during validation
+    const fileSnapshot = currentAttachments.map((att) => ({
+      index: currentAttachments.indexOf(att),
+      file: att?.file instanceof Blob || att?.file instanceof File ? att.file : null,
+    }));
+
     try {
       const submission = await formInstance.current.submit();
+
+      // Restore File blobs that Form.io stripped during submit
+      setCurrentAttachments((prev) =>
+        prev.map((att, i) => {
+          const snapshot = fileSnapshot.find((s) => s.index === i);
+          if (snapshot?.file && !(att.file instanceof Blob || att.file instanceof File)) {
+            return { ...att, file: snapshot.file };
+          }
+          return att;
+        }),
+      );
+
       const fileComponent =
         formInstance.current?.getComponent("custom_attachment");
       const filesFromForm =
@@ -478,6 +497,16 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       onCancel?.();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
+      // Restore File blobs on validation failure so preview stays intact
+      setCurrentAttachments((prev) =>
+        prev.map((att, i) => {
+          const snapshot = fileSnapshot.find((s) => s.index === i);
+          if (snapshot?.file && !(att.file instanceof Blob || att.file instanceof File)) {
+            return { ...att, file: snapshot.file };
+          }
+          return att;
+        }),
+      );
       const formatted = errorResponseFormater(
         err,
         err?.[0]?.message?.toString() ?? "Failed to Submit Leave Request",

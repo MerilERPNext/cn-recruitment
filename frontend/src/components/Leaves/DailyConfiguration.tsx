@@ -76,41 +76,43 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
       </div>
 
       {/* Apply to all section */}
-      <div className="px-4 py-3 border-b bg-white flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+      <div className={`px-4 py-3 border-b bg-white flex ${isMobile ? "flex-col gap-2" : "flex-wrap items-center gap-x-6 gap-y-2"} text-sm`}>
         <span className="font-medium text-gray-700">Apply to all:</span>
 
-        <label className="flex items-center gap-1.5 cursor-pointer select-none text-gray-600 hover:text-gray-900">
-          <input
-            type="radio"
-            name="apply-all"
-            checked={allSame === "First Half"}
-            onChange={() => applyToAll("First Half")}
-            className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-          />
-          First Half
-        </label>
+        <div className="flex items-center gap-x-6 gap-y-2 flex-wrap">
+          <label className="flex items-center gap-1.5 cursor-pointer select-none text-gray-600 hover:text-gray-900">
+            <input
+              type="radio"
+              name="apply-all"
+              checked={allSame === "First Half"}
+              onChange={() => applyToAll("First Half")}
+              className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+            />
+            First Half
+          </label>
 
-        <label className="flex items-center gap-1.5 cursor-pointer select-none text-gray-600 hover:text-gray-900">
-          <input
-            type="radio"
-            name="apply-all"
-            checked={allSame === "Second Half"}
-            onChange={() => applyToAll("Second Half")}
-            className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-          />
-          Second Half
-        </label>
+          <label className="flex items-center gap-1.5 cursor-pointer select-none text-gray-600 hover:text-gray-900">
+            <input
+              type="radio"
+              name="apply-all"
+              checked={allSame === "Second Half"}
+              onChange={() => applyToAll("Second Half")}
+              className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+            />
+            Second Half
+          </label>
 
-        <label className="flex items-center gap-1.5 cursor-pointer select-none text-gray-600 hover:text-gray-900">
-          <input
-            type="radio"
-            name="apply-all"
-            checked={allSame === "Full Day"}
-            onChange={() => applyToAll("Full Day")}
-            className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-          />
-          Full Day
-        </label>
+          <label className="flex items-center gap-1.5 cursor-pointer select-none text-gray-600 hover:text-gray-900">
+            <input
+              type="radio"
+              name="apply-all"
+              checked={allSame === "Full Day"}
+              onChange={() => applyToAll("Full Day")}
+              className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+            />
+            Full Day
+          </label>
+        </div>
       </div>
 
       {/* Conditionally Render Table on Desktop/Tablet and Cards on Mobile */}

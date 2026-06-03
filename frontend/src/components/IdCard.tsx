@@ -302,7 +302,7 @@ const ActionButtons = ({
 }: // onAttendanceAssignments,
   ActionButtonsProps) => (
   <div className="mt-8 space-y-4">
-    
+
     {employeeContact && (<div className="flex gap-4">
       <ActionButton variant="primary" icon={WhatsAppIcon} onClick={onWhatsApp}>
         WhatsApp
@@ -474,12 +474,20 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
     }
   };
 
+  const handleBackClick = () => {
+    if (window.isApp) {
+      navigate("/webapp/dashboard");
+    } else {
+      navigate(-1)
+    }
+  }
+
   return (
     <DesktopLayoutWrapper title="Employee ID Card">
       <div className="h-full overflow-y-auto bg-gray-50">
         <div className="min-h-full p-4 sm:p-6 lg:p-8">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <HeaderBar title="Employee ID Card" onBack={() => navigate(-1)} />
+            <HeaderBar title="Employee ID Card" onBack={handleBackClick} />
             {/* Header */}
             <div className="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -702,10 +710,16 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
     }
   }, [toast]);
 
+  const navigate = useNavigate();
+
   // Event handlers
   const handleBackClick = () => {
-    window.history.back();
-  };
+    if (window.isApp) {
+      navigate("/webapp/dashboard");
+    } else {
+      navigate(-1)
+    }
+  }
 
   const handleMailClick = () => {
     if (employee?.email) {
