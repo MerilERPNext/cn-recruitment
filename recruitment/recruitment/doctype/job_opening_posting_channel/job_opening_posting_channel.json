@@ -1,0 +1,60 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-05-25 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "post_to",
+  "display_from",
+  "display_to",
+  "status"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "post_to",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Post To",
+   "options": "Careers Page\nRefer\nIJP",
+   "reqd": 1
+  },
+  {
+   "columns": 3,
+   "fieldname": "display_from",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Display From"
+  },
+  {
+   "columns": 3,
+   "fieldname": "display_to",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Display To"
+  },
+  {
+   "columns": 2,
+   "default": "Inactive",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Active\nInactive"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-25 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Job Opening Posting Channel",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "ASC",
+ "states": []
+}

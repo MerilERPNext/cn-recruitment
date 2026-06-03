@@ -1,0 +1,84 @@
+import React from "react";
+import { Pencil } from "lucide-react";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+
+interface Field {
+    id: string | null;
+    name: string | null;
+}
+
+interface EmploymentRolesCardProps {
+    from_date: string;
+    to_date: string | null;
+    is_current: boolean;
+    is_promotion: boolean;
+
+    employee_role?: Field | null;
+
+    onEdit?: () => void;
+}
+
+const EmployeeRolesCard: React.FC<EmploymentRolesCardProps> = ({
+    from_date,
+    to_date,
+    is_current,
+    is_promotion,
+    employee_role,
+    onEdit,
+}) => {
+    return (
+        <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift  max-w-[90vw] min-w-[90vw]  md:min-w-[400px] md:max-w-[400px]">
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+                {is_current && (
+                    <span className="bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-xl">
+                        Current
+                    </span>
+                )}
+
+                {is_promotion && (
+                    <span className="bg-blue-100 text-blue-700 text-xs font-medium px-3 py-1 rounded-xl">
+                        Promotion
+                    </span>
+                )}
+
+                {onEdit && (
+                    <button
+                        className="text-gray-400 hover:text-gray-600 transition"
+                        onClick={onEdit}
+                    >
+                        <Pencil className="w-4 h-4" />
+                    </button>
+                )}
+            </div>
+
+            <div className="space-y-4 pr-20">
+                <div>
+                    <p className="text-xs text-gray-500">
+                        Employee Role
+                    </p>
+
+                    <p className="font-semibold text-lg text-gray-900">
+                        {employee_role?.name || "-"}
+                    </p>
+                </div>
+
+                <div>
+                    <p className="text-xs text-gray-500">
+                        Duration
+                    </p>
+
+                    <p className="font-medium text-gray-900">
+                        {formatToIndianDate(from_date)} -{" "}
+                        {is_current
+                            ? "Present"
+                            : to_date
+                                ? formatToIndianDate(to_date)
+                                : "-"}
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default EmployeeRolesCard;

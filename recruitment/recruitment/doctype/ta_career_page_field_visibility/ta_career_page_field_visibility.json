@@ -1,0 +1,61 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-05-19 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "field_key",
+  "field_label",
+  "tile_visibility",
+  "details_visibility"
+ ],
+ "fields": [
+  {
+   "fieldname": "field_key",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Field Key",
+   "read_only": 1
+  },
+  {
+   "columns": 6,
+   "fieldname": "field_label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Field Name",
+   "read_only": 1
+  },
+  {
+   "columns": 3,
+   "fieldname": "tile_visibility",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Job Tile Visibility"
+  },
+  {
+   "columns": 3,
+   "fieldname": "details_visibility",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Job Details Visibility"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-19 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "TA Career Page Field Visibility",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 0,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

@@ -1,0 +1,48 @@
+{
+    "title": "Reporting Details",
+    "name": "reportingDetails",
+    "path": "reporting-details",
+    "display": "form",
+    "components": [
+        {
+            "type": "panel",
+            "key": "reportingDetailsPanel",
+            "label": "Reporting Details",
+            "title": "Reporting Details",
+            "hideLabel": true,
+            "customClass": "bg-white rounded-lg",
+            "components": [
+                {
+                    "label": "Select Value",
+                    "errorLabel": "Select Value",
+                    "key": "reports_to",
+                    "type": "select",
+                    "input": true,
+                    "placeholder": "Select Value",
+                    "customClass": "mb-4",
+                    "dataSrc": "url",
+                    "data": {
+                        "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=[%22*%22]&doctype=Employee"
+                    },
+                    "valueProperty": "name",
+                    "template": "<span><div>{{ item.employee_name || '-' }} ({{ item.name || '-' }})</div><div style=\"font-size:0.85em;color:#6b7280;\">{{ item.department ||'' }}, {{item.branch || ''}}</div></span>",
+                    "selectValues": "message",
+                    "refreshOn": "isForOthers",
+                    "clearOnRefresh": false,
+                    "lazyLoad": false,
+                    "searchField": "q",
+                    "customDefaultValue": "value = data.defaultEmployee ? data.defaultEmployee : null;"
+                },
+                {
+                    "type": "datetime",
+                    "key": "start_date",
+                    "label": "Start Date",
+                    "errorLabel": "Start Date",
+                    "format": "dd-MM-yyyy",
+                    "enableTime": false,
+                    "input": true
+                }
+            ]
+        }
+    ]
+}

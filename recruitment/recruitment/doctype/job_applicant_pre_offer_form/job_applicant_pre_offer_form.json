@@ -1,0 +1,73 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-05-18 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "portal_form",
+  "status",
+  "column_break_1",
+  "sent_at",
+  "filled_at",
+  "action_item"
+ ],
+ "fields": [
+  {
+   "description": "Optional. Empty for opening-config (form-less) pre-offers; set only for legacy Portal Form sends.",
+   "fieldname": "portal_form",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Portal Form",
+   "options": "Job Applicant Portal Forms"
+  },
+  {
+   "default": "Sent",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Sent\nFilled\nReviewed",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sent_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Sent At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "filled_at",
+   "fieldtype": "Datetime",
+   "label": "Filled At",
+   "read_only": 1
+  },
+  {
+   "description": "Linked Candidate Action Center Item name (internal).",
+   "fieldname": "action_item",
+   "fieldtype": "Data",
+   "label": "Action Item",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-18 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Job Applicant Pre Offer Form",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

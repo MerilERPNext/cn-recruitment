@@ -1,0 +1,188 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "naming_series:",
+ "creation": "2026-05-19 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "basic_info_section",
+  "naming_series",
+  "duplicity_check_setting_name",
+  "column_break_basic",
+  "created_on",
+  "duplicity_check_configuration_section",
+  "applicable_to",
+  "select_duplicity_check_fields",
+  "candidate_reapplication_section",
+  "days_before_candidate_reapplication",
+  "column_break_candidate",
+  "allow_candidate_multi_positions_other_sources",
+  "allow_candidate_multi_positions_external_recruiter",
+  "employee_ijp_section",
+  "days_before_employee_ijp_reapplication",
+  "column_break_employee",
+  "allow_employee_multi_positions_ijp",
+  "override_permissions_section",
+  "allow_override_by_admins_and_roles"
+ ],
+ "fields": [
+  {
+   "fieldname": "basic_info_section",
+   "fieldtype": "Section Break",
+   "label": "Basic Information"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "TDC-.#####",
+   "reqd": 1
+  },
+  {
+   "fieldname": "duplicity_check_setting_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Duplicity Check Setting Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "column_break_basic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "created_on",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Created On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "duplicity_check_configuration_section",
+   "fieldtype": "Section Break",
+   "label": "Duplicity Check Configuration"
+  },
+  {
+   "description": "Pick one or more companies this setting should apply to.",
+   "fieldname": "applicable_to",
+   "fieldtype": "Table MultiSelect",
+   "label": "Applicable To",
+   "options": "TA Duplicity Check Company",
+   "reqd": 1
+  },
+  {
+   "description": "Pick the Job Applicant fields that should be checked to detect duplicate applications.",
+   "fieldname": "select_duplicity_check_fields",
+   "fieldtype": "Table MultiSelect",
+   "label": "Select Duplicity Check Fields",
+   "options": "TA Duplicity Check Field"
+  },
+  {
+   "fieldname": "candidate_reapplication_section",
+   "fieldtype": "Section Break",
+   "label": "Candidate Reapplication Rules"
+  },
+  {
+   "description": "Number of days a candidate must wait before they can reapply.",
+   "fieldname": "days_before_candidate_reapplication",
+   "fieldtype": "Int",
+   "label": "# of Days Before Reapplication by Candidate",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_candidate",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "allow_candidate_multi_positions_other_sources",
+   "fieldtype": "Check",
+   "label": "Allow Candidate to Apply for Multiple Positions - Other Sources"
+  },
+  {
+   "fieldname": "allow_candidate_multi_positions_external_recruiter",
+   "fieldtype": "Check",
+   "label": "Allow Candidate to Apply for Multiple Positions - External Recruiter"
+  },
+  {
+   "fieldname": "employee_ijp_section",
+   "fieldtype": "Section Break",
+   "label": "Employee IJP Reapplication Rules"
+  },
+  {
+   "description": "Number of days an employee must wait before they can reapply via IJP.",
+   "fieldname": "days_before_employee_ijp_reapplication",
+   "fieldtype": "Int",
+   "label": "# of Days Before Reapplication by Employee in IJP",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_employee",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "allow_employee_multi_positions_ijp",
+   "fieldtype": "Check",
+   "label": "Allow Employee to Apply for Multiple Positions via IJP"
+  },
+  {
+   "fieldname": "override_permissions_section",
+   "fieldtype": "Section Break",
+   "label": "Override Permissions"
+  },
+  {
+   "fieldname": "allow_override_by_admins_and_roles",
+   "fieldtype": "Check",
+   "label": "Allow Super Admins, Hiring Leads and Permission Role Holders to Override Duplicity Check Settings"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-19 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "TA Duplicity Check Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "duplicity_check_setting_name",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "duplicity_check_setting_name",
+ "track_changes": 1
+}

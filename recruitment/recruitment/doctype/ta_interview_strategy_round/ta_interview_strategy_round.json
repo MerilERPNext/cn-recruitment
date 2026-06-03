@@ -1,0 +1,109 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-05-19 13:30:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "round_name",
+  "is_mandatory",
+  "step_type",
+  "evaluation_form",
+  "auto_rejection_of_candidates",
+  "skip_stage_for_sources",
+  "interviewer_scheduling_template",
+  "candidate_scheduling_template",
+  "interview_guide",
+  "allow_skipping",
+  "enable_panel_interview"
+ ],
+ "fields": [
+  {
+   "fieldname": "round_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Round",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "is_mandatory",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Mandatory"
+  },
+  {
+   "fieldname": "step_type",
+   "fieldtype": "Select",
+   "label": "Step Type",
+   "options": "\nInterview"
+  },
+  {
+   "depends_on": "eval:doc.step_type == 'Interview'",
+   "fieldname": "evaluation_form",
+   "fieldtype": "Link",
+   "label": "Select scales/Evaluation forms",
+   "options": "Microapp Form Widget"
+  },
+  {
+   "default": "0",
+   "description": "If enabled, candidates rejected at this stage are auto-rejected.",
+   "fieldname": "auto_rejection_of_candidates",
+   "fieldtype": "Check",
+   "label": "Auto Rejection of Candidates"
+  },
+  {
+   "fieldname": "skip_stage_for_sources",
+   "fieldtype": "Table MultiSelect",
+   "label": "Skip Stage For Sources",
+   "options": "TA Hiring Source Item"
+  },
+  {
+   "fieldname": "interviewer_scheduling_template",
+   "fieldtype": "Link",
+   "label": "Interviewer Scheduling Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "candidate_scheduling_template",
+   "fieldtype": "Link",
+   "label": "Candidate Scheduling Template",
+   "options": "Email Template"
+  },
+  {
+   "fieldname": "interview_guide",
+   "fieldtype": "Link",
+   "label": "Interview Guide",
+   "options": "TA Interview Guide"
+  },
+  {
+   "default": "Yes",
+   "fieldname": "allow_skipping",
+   "fieldtype": "Select",
+   "label": "Allow skipping",
+   "options": "Yes\nNo"
+  },
+  {
+   "default": "No",
+   "description": "Enable Panel Interview for this stage",
+   "fieldname": "enable_panel_interview",
+   "fieldtype": "Select",
+   "label": "Enable Panel Interview",
+   "options": "Yes\nNo"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-19 14:20:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "TA Interview Strategy Round",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

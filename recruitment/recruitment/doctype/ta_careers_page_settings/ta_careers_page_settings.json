@@ -1,0 +1,187 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-05-19 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "general_settings_section",
+  "enable_group_company_wise_careers_pages",
+  "show_only_l1_departments_on_careers_page",
+  "column_break_general",
+  "show_office_area_in_careers_page_location",
+  "location_nomenclature",
+  "career_site_filters_section",
+  "career_site_filters_description",
+  "filter_department",
+  "filter_location",
+  "filter_experience_range",
+  "filter_employee_type",
+  "column_break_filters",
+  "filter_functional_area",
+  "filter_capability",
+  "filter_job_tags",
+  "filter_country",
+  "career_page_fields_section",
+  "career_page_fields_description",
+  "career_page_field_visibility",
+  "company_settings_section",
+  "company_settings_description",
+  "company_careers_page_settings"
+ ],
+ "fields": [
+  {
+   "fieldname": "general_settings_section",
+   "fieldtype": "Section Break",
+   "label": "General Settings"
+  },
+  {
+   "description": "Allow each group company to have its own careers page.",
+   "fieldname": "enable_group_company_wise_careers_pages",
+   "fieldtype": "Check",
+   "label": "Enable Group Company-wise Careers Pages"
+  },
+  {
+   "description": "Restrict the careers page to display only Level 1 (top level) departments.",
+   "fieldname": "show_only_l1_departments_on_careers_page",
+   "fieldtype": "Check",
+   "label": "Show Only L1 Departments On Careers Page"
+  },
+  {
+   "fieldname": "column_break_general",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Display the office area along with the location on the careers page.",
+   "fieldname": "show_office_area_in_careers_page_location",
+   "fieldtype": "Check",
+   "label": "Show Office Area in Careers Page Location"
+  },
+  {
+   "description": "Set the label used to display the location on the careers page (e.g. Location, City, Office).",
+   "fieldname": "location_nomenclature",
+   "fieldtype": "Data",
+   "label": "Location Nomenclature"
+  },
+  {
+   "fieldname": "career_site_filters_section",
+   "fieldtype": "Section Break",
+   "label": "Choose Filters for your Career Site"
+  },
+  {
+   "fieldname": "career_site_filters_description",
+   "fieldtype": "HTML",
+   "options": "<p style='color:#6c757d;font-size:12px;margin-bottom:10px;'>Select the filters that should be available to candidates on the careers page.</p>"
+  },
+  {
+   "fieldname": "filter_department",
+   "fieldtype": "Check",
+   "label": "Department"
+  },
+  {
+   "fieldname": "filter_location",
+   "fieldtype": "Check",
+   "label": "Location"
+  },
+  {
+   "fieldname": "filter_experience_range",
+   "fieldtype": "Check",
+   "label": "Experience Range"
+  },
+  {
+   "fieldname": "filter_employee_type",
+   "fieldtype": "Check",
+   "label": "Employee Type"
+  },
+  {
+   "fieldname": "column_break_filters",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "filter_functional_area",
+   "fieldtype": "Check",
+   "label": "Functional Area"
+  },
+  {
+   "fieldname": "filter_capability",
+   "fieldtype": "Check",
+   "label": "Capability"
+  },
+  {
+   "fieldname": "filter_job_tags",
+   "fieldtype": "Check",
+   "label": "Job Tags"
+  },
+  {
+   "fieldname": "filter_country",
+   "fieldtype": "Check",
+   "label": "Country"
+  },
+  {
+   "fieldname": "career_page_fields_section",
+   "fieldtype": "Section Break",
+   "label": "Configure Fields Shown on the Career Page"
+  },
+  {
+   "fieldname": "career_page_fields_description",
+   "fieldtype": "HTML",
+   "options": "<p style='color:#6c757d;font-size:12px;margin-bottom:10px;'>Configure visibility of each field on the Job Tile (card on the listings page) and on the Job Details page.</p>"
+  },
+  {
+   "fieldname": "career_page_field_visibility",
+   "fieldtype": "Table",
+   "label": "Field Visibility",
+   "options": "TA Career Page Field Visibility"
+  },
+  {
+   "fieldname": "company_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Company Careers Page Settings"
+  },
+  {
+   "fieldname": "company_settings_description",
+   "fieldtype": "HTML",
+   "options": "<p style='color:#6c757d;font-size:12px;margin-bottom:10px;'>Configure company-specific careers page settings. Click the edit icon on any row to manage banner text, images, social links and more.</p>"
+  },
+  {
+   "fieldname": "company_careers_page_settings",
+   "fieldtype": "Table",
+   "label": "Company Careers Page Settings",
+   "options": "Company Careers Page Setting"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-05-19 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "TA Careers Page Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "HR Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "HR User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
