@@ -229,8 +229,20 @@ export const requisitionFormSchemas = {
                 label: "Salary Range (Min)",
                 customClass: "required-field",
                 placeholder: "Min Salary",
-                validate: { required: true },
-              },
+                validate: {
+                  required: true,
+                  custom: `
+                    const minSalary = Number(input || 0);
+                    const maxSalary = Number(data.salary_max || 0);
+              
+                    if (maxSalary && minSalary >= maxSalary) {
+                      valid = 'Min Salary must be less than Max Salary';
+                    } else {
+                      valid = true;
+                    }
+                  `,
+                },
+              }
             ],
             width: 3,
             offset: 0,
@@ -245,8 +257,18 @@ export const requisitionFormSchemas = {
                 label: "Salary Range (Max)",
                 customClass: "required-field",
                 placeholder: "Max Salary",
-                validate: { required: true },
-              },
+                validate: {
+                  required: true,
+                  custom: `
+                    const minSalary = Number(data.salary_min || 0);
+                    const maxSalary = Number(input || 0);
+              
+                    valid = maxSalary > minSalary
+                      ? true
+                      : 'Max Salary must be greater than Min Salary';
+                  `,
+                },
+              }
             ],
             width: 3,
             offset: 0,
