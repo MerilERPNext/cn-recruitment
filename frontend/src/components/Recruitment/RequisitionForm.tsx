@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect,} from "react";
+import { useState, useEffect, useMemo,} from "react";
 import { Form } from "@tsed/react-formio";
 import {
   requisitionSteps,
@@ -7,6 +8,7 @@ import {
   FormSchemaKeys,
 } from "./requisitionFormSchemas";
 import Button from "../shared/atoms/Button";
+import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails, useFileUpload } from "../../hooks/useEmployee";
 import { useDeleteDocument } from "../../hooks/payroll/UseDeleteDocuemt";
 import { useCreateJobRequisition } from "../../hooks/useRecruitment";
@@ -20,6 +22,7 @@ import FrappeAPI from "../../utils/frappeAPI";
 import { useQueryClient } from "@tanstack/react-query";
 import { Edit, X, FileText, Loader2 } from "lucide-react";
 import { IoMdCloudUpload } from "react-icons/io";
+import "../../formio.custom.css";
 
 // ---------------------------------------------------------------------------
 // Validation config per step index
@@ -30,6 +33,7 @@ const stepValidationRules: Record<number, { key: string; label: string }[]> = {
     { key: "company", label: "Company" },
     { key: "department", label: "Department" },
     { key: "designation", label: "Designation" },
+    { key: "functional_area", label: "Functional Area" },
   ],
   1: [
     { key: "salary_currency", label: "Salary Range (Currency)" },
@@ -163,11 +167,146 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
 }
 
 // ---------------------------------------------------------------------------
+// Make form.io URL <select> fields display the selected option's LABEL (not the
+// raw id) after a step is unmounted/remounted on tab switch.
+//
+// By default url selects lazy-load their options, so on remount they only have
+// the stored value (id) and render it verbatim — e.g. "DEP_472" instead of the
+// department name. Disabling lazyLoad loads the options on mount, and setting
+// searchField lets form.io re-fetch the option for the current value (the
+// backend supports a `search_text` filter) so its label resolves even when the
+// value isn't in the first page of results. Applied recursively so nested
+// datagrid / columns selects (position rows) are covered too.
+// ---------------------------------------------------------------------------
+function enableUrlSelectLabels(components: any[], insideGrid = false): any[] {
+  if (!Array.isArray(components)) return components;
+  return components.map((c) => {
+    const next: any = { ...c };
+    if (next.type === "select" && next.dataSrc === "url") {
+      // Eager-load (lazyLoad:false) only for top-level selects so their saved
+      // value resolves to a label on remount. Inside a datagrid this would fire
+      // one request + build one Choices widget per row × per select (100 rows →
+      // hundreds of simultaneous loads), freezing the page — so keep those lazy
+      // (form.io's default): they only fetch when the user opens the dropdown.
+      if (!insideGrid) next.lazyLoad = false;
+      if (!next.searchField) next.searchField = "search_text";
+    }
+    // Selects nested in a datagrid/editgrid are repeated per row — flag them so
+    // descendants stay lazy.
+    const childInsideGrid =
+      insideGrid || next.type === "datagrid" || next.type === "editgrid";
+    if (Array.isArray(next.components)) {
+      next.components = enableUrlSelectLabels(next.components, childInsideGrid);
+    }
+    if (Array.isArray(next.columns)) {
+      next.columns = next.columns.map((col: any) => ({
+        ...col,
+        components: enableUrlSelectLabels(col.components || [], childInsideGrid),
+      }));
+    }
+    if (Array.isArray(next.rows)) {
+      next.rows = next.rows.map((row: any) =>
+        Array.isArray(row)
+          ? row.map((cell: any) => ({
+              ...cell,
+              components: enableUrlSelectLabels(cell.components || [], childInsideGrid),
+            }))
+          : row
+      );
+    }
+    return next;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Normalize the Total / New / Replacement counts and keep the positions array
+// in sync with them. Pure function so it can be reused by the plain-React count
+// inputs (rendered outside formio to avoid the controlled-input override issue).
+// ---------------------------------------------------------------------------
+function applyPositionCounts(newData: any, changedKey: string) {
+  let total = parseInt(newData.number_of_positions as any);
+  if (isNaN(total)) total = 0;
+  let newP = parseInt(newData.number_of_new_positions as any);
+  if (isNaN(newP)) newP = 0;
+  let repP = parseInt(newData.number_of_replacement_positions as any);
+  if (isNaN(repP)) repP = 0;
+
+  // 1. Enforce min value bounds to 0
+  if (total < 0) total = 0;
+  if (newP < 0) newP = 0;
+  if (repP < 0) repP = 0;
+
+  // 2. Enforce max value bounds of 100 for Total Position
+  if (total > 100) {
+    total = 100;
+  }
+
+  // 3. Enforce validation according to total position
+  if (changedKey === "number_of_positions") {
+    if (newP > total) {
+      newP = total;
+      repP = 0;
+    } else if (repP > total) {
+      repP = total;
+      newP = 0;
+    } else {
+      repP = Math.max(total - newP, 0);
+    }
+  } else if (changedKey === "number_of_new_positions") {
+    if (newP > total) {
+      newP = total;
+    }
+    repP = Math.max(total - newP, 0);
+  } else if (changedKey === "number_of_replacement_positions") {
+    if (repP > total) {
+      repP = total;
+    }
+    newP = Math.max(total - repP, 0);
+  }
+
+  newData.number_of_positions = total;
+  newData.number_of_new_positions = newP;
+  newData.number_of_replacement_positions = repP;
+
+  // Sync positions array rows to match new Total
+  let currentPositions = newData.positions || [];
+  if (currentPositions.length < total) {
+    const extra = Array.from(
+      { length: total - currentPositions.length },
+      (_, i) => ({
+        position_number: currentPositions.length + i + 1,
+        vacancy_type: "New",
+        location: "",
+        functional_area: "",
+        reporting_manager: "",
+        replacement_for: "",
+      })
+    );
+    currentPositions = [...currentPositions, ...extra];
+  } else if (currentPositions.length > total) {
+    currentPositions = currentPositions.slice(0, total);
+  }
+
+  newData.positions = currentPositions.map((pos: any, idx: number) => ({
+    ...pos,
+    position_number: idx + 1,
+    vacancy_type: idx < newP ? "New" : "Replacement",
+    ...(idx < newP ? { replacement_for: "" } : {}),
+  }));
+
+  return newData;
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 const RequisitionForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: currentUser } = useCurrentUser();
+  // System Manager / Administrator can edit the Hiring Manager (employee) field;
+  // for everyone else it stays read-only.
+  const canEditEmployeeField = isAdminUser(currentUser ?? null);
   const createJobRequisition = useCreateJobRequisition();
   const navigate = useNavigate();
   const location = useLocation();
@@ -178,23 +317,27 @@ const RequisitionForm = () => {
   const isEditMode = Boolean(existingRequisition);
 
   const [formData, setFormData] = useState<JobRequisitionFormData>({
-    number_of_positions: "",
-    number_of_new_positions: "",
-    number_of_replacement_positions: "",
-    positions: [
-      {
-        position_number: 1,
-        vacancy_type: "New",
-        location: "",
-        functional_area: "",
-        reporting_manager: "",
-        replacement_for: "",
-      }
-    ]
+    number_of_positions: 0,
+    number_of_new_positions: 0,
+    number_of_replacement_positions: 0,
+    positions: []
   } as unknown as JobRequisitionFormData);
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // Raw draft strings for the Total / New / Replacement number inputs while the
+  // user is typing. Keeping the in-progress text here (instead of coercing it to
+  // a number on every keystroke) lets the field be emptied/edited freely; the
+  // value is normalized into formData on blur.
+  const [countDrafts, setCountDrafts] = useState<
+    Partial<Record<
+      | "number_of_positions"
+      | "number_of_new_positions"
+      | "number_of_replacement_positions",
+      string
+    >>
+  >({});
 
 
 
@@ -333,25 +476,50 @@ const RequisitionForm = () => {
     }
   };
 
-  // Pre-populate for edit mode
+  // Pre-populate for edit mode.
+  // The object passed via navigation state is the trimmed list-view row, so it
+  // is missing most fields. Seed the form from it immediately (so the form is
+  // not blank while loading), then fetch the COMPLETE requisition by name and
+  // re-map it so every field is populated on edit.
   useEffect(() => {
-    if (isEditMode && existingRequisition) {
-      const mapped = mapRequisitionToFormData(existingRequisition);
-      setFormData(mapped as JobRequisitionFormData);
-    }
-  }, [isEditMode]);
+    if (!isEditMode || !existingRequisition) return;
 
-  // Always set employee defaults from the logged-in employee (only when not
-  // overridden by edit data). Uses the currentEmployee data directly — no extra API call.
+    setFormData(mapRequisitionToFormData(existingRequisition) as JobRequisitionFormData);
+
+    const reqName = existingRequisition.name;
+    if (!reqName) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res: any = await FrappeAPI.callMethod(
+          "recruitment.api.job_requisition.get_job_requisition",
+          { name: reqName }
+        );
+        // callMethod unwraps response.data.message → { success, message, data }
+        const full = res?.data ?? res;
+        if (!cancelled && full && typeof full === "object") {
+          setFormData(mapRequisitionToFormData(full) as JobRequisitionFormData);
+        }
+      } catch (err) {
+        console.error("Failed to fetch full requisition for edit:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [existingRequisition, isEditMode]);
+
+  // Set only Hiring Manager + Company defaults from the logged-in employee.
+  // Department / Designation / Functional Area are NOT auto-filled — the user
+  // selects them via the cascading dropdowns (department→designation→functional area).
   useEffect(() => {
     if (currentEmployee?.name && !isEditMode && !formData.hiring_manager) {
       setFormData((prev: any) => ({
         ...prev,
         hiring_manager: currentEmployee.name,
         company: currentEmployee.company,
-        department: currentEmployee.department_name || "",
-        designation: currentEmployee.designation_name || "",
-        functional_area: (currentEmployee as any).custom_functional_area || "",
       }));
     }
   }, [currentEmployee, isEditMode, formData.hiring_manager]);
@@ -454,125 +622,61 @@ const RequisitionForm = () => {
     }
   };
 
+  type CountKey =
+    | "number_of_positions"
+    | "number_of_new_positions"
+    | "number_of_replacement_positions";
+
+  // While typing, just hold the raw text so the field can be emptied/edited
+  // freely without being coerced to a number on every keystroke.
+  const handlePositionCountChange = (changedKey: CountKey, rawValue: string) => {
+    setCountDrafts((prev) => ({ ...prev, [changedKey]: rawValue }));
+  };
+
+  // On blur, normalize the typed value into formData and rebuild the positions
+  // array, then drop the draft so the input reflects the normalized number.
+  const commitPositionCount = (changedKey: CountKey) => {
+    const draft = countDrafts[changedKey];
+    if (draft === undefined) return;
+    setFormData((prev: any) =>
+      applyPositionCounts({ ...prev, [changedKey]: draft }, changedKey)
+    );
+    setCountDrafts((prev) => {
+      const next = { ...prev };
+      delete next[changedKey];
+      return next;
+    });
+    if (validationErrors.length > 0) {
+      setValidationErrors([]);
+    }
+  };
+
+  // Display the in-progress draft while editing, otherwise the normalized value.
+  const positionCountValue = (changedKey: CountKey): string => {
+    const draft = countDrafts[changedKey];
+    if (draft !== undefined) return draft;
+    const val = (formData as any)[changedKey];
+    return val === undefined || val === null ? "" : String(val);
+  };
+
   const handleChange = (changed: { data: any; changed?: { component?: { key?: string }; value?: any } }) => {
     const newData = { ...formData, ...changed.data };
-    const changedKey = changed.changed?.component?.key;
 
-    if (
-      changedKey === "number_of_positions" ||
-      changedKey === "number_of_new_positions" ||
-      changedKey === "number_of_replacement_positions"
-    ) {
-      let total = parseInt(newData.number_of_positions as any);
-      if (isNaN(total)) total = 0;
-      let newP = parseInt(newData.number_of_new_positions as any);
-      if (isNaN(newP)) newP = 0;
-      let repP = parseInt(newData.number_of_replacement_positions as any);
-      if (isNaN(repP)) repP = 0;
+    // If a row in the positions datagrid changed directly, sync totals to the
+    // Total / New / Replacement counts so the summary inputs stay accurate.
+    const positions = newData.positions || [];
+    const actualNew = positions.filter((p: any) => p.vacancy_type === "New").length;
+    const actualRep = positions.filter((p: any) => p.vacancy_type === "Replacement").length;
+    const actualTotal = positions.length;
 
-      // 1. Enforce min value bounds to 0
-      if (total < 0) total = 0;
-      if (newP < 0) newP = 0;
-      if (repP < 0) repP = 0;
+    const total = parseInt(newData.number_of_positions as any) || 0;
+    const newP = parseInt(newData.number_of_new_positions as any) || 0;
+    const repP = parseInt(newData.number_of_replacement_positions as any) || 0;
 
-      // 2. Enforce max value bounds of 100 for Total Position
-      if (total > 100) {
-        total = 100;
-      }
-
-      // 3. Enforce validation according to total position
-      if (changedKey === "number_of_positions") {
-        if (newP > total) {
-          newP = total;
-          repP = 0;
-        } else if (repP > total) {
-          repP = total;
-          newP = 0;
-        } else {
-          // Keep New and adjust Replacement to fill remainder
-          repP = Math.max(total - newP, 0);
-        }
-      } else if (changedKey === "number_of_new_positions") {
-        if (newP > total) {
-          newP = total;
-        }
-        repP = Math.max(total - newP, 0);
-      } else if (changedKey === "number_of_replacement_positions") {
-        if (repP > total) {
-          repP = total;
-        }
-        newP = Math.max(total - repP, 0);
-      }
-
-      newData.number_of_positions = total;
-      newData.number_of_new_positions = newP;
-      newData.number_of_replacement_positions = repP;
-
-      // Sync positions array rows to match new Total
-      let currentPositions = newData.positions || [];
-      if (currentPositions.length < total) {
-        const extra = Array.from(
-          { length: total - currentPositions.length },
-          (_, i) => ({
-            position_number: currentPositions.length + i + 1,
-            vacancy_type: "New",
-            location: "",
-            functional_area: "",
-            reporting_manager: "",
-            replacement_for: "",
-          })
-        );
-        currentPositions = [...currentPositions, ...extra];
-      } else if (currentPositions.length > total) {
-        currentPositions = currentPositions.slice(0, total);
-      }
-
-      newData.positions = currentPositions.map((pos: any, idx: number) => ({
-        ...pos,
-        position_number: idx + 1,
-        vacancy_type: idx < newP ? "New" : "Replacement",
-        ...(idx < newP ? { replacement_for: "" } : {}),
-      }));
-    } else {
-      // If a row in the datagrid changed directly, sync totals to parent fields
-      const positions = newData.positions || [];
-      const actualNew = positions.filter((p: any) => p.vacancy_type === "New").length;
-      const actualRep = positions.filter((p: any) => p.vacancy_type === "Replacement").length;
-      const actualTotal = positions.length;
-
-      const total = parseInt(newData.number_of_positions as any) || 0;
-      const newP = parseInt(newData.number_of_new_positions as any) || 0;
-      const repP = parseInt(newData.number_of_replacement_positions as any) || 0;
-
-      if (total !== actualTotal || newP !== actualNew || repP !== actualRep) {
-        newData.number_of_positions = actualTotal;
-        newData.number_of_new_positions = actualNew;
-        newData.number_of_replacement_positions = actualRep;
-      }
-    }
-
-    if (changed.changed?.component?.key === "hiring_manager") {
-      const managerId = changed.changed?.value;
-      if (managerId) {
-        FrappeAPI.getDocument("Employee", managerId, [
-          "department_name",
-          "designation_name",
-          "custom_functional_area",
-        ])
-          .then((employee: any) => {
-            if (employee) {
-              setFormData((prev: any) => ({
-                ...prev,
-                department: employee.department_name || "",
-                designation: employee.designation_name  || "",
-                functional_area: employee.custom_functional_area || "",
-              }));
-            }
-          })
-          .catch((err) => {
-            console.error("Error fetching employee details:", err);
-          });
-      }
+    if (total !== actualTotal || newP !== actualNew || repP !== actualRep) {
+      newData.number_of_positions = actualTotal;
+      newData.number_of_new_positions = actualNew;
+      newData.number_of_replacement_positions = actualRep;
     }
 
     if (validationErrors.length > 0) {
@@ -717,10 +821,24 @@ const RequisitionForm = () => {
     }
   };
 
-  const getCurrentSchema = () => {
+  const currentSchema = useMemo(() => {
     const stepKey = requisitionSteps[currentStep].key as FormSchemaKeys;
-    return requisitionFormSchemas[stepKey];
-  };
+    const schema = requisitionFormSchemas[stepKey];
+
+    let components = schema.components as any[];
+
+    // Basic Details: the Hiring Manager (employee) field is editable only for
+    // System Manager / Administrator; read-only for everyone else.
+    if (stepKey === "basicDetails") {
+      components = components.map((c) =>
+        c.key === "hiring_manager"
+          ? { ...c, disabled: !canEditEmployeeField }
+          : c
+      );
+    }
+
+    return { ...schema, components: enableUrlSelectLabels(components) };
+  }, [currentStep, canEditEmployeeField]);
 
   const isBusy = isUpdating || createJobRequisition.isPending;
   const canPreviewJD = !!(formData as any).designation && !!(formData as any).department;
@@ -805,8 +923,69 @@ const RequisitionForm = () => {
           )}
         </div>
 
+        {/* ── Position counts (plain React inputs, kept out of formio to avoid
+             the controlled-input override issue) ── */}
+        {currentStep === 2 && (
+          <div className="mb-4 border rounded-md p-4">
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Total Position <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={positionCountValue("number_of_positions")}
+                onChange={(e) =>
+                  handlePositionCountChange("number_of_positions", e.target.value)
+                }
+                onBlur={() => commitPositionCount("number_of_positions")}
+                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                (Max Allowed Positions per Requisition is 100)
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  New
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={positionCountValue("number_of_new_positions")}
+                  onChange={(e) =>
+                    handlePositionCountChange("number_of_new_positions", e.target.value)
+                  }
+                  onBlur={() => commitPositionCount("number_of_new_positions")}
+                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Replacement
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={positionCountValue("number_of_replacement_positions")}
+                  onChange={(e) =>
+                    handlePositionCountChange(
+                      "number_of_replacement_positions",
+                      e.target.value
+                    )
+                  }
+                  onBlur={() => commitPositionCount("number_of_replacement_positions")}
+                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         <Form
-          form={getCurrentSchema()}
+          form={currentSchema}
           submission={{ data: formData }}
           onChange={handleChange}
           onSubmit={handleSubmit}

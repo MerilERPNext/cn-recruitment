@@ -148,9 +148,14 @@ def get_job_offer_summary(appl):
             except Exception:
                 pass
 
+        # Resolve the Designation link to its title (falls back to the id).
+        designation_name = None
+        if jo.designation:
+            designation_name = frappe.db.get_value("Designation", jo.designation, "custom_designation_title") or jo.designation
+
         return {
             "applicant_name": f"{jo.get('applicant_name') or ''} {jo.get('applicant_last_name') or ''}".strip(),
-            "designation": jo.designation or "Intern",
+            "designation": designation_name or "Intern",
             "duration_display": f"{duration} Month{'s' if int(duration) != 1 else ''}" if duration else None,
             "expected_doj_display": formatdate(expected_doj) if expected_doj else None,
             "stipend_display": f"₹ {stipend}" if stipend else None,

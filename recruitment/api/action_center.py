@@ -793,6 +793,60 @@ def sync_onboarding_field_rejection_action(onboarding_doc, approval_list=None):
     )
 
 
+def sync_pre_offer_field_rejection_action(applicant_doc):
+    """Re-open (or clear) the candidate's pre-offer task based on field rejections.
+
+    Mirrors sync_onboarding_field_rejection_action for the pre-offer flow: when
+    any field in `custom_pre_offer_field_approvals` is Rejected, the candidate's
+    pre-offer action-center item is re-opened (status → "Action Required") and the
+    form-less pre-offer row is set back to "Sent" so they can correct & resubmit.
+    Once nothing is rejected, every pre-offer action item is completed again.
+    """
+    if not applicant_doc or not getattr(applicant_doc, "email_id", None):
+        return
+    candidate_email = applicant_doc.email_id
+
+    # The form-less pre-offer row anchors the candidate's pre-offer action item.
+    formless = next(
+        (r for r in (applicant_doc.get("custom_pre_offer_forms") or []) if not r.portal_form),
+        None,
+    )
+    if not formless:
+        return
+
+    rejected_count = sum(
+        1 for r in (applicant_doc.get("custom_pre_offer_field_approvals") or [])
+        if (r.get("approval_status") or "") == "Rejected"
+    )
+
+    if rejected_count <= 0:
+        mark_all_items_completed(
+            reference_doctype="Job Applicant Pre Offer Form",
+            candidate_email=candidate_email,
+            commit=True,
+        )
+        return
+
+    item = _upsert_minimal_item(
+        candidate_email=candidate_email,
+        reference_doctype="Job Applicant Pre Offer Form",
+        reference_docname=formless.name,
+        redirect_url=build_pre_offer_redirect(applicant_doc.name),
+        description=_("{0} pre-offer field(s) rejected. Please correct and resubmit from the candidate portal.").format(rejected_count),
+        commit=False,
+    )
+    # _upsert_minimal_item doesn't touch status on an existing row, so force it
+    # back to "Action Required" in case this item was completed on an earlier submit.
+    frappe.db.set_value(ACTION_DOCTYPE, item.name, "status", "Action Required")
+
+    # Re-open the form-less row so the candidate can edit it again.
+    if (formless.status or "") != "Sent":
+        formless.db_set("status", "Sent", update_modified=False)
+    if formless.get("action_item") != item.name:
+        formless.db_set("action_item", item.name, update_modified=False)
+    frappe.db.commit()
+
+
 @frappe.whitelist()
 def upsert_action_center_item(data):
     frappe.only_for(("System Manager", "HR Manager"))

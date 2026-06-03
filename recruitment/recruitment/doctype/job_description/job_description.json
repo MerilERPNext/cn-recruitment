@@ -14,6 +14,7 @@
   "column_break_ueon",
   "department",
   "designation",
+  "functional_area",
   "education_and_experience_section",
   "education_column",
   "category",
@@ -28,8 +29,8 @@
   "competencies_section",
   "competencies",
   "skills",
-  "description",
-  "preview"
+  "jd_builder",
+  "description"
  ],
  "fields": [
   {
@@ -66,6 +67,12 @@
    "label": "Designation",
    "options": "JD Designations",
    "reqd": 1
+  },
+  {
+   "fieldname": "functional_area",
+   "fieldtype": "Table MultiSelect",
+   "label": "Functional Area",
+   "options": "JD Functional Area"
   },
   {
    "fieldname": "business_unit",
@@ -160,16 +167,16 @@
    "options": "Job Requisition Skill"
   },
   {
-   "description": "Write Jinja. Use {{ fieldname }} for parent fields and {% for row in child_table %}{{ row.fieldname }}{% endfor %} for child tables. Preview renders live below.",
-   "fieldname": "description",
-   "fieldtype": "Code",
-   "label": "Description",
-   "options": "Jinja"
+   "fieldname": "jd_builder",
+   "fieldtype": "HTML",
+   "label": "Description"
   },
   {
-   "fieldname": "preview",
-   "fieldtype": "HTML",
-   "label": "Preview"
+   "description": "Stored JD template (HTML + Jinja). Managed by the builder above.",
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "label": "Description (stored)",
+   "hidden": 1
   }
  ],
  "grid_page_length": 50,

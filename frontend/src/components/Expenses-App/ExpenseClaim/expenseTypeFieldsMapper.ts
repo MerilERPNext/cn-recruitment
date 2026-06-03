@@ -202,6 +202,12 @@ const mapFieldToFormio = (field: FieldConfig, ctx: MapperContext) => {
       }
 
       if (field.fieldname === "custom_location") {
+        const url = ctx.expenseType
+          ? `/api/method/chatnext_expense_trips.expense_claim.get_cities_for_claim_type?expense_type=${encodeURIComponent(
+              ctx.expenseType,
+            )}`
+          : "/api/method/chatnext_expense_trips.expense_claim.get_cities_for_claim_type";
+
         return {
           type: "select",
           key: field.fieldname,
@@ -209,9 +215,9 @@ const mapFieldToFormio = (field: FieldConfig, ctx: MapperContext) => {
           input: true,
           dataSrc: "url",
           data: {
-            url: `/api/resource/City?fields=["name","city"]`,
+            url,
           },
-          selectValues: "data",
+          selectValues: "message.data",
           valueProperty: "name",
           template: "<span>{{ item.city }}</span>",
           searchEnabled: true,

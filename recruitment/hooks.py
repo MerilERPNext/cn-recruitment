@@ -67,8 +67,12 @@ fixtures = [
 # include js in doctype views
 doctype_js = {
     "Job Offer": ["public/js/job_offer.js"],
-    "Job Applicant": ["public/js/job_applicant.js"],
+    "Job Applicant": [
+        "public/js/job_applicant.js",
+        "public/js/pre_offer_field_approval.js",
+    ],
     "Job Opening": ["public/js/job_opening.js"],
+    "Job Description": ["public/js/job_description.js"],
     "Job Requisition": ["public/js/job_requisition.js"],
     "Interview": ["public/js/interview.js"],
     "User": ["public/js/user.js"],

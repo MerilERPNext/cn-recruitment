@@ -1,0 +1,28 @@
+{
+    "title": "Assignment Details",
+    "name": "assignmentDetails",
+    "display": "form",
+    "components": [
+        {
+            "type": "select",
+            "key": "module",
+            "label": "",
+            "hideLabel": true,
+            "input": true,
+            "dataSrc": "values",
+            "customClass": "w-64",
+            "data": {
+                "values": [
+                    { "label": "Separation", "value": "Separation" },
+                    { "label": "Confirmation", "value": "Confirmation" },
+                    { "label": "Custom Workflow", "value": "Custom Workflow" },
+                    { "label": "Employee Assignments", "value": "Employee Assignments" },
+                    { "label": "Travel and Reimbursement", "value": "Travel and Reimbursement" },
+                    { "label": "Leave", "value": "Leave" },
+                    { "label": "Attendance", "value": "Attendance" }
+                ]
+            },
+            "defaultValue": "Separation"
+        }
+    ]
+}

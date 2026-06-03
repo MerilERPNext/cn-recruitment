@@ -6,9 +6,8 @@ create_job_requisition(payload)
     Submit endpoint for the React "Raise a Requisition" form.
     Accepts a FLAT payload using DocType field names directly.
     Positions arrive in `custom_position_details` and are grouped by
-    `location` on the backend: one Job Requisition per unique location,
-    upserting (appending positions) when an open JR for the same
-    (designation, department, requested_by, location) already exists.
+    `location` on the backend: one fresh Job Requisition per unique location
+    in the submission, each carrying only that location's positions.
 
 get_job_requisition(name=..., filters=..., limit=..., start=..., order_by=...)
     - With `name`        →  one Job Requisition (flat shape)
@@ -108,6 +107,27 @@ PARENT_READONLY_FIELDS = (
 FRAPPE_MANAGED_FIELDS = {"status", "workflow_state"}
 
 
+# Link-field title resolution.
+# ----------------------------
+# These linked DocTypes don't have `title_field` configured, so HR supplied the
+# field that holds each one's human-readable title. Keyed by TARGET doctype, so
+# every Link field that points at one of these — on the parent JR *and* on its
+# child tables — gets a title automatically. For each such Link field `X`, GET
+# adds a sibling key `X_title` right after the id; the original `X` (the id) is
+# left untouched.
+LINK_TITLE_BY_DOCTYPE = {
+    "Designation": "custom_designation_title",
+    "Division": "division_name",
+    "Company": "company_name",
+    "Department": "department_name",
+    "Functional Area": "functional_area_name",
+    "Employee": "employee_name",
+    "Job Description": "job_description_title",
+    "Employment Type": "employee_type_name",
+    "Branch": "branch",
+}
+
+
 # ---------------------------------------------------------------------------
 # Response helpers
 # ---------------------------------------------------------------------------
@@ -197,26 +217,6 @@ def _group_positions_by_location(positions):
     return [(loc, groups[loc]) for loc in order]
 
 
-def _find_existing_requisition(designation, department, requested_by, location):
-    """Open JR (same designation+department+requested_by) that already has a
-    position at this `location`, or None."""
-    rows = frappe.db.sql(
-        """
-        SELECT jr.name
-        FROM `tabJob Requisition` jr
-        JOIN `tabPosition Details` pd ON pd.parent = jr.name
-        WHERE jr.designation = %s
-          AND jr.department = %s
-          AND jr.requested_by = %s
-          AND COALESCE(jr.status, '') NOT IN ('Cancelled', 'Filled')
-          AND pd.location = %s
-        LIMIT 1
-        """,
-        (designation, department, requested_by, location),
-    )
-    return rows[0][0] if rows else None
-
-
 def _bypass_hrms_duplicate_check(doc):
     """HRMS rejects more than one open JR per (designation, department,
     requested_by). Our flow uses `location` too, so shadow that method."""
@@ -228,17 +228,39 @@ def _bypass_hrms_duplicate_check(doc):
 # ---------------------------------------------------------------------------
 
 
-def _position_row(p, position_no, parent_vacancy_default, parent_functional_area):
-    """Build a single child row dict for `custom_position_details`."""
-    vacancy = (p.get("vacancy_type") or parent_vacancy_default or "New").strip() or "New"
+def _row_vacancy_type(row):
+    """Single source of truth for a position's New / Replacement type.
+
+    A position is a *Replacement* exactly when it names someone to replace
+    (`replacement_for` is set); otherwise it is *New*. `replacement_for` is the
+    reliable signal — validation requires it for Replacement, and the UI doesn't
+    always send `vacancy_type`, which used to leave replacement rows mislabelled
+    as "New". Deriving the type from `replacement_for` keeps the flag in
+    lock-step with the data on both write and read. `row` may be a payload dict
+    or a Frappe child row (both support `.get`).
+    """
+    return "Replacement" if row.get("replacement_for") else "New"
+
+
+def _position_row(p, position_no, parent_vacancy_default, parent_functional_area,
+                  parent_employee_type=None):
+    """Build a single child row dict for `custom_position_details`.
+
+    `vacancy_type` is derived from `replacement_for` (see _row_vacancy_type), so
+    a position that names a replacement is always stored as "Replacement" even
+    when the UI omits `vacancy_type`. `parent_vacancy_default` is retained for
+    signature compatibility but no longer needed for typing.
+    """
     return {
         "position_no": position_no,
-        "vacancy_type": vacancy,
+        "vacancy_type": _row_vacancy_type(p),
         "replacement_for": p.get("replacement_for"),
         "reporting_manager": p.get("reporting_manager"),
         "location": p.get("location"),
         "functional_area": p.get("functional_area") or parent_functional_area,
-        "employee_type": p.get("employee_type"),
+        # `employee_type` is mandatory on the child row. The UI collects the
+        # employment type once at parent level, so inherit it per-position.
+        "employee_type": p.get("employee_type") or parent_employee_type,
     }
 
 
@@ -254,6 +276,11 @@ def _apply_parent_fields(doc, payload):
     - Wraps each set() in a try/except so a bad value produces a clear error
       message ('field X = value Y') instead of a cryptic NoneType traceback.
     """
+    # Map the legacy `custom_work_experience` alias onto the real field so a
+    # value sent under either name persists to `custom_work_experience_range`.
+    if payload.get("custom_work_experience") and not payload.get("custom_work_experience_range"):
+        payload["custom_work_experience_range"] = payload["custom_work_experience"]
+
     for field in PARENT_WRITABLE_FIELDS:
         if field in FRAPPE_MANAGED_FIELDS:
             continue  # safety guard — should never be in PARENT_WRITABLE_FIELDS
@@ -270,7 +297,23 @@ def _apply_parent_fields(doc, payload):
             )
 
 
+def _has_table_field(doc, fieldname):
+    """True only when `fieldname` is a real Table field on the doc's doctype.
+
+    `custom_qualifications`, `custom_skills` and `custom_pre_screened_candidates`
+    exist on Job Opening but were never added to Job Requisition. Appending to a
+    missing table field blows up inside Frappe with
+    "'NoneType' object has no attribute 'options'", so callers skip the field
+    entirely when it is absent. (If the table field is later added to the
+    doctype, persistence resumes automatically — no code change needed.)
+    """
+    df = doc.meta.get_field(fieldname)
+    return bool(df) and df.fieldtype in ("Table", "Table MultiSelect")
+
+
 def _apply_qualifications(doc, payload):
+    if not _has_table_field(doc, "custom_qualifications"):
+        return
     doc.set("custom_qualifications", [])
     for q in _list_field(payload, "custom_qualifications"):
         if not isinstance(q, dict) or not q.get("qualification"):
@@ -282,6 +325,8 @@ def _apply_qualifications(doc, payload):
 
 
 def _apply_skills(doc, payload):
+    if not _has_table_field(doc, "custom_skills"):
+        return
     doc.set("custom_skills", [])
     for skill in _list_field(payload, "custom_skills"):
         if not skill:
@@ -326,6 +371,8 @@ def _sanitize_cv(value):
 
 
 def _apply_pre_screened(doc, payload):
+    if not _has_table_field(doc, "custom_pre_screened_candidates"):
+        return
     doc.set("custom_pre_screened_candidates", [])
     for cand in _list_field(payload, "custom_pre_screened_candidates"):
         if not isinstance(cand, dict):
@@ -346,18 +393,98 @@ def _apply_pre_screened(doc, payload):
 
 
 def sync_no_of_positions(doc, method=None):
-    """`validate` hook — keep parent.no_of_positions in lock-step with the
-    actual row count in custom_position_details.
+    """`validate` hook — keep parent fields in lock-step with the
+    custom_position_details rows on every save (our API, Desk UI, scripted).
 
-    Fires on every save of Job Requisition, regardless of how the doc was
-    edited (our API, Desk UI, scripted update). Only acts when the table
-    has rows — leaves the field untouched for legacy / HRMS-standard flows
-    where `custom_position_details` is empty (those flows use the standard
-    `vacancies` table instead, which we don't want to override).
+    1. `no_of_positions`         = number of position rows.
+    2. `custom_type_of_position` = "New" / "Replacement" / "Mixed", derived from
+       the rows (a row is a Replacement when it has a `replacement_for` — see
+       _row_vacancy_type). Stored so PRINT and any field reader show the correct
+       type, including "Mixed" when the requisition holds both. The value is
+       assigned only when it is a valid Select option, so a save can never fail
+       (e.g. before the "Mixed" option has been migrated into the field).
+
+    Only acts when the table has rows — leaves fields untouched for legacy /
+    HRMS-standard flows where `custom_position_details` is empty (those use the
+    standard `vacancies` table, which we don't want to override).
     """
     position_rows = doc.get("custom_position_details") or []
-    if position_rows:
-        doc.no_of_positions = len(position_rows)
+    if not position_rows:
+        return
+
+    doc.no_of_positions = len(position_rows)
+
+    new = sum(1 for r in position_rows if _row_vacancy_type(r) == "New")
+    replacement = len(position_rows) - new
+    if new and replacement:
+        vtype = "Mixed"
+    elif replacement:
+        vtype = "Replacement"
+    else:
+        vtype = "New"
+
+    df = doc.meta.get_field("custom_type_of_position")
+    allowed = (df.options or "").split("\n") if df else []
+    if vtype in allowed:
+        doc.custom_type_of_position = vtype
+
+
+def _resolve_jd_html(designation, department):
+    """Rendered Job Description HTML for (designation, department), or "".
+
+    Mirrors `preview_job_description`'s resolution (exact designation+department
+    match, else the default JD) so a saved requisition gets the same description
+    the React "Preview JD" card shows. The UI has no description field, yet the
+    parent field is mandatory — so this fills it from the linked JD on save.
+    """
+    if not designation or not department:
+        return ""
+    try:
+        rows = frappe.db.sql(
+            """
+            SELECT jd.name
+            FROM `tabJob Description` jd
+            JOIN `tabJD Designations` jdg
+              ON jdg.parent = jd.name
+             AND jdg.parenttype = 'Job Description'
+             AND jdg.parentfield = 'designation'
+            JOIN `tabJD Department` jdp
+              ON jdp.parent = jd.name
+             AND jdp.parenttype = 'Job Description'
+             AND jdp.parentfield = 'department'
+            WHERE jdg.designation = %s
+              AND jdp.department = %s
+            ORDER BY jd.modified DESC
+            LIMIT 1
+            """,
+            (designation, department),
+        )
+        jd_name = rows[0][0] if rows else None
+        if not jd_name and frappe.get_meta(JOB_DESCRIPTION).get_field("is_default"):
+            jd_name = frappe.db.get_value(JOB_DESCRIPTION, {"is_default": 1}, "name")
+        if not jd_name:
+            return ""
+        return _build_preview_payload(jd_name, "match").get("description_html") or ""
+    except Exception:
+        return ""
+
+
+def _ensure_description(doc, payload):
+    """Populate the mandatory parent `description` when the payload omits it.
+
+    Falls back from the linked Job Description → reason_for_requesting →
+    a minimal designation line, so submit never fails the mandatory check
+    while still preferring the real JD content shown in the UI preview.
+    """
+    if doc.get("description"):
+        return
+    html = _resolve_jd_html(payload.get("designation"), payload.get("department"))
+    if not html:
+        reason = payload.get("reason_for_requesting")
+        designation = payload.get("designation")
+        html = reason or (f"<p>{frappe.utils.escape_html(designation)}</p>" if designation else "")
+    if html:
+        doc.description = html
 
 
 def _build_requisition_doc(payload, positions_for_location):
@@ -366,6 +493,7 @@ def _build_requisition_doc(payload, positions_for_location):
     _bypass_hrms_duplicate_check(doc)
 
     _apply_parent_fields(doc, payload)
+    _ensure_description(doc, payload)
 
     # Always derive `no_of_positions` from the actual rows in
     # custom_position_details for THIS location group. The UI ships a single
@@ -381,8 +509,12 @@ def _build_requisition_doc(payload, positions_for_location):
 
     parent_vacancy = payload.get("custom_type_of_position")
     parent_functional_area = payload.get("custom_functional_area")
+    parent_employee_type = payload.get("custom_employment_type_link") or payload.get("custom__employee_type")
     for index, p in enumerate(positions_for_location, start=1):
-        doc.append("custom_position_details", _position_row(p, index, parent_vacancy, parent_functional_area))
+        doc.append(
+            "custom_position_details",
+            _position_row(p, index, parent_vacancy, parent_functional_area, parent_employee_type),
+        )
 
     return doc
 
@@ -397,14 +529,15 @@ def create_job_requisition(payload=None):
     """
     Submit a Job Requisition.
 
-    Groups `custom_position_details` rows by `location`; creates one JR per
-    unique location, OR appends positions to an open JR with the same
-    (designation, department, requested_by, location) — true upsert.
+    Groups `custom_position_details` rows by `location` and creates one fresh
+    JR per unique location, each holding only that location's positions. Each
+    submission is independent — positions are never merged into requisitions
+    created by an earlier submission.
 
     Returns:
         {
           "success": true,
-          "message": "Created X, updated Y requisition(s).",
+          "message": "Created X requisition(s).",
           "data": {
             "requisitions": [
               {"name": "HR-HIREQ-...", "location": "Pune", "positions_count": 2, "action": "created"},
@@ -425,47 +558,25 @@ def create_job_requisition(payload=None):
 
         positions = _list_field(payload, "custom_position_details")
         groups = _group_positions_by_location(positions)
-        parent_vacancy = payload.get("custom_type_of_position")
-        parent_functional_area = payload.get("custom_functional_area")
 
         results = []
         savepoint = "create_job_requisition"
         frappe.db.savepoint(savepoint)
         try:
+            # One fresh Job Requisition per unique location in THIS submission.
+            # Each location group carries only its own positions (e.g. 5 openings
+            # across BLR×2 / Mumbai / Kolkata / Noida → 4 requisitions, the BLR one
+            # holding 2 positions). We deliberately do NOT merge into requisitions
+            # from earlier submissions — every submit stands on its own.
             for location, group_positions in groups:
-                existing_name = _find_existing_requisition(
-                    payload.get("designation"),
-                    payload.get("department"),
-                    payload.get("requested_by"),
-                    location,
-                )
-
-                if existing_name:
-                    doc = frappe.get_doc(JOB_REQUISITION, existing_name)
-                    _bypass_hrms_duplicate_check(doc)
-                    _apply_parent_fields(doc, payload)
-                    start_idx = len(doc.get("custom_position_details") or [])
-                    for offset, p in enumerate(group_positions, start=1):
-                        doc.append(
-                            "custom_position_details",
-                            _position_row(p, start_idx + offset, parent_vacancy, parent_functional_area),
-                        )
-                    # Resync from the live child table after appending,
-                    # not from the payload-supplied total.
-                    doc.no_of_positions = len(doc.get("custom_position_details") or [])
-                    doc.save(ignore_permissions=False)
-                    action = "updated"
-                else:
-                    doc = _build_requisition_doc(payload, group_positions)
-                    doc.insert(ignore_permissions=False)
-                    action = "created"
-
+                doc = _build_requisition_doc(payload, group_positions)
+                doc.insert(ignore_permissions=False)
                 results.append(
                     {
                         "name": doc.name,
                         "location": location,
                         "positions_count": len(group_positions),
-                        "action": action,
+                        "action": "created",
                     }
                 )
         except Exception:
@@ -474,10 +585,9 @@ def create_job_requisition(payload=None):
 
         frappe.db.commit()
 
-        created_count = sum(1 for r in results if r["action"] == "created")
-        updated_count = sum(1 for r in results if r["action"] == "updated")
+        created_count = len(results)
         return _ok(
-            message=_("Created {0}, updated {1} requisition(s).").format(created_count, updated_count),
+            message=_("Created {0} requisition(s).").format(created_count),
             data={"requisitions": results},
             http=201 if created_count else 200,
         )
@@ -550,10 +660,76 @@ def _compute_global_summary(employee=None, requested_by_override=None):
     }
 
 
+def _link_title_value(target_doctype, value):
+    """Title of the linked record for `value`, using LINK_TITLE_BY_DOCTYPE.
+    Returns None when unmapped / empty / the row is missing (never raises)."""
+    title_field = LINK_TITLE_BY_DOCTYPE.get(target_doctype)
+    if not value or not title_field:
+        return None
+    try:
+        return frappe.get_cached_value(target_doctype, value, title_field) or None
+    except Exception:
+        return None
+
+
+def _with_link_titles(source_doctype, data):
+    """Return a copy of `data` where each Link field is immediately followed by
+    a `<field>_title` sibling holding the linked record's title.
+
+    Only Link fields whose target DocType is in LINK_TITLE_BY_DOCTYPE get a
+    title. The original (id) keys/values are never modified — we only ADD keys,
+    so the existing response contract is preserved.
+    """
+    try:
+        meta = frappe.get_meta(source_doctype)
+    except Exception:
+        return data
+    out = {}
+    for key, value in data.items():
+        out[key] = value
+        df = meta.get_field(key)
+        if df and df.fieldtype == "Link" and df.options in LINK_TITLE_BY_DOCTYPE:
+            out[f"{key}_title"] = _link_title_value(df.options, value)
+    return out
+
+
+def _vacancy_breakdown(doc):
+    """New / Replacement breakdown for a requisition, derived from its positions.
+
+    A single requisition can hold BOTH New and Replacement positions, which
+    makes the parent "Type of Position" Select ambiguous. So rather than forcing
+    one value, we expose explicit counts plus a clear 3-state `type`:
+        - all positions New          -> "New"
+        - all positions Replacement  -> "Replacement"
+        - a mix of both              -> "Mixed"
+        - no positions (edge case)   -> the stored parent value
+
+    Per-row `vacancy_type` is itself derived from `replacement_for`
+    (see _row_vacancy_type), so this stays correct on create and update alike.
+    Returns: {"total": int, "new": int, "replacement": int, "type": str}
+    """
+    rows = doc.get("custom_position_details") or []
+    new = sum(1 for r in rows if _row_vacancy_type(r) == "New")
+    replacement = sum(1 for r in rows if _row_vacancy_type(r) == "Replacement")
+    if new and replacement:
+        vtype = "Mixed"
+    elif replacement:
+        vtype = "Replacement"
+    elif new:
+        vtype = "New"
+    else:
+        vtype = doc.get("custom_type_of_position")
+    return {"total": new + replacement, "new": new, "replacement": replacement, "type": vtype}
+
+
 def _serialise_requisition(doc):
     """Flat round-trip representation of a JR.
     All parent fields keep their DocType field names so the UI can bind
-    directly without a translation layer."""
+    directly without a translation layer.
+
+    Every Link field is accompanied by a `<field>_title` sibling (the linked
+    record's title) so the UI never has to show a raw id. The id keys are
+    unchanged — see _with_link_titles / LINK_TITLE_BY_DOCTYPE."""
     out = {
         "name": doc.name,
         "status": doc.get("status"),
@@ -567,10 +743,26 @@ def _serialise_requisition(doc):
     for field in PARENT_READONLY_FIELDS:
         out[field] = doc.get(field)
 
+    # `custom_work_experience` is a legacy alias for the real Select field
+    # `custom_work_experience_range`. The real field doesn't exist under the
+    # alias name, so echo its value under both keys — a UI bound to either name
+    # then shows the stored value instead of an empty box.
+    out["custom_work_experience"] = out.get("custom_work_experience_range")
+
+    # Vacancy mix. A requisition may contain BOTH New and Replacement positions,
+    # so a single type is ambiguous — expose explicit counts plus a 3-state type
+    # ("New" / "Replacement" / "Mixed"). `custom_type_of_position` mirrors the
+    # type so existing bindings keep working; new UI should prefer the breakdown.
+    _breakdown = _vacancy_breakdown(doc)
+    out["custom_type_of_position"] = _breakdown["type"]
+    out["custom_vacancy_breakdown"] = _breakdown
+
     out["custom_position_details"] = [
         {
             "position_no": row.get("position_no"),
-            "vacancy_type": row.get("vacancy_type"),
+            # Derived from replacement_for so already-saved rows that were
+            # mislabelled "New" still report the correct type. See _row_vacancy_type.
+            "vacancy_type": _row_vacancy_type(row),
             "location": row.get("location"),
             "reporting_manager": row.get("reporting_manager"),
             "replacement_for": row.get("replacement_for"),
@@ -617,6 +809,16 @@ def _serialise_requisition(doc):
         }
         for row in doc.get("custom_pre_screened_candidates") or []
     ]
+
+    # Add `<field>_title` siblings for every mapped Link field (id kept as-is).
+    out = _with_link_titles(JOB_REQUISITION, out)
+    for table_field, child_doctype in (
+        ("custom_position_details", "Position Details"),
+        ("custom_position_summary", "Job Requisition Position"),
+        ("custom_qualifications", "Job Requisition Qualification"),
+    ):
+        if out.get(table_field):
+            out[table_field] = [_with_link_titles(child_doctype, row) for row in out[table_field]]
 
     return out
 
@@ -804,12 +1006,13 @@ def update_job_requisition(name=None, payload=None):
         if positions:
             parent_vacancy = payload.get("custom_type_of_position")
             parent_functional_area = payload.get("custom_functional_area")
+            parent_employee_type = payload.get("custom_employment_type_link") or payload.get("custom__employee_type")
 
             doc.set("custom_position_details", [])
             for idx, p in enumerate(positions, start=1):
                 doc.append(
                     "custom_position_details",
-                    _position_row(p, idx, parent_vacancy, parent_functional_area),
+                    _position_row(p, idx, parent_vacancy, parent_functional_area, parent_employee_type),
                 )
             # Always sync from the live child table — the payload's
             # `no_of_positions` is a UI-level total that may not match the
@@ -850,8 +1053,52 @@ def update_job_requisition(name=None, payload=None):
 JOB_DESCRIPTION = "Job Description"
 
 
+def _match_jd_name(designation, department, functional_area=None):
+    """Best-matching Job Description name for the given applicability.
+
+    Tiered: prefer a JD whose applicability matches designation + department +
+    functional area; fall back to designation + department. Most recently
+    modified JD wins within a tier. Returns the JD name or None.
+    """
+    if functional_area:
+        rows = frappe.db.sql(
+            """
+            SELECT jd.name
+            FROM `tabJob Description` jd
+            JOIN `tabJD Designations` jdg
+              ON jdg.parent = jd.name AND jdg.parenttype = 'Job Description' AND jdg.parentfield = 'designation'
+            JOIN `tabJD Department` jdp
+              ON jdp.parent = jd.name AND jdp.parenttype = 'Job Description' AND jdp.parentfield = 'department'
+            JOIN `tabJD Functional Area` jdf
+              ON jdf.parent = jd.name AND jdf.parenttype = 'Job Description' AND jdf.parentfield = 'functional_area'
+            WHERE jdg.designation = %s AND jdp.department = %s AND jdf.functional_area = %s
+            ORDER BY jd.modified DESC
+            LIMIT 1
+            """,
+            (designation, department, functional_area),
+        )
+        if rows:
+            return rows[0][0]
+
+    rows = frappe.db.sql(
+        """
+        SELECT jd.name
+        FROM `tabJob Description` jd
+        JOIN `tabJD Designations` jdg
+          ON jdg.parent = jd.name AND jdg.parenttype = 'Job Description' AND jdg.parentfield = 'designation'
+        JOIN `tabJD Department` jdp
+          ON jdp.parent = jd.name AND jdp.parenttype = 'Job Description' AND jdp.parentfield = 'department'
+        WHERE jdg.designation = %s AND jdp.department = %s
+        ORDER BY jd.modified DESC
+        LIMIT 1
+        """,
+        (designation, department),
+    )
+    return rows[0][0] if rows else None
+
+
 @frappe.whitelist()
-def preview_job_description(designation=None, department=None):
+def preview_job_description(designation=None, department=None, data=None, functional_area=None):
     """
     Return a preview payload for the Job Description that best matches the
     given (designation, department) pair, or the system-wide default JD
@@ -880,6 +1127,10 @@ def preview_job_description(designation=None, department=None):
     ----
     designation : str   (required)  Designation ID.
     department  : str   (required)  Department ID.
+    data        : dict|json (optional)  In-progress requisition values keyed
+        by the template's placeholder names. Used to fill the matched JD
+        template's placeholders for the preview; any token not present here
+        renders empty.
 
     Returns
     -------
@@ -947,31 +1198,25 @@ def preview_job_description(designation=None, department=None):
                 http=400,
             )
 
-        # 1) Try exact match on designation + department.
-        rows = frappe.db.sql(
-            """
-            SELECT jd.name
-            FROM `tabJob Description` jd
-            JOIN `tabJD Designations` jdg
-              ON jdg.parent = jd.name
-             AND jdg.parenttype = 'Job Description'
-             AND jdg.parentfield = 'designation'
-            JOIN `tabJD Department` jdp
-              ON jdp.parent = jd.name
-             AND jdp.parenttype = 'Job Description'
-             AND jdp.parentfield = 'department'
-            WHERE jdg.designation = %s
-              AND jdp.department = %s
-            ORDER BY jd.modified DESC
-            LIMIT 1
-            """,
-            (designation, department),
-        )
+        # Optional: in-progress requisition values the frontend has filled.
+        # These fill the JD template's placeholders for the preview; anything
+        # absent renders empty. Accepts a JSON string or a dict.
+        filled_data = data
+        if isinstance(filled_data, str):
+            try:
+                filled_data = json.loads(filled_data or "{}")
+            except (TypeError, ValueError):
+                filled_data = {}
+        if not isinstance(filled_data, dict):
+            filled_data = {}
 
-        if rows:
+        # 1) Best applicability match: designation + department (+ functional
+        #    area when supplied), tiered inside the helper.
+        matched_name = _match_jd_name(designation, department, functional_area)
+        if matched_name:
             return _ok(
                 message=_("Job Description found."),
-                data=_build_preview_payload(rows[0][0], source="match"),
+                data=_build_preview_payload(matched_name, source="match", filled_data=filled_data),
                 http=200,
             )
 
@@ -982,7 +1227,7 @@ def preview_job_description(designation=None, department=None):
         if default_name:
             return _ok(
                 message=_("No exact match — showing the default Job Description."),
-                data=_build_preview_payload(default_name, source="default"),
+                data=_build_preview_payload(default_name, source="default", filled_data=filled_data),
                 http=200,
             )
 
@@ -1014,7 +1259,7 @@ def preview_job_description(designation=None, department=None):
         )
 
 
-def _build_preview_payload(jd_name, source):
+def _build_preview_payload(jd_name, source, filled_data=None):
     """Shared JD → preview payload builder used by exact-match and
     default-fallback paths. Honours read permission on the JD doc.
 
@@ -1022,16 +1267,43 @@ def _build_preview_payload(jd_name, source):
     breaks converted to <p>/<br>), not the raw template — so the React
     Preview JD modal renders human-readable content via
     `dangerouslySetInnerHTML` without exposing `{{ }}` placeholders.
+
+    When `filled_data` (the in-progress requisition values) is supplied, the
+    template's placeholders are resolved against the JD doc's own fields
+    OVERLAID with those filled values — so e.g. `{{ office_location }}` shows
+    what the user typed on the requisition form. Tokens with no supplied value
+    render empty. Scalar overrides never clobber the JD's child-table fields
+    (designation/department/skills/…) so their `{% for %}` loops keep working.
     """
     from recruitment.recruitment.doctype.job_description.job_description import (
         _render_preview,
         plain_text_to_html,
+        render_with_context,
+        substitute_field_tokens,
     )
 
     doc = frappe.get_doc(JOB_DESCRIPTION, jd_name)
     doc.check_permission("read")
-    _render_preview(doc)
-    description_html = plain_text_to_html(doc.get("preview") or "")
+
+    if filled_data is not None:
+        # Two placeholder formats coexist:
+        #   1. Jinja `{{ field }}` (seeded default template) — resolved against
+        #      the JD doc's own fields, overlaid with the filled values.
+        #   2. Builder tokens `#*Field*#` — substituted from the filled values.
+        context = doc.as_dict()
+        for key, value in filled_data.items():
+            # Don't let a scalar requisition value overwrite a JD child table
+            # (would break the template's `{% for %}` loops).
+            if isinstance(context.get(key), list):
+                continue
+            context[key] = value
+        rendered = render_with_context(doc.get("description") or "", context)
+        rendered = substitute_field_tokens(rendered, filled_data)
+    else:
+        _render_preview(doc)
+        rendered = doc.get("preview") or ""
+
+    description_html = plain_text_to_html(rendered)
     skills = [
         row.get("skill")
         for row in (doc.get("skills") or [])
@@ -1054,9 +1326,12 @@ def _build_preview_payload(jd_name, source):
 
 
 @frappe.whitelist()
-def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20):
+def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20, include=None):
     """Returns [{id, label}] for a doctype; label uses title_field when set.
     Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins).
+    `include` is an id (or comma-separated ids) that must always appear in the
+    results — used so a pre-selected value renders its label even when it falls
+    outside the fetched/searched page (e.g. one designation out of thousands).
     Accessible to any authenticated Frappe user (desk session or API key/secret)."""
     if not doctype:
         frappe.local.response["http_status_code"] = 400
@@ -1086,5 +1361,22 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
         frappe.local.response["http_status_code"] = 500
         return {"status": "error", "message": str(e)}
 
-    results = [{"id": r["name"], "label": (r.get(title_field) if has_title else None) or r["name"]} for r in records]
+    def _to_option(r):
+        return {"id": r["name"], "label": (r.get(title_field) if has_title else None) or r["name"]}
+
+    results = [_to_option(r) for r in records]
+
+    # Always surface the pre-selected value(s) so the dropdown can label them,
+    # even when they're not part of the current (searched/paginated) page.
+    include_ids = [i.strip() for i in str(include or "").split(",") if i and i.strip()]
+    if include_ids:
+        present = {r["id"] for r in results}
+        missing = [i for i in include_ids if i not in present]
+        if missing:
+            try:
+                extra = frappe.get_all(doctype, fields=fields, filters={"name": ["in", missing]})
+            except Exception:
+                extra = []
+            results = [_to_option(r) for r in extra] + results
+
     return {"status": "success", "doctype": doctype, "title_field": title_field, "total": len(results), "results": results}

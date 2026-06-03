@@ -333,6 +333,25 @@ export interface EmployeeRole {
   }
 }
 
+export interface CostCenter {
+  id: string;
+  name: string;
+}
+
+export interface CostCenterAllocation {
+  cost_center: CostCenter;
+  percentage: number;
+}
+
+export interface EmployeeCostCenter {
+  from_date: string;
+  to_date: string | null;
+  is_current: boolean;
+  total_percentage: number;
+  allocations: CostCenterAllocation[];
+  segment_totals: Record<string, number>;
+}
+
 export interface EmployeeSupplementary {
   designation_name?: string;
   department_display?: string;
@@ -352,6 +371,7 @@ export interface EmployeeSupplementary {
   work_locations?: WorkLocation[];
   employment_types?: EmploymentTypes[];
   employee_roles?: EmployeeRole[];
+  cost_centers?: EmployeeCostCenter[];
 }
 
 export interface Employee extends EmployeeFromAPI, EmployeeSupplementary { }
@@ -499,4 +519,30 @@ export interface IGetEmpDesignationHierarchyCurrentDetails {
 export interface AttendanceFieldPermissions {
   make_attendance_message_optional: boolean;
   make_reason_non_mandate: boolean;
+}
+
+// Assignment Details types
+// Each item in a section — has dynamic string fields plus an optional link
+export interface AssignmentItem {
+  link?: string;
+  [key: string]: string | undefined;
+}
+
+// One section in the section-based response (e.g. Separation, Confirmation)
+export interface AssignmentSection {
+  section: string;
+  items: AssignmentItem[];
+}
+
+// Flat item format used by some modules (e.g. Travel & Reimbursement)
+// Fields like `reimbursement_type_link` sit alongside their base fields
+export interface AssignmentFlatItem {
+  [key: string]: string;
+}
+
+// Top-level envelope returned by get_assignment_details
+export interface AssignmentDetailsResponse {
+  module: string;
+  employee: string;
+  data: AssignmentSection[] | AssignmentFlatItem[];
 }

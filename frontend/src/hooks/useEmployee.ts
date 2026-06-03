@@ -625,10 +625,32 @@ export const useUpdateEmploymentDetailsMutation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employment-history-data"] });
-      toast.success("Work location updated successfully");
+      toast.success("Employment details updated successfully");
     },
   });
 };
+
+
+export const useUpdateEmployeeCostCentersMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["updateEmployeeCostCenters"],
+    mutationFn: (body: Record<string, unknown>) =>
+      profileService.updateEmployeeCostCenters(body),
+    onError: (error) => {
+      console.error("Error updating employee cost centers:", error);
+      const message =
+        error instanceof Error ? error.message : errorResponseFormater(error);
+      toast.error(message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employment-history-data"] });
+      toast.success("Employee cost centers updated successfully");
+    },
+  });
+};
+
+
 
 export const useAddEmployeeHistoryMutation = () => {
   const queryClient = useQueryClient();
@@ -701,6 +723,15 @@ export const useUpdateEmpReportingDetailsRecordMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["getEmployeeReportingDetails"] });
       toast.success("Employee reporting details updated successfully");
     },
+  });
+};
+
+export const useGetAssignmentDetails = (module: string, employee: string) => {
+  return useQuery({
+    queryKey: ["assignment-details", module, employee],
+    queryFn: () => EmployeeService.getAssignmentDetails(module, employee),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!module && !!employee,
   });
 };
 
@@ -855,6 +886,21 @@ export const useDeactivateEmployeeMutation = () => {
       ),
     onError: (error) => {
       console.error("Error deactivating employee:", error);
+    },
+  });
+};
+
+export const useResetOtpResendLimitMutation = () => {
+  return useMutation({
+    mutationKey: ["resetOtpResendLimit"],
+    mutationFn: (user_id: string) => EmployeeService.resetOtpResendLimit(user_id),
+    onSuccess: (data: any) => {
+      const msg = data?.message?.message || "OTP resend limit reset successfully";
+      toast.success(msg);
+    },
+    onError: (error) => {
+      console.error("Error resetting OTP resend limit:", error);
+      toast.error(errorResponseFormater(error) || "Failed to reset OTP resend limit");
     },
   });
 };

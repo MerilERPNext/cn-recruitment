@@ -323,7 +323,7 @@ const ReferralList = () => {
       return;
     }
 
-    const email = selectedReferral.email || selectedReferral.name;
+    const email =  selectedReferral.name;
     if (!email) return;
 
     setIsLoadingDetail(true);
