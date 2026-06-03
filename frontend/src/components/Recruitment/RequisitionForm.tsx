@@ -825,7 +825,7 @@ const RequisitionForm = () => {
       // Requisition name (e.g. "HR-HIREQ-00013") — dynamic; present on edit.
       job_title: finalData.name || existingRequisition?.name,
       // Source is always "Refer" for this form.
-      custom_source: "Refer",
+      source: "Refer",
       requested_by:
         finalData.hiring_manager ||
         existingRequisition?.requested_by ||
@@ -1049,7 +1049,7 @@ const RequisitionForm = () => {
           <span>
             Editing requisition{" "}
             <span className="font-semibold">{existingRequisition.name}</span>
-            {" — "}{existingRequisition.designation}, {existingRequisition.department}
+            {" — "}{existingRequisition.designation_title}, {existingRequisition.department_title}
           </span>
         </div>
       )}

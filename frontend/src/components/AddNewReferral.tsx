@@ -110,6 +110,8 @@ const AddNewReferral: React.FC = () => {
 
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const referrerEmployee = user?.employee || "";
+  const EmployeeName = user?.employee_name || "";
+
 
   const [activeView, setActiveView] = useState<"list" | "detail" | "form">("list");
   const [selectedJob, setSelectedJob] = useState<JobOpening | null>(null);
@@ -121,6 +123,11 @@ const AddNewReferral: React.FC = () => {
   const formDataRef = React.useRef<Record<string, any>>({});
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // ── Resume analyzer field state ──
+  const [resumeUploading, setResumeUploading] = useState(false);
+  const [resumeData, setResumeData] = useState<Record<string, any> | null>(null);
+  const [resumeFileName, setResumeFileName] = useState<string>("");
 
   // Validation state
   const [stepValidationErrors, setStepValidationErrors] = useState<string[]>([]);
@@ -596,7 +603,7 @@ const AddNewReferral: React.FC = () => {
               {selectedJob.job_title} ({selectedJob.name})
             </h2>
             <span className="text-xs text-gray-400 font-semibold mt-1">
-              Referral attribution to employee: {referrerEmployee || "Unassigned"}
+              Referral attribution to employee: {EmployeeName || "Unassigned"}
             </span>
           </div>
 

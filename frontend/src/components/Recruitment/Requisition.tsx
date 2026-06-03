@@ -122,9 +122,9 @@ const Requisition = () => {
     };
 
     const code = item.name;
-    const designation = item.designation;
-    const department = item.department;
-    const location = item.custom_location || item.location;
+    const designation = item.designation_title;
+    const department = item.department_title;
+    const location = item.custom_location_title;
     const status = item.status;
 
     const totalPositions = item.no_of_positions || item.total_positions || "1";
@@ -585,7 +585,7 @@ const Requisition = () => {
                   {selectedRequisition.name}
                 </Typography>
                 <Typography variant="bodySmall" className="text-gray-500 text-xs">
-                  {selectedRequisition.designation} — {selectedRequisition.department}
+                Department: {selectedRequisition.department_title} -- designation: {selectedRequisition.designation_title}
                 </Typography>
               </div>
               <button
@@ -614,7 +614,7 @@ const Requisition = () => {
                     Hiring Lead
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {selectedRequisition.custom_hiring_lead || "—"}
+                    {selectedRequisition.custom_hiring_lead_title || "—"}
                   </Typography>
                 </div>
                 <div>
@@ -640,7 +640,7 @@ const Requisition = () => {
                     Posting Date
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {selectedRequisition.posting_date || "—"}
+                    {formatToIndianDate(selectedRequisition.posting_date) || "—"}
                   </Typography>
                 </div>
                 <div>
@@ -648,7 +648,7 @@ const Requisition = () => {
                     Expected By
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {selectedRequisition.expected_by || "—"}
+                    {formatToIndianDate(selectedRequisition.expected_by) || "—"}
                   </Typography>
                 </div>
               </div>
@@ -674,8 +674,8 @@ const Requisition = () => {
                           <tr key={idx} className="hover:bg-gray-50/50">
                             <td className="px-4 py-2 font-medium">{pos.position_no}</td>
                             <td className="px-4 py-2">{pos.vacancy_type}</td>
-                            <td className="px-4 py-2">{pos.location || "—"}</td>
-                            <td className="px-4 py-2">{pos.reporting_manager || "—"}</td>
+                            <td className="px-4 py-2">{pos.location_title || "—"}</td>
+                            <td className="px-4 py-2">{pos.reporting_manager_title || "—"}</td>
                           </tr>
                         ))}
                       </tbody>
