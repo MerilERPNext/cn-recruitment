@@ -24,7 +24,7 @@ const MyGoals: React.FC = () => {
     <div className="min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] px-3 py-4 font-sans sm:px-4 sm:py-5 lg:px-6 lg:py-6">
       <div className="mx-auto w-full  min-w-0 space-y-4 sm:space-y-5">
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex min-w-0 flex-col gap-4 border-b border-slate-100 p-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 flex-col gap-4 border-b border-slate-100 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <Typography variant="h3" className="text-xl leading-tight text-slate-950 sm:text-2xl">
                 My Goals &middot; FY26
@@ -34,13 +34,13 @@ const MyGoals: React.FC = () => {
               </Typography>
             </div>
 
-            <div className="grid min-w-0 grid-cols-3 gap-2 sm:max-w-[520px]">
+            <div className="grid min-w-0 grid-cols-1 gap-2 min-[520px]:grid-cols-3 lg:w-[650px] lg:max-w-[650px]">
               {[
                 { icon: Target, label: 'Goals', value: '5' },
                 { icon: Weight, label: 'Weightage', value: '100%' },
                 { icon: Timer, label: 'Locked', value: '21 May' },
               ].map(({ icon: Icon, label, value }) => (
-                <div key={label} className="min-w-0 rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2 sm:px-3">
+                <div key={label} className="min-w-0 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
                   <div className="flex items-center gap-1.5 text-slate-500">
                     <Icon className="h-3.5 w-3.5 shrink-0" />
                     <Typography variant="caption" className="truncate text-slate-500">
@@ -55,8 +55,8 @@ const MyGoals: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-col gap-3 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex h-10 w-full items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-1 text-sm lg:w-auto">
+          <div className="flex min-w-0 flex-col gap-3 p-4 sm:p-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex h-10 w-full min-w-0 items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-1 text-sm md:max-w-[580px]">
               <button className="h-full min-w-0 flex-1 rounded-md px-3 font-medium text-slate-600 transition-colors hover:bg-white lg:flex-none" aria-label="Show goals as list">
                 List
               </button>
@@ -68,7 +68,7 @@ const MyGoals: React.FC = () => {
               </button>
             </div>
 
-            <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:items-center lg:w-auto">
+            <div className="grid w-full shrink-0 grid-cols-2 gap-3 sm:flex sm:items-center md:w-auto">
               <Button variant="outline" bgColor="text" size="sm" icon={<Filter className="h-4 w-4" />} className="h-10 w-full justify-center bg-white sm:w-auto">
                 Filter
               </Button>
