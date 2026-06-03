@@ -273,7 +273,7 @@ const EmployeeSearch = ({
                     : (key === "doj_from" || key === "doj_to"
                         ? formatToIndianDate(String(value))
                         : key === "employee_self_service"
-                            ? (value === 1 || value === "1" ? "Yes" : "No")
+                            ? (value === 1 || value === "1" || value === true || value === "Yes" ? "Yes" : "No")
                             : String(value))}
                 </span>
                 <span

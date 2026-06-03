@@ -168,6 +168,8 @@ const EmployeeTable = ({
                         <button
                           onClick={() => toggleRow(item.name)}
                           className="p-1 text-gray-500 hover:text-primary-600 transition-colors rounded-full hover:bg-primary-50"
+                          aria-label={expandedRows.includes(item.name) ? "Hide separation details" : "Show separation details"}
+                          title={expandedRows.includes(item.name) ? "Hide separation details" : "Show separation details"}
                         >
                           {expandedRows.includes(item.name) ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                         </button>
@@ -362,6 +364,8 @@ const EmployeeTable = ({
                       <button
                         onClick={() => toggleRow(item.name)}
                         className="p-1 text-gray-500 hover:text-primary-600 transition-colors rounded-full hover:bg-primary-50 shrink-0"
+                        aria-label={expandedRows.includes(item.name) ? "Hide separation details" : "Show separation details"}
+                        title={expandedRows.includes(item.name) ? "Hide separation details" : "Show separation details"}
                       >
                         {expandedRows.includes(item.name) ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                       </button>
