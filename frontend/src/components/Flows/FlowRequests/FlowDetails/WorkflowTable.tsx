@@ -296,7 +296,7 @@ const WorkflowCard = ({
       {isDesktop ? (
         <div
           key={idx}
-          className="hover:bg-primary-100 py-4 text-center grid grid-cols-7 cursor-pointer text-xs w-full border-b gap-4"
+          className="hover:bg-primary-100 py-4 px-6 text-center grid grid-cols-7 cursor-pointer text-xs w-full border-b gap-4"
         >
           {/* Stage Name */}
           <div className="flex justify-center items-center">

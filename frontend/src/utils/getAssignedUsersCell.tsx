@@ -11,13 +11,8 @@ export const getStageAssignedUsersCell = (
   textWrapper?: (text: string) => ReactNode
 ) => {
   if (!stage) return textWrapper ? textWrapper("—") : <span>—</span>;
-
+  const totalUsers = stage?.assigned_users_count;
   if (roleAssignedUsers.length > 0) {
-    const totalUsers =
-      roleAssignedUsers?.reduce(
-        (acc: number, r: any) => acc + (r.users?.length || r.user?.length || 0),
-        0,
-      ) ?? 0;
 
     const roles = stage.role ? stage.role.split(',').map((r: string) => r.trim()) : [];
 
@@ -40,7 +35,7 @@ export const getStageAssignedUsersCell = (
       ? [{ name: stage.user, employee: stage.employee_id, designation_name: stage.designation_name }]
       : [];
 
-  const label = (stage?.designation_name || stage?.stage_name || (users.length > 0 ? "Assign(" + users.length + ")" : "Not Assigned")) + " ";
+  const label = (stage?.designation_name || stage?.stage_name || (totalUsers ? `Assign(${totalUsers})` : users.length ? `Assign(${users.length})` : "Not Assigned")) + " ";
 
   return (
     <AllocatedToTooltip
