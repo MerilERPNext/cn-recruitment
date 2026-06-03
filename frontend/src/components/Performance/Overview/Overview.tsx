@@ -7,7 +7,7 @@ import OverviewSidebar from './component/OverviewSidebar';
 const Overview: React.FC = () => {
   return (
     <main aria-label="Performance Overview" className="min-h-full overflow-y-auto overflow-x-hidden bg-[#f8fafc] px-3 py-4 font-sans sm:px-4 sm:py-5 lg:px-6 lg:py-6">
-      <div className="mx-auto w-full max-w-[1440px] min-w-0 space-y-4 sm:space-y-6">
+      <div className="mx-auto w-full  min-w-0 space-y-4 sm:space-y-6">
 
         {/* Header Section */}
         <header aria-label="Overview Header">

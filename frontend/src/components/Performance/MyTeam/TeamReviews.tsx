@@ -152,8 +152,8 @@ const TeamReviews: React.FC = () => {
 
   return (
     <main className="min-h-full overflow-y-auto overflow-x-hidden bg-[#f4f7fb] px-3 py-4 font-sans text-gray-900 sm:px-4 lg:px-6 lg:py-6">
-      <div className="mx-auto grid w-full max-w-[1480px] min-w-0 gap-4 xl:grid-cols-[260px_minmax(0,1fr)] 2xl:grid-cols-[260px_minmax(0,1fr)_300px]">
-        <aside className="order-2 min-w-0 xl:order-1 xl:sticky xl:top-4 xl:self-start">
+      <div className="mx-auto grid w-full  min-w-0 gap-4 xl:grid-cols-[260px_minmax(0,1fr)] 2xl:grid-cols-[260px_minmax(0,1fr)_300px]">
+        <aside className="order-2 min-w-0 xl:order-1 xl:sticky  xl:self-start">
           <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <Typography
               variant="caption"
@@ -387,7 +387,7 @@ const TeamReviews: React.FC = () => {
           </footer>
         </section>
 
-        <aside className="order-3 min-w-0 space-y-4 xl:order-3 xl:col-start-2 2xl:col-start-auto 2xl:sticky 2xl:top-4 2xl:self-start">
+        <aside className="order-3 min-w-0 space-y-4 xl:order-3 xl:col-start-2 2xl:col-start-auto 2xl:sticky  2xl:self-start">
           <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <div className="mb-3 flex items-center gap-2">
               <MessageSquareText className="h-4 w-4 text-gray-500" />
