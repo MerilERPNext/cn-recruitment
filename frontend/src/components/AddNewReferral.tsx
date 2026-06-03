@@ -124,9 +124,9 @@ const AddNewReferral: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // ── Resume analyzer field state ──
-  const [resumeUploading, setResumeUploading] = useState(false);
-  const [resumeData, setResumeData] = useState<Record<string, any> | null>(null);
+  // ── Resume analyzer field state (dummy — AI integration coming later) ──
+  const [resumeAnalyzing, setResumeAnalyzing] = useState(false);
+  const [resumeAnalyzed, setResumeAnalyzed] = useState(false);
   const [resumeFileName, setResumeFileName] = useState<string>("");
 
   // Validation state
@@ -258,6 +258,60 @@ const AddNewReferral: React.FC = () => {
       console.error("Upload error", error);
       return null;
     }
+  };
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Dummy resume analyzer — NO API yet. This will be replaced by an AI-powered
+  // resume extraction service. For now it simulates analysis and auto-fills the
+  // referral form fields with sample candidate data, keyed by each field's
+  // reference_name, so the end-to-end flow can be demoed.
+  // ───────────────────────────────────────────────────────────────────────────
+  const buildDummyExtraction = (): Record<string, any> => {
+    const data: Record<string, any> = {};
+    (fieldsRes || []).forEach(field => {
+      if (field.visibility === "None" || field.fieldtype === "Attach") return;
+      // Can't safely guess Select/Link option values — skip them.
+      if (field.fieldtype === "Select" || field.fieldtype === "Link") return;
+
+      const key = field.reference_name;
+      const name = `${field.reference_name} ${field.display_name}`.toLowerCase();
+      const isNumeric = ["Int", "Float", "Currency"].includes(field.fieldtype);
+
+      if (/email/.test(name)) data[key] = "john.doe@example.com";
+      else if (/phone|mobile|contact/.test(name)) data[key] = "9876543210";
+      else if (/name/.test(name)) data[key] = "John Doe";
+      else if (/skill/.test(name)) data[key] = "React, TypeScript, Node.js";
+      else if (/experience|exp|year/.test(name)) data[key] = isNumeric ? 5 : "5 years";
+      else if (/salary|ctc|compensation/.test(name)) data[key] = isNumeric ? 1200000 : "12 LPA";
+      else if (/location|city|address/.test(name)) data[key] = "Bengaluru, India";
+      else if (field.fieldtype === "Date") data[key] = "1995-06-15";
+      else if (isNumeric) data[key] = 0;
+      else if (["Data", "Small Text", "Text", "Long Text", "Text Editor"].includes(field.fieldtype))
+        data[key] = "Auto-filled from resume (demo)";
+    });
+    return data;
+  };
+
+  const handleAnalyzeResume = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Resume exceeds 5MB size limit.");
+      return;
+    }
+    setResumeFileName(file.name);
+    setResumeAnalyzed(false);
+    setResumeAnalyzing(true);
+
+    // Simulate AI analysis latency (no backend call yet).
+    setTimeout(() => {
+      const extracted = buildDummyExtraction();
+      const merged = { ...formDataRef.current, ...extracted };
+      formDataRef.current = merged;        // keep sync ref up to date
+      setFormData(merged);                 // auto-fill the form fields
+      setStepValidationErrors([]);
+      setResumeAnalyzing(false);
+      setResumeAnalyzed(true);
+      toast.success("Resume analyzed — form auto-filled with demo data.");
+    }, 1200);
   };
 
   const handleChange = (changed: any) => {
@@ -631,6 +685,62 @@ const AddNewReferral: React.FC = () => {
             >
               <Copy size={13} /> {copied ? "COPIED" : "COPY LINK"}
             </button>
+          </div>
+
+          {/* ── Resume Analyzer (dummy — AI auto-fill coming soon) ── */}
+          <div className="pt-4 mt-2 border-t border-gray-100">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-gray-800">Resume Analyzer</h3>
+              <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider bg-violet-50 text-violet-600 border border-violet-200 px-2 py-0.5 rounded-lg">
+                AI · Coming soon
+              </span>
+            </div>
+            <p className="text-xs text-gray-400 font-medium mt-1 mb-3">
+              Upload a resume to auto-fill the application fields below
+            </p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 max-w-2xl">
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.txt"
+                id="resume_analyzer_input"
+                className="hidden"
+                disabled={resumeAnalyzing}
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) handleAnalyzeResume(file);
+                  e.target.value = ""; // allow re-selecting the same file
+                }}
+              />
+              <label
+                htmlFor="resume_analyzer_input"
+                className={`w-full sm:w-auto py-3 px-6 rounded-xl text-xs font-bold uppercase transition-all tracking-wider shrink-0 flex items-center justify-center gap-2 active:scale-[0.98] ${resumeAnalyzing ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+                  }`}
+                style={{ color: "var(--primary-color)", border: "1.5px solid var(--primary-color)" }}
+              >
+                {resumeAnalyzing ? (
+                  <>
+                    <span
+                      className="w-3.5 h-3.5 border-2 border-current/40 border-t-current rounded-full animate-spin"
+                    />
+                    ANALYZING...
+                  </>
+                ) : (
+                  <>
+                    <Upload size={13} /> {resumeAnalyzed ? "RE-ANALYZE RESUME" : "ANALYZE RESUME"}
+                  </>
+                )}
+              </label>
+              {resumeFileName && !resumeAnalyzing && (
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100">
+                  <CheckCircle size={14} /> {resumeFileName}
+                </div>
+              )}
+            </div>
+            {resumeAnalyzed && (
+              <p className="text-xs text-emerald-600 font-semibold mt-2">
+                Form auto-filled from resume. Review the fields below before submitting.
+              </p>
+            )}
           </div>
         </div>
 
