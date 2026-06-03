@@ -122,9 +122,9 @@ const Requisition = () => {
     };
 
     const code = item.name;
-    const designation = item.designation_title;
-    const department = item.department_title;
-    const location = item.custom_location_title;
+    const designation = item.designation;
+    const department = item.department;
+    const location = item.custom_location || item.location;
     const status = item.status;
 
     const totalPositions = item.no_of_positions || item.total_positions || "1";
@@ -219,7 +219,7 @@ const Requisition = () => {
 
           <div className="flex items-center">
             <Typography variant="bodySmall" className="text-gray-600">
-              {formatToIndianDate(lastUpdated)}
+            {formatToIndianDate(lastUpdated) || "__"}
             </Typography>
           </div>
 
@@ -230,7 +230,7 @@ const Requisition = () => {
               onMouseLeave={() => setShowRequesterCard(false)}
             >
               <Typography variant="bodySmall" className="text-gray-600">
-                {formatToIndianDate(initiated)}
+              {formatToIndianDate(initiated) || "--"}
               </Typography>
               <Typography variant="bodySmall" className="text-gray-500 text-xs hover:underline cursor-pointer">
                 {item.requested_by_name || item.requested_by}
@@ -585,7 +585,7 @@ const Requisition = () => {
                   {selectedRequisition.name}
                 </Typography>
                 <Typography variant="bodySmall" className="text-gray-500 text-xs">
-                  {selectedRequisition.designation_title} — {selectedRequisition.department_title}
+                  {selectedRequisition.designation} — {selectedRequisition.department}
                 </Typography>
               </div>
               <button
@@ -614,7 +614,7 @@ const Requisition = () => {
                     Hiring Lead
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {selectedRequisition.custom_hiring_lead_title || "—"}
+                    {selectedRequisition.custom_hiring_lead || "—"}
                   </Typography>
                 </div>
                 <div>
@@ -640,7 +640,7 @@ const Requisition = () => {
                     Posting Date
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {formatToIndianDate(selectedRequisition.posting_date) || "—"}
+                    {selectedRequisition.posting_date || "—"}
                   </Typography>
                 </div>
                 <div>
@@ -648,7 +648,7 @@ const Requisition = () => {
                     Expected By
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {formatToIndianDate(selectedRequisition.expected_by) || "—"}
+                    {selectedRequisition.expected_by || "—"}
                   </Typography>
                 </div>
               </div>
@@ -674,8 +674,8 @@ const Requisition = () => {
                           <tr key={idx} className="hover:bg-gray-50/50">
                             <td className="px-4 py-2 font-medium">{pos.position_no}</td>
                             <td className="px-4 py-2">{pos.vacancy_type}</td>
-                            <td className="px-4 py-2">{pos.location_title || "—"}</td>
-                            <td className="px-4 py-2">{pos.reporting_manager_title || "—"}</td>
+                            <td className="px-4 py-2">{pos.location || "—"}</td>
+                            <td className="px-4 py-2">{pos.reporting_manager || "—"}</td>
                           </tr>
                         ))}
                       </tbody>

@@ -629,6 +629,15 @@ const RequisitionForm = () => {
       return;
     }
 
+    // Escape values that get interpolated into the dangerouslySetInnerHTML
+    // string below, to avoid XSS / render issues from special characters.
+    const escapeHtml = (s: any) =>
+      String(s).replace(
+        /[&<>"']/g,
+        (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string)
+      );
+
     // Whole-form payload — every tab's data — sent under `data`.
     const payload = buildPayload(formData);
     const requestBody = { designation, department, functional_area, data: payload };
@@ -660,8 +669,8 @@ const RequisitionForm = () => {
         source: jd?.source || "",
         html: noJd
           ? `<p style="color:#6b7280;text-align:center;padding:32px 0;">
-              No job description found for <strong>${designation}</strong> in
-              <strong>${department}</strong>.
+              No job description found for <strong>${escapeHtml(designation)}</strong> in
+              <strong>${escapeHtml(department)}</strong>.
             </p>`
           : html,
       }));
@@ -937,6 +946,20 @@ const RequisitionForm = () => {
   // (handlePreviewJobDetails) — this one never opens the modal.
   // ---------------------------------------------------------------------------
   const handleSubmitWithPreview = async () => {
+    // Validate every step before submitting — a user can jump straight to the
+    // last step via the tabs and otherwise submit with missing/invalid fields
+    // from earlier steps. Stop at the first invalid step and surface its errors.
+    for (let step = 0; step < requisitionSteps.length; step++) {
+      const errors = validateStep(step, formData);
+      if (errors.length > 0) {
+        setValidationErrors(errors);
+        setCurrentStep(step);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+    }
+    setValidationErrors([]);
+
     let jdFields: Record<string, any> = {};
 
     try {
