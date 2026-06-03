@@ -325,8 +325,8 @@ export const requisitionFormSchemas = {
                 label: "Expected By Date",
                 customClass: "required-field",
                 format: "yyyy-MM-dd",
-          
                 validate: { required: true },
+                enableTime: false,
                 // Default to today and disable any date before today.
                 customDefaultValue: "value = moment().format('YYYY-MM-DD')",
                 datePicker: { minDate: "moment()" },
@@ -443,7 +443,7 @@ export const requisitionFormSchemas = {
                 placeholder: "Select Company",
                 dataSrc: "url",
                 data: {
-                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Company",
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Preferred Target Company",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message.results",
@@ -625,3 +625,38 @@ export const requisitionFormSchemas = {
 };
 
 export type FormSchemaKeys = keyof typeof requisitionFormSchemas;
+
+// ---------------------------------------------------------------------------
+// Job Details (JD) tab — field list driving the in-form "Preview" popup.
+// Ordered to mirror the on-screen layout.
+//   key        → the formData key the value is read from
+//   label      → what the preview popup shows
+//   backendKey → the Job Requisition field this value maps to when the preview
+//                payload is wired to the API later (feature, not now)
+// Keep this in sync with the `jobDetails` schema above.
+// ---------------------------------------------------------------------------
+export interface JobDetailsPreviewField {
+  key: string;
+  label: string;
+  backendKey: string;
+}
+
+export const jobDetailsPreviewFields: JobDetailsPreviewField[] = [
+  { key: "experience_from", label: "Experience Range - From", backendKey: "custom_experience_range_from" },
+  { key: "experience_to", label: "Experience Range - To", backendKey: "custom_experience_range_to" },
+  { key: "experience_unit", label: "Experience Unit", backendKey: "custom_experience_unit" },
+  { key: "salary_currency", label: "Salary Range (Currency)", backendKey: "custom_salary_range_currency" },
+  { key: "salary_min", label: "Salary Range (Min)", backendKey: "custom_salary_range_min" },
+  { key: "salary_max", label: "Salary Range (Max)", backendKey: "custom_salary_range_max" },
+  { key: "salary_timeframe", label: "Salary Timeframe", backendKey: "custom_salary_timeframe" },
+  { key: "recruitment_start_date", label: "Recruitment Start Date", backendKey: "posting_date" },
+  { key: "expected_compensation", label: "Expected Compensation", backendKey: "expected_compensation" },
+  { key: "expected_by", label: "Expected By Date", backendKey: "expected_by" },
+  { key: "employment_type", label: "Employment Type", backendKey: "custom_employment_type_link" },
+  { key: "location", label: "Work Location", backendKey: "custom_location" },
+  { key: "custom_work_experience_range", label: "Work Experience Range", backendKey: "custom_work_experience_range" },
+  { key: "custom_preferred_notice_period", label: "Preferred Notice Period", backendKey: "custom_preferred_notice_period" },
+  { key: "preferred_company", label: "Preferred Target Company", backendKey: "custom_preferred_company" },
+  { key: "custom_other_preferred_companies", label: "Other Preferred Companies", backendKey: "custom_other_preferred_companies" },
+  { key: "custom_skills", label: "Required Skills", backendKey: "custom_skills" },
+];
