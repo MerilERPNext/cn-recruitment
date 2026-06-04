@@ -519,6 +519,10 @@ export const requisitionFormSchemas = {
             type: "datagrid",
             key: "positions",
             label: "Position Details",
+            // Start with NO rows on create (form.io datagrids otherwise seed one
+            // empty row, which would force Total Position to 1). Rows are added
+            // as the user enters the Total Position count.
+            initEmpty: true,
             disableAddingRemovingRows: true,
             addAnother: "",
             removeRow: "",
