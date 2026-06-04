@@ -201,8 +201,8 @@ function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
     case "issued":
       return {
         label: "Issued",
-        bgClass: "bg-yellow-100",
-        textClass: "text-yellow-800",
+        bgClass: "bg-green-100",
+        textClass: "text-green-800",
         icon: <Clock className="w-3 h-3 md:w-4 md:h-4" />,
       };
 

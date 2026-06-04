@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { usePayCompOff } from "../../../hooks/useLeaves";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -14,6 +13,7 @@ import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import { RoleAssignedUsersType } from "../../../types/flows";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 export type CompensatoryRequestItem = {
   name: string;
   leave_type: string;
@@ -51,6 +51,7 @@ const CompensatoryRequestCard = ({
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onError: (error: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         toast.error(errorResponseFormater(error) as any);
       },
     });
@@ -77,12 +78,6 @@ const CompensatoryRequestCard = ({
   const cleanReason = sanitizeToPlainText(item.reason);
   const truncatedReason = truncateByChars(cleanReason);
 
-  const formattedFromDate = item?.work_from_date
-    ? format(new Date(item.work_from_date), "dd/MM/yyyy")
-    : "N/A";
-  const formattedToDate = item?.work_end_date
-    ? format(new Date(item.work_end_date), "dd/MM/yyyy")
-    : "N/A";
 
   return isDesktop ? (
     <div
@@ -95,11 +90,11 @@ const CompensatoryRequestCard = ({
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
-        {formattedFromDate}{" "}
+        {formatToIndianDate(item.work_from_date)}
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
-        {formattedToDate}{" "}
+        {formatToIndianDate(item.work_end_date)}
       </Typography>
 
       <Tooltip content={cleanReason}>
@@ -168,13 +163,15 @@ const CompensatoryRequestCard = ({
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">From</Typography>
             <Typography variant="mobileCardValue">
-              {formattedFromDate}
+              {formatToIndianDate(item.work_from_date)}
             </Typography>
           </div>
 
           <div className="flex flex-col gap-1 text-right">
             <Typography variant="mobileCardLabel">To</Typography>
-            <Typography variant="mobileCardValue">{formattedToDate}</Typography>
+            <Typography variant="mobileCardValue">
+              {formatToIndianDate(item.work_end_date)}
+            </Typography>
           </div>
         </div>
 
