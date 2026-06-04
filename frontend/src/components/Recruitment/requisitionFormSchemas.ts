@@ -351,8 +351,6 @@ export const requisitionFormSchemas = {
                 format: "yyyy-MM-dd",
                 validate: { required: true },
                 enableTime: false,
-                // Default to today and disable any date before today.
-                customDefaultValue: "value = moment().format('YYYY-MM-DD')",
                 datePicker: { minDate: "moment()" },
               },
             ],
@@ -521,6 +519,10 @@ export const requisitionFormSchemas = {
             type: "datagrid",
             key: "positions",
             label: "Position Details",
+            // Start with NO rows on create (form.io datagrids otherwise seed one
+            // empty row, which would force Total Position to 1). Rows are added
+            // as the user enters the Total Position count.
+            initEmpty: true,
             disableAddingRemovingRows: true,
             addAnother: "",
             removeRow: "",
@@ -549,6 +551,9 @@ export const requisitionFormSchemas = {
                 key: "location",
                 label: "Location",
                 placeholder: "Select Location",
+                // Validate only after the field is touched, so newly-added
+                // empty position rows don't show "required" red on render.
+                validateOn: "blur",
                 dataSrc: "url",
                 data: {
                   url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch",
@@ -564,6 +569,8 @@ export const requisitionFormSchemas = {
                 key: "functional_area",
                 label: "Functional Area",
                 placeholder: "Select Area",
+                // Validate only after the field is touched (see note above).
+                validateOn: "blur",
                 dataSrc: "url",
                 data: {
                   url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area',
@@ -579,6 +586,8 @@ export const requisitionFormSchemas = {
                 key: "reporting_manager",
                 label: "Reporting manager",
                 placeholder: "Search Employees",
+                // Validate only after the field is touched (see note above).
+                validateOn: "blur",
                 dataSrc: "url",
                 data: {
                   url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',
@@ -595,6 +604,8 @@ export const requisitionFormSchemas = {
                 key: "replacement_for",
                 label: "Replacement for",
                 placeholder: "Search Employees",
+                // Validate only after the field is touched (see note above).
+                validateOn: "blur",
                 dataSrc: "url",
                 data: {
                   url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect, useMemo,} from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Form } from "@tsed/react-formio";
 import {
   requisitionSteps,
@@ -130,6 +130,19 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
     hiring_lead: req.custom_hiring_lead,
     custom_division: req.custom_division,
     location: req.custom_location,
+
+    // Human-readable titles (display-only) the API returns alongside the ids,
+    // so the Review tab shows titles instead of raw ids on edit.
+    company_title: req.company,
+    department_title: req.department_title,
+    designation_title: req.designation_title,
+    functional_area_title: req.custom_functional_area_title,
+    hiring_manager_title: req.requested_by_title || req.custom_requested_by_title,
+    hiring_lead_title: req.custom_hiring_lead_title,
+    location_title: req.custom_location_title,
+    employment_type_title: req.custom_employment_type_link_title,
+    preferred_company_title: req.custom_preferred_company_title,
+    salary_currency_title: req.custom_salary_range_currency,
     reason_for_requesting: req.reason_for_requesting,
     description: req.description,
     job_description_template: req.custom_job_description_template,
@@ -329,6 +342,82 @@ function applyPositionCounts(newData: any, changedKey: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Build form.io's `submission.metadata.selectData` from the `_title` fields we
+// capture for each url <select>. form.io renders a select's chosen label from
+// `root.submission.metadata.selectData[<path>]` WITHOUT a network call; without
+// it, a select that only has the stored id renders the raw id on (re)mount and
+// then swaps in the label once its remote options load — the id→title flash the
+// user sees on tab switch. By feeding this metadata alongside the data, every
+// select shows its title immediately and never flashes the id.
+//
+// Shape mirrors what form.io itself writes:
+//   single select : selectData[key]            = { id, value, label }
+//   multiple       : selectData[key]            = { <id>: { id, value, label } }
+//   datagrid row   : selectData.positions[i].x  = { id, value, label }
+// The template object carries both `label` and `id` since some templates render
+// "{{ item.label }} ({{ item.id }})".
+// ---------------------------------------------------------------------------
+const SINGLE_SELECT_TITLE_KEYS: [string, string][] = [
+  ["hiring_manager", "hiring_manager_title"],
+  ["company", "company_title"],
+  ["department", "department_title"],
+  ["designation", "designation_title"],
+  ["functional_area", "functional_area_title"],
+  ["salary_currency", "salary_currency_title"],
+  ["employment_type", "employment_type_title"],
+  ["location", "location_title"],
+  ["preferred_company", "preferred_company_title"],
+];
+const POSITION_SELECT_TITLE_KEYS: [string, string][] = [
+  ["location", "location_title"],
+  ["functional_area", "functional_area_title"],
+  ["reporting_manager", "reporting_manager_title"],
+  ["replacement_for", "replacement_for_title"],
+];
+
+function buildSelectData(data: any): Record<string, any> {
+  const sd: Record<string, any> = {};
+  const opt = (id: any, label: any) => ({ id, value: id, label });
+
+  SINGLE_SELECT_TITLE_KEYS.forEach(([key, titleKey]) => {
+    const id = data?.[key];
+    const label = data?.[titleKey];
+    if (id && label) sd[key] = opt(id, label);
+  });
+
+  // Multiple select: Required Skills (keyed by id).
+  const skillIds: any[] = Array.isArray(data?.custom_skills)
+    ? data.custom_skills
+    : typeof data?.custom_skills === "string" && data.custom_skills
+    ? data.custom_skills.split(",").map((s: string) => s.trim())
+    : [];
+  const skillTitles: any[] = Array.isArray(data?.custom_skills_title)
+    ? data.custom_skills_title
+    : [];
+  if (skillIds.length && skillTitles.length) {
+    const map: Record<string, any> = {};
+    skillIds.forEach((id, i) => {
+      if (id) map[id] = opt(id, skillTitles[i] ?? id);
+    });
+    if (Object.keys(map).length) sd.custom_skills = map;
+  }
+
+  // Position datagrid rows.
+  const positions: any[] = Array.isArray(data?.positions) ? data.positions : [];
+  if (positions.length) {
+    sd.positions = positions.map((p: any) => {
+      const row: Record<string, any> = {};
+      POSITION_SELECT_TITLE_KEYS.forEach(([key, titleKey]) => {
+        if (p?.[key] && p?.[titleKey]) row[key] = opt(p[key], p[titleKey]);
+      });
+      return row;
+    });
+  }
+
+  return sd;
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 const RequisitionForm = () => {
@@ -361,6 +450,31 @@ const RequisitionForm = () => {
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // ── Decoupled form.io submission feed (performance) ──────────────────────
+  // form.io is uncontrolled: it manages its own field state and reports edits
+  // via onChange. Re-feeding `submission={{ data: formData }}` on every render
+  // forces form.io to run setSubmission + a full redraw of the step (every
+  // datagrid Choices widget), which makes selecting inside the Position Details
+  // Table lag. So we keep the submission identity STABLE across form.io-driven
+  // changes and only push a fresh submission when WE mutate the data outside
+  // form.io (count inputs, bulk vacancy-type toggle, JD preview, edit load) or
+  // when the step changes. `formSyncTick` bumps to request such a push.
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
+  const [formSyncTick, setFormSyncTick] = useState(0);
+  const pushFormSync = useCallback(() => setFormSyncTick((t) => t + 1), []);
+  const formSubmission = useMemo(
+    () => ({
+      data: formDataRef.current,
+      // Offline labels so url-selects render titles instantly (no id→title
+      // flash on tab switch). Each push to form.io replaces its submission, so
+      // we must re-supply this metadata or the accumulated labels are lost.
+      metadata: { selectData: buildSelectData(formDataRef.current) },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [formSyncTick, currentStep]
+  );
 
   const allValidationErrors = useMemo(() => {
     const errors: string[] = [];
@@ -458,6 +572,9 @@ const RequisitionForm = () => {
         number_of_replacement_positions: type === "Replacement" ? total : 0,
       };
     });
+    // Mutated positions outside form.io → push the new submission so the grid
+    // reflects the bulk vacancy-type change.
+    pushFormSync();
   };
 
   // ── Row-level mutations for the custom Pre-Screened Candidates table ──
@@ -551,6 +668,7 @@ const RequisitionForm = () => {
     if (!isEditMode || !existingRequisition) return;
 
     setFormData(mapRequisitionToFormData(existingRequisition) as JobRequisitionFormData);
+    pushFormSync();
 
     const reqName = existingRequisition.name;
     if (!reqName) return;
@@ -566,6 +684,7 @@ const RequisitionForm = () => {
         const full = res?.data ?? res;
         if (!cancelled && full && typeof full === "object") {
           setFormData(mapRequisitionToFormData(full) as JobRequisitionFormData);
+          pushFormSync();
         }
       } catch (err) {
         console.error("Failed to fetch full requisition for edit:", err);
@@ -587,6 +706,7 @@ const RequisitionForm = () => {
         hiring_manager: currentEmployee.name,
         company: currentEmployee.company,
       }));
+      pushFormSync();
     }
   }, [currentEmployee, isEditMode, formData.hiring_manager]);
 
@@ -598,8 +718,9 @@ const RequisitionForm = () => {
   // JD Preview handler (FIXED to match API response structure)
   // ---------------------------------------------------------------------------
   const handlePreviewJD = async () => {
-    const designation = (formData as any).designation;
-    const department = (formData as any).department;
+    // Send the human-readable titles (not the link ids) to the preview API.
+    const designation = (formData as any).designation_title || (formData as any).designation;
+    const department = (formData as any).department_title || (formData as any).department;
 
     if (!designation || !department) {
       toast.error("Please select both Designation and Department first.");
@@ -657,9 +778,11 @@ const RequisitionForm = () => {
   //   { designation, department, functional_area, data: <all-tab payload> }
   // ---------------------------------------------------------------------------
   const handlePreviewJobDetails = async () => {
-    const designation = (formData as any).designation;
-    const department = (formData as any).department;
-    const functional_area = (formData as any).functional_area;
+    // Send the human-readable titles (not the link ids) to the preview API.
+    const designation = (formData as any).designation_title || (formData as any).designation;
+    const department = (formData as any).department_title || (formData as any).department;
+    const functional_area =
+      (formData as any).functional_area_title || (formData as any).functional_area;
 
     if (!designation || !department) {
       toast.error("Please select Designation and Department first.");
@@ -731,6 +854,9 @@ const RequisitionForm = () => {
             ...(skills && !userHasSkills ? { custom_skills: skills } : {}),
           };
         });
+        // Seeded skills/description into the form → push so the form.io fields
+        // (e.g. the Required Skills select) show the previewed values.
+        pushFormSync();
       }
     } catch (err) {
       console.error("Error fetching job description preview:", err);
@@ -808,6 +934,9 @@ const RequisitionForm = () => {
     setFormData((prev: any) =>
       applyPositionCounts({ ...prev, [changedKey]: draft }, changedKey)
     );
+    // Rows were added/removed/retyped outside form.io → push so the datagrid
+    // rebuilds with the new row set.
+    pushFormSync();
     setCountDrafts((prev) => {
       const next = { ...prev };
       delete next[changedKey];
@@ -826,8 +955,85 @@ const RequisitionForm = () => {
     return val === undefined || val === null ? "" : String(val);
   };
 
-  const handleChange = (changed: { data: any; changed?: { component?: { key?: string }; value?: any } }) => {
+  const handleChange = (changed: { data: any; changed?: { component?: { key?: string }; value?: any }; metadata?: any }) => {
     const newData = { ...formData, ...changed.data };
+
+    // Capture the human-readable label of each url/link <select> alongside its
+    // stored id, so the Review tab (and the preview payload) can show the title
+    // instead of the raw id. form.io reports the selected option objects in
+    // `metadata.selectData`, mirroring the data nesting (top-level keys + the
+    // `positions` datagrid rows). We persist them as `${key}_title` fields.
+    const selectData = (changed as any).metadata?.selectData;
+    if (selectData && typeof selectData === "object") {
+      const labelOf = (v: any) =>
+        v && typeof v === "object" ? (v.label ?? v.name ?? v.title) : undefined;
+
+      Object.keys(selectData).forEach((key) => {
+        const sd = selectData[key];
+        if (key === "positions" && Array.isArray(sd)) {
+          // Per-row position titles (location, functional_area, etc.)
+          const rows = [...(newData.positions || [])];
+          sd.forEach((rowSel: any, idx: number) => {
+            if (!rows[idx] || !rowSel || typeof rowSel !== "object") return;
+            let updated = { ...rows[idx] };
+            Object.keys(rowSel).forEach((fk) => {
+              const lbl = labelOf(rowSel[fk]);
+              if (lbl) {
+                updated = { ...updated, [`${fk}_title`]: lbl };
+              } else {
+                delete updated[`${fk}_title`];
+              }
+            });
+            rows[idx] = updated;
+          });
+          newData.positions = rows;
+        } else if (Array.isArray(sd)) {
+          // Multiple select (e.g. custom_skills) → array of labels.
+          const labels = sd.map((v: any) => labelOf(v)).filter(Boolean);
+          if (labels.length) {
+            newData[`${key}_title`] = labels;
+          } else {
+            delete newData[`${key}_title`];
+          }
+        } else if (
+          sd &&
+          typeof sd === "object" &&
+          !("label" in sd || "name" in sd || "title" in sd)
+        ) {
+          // Multiple select stored as an object map: { <id>: { id, value, label } }
+          const labels = Object.values(sd)
+            .map((v: any) => labelOf(v))
+            .filter(Boolean);
+          if (labels.length) {
+            newData[`${key}_title`] = labels;
+          } else {
+            delete newData[`${key}_title`];
+          }
+        } else {
+          const lbl = labelOf(sd);
+          if (lbl) {
+            newData[`${key}_title`] = lbl;
+          } else {
+            delete newData[`${key}_title`];
+          }
+        }
+      });
+    }
+
+    // Drop stale `_title` fields when their select was cleared, so the Review
+    // step falls back to the empty state instead of showing an old title.
+    SINGLE_SELECT_TITLE_KEYS.forEach(([key, titleKey]) => {
+      if (!newData[key]) delete newData[titleKey];
+    });
+    if (Array.isArray(newData.positions)) {
+      newData.positions = newData.positions.map((pos: any) => {
+        const updated = { ...pos };
+        POSITION_SELECT_TITLE_KEYS.forEach(([key, titleKey]) => {
+          if (!updated[key]) delete updated[titleKey];
+        });
+        return updated;
+      });
+    }
 
     // If a row in the positions datagrid changed directly, sync totals to the
     // Total / New / Replacement counts so the summary inputs stay accurate.
@@ -1016,9 +1222,11 @@ const RequisitionForm = () => {
     let jdFields: Record<string, any> = {};
 
     try {
-      const designation = (formData as any).designation;
-      const department = (formData as any).department;
-      const functional_area = (formData as any).functional_area;
+      // Send the human-readable titles (not the link ids) to the preview API.
+      const designation = (formData as any).designation_title || (formData as any).designation;
+      const department = (formData as any).department_title || (formData as any).department;
+      const functional_area =
+        (formData as any).functional_area_title || (formData as any).functional_area;
 
       if (designation && department) {
         const payload = buildPayload(formData);
@@ -1256,7 +1464,7 @@ const RequisitionForm = () => {
 
             <Form
               form={currentSchema}
-              submission={{ data: formData }}
+              submission={formSubmission}
               onChange={handleChange}
               onSubmit={handleSubmit}
             />

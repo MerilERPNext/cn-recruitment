@@ -163,6 +163,11 @@ export interface RequisitionPosition {
   functional_area?: string;
   reporting_manager?: string;
   replacement_for?: string;
+  // Human-readable titles captured alongside the link ids (for display only).
+  location_title?: string;
+  functional_area_title?: string;
+  reporting_manager_title?: string;
+  replacement_for_title?: string;
 }
 
 export interface RequisitionQualification {
@@ -220,6 +225,18 @@ export interface RequisitionFormData {
   custom_skills?: string | string[];
   custom_qualifications?: RequisitionQualification[];
   custom_pre_screened_candidates?: RequisitionCandidate[];
+  // Human-readable titles captured alongside the link ids (for display only).
+  hiring_manager_title?: string;
+  company_title?: string;
+  department_title?: string;
+  designation_title?: string;
+  functional_area_title?: string;
+  hiring_lead_title?: string;
+  location_title?: string;
+  employment_type_title?: string;
+  preferred_company_title?: string;
+  salary_currency_title?: string;
+  custom_skills_title?: string[];
 }
 
 export interface ReferralField {
