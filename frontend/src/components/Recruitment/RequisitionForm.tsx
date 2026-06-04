@@ -130,6 +130,19 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
     hiring_lead: req.custom_hiring_lead,
     custom_division: req.custom_division,
     location: req.custom_location,
+
+    // Human-readable titles (display-only) the API returns alongside the ids,
+    // so the Review tab shows titles instead of raw ids on edit.
+    company_title: req.company,
+    department_title: req.department_title,
+    designation_title: req.designation_title,
+    functional_area_title: req.custom_functional_area_title,
+    hiring_manager_title: req.requested_by_title || req.custom_requested_by_title,
+    hiring_lead_title: req.custom_hiring_lead_title,
+    location_title: req.custom_location_title,
+    employment_type_title: req.custom_employment_type_link_title,
+    preferred_company_title: req.custom_preferred_company_title,
+    salary_currency_title: req.custom_salary_range_currency,
     reason_for_requesting: req.reason_for_requesting,
     description: req.description,
     job_description_template: req.custom_job_description_template,
@@ -598,8 +611,9 @@ const RequisitionForm = () => {
   // JD Preview handler (FIXED to match API response structure)
   // ---------------------------------------------------------------------------
   const handlePreviewJD = async () => {
-    const designation = (formData as any).designation;
-    const department = (formData as any).department;
+    // Send the human-readable titles (not the link ids) to the preview API.
+    const designation = (formData as any).designation_title || (formData as any).designation;
+    const department = (formData as any).department_title || (formData as any).department;
 
     if (!designation || !department) {
       toast.error("Please select both Designation and Department first.");
@@ -657,9 +671,11 @@ const RequisitionForm = () => {
   //   { designation, department, functional_area, data: <all-tab payload> }
   // ---------------------------------------------------------------------------
   const handlePreviewJobDetails = async () => {
-    const designation = (formData as any).designation;
-    const department = (formData as any).department;
-    const functional_area = (formData as any).functional_area;
+    // Send the human-readable titles (not the link ids) to the preview API.
+    const designation = (formData as any).designation_title || (formData as any).designation;
+    const department = (formData as any).department_title || (formData as any).department;
+    const functional_area =
+      (formData as any).functional_area_title || (formData as any).functional_area;
 
     if (!designation || !department) {
       toast.error("Please select Designation and Department first.");
@@ -826,8 +842,44 @@ const RequisitionForm = () => {
     return val === undefined || val === null ? "" : String(val);
   };
 
-  const handleChange = (changed: { data: any; changed?: { component?: { key?: string }; value?: any } }) => {
+  const handleChange = (changed: { data: any; changed?: { component?: { key?: string }; value?: any }; metadata?: any }) => {
     const newData = { ...formData, ...changed.data };
+
+    // Capture the human-readable label of each url/link <select> alongside its
+    // stored id, so the Review tab (and the preview payload) can show the title
+    // instead of the raw id. form.io reports the selected option objects in
+    // `metadata.selectData`, mirroring the data nesting (top-level keys + the
+    // `positions` datagrid rows). We persist them as `${key}_title` fields.
+    const selectData = (changed as any).metadata?.selectData;
+    if (selectData && typeof selectData === "object") {
+      const labelOf = (v: any) =>
+        v && typeof v === "object" ? (v.label ?? v.name ?? v.title) : undefined;
+
+      Object.keys(selectData).forEach((key) => {
+        const sd = selectData[key];
+        if (key === "positions" && Array.isArray(sd)) {
+          // Per-row position titles (location, functional_area, etc.)
+          const rows = [...(newData.positions || [])];
+          sd.forEach((rowSel: any, idx: number) => {
+            if (!rows[idx] || !rowSel || typeof rowSel !== "object") return;
+            let updated = { ...rows[idx] };
+            Object.keys(rowSel).forEach((fk) => {
+              const lbl = labelOf(rowSel[fk]);
+              if (lbl) updated = { ...updated, [`${fk}_title`]: lbl };
+            });
+            rows[idx] = updated;
+          });
+          newData.positions = rows;
+        } else if (Array.isArray(sd)) {
+          // Multiple select (e.g. custom_skills) → array of labels.
+          const labels = sd.map((v: any) => labelOf(v)).filter(Boolean);
+          if (labels.length) newData[`${key}_title`] = labels;
+        } else {
+          const lbl = labelOf(sd);
+          if (lbl) newData[`${key}_title`] = lbl;
+        }
+      });
+    }
 
     // If a row in the positions datagrid changed directly, sync totals to the
     // Total / New / Replacement counts so the summary inputs stay accurate.
@@ -1016,9 +1068,11 @@ const RequisitionForm = () => {
     let jdFields: Record<string, any> = {};
 
     try {
-      const designation = (formData as any).designation;
-      const department = (formData as any).department;
-      const functional_area = (formData as any).functional_area;
+      // Send the human-readable titles (not the link ids) to the preview API.
+      const designation = (formData as any).designation_title || (formData as any).designation;
+      const department = (formData as any).department_title || (formData as any).department;
+      const functional_area =
+        (formData as any).functional_area_title || (formData as any).functional_area;
 
       if (designation && department) {
         const payload = buildPayload(formData);
