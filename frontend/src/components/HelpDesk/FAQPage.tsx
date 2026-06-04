@@ -122,11 +122,10 @@ const FAQPage: React.FC = () => {
                           setSelectedCategory(category.name);
                           setIsCategoryDropdownOpen(false);
                         }}
-                        className={`flex cursor-pointer items-center rounded-lg px-3 py-2 text-sm transition ${
-                          category.name === selectedCategory
-                            ? "bg-primary-50 text-primary-600 font-medium"
-                            : "text-gray-700 hover:bg-gray-100"
-                        }`}
+                        className={`flex cursor-pointer items-center rounded-lg px-3 py-2 text-sm transition ${category.name === selectedCategory
+                          ? "bg-primary-50 text-primary-600 font-medium"
+                          : "text-gray-700 hover:bg-gray-100"
+                          }`}
                       >
                         {category.category_name} ({category.article_count})
                       </li>
@@ -147,30 +146,41 @@ const FAQPage: React.FC = () => {
           </div>
         ) : (
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Left: Illustration */}
-            <div className="lg:w-2/5 flex-shrink-0">
-              <img
-                src={emptyStateImage}
-                alt="FAQ Illustration"
-                className="w-full h-auto max-w-md mx-auto"
-              />
-            </div>
-
-            {/* Right: FAQ Accordion */}
-            <div className="lg:w-3/5">
-              {displayArticles.length > 0 ? (
-                <FAQAccordion
-                  categoryName={currentCategory?.category_name || ""}
-                  articleCount={displayArticles.length}
-                  articles={displayArticles}
+            {/* Left: Illustration (desktop only) */}
+            {isDesktop && (
+              <div className="lg:w-2/5 flex-shrink-0">
+                <img
+                  src={emptyStateImage}
+                  alt="FAQ Illustration"
+                  className="w-full h-auto max-w-md mx-auto"
                 />
-              ) : (
-                <div className="text-center py-8">
-                  <Typography variant="body" color="body2">
-                    No FAQs found for this category.
-                  </Typography>
-                </div>
+              </div>
+            )}
+
+            {/* Right: FAQ Accordion (with background image on mobile) */}
+            <div className="lg:w-3/5 relative">
+              {/* Mobile background image - fixed to viewport */}
+              {!isDesktop && (
+                <div
+                  className="fixed inset-0 bg-no-repeat bg-center bg-contain opacity-10 pointer-events-none z-0"
+                  style={{ backgroundImage: `url(${emptyStateImage})` }}
+                />
               )}
+              <div className="relative z-10">
+                {displayArticles.length > 0 ? (
+                  <FAQAccordion
+                    categoryName={currentCategory?.category_name || ""}
+                    articleCount={displayArticles.length}
+                    articles={displayArticles}
+                  />
+                ) : (
+                  <div className="text-center py-8">
+                    <Typography variant="body" color="body2">
+                      No FAQs found for this category.
+                    </Typography>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

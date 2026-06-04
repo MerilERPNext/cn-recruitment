@@ -44,7 +44,7 @@ const NotificationList = () => {
 
   const [activeTab, setActiveTab] = useState<"all" | "read" | "unread">("all");
 
-  const LIMIT = 10;
+  const LIMIT = 20;
   const [currentPage, setCurrentPage] = useState(1);
   const [pageCache, setPageCache] = useState<Record<number, NotificationLog[]>>({});
 
@@ -150,10 +150,24 @@ const NotificationList = () => {
 
   // ✅ Pagination Bar
   const PaginationBar = () => {
-    const pageNumbers: number[] = [];
-    for (let i = 1; i <= totalPages; i++) {
-      pageNumbers.push(i);
-    }
+    // Show at most 2 page numbers between prev and next
+    const getVisiblePages = (): number[] => {
+      if (totalPages <= 2) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+      }
+      // Sliding window of 2 pages around currentPage
+      let start = currentPage;
+      let end = currentPage + 1;
+      if (end > totalPages) {
+        end = totalPages;
+        start = totalPages - 1;
+      }
+      if (start < 1) start = 1;
+      const pages: number[] = [];
+      for (let i = start; i <= end; i++) pages.push(i);
+      return pages;
+    };
+    const pageNumbers = getVisiblePages();
     return (
       <div className="flex-shrink-0 flex gap-4 items-center justify-between overflow-x-scroll px-4 py-3 border-t bg-white">
         <p className="text-sm text-gray-500 whitespace-nowrap">
@@ -317,11 +331,8 @@ const NotificationList = () => {
 
             <div className="px-6 py-4 border-t flex justify-end gap-2">
               {/* Handler needs to be implemented */}
-              <Button size="md">
+              <Button size="md" className="rounded-none h-8">
                 Act
-              </Button>
-              <Button size="md" onClick={handleDrawerClose}>
-                Close
               </Button>
             </div>
           </div>

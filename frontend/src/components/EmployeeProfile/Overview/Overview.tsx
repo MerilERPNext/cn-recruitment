@@ -41,6 +41,8 @@ const Overview = () => {
 
             <ScrollTabs
                 tabs={permittedTabs}
+                stickyTopClassName="top-[114px] md:top-14"
+                offsetClassName="scroll-mt-[160px]"
                 renderSection={(tab: { key: string, label: string }) => (
                     <>
                         {tabeContent[tab.key as keyof typeof tabeContent]}

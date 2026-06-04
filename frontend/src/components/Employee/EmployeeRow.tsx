@@ -97,8 +97,6 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
     );
   };
 
-  const isActive = emp.status?.toLowerCase() === "active";
-
   return (
     <div
       className="w-full"
@@ -114,37 +112,34 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
         <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full">
           <div className="flex flex-col min-w-0 w-full">
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
-              <p className="text-sm   font-semibold text-gray-900 truncate">
-                {emp.employee_name}
-              </p>
+              <div className="flex flex-row">
 
-              <Badge
-                label={emp.employee_id || "—"}
-                backgroundColor="bg-gray-50/70"
-                textColor="text-black"
-                size="sm"
-              />
-              <Badge
-                label={emp.status || "—"}
-                backgroundColor={isActive ? "bg-green-100" : "bg-gray-100"}
-                textColor={isActive ? "text-green-700" : "text-gray-600"}
-                size="sm"
-              />
+                <p className="text-sm mr-2 font-semibold text-gray-900 truncate">
+                  {emp.employee_name}
+                </p>
+                <Badge
+                  label={emp.employee_id || "—"}
+                  backgroundColor="bg-gray-50/70"
+                  textColor="text-black"
+                  size="sm"
+                />
+              </div>
+
             </div>
 
             <div className="mt-1 flex flex-wrap items-center gap-x-2 sm:gap-y-2 text-xs text-gray-600 min-w-0">
               <span className="sm:inline min-w-0">
                 <Tooltip
-                  content={emp.designation_display || "—"}
+                  content={emp.branch_display || "—"}
                   position="top"
                 >
                   <span className="inline-block text-xs  max-w-[20ch] truncate align-bottom">
-                    {emp.designation_display || "—"}
+                    {emp.branch_display || "—"}
                   </span>
                 </Tooltip>
               </span>
 
-              {emp.designation_display && emp.department_display && (
+              {emp.branch_display && emp.department_display && (
                 <span className="sm:mx-3  hidden   mx-1 sm:block text-md text-gray-300">
                   •
                 </span>
