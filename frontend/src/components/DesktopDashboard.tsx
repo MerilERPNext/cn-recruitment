@@ -19,6 +19,7 @@ import {
   LogOut,
   ReceiptIndianRupeeIcon,
   RotateCcwKey,
+  Palette,
   Timer,
   User,
   Wallet,
@@ -747,6 +748,19 @@ export default function DesktopDashboard() {
                           Reset Password
                         </>
                       )}
+                    </Button>
+                    <Button
+                      variant="subtle"
+                      size="md"
+                      fullWidth
+                      contentAlign="start"
+                      onClick={() => {
+                        navigate("/webapp/theme-settings");
+                        setShowProfileDropdown(false);
+                      }}
+                    >
+                      <Palette className="w-4 h-4" />
+                      Themes
                     </Button>
                     <hr className="my-2 border-gray-100" />
                     <Button

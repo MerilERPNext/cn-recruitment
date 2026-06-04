@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useScreenSize } from "../hooks/useScreenSize";
-import { LogOut, ChevronDown, User, Dock, RotateCcwKey } from "lucide-react";
+import { LogOut, ChevronDown, User, Dock, RotateCcwKey, Palette } from "lucide-react";
 import defaultProfile from "../assets/face-rec.png";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import NotificationBell from "./Notification/NotificationBell";
@@ -356,6 +356,20 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                           Reset Password
                         </>
                       )}
+                    </Button>
+
+                    <Button
+                      variant="subtle"
+                      size="md"
+                      fullWidth
+                      contentAlign="start"
+                      onClick={() => {
+                        navigate("/webapp/theme-settings");
+                        setShowProfileDropdown(false);
+                      }}
+                    >
+                      <Palette className="w-4 h-4" />
+                      Themes
                     </Button>
 
                     <hr className="my-2 border-gray-100" />

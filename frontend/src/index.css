@@ -8,6 +8,33 @@
 :root {
   --primary-color: #5a4bda;
   --secondary-color: #6172f3;
+
+  /* Tailwind primary/secondary scales as RGB triplets so the whole project can
+     be re-themed at runtime (see components/ThemeCustomizer.tsx). Defaults
+     mirror the curated palette in tailwind.config.ts. */
+  --color-primary-10: 245 248 255;
+  --color-primary-50: 238 244 255;
+  --color-primary-100: 224 234 255;
+  --color-primary-200: 199 215 254;
+  --color-primary-300: 164 188 253;
+  --color-primary-400: 128 152 249;
+  --color-primary-500: 97 114 243;
+  --color-primary-600: 68 76 231;
+  --color-primary-700: 53 56 205;
+  --color-primary-800: 45 49 166;
+  --color-primary-900: 45 50 130;
+
+  --color-secondary-10: 250 250 255;
+  --color-secondary-50: 244 243 255;
+  --color-secondary-100: 235 233 254;
+  --color-secondary-200: 217 214 254;
+  --color-secondary-300: 189 180 254;
+  --color-secondary-400: 155 138 251;
+  --color-secondary-500: 122 90 248;
+  --color-secondary-600: 105 56 239;
+  --color-secondary-700: 89 37 220;
+  --color-secondary-800: 74 31 184;
+  --color-secondary-900: 62 28 150;
   --text-primary: #1b2124;
   --text-secondary: #3d3d3d;
   --background-light: #eaecef;

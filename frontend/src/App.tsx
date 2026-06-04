@@ -35,6 +35,7 @@ import GlobalLeaveRequestModal from "./components/Leaves/GlobalLeaveRequestModal
 
 import { useWebsiteBranding } from "./hooks/useBranding";
 import MandatoryHrProcessHandler from "./components/MandatoryHrProcessHandler";
+import ThemeCustomizer from "./components/ThemeCustomizer";
 
 // Component to sync ViewedUserContext with frappeAPI
 // NOTE: Must be defined BEFORE App to avoid Vite HMR evaluating it outside the provider tree.
@@ -226,6 +227,7 @@ const App: React.FC = () => {
                     </Route>
                   </Routes>
                 </div>
+                <ThemeCustomizer />
               </RequestLeaveModalProvider>
             </LoadingOverlayProvider>
           </ViewedUserProvider>

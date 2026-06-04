@@ -927,7 +927,7 @@ const DataListView = <T extends BaseItem>({
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
                 className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
-                  ? "bg-blue-600 text-white border-blue-600"
+                  ? "bg-primary-600 text-white border-primary-600"
                   : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
               >

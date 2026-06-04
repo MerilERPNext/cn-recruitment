@@ -32,6 +32,7 @@ import Onboarding from "./components/Onboarding/Onboarding";
 import Requests from "./components/Requests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import SearchMembers from "./components/SearchMembers";
+import ThemeSettingsPage from "./components/ThemeSettingsPage";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -642,6 +643,12 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/search-members",
     element: <SearchMembers />,
     permissionKey: "Employee Directory",
+  },
+  // Theme settings — accessible to everyone (empty permissionKey skips the check)
+  {
+    path: "/webapp/theme-settings",
+    element: <ThemeSettingsPage />,
+    permissionKey: "",
   },
 
   {

@@ -1,15 +1,20 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useEffect, useState } from "react";
-import { Palette, X, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 
 // ---------------------------------------------------------------------------
-// Dynamic theme customizer.
-// Lets the user pick a custom Primary / Secondary color that re-themes the
-// WHOLE project at runtime. It regenerates the full Tailwind shade ramp
-// (50–900) from the picked color and writes it to the CSS variables that
-// tailwind.config.ts + index.css read (--color-primary-*, --color-secondary-*),
-// plus the legacy --primary-color / --secondary-color used by raw var() styles.
-// Choices persist in localStorage. Fully self-contained — it only overrides
-// CSS custom properties, no app logic is touched.
+// Dynamic theming — custom brand colors.
+// Pick Primary / Secondary; we regenerate the full Tailwind shade ramp (10–900)
+// and write the CSS variables that tailwind.config.ts + index.css read
+// (--color-primary-*, --color-secondary-*) plus the legacy --primary-color /
+// --secondary-color used by raw var() styles. Persists in localStorage and is
+// applied on app load.
+//
+// Exports:
+//   default  <ThemeCustomizer/>   — no-UI initializer; applies the saved theme
+//                                    on load (mount once in App).
+//   <ThemeSettingsContent/>       — the settings UI, rendered on the dedicated
+//                                    Theme Settings page.
 // ---------------------------------------------------------------------------
 
 const STORAGE_KEY = "app-custom-theme";
@@ -51,7 +56,6 @@ const hexToRgb = (hex: string) => {
 const mix = (channel: number, target: number, amount: number) =>
   Math.round(channel + (target - channel) * amount);
 
-// Returns an "r g b" triplet string for a given base color + shade.
 const tripletForShade = (
   base: { r: number; g: number; b: number },
   shade: (typeof SHADES)[number]
@@ -67,9 +71,7 @@ const tripletForShade = (
 const applyColor = (name: ColorName, hex: string) => {
   const root = document.documentElement;
   const rgb = hexToRgb(hex);
-  // Legacy hex variable used by raw var(--primary-color) styles.
   root.style.setProperty(`--${name}-color`, hex);
-  // Full Tailwind scale.
   SHADES.forEach((shade) =>
     root.style.setProperty(`--color-${name}-${shade}`, tripletForShade(rgb, shade))
   );
@@ -91,24 +93,25 @@ const loadBases = (): Bases | null => {
   return null;
 };
 
-const FIELDS: { key: ColorName; label: string }[] = [
+// Apply the saved custom colors (called on app load).
+export const applySavedTheme = () => {
+  const saved = loadBases();
+  if (saved) {
+    applyColor("primary", saved.primary);
+    applyColor("secondary", saved.secondary);
+  }
+};
+
+const COLOR_FIELDS: { key: ColorName; label: string }[] = [
   { key: "primary", label: "Primary" },
   { key: "secondary", label: "Secondary" },
 ];
 
-const ThemeCustomizer = () => {
-  const [open, setOpen] = useState(false);
+// ---------------------------------------------------------------------------
+// Theme Settings UI — rendered on the dedicated Theme Settings page.
+// ---------------------------------------------------------------------------
+export const ThemeSettingsContent = () => {
   const [bases, setBases] = useState<Bases>(() => loadBases() ?? { ...DEFAULT_BASES });
-
-  // On mount, apply a saved custom theme (if any). When none is saved we leave
-  // the defaults from index.css/tailwind.config.ts untouched.
-  useEffect(() => {
-    const saved = loadBases();
-    if (saved) {
-      applyColor("primary", saved.primary);
-      applyColor("secondary", saved.secondary);
-    }
-  }, []);
 
   const updateColor = (name: ColorName, hex: string) => {
     const next = { ...bases, [name]: hex };
@@ -117,11 +120,11 @@ const ThemeCustomizer = () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     } catch {
-      /* localStorage unavailable — apply in-memory only */
+      /* ignore */
     }
   };
 
-  const reset = () => {
+  const resetColors = () => {
     setBases({ ...DEFAULT_BASES });
     clearColor("primary");
     clearColor("secondary");
@@ -133,68 +136,87 @@ const ThemeCustomizer = () => {
   };
 
   return (
-    <>
-      {/* Floating toggle button */}
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-label="Customize theme"
-        title="Customize theme"
-        className="fixed bottom-6 right-6 z-[1000] w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-white transition-transform hover:scale-105 active:scale-95"
-        style={{
-          background:
-            "linear-gradient(135deg, var(--primary-color), var(--secondary-color))",
-        }}
-      >
-        <Palette size={20} />
-      </button>
-
-      {/* Color picker panel */}
-      {open && (
-        <div className="fixed bottom-24 right-6 z-[1000] w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-gray-800">Theme Colors</h3>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Close"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          <div className="space-y-3">
-            {FIELDS.map(({ key, label }) => (
-              <div key={key} className="flex items-center justify-between gap-3">
-                <span className="text-sm font-medium text-gray-600">{label}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono text-gray-400 uppercase">
-                    {bases[key]}
-                  </span>
-                  <input
-                    type="color"
-                    value={bases[key]}
-                    onChange={(e) => updateColor(key, e.target.value)}
-                    className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer bg-white p-0.5"
-                    aria-label={`${label} color`}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
+    <div className="max-w-2xl mx-auto space-y-6">
+      {/* Brand colors */}
+      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-base font-bold text-gray-800">Brand Colors</h2>
           <button
             type="button"
-            onClick={reset}
-            className="mt-4 w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+            onClick={resetColors}
+            className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
           >
-            <RotateCcw size={13} /> Reset to default
+            <RotateCcw size={13} /> Reset
           </button>
         </div>
-      )}
-    </>
+        <p className="text-xs text-gray-400 mb-4">
+          These apply across the whole app instantly.
+        </p>
+
+        <div className="space-y-3">
+          {COLOR_FIELDS.map(({ key, label }) => (
+            <div
+              key={key}
+              className="flex items-center justify-between gap-3 py-2 border-b border-gray-50 last:border-b-0"
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  className="w-8 h-8 rounded-lg border border-gray-200 shrink-0"
+                  style={{ background: bases[key] }}
+                />
+                <span className="text-sm font-medium text-gray-700">{label}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-gray-400 uppercase">
+                  {bases[key]}
+                </span>
+                <input
+                  type="color"
+                  value={bases[key]}
+                  onChange={(e) => updateColor(key, e.target.value)}
+                  className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer bg-white p-0.5"
+                  aria-label={`${label} color`}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Live preview */}
+      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        <h2 className="text-base font-bold text-gray-800 mb-4">Preview</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
+            style={{ background: "var(--primary-color)" }}
+          >
+            Primary Button
+          </button>
+          <button className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-secondary-500">
+            Secondary Button
+          </button>
+          <span className="px-3 py-1 rounded-lg text-xs font-semibold bg-primary-50 text-primary-700">
+            Badge
+          </span>
+          <span className="text-primary-600 text-sm font-semibold underline">
+            Link
+          </span>
+        </div>
+      </section>
+    </div>
   );
+};
+
+// ---------------------------------------------------------------------------
+// Default export — no-UI initializer. Applies the saved theme on app load.
+// ---------------------------------------------------------------------------
+const ThemeCustomizer = () => {
+  useEffect(() => {
+    applySavedTheme();
+  }, []);
+
+  return null;
 };
 
 export default ThemeCustomizer;
