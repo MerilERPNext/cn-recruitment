@@ -978,7 +978,11 @@ const RequisitionForm = () => {
             let updated = { ...rows[idx] };
             Object.keys(rowSel).forEach((fk) => {
               const lbl = labelOf(rowSel[fk]);
-              if (lbl) updated = { ...updated, [`${fk}_title`]: lbl };
+              if (lbl) {
+                updated = { ...updated, [`${fk}_title`]: lbl };
+              } else {
+                delete updated[`${fk}_title`];
+              }
             });
             rows[idx] = updated;
           });
@@ -986,11 +990,48 @@ const RequisitionForm = () => {
         } else if (Array.isArray(sd)) {
           // Multiple select (e.g. custom_skills) → array of labels.
           const labels = sd.map((v: any) => labelOf(v)).filter(Boolean);
-          if (labels.length) newData[`${key}_title`] = labels;
+          if (labels.length) {
+            newData[`${key}_title`] = labels;
+          } else {
+            delete newData[`${key}_title`];
+          }
+        } else if (
+          sd &&
+          typeof sd === "object" &&
+          !("label" in sd || "name" in sd || "title" in sd)
+        ) {
+          // Multiple select stored as an object map: { <id>: { id, value, label } }
+          const labels = Object.values(sd)
+            .map((v: any) => labelOf(v))
+            .filter(Boolean);
+          if (labels.length) {
+            newData[`${key}_title`] = labels;
+          } else {
+            delete newData[`${key}_title`];
+          }
         } else {
           const lbl = labelOf(sd);
-          if (lbl) newData[`${key}_title`] = lbl;
+          if (lbl) {
+            newData[`${key}_title`] = lbl;
+          } else {
+            delete newData[`${key}_title`];
+          }
         }
+      });
+    }
+
+    // Drop stale `_title` fields when their select was cleared, so the Review
+    // step falls back to the empty state instead of showing an old title.
+    SINGLE_SELECT_TITLE_KEYS.forEach(([key, titleKey]) => {
+      if (!newData[key]) delete newData[titleKey];
+    });
+    if (Array.isArray(newData.positions)) {
+      newData.positions = newData.positions.map((pos: any) => {
+        const updated = { ...pos };
+        POSITION_SELECT_TITLE_KEYS.forEach(([key, titleKey]) => {
+          if (!updated[key]) delete updated[titleKey];
+        });
+        return updated;
       });
     }
 
