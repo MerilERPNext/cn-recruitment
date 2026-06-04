@@ -115,6 +115,61 @@ def _is_eligible(opening_name, employee_doc):
 
 
 # ---------------------------------------------------------------------------
+# Employee → application prefill
+# ---------------------------------------------------------------------------
+
+# Job Applicant field → ordered Employee field candidates, for the identity
+# fields whose names differ. Everything else is matched by identical fieldname:
+# Job Applicant mirrors the Employee field structure, so the bulk of the form
+# can be sourced straight from the employee's record.
+_EMPLOYEE_PREFILL_ALIASES = {
+	"applicant_name": ("employee_name",),
+	"email_id": ("personal_email", "company_email", "prefered_email"),
+	"phone_number": ("cell_number",),
+}
+
+# Shared fieldnames that must NOT be carried over from the Employee — they mean
+# something different on a Job Applicant, or are framework/naming fields.
+_EMPLOYEE_PREFILL_SKIP = {"name", "naming_series", "status", "docstatus", "source"}
+
+
+def _employee_prefill_values(emp, fields):
+	"""Map each configured application field to the employee's current value.
+
+	Returns ``{reference_name: value}`` for the fields the employee actually has
+	a value for. Identity fields are mapped via ``_EMPLOYEE_PREFILL_ALIASES``;
+	everything else is matched by identical fieldname against the Employee record
+	(Job Applicant mirrors the Employee field structure).
+	"""
+	ja_lookup = {
+		df.fieldname: df
+		for df in frappe.get_meta("Job Applicant").fields
+		if df.fieldname
+	}
+	emp_fields = {
+		df.fieldname for df in frappe.get_meta("Employee").fields if df.fieldname
+	}
+
+	values = {}
+	for f in fields:
+		ref = f.get("reference_name")
+		if not ref or ref in _EMPLOYEE_PREFILL_SKIP:
+			continue
+		df = ja_lookup.get(ref)
+		if not df:
+			continue
+		candidates = _EMPLOYEE_PREFILL_ALIASES.get(ref, ()) + (ref,)
+		for src in candidates:
+			if src not in emp_fields:
+				continue
+			val = _common._serialize_field_value(emp, src, df.fieldtype)
+			if val not in (None, "", []):
+				values[ref] = val
+				break
+	return values
+
+
+# ---------------------------------------------------------------------------
 # Public endpoints
 # ---------------------------------------------------------------------------
 
@@ -148,7 +203,17 @@ def get_application_fields(opening):
 	eligible, reason = _is_eligible(opening, emp)
 	if not eligible:
 		frappe.throw(frappe._("You're not eligible for this opening: {}").format(reason))
-	return _common.get_application_fields_for_channel(opening, CHANNEL)
+
+	fields = _common.get_application_fields_for_channel(opening, CHANNEL)
+
+	# Pre-fill from the employee's record so the form arrives ready to submit.
+	prefill = _employee_prefill_values(emp, fields)
+	for f in fields:
+		ref = f.get("reference_name")
+		if ref in prefill:
+			f["value"] = prefill[ref]
+			f["prefilled"] = True
+	return fields
 
 
 @frappe.whitelist()
@@ -173,7 +238,15 @@ def submit_application(opening, data, employee=None):
 	if not eligible:
 		frappe.throw(frappe._("You're not eligible for this opening: {}").format(reason))
 
-	cleaned = _common.assert_field_set_for_channel(opening, CHANNEL, data)
+	# Fill every configured field the submission left out from the employee's
+	# record, so an eligible employee can apply with a single click. Submitted
+	# values always win, and this runs before validation so prefilled mandatory
+	# fields don't block the submit.
+	fields = _common.get_application_fields_for_channel(opening, CHANNEL)
+	merged = _employee_prefill_values(emp, fields)
+	merged.update(data)
+
+	cleaned = _common.assert_field_set_for_channel(opening, CHANNEL, merged)
 	source = _common.source_value_for(CHANNEL) or SOURCE_FALLBACK_NAME
 	_common.ensure_source_master(source)
 
@@ -182,7 +255,7 @@ def submit_application(opening, data, employee=None):
 	applicant.source = source
 	applicant.custom_applied_employee = emp.name
 
-	# Sensible defaults from the employee record — only if not supplied.
+	# Identity safety net — covers channels where these aren't in the field set.
 	cleaned.setdefault("applicant_name", emp.employee_name)
 	cleaned.setdefault("email_id", emp.personal_email or emp.company_email or emp.prefered_email)
 	cleaned.setdefault("phone_number", emp.cell_number)
