@@ -170,6 +170,18 @@ chatnext-app.field-required::after {
   display: initial !important;
 }
 
+/* Position Details datagrid: show the required asterisk on the COLUMN HEADER
+   (table label) instead of inside the cell dropdowns. Scoped to the `positions`
+   datagrid so other forms are unaffected. The global `.field-required:after`
+   hide above is overridden here by higher specificity + !important. */
+.formio-component-positions table thead th.field-required::after,
+.formio-component-positions table thead th .field-required::after {
+  content: " *" !important;
+  color: #ef4444 !important;
+  font-weight: 600 !important;
+  display: inline !important;
+}
+
 .form-control.input {
   border-radius: 4px 0 0 4px !important;
 }

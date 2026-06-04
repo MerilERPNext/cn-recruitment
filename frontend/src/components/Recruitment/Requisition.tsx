@@ -13,6 +13,7 @@ import type { FetchParams } from "../../services/customApiService";
 import type { FrappePageResponse } from "../../types/frappe";
 import CardTable, { ColumnSortConfig } from "../shared/CardTable";
 import { Briefcase, CheckCircle, Edit, FileText, FolderOpen } from "lucide-react";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 const EditButton = ({ requisition, onClose }: { requisition: any; onClose: () => void }) => {
   const navigate = useNavigate();
@@ -121,9 +122,9 @@ const Requisition = () => {
     };
 
     const code = item.name;
-    const designation = item.designation;
-    const department = item.department;
-    const location = item.custom_location || item.location;
+    const designation = item.designation_title;
+    const department = item.department_title;
+    const location = item.custom_location_title;
     const status = item.status;
 
     const totalPositions = item.no_of_positions || item.total_positions || "1";
@@ -145,7 +146,7 @@ const Requisition = () => {
     if (isDesktop) {
       return (
         <div
-          className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer items-center min-w-max bg-white"
+          className={`grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer items-center min-w-max bg-white ${showRequesterCard ? "relative z-[60]" : ""}`}
           style={{ gridTemplateColumns: columnWidths.join(" ") }}
           onClick={handleRowClick}
         >
@@ -218,7 +219,7 @@ const Requisition = () => {
 
           <div className="flex items-center">
             <Typography variant="bodySmall" className="text-gray-600">
-              {lastUpdated}
+            {formatToIndianDate(lastUpdated) || "__"}
             </Typography>
           </div>
 
@@ -229,13 +230,13 @@ const Requisition = () => {
               onMouseLeave={() => setShowRequesterCard(false)}
             >
               <Typography variant="bodySmall" className="text-gray-600">
-                {initiated}
+              {formatToIndianDate(initiated) || "--"}
               </Typography>
               <Typography variant="bodySmall" className="text-gray-500 text-xs hover:underline cursor-pointer">
                 {item.requested_by_name || item.requested_by}
               </Typography>
               {showRequesterCard && (
-                <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 shadow-xl rounded-xl p-4 z-50 w-72 transition-all duration-200 text-left pointer-events-none">
+                <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 shadow-xl rounded-xl p-4 z-[70] w-72 transition-all duration-200 text-left pointer-events-none">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-base">
                       {item.requested_by_name ? item.requested_by_name[0] : "E"}
@@ -584,7 +585,7 @@ const Requisition = () => {
                   {selectedRequisition.name}
                 </Typography>
                 <Typography variant="bodySmall" className="text-gray-500 text-xs">
-                  {selectedRequisition.designation} — {selectedRequisition.department}
+                Department: {selectedRequisition.department_title} -- designation: {selectedRequisition.designation_title}
                 </Typography>
               </div>
               <button
@@ -613,7 +614,7 @@ const Requisition = () => {
                     Hiring Lead
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {selectedRequisition.custom_hiring_lead || "—"}
+                    {selectedRequisition.custom_hiring_lead_title || "—"}
                   </Typography>
                 </div>
                 <div>
@@ -639,7 +640,7 @@ const Requisition = () => {
                     Posting Date
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {selectedRequisition.posting_date || "—"}
+                    {formatToIndianDate(selectedRequisition.posting_date) || "—"}
                   </Typography>
                 </div>
                 <div>
@@ -647,7 +648,7 @@ const Requisition = () => {
                     Expected By
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {selectedRequisition.expected_by || "—"}
+                    {formatToIndianDate(selectedRequisition.expected_by) || "—"}
                   </Typography>
                 </div>
               </div>
@@ -657,6 +658,22 @@ const Requisition = () => {
                 <Typography variant="bodyMedium" className="font-bold text-gray-900">
                   Position Details
                 </Typography>
+                {selectedRequisition.custom_vacancy_breakdown && (
+      <div className="flex flex-wrap gap-2 text-xs">
+        <span className="px-2 text-xs py-1 bg-blue-50 text-blue-700 rounded-md font-medium">
+          Total: {selectedRequisition.custom_vacancy_breakdown.total}
+        </span>
+        <span className="px-2 text-xs py-1 bg-green-50 text-green-700 rounded-md font-medium">
+          New: {selectedRequisition.custom_vacancy_breakdown.new}
+        </span>
+        <span className="px-2 text-xs py-1 bg-orange-50 text-orange-700 rounded-md font-medium">
+          Replacement: {selectedRequisition.custom_vacancy_breakdown.replacement}
+        </span>
+        <span className="px-2  text-xs py-1 bg-purple-50 text-purple-700 rounded-md font-medium">
+          Type: {selectedRequisition.custom_vacancy_breakdown.type}
+        </span>
+      </div>
+    )}
                 {selectedRequisition.custom_position_details?.length > 0 ? (
                   <div className="border border-gray-200 rounded-lg overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200 text-xs">
@@ -671,10 +688,10 @@ const Requisition = () => {
                       <tbody className="bg-white divide-y divide-gray-150 text-gray-900">
                         {selectedRequisition.custom_position_details.map((pos: any, idx: number) => (
                           <tr key={idx} className="hover:bg-gray-50/50">
-                            <td className="px-4 py-2 font-medium">{pos.position_no}</td>
+                            <td className="px-4 py-2 font-medium">{idx+1}</td>
                             <td className="px-4 py-2">{pos.vacancy_type}</td>
-                            <td className="px-4 py-2">{pos.location || "—"}</td>
-                            <td className="px-4 py-2">{pos.reporting_manager || "—"}</td>
+                            <td className="px-4 py-2">{pos.location_title || "—"}</td>
+                            <td className="px-4 py-2">{pos.reporting_manager_title || "—"}</td>
                           </tr>
                         ))}
                       </tbody>

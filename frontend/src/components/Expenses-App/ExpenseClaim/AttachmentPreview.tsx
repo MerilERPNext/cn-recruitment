@@ -136,9 +136,14 @@ export const AttachmentPreviewVanillaV2: React.FC<{
         html += "</div>";
         html += "</div>";
 
+        // Blob URLs are not downloadable inside a React Native WebView
+        const hideDownload = window.isApp && previewUrl.startsWith("blob:");
+
         html += '<div class="flex items-center gap-2 shrink-0">';
         html += `<button type="button" title="Preview" class="preview-file-btn-v2 inline-flex items-center justify-center rounded-md border shadow-sm border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 transition-colors" data-preview-url="${previewUrl}" data-preview-name="${safeName}">${EYE_ICON_SVG}</button>`;
-        html += `<a href="${previewUrl}" download="${safeName}" title="Download" class="inline-flex items-center justify-center rounded-md border shadow-sm border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 transition-colors">${DOWNLOAD_ICON_SVG}</a>`;
+        if (!hideDownload) {
+          html += `<a href="${previewUrl}" download="${safeName}" title="Download" class="inline-flex items-center justify-center rounded-md border shadow-sm border-gray-300 bg-white p-2 text-gray-700 hover:bg-gray-100 transition-colors">${DOWNLOAD_ICON_SVG}</a>`;
+        }
         html += `<button type="button" title="Delete" class="remove-file-btn-v2 inline-flex items-center justify-center rounded-md border shadow-sm border-red-300 bg-white p-2 text-red-600 hover:bg-red-50 transition-colors" data-index="${index}">${TRASH_ICON_SVG}</button>`;
         html += "</div>";
         html += "</div>";

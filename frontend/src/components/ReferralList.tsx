@@ -619,13 +619,8 @@ const ReferralList = () => {
                     Opening
                   </Typography>
                   <Typography variant="bodySmall" className="font-bold text-gray-900 break-words">
-                    {selectedReferral.opening_label || selectedReferral.opening || "—"}
+                    {selectedReferral.job_title || selectedReferral.opening || "—"}
                   </Typography>
-                  {selectedReferral.opening && (
-                    <Typography variant="bodySmall" className="text-gray-400 text-xs mt-0.5">
-                      {selectedReferral.opening}
-                    </Typography>
-                  )}
                 </div>
                 <div>
                   <Typography variant="bodySmall" className="text-gray-500 text-xs mb-1 font-medium">

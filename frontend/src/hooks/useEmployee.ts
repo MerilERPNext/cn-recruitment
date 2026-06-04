@@ -442,6 +442,19 @@ export const useGetAllEmployees = (
   });
 };
 
+export const useGetEmployeesForDirectory = (
+  filters?: FilterCondition[],
+  employee_self_service?: 1 | 0,
+  fields?: string[],
+): UseQueryResult<Employee[], Error> => {
+  return useQuery<Employee[], Error>({
+    queryKey: ["directory-employees", filters, employee_self_service, fields],
+    queryFn: () =>
+      EmployeeService.getEmployeesForDirectory(filters, employee_self_service, fields),
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
 export const useGetAllReasons = (requestType: string) => {
   return useQuery({
     queryKey: ["all-reasons-list", requestType],
@@ -902,5 +915,14 @@ export const useResetOtpResendLimitMutation = () => {
       console.error("Error resetting OTP resend limit:", error);
       toast.error(errorResponseFormater(error) || "Failed to reset OTP resend limit");
     },
+  });
+};
+
+export const useGetSeparationDetails = (employeeId: string, enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ["separationDetails", employeeId],
+    queryFn: () => EmployeeService.getSeparationDetails(employeeId),
+    enabled: !!employeeId && enabled,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 };

@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useMemo,} from "react";
 import { Form } from "@tsed/react-formio";
@@ -7,6 +6,7 @@ import {
   requisitionFormSchemas,
   FormSchemaKeys,
 } from "./requisitionFormSchemas";
+import RequisitionReviewStep from "./RequisitionReviewStep";
 import Button from "../shared/atoms/Button";
 import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails, useFileUpload } from "../../hooks/useEmployee";
@@ -90,6 +90,19 @@ function validateStep(
     });
   }
 
+  // Step 3: validate qualifications
+  if (step === 3) {
+    const qualifications = (formData as any).custom_qualifications ?? [];
+    qualifications.forEach((q: any, i: number) => {
+      if (!q.qualification || !q.qualification.trim()) {
+        errors.push(`Qualification ${i + 1}: Qualification is required.`);
+      }
+      if (!q.mandatory) {
+        errors.push(`Qualification ${i + 1}: Mandatory? selection is required.`);
+      }
+    });
+  }
+
   return errors;
 }
 
@@ -129,13 +142,23 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
     number_of_replacement_positions: customPositionDetails.length
       ? customPositionDetails.filter((p: any) => p.vacancy_type === "Replacement").length
       : 0,
+    // Keep the link id as each select's value (so buildPayload sends ids), and
+    // carry the human-readable title alongside in a `_title` field for display.
     positions: customPositionDetails.map((p: any, i: number) => ({
       position_number: i + 1,
       vacancy_type: p.vacancy_type || "New",
+
       location: p.location,
+      location_title: p.location_title,
+
       functional_area: p.functional_area,
+      functional_area_title: p.functional_area_title,
+
       reporting_manager: p.reporting_manager,
+      reporting_manager_title: p.reporting_manager_title,
+
       replacement_for: p.replacement_for,
+      replacement_for_title: p.replacement_for_title,
     })),
 
     // Requirements
@@ -177,31 +200,39 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
 // backend supports a `search_text` filter) so its label resolves even when the
 // value isn't in the first page of results. Applied recursively so nested
 // datagrid / columns selects (position rows) are covered too.
+//
+// Inside a datagrid, eager-loading fires one request + builds one Choices widget
+// per row × per select, so a very large grid (100 rows → hundreds of
+// simultaneous loads) can freeze the page. To both resolve labels (so the
+// position rows show titles, not ids) AND stay safe, grid selects eager-load
+// only when the grid is reasonably small (eagerGrid); above that they stay lazy
+// (form.io's default) and only fetch when the user opens the dropdown.
 // ---------------------------------------------------------------------------
-function enableUrlSelectLabels(components: any[], insideGrid = false): any[] {
+function enableUrlSelectLabels(
+  components: any[],
+  insideGrid = false,
+  eagerGrid = false
+): any[] {
   if (!Array.isArray(components)) return components;
   return components.map((c) => {
     const next: any = { ...c };
     if (next.type === "select" && next.dataSrc === "url") {
-      // Eager-load (lazyLoad:false) only for top-level selects so their saved
-      // value resolves to a label on remount. Inside a datagrid this would fire
-      // one request + build one Choices widget per row × per select (100 rows →
-      // hundreds of simultaneous loads), freezing the page — so keep those lazy
-      // (form.io's default): they only fetch when the user opens the dropdown.
-      if (!insideGrid) next.lazyLoad = false;
+      // Eager-load top-level selects always; grid selects only when the grid is
+      // small enough (eagerGrid) — so their saved id resolves to a label.
+      if (!insideGrid || eagerGrid) next.lazyLoad = false;
       if (!next.searchField) next.searchField = "search_text";
     }
     // Selects nested in a datagrid/editgrid are repeated per row — flag them so
-    // descendants stay lazy.
+    // descendants follow the same grid eager/lazy decision.
     const childInsideGrid =
       insideGrid || next.type === "datagrid" || next.type === "editgrid";
     if (Array.isArray(next.components)) {
-      next.components = enableUrlSelectLabels(next.components, childInsideGrid);
+      next.components = enableUrlSelectLabels(next.components, childInsideGrid, eagerGrid);
     }
     if (Array.isArray(next.columns)) {
       next.columns = next.columns.map((col: any) => ({
         ...col,
-        components: enableUrlSelectLabels(col.components || [], childInsideGrid),
+        components: enableUrlSelectLabels(col.components || [], childInsideGrid, eagerGrid),
       }));
     }
     if (Array.isArray(next.rows)) {
@@ -209,7 +240,7 @@ function enableUrlSelectLabels(components: any[], insideGrid = false): any[] {
         Array.isArray(row)
           ? row.map((cell: any) => ({
               ...cell,
-              components: enableUrlSelectLabels(cell.components || [], childInsideGrid),
+              components: enableUrlSelectLabels(cell.components || [], childInsideGrid, eagerGrid),
             }))
           : row
       );
@@ -301,6 +332,11 @@ function applyPositionCounts(newData: any, changedKey: string) {
 // Component
 // ---------------------------------------------------------------------------
 const RequisitionForm = () => {
+  const steps = useMemo(() => {
+    const list = [...requisitionSteps];
+    list.push({ label: "Review", key: "review" as FormSchemaKeys });
+    return list;
+  }, []);
   const [currentStep, setCurrentStep] = useState(0);
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: currentUser } = useCurrentUser();
@@ -326,6 +362,24 @@ const RequisitionForm = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
+  const allValidationErrors = useMemo(() => {
+    const errors: string[] = [];
+    for (let s = 0; s < steps.length - 1; s++) {
+      errors.push(...validateStep(s, formData));
+    }
+    return errors;
+  }, [formData, steps]);
+
+  const isStepDisabled = (index: number) => {
+    if (index <= currentStep) return false;
+    for (let s = 0; s < index; s++) {
+      if (validateStep(s, formData).length > 0) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   // Raw draft strings for the Total / New / Replacement number inputs while the
   // user is typing. Keeping the in-progress text here (instead of coercing it to
   // a number on every keystroke) lets the field be emptied/edited freely; the
@@ -345,6 +399,18 @@ const RequisitionForm = () => {
   const [jdPreviewOpen, setJdPreviewOpen] = useState(false);
   const [jdContent, setJdContent] = useState<string>("");
   const [jdLoading, setJdLoading] = useState(false);
+
+  // "Preview" popup state. Sends ALL tab data to preview_job_description and
+  // renders the returned Job Description (title + html) in the modal. `payload`
+  // keeps the exact request body that was sent (shown in a toast + the modal).
+  const [jobDetailsPreviewOpen, setJobDetailsPreviewOpen] = useState(false);
+  const [jobDetailsPreview, setJobDetailsPreview] = useState<{
+    loading: boolean;
+    title: string;
+    source: string;
+    html: string;
+    payload: Record<string, any>;
+  }>({ loading: false, title: "", source: "", html: "", payload: {} });
 
   // ── Pre-Screened Candidate CV upload (same pattern as HraExemptio.tsx) ──
   const uploadMutation = useFileUpload();
@@ -584,6 +650,91 @@ const RequisitionForm = () => {
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // "Preview" — collects ALL tab data (via buildPayload), POSTs it to
+  // preview_job_description, and renders the returned Job Description in the
+  // modal. The request body shape is:
+  //   { designation, department, functional_area, data: <all-tab payload> }
+  // ---------------------------------------------------------------------------
+  const handlePreviewJobDetails = async () => {
+    const designation = (formData as any).designation;
+    const department = (formData as any).department;
+    const functional_area = (formData as any).functional_area;
+
+    if (!designation || !department) {
+      toast.error("Please select Designation and Department first.");
+      return;
+    }
+
+    // Escape values that get interpolated into the dangerouslySetInnerHTML
+    // string below, to avoid XSS / render issues from special characters.
+    const escapeHtml = (s: any) =>
+      String(s).replace(
+        /[&<>"']/g,
+        (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string)
+      );
+
+    // Whole-form payload — every tab's data — sent under `data`.
+    const payload = buildPayload(formData);
+    const requestBody = { designation, department, functional_area, data: payload };
+
+    setJobDetailsPreview({ loading: true, title: "", source: "", html: "", payload: requestBody });
+    setJobDetailsPreviewOpen(true);
+
+    // Surface the exact payload being sent in a toast.
+
+    try {
+      // callMethod posts the body as JSON and unwraps response.data.message →
+      // { success, message, data }.
+      const res: any = await FrappeAPI.callMethod(
+        "recruitment.api.job_requisition.preview_job_description",
+        requestBody
+      );
+
+      const jd = res?.data ?? res ?? {};
+      const html = jd?.description_html || jd?.description || "";
+      const skills = Array.isArray(jd?.skills) ? jd.skills : undefined;
+      // A "default"/"match" JD still carries html even when matched === false —
+      // only treat it as missing when source is "none" or there's no html.
+      const noJd = jd?.source === "none" || !html;
+
+      setJobDetailsPreview((prev) => ({
+        ...prev,
+        loading: false,
+        title: jd?.title || jd?.name || "",
+        source: jd?.source || "",
+        html: noJd
+          ? `<p style="color:#6b7280;text-align:center;padding:32px 0;">
+              No job description found for <strong>${escapeHtml(designation)}</strong> in
+              <strong>${escapeHtml(department)}</strong>.
+            </p>`
+          : html,
+      }));
+
+      // Persist the previewed JD into the form so the final submit/update sends
+      // the same html in `description` + `custom_job_description_template`, and
+      // the returned skills in `custom_skills`.
+      if (!noJd) {
+        setFormData((prev: any) => ({
+          ...prev,
+          description: html,
+          job_description_template: html,
+          ...(skills ? { custom_skills: skills } : {}),
+        }));
+      }
+    } catch (err) {
+      console.error("Error fetching job description preview:", err);
+      setJobDetailsPreview((prev) => ({
+        ...prev,
+        loading: false,
+        html: `<p style="color:#ef4444;text-align:center;padding:32px 0;">
+            Failed to load job description preview. Please try again.
+          </p>`,
+      }));
+    }
+  };
+
   const handleNext = () => {
     const errors = validateStep(currentStep, formData);
     if (errors.length > 0) {
@@ -592,7 +743,7 @@ const RequisitionForm = () => {
       return;
     }
     setValidationErrors([]);
-    if (currentStep < requisitionSteps.length - 1) {
+    if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -605,21 +756,28 @@ const RequisitionForm = () => {
   };
 
   const handleStepClick = (index: number) => {
+    if (index === currentStep) return;
+
     if (index < currentStep) {
       setValidationErrors([]);
       setCurrentStep(index);
       return;
     }
-    if (index > currentStep) {
-      const errors = validateStep(currentStep, formData);
-      if (errors.length > 0) {
-        setValidationErrors(errors);
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        return;
-      }
-      setValidationErrors([]);
-      setCurrentStep(index);
+
+    // Moving forward: validate every intermediate step
+    const allErrors: string[] = [];
+    for (let s = currentStep; s < index; s++) {
+      allErrors.push(...validateStep(s, formData));
     }
+
+    if (allErrors.length > 0) {
+      setValidationErrors(allErrors);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    setValidationErrors([]);
+    setCurrentStep(index);
   };
 
   type CountKey =
@@ -708,6 +866,10 @@ const RequisitionForm = () => {
     }
 
     return {
+      // Requisition name (e.g. "HR-HIREQ-00013") — dynamic; present on edit.
+      job_title: finalData.name || existingRequisition?.name,
+      // Source is always "Refer" for this form.
+      source: "Refer",
       requested_by:
         finalData.hiring_manager ||
         existingRequisition?.requested_by ||
@@ -821,8 +983,78 @@ const RequisitionForm = () => {
     }
   };
 
+  // ---------------------------------------------------------------------------
+  // Submit button flow: FIRST call preview_job_description (silently — no modal),
+  // capture its JD html/skills, THEN run the final submit with those merged in.
+  // Single button, single click. The Preview button keeps its own modal flow
+  // (handlePreviewJobDetails) — this one never opens the modal.
+  // ---------------------------------------------------------------------------
+  const handleSubmitWithPreview = async () => {
+    // Validate every step before submitting — a user can jump straight to the
+    // last step via the tabs and otherwise submit with missing/invalid fields
+    // from earlier steps. Stop at the first invalid step and surface its errors.
+    for (let step = 0; step < requisitionSteps.length; step++) {
+      const errors = validateStep(step, formData);
+      if (errors.length > 0) {
+        setValidationErrors(errors);
+        setCurrentStep(step);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+    }
+    setValidationErrors([]);
+
+    let jdFields: Record<string, any> = {};
+
+    try {
+      const designation = (formData as any).designation;
+      const department = (formData as any).department;
+      const functional_area = (formData as any).functional_area;
+
+      if (designation && department) {
+        const payload = buildPayload(formData);
+        const requestBody = { designation, department, functional_area, data: payload };
+
+        const res: any = await FrappeAPI.callMethod(
+          "recruitment.api.job_requisition.preview_job_description",
+          requestBody
+        );
+
+        const jd = res?.data ?? res ?? {};
+        const html = jd?.description_html || jd?.description || "";
+        const skills = Array.isArray(jd?.skills) ? jd.skills : undefined;
+        const noJd = jd?.source === "none" || !html;
+
+        if (!noJd) {
+          jdFields = {
+            description: html,
+            job_description_template: html,
+            ...(skills ? { custom_skills: skills } : {}),
+          };
+          // Keep the form state in sync too (does NOT open the preview modal).
+          setFormData((prev: any) => ({ ...prev, ...jdFields }));
+        }
+      }
+    } catch (err) {
+      // Don't block submit if the preview call fails — just submit as-is.
+      console.error("Preview before submit failed:", err);
+    }
+
+    // Final submit with the previewed JD fields merged over the current form data.
+    await handleSubmit({ data: jdFields });
+  };
+
+  // Eager-load the position-grid url-selects (so saved ids render as titles)
+  // only when the grid is small enough that per-row loads won't freeze the page.
+  const positionRowCount = ((formData as any).positions || []).length;
+  const eagerGrid = positionRowCount > 0 && positionRowCount <= 25;
+
   const currentSchema = useMemo(() => {
-    const stepKey = requisitionSteps[currentStep].key as FormSchemaKeys;
+    const activeKey = steps[currentStep].key;
+    if (activeKey === "review") {
+      return { components: [] };
+    }
+    const stepKey = activeKey as FormSchemaKeys;
     const schema = requisitionFormSchemas[stepKey];
 
     let components = schema.components as any[];
@@ -837,14 +1069,14 @@ const RequisitionForm = () => {
       );
     }
 
-    return { ...schema, components: enableUrlSelectLabels(components) };
-  }, [currentStep, canEditEmployeeField]);
+    return { ...schema, components: enableUrlSelectLabels(components, false, eagerGrid) };
+  }, [currentStep, canEditEmployeeField, eagerGrid]);
 
   const isBusy = isUpdating || createJobRequisition.isPending;
   const canPreviewJD = !!(formData as any).designation && !!(formData as any).department;
 
-  // Last step = "Other Details" (index 3)
-  const isLastStep = currentStep === requisitionSteps.length - 1;
+  // Last step = "Review" (index 4)
+  const isLastStep = currentStep === steps.length - 1;
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-6 bg-white rounded-lg shadow">
@@ -865,7 +1097,7 @@ const RequisitionForm = () => {
           <span>
             Editing requisition{" "}
             <span className="font-semibold">{existingRequisition.name}</span>
-            {" — "}{existingRequisition.designation}, {existingRequisition.department}
+            {" — "}{existingRequisition.designation_title}, {existingRequisition.department_title}
           </span>
         </div>
       )}
@@ -885,18 +1117,36 @@ const RequisitionForm = () => {
       {/* Step tabs */}
       <div className="mb-8 border-b overflow-x-auto scrollbar-hide">
         <div className="flex min-w-max md:min-w-0">
-          {requisitionSteps.map((step, index) => (
-            <div
-              key={step.key}
-              className={`flex-1 min-w-[140px] md:min-w-0 text-center pb-4 px-2 cursor-pointer whitespace-nowrap ${index === currentStep
-                ? "text-primary-500 border-b-2 border-primary-500 font-semibold"
-                : "text-gray-500"
+          {steps.map((step, index) => {
+            const disabled = isStepDisabled(index);
+            return (
+              <div
+                key={step.key}
+                className={`flex-1 min-w-[140px] md:min-w-0 text-center pb-4 px-2 whitespace-nowrap transition-colors ${
+                  index === currentStep
+                    ? "text-primary-500 border-b-2 border-primary-500 font-semibold"
+                    : disabled
+                    ? "text-gray-300 cursor-not-allowed opacity-60"
+                    : "text-gray-500 cursor-pointer hover:text-gray-700"
                 }`}
-              onClick={() => handleStepClick(index)}
-            >
-              {step.label}
-            </div>
-          ))}
+                onClick={() => {
+                  if (!disabled) {
+                    handleStepClick(index);
+                  } else {
+                    // Triggers validation messages for visual feedback
+                    const allErrors: string[] = [];
+                    for (let s = 0; s < index; s++) {
+                      allErrors.push(...validateStep(s, formData));
+                    }
+                    setValidationErrors(allErrors);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                }}
+              >
+                {step.label}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -904,7 +1154,7 @@ const RequisitionForm = () => {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl md:text-2xl font-semibold">
-            {requisitionSteps[currentStep].label}
+            {steps[currentStep].label}
           </h2>
           {/* Preview JD button — only on Job Details step (index 1) */}
           {currentStep === 1 && (
@@ -923,281 +1173,304 @@ const RequisitionForm = () => {
           )}
         </div>
 
-        {/* ── Position counts (plain React inputs, kept out of formio to avoid
-             the controlled-input override issue) ── */}
-        {currentStep === 2 && (
-          <div className="mb-4 border rounded-md p-4">
-            <div className="mb-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Total Position <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={positionCountValue("number_of_positions")}
-                onChange={(e) =>
-                  handlePositionCountChange("number_of_positions", e.target.value)
-                }
-                onBlur={() => commitPositionCount("number_of_positions")}
-                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                (Max Allowed Positions per Requisition is 100)
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  New
+        {steps[currentStep].key === "review" ? (
+          <RequisitionReviewStep
+            formData={formData}
+            onSubmit={() => handleSubmit({ data: formData })}
+            onBack={handlePrevious}
+            submitPending={isBusy}
+            isEditMode={isEditMode}
+            validationErrors={allValidationErrors}
+          />
+        ) : (
+          <>
+            {/* ── Position counts (plain React inputs, kept out of formio to avoid
+                 the controlled-input override issue) ── */}
+            {currentStep === 2 && (
+              <div className="mb-4 border rounded-md p-4">
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Total Position <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={positionCountValue("number_of_positions")}
+                    onChange={(e) =>
+                      handlePositionCountChange("number_of_positions", e.target.value)
+                    }
+                    onBlur={() => commitPositionCount("number_of_positions")}
+                    className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    (Max Allowed Positions per Requisition is 100)
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      New
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={positionCountValue("number_of_new_positions")}
+                      onChange={(e) =>
+                        handlePositionCountChange("number_of_new_positions", e.target.value)
+                      }
+                      onBlur={() => commitPositionCount("number_of_new_positions")}
+                      className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Replacement
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={positionCountValue("number_of_replacement_positions")}
+                      onChange={(e) =>
+                        handlePositionCountChange(
+                          "number_of_replacement_positions",
+                          e.target.value
+                        )
+                      }
+                      onBlur={() => commitPositionCount("number_of_replacement_positions")}
+                      className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Form
+              form={currentSchema}
+              submission={{ data: formData }}
+              onChange={handleChange}
+              onSubmit={handleSubmit}
+            />
+
+            {/* ── Position Selection summary bar (totals + bulk vacancy-type toggle) ── */}
+            {currentStep === 2 && (() => {
+              const positions: any[] = (formData as any).positions || [];
+              const total = positions.length;
+              const newCount = positions.filter((p) => p?.vacancy_type === "New").length;
+              const replacementCount = positions.filter(
+                (p) => p?.vacancy_type === "Replacement"
+              ).length;
+              return (
+                <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 py-2 border rounded-md bg-gray-50 text-sm">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <span className="font-semibold text-gray-800">
+                      {total} Total positions
+                    </span>
+                    <span className="flex items-center gap-1 text-gray-700">
+                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                      <span className="font-semibold">{newCount}</span>
+                      <span className="text-gray-500">New</span>
+                    </span>
+                    <span className="flex items-center gap-1 text-gray-700">
+                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                      <span className="font-semibold">{replacementCount}</span>
+                      <span className="text-gray-500">Replacement</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-gray-500 text-xs uppercase tracking-wide">
+                      Set all to
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setAllVacancyType("New")}
+                      disabled={total === 0}
+                      className="flex items-center gap-1 px-3 py-1 border border-green-500 text-green-700 rounded-lg text-xs hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                      New
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAllVacancyType("Replacement")}
+                      disabled={total === 0}
+                      className="flex items-center gap-1 px-3 py-1 border border-orange-500 text-orange-700 rounded-lg text-xs hover:bg-orange-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                      Replacement
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── Pre-Screened Candidates (custom table with inline Attachment column) ── */}
+            {currentStep === 3 && (
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pre-Screened Candidates
                 </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={positionCountValue("number_of_new_positions")}
-                  onChange={(e) =>
-                    handlePositionCountChange("number_of_new_positions", e.target.value)
-                  }
-                  onBlur={() => commitPositionCount("number_of_new_positions")}
-                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Replacement
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={positionCountValue("number_of_replacement_positions")}
-                  onChange={(e) =>
-                    handlePositionCountChange(
-                      "number_of_replacement_positions",
-                      e.target.value
-                    )
-                  }
-                  onBlur={() => commitPositionCount("number_of_replacement_positions")}
-                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        <Form
-          form={currentSchema}
-          submission={{ data: formData }}
-          onChange={handleChange}
-          onSubmit={handleSubmit}
-        />
-
-        {/* ── Position Selection summary bar (totals + bulk vacancy-type toggle) ── */}
-        {currentStep === 2 && (() => {
-          const positions: any[] = (formData as any).positions || [];
-          const total = positions.length;
-          const newCount = positions.filter((p) => p?.vacancy_type === "New").length;
-          const replacementCount = positions.filter(
-            (p) => p?.vacancy_type === "Replacement"
-          ).length;
-          return (
-            <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 px-4 py-2 border rounded-md bg-gray-50 text-sm">
-              <div className="flex items-center gap-4 flex-wrap">
-                <span className="font-semibold text-gray-800">
-                  {total} Total positions
-                </span>
-                <span className="flex items-center gap-1 text-gray-700">
-                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                  <span className="font-semibold">{newCount}</span>
-                  <span className="text-gray-500">New</span>
-                </span>
-                <span className="flex items-center gap-1 text-gray-700">
-                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                  <span className="font-semibold">{replacementCount}</span>
-                  <span className="text-gray-500">Replacement</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-gray-500 text-xs uppercase tracking-wide">
-                  Set all to
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setAllVacancyType("New")}
-                  disabled={total === 0}
-                  className="flex items-center gap-1 px-3 py-1 border border-green-500 text-green-700 rounded-lg text-xs hover:bg-green-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                  New
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAllVacancyType("Replacement")}
-                  disabled={total === 0}
-                  className="flex items-center gap-1 px-3 py-1 border border-orange-500 text-orange-700 rounded-lg text-xs hover:bg-orange-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                  Replacement
-                </button>
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* ── Pre-Screened Candidates (custom table with inline Attachment column) ── */}
-        {currentStep === 3 && (
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Pre-Screened Candidates
-            </label>
-            <div className="overflow-x-auto border rounded-md">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50 text-gray-700">
-                  <tr>
-                    <th className="text-left font-medium px-3 py-2 border-b">Candidate Name</th>
-                    <th className="text-left font-medium px-3 py-2 border-b">Email</th>
-                    <th className="text-left font-medium px-3 py-2 border-b">Phone</th>
-                    <th className="text-left font-medium px-3 py-2 border-b">Attachment</th>
-                    <th className="text-left font-medium px-3 py-2 border-b">Offer Directly?</th>
-                    <th className="px-3 py-2 border-b w-10"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {((formData as any).custom_pre_screened_candidates || []).length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="text-center text-gray-400 px-3 py-4">
-                        No candidates added yet.
-                      </td>
-                    </tr>
-                  )}
-                  {((formData as any).custom_pre_screened_candidates || []).map(
-                    (candidate: any, index: number) => (
-                      <tr key={index} className="border-b last:border-b-0 align-top">
-                        <td className="px-3 py-2">
-                          <input
-                            type="text"
-                            value={candidate?.candidate_name || ""}
-                            onChange={(e) =>
-                              updateCandidateField(index, "candidate_name", e.target.value)
-                            }
-                            placeholder="e.g., Maya Krishnan"
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="email"
-                            value={candidate?.email || ""}
-                            onChange={(e) =>
-                              updateCandidateField(index, "email", e.target.value)
-                            }
-                            placeholder="e.g., candidate@email.com"
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="text"
-                            value={candidate?.phone || ""}
-                            onChange={(e) =>
-                              updateCandidateField(index, "phone", e.target.value)
-                            }
-                            placeholder="e.g., +91..."
-                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <div className="flex flex-col gap-1">
-                            <label className="flex items-center gap-2 border-2 border-dashed border-gray-300 px-2 py-1 cursor-pointer hover:border-gray-500 transition rounded">
-                              <span className="text-gray-500 text-lg shrink-0">
-                                <IoMdCloudUpload />
-                              </span>
-                              <span
-                                title={candidateFileNames[index] || candidate?.cv}
-                                className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-xs text-gray-700"
-                              >
-                                {candidateFileNames[index] ||
-                                  candidate?.cv ||
-                                  "Upload file"}
-                              </span>
+                <div className="overflow-x-auto border rounded-md">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-gray-50 text-gray-700">
+                      <tr>
+                        <th className="text-left font-medium px-3 py-2 border-b">Candidate Name</th>
+                        <th className="text-left font-medium px-3 py-2 border-b">Email</th>
+                        <th className="text-left font-medium px-3 py-2 border-b">Phone</th>
+                        <th className="text-left font-medium px-3 py-2 border-b">Attachment</th>
+                        <th className="text-left font-medium px-3 py-2 border-b">Offer Directly?</th>
+                        <th className="px-3 py-2 border-b w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {((formData as any).custom_pre_screened_candidates || []).length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="text-center text-gray-400 px-3 py-4">
+                            No candidates added yet.
+                          </td>
+                        </tr>
+                      )}
+                      {((formData as any).custom_pre_screened_candidates || []).map(
+                        (candidate: any, index: number) => (
+                          <tr key={index} className="border-b last:border-b-0 align-top">
+                            <td className="px-3 py-2">
                               <input
-                                type="file"
-                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0] || null;
-                                  if (!file) return;
-                                  handleCandidateFileUpload(index, file);
-                                  e.target.value = "";
-                                }}
-                                className="hidden"
+                                type="text"
+                                value={candidate?.candidate_name || ""}
+                                onChange={(e) =>
+                                  updateCandidateField(index, "candidate_name", e.target.value)
+                                }
+                                placeholder="e.g., Maya Krishnan"
+                                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
                               />
-                            </label>
-                            {(candidateFileNames[index] || candidate?.cv) && (
+                            </td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="email"
+                                value={candidate?.email || ""}
+                                onChange={(e) =>
+                                  updateCandidateField(index, "email", e.target.value)
+                                }
+                                placeholder="e.g., candidate@email.com"
+                                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="text"
+                                value={candidate?.phone || ""}
+                                onChange={(e) =>
+                                  updateCandidateField(index, "phone", e.target.value)
+                                }
+                                placeholder="e.g., +91..."
+                                className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                              />
+                            </td>
+                            <td className="px-3 py-2">
+                              <div className="flex flex-col gap-1">
+                                <label className="flex items-center gap-2 border-2 border-dashed border-gray-300 px-2 py-1 cursor-pointer hover:border-gray-500 transition rounded">
+                                  <span className="text-gray-500 text-lg shrink-0">
+                                    <IoMdCloudUpload />
+                                  </span>
+                                  <span
+                                    title={candidateFileNames[index] || candidate?.cv}
+                                    className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-xs text-gray-700"
+                                  >
+                                    {candidateFileNames[index] ||
+                                      candidate?.cv ||
+                                      "Upload file"}
+                                  </span>
+                                  <input
+                                    type="file"
+                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0] || null;
+                                      if (!file) return;
+                                      handleCandidateFileUpload(index, file);
+                                      e.target.value = "";
+                                    }}
+                                    className="hidden"
+                                  />
+                                </label>
+                                {(candidateFileNames[index] || candidate?.cv) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCandidateRemoveFile(index)}
+                                    className="text-xs text-gray-500 hover:text-red-600 self-start"
+                                  >
+                                    Remove file
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="checkbox"
+                                checked={!!candidate?.offer_directly}
+                                onChange={(e) =>
+                                  updateCandidateField(index, "offer_directly", e.target.checked)
+                                }
+                                className="w-4 h-4"
+                              />
+                            </td>
+                            <td className="px-3 py-2 text-center">
                               <button
                                 type="button"
-                                onClick={() => handleCandidateRemoveFile(index)}
-                                className="text-xs text-gray-500 hover:text-red-600 self-start"
+                                onClick={() => removeCandidate(index)}
+                                title="Remove candidate"
+                                className="text-red-500 hover:text-red-700"
                               >
-                                Remove file
+                                <X size={16} />
                               </button>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            type="checkbox"
-                            checked={!!candidate?.offer_directly}
-                            onChange={(e) =>
-                              updateCandidateField(index, "offer_directly", e.target.checked)
-                            }
-                            className="w-4 h-4"
-                          />
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          <button
-                            type="button"
-                            onClick={() => removeCandidate(index)}
-                            title="Remove candidate"
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <X size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <button
-              type="button"
-              onClick={addCandidate}
-              className="mt-2 px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition"
-            >
-              + Add Candidate
-            </button>
-          </div>
-        )}
-      </div>
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <button
+                  type="button"
+                  onClick={addCandidate}
+                  className="mt-2 px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition"
+                >
+                  + Add Candidate
+                </button>
+              </div>
+            )}
 
-      {/* Navigation Buttons */}
-      <div className="flex justify-between mt-8 gap-4">
-        <Button
-          variant="outline"
-          onClick={handlePrevious}
-          disabled={currentStep === 0}
-          size="md"
-        >
-          Previous
-        </Button>
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-8 gap-4">
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+                disabled={currentStep === 0}
+                size="md"
+              >
+                Previous
+              </Button>
 
         {!isLastStep ? (
-          <Button size="md" onClick={handleNext} className="px-4 md:px-6 py-2">
-            Next
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* Preview button — only on the Job Details tab (index 1), left of Next */}
+         
+              <Button
+                variant="outline"
+                size="md"
+                onClick={handlePreviewJobDetails}
+                className="px-4 md:px-6 py-2"
+              >
+                Preview
+              </Button>
+           
+            <Button size="md" onClick={handleNext} className="px-4 md:px-6 py-2">
+              Next
+            </Button>
+          </div>
         ) : (
           <Button
             size="md"
-            onClick={() => handleSubmit({ data: formData })}
+            onClick={handleSubmitWithPreview}
             className="px-4 md:px-6 py-2"
           >
             {isBusy
@@ -1206,6 +1479,10 @@ const RequisitionForm = () => {
           </Button>
         )}
       </div>
+          </>
+        )}
+      </div>
+
 
       {/* JD Preview Modal */}
       {jdPreviewOpen && (
@@ -1254,6 +1531,69 @@ const RequisitionForm = () => {
             <div className="flex justify-end px-6 py-4 border-t">
               <button
                 onClick={() => setJdPreviewOpen(false)}
+                className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Job Details Preview Modal */}
+      {jobDetailsPreviewOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          onClick={() => setJobDetailsPreviewOpen(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  {jobDetailsPreview.title || "Job Description Preview"}
+                </h3>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {(formData as any).designation}
+                  {(formData as any).department ? ` · ${(formData as any).department}` : ""}
+                  {jobDetailsPreview.source ? ` · ${jobDetailsPreview.source}` : ""}
+                </p>
+              </div>
+              <button
+                onClick={() => setJobDetailsPreviewOpen(false)}
+                className="p-2 rounded-md hover:bg-gray-100 text-gray-500 transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {jobDetailsPreview.loading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="animate-spin text-indigo-500" size={32} />
+                  <span className="ml-3 text-gray-500 text-sm">Loading job description…</span>
+                </div>
+              ) : (
+                <>
+                  <div
+                    className="prose prose-sm max-w-none text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: jobDetailsPreview.html }}
+                  />
+
+                  {/* The exact payload that was sent to the API */}
+                </>
+              )}
+            </div>
+
+            {/* Modal footer */}
+            <div className="flex justify-end px-6 py-4 border-t">
+              <button
+                onClick={() => setJobDetailsPreviewOpen(false)}
                 className="px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition"
               >
                 Close

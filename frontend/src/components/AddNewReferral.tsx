@@ -20,6 +20,7 @@ import Modal from "./shared/Modal";
 import DataListView from "./DataListView";
 import { compileFormioSchema, ApplicationField } from "./Recruitment/referralFormSchemas";
 import toast from "react-hot-toast";
+import ReferralReviewStep from "./Recruitment/ReferralReviewStep";
 import CardTable from "./shared/CardTable";
 import { Typography } from "./shared/atoms/Typography";
 
@@ -110,6 +111,8 @@ const AddNewReferral: React.FC = () => {
 
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const referrerEmployee = user?.employee || "";
+  const EmployeeName = user?.employee_name || "";
+
 
   const [activeView, setActiveView] = useState<"list" | "detail" | "form">("list");
   const [selectedJob, setSelectedJob] = useState<JobOpening | null>(null);
@@ -122,8 +125,14 @@ const AddNewReferral: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // ── Resume analyzer field state (dummy — AI integration coming later) ──
+  const [resumeAnalyzing, setResumeAnalyzing] = useState(false);
+  const [resumeAnalyzed, setResumeAnalyzed] = useState(false);
+  const [resumeFileName, setResumeFileName] = useState<string>("");
+
   // Validation state
   const [stepValidationErrors, setStepValidationErrors] = useState<string[]>([]);
+  const [acknowledged, setAcknowledged] = useState(false);
 
   // Status modals
   const [showModal, setShowModal] = useState(false);
@@ -157,7 +166,11 @@ const AddNewReferral: React.FC = () => {
     fieldsRes.forEach(f => {
       if (f.visibility !== "None") unique.add(f.section || "Basic Details");
     });
-    return Array.from(unique);
+    const list = Array.from(unique);
+    if (list.length > 0 && !unique.has("Review")) {
+      list.push("Review");
+    }
+    return list;
   }, [fieldsRes]);
 
   const activeSection = sections[activeStepIndex] || "";
@@ -229,6 +242,17 @@ const AddNewReferral: React.FC = () => {
     return missing;
   };
 
+  const missingRequiredFields = useMemo(() => {
+    const allMissing: string[] = [];
+    sections.filter(s => s !== "Review").forEach(section => {
+      const missing = getMissingRequiredInSection(section);
+      allMissing.push(...missing);
+    });
+    return allMissing;
+  }, [sections, formData]);
+
+  const hasMissingRequiredFields = missingRequiredFields.length > 0;
+
   const handleCopyLink = () => {
     if (!selectedJob) return;
     const referralLink = `${window.location.origin}/webapp/recruitment/refer?job=${selectedJob.name}`;
@@ -251,6 +275,60 @@ const AddNewReferral: React.FC = () => {
       console.error("Upload error", error);
       return null;
     }
+  };
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Dummy resume analyzer — NO API yet. This will be replaced by an AI-powered
+  // resume extraction service. For now it simulates analysis and auto-fills the
+  // referral form fields with sample candidate data, keyed by each field's
+  // reference_name, so the end-to-end flow can be demoed.
+  // ───────────────────────────────────────────────────────────────────────────
+  const buildDummyExtraction = (): Record<string, any> => {
+    const data: Record<string, any> = {};
+    (fieldsRes || []).forEach(field => {
+      if (field.visibility === "None" || field.fieldtype === "Attach") return;
+      // Can't safely guess Select/Link option values — skip them.
+      if (field.fieldtype === "Select" || field.fieldtype === "Link") return;
+
+      const key = field.reference_name;
+      const name = `${field.reference_name} ${field.display_name}`.toLowerCase();
+      const isNumeric = ["Int", "Float", "Currency"].includes(field.fieldtype);
+
+      if (/email/.test(name)) data[key] = "john.doe@example.com";
+      else if (/phone|mobile|contact/.test(name)) data[key] = "9876543210";
+      else if (/name/.test(name)) data[key] = "John Doe";
+      else if (/skill/.test(name)) data[key] = "React, TypeScript, Node.js";
+      else if (/experience|exp|year/.test(name)) data[key] = isNumeric ? 5 : "5 years";
+      else if (/salary|ctc|compensation/.test(name)) data[key] = isNumeric ? 1200000 : "12 LPA";
+      else if (/location|city|address/.test(name)) data[key] = "Bengaluru, India";
+      else if (field.fieldtype === "Date") data[key] = "1995-06-15";
+      else if (isNumeric) data[key] = 0;
+      else if (["Data", "Small Text", "Text", "Long Text", "Text Editor"].includes(field.fieldtype))
+        data[key] = "Auto-filled from resume (demo)";
+    });
+    return data;
+  };
+
+  const handleAnalyzeResume = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Resume exceeds 5MB size limit.");
+      return;
+    }
+    setResumeFileName(file.name);
+    setResumeAnalyzed(false);
+    setResumeAnalyzing(true);
+
+    // Simulate AI analysis latency (no backend call yet).
+    setTimeout(() => {
+      const extracted = buildDummyExtraction();
+      const merged = { ...formDataRef.current, ...extracted };
+      formDataRef.current = merged;        // keep sync ref up to date
+      setFormData(merged);                 // auto-fill the form fields
+      setStepValidationErrors([]);
+      setResumeAnalyzing(false);
+      setResumeAnalyzed(true);
+      toast.success("Resume analyzed — form auto-filled with demo data.");
+    }, 1200);
   };
 
   const handleChange = (changed: any) => {
@@ -295,7 +373,7 @@ const AddNewReferral: React.FC = () => {
   const handleSubmit = async () => {
     // Validate ALL sections before final submit
     const allMissing: string[] = [];
-    sections.forEach(section => {
+    sections.filter(s => s !== "Review").forEach(section => {
       const missing = getMissingRequiredInSection(section);
       allMissing.push(...missing);
     });
@@ -303,6 +381,13 @@ const AddNewReferral: React.FC = () => {
     if (allMissing.length > 0) {
       setModalTitle("Validation Error");
       setModalMessage(`Please complete all required fields: ${allMissing.join(", ")}`);
+      setShowModal(true);
+      return;
+    }
+
+    if (!acknowledged) {
+      setModalTitle("Validation Error");
+      setModalMessage("Please acknowledge the declaration before submitting.");
       setShowModal(true);
       return;
     }
@@ -596,7 +681,7 @@ const AddNewReferral: React.FC = () => {
               {selectedJob.job_title} ({selectedJob.name})
             </h2>
             <span className="text-xs text-gray-400 font-semibold mt-1">
-              Referral attribution to employee: {referrerEmployee || "Unassigned"}
+              Referral attribution to employee: {EmployeeName || "Unassigned"}
             </span>
           </div>
 
@@ -624,6 +709,62 @@ const AddNewReferral: React.FC = () => {
             >
               <Copy size={13} /> {copied ? "COPIED" : "COPY LINK"}
             </button>
+          </div>
+
+          {/* ── Resume Analyzer (dummy — AI auto-fill coming soon) ── */}
+          <div className="pt-4 mt-2 border-t border-gray-100">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-gray-800">Resume Analyzer</h3>
+              <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider bg-violet-50 text-violet-600 border border-violet-200 px-2 py-0.5 rounded-lg">
+                AI · Coming soon
+              </span>
+            </div>
+            <p className="text-xs text-gray-400 font-medium mt-1 mb-3">
+              Upload a resume to auto-fill the application fields below
+            </p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 max-w-2xl">
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.txt"
+                id="resume_analyzer_input"
+                className="hidden"
+                disabled={resumeAnalyzing}
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) handleAnalyzeResume(file);
+                  e.target.value = ""; // allow re-selecting the same file
+                }}
+              />
+              <label
+                htmlFor="resume_analyzer_input"
+                className={`w-full sm:w-auto py-3 px-6 rounded-xl text-xs font-bold uppercase transition-all tracking-wider shrink-0 flex items-center justify-center gap-2 active:scale-[0.98] ${resumeAnalyzing ? "opacity-60 cursor-not-allowed" : "cursor-pointer"
+                  }`}
+                style={{ color: "var(--primary-color)", border: "1.5px solid var(--primary-color)" }}
+              >
+                {resumeAnalyzing ? (
+                  <>
+                    <span
+                      className="w-3.5 h-3.5 border-2 border-current/40 border-t-current rounded-full animate-spin"
+                    />
+                    ANALYZING...
+                  </>
+                ) : (
+                  <>
+                    <Upload size={13} /> {resumeAnalyzed ? "RE-ANALYZE RESUME" : "ANALYZE RESUME"}
+                  </>
+                )}
+              </label>
+              {resumeFileName && !resumeAnalyzing && (
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100">
+                  <CheckCircle size={14} /> {resumeFileName}
+                </div>
+              )}
+            </div>
+            {resumeAnalyzed && (
+              <p className="text-xs text-emerald-600 font-semibold mt-2">
+                Form auto-filled from resume. Review the fields below before submitting.
+              </p>
+            )}
           </div>
         </div>
 
@@ -728,104 +869,118 @@ const AddNewReferral: React.FC = () => {
                 </div>
               )}
 
-              {stepSchema && (
-                <Form
-                  form={stepSchema}
-                  submission={{ data: formData }}
-                  onChange={handleChange}
-                  onSubmit={handleSubmit}
+              {activeSection === "Review" ? (
+                <ReferralReviewStep
+                  sections={sections}
+                  fields={fieldsRes || []}
+                  formData={formData}
+                  acknowledged={acknowledged}
+                  setAcknowledged={setAcknowledged}
+                  missingRequiredFields={missingRequiredFields}
+                  hasMissingRequiredFields={hasMissingRequiredFields}
                 />
-              )}
+              ) : (
+                <>
+                  {stepSchema && (
+                    <Form
+                      form={stepSchema}
+                      submission={{ data: formData }}
+                      onChange={handleChange}
+                      onSubmit={handleSubmit}
+                    />
+                  )}
 
-              {/* Dynamic attachment dropzone fields */}
-              {activeStepAttachFields.map(field => {
-                const isMissingAttach =
-                  field.reqd === 1 &&
-                  stepValidationErrors.includes(field.display_name);
+                  {/* Dynamic attachment dropzone fields */}
+                  {activeStepAttachFields.map(field => {
+                    const isMissingAttach =
+                      field.reqd === 1 &&
+                      stepValidationErrors.includes(field.display_name);
 
-                return (
-                  <div
-                    key={field.reference_name}
-                    className={`mt-6 p-6 border rounded-2xl transition-colors ${isMissingAttach
-                      ? "border-rose-300 bg-rose-50/40"
-                      : "border-dashed border-gray-200 bg-gray-50/50"
-                      }`}
-                  >
-                    <label className="block text-xs font-bold uppercase tracking-wider mb-2"
-                      style={{ color: isMissingAttach ? "#ef4444" : "#6b7280" }}
-                    >
-                      {field.display_name}{" "}
-                      {field.reqd === 1 && (
-                        <span className="text-rose-500">*</span>
-                      )}
-                      {isMissingAttach && (
-                        <span className="ml-2 text-rose-500 normal-case font-semibold">
-                          — This field is required
-                        </span>
-                      )}
-                    </label>
-                    <div
-                      className={`flex flex-col items-center gap-4 rounded-2xl border px-6 py-10 bg-white transition-all ${isMissingAttach
-                        ? "border-rose-300 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
-                        : "border-gray-200 hover:border-[var(--primary-color)]"
-                        }`}
-                    >
-                      <Upload size={40} className={isMissingAttach ? "text-rose-400" : "text-gray-400"} />
-                      <div className="text-center">
-                        <p className="text-sm font-semibold text-gray-800">
-                          Drag and drop or browse
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">PDF, DOCX, or TXT (max 5MB)</p>
-                      </div>
-                      <input
-                        type="file"
-                        accept=".pdf,.doc,.docx,.txt"
-                        onChange={async e => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            if (file.size > 5 * 1024 * 1024) {
-                              toast.error("File exceeds 5MB size limit.");
-                              return;
-                            }
-                            const url = await uploadFile(file);
-                            if (url) {
-                              formDataRef.current = { ...formDataRef.current, [field.reference_name]: url };
-                              setFormData(prev => ({ ...prev, [field.reference_name]: url }));
-                              setStepValidationErrors(prev =>
-                                prev.filter(n => n !== field.display_name)
-                              );
-                              toast.success(`${field.display_name} uploaded successfully!`);
-                            } else {
-                              toast.error("Upload failed.");
-                            }
-                          }
-                        }}
-                        className="hidden"
-                        id={`file_input_${field.reference_name}`}
-                      />
-                      <label
-                        htmlFor={`file_input_${field.reference_name}`}
-                        className="py-2.5 px-6 bg-white border border-gray-200 rounded-xl text-xs font-bold tracking-wider uppercase shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+                    return (
+                      <div
+                        key={field.reference_name}
+                        className={`mt-6 p-6 border rounded-2xl transition-colors ${isMissingAttach
+                          ? "border-rose-300 bg-rose-50/40"
+                          : "border-dashed border-gray-200 bg-gray-50/50"
+                          }`}
                       >
-                        {formData[field.reference_name] ? "Change File" : "Browse Files"}
-                      </label>
-                      {formData[field.reference_name] && (
-                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
-                          <CheckCircle size={14} /> Attachment Uploaded
-                        </div>
-                      )}
-                      {uploading && (
-                        <p
-                          className="text-xs font-bold animate-pulse"
-                          style={{ color: "var(--primary-color)" }}
+                        <label className="block text-xs font-bold uppercase tracking-wider mb-2"
+                          style={{ color: isMissingAttach ? "#ef4444" : "#6b7280" }}
                         >
-                          Uploading attachment...
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                          {field.display_name}{" "}
+                          {field.reqd === 1 && (
+                            <span className="text-rose-500">*</span>
+                          )}
+                          {isMissingAttach && (
+                            <span className="ml-2 text-rose-500 normal-case font-semibold">
+                              — This field is required
+                            </span>
+                          )}
+                        </label>
+                        <div
+                          className={`flex flex-col items-center gap-4 rounded-2xl border px-6 py-10 bg-white transition-all ${isMissingAttach
+                            ? "border-rose-300 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]"
+                            : "border-gray-200 hover:border-[var(--primary-color)]"
+                            }`}
+                        >
+                          <Upload size={40} className={isMissingAttach ? "text-rose-400" : "text-gray-400"} />
+                          <div className="text-center">
+                            <p className="text-sm font-semibold text-gray-800">
+                              Drag and drop or browse
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">PDF, DOCX, or TXT (max 5MB)</p>
+                          </div>
+                          <input
+                            type="file"
+                            accept=".pdf,.doc,.docx,.txt"
+                            onChange={async e => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                if (file.size > 5 * 1024 * 1024) {
+                                  toast.error("File exceeds 5MB size limit.");
+                                  return;
+                                }
+                                const url = await uploadFile(file);
+                                if (url) {
+                                  formDataRef.current = { ...formDataRef.current, [field.reference_name]: url };
+                                  setFormData(prev => ({ ...prev, [field.reference_name]: url }));
+                                  setStepValidationErrors(prev =>
+                                    prev.filter(n => n !== field.display_name)
+                                  );
+                                  toast.success(`${field.display_name} uploaded successfully!`);
+                                } else {
+                                  toast.error("Upload failed.");
+                                }
+                              }
+                            }}
+                            className="hidden"
+                            id={`file_input_${field.reference_name}`}
+                          />
+                          <label
+                            htmlFor={`file_input_${field.reference_name}`}
+                            className="py-2.5 px-6 bg-white border border-gray-200 rounded-xl text-xs font-bold tracking-wider uppercase shadow-sm cursor-pointer hover:bg-gray-50 transition-colors"
+                          >
+                            {formData[field.reference_name] ? "Change File" : "Browse Files"}
+                          </label>
+                          {formData[field.reference_name] && (
+                            <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100">
+                              <CheckCircle size={14} /> Attachment Uploaded
+                            </div>
+                          )}
+                          {uploading && (
+                            <p
+                              className="text-xs font-bold animate-pulse"
+                              style={{ color: "var(--primary-color)" }}
+                            >
+                              Uploading attachment...
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
             </div>
 
             {/* ── Sticky Footer Navigation ── */}
@@ -849,7 +1004,7 @@ const AddNewReferral: React.FC = () => {
               {isLastStep ? (
                 <button
                   onClick={handleSubmit}
-                  disabled={uploading}
+                  disabled={uploading || !acknowledged || hasMissingRequiredFields}
                   className="flex items-center gap-2 py-2.5 px-6 rounded-xl text-sm font-bold text-white tracking-wide transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{
                     background: "linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%)"

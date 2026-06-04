@@ -264,6 +264,34 @@ def _position_row(p, position_no, parent_vacancy_default, parent_functional_area
     }
 
 
+def _drop_invalid_link_values(doc, payload):
+    """Remove payload values for Link parent fields that don't point to an
+    existing record, so a stray value never fails the whole save with a
+    LinkValidationError.
+
+    This guards two common frontend mistakes:
+      - `custom_job_description_template` (Link → Job Description) receiving the
+        rendered JD *HTML* instead of a JD name.
+      - `custom_preferred_company` (Link → Preferred Target Company) receiving a
+        free-text company name that isn't in that master yet.
+    The offending field is simply not written (and logged); everything else on
+    the requisition still saves.
+    """
+    meta = doc.meta
+    for field in PARENT_WRITABLE_FIELDS:
+        value = payload.get(field)
+        if value in (None, ""):
+            continue
+        df = meta.get_field(field)
+        if df and df.fieldtype == "Link" and df.options and not frappe.db.exists(df.options, value):
+            frappe.logger().info(
+                "create/update Job Requisition: dropping invalid link {0}={1!r} (no such {2})".format(
+                    field, str(value)[:80], df.options
+                )
+            )
+            payload.pop(field, None)
+
+
 def _apply_parent_fields(doc, payload):
     """Copy parent-level fields from payload onto the doc.
 
@@ -273,6 +301,8 @@ def _apply_parent_fields(doc, payload):
       sending those is what causes the
       "'NoneType' object has no attribute 'options'" error in Frappe when the
       field meta cannot be resolved for a Select that the workflow engine owns.
+    - Drops Link-field values that don't resolve to a real record (see
+      _drop_invalid_link_values) so a stray value doesn't fail the whole save.
     - Wraps each set() in a try/except so a bad value produces a clear error
       message ('field X = value Y') instead of a cryptic NoneType traceback.
     """
@@ -280,6 +310,8 @@ def _apply_parent_fields(doc, payload):
     # value sent under either name persists to `custom_work_experience_range`.
     if payload.get("custom_work_experience") and not payload.get("custom_work_experience_range"):
         payload["custom_work_experience_range"] = payload["custom_work_experience"]
+
+    _drop_invalid_link_values(doc, payload)
 
     for field in PARENT_WRITABLE_FIELDS:
         if field in FRAPPE_MANAGED_FIELDS:

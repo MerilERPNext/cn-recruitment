@@ -217,6 +217,7 @@ export function useReplaceLeave() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
+      console.log("error leave request replace", err)
       toast.error(
         errorResponseFormater(err, "Failed to replace leave. Please try again.")
       );
