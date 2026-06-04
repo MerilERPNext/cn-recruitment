@@ -328,20 +328,21 @@ const EmployeeProfile: React.FC = () => {
   };
   const mobileLayout = (
     <div className="bg-white font-sans scroll-smooth">
+      {/* Sticky Header - always on top */}
+      <HeaderBar
+        title="Profile"
+        onBack={() => {
+          if (isViewingOtherUser) {
+            clearTargetEmployee();
+          }
+          navigate("/webapp/");
+        }}
+      />
       <div className="bg-white shadow">
         {userIsLoading ? (
           <HeaderInfoSkeleton />
         ) : (
           <div className="bg-white shadow">
-            <HeaderBar
-              title="Profile"
-              onBack={() => {
-                if (isViewingOtherUser) {
-                  clearTargetEmployee();
-                }
-                navigate("/webapp/");
-              }}
-            />
             <input
               ref={fileInputRef}
               type="file"
@@ -483,7 +484,7 @@ const EmployeeProfile: React.FC = () => {
           </div>
         )}
         {/* Horizontal Tabs */}
-        <div className="bg-white border-b sticky top-0 z-10">
+        <div className="bg-white border-b sticky top-[60px] z-20">
           <div className="flex overflow-x-auto scrollbar-hide px-4 py-2">
             {permittedTabs?.map((tab) => (
               <Button

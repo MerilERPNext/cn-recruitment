@@ -10,12 +10,14 @@ interface ScrollTabsProps {
     tabs: ScrollTab[];
     renderSection: (tab: ScrollTab) => ReactNode;
     offsetClassName?: string;
+    stickyTopClassName?: string;
 }
 
 export const ScrollTabs = ({
     tabs,
     renderSection,
     offsetClassName = "scroll-mt-28",
+    stickyTopClassName = "top-12 md:top-14",
 }: ScrollTabsProps) => {
     const [activeTab, setActiveTab] = useState(tabs[0]?.key ?? "");
     const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -53,7 +55,7 @@ export const ScrollTabs = ({
         <>
             {/* Tabs */}
             {tabs.length > 1 && (
-                <div className="sticky top-12 md:top-14 bg-white z-10 px-0 md:px-6 pb-2">
+                <div className={`sticky ${stickyTopClassName} bg-white z-10 px-0 md:px-6 pb-2`}>
                     <div className="flex overflow-x-auto gap-1 py-2 scrollbar-hide">
                         {tabs.map(tab => (
                             <Button
