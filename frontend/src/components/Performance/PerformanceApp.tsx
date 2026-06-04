@@ -16,6 +16,12 @@ type TabName =
     | "Cycle"
     | "Calibrator";
 
+type TeamTabName =
+    "Overview"
+    | "Team Goals"
+    | "Reviews"
+    | "Calibration"
+    | "Check-Ins";
 
 const tabRoutes: Record<TabName, string> = {
     Overview: "/webapp/performance-app/overview",
@@ -31,12 +37,26 @@ const tabRoutes: Record<TabName, string> = {
     Calibrator: "/webapp/performance-app/calibrator/session",
 };
 
+const teamTabRoutes: Record<TeamTabName, string> = {
+    Overview: "/webapp/performance-app/team-overview",
+    "Team Goals": "/webapp/performance-app/team-goals",
+    Reviews: "/webapp/performance-app/team-reviews",
+    Calibration: "/webapp/performance-app/team-calibration",
+    "Check-Ins": "/webapp/performance-app/team-check-ins",
+};
+
+const teamRoutePrefixes = Object.values(teamTabRoutes);
 
 const PerformanceApp: React.FC = () => {
     const { isDesktop } = useScreenSize();
     const [activeTab, setActiveTab] = useState<TabName>("Overview");
+    const [activeTeamTab, setActiveTeamTab] = useState<TeamTabName>("Overview");
     const navigate = useNavigate();
     const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
+        key,
+        label: key,
+    }));
+    const teamTabs: Tab[] = (Object.keys(teamTabRoutes) as TeamTabName[]).map((key) => ({
         key,
         label: key,
     }));
@@ -47,11 +67,21 @@ const PerformanceApp: React.FC = () => {
         navigate(tabRoutes[tab]);
     };
 
+    const handleTeamTabChange = (tab: TeamTabName) => {
+        setActiveTeamTab(tab);
+        navigate(teamTabRoutes[tab]);
+    };
+
 
     useEffect(() => {
-        const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
-            location.pathname.startsWith(tabRoutes[tab])
+        const isTeamRoute = teamRoutePrefixes.some((route) =>
+            location.pathname.startsWith(route)
         );
+        const matchedTab = isTeamRoute
+            ? "My Team"
+            : (Object.keys(tabRoutes) as TabName[]).find((tab) =>
+                location.pathname.startsWith(tabRoutes[tab])
+            );
 
         if (matchedTab) {
             setActiveTab(matchedTab);
@@ -68,6 +98,20 @@ const PerformanceApp: React.FC = () => {
 
     }, [location.pathname, navigate]);
 
+    useEffect(() => {
+        const matchedTeamTab = (Object.keys(teamTabRoutes) as TeamTabName[]).find((tab) =>
+            location.pathname.startsWith(teamTabRoutes[tab])
+        );
+
+        if (matchedTeamTab) {
+            setActiveTeamTab(matchedTeamTab);
+        }
+    }, [location.pathname]);
+
+    const isTeamRoute = teamRoutePrefixes.some((route) =>
+        location.pathname.startsWith(route)
+    );
+
     const mobileLayout = (
         <div className="flex flex-col min-h-screen bg-white">
 
@@ -82,6 +126,15 @@ const PerformanceApp: React.FC = () => {
                 activeTab={activeTab}
                 onTabChange={(tab) => handleTabChange(tab as TabName)}
             />
+            {isTeamRoute && (
+                <div className="border-t border-gray-100">
+                    <NavigationTabs
+                        tabs={teamTabs}
+                        activeTab={activeTeamTab}
+                        onTabChange={(tab) => handleTeamTabChange(tab as TeamTabName)}
+                    />
+                </div>
+            )}
             </header>
             <main className="z-10 flex-grow">
                 <Outlet />
