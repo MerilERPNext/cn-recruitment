@@ -11,7 +11,7 @@ const navigate = useNavigate()
               <div aria-label="Cycle Details" className="mb-5 flex min-w-0 flex-col justify-between gap-4 sm:mb-8 lg:flex-row lg:items-end">
                 <div className="min-w-0">
                   <div className="mb-3 flex flex-wrap items-center gap-2">
-                    <Badge label="CYCLE LIVE" backgroundColor="bg-blue-100 ring-1 ring-inset ring-blue-300" textColor="text-blue-700" size="sm" pulse={{ show: true, color: "bg-blue-600" }} />
+                    <Badge label="CYCLE LIVE" backgroundColor="bg-blue-100 " textColor="text-blue-700" size="sm" pulse={{ show: true, color: "bg-blue-600" }} />
                     <Typography variant="bodySmall" className="break-words text-gray-500">Apr 2026 &rarr; Mar 2027 &middot; India Tech</Typography>
                   </div>
                   <Typography variant="h3" className="break-words text-xl leading-tight sm:text-2xl">FY26 Annual Performance Cycle</Typography>

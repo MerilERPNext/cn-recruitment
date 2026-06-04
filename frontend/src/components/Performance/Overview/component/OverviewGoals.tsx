@@ -8,7 +8,7 @@ const goalsData: GoalItem[] = [
   {
     id: 'g1',
     type: 'OKR',
-    typeBgColor: 'bg-blue-100 ring-1 ring-inset ring-blue-300',
+    typeBgColor: 'bg-blue-100 ',
     typeTextColor: 'text-blue-700',
     title: 'Ship Oxygen 2.0 dashboard to 100% of PW employees',
     weightage: '30%',
@@ -24,7 +24,7 @@ const goalsData: GoalItem[] = [
   {
     id: 'g2',
     type: 'OKR',
-    typeBgColor: 'bg-blue-100 ring-1 ring-inset ring-blue-300',
+    typeBgColor: 'bg-blue-100 ',
     typeTextColor: 'text-blue-700',
     title: 'Reduce design \u2192 engineering handoff time by 40%',
     weightage: '20%',
@@ -40,7 +40,7 @@ const goalsData: GoalItem[] = [
   {
     id: 'g3',
     type: 'OKR',
-    typeBgColor: 'bg-blue-100 ring-1 ring-inset ring-blue-300',
+    typeBgColor: 'bg-blue-100 ',
     typeTextColor: 'text-blue-700',
     title: 'Mentor 2 junior designers to mid-level promotion',
     weightage: '15%',
@@ -56,7 +56,7 @@ const goalsData: GoalItem[] = [
   {
     id: 'g4',
     type: 'OKR',
-    typeBgColor: 'bg-blue-100 ring-1 ring-inset ring-blue-300',
+    typeBgColor: 'bg-blue-100 ',
     typeTextColor: 'text-blue-700',
     title: 'Maintain CSAT for design partnership \u2265 4.5 / 5',
     weightage: '20%',
@@ -72,7 +72,7 @@ const goalsData: GoalItem[] = [
   {
     id: 'g5',
     type: 'OKR',
-    typeBgColor: 'bg-blue-100 ring-1 ring-inset ring-blue-300',
+    typeBgColor: 'bg-blue-100 ',
     typeTextColor: 'text-blue-700',
     title: 'Launch design-thinking workshop series across 5 BUs',
     weightage: '15%',
