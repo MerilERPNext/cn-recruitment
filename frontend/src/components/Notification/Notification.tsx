@@ -44,7 +44,7 @@ const NotificationList = () => {
 
   const [activeTab, setActiveTab] = useState<"all" | "read" | "unread">("all");
 
-  const LIMIT = 10;
+  const LIMIT = 20;
   const [currentPage, setCurrentPage] = useState(1);
   const [pageCache, setPageCache] = useState<Record<number, NotificationLog[]>>({});
 
