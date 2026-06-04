@@ -478,15 +478,6 @@ const EmployeeProfile: React.FC = () => {
                   Future Transactions
                 </Button>
               )}
-              {canShowAssignmentDetailsButton &&
-                <Button
-                  variant="soft"
-                  size="sm"
-                  icon={<History size={14} />}
-                  onClick={() => navigate("/webapp/employee-profile/assignment-details")}
-                >
-                  Assignment Details
-                </Button>}
             </div>
             <AwardsSection isDesktop={false} />
           </div>
