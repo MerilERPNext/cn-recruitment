@@ -713,15 +713,24 @@ const RequisitionForm = () => {
       }));
 
       // Persist the previewed JD into the form so the final submit/update sends
-      // the same html in `description` + `custom_job_description_template`, and
-      // the returned skills in `custom_skills`.
+      // the same html in `description` + `custom_job_description_template`.
+      // Do NOT overwrite `custom_skills` the user already filled — only seed it
+      // from the preview when the user hasn't entered any skills yet, so opening
+      // the Preview never resets the skills field.
       if (!noJd) {
-        setFormData((prev: any) => ({
-          ...prev,
-          description: html,
-          job_description_template: html,
-          ...(skills ? { custom_skills: skills } : {}),
-        }));
+        setFormData((prev: any) => {
+          const userHasSkills =
+            prev.custom_skills !== undefined &&
+            prev.custom_skills !== null &&
+            prev.custom_skills !== "" &&
+            !(Array.isArray(prev.custom_skills) && prev.custom_skills.length === 0);
+          return {
+            ...prev,
+            description: html,
+            job_description_template: html,
+            ...(skills && !userHasSkills ? { custom_skills: skills } : {}),
+          };
+        });
       }
     } catch (err) {
       console.error("Error fetching job description preview:", err);

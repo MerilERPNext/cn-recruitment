@@ -677,9 +677,11 @@ export const jobDetailsPreviewFields: JobDetailsPreviewField[] = [
   { key: "expected_by", label: "Expected By Date", backendKey: "expected_by" },
   { key: "employment_type", label: "Employment Type", backendKey: "custom_employment_type_link" },
   { key: "location", label: "Work Location", backendKey: "custom_location" },
+  { key: "vacancy_type", label: "Vacancy Type", backendKey: "custom_vacancy_type" },
+  { key: "functional_area", label: "Functional Area", backendKey: "custom_functional_area" },
   { key: "custom_work_experience_range", label: "Work Experience Range", backendKey: "custom_work_experience_range" },
   { key: "custom_preferred_notice_period", label: "Preferred Notice Period", backendKey: "custom_preferred_notice_period" },
   { key: "preferred_company", label: "Preferred Target Company", backendKey: "custom_preferred_company" },
   { key: "custom_other_preferred_companies", label: "Other Preferred Companies", backendKey: "custom_other_preferred_companies" },
   { key: "custom_skills", label: "Required Skills", backendKey: "custom_skills" },
-];
+]; 
