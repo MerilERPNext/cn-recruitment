@@ -72,6 +72,7 @@ export interface IJPField {
   visibility: string;
   editability: string;
   table_fields?: IJPTableField[];
+  value?: IJPApplicationValue;
 }
 
 export type IJPApplicationValue =
