@@ -55,6 +55,10 @@ def _read_onboarding_meta():
             "section_label": current_section,
             "options": df.options or "",
             "reqd": df.reqd or 0,
+            "depends_on": df.get("depends_on") or "",
+            "mandatory_depends_on": df.get("mandatory_depends_on") or "",
+            "read_only": df.read_only or 0,
+            "length": df.get("length") or 0,
         })
 
     return result
@@ -335,6 +339,9 @@ def _get_child_table_fields(child_doctype):
             "options": df.options or "",
             "reqd": df.reqd or 0,
             "read_only": df.read_only or 0,
+            "depends_on": df.get("depends_on") or "",
+            "mandatory_depends_on": df.get("mandatory_depends_on") or "",
+            "length": df.get("length") or 0,
         })
 
     return fields
@@ -450,6 +457,11 @@ def _build_tabbed_response(portal_rows, meta_lookup, doc=None, applicant_doc=Non
             "value": _resolve_field_value(doc, applicant_doc, fn, fieldtype),
             "approval_status": approval_status,
             "hr_comment": row.get("hr_comment") or "",
+            # Conditional-logic metadata for the portal UI (show/hide,
+            # conditional-mandatory, format hints). Sourced from the DocType meta.
+            "depends_on": meta.get("depends_on", ""),
+            "mandatory_depends_on": meta.get("mandatory_depends_on", ""),
+            "length": meta.get("length", 0),
         }
         if fieldtype == "Table":
             field_entry["child_doctype"] = field_options
