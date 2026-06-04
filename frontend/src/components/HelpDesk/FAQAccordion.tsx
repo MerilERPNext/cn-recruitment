@@ -14,7 +14,7 @@ const FAQAccordion: React.FC<FAQAccordionProps> = ({
   articleCount,
   articles,
 }) => {
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const toggleExpand = (index: number) => {
     setExpandedIndex(expandedIndex === index ? null : index);
