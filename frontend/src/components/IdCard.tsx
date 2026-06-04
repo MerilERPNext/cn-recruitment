@@ -17,6 +17,7 @@ import { useScreenSize } from "../hooks/useScreenSize";
 import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
 import HeaderBar from "./HeaderBar";
 import { useNavigate } from "react-router-dom";
+import { useTargetUser } from "../context/ViewedUserContext";
 
 // Icon Components
 const BackIcon = () => (
@@ -95,10 +96,11 @@ interface HeaderProps {
   title: string;
   onBackClick: () => void;
   onMailClick: () => void;
+  showMailButton: boolean;
 }
 
 // Header Component
-const Header = ({ title, onBackClick, onMailClick }: HeaderProps) => (
+const Header = ({ title, onBackClick, onMailClick, showMailButton = false }: HeaderProps) => (
   <header className="bg-white border shadow-sm">
     <div className="mx-auto flex items-center p-4">
       <button
@@ -110,12 +112,22 @@ const Header = ({ title, onBackClick, onMailClick }: HeaderProps) => (
       <h1 className="text-gray-800 text-xl font-semibold flex-1 text-center">
         {title}
       </h1>
-      <button
-        className="text-gray-800 p-2 -mr-2 hover:bg-gray-100 rounded-lg transition-colors"
-        onClick={onMailClick}
-      >
-        <MailIcon />
-      </button>
+      {showMailButton ? (
+        <button
+          className="text-gray-800 p-2 -mr-2 hover:bg-gray-100 rounded-lg transition-colors"
+          onClick={onMailClick}
+        >
+          <MailIcon />
+        </button>
+      ) : (
+        <button
+          className="p-2 -mr-2 invisible pointer-events-none"
+          aria-hidden="true"
+          tabIndex={-1}
+        >
+          <MailIcon />
+        </button>
+      )}
     </div>
   </header>
 );
@@ -416,6 +428,7 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
   const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
     useState(false);
 
+
   const navigate = useNavigate();
   // Automatically hide the toast after a few seconds
   useEffect(() => {
@@ -426,6 +439,8 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  const { isViewingOtherUser } = useTargetUser();
 
   const showToast = (message: string, type: "error" | "info") => {
     setToast({ message, type });
@@ -507,13 +522,15 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
-                  <button
-                    onClick={handleEmail}
-                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm sm:text-base"
-                  >
-                    <EmailIcon />
-                    Email
-                  </button>
+                  {isViewingOtherUser &&
+                    <button
+                      onClick={handleEmail}
+                      className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm sm:text-base"
+                    >
+                      <EmailIcon />
+                      Email
+                    </button>
+                  }
                   <button
                     onClick={handleChat}
                     className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm sm:text-base"
@@ -770,12 +787,14 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
     }
   };
 
+  const { isViewingOtherUser } = useTargetUser();
   if (!isMobile && employee && !isLoading && !error) {
     // Validate essential employee data before rendering desktop view
     if (employee.employee_name && employee.id) {
       return <DesktopLayout employee={employee} />;
     }
   }
+
 
   return (
     <div
@@ -789,6 +808,7 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
         title="Employee ID"
         onBackClick={handleBackClick}
         onMailClick={handleMailClick}
+        showMailButton={isViewingOtherUser}
       />
 
       <main className="flex-1 overflow-y-auto p-6 bg-white">
