@@ -505,6 +505,227 @@ const RejectResolutionModal: React.FC<RejectResolutionModalProps> = ({
   );
 };
 
+const getInitials = (name: string) => {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+const formatTime = (date: Date) => {
+  return date
+    .toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })
+    .toLowerCase();
+};
+
+interface AvatarProps {
+  sender: SimpleChatMessage["sender"];
+  isCurrentUser: boolean;
+}
+
+const Avatar: React.FC<AvatarProps> = ({ sender, isCurrentUser }) => (
+  <div className="flex-shrink-0">
+    {sender.avatar ? (
+      <img
+        src={sender.avatar}
+        alt={sender.name}
+        className="w-10 h-10 rounded-xl object-cover"
+      />
+    ) : (
+      <div
+        className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium ${isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+          }`}
+      >
+        {getInitials(sender.name)}
+      </div>
+    )}
+  </div>
+);
+
+interface AttachmentListProps {
+  attachments: SimpleChatMessage["attachments"];
+  isCurrentUser: boolean;
+  onPreviewFile: (file: { url: string; name: string }) => void;
+}
+
+const AttachmentList: React.FC<AttachmentListProps> = ({
+  attachments,
+  isCurrentUser,
+  onPreviewFile,
+}) => {
+  if (!attachments || attachments.length === 0) return null;
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-200/30 flex flex-wrap gap-2">
+      {attachments.map((attachment, index) => {
+        const { category, iconColor, bgColor } = getFileTypeInfo(attachment.file_name);
+        return (
+          <button
+            key={index}
+            onClick={() =>
+              onPreviewFile({ url: attachment.file_url, name: attachment.file_name })
+            }
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border max-w-full ${isCurrentUser
+                ? "bg-blue-400/10 border-blue-400/20 text-blue-100 hover:bg-blue-400/20"
+                : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
+              }`}
+          >
+            <div
+              className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${isCurrentUser ? "bg-blue-500/20" : bgColor
+                }`}
+            >
+              <FileTypeIcon
+                category={category}
+                className={`w-3.5 h-3.5 ${isCurrentUser ? "text-blue-200" : iconColor}`}
+              />
+            </div>
+            <span className="truncate max-w-[150px] font-medium">{attachment.file_name}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+interface QuotedMessageProps {
+  content: string;
+  sender?: string | null;
+  isCurrentUser: boolean;
+  onContentClick: (e: React.MouseEvent<HTMLDivElement>) => void;
+}
+
+const QuotedMessage: React.FC<QuotedMessageProps> = ({
+  content,
+  sender,
+  isCurrentUser,
+  onContentClick,
+}) => (
+  <div
+    onClick={onContentClick}
+    className={`mb-2 p-3 rounded-lg border-l-4 cursor-pointer ${isCurrentUser
+        ? "bg-blue-400/20 border-blue-300 text-blue-100"
+        : "bg-gray-100 border-gray-300 text-gray-600"
+      }`}
+  >
+    <div
+      className={`text-xs mb-1 font-medium ${isCurrentUser ? "text-blue-200" : "text-gray-500"}`}
+    >
+      {sender ? `${sender} wrote:` : "Previous message:"}
+    </div>
+    <div
+      className={`text-sm line-clamp-3 prose prose-sm max-w-none ${isCurrentUser ? "prose-invert" : ""
+        } [&>p]:mb-0 [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg`}
+      dangerouslySetInnerHTML={{ __html: content }}
+    />
+  </div>
+);
+
+interface ChatBubbleProps {
+  message: SimpleChatMessage;
+  isTicketClosed: boolean;
+  onReplyingTo: (message: SimpleChatMessage) => void;
+  onPreviewFile: (file: { url: string; name: string }) => void;
+  onContentClick: (e: React.MouseEvent<HTMLDivElement>) => void;
+  formatTime: (date: Date) => string;
+}
+
+const ChatBubble: React.FC<ChatBubbleProps> = ({
+  message,
+  isTicketClosed,
+  onReplyingTo,
+  onPreviewFile,
+  onContentClick,
+  formatTime,
+}) => {
+  const { content, quotedContent, quotedSender, sender, timestamp, isCurrentUser, attachments } =
+    message;
+
+  if (isCurrentUser) {
+    return (
+      <div className="group flex justify-end gap-3 mb-6 simplified-chat-view-quoted-message-a">
+        {!isTicketClosed && (
+          <button
+            onClick={() => onReplyingTo(message)}
+            className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+            title="Reply"
+          >
+            <Reply className="w-4 h-4" />
+          </button>
+        )}
+        <div className="flex flex-col items-end max-w-[75%]">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md px-5 py-4 max-w-full overflow-hidden">
+            {quotedContent && (
+              <QuotedMessage
+                content={quotedContent}
+                sender={quotedSender}
+                isCurrentUser={true}
+                onContentClick={onContentClick}
+              />
+            )}
+            <div
+              onClick={onContentClick}
+              className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg"
+              dangerouslySetInnerHTML={{ __html: content }}
+            />
+            <AttachmentList
+              attachments={attachments}
+              isCurrentUser={true}
+              onPreviewFile={onPreviewFile}
+            />
+          </div>
+          <span className="text-xs text-gray-400 mt-2 mr-1">{formatTime(timestamp)}</span>
+        </div>
+        <Avatar sender={sender} isCurrentUser={true} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="group flex justify-start gap-3 mb-6">
+      <Avatar sender={sender} isCurrentUser={false} />
+      <div className="flex flex-col items-start max-w-[75%]">
+        <div className="bg-[#F5F0E8] rounded-2xl rounded-bl-md px-5 py-4 max-w-full overflow-hidden">
+          <div className="text-xs text-gray-500 mb-2 font-medium">{sender.name}</div>
+          {quotedContent && (
+            <QuotedMessage
+              content={quotedContent}
+              sender={quotedSender}
+              isCurrentUser={false}
+              onContentClick={onContentClick}
+            />
+          )}
+          <div
+            onClick={onContentClick}
+            className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg"
+            dangerouslySetInnerHTML={{ __html: content }}
+          />
+          <AttachmentList
+            attachments={attachments}
+            isCurrentUser={false}
+            onPreviewFile={onPreviewFile}
+          />
+        </div>
+        <span className="text-xs text-gray-400 mt-2 ml-1">{formatTime(timestamp)}</span>
+      </div>
+      {!isTicketClosed && (
+        <button
+          onClick={() => onReplyingTo(message)}
+          className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+          title="Reply"
+        >
+          <Reply className="w-4 h-4" />
+        </button>
+      )}
+    </div>
+  );
+};
+
 const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   ticket,
   currentUserEmail,
@@ -638,26 +859,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     });
   }
 
-  // Format timestamp
-  const formatTime = (date: Date) => {
-    return date
-      .toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      })
-      .toLowerCase();
-  };
 
-  // Get avatar initials
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   // Get assigned user email
   const getAssignedUserEmail = (): string | null => {
@@ -724,7 +926,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       files.forEach((file) => {
         const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.file_name);
         if (isImage) {
-          attachmentHtml += `<li><a href="${file.file_url}" target="_blank"><img src="${file.file_url}" alt="${file.file_name}" style="max-width: 300px; max-height: 200px;" /><br/>${file.file_name}</a></li>`;
+          attachmentHtml += `<li><a href="${file.file_url}" target="_blank"><img src="${file.file_url}" alt="${file.file_name}" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px;" /><br/>${file.file_name}</a></li>`;
         } else {
           attachmentHtml += `<li><a href="${file.file_url}" target="_blank">${file.file_name}</a></li>`;
         }
@@ -995,54 +1197,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     });
   }
 
-  // Simple Avatar component - avatars should remain circular
-  const Avatar = ({ sender, isCurrentUser }: { sender: SimpleChatMessage["sender"]; isCurrentUser: boolean }) => (
-    <div className="flex-shrink-0">
-      {sender.avatar ? (
-        <img
-          src={sender.avatar}
-          alt={sender.name}
-          className="w-10 h-10 rounded-xl object-cover"
-        />
-      ) : (
-        <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium ${isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
-            }`}
-        >
-          {getInitials(sender.name)}
-        </div>
-      )}
-    </div>
-  );
-
-  // Attachment list component
-  const AttachmentList = ({ attachments, isCurrentUser }: { attachments: SimpleChatMessage["attachments"]; isCurrentUser: boolean }) => {
-    if (!attachments || attachments.length === 0) return null;
-
-    return (
-      <div className="mt-3 pt-3 border-t border-gray-200/30 flex flex-wrap gap-2">
-        {attachments.map((attachment, index) => {
-          const { category, iconColor, bgColor } = getFileTypeInfo(attachment.file_name);
-          return (
-            <button
-              key={index}
-              onClick={() => setPreviewFile({ url: attachment.file_url, name: attachment.file_name })}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border ${isCurrentUser
-                ? "bg-blue-400/10 border-blue-400/20 text-blue-100 hover:bg-blue-400/20"
-                : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
-                }`}
-            >
-              <div className={`w-6 h-6 rounded flex items-center justify-center ${isCurrentUser ? "bg-blue-500/20" : bgColor}`}>
-                <FileTypeIcon category={category} className={`w-3.5 h-3.5 ${isCurrentUser ? "text-blue-200" : iconColor}`} />
-              </div>
-              <span className="truncate max-w-[150px] font-medium">{attachment.file_name}</span>
-            </button>
-          );
-        })}
-      </div>
-    );
-  };
-
   const handleContentClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     const anchor = target.closest("a");
@@ -1055,112 +1209,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         setPreviewFile({ url: anchor.href, name: fileName });
       }
     }
-  };
-
-  // Quoted message component
-  const QuotedMessage = ({ content, sender, isCurrentUser }: { content: string; sender?: string | null; isCurrentUser: boolean }) => (
-    <div
-      onClick={handleContentClick}
-      className={`mb-2 p-3 rounded-lg border-l-4 cursor-pointer${isCurrentUser
-        ? 'bg-blue-400/20 border-blue-300 text-blue-100'
-        : 'bg-gray-100 border-gray-300 text-gray-600'
-        }`}>
-      <div className={`text-xs mb-1 font-medium ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}>
-        {sender ? `${sender} wrote:` : 'Previous message:'}
-      </div>
-      <div
-        className={`text-sm line-clamp-3 prose prose-sm max-w-none ${isCurrentUser ? 'prose-invert' : ''} [&>p]:mb-0`}
-        dangerouslySetInnerHTML={{ __html: content }}
-      />
-    </div>
-  );
-
-  // Chat message component (simplified, no type badges)
-  const ChatBubble = ({ message }: { message: SimpleChatMessage }) => {
-    const { content, quotedContent, quotedSender, sender, timestamp, isCurrentUser, attachments } = message;
-
-    if (isCurrentUser) {
-      // Right-aligned message (current user) - blue gradient
-      return (
-        <div className="group flex justify-end gap-3 mb-6  simplified-chat-view-quoted-message-a ">
-          {/* Reply button - shows on hover */}
-          {!isTicketClosed && (
-            <button
-              onClick={() => setReplyingTo(message)}
-              className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-              title="Reply"
-            >
-              <Reply className="w-4 h-4" />
-            </button>
-          )}
-          <div className="flex flex-col items-end max-w-[75%]">
-            {/* Message bubble */}
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md px-5 py-4">
-              {/* Quoted message - appears ABOVE main content */}
-              {quotedContent && (
-                <QuotedMessage content={quotedContent} sender={quotedSender} isCurrentUser={true} />
-              )}
-
-              {/* Main content */}
-              <div
-                onClick={handleContentClick}
-                className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer"
-                dangerouslySetInnerHTML={{ __html: content }}
-              />
-              <AttachmentList attachments={attachments} isCurrentUser={true} />
-            </div>
-
-            {/* Timestamp */}
-            <span className="text-xs text-gray-400 mt-2 mr-1">{formatTime(timestamp)}</span>
-          </div>
-          <Avatar sender={sender} isCurrentUser={true} />
-        </div>
-      );
-    }
-
-    // Left-aligned message (other users) - warm cream color
-    return (
-      <div className="group flex justify-start gap-3 mb-6">
-        <Avatar sender={sender} isCurrentUser={false} />
-
-        <div className="flex flex-col items-start max-w-[75%]">
-          {/* Message bubble - warm cream/beige color */}
-          <div className="bg-[#F5F0E8] rounded-2xl rounded-bl-md px-5 py-4">
-            {/* Sender name */}
-            <div className="text-xs text-gray-500 mb-2 font-medium">
-              {sender.name}
-            </div>
-
-            {/* Quoted message - appears ABOVE main content */}
-            {quotedContent && (
-              <QuotedMessage content={quotedContent} sender={quotedSender} isCurrentUser={false} />
-            )}
-
-            {/* Content */}
-            <div
-              onClick={handleContentClick}
-              className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer"
-              dangerouslySetInnerHTML={{ __html: content }}
-            />
-            <AttachmentList attachments={attachments} isCurrentUser={false} />
-          </div>
-
-          {/* Timestamp */}
-          <span className="text-xs text-gray-400 mt-2 ml-1">{formatTime(timestamp)}</span>
-        </div>
-
-        {/* Reply button - shows on hover */}
-        {!isTicketClosed && (
-          <button
-            onClick={() => setReplyingTo(message)}
-            className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-            title="Reply"
-          >
-            <Reply className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-    );
   };
 
   // Resolution content component
@@ -1501,7 +1549,15 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
                     {/* Messages for this date */}
                     {dateMessages.map((msg) => (
-                      <ChatBubble key={msg.id} message={msg} />
+                      <ChatBubble
+                        key={msg.id}
+                        message={msg}
+                        isTicketClosed={isTicketClosed}
+                        onReplyingTo={setReplyingTo}
+                        onPreviewFile={setPreviewFile}
+                        onContentClick={handleContentClick}
+                        formatTime={formatTime}
+                      />
                     ))}
                   </div>
                 ))}
