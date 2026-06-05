@@ -347,7 +347,6 @@
   {
    "fieldname": "extension_probation_period",
    "fieldtype": "Link",
-   "ignore_user_permissions": 1,
    "label": "Extension Probation Period",
    "options": "Probation Period"
   },
@@ -369,7 +368,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-29 12:25:46.798888",
+ "modified": "2026-06-05 17:00:01.496258",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Employee Confirmation",

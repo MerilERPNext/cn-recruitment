@@ -39,6 +39,11 @@
   "confirmation_extension_form",
   "extension_workflow_section",
   "extension_workflow_configurations",
+  "separation_workflow_configurations_section",
+  "configure_separation_initiators",
+  "separation_initiators",
+  "separation_form",
+  "separation_workflow",
   "notification_and_advanced_settings_tab",
   "letter_configuration",
   "section_break_lgfk",
@@ -255,12 +260,40 @@
    "fieldtype": "Select",
    "label": "Status",
    "options": "\nActive\nInactive"
+  },
+  {
+   "fieldname": "separation_workflow_configurations_section",
+   "fieldtype": "Section Break",
+   "label": "Separation Workflow Configurations"
+  },
+  {
+   "fieldname": "configure_separation_initiators",
+   "fieldtype": "Button",
+   "label": "Configure Separation Initiators"
+  },
+  {
+   "fieldname": "separation_initiators",
+   "fieldtype": "Small Text",
+   "label": "Separation Initiators",
+   "read_only": 1
+  },
+  {
+   "fieldname": "separation_form",
+   "fieldtype": "Link",
+   "label": "Separation Form",
+   "options": "Microapp Form Widget"
+  },
+  {
+   "fieldname": "separation_workflow",
+   "fieldtype": "Link",
+   "label": "Separation Workflow",
+   "options": "Approval Policy Matrix"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-22 10:50:58.472769",
+ "modified": "2026-06-05 13:01:47.259106",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Confirmation Policy",
