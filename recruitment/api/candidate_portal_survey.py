@@ -40,23 +40,45 @@ DEFAULT_STEP_LABELS = {
 # ---------------------------------------------------------------------------
 @candidate_required
 def get_post_login_route():
-    """Tell the candidate portal where to land after login.
+    """Tell the candidate portal where to land after login AND describe the stepper.
 
-    Walks the configured Post-Login Flow in order and returns the first step still
-    pending for this candidate:
+    Routing — walks the configured Post-Login Flow in order and points at the first
+    step still pending for this candidate:
+      - Survey    → render the survey form (survey_required=True + schema).
+      - Job Offer → redirect to the job offer page (redirect_url).
+      - Onboarding → redirect to the onboarding page (redirect_url).
+      - nothing pending → the action center (redirect_url).
 
-    - Survey    → render the survey form (survey_required=True + schema).
-    - Job Offer → redirect to the job offer page.
-    - Onboarding → redirect to the onboarding page.
-    - nothing pending → the action center.
+    Sidebar — the same response always carries the full stepper so the UI needs only
+    this one call:
+      - steps[]      : ordered [{key, label, status, redirect_url}] for the portal
+                       stepper; status is "completed" | "ongoing" | "pending".
+      - current_step : key of the ongoing step (or None).
+      - job_applicant / job_opening : the resolved application context.
 
-    With no flow configured the default order is Survey → Job Offer → Onboarding.
+    With no flow configured, routing keeps the legacy order (Survey → Job Offer →
+    action center) and the stepper is empty — i.e. existing sites are unaffected.
     """
     applicant_name, opening_name = _resolve_candidate_application()
     if not applicant_name or not opening_name:
-        return {"survey_required": False, "redirect_url": ACTION_CENTER_URL}
+        return {
+            "survey_required": False,
+            "redirect_url": ACTION_CENTER_URL,
+            "job_applicant": applicant_name,
+            "job_opening": opening_name,
+            "current_step": None,
+            "steps": [],
+        }
 
     opening = frappe.get_doc("Job Opening", opening_name)
+    steps, current_step = _build_flow(applicant_name, opening)
+    flow = {
+        "job_applicant": applicant_name,
+        "job_opening": opening_name,
+        "current_step": current_step,
+        "steps": steps,
+    }
+
     step = _next_step(applicant_name, opening)
 
     if step == SURVEY_STEP:
@@ -66,75 +88,13 @@ def get_post_login_route():
             "survey_required": True,
             "form_name": widget_name,
             "form_schema": _parse_form_schema(widget.get("custom_form_data")),
-            "job_applicant": applicant_name,
-            "job_opening": opening_name,
+            **flow,
         }
 
     if step in (JOB_OFFER_STEP, ONBOARDING_STEP):
-        return {"survey_required": False, "redirect_url": _step_url(step, applicant_name)}
+        return {"survey_required": False, "redirect_url": _step_url(step, applicant_name), **flow}
 
-    return {"survey_required": False, "redirect_url": ACTION_CENTER_URL}
-
-
-@candidate_required
-def get_candidate_flow():
-    """Return the candidate's post-login flow for the portal stepper/sidebar.
-
-    Steps, their order and their labels come from Candidate Portal Auth Settings
-    (the `post_login_flow` table) — so reordering / relabelling rows there changes
-    the sidebar directly, with no frontend change.
-
-    For each step applicable to this candidate we return:
-      - key          : stable logical key (Survey / Job Offer / Onboarding)
-      - label         : display caption (configurable, falls back to a default)
-      - status        : "completed" | "ongoing" | "pending"
-      - redirect_url  : portal route to open that step
-
-    Status is derived from the configured order: every finished step is "completed",
-    the first unfinished step is "ongoing", and the rest are "pending".
-    """
-    applicant_name, opening_name = _resolve_candidate_application()
-    if not applicant_name:
-        return {
-            "job_applicant": None,
-            "job_opening": None,
-            "current_step": None,
-            "steps": [],
-        }
-
-    opening = None
-    if opening_name and frappe.db.exists("Job Opening", opening_name):
-        opening = frappe.get_doc("Job Opening", opening_name)
-
-    steps = []
-    ongoing_taken = False
-    for cfg in _get_flow_config():
-        key = cfg["key"]
-        if not _is_step_applicable(key, applicant_name, opening):
-            continue
-
-        if _is_step_completed(key, applicant_name, opening):
-            status = "completed"
-        elif not ongoing_taken:
-            status = "ongoing"
-            ongoing_taken = True
-        else:
-            status = "pending"
-
-        steps.append({
-            "key": key,
-            "label": cfg["label"],
-            "status": status,
-            "redirect_url": _step_url(key, applicant_name),
-        })
-
-    current_step = next((s["key"] for s in steps if s["status"] == "ongoing"), None)
-    return {
-        "job_applicant": applicant_name,
-        "job_opening": opening_name,
-        "current_step": current_step,
-        "steps": steps,
-    }
+    return {"survey_required": False, "redirect_url": ACTION_CENTER_URL, **flow}
 
 
 @candidate_required
@@ -208,6 +168,40 @@ def _get_flow_steps():
     """
     keys = [cfg["key"] for cfg in _get_flow_config()]
     return keys or list(LEGACY_FLOW)
+
+
+def _build_flow(applicant_name, opening):
+    """Build the portal stepper: ordered steps + the current (ongoing) step key.
+
+    Returns (steps, current_step) where each step is
+    {key, label, status, redirect_url} and status is derived from the configured
+    order — finished steps are "completed", the first unfinished step is "ongoing",
+    the rest are "pending". Empty when the flow isn't configured for this site.
+    """
+    steps = []
+    ongoing_taken = False
+    for cfg in _get_flow_config():
+        key = cfg["key"]
+        if not _is_step_applicable(key, applicant_name, opening):
+            continue
+
+        if _is_step_completed(key, applicant_name, opening):
+            status = "completed"
+        elif not ongoing_taken:
+            status = "ongoing"
+            ongoing_taken = True
+        else:
+            status = "pending"
+
+        steps.append({
+            "key": key,
+            "label": cfg["label"],
+            "status": status,
+            "redirect_url": _step_url(key, applicant_name),
+        })
+
+    current_step = next((s["key"] for s in steps if s["status"] == "ongoing"), None)
+    return steps, current_step
 
 
 def _next_step(applicant_name, opening, skip=()):
