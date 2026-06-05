@@ -1,7 +1,7 @@
 {
-    "title": "Platform Access Controls",
-    "name": "platformAccessControlsForm",
-    "path": "platform-access-controls-form",
+    "title": "Change Self Service Status",
+    "name": "changeSelfServiceForm",
+    "path": "change-self-service-form",
     "display": "form",
     "components": [
         {
@@ -29,21 +29,9 @@
             }
         },
         {
-            "label": "Email",
-            "errorLabel": "Email",
-            "key": "email",
-            "type": "email",
-            "input": true,
-            "placeholder": "Enter Email",
-            "customClass": "mb-4",
-            "validate": {
-                "required": true
-            }
-        },
-        {
             "label": "Allow Mobile Access",
             "errorLabel": "Allow Mobile Access",
-            "key": "allow_mobile_access",
+            "key": "mobile_status",
             "type": "select",
             "input": true,
             "placeholder": "Select Allow Mobile Access",

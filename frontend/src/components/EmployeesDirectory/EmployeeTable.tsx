@@ -636,9 +636,7 @@ const EmployeeTable = ({
               setActiveTool(null);
               setSelectedRowEmployee(null);
             }}
-            employeeName={selectedRowEmployee.employee_name}
             employeeId={selectedRowEmployee.employee}
-            userEmail={selectedRowEmployee.user_id || ""}
           />
           <UndoDeactivation
             isOpen={activeTool === 'undo_deactivation'}
