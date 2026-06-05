@@ -28,6 +28,7 @@ export const NotificationService = {
 
 export const NotificationAlertService = {
   getNotifications: async (
+    for_user: string,
     limit = 100,
     offset = 0,
     readFilter?: 0 | 1
@@ -37,14 +38,18 @@ export const NotificationAlertService = {
       filters.push(["read", "=", readFilter]);
     }
 
-    const response = await FrappeAPI.getDocumentList("Notification Log", {
-      fields: ["name", "subject", "for_user", "type", "read", "from_user", "creation","email_content"],
-      filters,
-      orderBy: "creation desc",
-      limit,
-      limitStart: offset,
-    });
+    const response = await FrappeAPI.callMethod(
+      "cn_hrms_core.cn_hrms_core.apis.notifications.get_unread_notifications",
+      {
+        for_user,
+        limit_page_length: limit,
+        start: offset,
+        filters,
+        filter: filters,
+        order_by: "creation desc",
+      }
+    );
 
-    return response.data as NotificationLog[];
+    return (response || []) as NotificationLog[];
   },
 };
