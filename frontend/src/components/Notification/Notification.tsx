@@ -19,8 +19,6 @@ import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
-import { useTargetUser } from "../../context/ViewedUserContext";
-import { useGetEmployeeDetailsByEmpId } from "../../hooks/useEmployee";
 
 // -------------------- TYPES --------------------
 interface NotificationLog {
@@ -57,13 +55,9 @@ const NotificationList = () => {
   const [pageCache, setPageCache] = useState<Record<number, NotificationLog[]>>({});
 
   const { data: currentUser } = useCurrentUser();
-  const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
-  const { data: targetEmployee } = useGetEmployeeDetailsByEmpId(targetEmployeeId ?? "");
 
 
-  const effectiveUser = isViewingOtherUser
-    ? (targetEmployee as { user_id?: string })?.user_id
-    : currentUser?.name;
+  const effectiveUser = currentUser?.name;
 
 
 
@@ -79,7 +73,7 @@ const NotificationList = () => {
 
   const isQueryLoading =
     isLoading ||
-    (!effectiveUser && (isViewingOtherUser ? !targetEmployee : !currentUser));
+    (!effectiveUser);
 
   const apiNotifications: NotificationLog[] = useMemo(() => (data ?? []).map((item) => ({
     email_content: item.email_content || "",
