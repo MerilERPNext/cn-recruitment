@@ -351,8 +351,6 @@ export const requisitionFormSchemas = {
                 format: "yyyy-MM-dd",
                 validate: { required: true },
                 enableTime: false,
-                // Default to today and disable any date before today.
-                customDefaultValue: "value = moment().format('YYYY-MM-DD')",
                 datePicker: { minDate: "moment()" },
               },
             ],
@@ -521,6 +519,10 @@ export const requisitionFormSchemas = {
             type: "datagrid",
             key: "positions",
             label: "Position Details",
+            // Start with NO rows on create (form.io datagrids otherwise seed one
+            // empty row, which would force Total Position to 1). Rows are added
+            // as the user enters the Total Position count.
+            initEmpty: true,
             disableAddingRemovingRows: true,
             addAnother: "",
             removeRow: "",
@@ -549,6 +551,9 @@ export const requisitionFormSchemas = {
                 key: "location",
                 label: "Location",
                 placeholder: "Select Location",
+                // Validate only after the field is touched, so newly-added
+                // empty position rows don't show "required" red on render.
+                validateOn: "blur",
                 dataSrc: "url",
                 data: {
                   url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch",
@@ -564,6 +569,8 @@ export const requisitionFormSchemas = {
                 key: "functional_area",
                 label: "Functional Area",
                 placeholder: "Select Area",
+                // Validate only after the field is touched (see note above).
+                validateOn: "blur",
                 dataSrc: "url",
                 data: {
                   url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area',
@@ -579,6 +586,8 @@ export const requisitionFormSchemas = {
                 key: "reporting_manager",
                 label: "Reporting manager",
                 placeholder: "Search Employees",
+                // Validate only after the field is touched (see note above).
+                validateOn: "blur",
                 dataSrc: "url",
                 data: {
                   url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',
@@ -595,6 +604,8 @@ export const requisitionFormSchemas = {
                 key: "replacement_for",
                 label: "Replacement for",
                 placeholder: "Search Employees",
+                // Validate only after the field is touched (see note above).
+                validateOn: "blur",
                 dataSrc: "url",
                 data: {
                   url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',
@@ -677,9 +688,11 @@ export const jobDetailsPreviewFields: JobDetailsPreviewField[] = [
   { key: "expected_by", label: "Expected By Date", backendKey: "expected_by" },
   { key: "employment_type", label: "Employment Type", backendKey: "custom_employment_type_link" },
   { key: "location", label: "Work Location", backendKey: "custom_location" },
+  { key: "vacancy_type", label: "Vacancy Type", backendKey: "custom_vacancy_type" },
+  { key: "functional_area", label: "Functional Area", backendKey: "custom_functional_area" },
   { key: "custom_work_experience_range", label: "Work Experience Range", backendKey: "custom_work_experience_range" },
   { key: "custom_preferred_notice_period", label: "Preferred Notice Period", backendKey: "custom_preferred_notice_period" },
   { key: "preferred_company", label: "Preferred Target Company", backendKey: "custom_preferred_company" },
   { key: "custom_other_preferred_companies", label: "Other Preferred Companies", backendKey: "custom_other_preferred_companies" },
   { key: "custom_skills", label: "Required Skills", backendKey: "custom_skills" },
-];
+]; 

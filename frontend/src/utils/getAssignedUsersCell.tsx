@@ -11,12 +11,12 @@ export const getStageAssignedUsersCell = (
   textWrapper?: (text: string) => ReactNode
 ) => {
   if (!stage) return textWrapper ? textWrapper("—") : <span>—</span>;
-  const totalUsers = stage?.assigned_users_count;
+  const totalUsers = stage?.assigned_users_count ?? stage?.todo?.assigned_users_count;;
   if (roleAssignedUsers.length > 0) {
 
     const roles = stage.role ? stage.role.split(',').map((r: string) => r.trim()) : [];
 
-    const text = totalUsers ? `Assign(${totalUsers})` : `${roles.length}`;
+    const text = totalUsers ? `Assign(${totalUsers})` : `AssignRole(${roleAssignedUsers.length})`;
     return (
       <AllocatedToTooltip
         title="Assigned To"

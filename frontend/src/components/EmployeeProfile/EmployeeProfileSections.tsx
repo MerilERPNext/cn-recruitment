@@ -120,7 +120,7 @@ export default function EmployeeProfileSections() {
                 </div>
             </div>
             {tabs.length > 1 && (
-                <div className="px-0 md:px-6 sticky top-12 md:top-14 bg-white z-10 flex-shrink-0 w-full max-w-full pb-2">
+                <div className="px-0 md:px-6 sticky top-[114px] md:top-14 bg-white z-10 flex-shrink-0 w-full max-w-full pb-2">
                     <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-1 w-full py-2">
                         {tabs.map(tab => (
                             <Button
@@ -150,7 +150,7 @@ export default function EmployeeProfileSections() {
                             key={tab.key}
                             id={tab.key}
                             ref={el => { sectionRefs.current[tab.key] = el; }}
-                            className="scroll-mt-28"
+                            className="scroll-mt-[160px]"
                         >
                             {/* Tab Header */}
                             <div className="flex items-center rounded-xl justify-between mb-3 md:mb-6 py-2 max-sm:px-4 px-6 bg-gray-50/50 mx-0 md:mx-6 border border-gray-100/50">

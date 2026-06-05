@@ -1291,6 +1291,84 @@ def preview_job_description(designation=None, department=None, data=None, functi
         )
 
 
+def _link_title(target_doctype, record_name):
+    """Return the title-field value of `record_name` in `target_doctype`, or
+    None when the doctype has no distinct `title_field` (its name already IS
+    the human label) or the lookup fails. Result feeds the JD preview so link
+    IDs render as readable names."""
+    try:
+        title_field = frappe.get_meta(target_doctype).get("title_field")
+    except Exception:
+        return None
+    if not title_field or title_field == "name":
+        return None
+    try:
+        return frappe.db.get_value(target_doctype, record_name, title_field) or None
+    except Exception:
+        return None
+
+
+def _child_link_field(child_doctype):
+    """Fieldname of the first Link field in `child_doctype`. Used to wrap Table
+    MultiSelect values the frontend sends as plain IDs (e.g. custom_skills =
+    ["Python"]) into the row dicts JD templates iterate over
+    (`{% for row in custom_skills %}{{ row.skill }}`)."""
+    try:
+        for df in frappe.get_meta(child_doctype).fields:
+            if df.fieldtype == "Link":
+                return df.fieldname
+    except Exception:
+        pass
+    return None
+
+
+def _resolve_link_titles(values, doctype=JOB_REQUISITION):
+    """Return a copy of `values` with Link IDs replaced by their target
+    doctype's title (when one is configured), driven by `doctype`'s meta.
+
+    Used for the Requisition "Preview JD" flow: the frontend sends requisition
+    values keyed by Job Requisition fieldnames, where Link fields hold record
+    IDs. We swap each ID for its readable title so the rendered JD shows e.g.
+    the Functional Area's name rather than its code. Child tables (Table /
+    Table MultiSelect) are resolved recursively against the child doctype.
+    Non-link fields, unknown keys, and links whose name IS the label pass
+    through untouched. Never raises."""
+    if not isinstance(values, dict) or not values:
+        return values
+    try:
+        meta = frappe.get_meta(doctype)
+    except Exception:
+        return values
+
+    out = dict(values)
+    for key, val in values.items():
+        if val in (None, "", []):
+            continue
+        df = meta.get_field(key)
+        if not df:
+            continue
+        if df.fieldtype == "Link" and df.options and isinstance(val, str):
+            title = _link_title(df.options, val)
+            if title:
+                out[key] = title
+        elif df.fieldtype in ("Table", "Table MultiSelect") and df.options and isinstance(val, list):
+            # Table MultiSelect values may arrive as plain IDs (["Python"])
+            # rather than child-row dicts. JD templates iterate them as
+            # `{% for row in custom_skills %}{{ row.skill }}`, so wrap each ID
+            # under the child's link fieldname before resolving titles.
+            link_field = _child_link_field(df.options) if df.fieldtype == "Table MultiSelect" else None
+            rows = []
+            for row in val:
+                if isinstance(row, dict):
+                    rows.append(_resolve_link_titles(row, df.options))
+                elif link_field and isinstance(row, str):
+                    rows.append(_resolve_link_titles({link_field: row}, df.options))
+                else:
+                    rows.append(row)
+            out[key] = rows
+    return out
+
+
 def _build_preview_payload(jd_name, source, filled_data=None):
     """Shared JD → preview payload builder used by exact-match and
     default-fallback paths. Honours read permission on the JD doc.
@@ -1318,6 +1396,13 @@ def _build_preview_payload(jd_name, source, filled_data=None):
     doc.check_permission("read")
 
     if filled_data is not None:
+        # Link fields arrive as record IDs (e.g. custom_functional_area =
+        # "FCC_AC_AET"). Swap each for its target doctype's title where one is
+        # configured, so the preview reads human-friendly names instead of
+        # codes. Fields whose name IS the label (Designation, Department,
+        # Company, Branch — no distinct title_field) pass through unchanged.
+        filled_data = _resolve_link_titles(filled_data)
+
         # Two placeholder formats coexist:
         #   1. Jinja `{{ field }}` (seeded default template) — resolved against
         #      the JD doc's own fields, overlaid with the filled values.

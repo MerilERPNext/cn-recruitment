@@ -31,8 +31,18 @@ type FormValue =
   | unknown[]
   | Record<string, unknown>;
 
+interface FormioSelectOption {
+  label?: string;
+  name?: string;
+  title?: string;
+  [key: string]: unknown;
+}
+
 interface FormioChangeEvent {
   data?: Record<string, FormValue>;
+  metadata?: {
+    selectData?: Record<string, FormioSelectOption | string | number | boolean | null | undefined>;
+  };
   [key: string]: unknown;
 }
 
@@ -55,13 +65,90 @@ export default function ApplyView({
   const [submitted, setSubmitted] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const formRef = useRef<FormioInstance | null>(null);
+  const initializedRef = useRef(false);
   const [stepValidationErrors, setStepValidationErrors] = useState<string[]>(
     [],
   );
 
   useEffect(() => {
+    initializedRef.current = false;
+    setFormData({});
+    setRowCounts({});
+    setCurrentStep(0);
+  }, [job.name]);
+
+  useEffect(() => {
     setStepValidationErrors([]);
   }, [currentStep]);
+
+  useEffect(() => {
+    if (fields && fields.length > 0 && !initializedRef.current) {
+      const initialData: Record<string, FormValue> = {};
+      const initialRowCounts: Record<string, number> = {};
+
+      fields.forEach((field) => {
+        if (field.value !== undefined && field.value !== null) {
+          if (field.fieldtype === "Table" && Array.isArray(field.value)) {
+            const rows = field.value as unknown[];
+            initialRowCounts[field.reference_name] = Math.max(
+              rows.length,
+              field.reqd === 1 ? 1 : 0
+            );
+            rows.forEach((rowVal, i: number) => {
+              const row = rowVal as Record<string, unknown>;
+              if (field.table_fields && row && typeof row === "object") {
+                field.table_fields.forEach((subField) => {
+                  const key = `${field.reference_name}_${i}_${subField.fieldname}`;
+                  const subVal = row[subField.fieldname];
+                  if (subVal !== undefined && subVal !== null) {
+                    if (
+                      typeof subVal === "string" &&
+                      (subField.fieldtype === "Attach" ||
+                        subField.fieldtype === "Attach Image")
+                    ) {
+                      initialData[key] = [
+                        {
+                          name:
+                            subVal.substring(subVal.lastIndexOf("/") + 1) ||
+                            "Attached File",
+                          url: subVal,
+                          size: 0,
+                        },
+                      ];
+                    } else {
+                      initialData[key] = subVal as FormValue;
+                    }
+                  }
+                });
+              }
+            });
+          } else {
+            if (
+              typeof field.value === "string" &&
+              (field.fieldtype === "Attach" ||
+                field.fieldtype === "Attach Image")
+            ) {
+              initialData[field.reference_name] = [
+                {
+                  name:
+                    field.value.substring(field.value.lastIndexOf("/") + 1) ||
+                    "Attached File",
+                  url: field.value,
+                  size: 0,
+                },
+              ];
+            } else {
+              initialData[field.reference_name] = field.value as FormValue;
+            }
+          }
+        }
+      });
+
+      setFormData((prev) => ({ ...initialData, ...prev }));
+      setRowCounts((prev) => ({ ...initialRowCounts, ...prev }));
+      initializedRef.current = true;
+    }
+  }, [fields]);
 
   // Group unique sections in order of appearance
   const sections = useMemo(() => {
@@ -133,7 +220,7 @@ export default function ApplyView({
                 key: subKey,
                 label: subLabel,
                 input: true,
-                disabled: subReadOnly,
+                disabled: isReadOnly || subReadOnly,
                 validate: {
                   required: subRequired,
                   customMessage: `${subLabel} is required`,
@@ -347,15 +434,19 @@ export default function ApplyView({
     if (changed.data) {
       setFormData((prev) => {
         const next = { ...prev, ...changed.data };
-        const metadata = (changed as any).metadata;
+        const metadata = changed.metadata;
         const selectData = metadata?.selectData;
         if (selectData) {
-          const labelOf = (v: any) =>
-            v && typeof v === "object" ? (v.label ?? v.name ?? v.title) : v;
+          const labelOf = (
+            v: FormioSelectOption | string | number | boolean | null | undefined
+          ): string | number | boolean | null | undefined =>
+            v && typeof v === "object"
+              ? (v.label ?? v.name ?? v.title)
+              : v;
           Object.keys(selectData).forEach((k) => {
             const lbl = labelOf(selectData[k]);
             if (lbl) {
-              (next as any)[`${k}_title`] = lbl;
+              next[`${k}_title`] = lbl;
             }
           });
         }
@@ -803,6 +894,9 @@ export default function ApplyView({
                   {/* Add More button for Table fields */}
                   {fieldsInActiveSection.map((field) => {
                     if (field.fieldtype === "Table") {
+                      if (field.editability === "Read Only") {
+                        return null;
+                      }
                       const rowCount =
                         rowCounts[field.reference_name] ??
                         (field.reqd === 1 ? 1 : 0);

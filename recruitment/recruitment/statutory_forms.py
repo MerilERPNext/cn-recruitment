@@ -263,21 +263,51 @@ def _render_and_attach(form_doc, print_format, eo_doc, eo_field, file_prefix):
     pdf_bytes = get_pdf(html)
     filename = "{0}-{1}.pdf".format(file_prefix, form_doc.name)
 
+    # Attach the PDF to the statutory form record (its `generated_pdf` field)...
+    _attach_pdf_to_field(form_doc.doctype, form_doc.name, "generated_pdf", filename, pdf_bytes)
+
+    # ...and a copy owned by the Employee Onboarding itself, so the read-only
+    # Attach field on the Statutory tab points at a file the EO owns. Owning the
+    # file avoids cross-doctype private-file permission issues (HR opening the EO
+    # field would otherwise be permission-checked against the statutory form) and
+    # makes the PDF show under the EO's Attachments.
+    return _attach_pdf_to_field("Employee Onboarding", eo_doc.name, eo_field, filename, pdf_bytes)
+
+
+def _attach_pdf_to_field(dt, dn, fieldname, filename, pdf_bytes):
+    """Point `dt.dn.fieldname` (an Attach field) at a fresh private PDF owned by
+    that document, removing any file previously attached to the same field so
+    regenerations don't orphan attachments. Returns the new file URL."""
+    _remove_field_files(dt, dn, fieldname)
     file_doc = save_file(
         filename,
         pdf_bytes,
-        form_doc.doctype,
-        form_doc.name,
+        dt,
+        dn,
+        df=fieldname,
         is_private=1,
     )
-
-    frappe.db.set_value(
-        form_doc.doctype, form_doc.name, "generated_pdf", file_doc.file_url, update_modified=False
-    )
-    frappe.db.set_value(
-        "Employee Onboarding", eo_doc.name, eo_field, file_doc.file_url, update_modified=False
-    )
+    frappe.db.set_value(dt, dn, fieldname, file_doc.file_url, update_modified=False)
     return file_doc.file_url
+
+
+def _remove_field_files(dt, dn, fieldname):
+    """Delete File records previously attached to `dt.dn` on `fieldname`.
+    Failures are logged but never abort generation."""
+    existing = frappe.get_all(
+        "File",
+        filters={
+            "attached_to_doctype": dt,
+            "attached_to_name": dn,
+            "attached_to_field": fieldname,
+        },
+        pluck="name",
+    )
+    for file_name in existing:
+        try:
+            frappe.delete_doc("File", file_name, ignore_permissions=True, delete_permanently=True)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "statutory_forms: old attachment cleanup failed")
 
 
 def _coerce_bool(val):

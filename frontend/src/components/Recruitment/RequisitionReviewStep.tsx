@@ -129,12 +129,27 @@ export default function RequisitionReviewStep({
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             {[
-              { label: "Hiring Manager", value: formData.hiring_manager },
-              { label: "Company", value: formData.company },
-              { label: "Department", value: formData.department },
-              { label: "Designation", value: formData.designation },
-              { label: "Functional Area", value: formData.functional_area },
-              { label: "Hiring Lead", value: formData.hiring_lead },
+              {
+                label: "Hiring Manager",
+                value: formData.hiring_manager_title ?? formData.hiring_manager,
+              },
+              { label: "Company", value: formData.company_title ?? formData.company },
+              {
+                label: "Department",
+                value: formData.department_title ?? formData.department,
+              },
+              {
+                label: "Designation",
+                value: formData.designation_title ?? formData.designation,
+              },
+              {
+                label: "Functional Area",
+                value: formData.functional_area_title ?? formData.functional_area,
+              },
+              {
+                label: "Hiring Lead",
+                value: formData.hiring_lead_title ?? formData.hiring_lead,
+              },
               { label: "Division", value: formData.custom_division },
             ].map((f) => (
               <div key={f.label} className="space-y-1">
@@ -156,7 +171,7 @@ export default function RequisitionReviewStep({
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             {[
-              { label: "Location", value: formData.location },
+              { label: "Location", value: formData.location_title ?? formData.location },
               {
                 label: "Recruitment Start Date",
                 value: formData.recruitment_start_date,
@@ -241,7 +256,7 @@ export default function RequisitionReviewStep({
                           Location
                         </span>
                         <span className="font-semibold text-slate-800">
-                          {renderValue(pos.location)}
+                          {renderValue(pos.location_title ?? pos.location)}
                         </span>
                       </div>
                       <div>
@@ -249,7 +264,7 @@ export default function RequisitionReviewStep({
                           Functional Area
                         </span>
                         <span className="font-semibold text-slate-800">
-                          {renderValue(pos.functional_area)}
+                          {renderValue(pos.functional_area_title ?? pos.functional_area)}
                         </span>
                       </div>
                       <div>
@@ -257,7 +272,7 @@ export default function RequisitionReviewStep({
                           Reporting Manager
                         </span>
                         <span className="font-semibold text-slate-800">
-                          {renderValue(pos.reporting_manager)}
+                          {renderValue(pos.reporting_manager_title ?? pos.reporting_manager)}
                         </span>
                       </div>
                       {pos.vacancy_type === "Replacement" && (
@@ -266,7 +281,7 @@ export default function RequisitionReviewStep({
                             Replacement For
                           </span>
                           <span className="font-semibold text-slate-800">
-                            {renderValue(pos.replacement_for)}
+                            {renderValue(pos.replacement_for_title ?? pos.replacement_for)}
                           </span>
                         </div>
                       )}
@@ -286,7 +301,10 @@ export default function RequisitionReviewStep({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             {[
               { label: "Employee Type", value: formData.custom_employee_type },
-              { label: "Employment Type", value: formData.employment_type },
+              {
+                label: "Employment Type",
+                value: formData.employment_type_title ?? formData.employment_type,
+              },
               {
                 label: "Work Experience Range",
                 value: formData.custom_work_experience_range,
@@ -305,7 +323,7 @@ export default function RequisitionReviewStep({
               },
               {
                 label: "Preferred Target Company",
-                value: formData.preferred_company,
+                value: formData.preferred_company_title ?? formData.preferred_company,
               },
               {
                 label: "Other Preferred Companies",
@@ -315,7 +333,10 @@ export default function RequisitionReviewStep({
                 label: "Assign to Recruiter",
                 value: formData.custom_assign_to_recruiter,
               },
-              { label: "Salary Currency", value: formData.salary_currency },
+              {
+                label: "Salary Currency",
+                value: formData.salary_currency_title ?? formData.salary_currency,
+              },
               {
                 label: "Salary Range",
                 value:
@@ -345,12 +366,16 @@ export default function RequisitionReviewStep({
                 </span>
                 <div className="flex flex-wrap gap-1.5 mt-1 bg-white border rounded p-2">
                   {(() => {
-                    const skillsArray = Array.isArray(formData.custom_skills)
-                      ? formData.custom_skills
-                      : typeof formData.custom_skills === "string"
-                        ? formData.custom_skills
-                            .split(",")
-                            .map((s: string) => s.trim())
+                    // Prefer the captured human-readable skill titles over ids.
+                    const skillsSource =
+                      Array.isArray(formData.custom_skills_title) &&
+                      formData.custom_skills_title.length > 0
+                        ? formData.custom_skills_title
+                        : formData.custom_skills;
+                    const skillsArray = Array.isArray(skillsSource)
+                      ? skillsSource
+                      : typeof skillsSource === "string"
+                        ? skillsSource.split(",").map((s: string) => s.trim())
                         : [];
 
                     if (

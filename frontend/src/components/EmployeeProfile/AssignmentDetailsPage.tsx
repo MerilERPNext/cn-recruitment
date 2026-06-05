@@ -102,21 +102,25 @@ const AssignmentDetailsPage = () => {
                         sectionName
                       ) : (
                         <div className="flex flex-col gap-1">
-                          {items.map((item: any, i: number) =>
-                            item.link ? (
-                              <a
-                                key={i}
-                                href={item.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 hover:underline break-words"
-                              >
-                                {item[col] ?? "-"}
-                              </a>
-                            ) : item[col] != null ? (
-                              <span key={i}>{String(item[col])}</span>
-                            ) : (
-                              <span key={i}>-</span>
+                          {items.length === 0 ? (
+                            <span>-</span>
+                          ) : (
+                            items.map((item: any, i: number) =>
+                              item.link ? (
+                                <a
+                                  key={i}
+                                  href={item.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:text-blue-800 hover:underline break-words"
+                                >
+                                  {item[col] || "-"}
+                                </a>
+                              ) : item[col] ? (
+                                <span key={i}>{String(item[col])}</span>
+                              ) : (
+                                <span key={i}>-</span>
+                              )
                             )
                           )}
                         </div>
@@ -170,9 +174,9 @@ const AssignmentDetailsPage = () => {
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:text-blue-800 hover:underline break-words"
                         >
-                          {row[col] ?? "-"}
+                          {row[col] || "-"}
                         </a>
-                      ) : row[col] != null ? (
+                      ) : row[col] ? (
                         String(row[col])
                       ) : (
                         "-"

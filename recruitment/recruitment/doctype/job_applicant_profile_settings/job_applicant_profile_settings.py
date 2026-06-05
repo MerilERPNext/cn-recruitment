@@ -32,7 +32,6 @@ class JobApplicantProfileSettings(Document):
 	def _auto_sync(self):
 		"""Idempotently import Job Applicant fields. Skips:
 		  - hidden sections (and all fields inside)
-		  - sections without a label (orphan layout fields)
 		  - hidden / read-only / no-fieldname fields
 		  - layout fieldtypes (Section/Column/Tab Break, HTML, Heading, Button, etc.)
 		  - refs that are already tracked in synced_field_refs (deleted refs stay deleted)
@@ -47,16 +46,30 @@ class JobApplicantProfileSettings(Document):
 
 		meta = frappe.get_meta("Job Applicant")
 
+		current_tab = ""
 		current_section = ""
 		current_section_skipped = False
 		added_refs = []
 		for f in meta.fields:
+			if f.fieldtype == "Tab Break":
+				# New tab: its label is the grouping fallback for any fields that
+				# sit directly under it / under unlabelled sections.
+				current_tab = (f.label or "").strip()
+				current_section = ""
+				current_section_skipped = False
+				continue
 			if f.fieldtype == "Section Break":
-				if f.hidden or not (f.label and f.label.strip()):
+				if f.hidden:
+					# Hidden section: drop it and everything inside.
 					current_section = ""
 					current_section_skipped = True
-				else:
+				elif f.label and f.label.strip():
 					current_section = f.label.strip()
+					current_section_skipped = False
+				else:
+					# Visible but unlabelled (e.g. a mirrored layout section):
+					# keep its fields under the previous labelled section rather
+					# than discarding them.
 					current_section_skipped = False
 				continue
 
@@ -70,7 +83,7 @@ class JobApplicantProfileSettings(Document):
 				continue
 
 			self.append("default_application_fields", {
-				"section": current_section or "General",
+				"section": current_section or current_tab or "General",
 				"reference_name": f.fieldname,
 				"display_name": f.label or f.fieldname,
 				"visibility": "All",
