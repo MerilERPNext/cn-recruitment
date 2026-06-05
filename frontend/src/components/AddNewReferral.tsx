@@ -248,22 +248,40 @@ const AddNewReferral: React.FC = () => {
     fieldsRes?.forEach(field => {
       if (field.section !== sectionName || field.visibility === "None") return;
 
-      // Child table: validate per-row required sub-fields across its entries.
+      // Child table: a REQUIRED table must have at least one entry with actual
+      // data. Required tables default to 1 auto-rendered (empty) entry and often
+      // have no required sub-fields, so checking only sub-fields lets an empty
+      // table pass — hence we also require at least one filled entry. Any
+      // required sub-fields must still be filled in every rendered entry.
       if (field.fieldtype === "Table") {
         const rowCount = rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
-        if (field.reqd === 1 && rowCount === 0) {
-          missing.push(field.display_name);
-        } else {
+        const subs = field.table_fields || [];
+        const isRowFilled = (i: number) =>
+          subs.some(sub => {
+            const val = latestData[`${field.reference_name}_${i}_${sub.fieldname}`];
+            return !(
+              val === undefined || val === null || val === "" ||
+              (Array.isArray(val) && val.length === 0)
+            );
+          });
+
+        if (field.reqd === 1) {
+          let anyRowFilled = false;
           for (let i = 0; i < rowCount; i++) {
-            (field.table_fields || []).forEach(sub => {
-              if (sub.reqd !== 1) return;
-              const val = latestData[`${field.reference_name}_${i}_${sub.fieldname}`];
-              const isEmpty =
-                val === undefined || val === null || val === "" ||
-                (Array.isArray(val) && val.length === 0);
-              if (isEmpty) missing.push(`${field.display_name} (Entry ${i + 1}): ${sub.label}`);
-            });
+            if (isRowFilled(i)) { anyRowFilled = true; break; }
           }
+          if (!anyRowFilled) missing.push(field.display_name);
+        }
+
+        for (let i = 0; i < rowCount; i++) {
+          subs.forEach(sub => {
+            if (sub.reqd !== 1) return;
+            const val = latestData[`${field.reference_name}_${i}_${sub.fieldname}`];
+            const isEmpty =
+              val === undefined || val === null || val === "" ||
+              (Array.isArray(val) && val.length === 0);
+            if (isEmpty) missing.push(`${field.display_name} (Entry ${i + 1}): ${sub.label}`);
+          });
         }
         return;
       }
@@ -912,10 +930,18 @@ const AddNewReferral: React.FC = () => {
               const isFilled = section !== "Review" && isSectionComplete(section);
               const hasMissing =
                 isActive && stepValidationErrors.length > 0;
+              // Disable a forward tab when the current step (or any step between
+              // here and it) still has unfilled mandatory fields.
+              const isForwardBlocked =
+                index > activeStepIndex &&
+                sections
+                  .slice(activeStepIndex, index)
+                  .some(s => getMissingRequiredInSection(s).length > 0);
 
               return (
                 <button
                   key={section}
+                  disabled={isForwardBlocked}
                   onClick={() => {
                     if (index === activeStepIndex) return; // already here
 
@@ -943,7 +969,7 @@ const AddNewReferral: React.FC = () => {
 
                     setActiveStepIndex(index);
                   }}
-                  className={`w-full py-4 px-5 flex items-center gap-3 text-left transition-all duration-200 border-b border-gray-50 last:border-b-0 ${isActive
+                  className={`w-full py-4 px-5 flex items-center gap-3 text-left transition-all duration-200 border-b border-gray-50 last:border-b-0 ${isForwardBlocked ? "opacity-50 cursor-not-allowed" : ""} ${isActive
                     ? hasMissing
                       ? "bg-rose-50/60 border-l-4 border-l-rose-500"
                       : "bg-[var(--primary-color)]/5 border-l-4 border-l-[var(--primary-color)]"

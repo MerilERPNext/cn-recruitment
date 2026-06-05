@@ -178,6 +178,20 @@ export const compileFormioSchema = (
         if (tableFields.length === 0) return;
         const rowCount = rowCounts[reference_name] ?? (isRequired ? 1 : 0);
 
+        // Required tables are mandatory even when their sub-fields aren't.
+        // form.io only renders the red asterisk for required INPUTS, not for the
+        // table's panel/well wrapper, so add an explicit asterisk label here.
+        if (isRequired) {
+          panelComponents.push({
+            type: "htmlelement",
+            tag: "div",
+            key: `${reference_name}__required_label`,
+            label: display_name,
+            content: `<label class="control-label" style="font-weight:600;margin-bottom:0">${display_name} <span style="color:#ef4444;font-weight:700">*</span></label>`,
+            customClass: "mb-1",
+          } as any);
+        }
+
         if (rowCount > 0) {
           const entryPanels: FormioComponent[] = [];
           for (let i = 0; i < rowCount; i++) {
