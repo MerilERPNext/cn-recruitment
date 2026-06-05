@@ -19,7 +19,9 @@
 "recruitment_tool",
 "dummy_salary_structure_assignment",
 "interview_settings_section",
-"authorized_feedback_roles"
+"authorized_feedback_roles",
+"requisition_settings_section",
+"allowed_replacement_employee_statuses"
 ],
 "fields": [
 {
@@ -112,6 +114,18 @@
 "fieldtype": "Table MultiSelect",
 "label": "Authorized Roles for Feedback Submission",
 "options": "Roles"
+},
+{
+"fieldname": "requisition_settings_section",
+"fieldtype": "Section Break",
+"label": "Job Requisition Settings"
+},
+{
+"description": "Employee statuses allowed when selecting the \"Replacement For\" employee on a Job Requisition position. When a position's posting detail is a Replacement, only employees with one of these statuses are shown. Falls back to \"Active\" only when left empty.",
+"fieldname": "allowed_replacement_employee_statuses",
+"fieldtype": "Table",
+"label": "Allowed Replacement Employee Statuses",
+"options": "Allowed Replacement Employee Status"
 }
 ],
 "index_web_pages_for_search": 1,
