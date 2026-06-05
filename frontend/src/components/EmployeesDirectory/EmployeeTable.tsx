@@ -218,7 +218,7 @@ const EmployeeTable = ({
                         className="mt-1"
                       >
                         <div className="flex flex-col p-1 min-w-[160px]">
-                          {canChangeWeeklyOff && <Button
+                          {canChangeWeeklyOff && (item.status === "Active" || item.status === "Pending") && <Button
                             variant="subtle"
                             contentAlign="start"
                             fullWidth
@@ -232,7 +232,7 @@ const EmployeeTable = ({
                           >
                             Assign Weekly Off
                           </Button>}
-                          {canChangeSelfServiceStatus && <Button
+                          {canChangeSelfServiceStatus && item.status === "Active" && <Button
                             variant="subtle"
                             contentAlign="start"
                             fullWidth
@@ -245,7 +245,7 @@ const EmployeeTable = ({
                           >
                             Self Service
                           </Button>}
-                          {canResetPassword && <Button
+                          {canResetPassword && item.status === "Active" && <Button
                             variant="subtle"
                             size="md"
                             contentAlign="start"
@@ -272,7 +272,7 @@ const EmployeeTable = ({
                           >
                             Reset OTP Auth Limits
                           </Button>}
-                          {canChangePlatformAccess && <Button
+                          {canChangePlatformAccess && (item.status === "Active" || item.status === "Pending") && <Button
                             variant="subtle"
                             size="md"
                             contentAlign="start"
@@ -285,7 +285,7 @@ const EmployeeTable = ({
                           >
                             Platform Access Controls
                           </Button>}
-                          {canUndoDeactivation && <Button
+                          {canUndoDeactivation && item.status === "Inactive" && <Button
                             variant="subtle"
                             size="md"
                             contentAlign="start"
@@ -429,7 +429,7 @@ const EmployeeTable = ({
                   className="mt-1 right-0"
                 >
                   <div className="flex flex-col p-1.5 min-w-[170px]">
-                    {canChangeWeeklyOff && <Button
+                    {canChangeWeeklyOff && (item.status === "Active" || item.status === "Pending") && <Button
                       variant="subtle"
                       size="sm"
                       contentAlign="start"
@@ -444,7 +444,7 @@ const EmployeeTable = ({
                     >
                       Assign Weekly Off
                     </Button>}
-                    {canChangeSelfServiceStatus && <Button
+                    {canChangeSelfServiceStatus && item.status === "Active" && <Button
                       variant="subtle"
                       size="sm"
                       contentAlign="start"
@@ -458,7 +458,7 @@ const EmployeeTable = ({
                     >
                       Self Service
                     </Button>}
-                    {canResetPassword && <Button
+                    {canResetPassword && item.status === "Active" && <Button
                       variant="subtle"
                       size="sm"
                       contentAlign="start"
@@ -487,7 +487,7 @@ const EmployeeTable = ({
                     >
                       Reset OTP Auth Limits
                     </Button>}
-                    {canChangePlatformAccess && <Button
+                    {canChangePlatformAccess && (item.status === "Active" || item.status === "Pending") && <Button
                       variant="subtle"
                       size="sm"
                       contentAlign="start"
@@ -501,7 +501,7 @@ const EmployeeTable = ({
                     >
                       Platform Access Controls
                     </Button>}
-                    {canUndoDeactivation && <Button
+                    {canUndoDeactivation && item.status === "Inactive" && <Button
                       variant="subtle"
                       size="sm"
                       contentAlign="start"
