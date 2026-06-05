@@ -309,8 +309,8 @@ body {
 }
 
 /* Hide mandatory red asterisk on select fields, showing only label (unless explicitly requested via show-req-astrik) */
-.formio-component-select:not(.show-req-astrik) .control-label.field-required::after,
+/* .formio-component-select:not(.show-req-astrik) .control-label.field-required::after,
 .formio-component-select:not(.show-req-astrik) .col-form-label.field-required::after {
   content: "" !important;
   display: none !important;
-}
+} */
