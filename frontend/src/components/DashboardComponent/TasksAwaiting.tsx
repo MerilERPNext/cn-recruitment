@@ -168,7 +168,7 @@ const TasksAwaiting: React.FC = () => {
         </div>
       )}
 
-      {/* Show only top 5 items for the active category */}
+      {/* Show only top 3 items for the active category */}
       <div className="flex-1">
         {isLoading || isTodosLoading ? (
           <CardSkeleton rows={2} />
