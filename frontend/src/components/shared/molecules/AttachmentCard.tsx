@@ -65,7 +65,7 @@ export function AttachmentCard({
       ) : compact ? (
         ActionButtons
       ) : (
-        <div className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50">
+        <div className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50 min-w-0 w-full">
           {/* Thumbnail — image preview for images, icon for everything else */}
           <div
             className={`w-12 h-12 rounded-md overflow-hidden border flex items-center justify-center flex-shrink-0 ${category === "image" ? "bg-white" : bgColor

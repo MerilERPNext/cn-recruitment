@@ -1,19 +1,19 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, UserLock } from "lucide-react";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
-import { useGetTicketStats } from "../../hooks/useHelpDeskTickets";
-import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { isActionEnabled } from "../../utils/uiPermission";
-import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
-import HeaderBar from "../HeaderBar";
-import Button from "../shared/atoms/Button";
-import { Typography } from "../shared/atoms/Typography";
-import HelpDeskEmptyState from "./HelpDeskEmptyState";
-import HelpDeskSkeleton from "./HelpDeskSkeleton";
-import TicketListView from "./TicketListView";
-import RequestIssueModal from "./RequestIssueModal";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useCurrentUser, isAdminUser } from "../../../hooks/useCurrentUser";
+import { useGetTicketStats } from "../../../hooks/useHelpDeskTickets";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
+import HeaderBar from "../../HeaderBar";
+import Button from "../../shared/atoms/Button";
+import { Typography } from "../../shared/atoms/Typography";
+import HelpDeskEmptyState from "../HelpDeskEmptyState";
+import HelpDeskSkeleton from "../HelpDeskSkeleton";
+import TicketListView from "../TicketListView";
+import RequestIssueModal from "../RequestIssueModal";
 
 type ViewMode = "user" | "admin";
 

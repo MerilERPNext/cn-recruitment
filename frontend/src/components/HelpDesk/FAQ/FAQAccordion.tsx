@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Plus, X } from "lucide-react";
-import { Typography } from "../shared/atoms/Typography";
-import { FAQArticle } from "../../hooks/useFAQ";
+import { Typography } from "../../shared/atoms/Typography";
+import { FAQArticle } from "../../../hooks/useFAQ";
 
 interface FAQAccordionProps {
   categoryName: string;

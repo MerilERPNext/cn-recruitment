@@ -2,7 +2,7 @@ import React from "react";
 import { Loader2 } from "lucide-react";
 import SideDrawer from "../shared/SideDrawer";
 import { useTicketDetail } from "../../hooks/useHelpDeskTickets";
-import SimplifiedChatView from "./SimplifiedChatView";
+import SimplifiedChatView from "./Helpdesk/SimplifiedChatView";
 
 interface TicketDrawerProps {
   isOpen: boolean;

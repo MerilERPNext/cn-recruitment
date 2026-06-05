@@ -33,7 +33,7 @@ const StatCard: React.FC<StatCardProps> = ({ icon: Icon, value, label, iconColor
         {value}
       </Typography>
     </div>
-    <Typography variant="bodySmall" className="text-gray-500 font-medium text-xs sm:text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+    <Typography variant="bodySmall" className="text-gray-500 font-medium text-[10px] min-[400px]:text-xs sm:text-sm leading-tight break-words">
       {label}
     </Typography>
   </div>
@@ -50,17 +50,19 @@ const TicketStatsCards: React.FC<TicketStatsCardsProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 w-full">
+      <div className="grid grid-rows-2 grid-flow-col auto-cols-[45%] min-[480px]:auto-cols-[36%] sm:auto-cols-[25%] md:grid-cols-4 md:grid-rows-none md:grid-flow-row gap-3 sm:gap-4 w-full overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 scrollbar-hide">
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
           <div
             key={i}
-            className="flex flex-col justify-between p-4 sm:p-5 rounded-2xl bg-white border border-gray-100 shadow-sm"
+            className="flex flex-col justify-between p-4 sm:p-5 rounded-2xl bg-white border border-gray-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] animate-pulse"
           >
-            <div className="flex items-start justify-between mb-3 sm:mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-xl animate-pulse" />
-              <div className="w-10 h-6 sm:w-12 sm:h-8 bg-gray-100 rounded animate-pulse" />
+            <div className="flex items-start justify-between mb-3 sm:mb-4 gap-2">
+              <div className="p-2.5 sm:p-3 rounded-xl bg-gray-100 shrink-0">
+                <div className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <div className="w-10 h-6 sm:w-12 sm:h-8 bg-gray-200 rounded" />
             </div>
-            <div className="w-20 sm:w-24 h-3 sm:h-4 bg-gray-100 rounded animate-pulse" />
+            <div className="w-20 sm:w-24 h-3 sm:h-4 bg-gray-200 rounded animate-pulse" />
           </div>
         ))}
       </div>
@@ -79,7 +81,7 @@ const TicketStatsCards: React.FC<TicketStatsCardsProps> = ({
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 w-full">
+    <div className="grid grid-rows-2 grid-flow-col auto-cols-[45%] min-[480px]:auto-cols-[36%] sm:auto-cols-[25%] md:grid-cols-4 md:grid-rows-none md:grid-flow-row gap-3 sm:gap-4 w-full overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 scrollbar-hide">
       {statItems.map((item, index) => (
         <StatCard
           key={index}

@@ -1,19 +1,19 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Plus, ChevronDown } from "lucide-react";
-import { useScreenSize } from "../../hooks/useScreenSize";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import {
   useCategories,
   useCategoryArticles,
   useSearchArticles,
-} from "../../hooks/useFAQ";
-import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
-import HeaderBar from "../HeaderBar";
-import Button from "../shared/atoms/Button";
-import { Typography } from "../shared/atoms/Typography";
-import FAQAccordion from "./FAQAccordion";
-import RequestIssueModal from "./RequestIssueModal";
-import emptyStateImage from "../../assets/helpdesk-empty-state.png";
+} from "../../../hooks/useFAQ";
+import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
+import HeaderBar from "../../HeaderBar";
+import Button from "../../shared/atoms/Button";
+import { Typography } from "../../shared/atoms/Typography";
+import FAQAccordion from "../FAQ/FAQAccordion";
+import RequestIssueModal from "../RequestIssueModal";
+import emptyStateImage from "../../../assets/helpdesk-empty-state.png";
 
 const FAQPage: React.FC = () => {
   const { isDesktop } = useScreenSize();
