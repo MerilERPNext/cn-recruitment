@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -119,9 +119,19 @@ const AddNewReferral: React.FC = () => {
 
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [formData, setFormData] = useState<Record<string, any>>({});
+  // Number of entry panels rendered per child-table field (keyed by reference_name).
+  const [rowCounts, setRowCounts] = useState<Record<string, number>>({});
   // Ref mirrors formData synchronously so validation always reads the latest value
   // even if React hasn't flushed the setState yet (e.g. user types then immediately clicks Next)
   const formDataRef = React.useRef<Record<string, any>>({});
+  // form.io is uncontrolled: re-feeding `submission={{ data: formData }}` on every
+  // render makes it run setSubmission + a full redraw of the step on each
+  // keystroke, which lags the child-table fields. We keep the submission identity
+  // STABLE while typing and only push a fresh one when WE change data outside
+  // form.io (section/row change, resume autofill, attachment upload). `formSyncTick`
+  // bumps to request such a push.
+  const [formSyncTick, setFormSyncTick] = useState(0);
+  const pushFormSync = useCallback(() => setFormSyncTick(t => t + 1), []);
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -157,8 +167,8 @@ const AddNewReferral: React.FC = () => {
 
   const formioSchema = useMemo(() => {
     if (!fieldsRes) return null;
-    return compileFormioSchema(fieldsRes);
-  }, [fieldsRes]);
+    return compileFormioSchema(fieldsRes, rowCounts);
+  }, [fieldsRes, rowCounts]);
 
   const sections = useMemo(() => {
     if (!fieldsRes) return [];
@@ -183,12 +193,23 @@ const AddNewReferral: React.FC = () => {
     return activePanel ? { components: [activePanel] } : null;
   }, [formioSchema, activeSection]);
 
+  // Stable submission for the form.io <Form>. Reads the latest data from the ref
+  // and only changes identity when the step or row count changes, or when
+  // pushFormSync() is called — NOT on every keystroke — so typing doesn't trigger
+  // a form.io redraw. eslint-disable: we intentionally read formDataRef (a ref).
+  const stepSubmission = useMemo(
+    () => ({ data: formDataRef.current }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeSection, activeStepIndex, JSON.stringify(rowCounts), formSyncTick]
+  );
+
   const activeStepAttachFields = useMemo(() => {
     if (!fieldsRes || !activeSection) return [];
     return fieldsRes.filter(
       field => field.section === activeSection && field.fieldtype === "Attach"
     );
   }, [fieldsRes, activeSection]);
+
 
   // ── URL deep linking ──────────────────────────────────────────────────────
 
@@ -225,11 +246,29 @@ const AddNewReferral: React.FC = () => {
     // Read from ref (synchronous) so we never miss a field the user just typed
     const latestData = formDataRef.current;
     fieldsRes?.forEach(field => {
-      if (
-        field.section === sectionName &&
-        field.reqd === 1 &&
-        field.visibility !== "None"
-      ) {
+      if (field.section !== sectionName || field.visibility === "None") return;
+
+      // Child table: validate per-row required sub-fields across its entries.
+      if (field.fieldtype === "Table") {
+        const rowCount = rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
+        if (field.reqd === 1 && rowCount === 0) {
+          missing.push(field.display_name);
+        } else {
+          for (let i = 0; i < rowCount; i++) {
+            (field.table_fields || []).forEach(sub => {
+              if (sub.reqd !== 1) return;
+              const val = latestData[`${field.reference_name}_${i}_${sub.fieldname}`];
+              const isEmpty =
+                val === undefined || val === null || val === "" ||
+                (Array.isArray(val) && val.length === 0);
+              if (isEmpty) missing.push(`${field.display_name} (Entry ${i + 1}): ${sub.label}`);
+            });
+          }
+        }
+        return;
+      }
+
+      if (field.reqd === 1) {
         const val = latestData[field.reference_name];
         const isEmpty =
           val === undefined ||
@@ -249,7 +288,7 @@ const AddNewReferral: React.FC = () => {
       allMissing.push(...missing);
     });
     return allMissing;
-  }, [sections, formData]);
+  }, [sections, formData, rowCounts]);
 
   const hasMissingRequiredFields = missingRequiredFields.length > 0;
 
@@ -324,6 +363,7 @@ const AddNewReferral: React.FC = () => {
       const merged = { ...formDataRef.current, ...extracted };
       formDataRef.current = merged;        // keep sync ref up to date
       setFormData(merged);                 // auto-fill the form fields
+      pushFormSync();                      // re-feed form.io so fields update
       setStepValidationErrors([]);
       setResumeAnalyzing(false);
       setResumeAnalyzed(true);
@@ -341,11 +381,70 @@ const AddNewReferral: React.FC = () => {
     }
   };
 
-  const isSectionVisitedOrFilled = (sectionName: string) => {
-    const sectionFields = fieldsRes?.filter(f => f.section === sectionName) || [];
-    return sectionFields.some(
-      f => formData[f.reference_name] !== undefined && formData[f.reference_name] !== ""
-    );
+  // Remove a child-table entry: clear that row's flat keys, shift the rows above
+  // it down by one so the keys stay contiguous, then decrement the row count.
+  const handleRemoveTableEntry = (ref: string, index: number) => {
+    const field = (fieldsRes || []).find(f => f.reference_name === ref);
+    if (!field) return;
+    const subs = field.table_fields || [];
+    const current = rowCounts[ref] ?? (field.reqd === 1 ? 1 : 0);
+    if (current <= 0 || index < 0 || index >= current) return;
+
+    const next = { ...formDataRef.current };
+    for (let j = index; j < current - 1; j++) {
+      subs.forEach(sub => {
+        next[`${ref}_${j}_${sub.fieldname}`] = next[`${ref}_${j + 1}_${sub.fieldname}`];
+      });
+    }
+    subs.forEach(sub => {
+      delete next[`${ref}_${current - 1}_${sub.fieldname}`];
+    });
+    formDataRef.current = next;
+    setFormData(next);
+    setRowCounts(prev => ({ ...prev, [ref]: Math.max(current - 1, 0) }));
+    setStepValidationErrors([]);
+  };
+
+  const handleCustomEvent = (event: any) => {
+    const ref = event?.component?.properties?.tableRef;
+    if (event?.type === "removeTableEntry") {
+      const idx = parseInt(event?.component?.properties?.rowIndex, 10);
+      if (ref && !Number.isNaN(idx)) handleRemoveTableEntry(ref, idx);
+    } else if (event?.type === "addTableEntry" && ref) {
+      const field = (fieldsRes || []).find(f => f.reference_name === ref);
+      setRowCounts(prev => ({
+        ...prev,
+        [ref]: (prev[ref] ?? (field?.reqd === 1 ? 1 : 0)) + 1,
+      }));
+    }
+  };
+
+  /**
+   * A section is "complete" (green) when none of its required fields are still
+   * missing. Reuses getMissingRequiredInSection so child-table sections (whose
+   * values live under flat per-row keys, not formData[reference_name]) are
+   * evaluated correctly. Optional-only sections turn green once any value is
+   * entered, so they don't show as done before the user has touched them.
+   */
+  const isSectionComplete = (sectionName: string): boolean => {
+    const sectionFields =
+      fieldsRes?.filter(f => f.section === sectionName && f.visibility !== "None") || [];
+    if (sectionFields.length === 0) return false;
+
+    // Incomplete while any required field is still empty.
+    if (getMissingRequiredInSection(sectionName).length > 0) return false;
+
+    // Has required fields and all are satisfied → complete.
+    if (sectionFields.some(f => f.reqd === 1)) return true;
+
+    // Optional-only section → green once the user has entered something.
+    return sectionFields.some(f => {
+      if (f.fieldtype === "Table") {
+        return (rowCounts[f.reference_name] ?? 0) > 0;
+      }
+      const v = formData[f.reference_name];
+      return v !== undefined && v !== null && v !== "";
+    });
   };
 
   /**
@@ -394,6 +493,38 @@ const AddNewReferral: React.FC = () => {
 
     const allowedFields = new Set((fieldsRes || []).map(f => f.reference_name));
 
+    // Collapse the flat per-row table keys (`${ref}_${i}_${fieldname}`) back into
+    // arrays of row objects under each table's reference_name, leaving non-table
+    // fields untouched.
+    const transformTableData = (data: Record<string, any>): Record<string, any> => {
+      const out: Record<string, any> = {};
+      (fieldsRes || []).forEach(field => {
+        if (field.fieldtype === "Table") return; // handled below
+        if (data[field.reference_name] !== undefined) {
+          out[field.reference_name] = data[field.reference_name];
+        }
+      });
+      (fieldsRes || []).forEach(field => {
+        if (field.fieldtype !== "Table") return;
+        const rowCount = rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
+        const rows: Record<string, any>[] = [];
+        for (let i = 0; i < rowCount; i++) {
+          const row: Record<string, any> = {};
+          let hasValue = false;
+          (field.table_fields || []).forEach(sub => {
+            const val = data[`${field.reference_name}_${i}_${sub.fieldname}`];
+            if (val !== undefined && val !== null && val !== "") {
+              row[sub.fieldname] = val;
+              hasValue = true;
+            }
+          });
+          if (hasValue) rows.push(row);
+        }
+        out[field.reference_name] = rows;
+      });
+      return out;
+    };
+
     const formatPayloadDates = (obj: any): any => {
       if (obj === null || obj === undefined) return obj;
       if (Array.isArray(obj)) return obj.map(formatPayloadDates);
@@ -412,7 +543,7 @@ const AddNewReferral: React.FC = () => {
     };
 
     const cleanData: Record<string, any> = {};
-    Object.entries(formData).forEach(([key, value]) => {
+    Object.entries(transformTableData(formData)).forEach(([key, value]) => {
       if (
         allowedFields.has(key) &&
         value !== "" &&
@@ -647,6 +778,10 @@ const AddNewReferral: React.FC = () => {
     }
 
     const isLastStep = activeStepIndex === sections.length - 1;
+    // Block forward navigation while the current step has empty required fields.
+    const isCurrentStepIncomplete =
+      activeSection !== "Review" &&
+      getMissingRequiredInSection(activeSection).length > 0;
 
     return (
       <div className="space-y-2 animate-fadeIn">
@@ -774,7 +909,7 @@ const AddNewReferral: React.FC = () => {
           <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
             {sections.map((section, index) => {
               const isActive = activeStepIndex === index;
-              const isFilled = isSectionVisitedOrFilled(section);
+              const isFilled = section !== "Review" && isSectionComplete(section);
               const hasMissing =
                 isActive && stepValidationErrors.length > 0;
 
@@ -874,6 +1009,7 @@ const AddNewReferral: React.FC = () => {
                   sections={sections}
                   fields={fieldsRes || []}
                   formData={formData}
+                  rowCounts={rowCounts}
                   acknowledged={acknowledged}
                   setAcknowledged={setAcknowledged}
                   missingRequiredFields={missingRequiredFields}
@@ -883,12 +1019,26 @@ const AddNewReferral: React.FC = () => {
                 <>
                   {stepSchema && (
                     <Form
+                      // Remount when the section or a table's row count changes so
+                      // newly-added entry panels render.
+                      key={`${activeSection}-${activeStepIndex}-${JSON.stringify(rowCounts)}`}
                       form={stepSchema}
-                      submission={{ data: formData }}
+                      submission={stepSubmission}
                       onChange={handleChange}
                       onSubmit={handleSubmit}
+                      onCustomEvent={handleCustomEvent}
+                      options={{
+                        alerts: false,
+                        validateOnInit: false,
+                        validateOnBlur: true,
+                        validateOnChange: false,
+                      } as any}
                     />
                   )}
+
+                  {/* Add/Remove entry buttons for child tables are rendered
+                      in-schema (see referralFormSchemas) so they sit right below
+                      the table, above any following fields. */}
 
                   {/* Dynamic attachment dropzone fields */}
                   {activeStepAttachFields.map(field => {
@@ -944,6 +1094,7 @@ const AddNewReferral: React.FC = () => {
                                 if (url) {
                                   formDataRef.current = { ...formDataRef.current, [field.reference_name]: url };
                                   setFormData(prev => ({ ...prev, [field.reference_name]: url }));
+                                  pushFormSync();
                                   setStepValidationErrors(prev =>
                                     prev.filter(n => n !== field.display_name)
                                   );
@@ -1025,7 +1176,8 @@ const AddNewReferral: React.FC = () => {
               ) : (
                 <button
                   onClick={handleNextStep}
-                  className="flex items-center gap-2 py-2.5 px-6 rounded-xl text-sm font-bold text-white tracking-wide transition-all hover:opacity-90 active:scale-[0.98]"
+                  disabled={isCurrentStepIncomplete}
+                  className="flex items-center gap-2 py-2.5 px-6 rounded-xl text-sm font-bold text-white tracking-wide transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:opacity-60"
                   style={{
                     background: "linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%)"
                   }}
@@ -1091,6 +1243,47 @@ const AddNewReferral: React.FC = () => {
           transition: opacity 0.15s;
         }
         .formio-component-datagrid .datagrid-add .btn:hover { opacity: 0.88; }
+
+        /* ── Child-table per-entry "Remove Entry" button ──────────────── */
+        .ref-remove-entry-btn { margin-top: 0.5rem; }
+        .ref-remove-entry-btn .btn,
+        .ref-remove-entry-btn button {
+          background: #fff;
+          color: #e11d48;
+          border: 1px solid #fecdd3;
+          border-radius: 0.5rem;
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          padding: 0.4rem 0.9rem;
+          cursor: pointer;
+          transition: background 0.15s, border-color 0.15s;
+        }
+        .ref-remove-entry-btn .btn:hover,
+        .ref-remove-entry-btn button:hover {
+          background: #fff1f2;
+          border-color: #fda4af;
+        }
+
+        /* ── Child-table "Add / Add More" button ──────────────────────── */
+        .ref-add-entry-btn { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+        .ref-add-entry-btn .btn,
+        .ref-add-entry-btn button {
+          background: #fff;
+          color: var(--primary-color);
+          border: 1px solid var(--primary-color);
+          border-radius: 0.75rem;
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          padding: 0.5rem 1.25rem;
+          cursor: pointer;
+          transition: opacity 0.15s;
+        }
+        .ref-add-entry-btn .btn:hover,
+        .ref-add-entry-btn button:hover { opacity: 0.85; }
       `}</style>
 
       <div className="w-full mx-auto space-y-6">
