@@ -1395,7 +1395,7 @@ const RequisitionForm = () => {
             {steps[currentStep].label}
           </h2>
           {/* Preview JD button — only on Job Details step (index 1) */}
-          {currentStep === 1 && (
+          {currentStep === 11 && (
             <button
               onClick={handlePreviewJD}
               disabled={!canPreviewJD}
