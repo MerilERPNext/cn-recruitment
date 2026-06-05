@@ -36,8 +36,14 @@ const UndoDeactivation: React.FC<UndoDeactivationProps> = ({ isOpen, onClose, em
                                 comment: submission.data.comment,
                             },
                             {
-                                onSuccess: () => {
-                                    toast.success("Employee reactivated successfully.");
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                onSuccess: (response: any) => {
+                                    if (response?.success === false) {
+                                        const errorMsg = response?.results?.[0]?.message || response?.message || "Reactivation failed";
+                                        toast.error(errorMsg);
+                                    } else {
+                                        toast.success("Employee reactivated successfully.");
+                                    }
                                     onClose();
                                     resolve();
                                 },
