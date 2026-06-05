@@ -365,16 +365,8 @@ const NotificationList = () => {
                   size="md"
                   className="rounded-none h-8"
                   onClick={() => {
-                    const targetUrl = selectedNotification.url;
-                    if (targetUrl) {
-                      if (targetUrl.startsWith("http") || targetUrl.startsWith("/webapp")) {
-                        window.location.href = targetUrl;
-                      } else if (targetUrl.startsWith("/")) {
-                        navigate(targetUrl);
-                      } else {
-                        window.location.href = targetUrl;
-                      }
-                    }
+                    const targetUrl = selectedNotification?.url ?? "";
+                    navigate(targetUrl);
                   }}
                 >
                   Act

@@ -3,14 +3,12 @@ import { useNotifications } from "../../hooks/useNotificationLog";
 import { IMPERSONATION_TEXT } from "../../constants/Notification";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useTargetUser } from "../../context/ViewedUserContext";
-import { useEmployee } from "../../hooks/useEmployee";
+import { useGetEmployeeDetailsByEmpId } from "../../hooks/useEmployee";
 
 export default function NotificationBell() {
   const { data: currentUser } = useCurrentUser();
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
-  const { data: targetEmployee } = useEmployee(
-    isViewingOtherUser ? targetEmployeeId : null
-  );
+  const { data: targetEmployee } = useGetEmployeeDetailsByEmpId(targetEmployeeId ?? "");
 
   const effectiveUser = isViewingOtherUser
     ? (targetEmployee as { user_id?: string })?.user_id
