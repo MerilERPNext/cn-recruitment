@@ -19,8 +19,8 @@ import {
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
 import { AddressInfoData } from "../types/profile";
-import { useLoggedInUser } from "./useLoggedInUser";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
+import { useLoggedInUser } from "./useLoggedInUser";
 
 // Hook to get a single employee by ID
 const defaultQueryOptions = {
@@ -450,7 +450,11 @@ export const useGetEmployeesForDirectory = (
   return useQuery<Employee[], Error>({
     queryKey: ["directory-employees", filters, employee_self_service, fields],
     queryFn: () =>
-      EmployeeService.getEmployeesForDirectory(filters, employee_self_service, fields),
+      EmployeeService.getEmployeesForDirectory(
+        filters,
+        employee_self_service,
+        fields,
+      ),
     staleTime: 1000 * 60 * 5,
   });
 };
@@ -643,7 +647,6 @@ export const useUpdateEmploymentDetailsMutation = () => {
   });
 };
 
-
 export const useUpdateEmployeeCostCentersMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -662,8 +665,6 @@ export const useUpdateEmployeeCostCentersMutation = () => {
     },
   });
 };
-
-
 
 export const useAddEmployeeHistoryMutation = () => {
   const queryClient = useQueryClient();
@@ -712,12 +713,15 @@ export const useDeleteEmpReportingDetailsRecordMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["deleteEmpReportingDetailsRecord"],
-    mutationFn: (name: string) => profileService.deleteEmpReportingDetailsRecord(name),
+    mutationFn: (name: string) =>
+      profileService.deleteEmpReportingDetailsRecord(name),
     onError: (error) => {
       toast.error(errorResponseFormater(error));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["getEmployeeHierarchyHistory"] });
+      queryClient.invalidateQueries({
+        queryKey: ["getEmployeeHierarchyHistory"],
+      });
       toast.success("Employee reporting details deleted successfully");
     },
   });
@@ -727,13 +731,33 @@ export const useUpdateEmpReportingDetailsRecordMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["updateEmpReportingDetailsRecord"],
-    mutationFn: ({ employee, field, value, start_date }: { employee: string, field: string, value: string, start_date: string }) => profileService.updateEmpReportingDetailsRecord(employee, field, value, start_date),
+    mutationFn: ({
+      employee,
+      field,
+      value,
+      start_date,
+    }: {
+      employee: string;
+      field: string;
+      value: string;
+      start_date: string;
+    }) =>
+      profileService.updateEmpReportingDetailsRecord(
+        employee,
+        field,
+        value,
+        start_date,
+      ),
     onError: (error) => {
       toast.error(errorResponseFormater(error));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["getEmployeeHierarchyHistory"] });
-      queryClient.invalidateQueries({ queryKey: ["getEmployeeReportingDetails"] });
+      queryClient.invalidateQueries({
+        queryKey: ["getEmployeeHierarchyHistory"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["getEmployeeReportingDetails"],
+      });
       toast.success("Employee reporting details updated successfully");
     },
   });
@@ -889,7 +913,12 @@ export const useChangeEmployeesWeekOffMutation = () => {
       employees: string[];
       new_week_off: string;
       effective_date: string;
-    }) => EmployeeService.changeEmployeesWeekOff(employees, new_week_off, effective_date),
+    }) =>
+      EmployeeService.changeEmployeesWeekOff(
+        employees,
+        new_week_off,
+        effective_date,
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["directory-employees"] });
       queryClient.invalidateQueries({ queryKey: ["employee"] });
@@ -935,11 +964,7 @@ export const useReactivateEmployeeMutation = () => {
     }: {
       employees: string[];
       comment: string;
-    }) =>
-      EmployeeService.reactivateEmployee(
-        employees,
-        comment,
-      ),
+    }) => EmployeeService.reactivateEmployee(employees, comment),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["directory-employees"] });
       queryClient.invalidateQueries({ queryKey: ["employee"] });
@@ -953,7 +978,8 @@ export const useReactivateEmployeeMutation = () => {
 export const useResetOtpResendLimitMutation = () => {
   return useMutation({
     mutationKey: ["resetOtpResendLimit"],
-    mutationFn: (user_id: string) => EmployeeService.resetOtpResendLimit(user_id),
+    mutationFn: (user_id: string) =>
+      EmployeeService.resetOtpResendLimit(user_id),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSuccess: (data: any) => {
       if (data?.success === false) {
@@ -966,12 +992,17 @@ export const useResetOtpResendLimitMutation = () => {
     },
     onError: (error) => {
       console.error("Error resetting OTP resend limit:", error);
-      toast.error(errorResponseFormater(error) || "Failed to reset OTP resend limit");
+      toast.error(
+        errorResponseFormater(error) || "Failed to reset OTP resend limit",
+      );
     },
   });
 };
 
-export const useGetSeparationDetails = (employeeId: string, enabled: boolean = true) => {
+export const useGetSeparationDetails = (
+  employeeId: string,
+  enabled: boolean = true,
+) => {
   return useQuery({
     queryKey: ["separationDetails", employeeId],
     queryFn: () => EmployeeService.getSeparationDetails(employeeId),
