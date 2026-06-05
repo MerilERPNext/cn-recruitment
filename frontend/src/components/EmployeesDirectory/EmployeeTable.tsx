@@ -224,7 +224,7 @@ const EmployeeTable = ({
                               setOpenPopupId(null);
                             }}
                           >
-                            Weekly off
+                            Assign Weekly Off
                           </Button>}
                           {canChangeSelfServiceStatus && <Button
                             variant="subtle"
@@ -237,7 +237,7 @@ const EmployeeTable = ({
                               setOpenPopupId(null);
                             }}
                           >
-                            Self service
+                            Self Service
                           </Button>}
                           {canResetPassword && <Button
                             variant="subtle"
@@ -250,7 +250,7 @@ const EmployeeTable = ({
                               setOpenPopupId(null);
                             }}
                           >
-                            Reset password
+                            Reset Password
                           </Button>}
                           {canResetOtpAuthLimit && <Button
                             variant="subtle"
@@ -264,7 +264,7 @@ const EmployeeTable = ({
                               setOpenPopupId(null);
                             }}
                           >
-                            Reset otp auth limit
+                            Reset OTP Auth Limits
                           </Button>}
                           {canChangePlatformAccess && <Button
                             variant="subtle"
@@ -277,7 +277,7 @@ const EmployeeTable = ({
                               setOpenPopupId(null);
                             }}
                           >
-                            Platform access
+                            Platform Access Controls
                           </Button>}
                         </div>
                       </ContextualPopup>
@@ -423,7 +423,7 @@ const EmployeeTable = ({
                       }}
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
-                      Weekly off
+                      Assign Weekly Off
                     </Button>}
                     {canChangeSelfServiceStatus && <Button
                       variant="subtle"
@@ -437,7 +437,7 @@ const EmployeeTable = ({
                       }}
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
-                      Self service
+                      Self Service
                     </Button>}
                     {canResetPassword && <Button
                       variant="subtle"
@@ -451,7 +451,7 @@ const EmployeeTable = ({
                       }}
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
-                      Reset password
+                      Reset Password
                     </Button>}
                     {canResetOtpAuthLimit && <Button
                       variant="subtle"
@@ -466,7 +466,7 @@ const EmployeeTable = ({
                       }}
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
-                      Reset otp auth limit
+                      Reset OTP Auth Limits
                     </Button>}
                     {canChangePlatformAccess && <Button
                       variant="subtle"
@@ -480,7 +480,7 @@ const EmployeeTable = ({
                       }}
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
-                      Platform access
+                      Platform Access Controls
                     </Button>}
                   </div>
                 </ContextualPopup>
