@@ -903,6 +903,26 @@ export const useDeactivateEmployeeMutation = () => {
   });
 };
 
+export const useReactivateEmployeeMutation = () => {
+  return useMutation({
+    mutationKey: ["reactivateEmployee"],
+    mutationFn: ({
+      employees,
+      comment,
+    }: {
+      employees: string[];
+      comment: string;
+    }) =>
+      EmployeeService.reactivateEmployee(
+        employees,
+        comment,
+      ),
+    onError: (error) => {
+      console.error("Error reactivating employee:", error);
+    },
+  });
+};
+
 export const useResetOtpResendLimitMutation = () => {
   return useMutation({
     mutationKey: ["resetOtpResendLimit"],

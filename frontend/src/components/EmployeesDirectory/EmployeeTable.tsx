@@ -13,6 +13,7 @@ import ChangeWeekOff from "./tools/ChangeWeekOff/ChangeWeekOff";
 import ResetPassword from "./tools/ResetPassword/ResetPassword";
 import ResetOtpLimit from "./tools/ResetOtpLimit/ResetOtpLimit";
 import PlatformAccessControls from "./tools/PlatformAccessControls/PlatformAccessControls";
+import UndoDeactivation from "./tools/UndoDeactivation/UndoDeactivation";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 const EmployeeTable = ({
@@ -52,9 +53,14 @@ const EmployeeTable = ({
     "change_platform_access",
     "Employee Directory"
   );
+  const canUndoDeactivation = isActionEnabled(
+    userUiPermission,
+    "undo_deactivation",
+    "Employee Directory"
+  );
 
   const { isDesktop } = useScreenSize();
-  const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | 'otp_limit' | 'platform_access' | null>(null);
+  const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | 'otp_limit' | 'platform_access' | 'undo_deactivation' | null>(null);
   const [selectedRowEmployee, setSelectedRowEmployee] = useState<Employee | null>(null);
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -279,6 +285,19 @@ const EmployeeTable = ({
                           >
                             Platform Access Controls
                           </Button>}
+                          {canUndoDeactivation && <Button
+                            variant="subtle"
+                            size="md"
+                            contentAlign="start"
+                            fullWidth
+                            onClick={() => {
+                              setSelectedRowEmployee(item);
+                              setActiveTool('undo_deactivation');
+                              setOpenPopupId(null);
+                            }}
+                          >
+                            Undo Deactivation
+                          </Button>}
                         </div>
                       </ContextualPopup>
                     </div>
@@ -482,6 +501,20 @@ const EmployeeTable = ({
                     >
                       Platform Access Controls
                     </Button>}
+                    {canUndoDeactivation && <Button
+                      variant="subtle"
+                      size="sm"
+                      contentAlign="start"
+                      fullWidth
+                      onClick={() => {
+                        setSelectedRowEmployee(item);
+                        setActiveTool('undo_deactivation');
+                        setOpenPopupId(null);
+                      }}
+                      className="text-xs py-2 px-3 hover:bg-primary-50"
+                    >
+                      Undo Deactivation
+                    </Button>}
                   </div>
                 </ContextualPopup>
               </div>
@@ -571,6 +604,14 @@ const EmployeeTable = ({
             employeeName={selectedRowEmployee.employee_name}
             employeeId={selectedRowEmployee.employee}
             userEmail={selectedRowEmployee.user_id || ""}
+          />
+          <UndoDeactivation
+            isOpen={activeTool === 'undo_deactivation'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            employeeId={selectedRowEmployee.employee}
           />
         </>
       )}

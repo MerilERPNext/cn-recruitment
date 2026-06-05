@@ -875,6 +875,20 @@ export class EmployeeService {
     const data = await response;
     return data as Employee[];
   }
+  static async reactivateEmployee(
+    employees: string[],
+    comment: string,
+  ) {
+    const response = FrappeAPI.callMethod(
+      "cn_leave_shift_managment.employee_directory.reactivate_employee",
+      {
+        employees: employees,
+        comment: comment,
+      },
+    );
+    const data = await response;
+    return data;
+  }
   static async resetOtpResendLimit(user_id: string) {
     const response = FrappeAPI.callMethod(
       "cn_hrms_core.api.reset_otp_resend_limit",
