@@ -857,6 +857,22 @@ export class EmployeeService {
     const data = await response;
     return data as Employee[];
   }
+  static async changeEmployeesWeekOff(
+    employees: string[],
+    new_week_off: string,
+    effective_date: string,
+  ) {
+    const response = FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.change_employees_week_off",
+      {
+        employees: employees,
+        new_week_off: new_week_off,
+        effective_date: effective_date,
+      },
+    );
+    const data = await response;
+    return data;
+  }
   static async deactivateEmployee(
     employees: string[],
     deactivate_reason: string,
@@ -874,6 +890,20 @@ export class EmployeeService {
     );
     const data = await response;
     return data as Employee[];
+  }
+  static async reactivateEmployee(
+    employees: string[],
+    comment: string,
+  ) {
+    const response = FrappeAPI.callMethod(
+      "cn_leave_shift_managment.employee_directory.reactivate_employee",
+      {
+        employees: employees,
+        comment: comment,
+      },
+    );
+    const data = await response;
+    return data;
   }
   static async resetOtpResendLimit(user_id: string) {
     const response = FrappeAPI.callMethod(

@@ -13,16 +13,20 @@ import ChangeWeekOff from "./tools/ChangeWeekOff/ChangeWeekOff";
 import ResetPassword from "./tools/ResetPassword/ResetPassword";
 import ResetOtpLimit from "./tools/ResetOtpLimit/ResetOtpLimit";
 import PlatformAccessControls from "./tools/PlatformAccessControls/PlatformAccessControls";
+import UndoDeactivation from "./tools/UndoDeactivation/UndoDeactivation";
+import ActivateEmployee from "./tools/ActivateEmployee/ActivateEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 const EmployeeTable = ({
   employees,
   selectedEmployees = [],
   setSelectedEmployees,
+  activeTab,
 }: {
   employees: Employee[];
   selectedEmployees: Employee[];
   setSelectedEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
+  activeTab?: 'directory' | 'my_reportees';
 }) => {
 
   const { data: userUiPermission } = useGetUiPermission("Employee Directory");
@@ -52,9 +56,19 @@ const EmployeeTable = ({
     "change_platform_access",
     "Employee Directory"
   );
+  const canUndoDeactivation = isActionEnabled(
+    userUiPermission,
+    "undo_deactivation",
+    "Employee Directory"
+  );
+  const canActivateEmployee = isActionEnabled(
+    userUiPermission,
+    "activate_employee",
+    "Employee Directory"
+  );
 
   const { isDesktop } = useScreenSize();
-  const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | 'otp_limit' | 'platform_access' | null>(null);
+  const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | 'otp_limit' | 'platform_access' | 'undo_deactivation' | 'activate' | null>(null);
   const [selectedRowEmployee, setSelectedRowEmployee] = useState<Employee | null>(null);
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -194,7 +208,7 @@ const EmployeeTable = ({
                     </Link>
 
                     <div>
-                      {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
+                      {activeTab !== 'my_reportees' && (canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
                         ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                         variant="subtle"
                         size="sm"
@@ -212,7 +226,7 @@ const EmployeeTable = ({
                         className="mt-1"
                       >
                         <div className="flex flex-col p-1 min-w-[160px]">
-                          {canChangeWeeklyOff && <Button
+                          {canChangeWeeklyOff && (item.status === "Active" || item.status === "Pending") && <Button
                             variant="subtle"
                             contentAlign="start"
                             fullWidth
@@ -224,9 +238,9 @@ const EmployeeTable = ({
                               setOpenPopupId(null);
                             }}
                           >
-                            Weekly off
+                            Assign Weekly Off
                           </Button>}
-                          {canChangeSelfServiceStatus && <Button
+                          {canChangeSelfServiceStatus && item.status === "Active" && <Button
                             variant="subtle"
                             contentAlign="start"
                             fullWidth
@@ -237,9 +251,9 @@ const EmployeeTable = ({
                               setOpenPopupId(null);
                             }}
                           >
-                            Self service
+                            Self Service
                           </Button>}
-                          {canResetPassword && <Button
+                          {canResetPassword && item.status === "Active" && <Button
                             variant="subtle"
                             size="md"
                             contentAlign="start"
@@ -250,7 +264,7 @@ const EmployeeTable = ({
                               setOpenPopupId(null);
                             }}
                           >
-                            Reset password
+                            Reset Password
                           </Button>}
                           {canResetOtpAuthLimit && <Button
                             variant="subtle"
@@ -264,9 +278,9 @@ const EmployeeTable = ({
                               setOpenPopupId(null);
                             }}
                           >
-                            Reset otp auth limit
+                            Reset OTP Auth Limits
                           </Button>}
-                          {canChangePlatformAccess && <Button
+                          {canChangePlatformAccess && (item.status === "Active" || item.status === "Pending") && <Button
                             variant="subtle"
                             size="md"
                             contentAlign="start"
@@ -277,7 +291,33 @@ const EmployeeTable = ({
                               setOpenPopupId(null);
                             }}
                           >
-                            Platform access
+                            Platform Access Controls
+                          </Button>}
+                          {canUndoDeactivation && item.status === "Inactive" && <Button
+                            variant="subtle"
+                            size="md"
+                            contentAlign="start"
+                            fullWidth
+                            onClick={() => {
+                              setSelectedRowEmployee(item);
+                              setActiveTool('undo_deactivation');
+                              setOpenPopupId(null);
+                            }}
+                          >
+                            Undo Deactivation
+                          </Button>}
+                          {canActivateEmployee && item.status === "Pending" && <Button
+                            variant="subtle"
+                            size="md"
+                            contentAlign="start"
+                            fullWidth
+                            onClick={() => {
+                              setSelectedRowEmployee(item);
+                              setActiveTool('activate');
+                              setOpenPopupId(null);
+                            }}
+                          >
+                            Activate
                           </Button>}
                         </div>
                       </ContextualPopup>
@@ -392,7 +432,7 @@ const EmployeeTable = ({
               </div>
 
               <div className="relative">
-                {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
+                {activeTab !== 'my_reportees' && (canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
                   ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                   variant="soft"
                   size="sm"
@@ -410,7 +450,7 @@ const EmployeeTable = ({
                   className="mt-1 right-0"
                 >
                   <div className="flex flex-col p-1.5 min-w-[170px]">
-                    {canChangeWeeklyOff && <Button
+                    {canChangeWeeklyOff && (item.status === "Active" || item.status === "Pending") && <Button
                       variant="subtle"
                       size="sm"
                       contentAlign="start"
@@ -423,9 +463,9 @@ const EmployeeTable = ({
                       }}
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
-                      Weekly off
+                      Assign Weekly Off
                     </Button>}
-                    {canChangeSelfServiceStatus && <Button
+                    {canChangeSelfServiceStatus && item.status === "Active" && <Button
                       variant="subtle"
                       size="sm"
                       contentAlign="start"
@@ -437,9 +477,9 @@ const EmployeeTable = ({
                       }}
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
-                      Self service
+                      Self Service
                     </Button>}
-                    {canResetPassword && <Button
+                    {canResetPassword && item.status === "Active" && <Button
                       variant="subtle"
                       size="sm"
                       contentAlign="start"
@@ -451,7 +491,7 @@ const EmployeeTable = ({
                       }}
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
-                      Reset password
+                      Reset Password
                     </Button>}
                     {canResetOtpAuthLimit && <Button
                       variant="subtle"
@@ -466,9 +506,9 @@ const EmployeeTable = ({
                       }}
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
-                      Reset otp auth limit
+                      Reset OTP Auth Limits
                     </Button>}
-                    {canChangePlatformAccess && <Button
+                    {canChangePlatformAccess && (item.status === "Active" || item.status === "Pending") && <Button
                       variant="subtle"
                       size="sm"
                       contentAlign="start"
@@ -480,7 +520,35 @@ const EmployeeTable = ({
                       }}
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
-                      Platform access
+                      Platform Access Controls
+                    </Button>}
+                    {canUndoDeactivation && item.status === "Inactive" && <Button
+                      variant="subtle"
+                      size="sm"
+                      contentAlign="start"
+                      fullWidth
+                      onClick={() => {
+                        setSelectedRowEmployee(item);
+                        setActiveTool('undo_deactivation');
+                        setOpenPopupId(null);
+                      }}
+                      className="text-xs py-2 px-3 hover:bg-primary-50"
+                    >
+                      Undo Deactivation
+                    </Button>}
+                    {canActivateEmployee && item.status === "Pending" && <Button
+                      variant="subtle"
+                      size="sm"
+                      contentAlign="start"
+                      fullWidth
+                      onClick={() => {
+                        setSelectedRowEmployee(item);
+                        setActiveTool('activate');
+                        setOpenPopupId(null);
+                      }}
+                      className="text-xs py-2 px-3 hover:bg-primary-50"
+                    >
+                      Activate
                     </Button>}
                   </div>
                 </ContextualPopup>
@@ -571,6 +639,23 @@ const EmployeeTable = ({
             employeeName={selectedRowEmployee.employee_name}
             employeeId={selectedRowEmployee.employee}
             userEmail={selectedRowEmployee.user_id || ""}
+          />
+          <UndoDeactivation
+            isOpen={activeTool === 'undo_deactivation'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            employeeId={selectedRowEmployee.employee}
+          />
+          <ActivateEmployee
+            isOpen={activeTool === 'activate'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            employeeId={selectedRowEmployee.employee}
+            employeeName={selectedRowEmployee.employee_name}
           />
         </>
       )}

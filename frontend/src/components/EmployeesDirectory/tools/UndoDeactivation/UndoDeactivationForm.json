@@ -1,0 +1,19 @@
+{
+    "title": "Undo Deactivation",
+    "name": "undoDeactivationForm",
+    "path": "undo-deactivation-form",
+    "display": "form",
+    "components": [
+        {
+            "label": "Comment",
+            "key": "comment",
+            "type": "textfield",
+            "placeholder": "Re-hired on new contract",
+            "input": true,
+            "customClass": "mb-4",
+            "errorLabel": "Comment",
+            "allowCalculateOverride": true,
+            "applyMaskOn": "change"
+        }
+    ]
+}
