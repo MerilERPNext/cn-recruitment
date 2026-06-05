@@ -927,9 +927,15 @@ export const useResetOtpResendLimitMutation = () => {
   return useMutation({
     mutationKey: ["resetOtpResendLimit"],
     mutationFn: (user_id: string) => EmployeeService.resetOtpResendLimit(user_id),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSuccess: (data: any) => {
-      const msg = data?.message?.message || "OTP resend limit reset successfully";
-      toast.success(msg);
+      if (data?.success === false) {
+        const errorMsg = data?.message || "Failed to reset OTP resend limit";
+        toast.error(errorMsg);
+      } else {
+        const msg = data?.message || "OTP resend limit reset successfully";
+        toast.success(msg);
+      }
     },
     onError: (error) => {
       console.error("Error resetting OTP resend limit:", error);
