@@ -13,6 +13,7 @@ import { useState, useRef } from "react";
 import ChangeDottedLineManager from "./tools/ChangeDottedLineManager/ChangeDottedLineManager";
 import ChangeProbationPeriod from "./tools/ChangeProbationPeriod/ChangeProbationPeriod";
 import DeactivateEmployee from "./tools/DeactivateEmployee/DeactivateEmployee";
+import BulkChangeWeekOff from "./tools/BulkChangeWeekOff/BulkChangeWeekOff";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 
@@ -20,7 +21,7 @@ type Props = {
     activeTab: 'directory' | 'my_reportees';
 };
 
-type ToolType = 'hrbp' | 'dotted_line_manager' | 'attendance_assignments' | 'probation_period' | 'deactivate_employee' | null;
+type ToolType = 'hrbp' | 'dotted_line_manager' | 'attendance_assignments' | 'probation_period' | 'deactivate_employee' | 'bulk_week_off' | null;
 
 const EmployeeDirectoryContent = ({ activeTab }: Props) => {
     // STATE LIVES HERE
@@ -75,9 +76,15 @@ const EmployeeDirectoryContent = ({ activeTab }: Props) => {
         "attendance_assignments",
         "Employee Directory"
     );
+    const canBulkChangeWeekOff = isActionEnabled(
+        userUiPermission,
+        "change_week_off",
+        "Employee Directory"
+    );
     const [activeTool, setActiveTool] = useState<ToolType>(null);
 
     const canPerformDropdownActions = canChangeHrbp || canChangeDottedLineManager || canChangeProbationPeriod || canDeactivateEmployee;
+    const isReporteesTab = activeTab === 'my_reportees';
     return (
         <>
             <EmployeeSearch {...searchState} />
@@ -88,7 +95,7 @@ const EmployeeDirectoryContent = ({ activeTab }: Props) => {
                 setSelectedEmployees={setSelectedEmployees}
             />
 
-            {selectedEmployees.length > 0 && canPerformDropdownActions && canAttendanceAssignments && (
+            {selectedEmployees.length > 0 && (canPerformDropdownActions || canAttendanceAssignments || (isReporteesTab && canBulkChangeWeekOff)) && (
                 <div className="sticky bottom-1 flex justify-end bg-primary rounded-md p-2 gap-2">
                     {canAttendanceAssignments && <Button
                         variant="soft"
@@ -98,7 +105,7 @@ const EmployeeDirectoryContent = ({ activeTab }: Props) => {
                         Attendance Assignments
                     </Button>}
 
-                    {canPerformDropdownActions && <Button
+                    {((isReporteesTab && canBulkChangeWeekOff) || (!isReporteesTab && canPerformDropdownActions)) && <Button
                         ref={buttonRef}
                         variant="soft"
                         size="sm"
@@ -117,59 +124,78 @@ const EmployeeDirectoryContent = ({ activeTab }: Props) => {
                 className="mt-2"
             >
                 <div className="flex flex-col p-2">
-
-                    {canChangeHrbp && <Button
-                        variant="subtle"
-                        contentAlign="start"
-                        size="sm"
-                        fullWidth
-                        className="text-sm px-4 py-2"
-                        onClick={() => {
-                            setActiveTool('hrbp');
-                            setIsPopupOpen(false);
-                        }}
-                    >
-                        Change HRBP
-                    </Button>}
-                    {canChangeDottedLineManager && <Button
-                        variant="subtle"
-                        contentAlign="start"
-                        size="sm"
-                        fullWidth
-                        className="text-sm px-4 py-2"
-                        onClick={() => {
-                            setActiveTool('dotted_line_manager');
-                            setIsPopupOpen(false);
-                        }}
-                    >
-                        Change Dotted Line Manager
-                    </Button>}
-                    {canChangeProbationPeriod && <Button
-                        variant="subtle"
-                        contentAlign="start"
-                        size="sm"
-                        fullWidth
-                        className="text-sm px-4 py-2"
-                        onClick={() => {
-                            setActiveTool('probation_period');
-                            setIsPopupOpen(false);
-                        }}
-                    >
-                        Change Probation Period
-                    </Button>}
-                    {canDeactivateEmployee && <Button
-                        variant="subtle"
-                        contentAlign="start"
-                        size="sm"
-                        fullWidth
-                        className="text-sm px-4 py-2"
-                        onClick={() => {
-                            setActiveTool('deactivate_employee');
-                            setIsPopupOpen(false);
-                        }}
-                    >
-                        Deactivate Employee
-                    </Button>}
+                    {isReporteesTab ? (
+                        <>
+                            {canBulkChangeWeekOff && <Button
+                                variant="subtle"
+                                contentAlign="start"
+                                size="sm"
+                                fullWidth
+                                className="text-sm px-4 py-2"
+                                onClick={() => {
+                                    setActiveTool('bulk_week_off');
+                                    setIsPopupOpen(false);
+                                }}
+                            >
+                                Update Current Weekly Off
+                            </Button>}
+                        </>
+                    ) : (
+                        <>
+                            {canChangeHrbp && <Button
+                                variant="subtle"
+                                contentAlign="start"
+                                size="sm"
+                                fullWidth
+                                className="text-sm px-4 py-2"
+                                onClick={() => {
+                                    setActiveTool('hrbp');
+                                    setIsPopupOpen(false);
+                                }}
+                            >
+                                Change HRBP
+                            </Button>}
+                            {canChangeDottedLineManager && <Button
+                                variant="subtle"
+                                contentAlign="start"
+                                size="sm"
+                                fullWidth
+                                className="text-sm px-4 py-2"
+                                onClick={() => {
+                                    setActiveTool('dotted_line_manager');
+                                    setIsPopupOpen(false);
+                                }}
+                            >
+                                Change Dotted Line Manager
+                            </Button>}
+                            {canChangeProbationPeriod && <Button
+                                variant="subtle"
+                                contentAlign="start"
+                                size="sm"
+                                fullWidth
+                                className="text-sm px-4 py-2"
+                                onClick={() => {
+                                    setActiveTool('probation_period');
+                                    setIsPopupOpen(false);
+                                }}
+                            >
+                                Change Probation Period
+                            </Button>}
+                            {canDeactivateEmployee && <Button
+                                variant="subtle"
+                                contentAlign="start"
+                                size="sm"
+                                fullWidth
+                                className="text-sm px-4 py-2"
+                                onClick={() => {
+                                    setActiveTool('deactivate_employee');
+                                    setIsPopupOpen(false);
+                                }}
+                            >
+                                Deactivate Employee
+                            </Button>}
+                        </>
+                    )}
                 </div>
             </ContextualPopup>
 
@@ -196,6 +222,11 @@ const EmployeeDirectoryContent = ({ activeTab }: Props) => {
             />
             <DeactivateEmployee
                 isOpen={activeTool === 'deactivate_employee'}
+                onClose={() => setActiveTool(null)}
+                employees={selectedEmployees.map((employee) => employee.employee)}
+            />
+            <BulkChangeWeekOff
+                isOpen={activeTool === 'bulk_week_off'}
                 onClose={() => setActiveTool(null)}
                 employees={selectedEmployees.map((employee) => employee.employee)}
             />

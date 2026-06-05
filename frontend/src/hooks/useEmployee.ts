@@ -877,6 +877,23 @@ export const useUpdateEmployeeWeekOffMutation = () => {
     },
   });
 };
+export const useChangeEmployeesWeekOffMutation = () => {
+  return useMutation({
+    mutationKey: ["changeEmployeesWeekOff"],
+    mutationFn: ({
+      employees,
+      new_week_off,
+      effective_date,
+    }: {
+      employees: string[];
+      new_week_off: string;
+      effective_date: string;
+    }) => EmployeeService.changeEmployeesWeekOff(employees, new_week_off, effective_date),
+    onError: (error) => {
+      console.error("Error changing employees week off:", error);
+    },
+  });
+};
 export const useDeactivateEmployeeMutation = () => {
   return useMutation({
     mutationKey: ["deactivateEmployee"],
