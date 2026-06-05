@@ -18,6 +18,9 @@ import Button from "../shared/atoms/Button";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { useTargetUser } from "../../context/ViewedUserContext";
+import { useGetEmployeeDetailsByEmpId } from "../../hooks/useEmployee";
 
 // -------------------- TYPES --------------------
 interface NotificationLog {
@@ -29,6 +32,11 @@ interface NotificationLog {
   read: number;
   from_user: string;
   creation: string;
+  url: string | null;
+  link: string | null;
+  document_type: string | null;
+  document_name: string | null;
+  todo: string | null;
 }
 
 // Map tab → readFilter param
@@ -48,13 +56,30 @@ const NotificationList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageCache, setPageCache] = useState<Record<number, NotificationLog[]>>({});
 
+  const { data: currentUser } = useCurrentUser();
+  const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
+  const { data: targetEmployee } = useGetEmployeeDetailsByEmpId(targetEmployeeId ?? "");
+
+
+  const effectiveUser = isViewingOtherUser
+    ? (targetEmployee as { user_id?: string })?.user_id
+    : currentUser?.name;
+
+
+
   // ✅ Pass readFilter to API — server-side filtering
   const readFilter = TAB_FILTER[activeTab];
+
   const { data, isLoading } = useNotifications(
+    effectiveUser,
     LIMIT,
     (currentPage - 1) * LIMIT,
     readFilter
   );
+
+  const isQueryLoading =
+    isLoading ||
+    (!effectiveUser && (isViewingOtherUser ? !targetEmployee : !currentUser));
 
   const apiNotifications: NotificationLog[] = useMemo(() => (data ?? []).map((item) => ({
     email_content: item.email_content || "",
@@ -65,6 +90,11 @@ const NotificationList = () => {
     read: item.read,
     from_user: item.from_user,
     creation: item.creation,
+    url: item.url,
+    link: item.link,
+    document_type: item.document_type,
+    document_name: item.document_name,
+    todo: item.todo,
   })), [data]);
 
   const [selectedNotification, setSelectedNotification] =
@@ -261,7 +291,7 @@ const NotificationList = () => {
 
       {/* Scrollable List */}
       <div className="flex-1 min-h-0 overflow-y-auto p-2">
-        {isLoading && currentNotifications.length === 0 ? (
+        {isQueryLoading && currentNotifications.length === 0 ? (
           <CardSkeleton />
         ) : filteredNotifications.length === 0 ? (
           <NoDataFound
@@ -329,12 +359,28 @@ const NotificationList = () => {
               )}
             </div>
 
-            <div className="px-6 py-4 border-t flex justify-end gap-2">
-              {/* Handler needs to be implemented */}
-              <Button size="md" className="rounded-none h-8">
-                Act
-              </Button>
-            </div>
+            {selectedNotification.url && (
+              <div className="px-6 py-4 border-t flex justify-end gap-2">
+                <Button
+                  size="md"
+                  className="rounded-none h-8"
+                  onClick={() => {
+                    const targetUrl = selectedNotification.url;
+                    if (targetUrl) {
+                      if (targetUrl.startsWith("http") || targetUrl.startsWith("/webapp")) {
+                        window.location.href = targetUrl;
+                      } else if (targetUrl.startsWith("/")) {
+                        navigate(targetUrl);
+                      } else {
+                        window.location.href = targetUrl;
+                      }
+                    }
+                  }}
+                >
+                  Act
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}

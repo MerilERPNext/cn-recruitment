@@ -3,10 +3,11 @@ import { toast } from "react-hot-toast";
 import { NotificationService, NotificationAlertService } from "../services/notificationLogService";
 import { NotificationLog } from "../types/notificationLog";
 
-export const useNotifications = (limit = 100, offset = 0, readFilter?: 0 | 1) => {
+export const useNotifications = (forUser: string | undefined, limit = 100, offset = 0, readFilter?: 0 | 1) => {
   return useQuery<NotificationLog[]>({
-    queryKey: ["notifications", limit, offset, readFilter],
-    queryFn: () => NotificationAlertService.getNotifications(limit, offset, readFilter),
+    queryKey: ["notifications", forUser, limit, offset, readFilter],
+    queryFn: () => NotificationAlertService.getNotifications(forUser!, limit, offset, readFilter),
+    enabled: !!forUser,
     refetchInterval: 30000,
     staleTime: Infinity,
   });
