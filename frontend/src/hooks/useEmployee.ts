@@ -878,6 +878,7 @@ export const useUpdateEmployeeWeekOffMutation = () => {
   });
 };
 export const useChangeEmployeesWeekOffMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["changeEmployeesWeekOff"],
     mutationFn: ({
@@ -889,6 +890,10 @@ export const useChangeEmployeesWeekOffMutation = () => {
       new_week_off: string;
       effective_date: string;
     }) => EmployeeService.changeEmployeesWeekOff(employees, new_week_off, effective_date),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["directory-employees"] });
+      queryClient.invalidateQueries({ queryKey: ["employee"] });
+    },
     onError: (error) => {
       console.error("Error changing employees week off:", error);
     },
@@ -921,6 +926,7 @@ export const useDeactivateEmployeeMutation = () => {
 };
 
 export const useReactivateEmployeeMutation = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationKey: ["reactivateEmployee"],
     mutationFn: ({
@@ -934,6 +940,10 @@ export const useReactivateEmployeeMutation = () => {
         employees,
         comment,
       ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["directory-employees"] });
+      queryClient.invalidateQueries({ queryKey: ["employee"] });
+    },
     onError: (error) => {
       console.error("Error reactivating employee:", error);
     },

@@ -26,36 +26,40 @@ const BulkChangeWeekOff: React.FC<BulkChangeWeekOffProps> = ({ isOpen, onClose, 
 
     const handleSubmit = async () => {
         await loading?.wrap(async () => {
+            let submission;
             try {
                 if (formInstance.current) {
-                    const submission = await formInstance.current.submit();
-                    await new Promise<void>((resolve, reject) => {
-                        changeEmployeesWeekOff(
-                            {
-                                employees: employees,
-                                new_week_off: submission.data.new_week_off,
-                                effective_date: submission.data.effective_date,
-                            },
-                            {
-                                onSuccess: () => {
-                                    toast.success(`Weekly off updated for ${employees.length} employee${employees.length > 1 ? "s" : ""}.`);
-                                    onClose();
-                                    resolve();
-                                },
-                                onError: (e: CustomError) => {
-                                    const formattedError = errorResponseFormater(e, "Update Failed");
-                                    toast.error(formattedError);
-                                    reject(e);
-                                    onClose();
-                                },
-                            }
-                        );
-                    });
+                    submission = await formInstance.current.submit();
                 }
             } catch (error) {
                 console.error("Form submission error:", error);
                 toast.error("Please correct the errors in the form.");
-                throw error;
+                return;
+            }
+
+            if (submission) {
+                await new Promise<void>((resolve) => {
+                    changeEmployeesWeekOff(
+                        {
+                            employees: employees,
+                            new_week_off: submission.data.new_week_off,
+                            effective_date: submission.data.effective_date,
+                        },
+                        {
+                            onSuccess: () => {
+                                toast.success(`Weekly off updated for ${employees.length} employee${employees.length > 1 ? "s" : ""}.`);
+                                onClose();
+                                resolve();
+                            },
+                            onError: (e: CustomError) => {
+                                const formattedError = errorResponseFormater(e, "Update Failed");
+                                toast.error(formattedError);
+                                onClose();
+                                resolve();
+                            },
+                        }
+                    );
+                });
             }
         }, "Updating weekly off...");
     };

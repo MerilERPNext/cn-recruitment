@@ -26,41 +26,45 @@ const UndoDeactivation: React.FC<UndoDeactivationProps> = ({ isOpen, onClose, em
 
     const handleSubmit = async () => {
         await loading?.wrap(async () => {
+            let submission;
             try {
                 if (formInstance.current) {
-                    const submission = await formInstance.current.submit();
-                    await new Promise<void>((resolve, reject) => {
-                        reactivateEmployeeMutation(
-                            {
-                                employees: [employeeId],
-                                comment: submission.data.comment,
-                            },
-                            {
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                onSuccess: (response: any) => {
-                                    if (response?.success === false) {
-                                        const errorMsg = response?.results?.[0]?.message || response?.message || "Reactivation failed";
-                                        toast.error(errorMsg);
-                                    } else {
-                                        toast.success("Employee reactivated successfully.");
-                                    }
-                                    onClose();
-                                    resolve();
-                                },
-                                onError: (e: CustomError) => {
-                                    const formattedError = errorResponseFormater(e, "Reactivation Failed");
-                                    toast.error(formattedError);
-                                    reject(e);
-                                    onClose();
-                                },
-                            }
-                        );
-                    });
+                    submission = await formInstance.current.submit();
                 }
             } catch (error) {
                 console.error("Form submission error:", error);
                 toast.error("Please correct the errors in the form.");
-                throw error;
+                return;
+            }
+
+            if (submission) {
+                await new Promise<void>((resolve) => {
+                    reactivateEmployeeMutation(
+                        {
+                            employees: [employeeId],
+                            comment: submission.data.comment,
+                        },
+                        {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            onSuccess: (response: any) => {
+                                if (response?.success === false) {
+                                    const errorMsg = response?.results?.[0]?.message || response?.message || "Reactivation failed";
+                                    toast.error(errorMsg);
+                                } else {
+                                    toast.success("Employee reactivated successfully.");
+                                }
+                                onClose();
+                                resolve();
+                            },
+                            onError: (e: CustomError) => {
+                                const formattedError = errorResponseFormater(e, "Reactivation Failed");
+                                toast.error(formattedError);
+                                onClose();
+                                resolve();
+                            },
+                        }
+                    );
+                });
             }
         }, "Reactivating employee...");
     };

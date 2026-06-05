@@ -153,11 +153,13 @@ const EmployeeSearch = ({
   // For "My Reportees" tab, auto-populate table with all fetched reportees
   // so users see their reportees immediately without search+select+apply.
   // Also resets to full list when the user clears their search selection.
+  const dataIds = data.map((emp) => emp.name).join(",");
   useEffect(() => {
     if (activeTab === 'my_reportees' && appliedSearchEmployees.length === 0) {
       setEmployees(data);
     }
-  }, [activeTab, data, setEmployees, appliedSearchEmployees]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, dataIds, setEmployees, appliedSearchEmployees]);
 
   const handleFilterUpdate = (data: EmployeeDirectoryFilterData) => {
     setActiveFilters(data);
