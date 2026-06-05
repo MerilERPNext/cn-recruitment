@@ -2,7 +2,7 @@ import { ClipboardList } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import { useTodoList } from "../../hooks/useTodo";
+import { useTodoCategories, useTodoList } from "../../hooks/useTodo";
 import type { ToDo } from "../../services/todoService";
 import { formatDateDDMonthYYYY } from "../../utils/formatToIndianDate";
 import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
@@ -63,7 +63,11 @@ const MyToDoItem: React.FC<{ item: ToDo; index?: number }> = ({ item }) => {
 };
 
 const TasksAwaiting: React.FC = () => {
-  const { data: fullData = [], isLoading } = useTodoList();
+  const {
+    data: categories = [],
+    isLoading: isCategoriesLoading,
+  } = useTodoCategories();
+
   const [activeCategory, setActiveCategory] = useState<string>("");
 
   const navigate = useNavigate();
@@ -85,45 +89,37 @@ const TasksAwaiting: React.FC = () => {
     return colors[index % colors.length];
   };
 
-
-  // Get only categorized entries (exclude uncategorized)
-  const categorizedData = useMemo(() => {
-    return fullData.filter((item: { custom_todo_type: string; }) => !!item.custom_todo_type);
-  }, [fullData]);
-
-  const filtered = useMemo(() => {
-    if (!activeCategory) return categorizedData;
-    return categorizedData.filter((item: { custom_todo_type: string; }) => item.custom_todo_type === activeCategory);
-  }, [activeCategory, categorizedData]);
-
-  const categoryCounts = useMemo(() => {
-    const grouped: Record<string, number> = {};
-
-    categorizedData.forEach((item: { custom_todo_type: string; }) => {
-      const cat = item.custom_todo_type;
-      if (cat) {
-        grouped[cat] = (grouped[cat] || 0) + 1;
-      }
-    });
-
-    return grouped;
-  }, [categorizedData]);
-
   // Set default active category to the first available category
-  const categoryKeys = useMemo(() => Object.keys(categoryCounts), [categoryCounts]);
-
   React.useEffect(() => {
-    if (categoryKeys.length > 0 && (!activeCategory || !categoryKeys.includes(activeCategory))) {
-      setActiveCategory(categoryKeys[0]);
+    if (
+      categories.length > 0 &&
+      (!activeCategory || !categories.some((c) => c.name === activeCategory))
+    ) {
+      setActiveCategory(categories[0].name);
     }
-  }, [categoryKeys, activeCategory]);
+  }, [categories, activeCategory]);
+
+  // Fetch todos for the selected category using category_filter
+  const {
+    data: todos = [],
+    isLoading: isTodosLoading,
+  } = useTodoList(
+    activeCategory
+      ? { category_filter: activeCategory }
+      : {}
+  );
+
+  // Show only top 3 items
+  const displayedTodos = useMemo(() => todos.slice(0, 3), [todos]);
 
   const filterOptions = useMemo(() => {
-    return Object.entries(categoryCounts).map(([cat, count]) => ({
-      label: `${cat} (${count})`,
-      value: cat,
+    return categories.map((cat) => ({
+      label: `${cat.name} (${cat.count})`,
+      value: cat.name,
     }));
-  }, [categoryCounts]);
+  }, [categories]);
+
+  const isLoading = isCategoriesLoading;
 
   return (
     <Card shadow="sm" className="h-fit md:h-full flex flex-col">
@@ -150,37 +146,36 @@ const TasksAwaiting: React.FC = () => {
         </div>
       )}
 
-      {isDesktop && !isLoading && categoryKeys.length > 0 && (
+      {isDesktop && !isLoading && categories.length > 0 && (
         <div className="flex gap-3 mb-4 p-2 max-w-full overflow-x-auto">
-          {Object.entries(categoryCounts).map(([cat, count], idx) => {
-            const isActive = activeCategory === cat;
+          {categories.map((cat, idx) => {
+            const isActive = activeCategory === cat.name;
             const colors = generatePastelColor(idx);
 
             return (
               <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
+                key={cat.name}
+                onClick={() => setActiveCategory(cat.name)}
                 className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${isActive
                   ? `scale-105 ring-2 ${colors}`
                   : `${colors} opacity-70 hover:opacity-100`
                   } `}
               >
-                {cat} ({count})
+                {cat.name} ({cat.count})
               </button>
             );
           })}
         </div>
       )}
 
-
-      {/* Show only latest 3 items for the active category */}
+      {/* Show only top 5 items for the active category */}
       <div className="flex-1">
-        {isLoading ? (
+        {isLoading || isTodosLoading ? (
           <CardSkeleton rows={2} />
-        ) : filtered.length > 0 ? (
-          filtered
-            .slice(0, 3)
-            .map((item: ToDo) => <MyToDoItem key={item.name} item={item} />)
+        ) : displayedTodos.length > 0 ? (
+          displayedTodos.map((item: ToDo) => (
+            <MyToDoItem key={item.name} item={item} />
+          ))
         ) : (
           <NoDataFound
             title="You're all caught up 🎉"
