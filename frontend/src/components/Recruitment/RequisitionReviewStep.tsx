@@ -178,6 +178,10 @@ export default function RequisitionReviewStep({
               },
               { label: "Expected By Date", value: formData.expected_by },
               {
+                label: "Position Specific Requirements",
+                value: (formData as any).additional_roles_responsibilities,
+              },
+              {
                 label: "Reason for Requesting",
                 value: formData.reason_for_requesting,
               },
@@ -348,6 +352,20 @@ export default function RequisitionReviewStep({
               {
                 label: "Expected Compensation",
                 value: formData.expected_compensation,
+              },
+              {
+                label: "Cost Center",
+                value:
+                  (formData as any).cost_centre_title ??
+                  (formData as any).cost_centre,
+              },
+              {
+                label: "Designation Change",
+                value: (formData as any).designation_change,
+              },
+              {
+                label: "Comments / Instruction",
+                value: (formData as any).comments_instructions,
               },
             ].map((f) => (
               <div key={f.label} className="space-y-1">

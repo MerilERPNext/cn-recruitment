@@ -246,6 +246,14 @@ export interface ReferralField {
   fieldtype?: string;
   reqd?: number;
   visibility?: string;
+  options?: string;
+  table_fields?: {
+    fieldname: string;
+    label: string;
+    fieldtype?: string;
+    reqd?: number;
+    in_list_view?: number;
+  }[];
 }
 
 export type ReferralApplicationValue =
