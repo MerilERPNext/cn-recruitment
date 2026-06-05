@@ -822,8 +822,8 @@ export const useResetPasswordMutation = () => {
 export const useUpdateEmployeeSelfServiceMutation = () => {
   return useMutation({
     mutationKey: ["updateEmployeeSelfService"],
-    mutationFn: ({ employee, status }: { employee: string; status: string }) =>
-      EmployeeService.updateEmployeeSelfService(employee, status),
+    mutationFn: ({ employee, status, mobile_status }: { employee: string; status: string; mobile_status: string }) =>
+      EmployeeService.updateEmployeeSelfService(employee, status, mobile_status),
     onError: (error) => {
       console.error("Error updating employee self service:", error);
     },

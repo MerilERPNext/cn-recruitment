@@ -788,12 +788,13 @@ export class EmployeeService {
     const data = await response;
     return data;
   }
-  static async updateEmployeeSelfService(employee?: string, status?: string) {
+  static async updateEmployeeSelfService(employee?: string, status?: string, mobile_status?: string) {
     const response = FrappeAPI.callMethod(
       "cn_leave_shift_managment.employee_directory.change_employee_self_service_role",
       {
         employee: employee,
         status: status,
+        mobile_status: mobile_status,
       },
     );
     const data = await response;

@@ -33,7 +33,8 @@ const ChangeSelfService: React.FC<ChangeSelfServiceProps> = ({ isOpen, onClose, 
                         updateEmployeeSelfService(
                             {
                                 employee: employeeId,
-                                status: submission?.data?.self_service_status
+                                status: submission?.data?.self_service_status,
+                                mobile_status: submission?.data?.mobile_status
                             },
                             {
                                 onSuccess: () => {
