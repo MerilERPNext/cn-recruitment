@@ -934,8 +934,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   const isSending = sendEmailMutation.isPending;
   const isClosing = closeTicketMutation.isPending || closeResolvedMutation.isPending;
 
-  const creationForm = useMemo(() => {
-    const form = ticket.creation_form_data;
+  const parseForm = (form: string | null | undefined) => {
     if (typeof form === "string") {
       try {
         return JSON.parse(form);
@@ -945,33 +944,11 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       }
     }
     return form;
-  }, [ticket.creation_form_data]);
+  };
 
-  const feedbackForm = useMemo(() => {
-    const form = ticket.feedback_form_data;
-    if (typeof form === "string") {
-      try {
-        return JSON.parse(form);
-      } catch (error) {
-        console.error("Error parsing form data", error);
-        return {};
-      }
-    }
-    return form;
-  }, [ticket.feedback_form_data]);
-
-  const closeForm = useMemo(() => {
-    const form = ticket.closing_form_data;
-    if (typeof form === "string") {
-      try {
-        return JSON.parse(form);
-      } catch (error) {
-        console.error("Error parsing form data", error);
-        return {};
-      }
-    }
-    return form;
-  }, [ticket.closing_form_data]);
+  const creationForm = useMemo(() => parseForm(ticket.creation_form_data), [ticket.creation_form_data]);
+  const feedbackForm = useMemo(() => parseForm(ticket.feedback_form_data), [ticket.feedback_form_data]);
+  const closeForm = useMemo(() => parseForm(ticket.closing_form_data), [ticket.closing_form_data]);
 
   const [showForms, setShowForms] = useState<boolean>(false);
 
