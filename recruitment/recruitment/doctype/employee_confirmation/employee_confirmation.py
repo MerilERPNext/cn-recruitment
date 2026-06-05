@@ -6,6 +6,21 @@ from frappe.model.document import Document
 from datetime import timedelta
 
 
+SEPARATION_TODO_TYPE = "Initiate Separation"
+
+
+def ensure_separation_todo_type():
+	if frappe.db.exists("Todo Type", SEPARATION_TODO_TYPE):
+		return
+	frappe.get_doc({
+		"doctype": "Todo Type",
+		"todo_type_name": SEPARATION_TODO_TYPE,
+		"is_active": 1,
+		"redirect_only": 1,
+		"dynamic_route": '"flow-app/separation?target_user=" + (todo.reference_name or "")',
+	}).insert(ignore_permissions=True)
+
+
 class EmployeeConfirmation(Document):
     	
 	def on_submit(self):
@@ -27,6 +42,25 @@ class EmployeeConfirmation(Document):
 			employee = frappe.get_doc("Employee", self.employee)
 			employee.custom_employment_status = "Pending Separation"
 			employee.save()
+
+			hrbp_user = None
+			if employee.custom_hrbp:
+				hrbp_user = frappe.db.get_value("Employee", employee.custom_hrbp, "user_id")
+
+			if hrbp_user:
+				ensure_separation_todo_type()
+
+				todo = frappe.new_doc("ToDo")
+				todo.owner = "Administrator"
+				todo.allocated_to = hrbp_user
+				todo.reference_type = "Employee"
+				todo.reference_name = self.employee
+				todo.description = f"Initiate separation for {employee.employee_name}"
+				todo.status = "Open"
+				todo.priority = "High"
+				todo.custom_todo_type = SEPARATION_TODO_TYPE
+				todo.flags.ignore_permissions = True
+				todo.insert()
 
 	def validate(self):
 		draft_exists = frappe.db.exists(
