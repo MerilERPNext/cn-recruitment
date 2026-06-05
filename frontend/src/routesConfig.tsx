@@ -424,12 +424,12 @@ const MyTeamBenefitsRequests = lazyWithRetry(
 );
 
 const HelpDeskApp = lazyWithRetry(
-  () => import("./components/HelpDesk/HelpDeskApp"),
+  () => import("./components/HelpDesk/Helpdesk/HelpDeskApp"),
   "HelpDeskApp",
 );
 
 const FAQPage = lazyWithRetry(
-  () => import("./components/HelpDesk/FAQPage"),
+  () => import("./components/HelpDesk/FAQ/FAQPage"),
   "FAQPage",
 );
 

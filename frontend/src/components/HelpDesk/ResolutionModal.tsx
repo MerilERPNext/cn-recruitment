@@ -194,10 +194,10 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>
-            <Typography variant="h3" color="primary">
+            <Typography variant="h3" color="primary" className="text-lg sm:text-[24px] font-bold">
               {title}
             </Typography>
-            <Typography variant="bodySmall" color="body2" className="mt-1">
+            <Typography variant="bodySmall" color="body2" className="mt-1 text-xs sm:text-[14px]">
               Ticket ID: {ticket?.name}
             </Typography>
           </div>
@@ -216,7 +216,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
               display: none !important;
             }
           `}</style>
-          <Typography variant="bodySmall" color="body2" className="mb-3">
+          <Typography variant="bodySmall" color="body2" className="mb-3 text-xs sm:text-[14px]">
             {description}
           </Typography>
 
@@ -232,7 +232,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
             <FormioFormSkeleton />
           }
           {!feedbackFormJsonLoading && feedbackFormJson && !isRequestClosure && <div className="w-full show-req-astrik mt-4 ">
-            <Typography variant="subheading" className="mb-1">Feedback Form Details</Typography>
+            <Typography variant="subheading" className="mb-1 text-base sm:text-[18px] font-semibold">Feedback Form Details</Typography>
             <div id={`feedback-form-container-${ticket?.name}`} className="w-full border-gray-100 rounded-lg p-4 border-1">
               <Form
                 form={feedbackFormJson}
@@ -253,7 +253,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
             <FormioFormSkeleton />
           }
           {!exitFormJsonLoading && exitFormJson && !isRequestClosure && <div className="w-full show-req-astrik mt-4 ">
-            <Typography variant="subheading" className="mb-1">Issue Closure Form</Typography>
+            <Typography variant="subheading" className="mb-1 text-base sm:text-[18px] font-semibold">Issue Closure Form</Typography>
             <div id={`exit-form-container-${ticket?.name}`} className="w-full border-gray-100 rounded-lg p-4 border-1">
               <Form
                 form={exitFormJson}

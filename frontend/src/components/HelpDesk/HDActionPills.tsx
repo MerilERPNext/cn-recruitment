@@ -1,10 +1,12 @@
 "use client";
 
-import { Trash2, CheckCircle, MessageSquare, RotateCcw } from "lucide-react";
+import { Trash2, CheckCircle, MessageSquare, RotateCcw, MoreVertical } from "lucide-react";
 import type { JSX } from "react";
 import Tooltip from "../shared/Tooltip";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Button, { ButtonColor } from "../shared/atoms/Button";
+import DropdownMenu from "../shared/DropDownMenu";
+import IconButton from "../shared/atoms/IconButton";
 
 type HDActionPillProp = {
     canRevoke?: boolean;
@@ -23,6 +25,7 @@ type HDActionPillProp = {
     reopenLoading?: boolean;
 
     variant?: "pill" | "buttons";
+    placement?: "top-right" | "bottom-left";
 };
 
 type ActionItem = {
@@ -48,6 +51,7 @@ const HDActionPill = ({
     replyLoading = false,
     reopenLoading = false,
     variant = "pill",
+    placement = "top-right"
 }: HDActionPillProp) => {
     const hasActions = canRevoke || canClose || canReply || canReopen;
     const { isDesktop } = useScreenSize();
@@ -107,15 +111,46 @@ const HDActionPill = ({
         });
     }
 
-    // ✅ MOBILE BUTTON VARIANT OR NON-DESKTOP
-    if (variant === "buttons" || !isDesktop) {
+    // ✅ MOBILE VARIANT
+    if (!isDesktop) {
         return (
-            <div className={`flex gap-2 w-full ${variant !== "buttons" && !isDesktop ? 'justify-end flex-wrap' : 'mt-3'}`}>
+            <div className="flex justify-end w-full">
+                <DropdownMenu
+                    placement={placement}
+                    className="capitalize"
+                    items={actions.map((action) => ({
+                        label: action.key === "close" ? "Close Ticket" : action.key === "reopen" ? "Reopen Ticket" : action.key,
+                        icon: action.loading ? <span className="w-4 h-4 border border-gray-400 border-t-transparent rounded-full animate-spin" /> : action.icon,
+                        onClick: () => {
+                            if (!action.loading) {
+                                action.onClick?.();
+                            }
+                        },
+                    }))}
+                >
+                    <div className="w-fit">
+                        <IconButton
+                            icon={<MoreVertical className="h-4 w-4" />}
+                            size="xs"
+                            variant="subtle"
+                            color="secondary"
+                            radius="md"
+                        />
+                    </div>
+                </DropdownMenu>
+            </div>
+        );
+    }
+
+    // ✅ DESKTOP BUTTON VARIANT
+    if (variant === "buttons") {
+        return (
+            <div className="flex gap-2 w-full mt-3">
                 {actions.map((action) => (
                     <Button
                         key={action.key}
                         bgColor={action.color}
-                        variant={variant === "buttons" ? "contain" : "soft"}
+                        variant="contain"
                         size="sm"
                         onClick={(e) => {
                             e.preventDefault();
@@ -125,7 +160,7 @@ const HDActionPill = ({
                         disabled={action.loading}
                         loading={action.loading}
                         icon={action.icon}
-                        className={variant === "buttons" ? "flex-1" : ""}
+                        className="flex-1"
                     >
                         <span className="capitalize">{action.key === "close" ? "Close Ticket" : action.key === "reopen" ? "Reopen Ticket" : action.key}</span>
                     </Button>

@@ -1,6 +1,7 @@
-import { ArrowDown, ArrowUp, ArrowUpDown, Ticket as TicketIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Ticket as TicketIcon, X, MessageSquare, FileText, Loader2 } from "lucide-react";
 import React, { useRef, useState, useEffect } from "react";
-import { HDTicket } from "../../hooks/useHelpDeskTickets";
+import { HDTicket, useTicketDetail } from "../../hooks/useHelpDeskTickets";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useCountdown } from "../../hooks/Helpdesk/useCountdown";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import formatToIndianDate from "../../utils/formatToIndianDate";
@@ -12,7 +13,7 @@ import NoDataFound from "../shared/atoms/NoDataFound";
 import { showCloseTicketButton } from "./hdelpdeskUtils";
 import HDActionPill from "./HDActionPills";
 import TicketTableRow from "./TicketTableRow";
-import Button from "../shared/atoms/Button";
+import SimplifiedChatView from "./Helpdesk/SimplifiedChatView";
 
 interface TicketTableProps {
   tickets: HDTicket[];
@@ -162,17 +163,12 @@ const TicketCard: React.FC<TicketCardProps> = ({
 
   return (
     <div
-      className="rounded-2xl my-2 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary p-6 transition-shadow duration-200 flex flex-col gap-5 cursor-pointer hover:shadow-md"
+      className="rounded-2xl my-2 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary p-4 transition-shadow duration-200 flex flex-col gap-4 cursor-pointer hover:shadow-md"
       onClick={() => onRowClick?.(ticket)}
     >
-      <div className="flex justify-between items-start mb-1">
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col gap-2">
-            <Typography variant="mobileCardLabel" className="block">
-              Issue ID
-            </Typography>
-            <Typography variant="mobileCardValue">{ticket.name}</Typography>
-          </div>
+      <div className="flex justify-between items-center mb-0">
+        <div className="flex items-center gap-1.5">
+          <Typography variant="mobileCardTitle">Issue ID : {ticket.name}</Typography>
         </div>
 
         <Badge
@@ -183,10 +179,10 @@ const TicketCard: React.FC<TicketCardProps> = ({
         />
       </div>
 
-      {/* Data Fields - Responsive Flex Layout */}
-      <div className="flex flex-wrap gap-5">
+      {/* Data Fields - Grid Layout */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-4 gap-x-3">
         {/* Category */}
-        <div className="flex flex-col gap-2 flex-1 min-w-[calc(50%-0.625rem)] sm:min-w-[calc(25%-0.9375rem)]">
+        <div className="flex flex-col gap-1">
           <Typography variant="mobileCardLabel" className="block">
             Category
           </Typography>
@@ -196,7 +192,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
         </div>
 
         {/* Sub Category */}
-        <div className="flex flex-col gap-2 flex-1 min-w-[calc(50%-0.625rem)] sm:min-w-[calc(25%-0.9375rem)] text-right">
+        <div className="flex flex-col gap-1 text-right sm:text-left">
           <Typography variant="mobileCardLabel" className="block">
             Sub Category
           </Typography>
@@ -206,7 +202,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
         </div>
 
         {/* Assigned to */}
-        <div className="flex flex-col gap-2 flex-1 min-w-[calc(50%-0.625rem)] sm:min-w-[calc(25%-0.9375rem)]">
+        <div className="flex flex-col gap-1">
           <Typography variant="mobileCardLabel" className="block">
             Assigned to
           </Typography>
@@ -223,7 +219,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
         </div>
 
         {/* Created on */}
-        <div className="flex flex-col gap-2 flex-1 min-w-[calc(50%-0.625rem)] sm:min-w-[calc(25%-0.9375rem)] text-right">
+        <div className="flex flex-col gap-1 text-right sm:text-left">
           <Typography variant="mobileCardLabel" className="block">
             Created on
           </Typography>
@@ -233,7 +229,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
         </div>
 
         {/* Creator Type */}
-        <div className="flex flex-col gap-2 flex-1 min-w-[calc(50%-0.625rem)] sm:min-w-[calc(25%-0.9375rem)]">
+        <div className="flex flex-col gap-1">
           <Typography variant="mobileCardLabel" className="block">
             Creator Type
           </Typography>
@@ -243,7 +239,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
         </div>
 
         {/* Number of Comments */}
-        <div className="flex flex-col gap-2 flex-1 min-w-[calc(50%-0.625rem)] sm:min-w-[calc(25%-0.9375rem)] text-right">
+        <div className="flex flex-col gap-1 text-right sm:text-left">
           <Typography variant="mobileCardLabel" className="block">
             Comments
           </Typography>
@@ -254,7 +250,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
       </div>
 
       <div>
-        <div className="h-[1px] w-full bg-gray-100 mb-4" />
+        <div className="h-[1px] w-full bg-gray-100 mb-2" />
         <div className="flex justify-between items-center">
           <Typography variant="mobileCardFooter">
             Last Updated on {formatToIndianDate(ticket.modified)}
@@ -343,6 +339,22 @@ const formateDateDiff = (date1: string, date2: string) => {
   return `${hours}h ${minutes}m`;
 }
 
+interface DetailRowProps {
+  label: string;
+  value: React.ReactNode;
+}
+
+const DetailRow: React.FC<DetailRowProps> = ({ label, value }) => (
+  <div className="flex flex-col gap-1">
+    <span className="text-[10px] uppercase tracking-wider font-bold text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis w-full">
+      {label}
+    </span>
+    <div className="text-sm font-bold text-slate-800 break-words whitespace-normal leading-snug">
+      {value}
+    </div>
+  </div>
+);
+
 interface MobileTicketDetailModalProps {
   ticket: HDTicket | null;
   isOpen: boolean;
@@ -360,6 +372,8 @@ interface MobileTicketDetailModalProps {
   permReopen?: boolean;
 }
 
+type MobileDetailTab = "details" | "chat";
+
 const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
   ticket,
   isOpen,
@@ -376,11 +390,27 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
   permReply = true,
   permReopen = true,
 }) => {
+  const [activeTab, setActiveTab] = useState<MobileDetailTab>("details");
+  const { data: currentUser } = useCurrentUser();
+  const currentUserEmail = currentUser?.email || "";
+
+  // Fetch full ticket details for chat view
+  const { data: fullTicketDetail, isLoading: isLoadingDetail } = useTicketDetail(
+    ticket?.name || ""
+  );
+
   const targetTime = ticket
     ? new Date(new Date(ticket.creation).getTime() + (ticket.custom_second_level_escalation_delay_hours || 0) * 60 * 60 * 1000)
     : new Date();
 
   const { hours, minutes, seconds, isExpired } = useCountdown(targetTime);
+
+  // Reset tab when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setActiveTab("details");
+    }
+  }, [isOpen]);
 
   if (!ticket) return <BottomDrawer isOpen={isOpen} onClose={onClose}><div /></BottomDrawer>;
 
@@ -391,103 +421,172 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
     return categoryMap[categoryId] || categoryId;
   };
 
-  const DetailRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
-    <div className="flex flex-col gap-1">
-      <span className="text-[10px] uppercase tracking-wider font-bold text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis w-full">
-        {label}
-      </span>
-      <div className="text-sm font-bold text-slate-800 break-words whitespace-normal leading-snug">
-        {value}
+  // Details Tab Content
+  const renderDetailsContent = () => (
+    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/70">
+      {/* Card 1: Issue Details */}
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="bg-gradient-to-r from-blue-50/80 to-white px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center">
+              <FileText className="w-3.5 h-3.5 text-blue-600" />
+            </div>
+            <span className="text-xs font-semibold text-gray-700">Issue Details</span>
+          </div>
+          <div onClick={(e) => e.stopPropagation()}>
+            <HDActionPill
+              canClose={permCloseTicket && showCloseTicketButton(ticket.status)}
+              canRevoke={permRevoke && ticket.status === "Open" && !ticket.custom_archived}
+              canReply={permReply && ticket.status !== "Closed"}
+              canReopen={permReopen && ticket.status === "Closed"}
+              onReopen={() => { onReopen(ticket); onClose(); }}
+              onClose={() => { onCloseTicket(ticket); onClose(); }}
+              onReply={() => { onReply(ticket); onClose(); }}
+              onRevoke={() => { onRevoke(ticket); onClose(); }}
+              placement="bottom-left"
+            />
+          </div>
+        </div>
+        <div className="p-4 grid grid-cols-2 gap-y-5 gap-x-4">
+          <DetailRow label="Category" value={getCategoryName(ticket.custom_category)} />
+          <DetailRow label="Sub Category" value={getCategoryName(ticket.custom_sub_category)} />
+          <DetailRow label="Requested By" value={ticket.raise_by_name || "-"} />
+          <DetailRow label="Assigned to" value={getAssignedName(ticket._assign, userLookup)} />
+          <DetailRow label="Creator Type" value={ticket.user_type || "-"} />
+          <DetailRow label="Number of Comments" value={ticket.no_of_comments ?? "0"} />
+        </div>
+      </div>
+
+      {/* Card 2: SLA & Timings */}
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="bg-gradient-to-r from-amber-50/80 to-white px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+          <div className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center">
+            <TicketIcon className="w-3.5 h-3.5 text-amber-600" />
+          </div>
+          <span className="text-xs font-semibold text-gray-700">Timing & SLA</span>
+        </div>
+        <div className="p-4 grid grid-cols-2 gap-y-5 gap-x-4">
+          <DetailRow label="Created on" value={formatToIndianDate(ticket.creation)} />
+          <DetailRow label="Last Updated" value={formatToIndianDate(ticket.modified)} />
+          <DetailRow label="SLA Breached TAT" value={formateDateDiff(ticket.resolution_by, ticket.creation)} />
+          <DetailRow label="SLA Breached FRT" value={formateDateDiff(ticket.response_by, ticket.creation)} />
+        </div>
+        {/* Highlighted section for Escalation */}
+        <div className={`px-4 py-3.5 border-t flex gap-3 justify-between items-center ${isExpired ? 'bg-red-50/60 border-red-100' : 'bg-emerald-50/60 border-emerald-100'}`}>
+          <span className={`text-[10px] font-bold uppercase tracking-wider ${isExpired ? 'text-red-700/80' : 'text-emerald-700/80'}`}>Escalation Wait Time</span>
+          <span className={`text-sm font-bold ${isExpired ? 'text-red-600' : 'text-emerald-600'}`}>
+            {isExpired ? "Escalated" : `${hours}h ${minutes}m ${seconds}s`}
+          </span>
+        </div>
       </div>
     </div>
   );
 
+  // Chat Tab Content
+  const renderChatContent = () => {
+    if (isLoadingDetail) {
+      return (
+        <div className="flex-1 flex items-center justify-center bg-slate-50/70">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            <span className="text-sm text-gray-500">Loading conversation...</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (!fullTicketDetail) {
+      return (
+        <div className="flex-1 flex items-center justify-center bg-slate-50/70">
+          <div className="flex flex-col items-center gap-3">
+            <MessageSquare className="w-10 h-10 text-gray-300" />
+            <span className="text-sm text-gray-500">Unable to load conversation</span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <SimplifiedChatView
+          ticket={fullTicketDetail}
+          currentUserEmail={currentUserEmail}
+          isDrawer={true}
+        />
+      </div>
+    );
+  };
+
   return (
     <BottomDrawer isOpen={isOpen} onClose={onClose}>
-      <div className="flex flex-col max-h-[85vh] -mx-4 -mb-6">
-        {/* Sticky Header */}
-        <div className="flex flex-col gap-3 px-4 pt-2 pb-4 border-b border-gray-100 bg-white sticky top-0 z-10 rounded-t-2xl">
-          <div className="flex justify-between items-start gap-4">
-            <div className="flex gap-3 items-center">
-              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
-                <TicketIcon className="w-5 h-5 text-primary" />
+      <div className="flex flex-col h-[90vh] -mx-4 -mb-6">
+        {/* Header */}
+        <div className="flex flex-col gap-3 px-4 pt-3 pb-3 bg-white sticky top-0 z-10 rounded-t-2xl border-b border-gray-100">
+          {/* Title Row */}
+          <div className="flex justify-between items-start gap-3">
+            <div className="flex gap-3 items-center flex-1 min-w-0">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/20">
+                <TicketIcon className="w-5 h-5 text-white" />
               </div>
-              <div className="flex flex-col flex-1 min-w-0 pr-2">
-                <Typography variant="bodySmall" className="text-gray-500 font-medium whitespace-nowrap overflow-hidden text-ellipsis text-xs">
-                  {ticket.name}
-                </Typography>
-                <Typography variant="h3" className="font-bold text-gray-900 text-[15px] leading-tight line-clamp-2 mt-0.5">
+              <div className="flex flex-col flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <Typography variant="bodySmall" className="text-blue-600 font-semibold text-xs">
+                    #{ticket.name}
+                  </Typography>
+                  <Badge
+                    size="sm"
+                    label={badgeConfig.label}
+                    backgroundColor={badgeConfig.backgroundColor}
+                    textColor={badgeConfig.textColor}
+                  />
+                </div>
+                <Typography variant="h3" className="font-bold text-gray-900 text-sm leading-tight line-clamp-1 mt-0.5">
                   {ticket.subject || "No Subject"}
                 </Typography>
               </div>
             </div>
-            <div className="flex-shrink-0 pt-0.5">
-              <Badge
-                size="md"
-                label={badgeConfig.label}
-                backgroundColor={badgeConfig.backgroundColor}
-                textColor={badgeConfig.textColor}
-              />
-            </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all flex-shrink-0"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-1 bg-slate-100 p-0.5 rounded-lg">
+            <button
+              onClick={() => setActiveTab("details")}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === "details"
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+                }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Details
+            </button>
+            <button
+              onClick={() => setActiveTab("chat")}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === "chat"
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+                }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              Chat
+              {(ticket.no_of_comments ?? 0) > 0 && (
+                <span className={`px-1.5 py-0.5 text-[10px] rounded-full ${activeTab === "chat" ? "bg-blue-100 text-blue-700" : "bg-gray-200 text-gray-600"
+                  }`}>
+                  {ticket.no_of_comments}
+                </span>
+              )}
+            </button>
           </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50 shadow-inner max-h-[60vh]">
-
-          {/* Card 1: Issue Details */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_2px_8px_rgb(0,0,0,0.04)]">
-            <div className="bg-gradient-to-r from-slate-50 to-white px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-              <span className="text-[10px] font-bold text-gray-500/80 uppercase tracking-wider">Issue Details</span>
-            </div>
-            <div className="p-4 grid grid-cols-2 gap-y-5 gap-x-4">
-              <DetailRow label="Category" value={getCategoryName(ticket.custom_category)} />
-              <DetailRow label="Sub Category" value={getCategoryName(ticket.custom_sub_category)} />
-              <DetailRow label="Requested By" value={ticket.raise_by_name || "-"} />
-              <DetailRow label="Assigned to" value={getAssignedName(ticket._assign, userLookup)} />
-              <DetailRow label="Creator Type" value={ticket.user_type || "-"} />
-              <DetailRow label="Number of Comments" value={ticket.no_of_comments ?? "0"} />
-            </div>
-          </div>
-
-          {/* Card 2: SLA & SLA Timings */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_2px_8px_rgb(0,0,0,0.04)]">
-            <div className="bg-gradient-to-r from-slate-50 to-white px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-              <span className="text-[10px] font-bold text-gray-500/80 uppercase tracking-wider">Timing & SLA</span>
-            </div>
-            <div className="p-4 grid grid-cols-2 gap-y-5 gap-x-4">
-              <DetailRow label="Created on" value={formatToIndianDate(ticket.creation)} />
-              <DetailRow label="Last Updated" value={formatToIndianDate(ticket.modified)} />
-              <DetailRow label="SLA Breached TAT" value={formateDateDiff(ticket.resolution_by, ticket.creation)} />
-              <DetailRow label="SLA Breached FRT" value={formateDateDiff(ticket.response_by, ticket.creation)} />
-            </div>
-            {/* Highlighted section for Escalation */}
-            <div className={`px-4 py-3.5 border-t flex gap-3 justify-between items-center ${isExpired ? 'bg-red-50/50 border-red-100' : 'bg-emerald-50/50 border-emerald-100'}`}>
-              <span className={`text-[10px] font-bold uppercase tracking-wider ${isExpired ? 'text-red-700/80' : 'text-emerald-700/80'}`}>Escalation Wait Time</span>
-              <span className={`text-sm font-bold ${isExpired ? 'text-red-600' : 'text-emerald-600'}`}>
-                {isExpired ? "Escalated" : `${hours}h ${minutes}m ${seconds}s`}
-              </span>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Action Footer */}
-        <div className="px-4 py-3.5 border-t border-gray-100 bg-white sticky bottom-0 flex flex-wrap items-center justify-end gap-3 rounded-b-2xl z-20">
-          <Button variant="outline" size="md" onClick={onClose} className="border-gray-200 text-gray-600 hover:bg-gray-50">
-            Close
-          </Button>
-          <HDActionPill
-            canClose={permCloseTicket && showCloseTicketButton(ticket.status)}
-            canRevoke={permRevoke && ticket.status === "Open" && !ticket.custom_archived}
-            canReply={permReply && ticket.status !== "Closed"}
-            canReopen={permReopen && ticket.status === "Closed"}
-            onReopen={() => { onReopen(ticket); onClose(); }}
-            onClose={() => { onCloseTicket(ticket); onClose(); }}
-            onReply={() => { onReply(ticket); onClose(); }}
-            onRevoke={() => { onRevoke(ticket); onClose(); }}
-          />
-        </div>
+        {/* Content Area */}
+        {activeTab === "details" ? renderDetailsContent() : renderChatContent()}
       </div>
     </BottomDrawer>
   );
@@ -550,52 +649,63 @@ const TicketTable: React.FC<TicketTableProps> = ({
   const LoadingSkeleton = (
     !isDesktop ?
       (
-        <div className="w-fullspace-y-4 px-2">
+        <div className="w-full space-y-2 px-2">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="rounded-2xl bg-white border border-gray-100 p-6 animate-pulse"
+              className="rounded-2xl my-2 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary p-4 animate-pulse bg-white flex flex-col gap-4"
             >
               {/* Header with badge */}
-              <div className="flex justify-between items-start mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="space-y-2">
-                    <div className="h-3 w-16 bg-gray-200 rounded" />
-                    <div className="h-4 w-24 bg-gray-200 rounded" />
-                  </div>
-                </div>
-                <div className="h-6 w-16 bg-gray-200 rounded-3xl" />
+              <div className="flex justify-between items-center mb-0">
+                <div className="h-4 w-28 bg-gray-200 rounded" />
+                <div className="h-6 w-16 bg-gray-200 rounded-full" />
               </div>
 
-              {/* Responsive data fields - 4 items in flex-wrap */}
-              <div className="flex flex-wrap gap-5 mb-5">
-                <div className="flex-1 min-w-[calc(50%-0.625rem)] space-y-2">
-                  <div className="h-3 w-16 bg-gray-200 rounded" />
+              {/* Data Fields - Grid Layout */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-4 gap-x-3">
+                {/* Category */}
+                <div className="flex flex-col gap-1">
+                  <div className="h-3 w-16 bg-gray-200 rounded mb-1" />
                   <div className="h-4 w-24 bg-gray-200 rounded" />
                 </div>
-                <div className="flex-1 min-w-[calc(50%-0.625rem)] space-y-2">
-                  <div className="h-3 w-20 bg-gray-200 rounded ml-auto" />
-                  <div className="h-4 w-28 bg-gray-200 rounded ml-auto" />
+
+                {/* Sub Category */}
+                <div className="flex flex-col gap-1 items-end sm:items-start">
+                  <div className="h-3 w-20 bg-gray-200 rounded mb-1" />
+                  <div className="h-4 w-24 bg-gray-200 rounded" />
                 </div>
-                <div className="flex-1 min-w-[calc(50%-0.625rem)] space-y-2">
-                  <div className="h-3 w-18 bg-gray-200 rounded" />
-                  <div className="h-4 w-20 bg-gray-200 rounded" />
+
+                {/* Assigned to */}
+                <div className="flex flex-col gap-1">
+                  <div className="h-3 w-20 bg-gray-200 rounded mb-1" />
+                  <div className="h-4 w-28 bg-gray-200 rounded" />
                 </div>
-                <div className="flex-1 min-w-[calc(50%-0.625rem)] space-y-2">
-                  <div className="h-3 w-16 bg-gray-200 rounded ml-auto" />
-                  <div className="h-4 w-24 bg-gray-200 rounded ml-auto" />
+
+                {/* Created on */}
+                <div className="flex flex-col gap-1 items-end sm:items-start">
+                  <div className="h-3 w-16 bg-gray-200 rounded mb-1" />
+                  <div className="h-4 w-24 bg-gray-200 rounded" />
+                </div>
+
+                {/* Creator Type */}
+                <div className="flex flex-col gap-1">
+                  <div className="h-3 w-20 bg-gray-200 rounded mb-1" />
+                  <div className="h-4 w-16 bg-gray-200 rounded" />
+                </div>
+
+                {/* Comments */}
+                <div className="flex flex-col gap-1 items-end sm:items-start">
+                  <div className="h-3 w-16 bg-gray-200 rounded mb-1" />
+                  <div className="h-4 w-8 bg-gray-200 rounded" />
                 </div>
               </div>
 
               {/* Footer */}
               <div>
-                <div className="h-[1px] w-full bg-gray-100 mb-4" />
+                <div className="h-[1px] w-full bg-gray-100 mb-2" />
                 <div className="flex justify-between items-center">
-                  <div className="h-3 w-32 bg-gray-200 rounded" />
-                  <div className="flex gap-2">
-                    <div className="w-8 h-8 bg-gray-200 rounded" />
-                    <div className="w-8 h-8 bg-gray-200 rounded" />
-                  </div>
+                  <div className="h-3.5 w-40 bg-gray-200 rounded" />
+                  <div className="h-7 w-8 bg-gray-200 rounded-md" />
                 </div>
               </div>
             </div>

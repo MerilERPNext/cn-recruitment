@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Typography } from "../shared/atoms/Typography";
+import { Typography } from "../../shared/atoms/Typography";
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { X, Loader2, MessageSquare, CheckCircle, Edit3, Reply, XCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Loader2, MessageSquare, CheckCircle, Edit3, Reply, XCircle, Clock, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import {
   TicketDetail,
   useSendEmailReply,
@@ -13,24 +13,24 @@ import {
   useEmployeeByUserEmail,
   useGetFeedbackFormJson,
   useGetExitFormJson,
-} from "../../hooks/useHelpDeskTickets";
-import WrapperHoverCard from "../shared/WrapperHoverCard";
-import SimplifiedChatInput from "./SimplifiedChatInput";
+} from "../../../hooks/useHelpDeskTickets";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import SimplifiedChatInput from "../SimplifiedChatInput";
 import toast from "react-hot-toast";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import { showCloseTicketButton } from "./hdelpdeskUtils";
-import { FormIOForm, getFileComponents } from "../../utils/flowUtils";
-import { getRequiredKeys } from "../../utils/formioUtils";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { showCloseTicketButton } from "../hdelpdeskUtils";
+import { FormIOForm, getFileComponents } from "../../../utils/flowUtils";
+import { getRequiredKeys } from "../../../utils/formioUtils";
 import { Form } from "@tsed/react-formio";
-import { FormioFormSkeleton } from "./LoadingSkeletons";
-import { FormioPreviewItem, FormioPreviewPortal } from "../shared/molecules/FormioPreview";
-import { useFileUploader } from "../../hooks/useFileUploader";
-import Button from "../shared/atoms/Button";
-import Modal from "../shared/Modal";
-import FormPreview from "../shared/molecules/FormPreview";
-import { useLoadingOverlay } from "../../context/OverlayContext";
-import { FilePreviewModal } from "../shared/molecules/FilePreviewModal";
-import { FileTypeIcon, getFileTypeInfo } from "../../utils/fileUtils";
+import { FormioFormSkeleton } from "../LoadingSkeletons";
+import { FormioPreviewItem, FormioPreviewPortal } from "../../shared/molecules/FormioPreview";
+import { useFileUploader } from "../../../hooks/useFileUploader";
+import Modal from "../../shared/Modal";
+import FormPreview from "../../shared/molecules/FormPreview";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { FilePreviewModal } from "../../shared/molecules/FilePreviewModal";
+import { FileTypeIcon, getFileTypeInfo } from "../../../utils/fileUtils";
+import DropdownMenu from "../../shared/DropDownMenu";
 
 interface SimplifiedChatViewProps {
   ticket: TicketDetail;
@@ -517,7 +517,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isResolvingTicket, setIsResolvingTicket] = useState(false);
   const [replyingTo, setReplyingTo] = useState<SimpleChatMessage | null>(null);
-  const [isDropDownOpen, setIsDropDownOpen] = useState(false);
   const { isDesktop } = useScreenSize();
   const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
   // Mutations
@@ -935,6 +934,90 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   const isSending = sendEmailMutation.isPending;
   const isClosing = closeTicketMutation.isPending || closeResolvedMutation.isPending;
 
+  const creationForm = useMemo(() => {
+    const form = ticket.creation_form_data;
+    if (typeof form === "string") {
+      try {
+        return JSON.parse(form);
+      } catch (error) {
+        console.error("Error parsing form data", error);
+        return {};
+      }
+    }
+    return form;
+  }, [ticket.creation_form_data]);
+
+  const feedbackForm = useMemo(() => {
+    const form = ticket.feedback_form_data;
+    if (typeof form === "string") {
+      try {
+        return JSON.parse(form);
+      } catch (error) {
+        console.error("Error parsing form data", error);
+        return {};
+      }
+    }
+    return form;
+  }, [ticket.feedback_form_data]);
+
+  const closeForm = useMemo(() => {
+    const form = ticket.closing_form_data;
+    if (typeof form === "string") {
+      try {
+        return JSON.parse(form);
+      } catch (error) {
+        console.error("Error parsing form data", error);
+        return {};
+      }
+    }
+    return form;
+  }, [ticket.closing_form_data]);
+
+  const [showForms, setShowForms] = useState<boolean>(false);
+
+  const actionItems: { label: string; icon: React.ReactNode; onClick: () => void }[] = [];
+
+  // Resolved ticket actions for raiser
+  if (ticket.status === "Resolved" && ticket.raised_by === currentUserEmail) {
+    actionItems.push({
+      label: isClosing ? "Closing..." : "Accept Closure",
+      icon: <CheckCircle className="w-4 h-4 text-green-600" />,
+      onClick: handleAcceptClosure,
+    });
+    actionItems.push({
+      label: "Reject",
+      icon: <XCircle className="w-4 h-4 text-red-600" />,
+      onClick: () => setIsRejectModalOpen(true),
+    });
+  }
+
+  // Open/Replied ticket actions
+  if (ticket.status !== "Closed" && ticket.status !== "Resolved") {
+    if (!isDrawer || !isDesktop) {
+      actionItems.push({
+        label: "Resolve",
+        icon: <CheckCircle className="w-4 h-4 text-amber-600" />,
+        onClick: handleResolveButtonClick,
+      });
+    }
+    if (showCloseTicketButton(ticket.status) || !isDesktop) {
+      actionItems.push({
+        label: isClosing ? "Closing..." : "Close Ticket",
+        icon: <CheckCircle className="w-4 h-4 text-green-600" />,
+        onClick: handleCloseButtonClick,
+      });
+    }
+  }
+
+  // Show Forms action
+  if (!!creationForm?.schema || !!closeForm?.schema || !!feedbackForm?.schema) {
+    actionItems.push({
+      label: "Show Forms",
+      icon: <FileText className="w-4 h-4 text-blue-600" />,
+      onClick: () => setShowForms(true),
+    });
+  }
+
   // Simple Avatar component - avatars should remain circular
   const Avatar = ({ sender, isCurrentUser }: { sender: SimpleChatMessage["sender"]; isCurrentUser: boolean }) => (
     <div className="flex-shrink-0">
@@ -1287,51 +1370,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   };
 
   const Header = ({ ticket }: { ticket: TicketDetail }) => {
-
-    const creationForm = useMemo(() => {
-      const form = ticket.creation_form_data;
-      if (typeof form === "string") {
-        try {
-          return JSON.parse(form);
-        } catch (error) {
-          console.error("Error parsing form data", error);
-          return {};
-        }
-      }
-      return form;
-
-    }, [ticket.creation_form_data])
-
-    const feedbackForm = useMemo(() => {
-      const form = ticket.feedback_form_data;
-      if (typeof form === "string") {
-        try {
-          return JSON.parse(form);
-        } catch (error) {
-          console.error("Error parsing form data", error);
-          return {};
-        }
-      }
-      return form;
-
-    }, [ticket.feedback_form_data])
-
-    const closeForm = useMemo(() => {
-      const form = ticket.closing_form_data;
-      if (typeof form === "string") {
-        try {
-          return JSON.parse(form);
-        } catch (error) {
-          console.error("Error parsing form data", error);
-          return {};
-        }
-      }
-      return form;
-
-    }, [ticket.closing_form_data])
-
-    const [showForms, setShowForms] = useState<boolean>(false);
-
     return (
       <header className="bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0 shadow-sm">
         <div className="flex items-center gap-4">
@@ -1364,150 +1402,29 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             </div>
           </div>
         </div>
-        <div className="flex items-center justify-end gap-2 w-full md:w-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide">
-          {ticket.status === "Resolved" && ticket.raised_by === currentUserEmail ? (
-            <>
-              {/* Accept Closure - closes the ticket */}
-              <button
-                onClick={handleAcceptClosure}
-                disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-              >
-                <CheckCircle className="w-4 h-4" />
-                {isClosing ? "Closing..." : "Accept Closure"}
-              </button>
-              {/* Reject Resolution - reopens for more work */}
-              <button
-                onClick={() => setIsRejectModalOpen(true)}
-                disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-              >
-                <XCircle className="w-4 h-4" />
-                Reject
-              </button>
-            </>
-          ) : ticket.status !== "Closed" && ticket.status !== "Resolved" ? (
-            <>
-              {!isDrawer && (
+        <div className="flex items-center justify-end gap-2 w-full md:w-auto pb-2 md:pb-0">
+          {/* Actions Dropdown */}
+          {actionItems.length > 0 && (
+            <DropdownMenu items={actionItems} placement="bottom-left">
+              {(isOpen) => (
                 <button
-                  onClick={handleResolveButtonClick}
                   disabled={isClosing}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
                 >
-                  <CheckCircle className="w-4 h-4" />
-                  Resolve
+                  Actions
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
                 </button>
               )}
-              {showCloseTicketButton(ticket.status) && (
-                <button
-                  onClick={handleCloseButtonClick}
-                  disabled={isClosing}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  {isClosing ? "Closing..." : "Close Ticket"}
-                </button>
-              )}
-            </>
-          ) : null}
-
-          {
-            (!!creationForm?.schema || !!closeForm?.schema || !!feedbackForm?.schema) && (
-              <Button
-                onClick={() => { setShowForms(true) }}
-                disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Show Forms
-              </Button>
-            )
-          }
-
-          {
-            showForms && (
-              <Modal
-                isOpen={showForms}
-                onClose={() => setShowForms(false)}
-                className="flex flex-col overflow-hidden h-[85vh] sm:h-[80vh]"
-                size="lg"
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10 text-left">
-                  <div>
-                    <Typography variant="h3" color="primary">
-                      Ticket Submission Forms
-                    </Typography>
-                    <Typography variant="bodySmall" color="body2" className="mt-1">
-                      Ticket ID: {ticket.name}
-                    </Typography>
-                  </div>
-                  <button
-                    onClick={() => setShowForms(false)}
-                    className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto hide-attachment-readonly p-4 md:p-6 bg-gray-50/30">
-                  <div className="flex flex-col gap-6">
-                    {closeForm?.schema && (
-                      <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
-                        <Typography variant="subheading" color="primary" className="mb-4 block">
-                          Close Form
-                        </Typography>
-                        <FormPreview
-                          containerId={`close-form-container-chat-read-${ticket.name}`}
-                          schema={closeForm.schema}
-                          submissionData={closeForm.answer || {}}
-                          readOnly={true}
-                        />
-                      </div>
-                    )}
-
-                    {feedbackForm?.schema && (
-                      <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
-                        <Typography variant="subheading" color="primary" className="mb-4 block">
-                          Feedback Form
-                        </Typography>
-                        <FormPreview
-                          containerId={`feedback-form-container-chat-read-${ticket.name}`}
-                          schema={feedbackForm.schema}
-                          submissionData={feedbackForm.answer || {}}
-                          readOnly={true}
-                        />
-                      </div>
-                    )}
-
-                    {creationForm?.schema && (
-                      <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
-                        <Typography variant="subheading" color="primary" className="mb-4 block">
-                          Creation Form
-                        </Typography>
-                        <FormPreview
-                          containerId={`creation-form-container-chat-read-${ticket.name}`}
-                          schema={creationForm.schema}
-                          submissionData={creationForm.answer || {}}
-                          readOnly={true}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Modal>
-            )
-          }
-
+            </DropdownMenu>
+          )}
         </div>
       </header>
-    )
+    );
   };
 
   return (
     <div className={`${isDrawer ? "flex-1 min-h-0" : "h-screen"} flex flex-col bg-app`}>
       {/* Header */}
-
       {isDesktop && <Header ticket={ticket} />}
 
       {/* Info banner when agent has requested closure */}
@@ -1521,54 +1438,62 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
       {/* Tabs - Chat and Resolution */}
       <div className="bg-white border-b border-gray-200 px-6">
-        <nav className="flex gap-1">
-          <button
-            onClick={() => setActiveTab("chat")}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === "chat"
-              ? "border-blue-500 text-blue-600 bg-blue-50/50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              }`}
-          >
-            Messages
-            {messages.length > 0 && (
-              <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === "chat"
-                ? "bg-blue-100 text-blue-700"
-                : "bg-app text-gray-600"
-                }`}>
-                {messages.length}
-              </span>
-            )}
-          </button>
-          {ticket.status !== "Open" && (
+        <nav className="flex items-center justify-between w-full">
+          <div className="flex gap-1">
             <button
-              onClick={() => setActiveTab("resolution")}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === "resolution"
+              onClick={() => setActiveTab("chat")}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === "chat"
                 ? "border-blue-500 text-blue-600 bg-blue-50/50"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                 }`}
             >
-              Resolution
-              {ticket.resolution_details && (
-                <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === "resolution"
+              Messages
+              {messages.length > 0 && (
+                <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === "chat"
                   ? "bg-blue-100 text-blue-700"
                   : "bg-app text-gray-600"
                   }`}>
-                  1
+                  {messages.length}
                 </span>
               )}
             </button>
+            {ticket.status !== "Open" && (
+              <button
+                onClick={() => setActiveTab("resolution")}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === "resolution"
+                  ? "border-blue-500 text-blue-600 bg-blue-50/50"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  }`}
+              >
+                Resolution
+                {ticket.resolution_details && (
+                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === "resolution"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-app text-gray-600"
+                    }`}>
+                    1
+                  </span>
+                )}
+              </button>
+            )}
+          </div>
+          {!isDesktop && actionItems.length > 0 && (
+            <div className="flex items-center">
+              <DropdownMenu items={actionItems} placement="bottom-left">
+                {(isOpen) => (
+                  <button
+                    disabled={isClosing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                  >
+                    Actions
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                  </button>
+                )}
+              </DropdownMenu>
+            </div>
           )}
-          {!isDesktop &&
-            <button
-              onClick={() => setIsDropDownOpen(!isDropDownOpen)}
-              className="flex ml-auto self-center items-center rounded-full p-1 bg-gray-50 hover:bg-gray-100 cursor-pointer">
-              <ChevronUp
-                className={`w-4 h-4 transition-all duration-300 ${isDropDownOpen ? "rotate-180 " : ""}`} />
-            </button>
-          }
         </nav>
       </div>
-      {isDropDownOpen && <Header ticket={ticket} />}
       {/* Content Area */}
       {activeTab === "resolution" ? (
         <div className="flex-1 overflow-y-auto px-6 py-4">
@@ -1658,31 +1583,83 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
           onClose={() => setPreviewFile(null)}
         />
       )}
+
+      {/* Forms Modal */}
+      {showForms && (
+        <Modal
+          isOpen={showForms}
+          onClose={() => setShowForms(false)}
+          className="flex flex-col overflow-hidden h-[85vh] sm:h-[80vh]"
+          size="lg"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10 text-left">
+            <div>
+              <Typography variant="h3" color="primary" className="text-lg sm:text-[24px] font-bold">
+                Ticket Submission Forms
+              </Typography>
+              <Typography variant="bodySmall" color="body2" className="mt-1 text-xs sm:text-[14px]">
+                Ticket ID: {ticket.name}
+              </Typography>
+            </div>
+            <button
+              onClick={() => setShowForms(false)}
+              className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto hide-attachment-readonly p-4 md:p-6 bg-gray-50/30">
+            <div className="flex flex-col gap-6">
+              {closeForm?.schema && (
+                <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
+                  <Typography variant="subheading" color="primary" className="mb-4 block text-base sm:text-[18px] font-semibold">
+                    Close Form
+                  </Typography>
+                  <FormPreview
+                    containerId={`close-form-container-chat-read-${ticket.name}`}
+                    schema={closeForm.schema}
+                    submissionData={closeForm.answer || {}}
+                    readOnly={true}
+                  />
+                </div>
+              )}
+
+              {feedbackForm?.schema && (
+                <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
+                  <Typography variant="subheading" color="primary" className="mb-4 block text-base sm:text-[18px] font-semibold">
+                    Feedback Form
+                  </Typography>
+                  <FormPreview
+                    containerId={`feedback-form-container-chat-read-${ticket.name}`}
+                    schema={feedbackForm.schema}
+                    submissionData={feedbackForm.answer || {}}
+                    readOnly={true}
+                  />
+                </div>
+              )}
+
+              {creationForm?.schema && (
+                <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
+                  <Typography variant="subheading" color="primary" className="mb-4 block text-base sm:text-[18px] font-semibold">
+                    Creation Form
+                  </Typography>
+                  <FormPreview
+                    containerId={`creation-form-container-chat-read-${ticket.name}`}
+                    schema={creationForm.schema}
+                    submissionData={creationForm.answer || {}}
+                    readOnly={true}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
 
-// Loading component
-export const SimplifiedChatViewLoading: React.FC = () => (
-  <div className="h-screen flex items-center justify-center bg-app">
-    <div className="flex items-center gap-3">
-      <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-      <span className="text-gray-600">Loading ticket...</span>
-    </div>
-  </div>
-);
-
-// Error component
-export const SimplifiedChatViewError: React.FC<{ onClose: () => void }> = ({ onClose }) => (
-  <div className="h-screen flex flex-col items-center justify-center bg-app">
-    <p className="text-red-500 mb-4">Failed to load ticket</p>
-    <button
-      onClick={onClose}
-      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-    >
-      Back to HelpDesk
-    </button>
-  </div>
-);
 
 export default SimplifiedChatView;
