@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { todoService, type TodoFilters, type ToDo } from "../services/todoService";
+import type { TodoCategory } from "../types/todos";
 
 export function useTodoList(filters: TodoFilters = {}) {
   return useQuery<ToDo[]>({
@@ -9,3 +10,11 @@ export function useTodoList(filters: TodoFilters = {}) {
   });
 }
 
+export function useTodoCategories() {
+  return useQuery<TodoCategory[]>({
+    queryKey: ["todo-categories"],
+    queryFn: () => todoService.getTodoCategories(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    select: (data) => data.filter((cat) => cat.name !== "Uncategorized"),
+  });
+}
