@@ -93,6 +93,7 @@ const EmployeeDirectoryContent = ({ activeTab }: Props) => {
                 employees={employees}
                 selectedEmployees={selectedEmployees}
                 setSelectedEmployees={setSelectedEmployees}
+                activeTab={activeTab}
             />
 
             {selectedEmployees.length > 0 && (canPerformDropdownActions || canAttendanceAssignments || (isReporteesTab && canBulkChangeWeekOff)) && (

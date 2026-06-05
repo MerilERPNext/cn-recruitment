@@ -21,10 +21,12 @@ const EmployeeTable = ({
   employees,
   selectedEmployees = [],
   setSelectedEmployees,
+  activeTab,
 }: {
   employees: Employee[];
   selectedEmployees: Employee[];
   setSelectedEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
+  activeTab?: 'directory' | 'my_reportees';
 }) => {
 
   const { data: userUiPermission } = useGetUiPermission("Employee Directory");
@@ -206,7 +208,7 @@ const EmployeeTable = ({
                     </Link>
 
                     <div>
-                      {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
+                      {activeTab !== 'my_reportees' && (canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
                         ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                         variant="subtle"
                         size="sm"
@@ -430,7 +432,7 @@ const EmployeeTable = ({
               </div>
 
               <div className="relative">
-                {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
+                {activeTab !== 'my_reportees' && (canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
                   ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                   variant="soft"
                   size="sm"
