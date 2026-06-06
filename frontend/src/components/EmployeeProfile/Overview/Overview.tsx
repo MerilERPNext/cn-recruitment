@@ -4,6 +4,7 @@ import TwoLevelOrgChart from "../../ORGChart/OrgnazationChartForTwoLavel";
 import ProfileSummary from "./ProfileSummary";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
+import Emergency from "./Emergency";
 
 const Overview = () => {
 
@@ -11,11 +12,13 @@ const Overview = () => {
 
     const tabs = [
         { key: "personal-summary", label: "Personal Summary", permissionKey: "show_personal_summary" },
+        { key: "emergency-contact", label: "Emergency Contact", permissionKey: "show_emergency_tab" },
         { key: "org-chart", label: "Organizational Chart", permissionKey: "show_org_chart" },
     ];
     const tabeContent = {
         "personal-summary": <ProfileSummary />,
         "org-chart": <TwoLevelOrgChart />,
+        "emergency-contact": <Emergency />,
     }
     const permittedTabs = tabs?.filter((tab) => {
         if (tab.permissionKey) {

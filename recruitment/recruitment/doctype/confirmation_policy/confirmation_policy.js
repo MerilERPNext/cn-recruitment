@@ -473,6 +473,114 @@ frappe.ui.form.on("Confirmation Policy", {
 		});
 	},
 
+	configure_separation_initiators(frm) {
+		let cfg = {};
+		try { cfg = JSON.parse(frm.doc.separation_initiators || "{}"); } catch (e) {}
+		if (Array.isArray(cfg)) cfg = {};
+
+		let existing_roles = (cfg.roles || []);
+		let existing_users = (cfg.users || []);
+		let existing_fields = (cfg.employee_fields || []);
+
+		Promise.all([
+			frappe.model.with_doctype("Role Table"),
+			frappe.model.with_doctype("User Group Member"),
+			frappe.model.with_doctype("Employee"),
+		]).then(() => {
+			let emp_fields = [];
+			let emp_meta = frappe.get_meta("Employee");
+			if (emp_meta) {
+				emp_fields = emp_meta.fields
+					.filter(f => f.fieldtype === "Link" && f.options === "Employee")
+					.map(f => ({ fieldname: f.fieldname, label: f.label }));
+			}
+			let d = new frappe.ui.Dialog({
+				title: __("Configure Separation Initiators"),
+				size: "large",
+				fields: [
+					{
+						fieldname: "self",
+						fieldtype: "Check",
+						label: "Self (Employee)",
+						default: cfg.self ? 1 : 0
+					},
+					{ fieldtype: "Section Break", label: "Roles" },
+					{
+						fieldname: "roles",
+						fieldtype: "Table MultiSelect",
+						label: "Select Roles",
+						options: "Role Table"
+					},
+					{ fieldtype: "Section Break", label: "Users" },
+					{
+						fieldname: "users",
+						fieldtype: "Table MultiSelect",
+						label: "Select Users",
+						options: "User Group Member"
+					},
+					{ fieldtype: "Section Break", label: "Employee Fields" },
+					{
+						fieldname: "employee_fields",
+						fieldtype: "Table MultiSelect",
+						label: "Select Employee Fields",
+						options: "Role Table",
+						hidden: 1
+					},
+					{
+						fieldname: "employee_fields_html",
+						fieldtype: "HTML"
+					}
+				],
+				primary_action_label: __("Save"),
+				primary_action() {
+					let selected_roles = (d.fields_dict.roles.rows || []).map(r => r.role).filter(Boolean);
+					let selected_users = (d.fields_dict.users.rows || []).map(r => r.user).filter(Boolean);
+					let selected_fields = [];
+					d.$wrapper.find(".sep-emp-field-check:checked").each(function () {
+						let fn = $(this).data("fieldname");
+						let match = emp_fields.find(f => f.fieldname === fn);
+						selected_fields.push({ field: fn, label: match ? match.label : fn });
+					});
+					let new_cfg = {
+						self: d.get_value("self") ? true : false,
+						roles: selected_roles,
+						users: selected_users,
+						employee_fields: selected_fields
+					};
+					frm.set_value("separation_initiators", JSON.stringify(new_cfg));
+					frm.dirty();
+					d.hide();
+				}
+			});
+
+			d.show();
+
+			if (existing_roles.length) {
+				d.fields_dict.roles.set_formatted_input(
+					existing_roles.map(r => ({ role: r }))
+				);
+			}
+			if (existing_users.length) {
+				d.fields_dict.users.set_formatted_input(
+					existing_users.map(u => ({ user: u }))
+				);
+			}
+
+			let fields_html = "";
+			if (emp_fields.length) {
+				fields_html = emp_fields.map(f => {
+					let checked = existing_fields.some(ef => ef.field === f.fieldname) ? "checked" : "";
+					return `<div style="padding:4px 0;">
+						<label><input type="checkbox" class="sep-emp-field-check" data-fieldname="${f.fieldname}" ${checked}> ${f.label} <span style="color:#888;">(${f.fieldname})</span></label>
+					</div>`;
+				}).join("");
+			} else {
+				fields_html = `<span style="color:#888;">No Employee link fields found on Employee</span>`;
+			}
+			d.fields_dict.employee_fields_html.$wrapper.html(fields_html);
+		});
+	},
+
 	validate(frm) {
 		cp_enforce_child_row_rules(
 			frm,

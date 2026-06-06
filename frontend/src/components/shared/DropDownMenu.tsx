@@ -8,7 +8,7 @@ interface MenuItem {
 
 interface DropdownMenuProps {
   items: MenuItem[];
-  children: React.ReactNode;
+  children: React.ReactNode | ((isOpen: boolean) => React.ReactNode);
   placement?:
     | "bottom-right"
     | "bottom-left"
@@ -49,6 +49,9 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
     "center-right": "top-1/2 -translate-y-1/2 left-[calc(100%+10px)]",
   };
 
+  // Support render function for children to access open state
+  const renderChildren = typeof children === "function" ? children(open) : children;
+
   return (
     <div
       ref={menuRef}
@@ -57,7 +60,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
     >
       {/* Custom Trigger */}
       <div onClick={() => setOpen(!open)} className="cursor-pointer">
-        {children}
+        {renderChildren}
       </div>
 
       {/* Menu */}

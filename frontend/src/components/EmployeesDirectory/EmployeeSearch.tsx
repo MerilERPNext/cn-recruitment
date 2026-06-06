@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import useDebounce from "../../hooks/useDebounce";
 import { useGetEmployeesForDirectory, useCurrentEmployeeDetails } from "../../hooks/useEmployee";
@@ -150,6 +150,17 @@ const EmployeeSearch = ({
     id: emp.name, // valueKey
   }));
 
+  // For "My Reportees" tab, auto-populate table with all fetched reportees
+  // so users see their reportees immediately without search+select+apply.
+  // Also resets to full list when the user clears their search selection.
+  const dataIds = data.map((emp) => emp.name).join(",");
+  useEffect(() => {
+    if (activeTab === 'my_reportees' && appliedSearchEmployees.length === 0) {
+      setEmployees(data);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, dataIds, setEmployees, appliedSearchEmployees]);
+
   const handleFilterUpdate = (data: EmployeeDirectoryFilterData) => {
     setActiveFilters(data);
     setPendingFilters(data);
@@ -173,7 +184,12 @@ const EmployeeSearch = ({
 
   const handleApplyEmployeeSelection = () => {
     setAppliedSearchEmployees(pendingEmployees);
-    setEmployees(pendingEmployees);
+    // On the reportees tab, applying an empty selection should show all reportees
+    if (activeTab === 'my_reportees' && pendingEmployees.length === 0) {
+      setEmployees(data);
+    } else {
+      setEmployees(pendingEmployees);
+    }
     clearTableSelection();
   };
 

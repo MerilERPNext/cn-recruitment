@@ -13,7 +13,7 @@ import ChatMessage, { ChatMessageData } from "./ChatMessage";
 import ChatInput, { EmailOptions } from "./ChatInput";
 import TicketDetailSidebar from "./TicketDetailSidebar";
 import TicketInfoPanel from "./TicketInfoPanel";
-import SimplifiedChatView from "./SimplifiedChatView";
+import SimplifiedChatView from "./Helpdesk/SimplifiedChatView";
 import toast from "react-hot-toast";
 import { showCloseTicketButton } from "./hdelpdeskUtils";
 

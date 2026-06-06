@@ -29,8 +29,8 @@ export const FormioPreviewItem = ({ fileObj, onRemove, readOnly = false, showFil
   if (!fileUrl) return null;
 
   return (
-    <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-      <div className="flex-1">
+    <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg min-w-0 w-full">
+      <div className="flex-1 min-w-0">
         <AttachmentCard
           fileUrl={fileUrl}
           fileName={fileName}

@@ -184,6 +184,11 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
     custom_preferred_notice_period: req.custom_preferred_notice_period,
     preferred_company: req.custom_preferred_company,
     custom_other_preferred_companies: req.custom_other_preferred_companies,
+    additional_roles_responsibilities: req.custom_additional_roles__responsibilities,
+    additional_skills: req.custom_additional_skills,
+    comments_instructions: req.custom_comments__instructions,
+    cost_centre: req.custom_cost_centre,
+    designation_change: req.custom_designation_change,
     custom_qualifications: req.custom_qualifications,
     custom_skills: req.custom_skills,
     custom_assign_to_recruiter: req.custom_assign_to_recruiter,
@@ -696,6 +701,17 @@ const RequisitionForm = () => {
     };
   }, [existingRequisition, isEditMode]);
 
+  // Recruitment Start Date default: today on create. Edit mode is seeded from
+  // the API's posting_date in mapRequisitionToFormData, so only set this when
+  // creating and the field is still empty.
+  useEffect(() => {
+    if (!isEditMode && !formData.recruitment_start_date) {
+      const today = new Date().toISOString().split("T")[0];
+      setFormData((prev: any) => ({ ...prev, recruitment_start_date: today }));
+      pushFormSync();
+    }
+  }, [isEditMode, formData.recruitment_start_date, pushFormSync]);
+
   // Set only Hiring Manager + Company defaults from the logged-in employee.
   // Department / Designation / Functional Area are NOT auto-filled — the user
   // selects them via the cascading dropdowns (department→designation→functional area).
@@ -1130,6 +1146,11 @@ const RequisitionForm = () => {
       custom_preferred_notice_period: finalData.custom_preferred_notice_period,
       custom_preferred_company: finalData.preferred_company,
       custom_other_preferred_companies: finalData.custom_other_preferred_companies,
+      custom_additional_roles__responsibilities: finalData.additional_roles_responsibilities,
+      custom_additional_skills: finalData.additional_skills,
+      custom_comments__instructions: finalData.comments_instructions,
+      custom_cost_centre: finalData.cost_centre,
+      custom_designation_change: finalData.designation_change,
       custom_qualifications: finalData.custom_qualifications,
       custom_job_description_template: finalData.job_description_template,
       description: finalData.description,
@@ -1374,7 +1395,7 @@ const RequisitionForm = () => {
             {steps[currentStep].label}
           </h2>
           {/* Preview JD button — only on Job Details step (index 1) */}
-          {currentStep === 1 && (
+          {currentStep === 11 && (
             <button
               onClick={handlePreviewJD}
               disabled={!canPreviewJD}

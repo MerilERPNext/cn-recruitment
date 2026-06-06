@@ -140,7 +140,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                 <path
                   d={createArcPath(0, presentAngle, 80, 50)}
                   fill="#10b981"
-                  className="transition-all duration-700 hover:opacity-80"
+                  className="hover:opacity-80"
                 />
               )}
 
@@ -154,7 +154,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                     50,
                   )}
                   fill="#ef4444"
-                  className="transition-all duration-700 hover:opacity-80"
+                  className="hover:opacity-80"
                 />
               )}
 
@@ -168,7 +168,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                     50,
                   )}
                   fill="#f59e0b"
-                  className="transition-all duration-700 hover:opacity-80"
+                  className="hover:opacity-80"
                 />
               )}
 
@@ -182,7 +182,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                     50,
                   )}
                   fill="#FFC0CB"
-                  className="transition-all duration-700 hover:opacity-80"
+                  className="hover:opacity-80"
                 />
               )}
 

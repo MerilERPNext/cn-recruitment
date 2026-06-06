@@ -124,3 +124,10 @@ export interface TodoType {
     approval_stages_status: ApprovalStage[];
     attachments: any[];
 }
+
+export interface TodoCategory {
+    name: string;
+    count: number;
+}
+
+

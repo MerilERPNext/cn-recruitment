@@ -60,7 +60,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Department&company={{ data.company }}',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Department&company={{ data.company }}&disabled=1',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -80,7 +80,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation&department={{ data.department }}',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation&department={{ data.department }}&custom_status=Active',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -100,7 +100,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}&disabled=1',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -304,15 +304,56 @@ export const requisitionFormSchemas = {
         ],
       },
       {
-        type: "datetime",
-        key: "recruitment_start_date",
-        label: "Recruitment Start Date",
-        format: "yyyy-MM-dd",
-        enableDate: true,
-        enableTime: false,
-        // Default to today and disable any date before today.
-        customDefaultValue: "value = moment().format('YYYY-MM-DD')",
-        datePicker: { minDate: "moment()" },
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "datetime",
+                key: "recruitment_start_date",
+                label: "Recruitment Start Date",
+                format: "yyyy-MM-dd",
+                enableDate: true,
+                enableTime: false,
+                // Edit mode: keep the API's posting_date (mapped into
+                // recruitment_start_date). Create mode: default to today.
+                // Guarded so a redraw never overwrites an existing value.
+                // No minDate so an edit's past posting_date still renders.
+                customDefaultValue:
+                  "value = data.recruitment_start_date ? data.recruitment_start_date : moment().format('YYYY-MM-DD')",
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "select",
+                key: "hiring_lead",
+                label: "Hiring Lead",
+                placeholder: "Select Hiring Lead",
+                input: true,
+                dataSrc: "url",
+                data: {
+                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "message.results",
+                valueProperty: "id",
+                template:
+                  "<span>{{ item.label }} <span style='color:#7f8c8d'>({{item.id}})</span></span>",
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
       },
       {
         type: "htmlelement",
@@ -325,22 +366,6 @@ export const requisitionFormSchemas = {
         type: "columns",
         customClass: "my-3",
         columns: [
-          {
-            components: [
-              {
-                type: "number",
-                key: "expected_compensation",
-                label: "Expected Compensation",
-                customClass: "required-field",
-                placeholder: "e.g., 600000",
-                validate: { required: true },
-              },
-            ],
-            width: 6,
-            offset: 0,
-            push: 0,
-            pull: 0,
-          },
           {
             components: [
               {
@@ -359,23 +384,31 @@ export const requisitionFormSchemas = {
             push: 0,
             pull: 0,
           },
+          {
+            components: [
+              {
+                type: "select",
+                key: "employment_type",
+                label: "Employment Type (Link)",
+                customClass: "required-field",
+                placeholder: "Select Employment Type",
+                dataSrc: "url",
+                data: {
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employment Type",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "message.results",
+                valueProperty: "id",
+                template: "<span>{{ item.label }}</span>",
+                validate: { required: true },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
         ],
-      },
-      {
-        type: "select",
-        key: "employment_type",
-        label: "Employment Type (Link)",
-        customClass: "required-field",
-        placeholder: "Select Employment Type",
-        dataSrc: "url",
-        data: {
-          url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employment Type",
-          headers: [{ key: "Accept", value: "application/json" }],
-        },
-        selectValues: "message.results",
-        valueProperty: "id",
-        template: "<span>{{ item.label }}</span>",
-        validate: { required: true },
       },
       {
         type: "columns",
@@ -409,34 +442,6 @@ export const requisitionFormSchemas = {
             components: [
               {
                 type: "select",
-                key: "custom_work_experience_range",
-                label: "Work Experience Range",
-                placeholder: "Select Work Experience Range",
-                data: {
-                  values: [
-                    { label: "Fresher", value: "Fresher" },
-                    { label: "1 - 3 Years", value: "1 - 3 Years" },
-                    { label: "4 - 5 Years", value: "4 - 5 Years" },
-                    { label: "5 - 10 Years", value: "5 - 10 Years" },
-                  ],
-                },
-              },
-            ],
-            width: 6,
-            offset: 0,
-            push: 0,
-            pull: 0,
-          },
-        ],
-      },
-      {
-        type: "columns",
-        customClass: "my-3",
-        columns: [
-          {
-            components: [
-              {
-                type: "select",
                 key: "custom_preferred_notice_period",
                 label: "Preferred Notice Period",
                 placeholder: "Select Notice Period",
@@ -456,6 +461,12 @@ export const requisitionFormSchemas = {
             push: 0,
             pull: 0,
           },
+        ],
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
           {
             components: [
               {
@@ -478,29 +489,66 @@ export const requisitionFormSchemas = {
             push: 0,
             pull: 0,
           },
+          {
+            components: [
+              {
+                type: "textfield",
+                key: "custom_other_preferred_companies",
+                label: "Other Preferred Companies",
+                placeholder: "e.g., Razorpay, Cred, Postman",
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
         ],
       },
       {
-        type: "textfield",
-        key: "custom_other_preferred_companies",
-        label: "Other Preferred Companies",
-        placeholder: "e.g., Razorpay, Cred, Postman",
-      },
-      {
-        type: "select",
-        key: "custom_skills",
-        label: "Required Skills",
-        placeholder: "Select Skills",
-        multiple: true,
-        input: true,
-        dataSrc: "url",
-        data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Skill',
-          headers: [{ key: "Accept", value: "application/json" }],
-        },
-        selectValues: "message.results",
-        valueProperty: "id",
-        template: "<span>{{ item.label }}</span>",
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "select",
+                key: "custom_skills",
+                label: "Required Skills",
+                placeholder: "Select Skills",
+                multiple: true,
+                input: true,
+                dataSrc: "url",
+                data: {
+                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Skill',
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "message.results",
+                valueProperty: "id",
+                template: "<span>{{ item.label }}</span>",
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "textarea",
+                key: "additional_roles_responsibilities",
+                label: "Position Specific Requirements",
+                placeholder: "Enter position specific requirements",
+                input: true,
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
       },
     ],
   },
@@ -608,7 +656,7 @@ export const requisitionFormSchemas = {
                 validateOn: "blur",
                 dataSrc: "url",
                 data: {
-                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',
+                  url: '/api/method/recruitment.api.job_requisition.get_replacement_employee_options',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message.results",
@@ -626,6 +674,60 @@ export const requisitionFormSchemas = {
   },
   otherDetails: {
     components: [
+      {
+        type: "textarea",
+        key: "comments_instructions",
+        label: "Comments / Instruction",
+        placeholder: "Enter any comments or instructions for recruiters",
+        input: true,
+        rows: 3,
+      },
+      {
+        type: "columns",
+        customClass: "my-3",
+        columns: [
+          {
+            components: [
+              {
+                type: "select",
+                key: "cost_centre",
+                label: "Cost Center",
+                placeholder: "Select Cost Center",
+                customClass: "required-field",
+                input: true,
+                dataSrc: "url",
+                data: {
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Cost Center",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "message.results",
+                valueProperty: "id",
+                template: "<span>{{ item.label }}</span>",
+                validate: { required: true },
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+          {
+            components: [
+              {
+                type: "textfield",
+                key: "designation_change",
+                label: "Designation Change",
+                placeholder: "Enter designation change",
+                input: true,
+              },
+            ],
+            width: 6,
+            offset: 0,
+            push: 0,
+            pull: 0,
+          },
+        ],
+      },
       {
         type: "datagrid",
         key: "custom_qualifications",

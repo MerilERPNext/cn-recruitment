@@ -1,3 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export interface TableField {
+  fieldname: string;
+  label: string;
+  fieldtype: string;
+  options: string;
+  reqd: number;
+  read_only: number;
+  in_list_view: number;
+  default: unknown;
+}
+
 export interface ApplicationField {
   section: string;
   reference_name: string;
@@ -8,6 +20,11 @@ export interface ApplicationField {
   ctq: number;
   visibility: string;
   editability: string;
+  value?: unknown;
+  // For `fieldtype: "Table"`, the API sends the child-table column definitions
+  // here. When present these are rendered dynamically (instead of any hardcoded
+  // fallback) so every column from the API shows up with the correct key.
+  table_fields?: TableField[];
 }
 
 export interface FormioComponent {
@@ -29,6 +46,9 @@ export interface FormioComponent {
   selectValues?: string;
   valueProperty?: string;
   template?: string;
+  limit?: number;
+  lazyLoad?: boolean;
+  searchField?: string;
   format?: string;
   enableDate?: boolean;
   enableTime?: boolean;
@@ -36,6 +56,14 @@ export interface FormioComponent {
   components?: FormioComponent[];
   addAnother?: string;
   defaultValue?: any;
+  // Panel / button extras used by the stacked child-table layout.
+  collapsible?: boolean;
+  collapsed?: boolean;
+  action?: string;
+  event?: string;
+  theme?: string;
+  block?: boolean;
+  properties?: Record<string, string>;
 }
 
 export interface FormioSchema {
@@ -43,42 +71,85 @@ export interface FormioSchema {
 }
 
 /**
- * Gets standard schema components for known child tables.
+ * Maps a single child-table sub-field (from the API's `table_fields`) to a
+ * Form.io component, using `key` for the flat per-row binding key
+ * (`${reference_name}_${rowIndex}_${fieldname}`). Mirrors the top-level mapping
+ * and IJPApplyView so child tables render + validate the same way.
  */
-const getChildTableSchema = (doctype: string): FormioComponent[] => {
-  switch (doctype) {
-    case "Employee Education":
-      return [
-        { type: "textfield", key: "qualification",     label: "Degree / Qualification", input: true, validate: { required: true } },
-        { type: "textfield", key: "school_university", label: "School / Institution",   input: true, validate: { required: true } },
-        { type: "textfield", key: "year_of_passing",   label: "Year of Passing",        input: true, validate: { required: false } },
-        { type: "textfield", key: "class_percentage",  label: "Score / Percentage",     input: true, validate: { required: false } }
-      ];
-    case "Employee External Work History":
-      return [
-        { type: "textfield", key: "company_name", label: "Company Name", input: true, validate: { required: true } },
-        { type: "textfield", key: "designation",  label: "Designation",  input: true, validate: { required: true } },
-        { type: "datetime",  key: "from_date",    label: "From Date",    format: "dd-MM-yyyy", enableDate: true, enableTime: false, input: true },
-        { type: "datetime",  key: "to_date",      label: "To Date",      format: "dd-MM-yyyy", enableDate: true, enableTime: false, input: true },
-        { type: "textfield", key: "salary",        label: "Salary / CTC", input: true }
-      ];
-    case "Job Applicant Pre Offer Form":
-      return [
-        { type: "textfield", key: "form_name",    label: "Form Name",     input: true, validate: { required: true } },
-        { type: "checkbox",  key: "is_mandatory", label: "Is Mandatory",  input: true }
-      ];
+const buildTableSubField = (sub: TableField, key: string): FormioComponent => {
+  const { label, fieldtype, options, reqd, read_only } = sub;
+  const isRequired = reqd === 1;
+  const isReadOnly = read_only === 1;
+  const base: FormioComponent = {
+    type: "textfield",
+    key,
+    label,
+    input: true,
+    ...(isReadOnly && { disabled: true }),
+    ...(isRequired && { customClass: "required-field" }),
+    validate: { required: isRequired, customMessage: `${label} is required` },
+  };
+
+  switch (fieldtype) {
+    case "Select": {
+      const values = options
+        ? options.split(/[\n,]/).map((o) => o.trim()).filter(Boolean).map((o) => ({ label: o, value: o }))
+        : [];
+      return { ...base, type: "select", placeholder: `Select ${label.toLowerCase()}`, data: { values }, template: "<span>{{ item.label }}</span>" };
+    }
+    case "Check":
+      return { ...base, type: "checkbox" };
+    case "Date":
+      return { ...base, type: "datetime", placeholder: `Select ${label.toLowerCase()}`, format: "dd-MM-yyyy", enableDate: true, enableTime: false };
+    case "Int":
+    case "Float":
+    case "Currency":
+      return { ...base, type: "number", placeholder: `Enter ${label.toLowerCase()}` };
+    case "Small Text":
+    case "Text":
+    case "Long Text":
+    case "Text Editor":
+      return { ...base, type: "textarea", placeholder: `Enter ${label.toLowerCase()}` };
+    case "Link":
+      return {
+        ...base,
+        type: "select",
+        placeholder: `Select ${label}`,
+        dataSrc: "url",
+        data: {
+          url: `/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=${options}`,
+          headers: [{ key: "Accept", value: "application/json" }],
+        },
+        selectValues: "message.results",
+        valueProperty: "id",
+        template: "<span>{{ item.label }}</span>",
+        // Server-side search (see top-level Link note) — fetch matching options
+        // as the user types instead of loading the whole list.
+        lazyLoad: true,
+        searchField: "search_text",
+        limit: 100,
+      };
+    case "Attach":
+      // Inline URL entry inside the entry panel (no per-cell dropzone).
+      return { ...base, placeholder: "Paste attachment URL..." };
+    case "Data":
     default:
-      return [
-        { type: "textfield", key: "name",        label: "Name / Title", input: true, validate: { required: true } },
-        { type: "textarea",  key: "description", label: "Description",  input: true }
-      ];
+      return { ...base, placeholder: `Enter ${label.toLowerCase()}` };
   }
 };
 
 /**
  * Compiles a list of dynamic application fields into a Form.io JSON schema.
+ *
+ * `rowCounts` controls how many entry panels each `Table` field renders (keyed
+ * by reference_name). Child tables render as stacked vertical panels — each
+ * entry's fields laid out in a column — exactly like IJPApplyView, with flat
+ * per-row keys `${reference_name}_${rowIndex}_${fieldname}`.
  */
-export const compileFormioSchema = (fields: ApplicationField[]): FormioSchema => {
+export const compileFormioSchema = (
+  fields: ApplicationField[],
+  rowCounts: Record<string, number> = {}
+): FormioSchema => {
   // 1. Group fields by section
   const sectionsMap = new Map<string, ApplicationField[]>();
 
@@ -100,15 +171,84 @@ export const compileFormioSchema = (fields: ApplicationField[]): FormioSchema =>
       const isRequired = reqd === 1;
 
       if (fieldtype === "Table") {
+        // Render each entry as a stacked vertical panel (fields in a column),
+        // like IJPApplyView — not a wide datagrid. Row count is driven by
+        // `rowCounts`; entries bind to flat keys `${ref}_${i}_${fieldname}`.
+        const tableFields = field.table_fields || [];
+        if (tableFields.length === 0) return;
+        const rowCount = rowCounts[reference_name] ?? (isRequired ? 1 : 0);
+
+        // Required tables are mandatory even when their sub-fields aren't.
+        // form.io only renders the red asterisk for required INPUTS, not for the
+        // table's panel/well wrapper, so add an explicit asterisk label here.
+        if (isRequired) {
+          panelComponents.push({
+            type: "htmlelement",
+            tag: "div",
+            key: `${reference_name}__required_label`,
+            label: display_name,
+            content: `<label class="control-label" style="font-weight:600;margin-bottom:0">${display_name} <span style="color:#ef4444;font-weight:700">*</span></label>`,
+            customClass: "mb-1",
+          } as any);
+        }
+
+        if (rowCount > 0) {
+          const entryPanels: FormioComponent[] = [];
+          for (let i = 0; i < rowCount; i++) {
+            const rowComponents = tableFields.map((sub) =>
+              buildTableSubField(sub, `${reference_name}_${i}_${sub.fieldname}`)
+            );
+            // Per-entry delete button. Fires a custom form.io event captured by
+            // AddNewReferral's onCustomEvent, which removes this row and shifts
+            // the remaining entries' flat keys down.
+            rowComponents.push({
+              type: "button",
+              key: `${reference_name}__removeEntry__${i}`,
+              label: "Remove Entry",
+              input: true,
+              action: "event",
+              event: "removeTableEntry",
+              theme: "danger",
+              block: false,
+              customClass: "ref-remove-entry-btn",
+              properties: { tableRef: reference_name, rowIndex: String(i) },
+            });
+            entryPanels.push({
+              type: "panel",
+              key: `${reference_name}_panel_${i}`,
+              label: `${display_name} - Entry #${i + 1}`,
+              title: `${display_name} - Entry #${i + 1}`,
+              components: rowComponents,
+              collapsible: true,
+              collapsed: i !== rowCount - 1,
+              customClass:
+                "py-3 px-5 bg-slate-50 border border-slate-200 rounded-xl mb-4 formio-section-panel",
+            } as FormioComponent);
+          }
+
+          panelComponents.push({
+            type: "well",
+            key: reference_name,
+            label: display_name,
+            components: entryPanels,
+            customClass: "mb-2",
+          } as FormioComponent);
+        }
+
+        // Add-entry button — rendered in-schema right after the table so it sits
+        // directly below the entries (above any following fields), not at the
+        // bottom of the section. Captured by onCustomEvent to bump the row count.
         panelComponents.push({
-          type: "datagrid",
-          key: reference_name,
-          label: display_name,
-          addAnother: `Add ${display_name}`,
+          type: "button",
+          key: `${reference_name}__addEntry`,
+          label: rowCount === 0 ? `+ Add ${display_name}` : `+ Add More ${display_name}`,
           input: true,
-          components: getChildTableSchema(options),
-          validate: { required: isRequired },
-          ...(isRequired && { customClass: "required-field" })
+          action: "event",
+          event: "addTableEntry",
+          theme: "primary",
+          block: false,
+          customClass: "ref-add-entry-btn",
+          properties: { tableRef: reference_name },
         });
         return;
       }
@@ -240,6 +380,13 @@ export const compileFormioSchema = (fields: ApplicationField[]): FormioSchema =>
             selectValues: "message.results",
             valueProperty: "id",
             template: "<span>{{ item.label }}</span>",
+            // Server-side search instead of loading the whole list (which lags
+            // for large link doctypes like Country/Employee). form.io sends the
+            // typed text as `search_text`, which the backend filters on, and
+            // only fetches matching options on demand.
+            lazyLoad: true,
+            searchField: "search_text",
+            limit: 100,
             ...(isRequired && { customClass: "required-field" }),
             validate: { required: isRequired }
           });

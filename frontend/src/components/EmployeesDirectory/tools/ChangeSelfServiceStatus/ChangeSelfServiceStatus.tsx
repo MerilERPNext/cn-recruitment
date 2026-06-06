@@ -33,7 +33,8 @@ const ChangeSelfService: React.FC<ChangeSelfServiceProps> = ({ isOpen, onClose, 
                         updateEmployeeSelfService(
                             {
                                 employee: employeeId,
-                                status: submission?.data?.self_service_status
+                                status: submission?.data?.self_service_status,
+                                mobile_status: submission?.data?.mobile_status
                             },
                             {
                                 onSuccess: () => {
@@ -72,7 +73,7 @@ const ChangeSelfService: React.FC<ChangeSelfServiceProps> = ({ isOpen, onClose, 
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
                     <h2 className="text-xl font-bold text-gray-900">
-                        Update HRBP Role
+                        Update Self Service Status
                     </h2>
                     <button
                         onClick={onClose}

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FrappeListView from "./ListView";
+import HeaderBar from "./HeaderBar";
 import { useCurrentEmployeeDetails } from "../hooks/useEmployee";
 import { Typography } from "./shared/atoms/Typography";
 import {
@@ -9,7 +10,7 @@ import {
   IoChevronDownOutline,
   IoDocumentTextOutline,
   IoInformationCircleOutline,
-  IoHomeOutline,
+  IoArrowBackOutline,
 } from "react-icons/io5";
 import { useScreenSize } from "../hooks/useScreenSize";
 import { useMandatoryPoliciesPending } from "../hooks/usePolicy";
@@ -151,30 +152,44 @@ const PoliciesEnforced: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50/50 pb-10">
+      {/* Header — Mobile: HeaderBar */}
+      {isMobile && !isMandatoryCheckLoading && !hasMandatoryPolicies && (
+        <HeaderBar
+          title="Policy"
+          showBackButton
+          onBack={() => {
+            const redirectTo = sessionStorage.getItem("policy_redirect_to") || "/webapp/";
+            navigate(redirectTo);
+          }}
+        />
+      )}
+
       {/* Header with Gradient */}
       <div className="bg-gradient-to-r from-primary-700 via-primary-600 to-secondary-600 pt-8 pb-16 px-4 sm:px-6 lg:px-8 shadow-xl">
-        <div className="max-w-3xl mx-auto text-center">
-          <Typography
-            variant={isMobile ? "bodySmall" : "body"}
-            className="text-white/80 max-w-xl text-center"
-          >
-            Review and acknowledge mandatory company policies and procedures.
-            Keep track of your compliance status.
-          </Typography>
-
-          {/* Go to Dashboard button — shown only when no mandatory policies are pending */}
-          {!isMandatoryCheckLoading && !hasMandatoryPolicies && (
-            <button
-              onClick={() => {
-                const redirectTo = sessionStorage.getItem("policy_redirect_to") || "/webapp/";
-                navigate(redirectTo);
-              }}
-              className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/30 text-white font-medium text-sm transition-all duration-200 backdrop-blur-sm shadow-sm hover:shadow-md"
-            >
-              <IoHomeOutline size={18} />
-              Go to Dashboard
-            </button>
+        <div className="max-w-3xl mx-auto">
+          {!isMobile && !isMandatoryCheckLoading && !hasMandatoryPolicies && (
+            <div className="flex justify-start mb-6">
+              <button
+                onClick={() => {
+                  const redirectTo = sessionStorage.getItem("policy_redirect_to") || "/webapp/";
+                  navigate(redirectTo);
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200 backdrop-blur-sm shadow-sm"
+              >
+                <IoArrowBackOutline size={18} />
+                Go Back
+              </button>
+            </div>
           )}
+          <div className="text-center">
+            <Typography
+              variant={isMobile ? "bodySmall" : "body"}
+              className="text-white/80 max-w-xl mx-auto text-center"
+            >
+              Review and acknowledge mandatory company policies and procedures.
+              Keep track of your compliance status.
+            </Typography>
+          </div>
         </div>
       </div>
 

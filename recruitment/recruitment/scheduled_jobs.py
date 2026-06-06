@@ -556,3 +556,179 @@ def should_show_confirmation_button():
                 }
 
     return {"show_button": False}
+
+
+@frappe.whitelist()
+def should_show_separation_button():
+    import json
+
+    user = frappe.session.user
+
+    user_employee = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    user_roles = frappe.get_roles(user)
+
+    target_employee_header = None
+    try:
+        target_employee_header = frappe.request.headers.get("X-Target-Employee-Id")
+    except Exception:
+        target_employee_header = None
+
+    print("[SEP] === should_show_separation_button START ===")
+    print("[SEP] session_user:", user, "| user_employee:", user_employee)
+    print("[SEP] X-Target-Employee-Id header:", target_employee_header)
+
+    if target_employee_header:
+        if not frappe.db.exists("Employee", target_employee_header):
+            print("[SEP] STOP: target employee in header does not exist")
+            return {"show_button": False, "error": "Target employee not found"}
+        scope_employee = target_employee_header
+    else:
+        scope_employee = user_employee
+
+    print("[SEP] scope_employee (employee we are deciding for):", scope_employee)
+
+    if not scope_employee:
+        print("[SEP] STOP: no scope_employee (caller has no Employee and no header)")
+        return {"show_button": False}
+
+    policies = frappe.get_all(
+        "Confirmation Policy",
+        fields=["name", "triggered_number_of_days_before_confirmation", "separation_initiators"]
+    )
+
+    current_date = getdate(today())
+    print("[SEP] today:", current_date, "| policies found:", len(policies))
+
+    for policy in policies:
+        print("[SEP] --- checking policy:", policy.name, "---")
+        policy_doc = frappe.get_doc("Confirmation Policy", policy.name)
+        applicable_employees = get_applicable_employees(policy_doc)
+        if not applicable_employees:
+            print("[SEP]   skip: policy has no applicable employees")
+            continue
+
+        if scope_employee not in applicable_employees:
+            print("[SEP]   skip:", scope_employee, "not in this policy's applicable employees")
+            continue
+
+        initiator_cfg = {}
+        try:
+            initiator_cfg = json.loads(policy_doc.separation_initiators or "{}")
+        except Exception:
+            pass
+        if not isinstance(initiator_cfg, dict):
+            initiator_cfg = {}
+
+        has_self = initiator_cfg.get("self", False)
+        cfg_roles = initiator_cfg.get("roles", [])
+        cfg_users = initiator_cfg.get("users", [])
+        cfg_fields = initiator_cfg.get("employee_fields", [])
+        print("[SEP]   separation_initiators -> self:", has_self, "| roles:", cfg_roles, "| users:", cfg_users, "| employee_fields:", cfg_fields)
+
+        # Separation must be explicitly configured - no implicit self fallback.
+        if not has_self and not cfg_roles and not cfg_users and not cfg_fields:
+            print("[SEP]   skip: separation_initiators is empty / not configured")
+            continue
+
+        target_employees = []
+
+        if has_self:
+            if user_employee and user_employee in applicable_employees:
+                target_employees.append(user_employee)
+
+        if cfg_roles:
+            if any(r in user_roles for r in cfg_roles):
+                target_employees.extend(applicable_employees)
+
+        if cfg_users:
+            if user in cfg_users:
+                target_employees.extend(applicable_employees)
+
+        if cfg_fields and user_employee:
+            for emp_id in applicable_employees:
+                for f in cfg_fields:
+                    field_name = f.get("field", "")
+                    if not field_name:
+                        continue
+                    val = frappe.db.get_value("Employee", emp_id, field_name)
+                    if val == user_employee:
+                        target_employees.append(emp_id)
+
+        target_employees = list(set(target_employees))
+        print("[SEP]   employees the CALLER is allowed to initiate for:", target_employees)
+        if scope_employee in target_employees:
+            target_employees = [scope_employee]
+        else:
+            print("[SEP]   skip: caller (", user, "/ emp", user_employee, ") is NOT an allowed separation initiator for", scope_employee)
+            print("[SEP]          (self is", has_self, "- if you are testing as the employee, turn Self ON; if reports_to, call as the manager WITH the X-Target-Employee-Id header)")
+            target_employees = []
+
+        if not target_employees:
+            continue
+
+        for emp_id in target_employees:
+            emp_doc = frappe.get_doc("Employee", emp_id)
+            print("[SEP]   employee", emp_id, "status:", emp_doc.status, "| employment_status:", emp_doc.custom_employment_status, "| final_confirmation_date:", emp_doc.final_confirmation_date)
+
+            if emp_doc.status != "Active":
+                print("[SEP]   skip: employee status is not Active")
+                continue
+            if emp_doc.custom_employment_status not in ("On Probation", "Probation Extended"):
+                print("[SEP]   skip: employment_status is not On Probation / Probation Extended")
+                continue
+            if not emp_doc.final_confirmation_date:
+                print("[SEP]   skip: final_confirmation_date is empty")
+                continue
+
+            confirmation_date = getdate(emp_doc.final_confirmation_date)
+            days_until_confirmation = (confirmation_date - current_date).days
+
+            extension_count = frappe.db.count(
+                "Employee Confirmation",
+                {
+                    "employee": emp_id,
+                    "docstatus": 1,
+                    "status": "Probation Extended"
+                }
+            )
+
+            trigger_days = None
+
+            if extension_count > 0:
+                if policy_doc.extension_workflow_configurations:
+                    for row in policy_doc.extension_workflow_configurations:
+                        if row.extension_number == extension_count:
+                            trigger_days = row.trigger_days_before_extension or 0
+                            break
+                if not trigger_days:
+                    print("[SEP]   skip: extended probation but no matching extension trigger_days")
+                    continue
+            else:
+                trigger_days = policy_doc.triggered_number_of_days_before_confirmation
+
+            print("[SEP]   days_until_confirmation:", days_until_confirmation, "| trigger_days:", trigger_days, "| extension_count:", extension_count)
+
+            if not trigger_days:
+                print("[SEP]   skip: trigger_days is 0 / not set")
+                continue
+
+           
+            if days_until_confirmation > trigger_days:
+                is_self = (emp_id == user_employee)
+                print("[SEP]   MATCH: days_until > trigger_days -> show_button TRUE")
+                return {
+                    "show_button": True,
+                    "employee": emp_id,
+                    "employee_name": emp_doc.employee_name,
+                    "is_self": is_self,
+                    "days_until_confirmation": days_until_confirmation,
+                    "trigger_days": trigger_days,
+                    "confirmation_date": str(confirmation_date),
+                    "separation_hidden_from_date": str(add_days(confirmation_date, -trigger_days)),
+                    "extension_count": extension_count
+                }
+            else:
+                print("[SEP]   skip: days_until (", days_until_confirmation, ") <= trigger_days (", trigger_days, ") -> inside confirmation window, separation hides")
+
+    print("[SEP] === RESULT: show_button FALSE ===")
+    return {"show_button": False}

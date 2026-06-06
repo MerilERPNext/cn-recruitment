@@ -1,4 +1,5 @@
 import FrappeAPI from "../utils/frappeAPI";
+import type { TodoCategory } from "../types/todos";
 
 export interface TodoFilters {
   [key: string]: unknown;
@@ -47,6 +48,9 @@ export interface ToDo {
 const TODO_API_METHOD =
   "cn_todo_manager.chatnext_todo_manager.api.todo_api.get_todo_list";
 
+const TODO_CATEGORIES_API_METHOD =
+  "cn_todo_manager.chatnext_todo_manager.api.todo_api.get_todo_categories";
+
 export const todoService = {
   getTodoList: async (filters: TodoFilters = {}): Promise<ToDo[]> => {
     try {
@@ -80,4 +84,18 @@ export const todoService = {
       throw error;
     }
   },
+
+  getTodoCategories: async (): Promise<TodoCategory[]> => {
+    try {
+      const result = await FrappeAPI.callMethod(TODO_CATEGORIES_API_METHOD, {
+        type: "My Todo",
+      });
+
+      return (result as TodoCategory[]) || [];
+    } catch (error) {
+      console.error("📡 Error fetching todo categories:", error);
+      throw error;
+    }
+  },
 };
+

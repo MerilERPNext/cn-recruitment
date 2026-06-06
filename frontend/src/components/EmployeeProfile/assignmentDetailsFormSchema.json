@@ -6,48 +6,21 @@
         {
             "type": "select",
             "key": "module",
-            "label": "",
-            "hideLabel": true,
             "input": true,
-            "dataSrc": "values",
-            "customClass": "w-64",
+            "placeholder": "Select Module",
+            "customClass": "mb-4",
+            "hideLabel": true,
+            "refreshOn": "doctype",
+            "dataSrc": "url",
             "data": {
-                "values": [
-                    {
-                        "label": "Separation",
-                        "value": "Separation"
-                    },
-                    {
-                        "label": "Confirmation",
-                        "value": "Confirmation"
-                    },
-                    {
-                        "label": "Custom Workflow",
-                        "value": "Custom Workflow"
-                    },
-                    {
-                        "label": "Employee Assignments",
-                        "value": "Employee Assignments"
-                    },
-                    {
-                        "label": "Travel and Reimbursement",
-                        "value": "Travel and Reimbursement"
-                    },
-                    {
-                        "label": "Leave",
-                        "value": "Leave"
-                    },
-                    {
-                        "label": "Attendance",
-                        "value": "Attendance"
-                    },
-                    {
-                        "label": "Helpdesk",
-                        "value": "Helpdesk"
-                    }
-                ]
+                "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.assignment_details.get_modules"
             },
-            "defaultValue": "Separation"
+            "selectValues": "message.modules",
+            "template": "<span>{{ item }}</span>",
+            "lazyLoad": false,
+            "validate": {
+                "required": true
+            }
         }
     ]
 }

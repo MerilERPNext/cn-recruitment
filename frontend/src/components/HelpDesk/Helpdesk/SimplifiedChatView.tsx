@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Typography } from "../shared/atoms/Typography";
+import { Typography } from "../../shared/atoms/Typography";
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { X, Loader2, MessageSquare, CheckCircle, Edit3, Reply, XCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Loader2, MessageSquare, CheckCircle, Edit3, Reply, XCircle, Clock, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import {
   TicketDetail,
   useSendEmailReply,
@@ -13,24 +13,24 @@ import {
   useEmployeeByUserEmail,
   useGetFeedbackFormJson,
   useGetExitFormJson,
-} from "../../hooks/useHelpDeskTickets";
-import WrapperHoverCard from "../shared/WrapperHoverCard";
-import SimplifiedChatInput from "./SimplifiedChatInput";
+} from "../../../hooks/useHelpDeskTickets";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import SimplifiedChatInput from "../SimplifiedChatInput";
 import toast from "react-hot-toast";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import { showCloseTicketButton } from "./hdelpdeskUtils";
-import { FormIOForm, getFileComponents } from "../../utils/flowUtils";
-import { getRequiredKeys } from "../../utils/formioUtils";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { showCloseTicketButton } from "../hdelpdeskUtils";
+import { FormIOForm, getFileComponents } from "../../../utils/flowUtils";
+import { getRequiredKeys } from "../../../utils/formioUtils";
 import { Form } from "@tsed/react-formio";
-import { FormioFormSkeleton } from "./LoadingSkeletons";
-import { FormioPreviewItem, FormioPreviewPortal } from "../shared/molecules/FormioPreview";
-import { useFileUploader } from "../../hooks/useFileUploader";
-import Button from "../shared/atoms/Button";
-import Modal from "../shared/Modal";
-import FormPreview from "../shared/molecules/FormPreview";
-import { useLoadingOverlay } from "../../context/OverlayContext";
-import { FilePreviewModal } from "../shared/molecules/FilePreviewModal";
-import { FileTypeIcon, getFileTypeInfo } from "../../utils/fileUtils";
+import { FormioFormSkeleton } from "../LoadingSkeletons";
+import { FormioPreviewItem, FormioPreviewPortal } from "../../shared/molecules/FormioPreview";
+import { useFileUploader } from "../../../hooks/useFileUploader";
+import Modal from "../../shared/Modal";
+import FormPreview from "../../shared/molecules/FormPreview";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { FilePreviewModal } from "../../shared/molecules/FilePreviewModal";
+import { FileTypeIcon, getFileTypeInfo } from "../../../utils/fileUtils";
+import DropdownMenu from "../../shared/DropDownMenu";
 
 interface SimplifiedChatViewProps {
   ticket: TicketDetail;
@@ -505,6 +505,227 @@ const RejectResolutionModal: React.FC<RejectResolutionModalProps> = ({
   );
 };
 
+const getInitials = (name: string) => {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+const formatTime = (date: Date) => {
+  return date
+    .toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })
+    .toLowerCase();
+};
+
+interface AvatarProps {
+  sender: SimpleChatMessage["sender"];
+  isCurrentUser: boolean;
+}
+
+const Avatar: React.FC<AvatarProps> = ({ sender, isCurrentUser }) => (
+  <div className="flex-shrink-0">
+    {sender.avatar ? (
+      <img
+        src={sender.avatar}
+        alt={sender.name}
+        className="w-10 h-10 rounded-xl object-cover"
+      />
+    ) : (
+      <div
+        className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium ${isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+          }`}
+      >
+        {getInitials(sender.name)}
+      </div>
+    )}
+  </div>
+);
+
+interface AttachmentListProps {
+  attachments: SimpleChatMessage["attachments"];
+  isCurrentUser: boolean;
+  onPreviewFile: (file: { url: string; name: string }) => void;
+}
+
+const AttachmentList: React.FC<AttachmentListProps> = ({
+  attachments,
+  isCurrentUser,
+  onPreviewFile,
+}) => {
+  if (!attachments || attachments.length === 0) return null;
+
+  return (
+    <div className="mt-3 pt-3 border-t border-gray-200/30 flex flex-wrap gap-2">
+      {attachments.map((attachment, index) => {
+        const { category, iconColor, bgColor } = getFileTypeInfo(attachment.file_name);
+        return (
+          <button
+            key={index}
+            onClick={() =>
+              onPreviewFile({ url: attachment.file_url, name: attachment.file_name })
+            }
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border max-w-full ${isCurrentUser
+                ? "bg-blue-400/10 border-blue-400/20 text-blue-100 hover:bg-blue-400/20"
+                : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
+              }`}
+          >
+            <div
+              className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${isCurrentUser ? "bg-blue-500/20" : bgColor
+                }`}
+            >
+              <FileTypeIcon
+                category={category}
+                className={`w-3.5 h-3.5 ${isCurrentUser ? "text-blue-200" : iconColor}`}
+              />
+            </div>
+            <span className="truncate max-w-[150px] font-medium">{attachment.file_name}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+interface QuotedMessageProps {
+  content: string;
+  sender?: string | null;
+  isCurrentUser: boolean;
+  onContentClick: (e: React.MouseEvent<HTMLDivElement>) => void;
+}
+
+const QuotedMessage: React.FC<QuotedMessageProps> = ({
+  content,
+  sender,
+  isCurrentUser,
+  onContentClick,
+}) => (
+  <div
+    onClick={onContentClick}
+    className={`mb-2 p-3 rounded-lg border-l-4 cursor-pointer ${isCurrentUser
+        ? "bg-blue-400/20 border-blue-300 text-blue-100"
+        : "bg-gray-100 border-gray-300 text-gray-600"
+      }`}
+  >
+    <div
+      className={`text-xs mb-1 font-medium ${isCurrentUser ? "text-blue-200" : "text-gray-500"}`}
+    >
+      {sender ? `${sender} wrote:` : "Previous message:"}
+    </div>
+    <div
+      className={`text-sm line-clamp-3 prose prose-sm max-w-none ${isCurrentUser ? "prose-invert" : ""
+        } [&>p]:mb-0 [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg`}
+      dangerouslySetInnerHTML={{ __html: content }}
+    />
+  </div>
+);
+
+interface ChatBubbleProps {
+  message: SimpleChatMessage;
+  isTicketClosed: boolean;
+  onReplyingTo: (message: SimpleChatMessage) => void;
+  onPreviewFile: (file: { url: string; name: string }) => void;
+  onContentClick: (e: React.MouseEvent<HTMLDivElement>) => void;
+  formatTime: (date: Date) => string;
+}
+
+const ChatBubble: React.FC<ChatBubbleProps> = ({
+  message,
+  isTicketClosed,
+  onReplyingTo,
+  onPreviewFile,
+  onContentClick,
+  formatTime,
+}) => {
+  const { content, quotedContent, quotedSender, sender, timestamp, isCurrentUser, attachments } =
+    message;
+
+  if (isCurrentUser) {
+    return (
+      <div className="group flex justify-end gap-3 mb-6 simplified-chat-view-quoted-message-a">
+        {!isTicketClosed && (
+          <button
+            onClick={() => onReplyingTo(message)}
+            className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+            title="Reply"
+          >
+            <Reply className="w-4 h-4" />
+          </button>
+        )}
+        <div className="flex flex-col items-end max-w-[75%]">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md px-5 py-4 max-w-full overflow-hidden">
+            {quotedContent && (
+              <QuotedMessage
+                content={quotedContent}
+                sender={quotedSender}
+                isCurrentUser={true}
+                onContentClick={onContentClick}
+              />
+            )}
+            <div
+              onClick={onContentClick}
+              className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg"
+              dangerouslySetInnerHTML={{ __html: content }}
+            />
+            <AttachmentList
+              attachments={attachments}
+              isCurrentUser={true}
+              onPreviewFile={onPreviewFile}
+            />
+          </div>
+          <span className="text-xs text-gray-400 mt-2 mr-1">{formatTime(timestamp)}</span>
+        </div>
+        <Avatar sender={sender} isCurrentUser={true} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="group flex justify-start gap-3 mb-6">
+      <Avatar sender={sender} isCurrentUser={false} />
+      <div className="flex flex-col items-start max-w-[75%]">
+        <div className="bg-[#F5F0E8] rounded-2xl rounded-bl-md px-5 py-4 max-w-full overflow-hidden">
+          <div className="text-xs text-gray-500 mb-2 font-medium">{sender.name}</div>
+          {quotedContent && (
+            <QuotedMessage
+              content={quotedContent}
+              sender={quotedSender}
+              isCurrentUser={false}
+              onContentClick={onContentClick}
+            />
+          )}
+          <div
+            onClick={onContentClick}
+            className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg"
+            dangerouslySetInnerHTML={{ __html: content }}
+          />
+          <AttachmentList
+            attachments={attachments}
+            isCurrentUser={false}
+            onPreviewFile={onPreviewFile}
+          />
+        </div>
+        <span className="text-xs text-gray-400 mt-2 ml-1">{formatTime(timestamp)}</span>
+      </div>
+      {!isTicketClosed && (
+        <button
+          onClick={() => onReplyingTo(message)}
+          className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+          title="Reply"
+        >
+          <Reply className="w-4 h-4" />
+        </button>
+      )}
+    </div>
+  );
+};
+
 const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   ticket,
   currentUserEmail,
@@ -517,7 +738,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isResolvingTicket, setIsResolvingTicket] = useState(false);
   const [replyingTo, setReplyingTo] = useState<SimpleChatMessage | null>(null);
-  const [isDropDownOpen, setIsDropDownOpen] = useState(false);
   const { isDesktop } = useScreenSize();
   const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
   // Mutations
@@ -639,26 +859,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     });
   }
 
-  // Format timestamp
-  const formatTime = (date: Date) => {
-    return date
-      .toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      })
-      .toLowerCase();
-  };
 
-  // Get avatar initials
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   // Get assigned user email
   const getAssignedUserEmail = (): string | null => {
@@ -725,7 +926,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       files.forEach((file) => {
         const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.file_name);
         if (isImage) {
-          attachmentHtml += `<li><a href="${file.file_url}" target="_blank"><img src="${file.file_url}" alt="${file.file_name}" style="max-width: 300px; max-height: 200px;" /><br/>${file.file_name}</a></li>`;
+          attachmentHtml += `<li><a href="${file.file_url}" target="_blank"><img src="${file.file_url}" alt="${file.file_name}" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px;" /><br/>${file.file_name}</a></li>`;
         } else {
           attachmentHtml += `<li><a href="${file.file_url}" target="_blank">${file.file_name}</a></li>`;
         }
@@ -935,53 +1136,66 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   const isSending = sendEmailMutation.isPending;
   const isClosing = closeTicketMutation.isPending || closeResolvedMutation.isPending;
 
-  // Simple Avatar component - avatars should remain circular
-  const Avatar = ({ sender, isCurrentUser }: { sender: SimpleChatMessage["sender"]; isCurrentUser: boolean }) => (
-    <div className="flex-shrink-0">
-      {sender.avatar ? (
-        <img
-          src={sender.avatar}
-          alt={sender.name}
-          className="w-10 h-10 rounded-xl object-cover"
-        />
-      ) : (
-        <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium ${isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
-            }`}
-        >
-          {getInitials(sender.name)}
-        </div>
-      )}
-    </div>
-  );
-
-  // Attachment list component
-  const AttachmentList = ({ attachments, isCurrentUser }: { attachments: SimpleChatMessage["attachments"]; isCurrentUser: boolean }) => {
-    if (!attachments || attachments.length === 0) return null;
-
-    return (
-      <div className="mt-3 pt-3 border-t border-gray-200/30 flex flex-wrap gap-2">
-        {attachments.map((attachment, index) => {
-          const { category, iconColor, bgColor } = getFileTypeInfo(attachment.file_name);
-          return (
-            <button
-              key={index}
-              onClick={() => setPreviewFile({ url: attachment.file_url, name: attachment.file_name })}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border ${isCurrentUser
-                ? "bg-blue-400/10 border-blue-400/20 text-blue-100 hover:bg-blue-400/20"
-                : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
-                }`}
-            >
-              <div className={`w-6 h-6 rounded flex items-center justify-center ${isCurrentUser ? "bg-blue-500/20" : bgColor}`}>
-                <FileTypeIcon category={category} className={`w-3.5 h-3.5 ${isCurrentUser ? "text-blue-200" : iconColor}`} />
-              </div>
-              <span className="truncate max-w-[150px] font-medium">{attachment.file_name}</span>
-            </button>
-          );
-        })}
-      </div>
-    );
+  const parseForm = (form: string | null | undefined) => {
+    if (typeof form === "string") {
+      try {
+        return JSON.parse(form);
+      } catch (error) {
+        console.error("Error parsing form data", error);
+        return {};
+      }
+    }
+    return form;
   };
+
+  const creationForm = useMemo(() => parseForm(ticket.creation_form_data), [ticket.creation_form_data]);
+  const feedbackForm = useMemo(() => parseForm(ticket.feedback_form_data), [ticket.feedback_form_data]);
+  const closeForm = useMemo(() => parseForm(ticket.closing_form_data), [ticket.closing_form_data]);
+
+  const [showForms, setShowForms] = useState<boolean>(false);
+
+  const actionItems: { label: string; icon: React.ReactNode; onClick: () => void }[] = [];
+
+  // Resolved ticket actions for raiser
+  if (ticket.status === "Resolved" && ticket.raised_by === currentUserEmail) {
+    actionItems.push({
+      label: isClosing ? "Closing..." : "Accept Closure",
+      icon: <CheckCircle className="w-4 h-4 text-green-600" />,
+      onClick: handleAcceptClosure,
+    });
+    actionItems.push({
+      label: "Reject",
+      icon: <XCircle className="w-4 h-4 text-red-600" />,
+      onClick: () => setIsRejectModalOpen(true),
+    });
+  }
+
+  // Open/Replied ticket actions
+  if (ticket.status !== "Closed" && ticket.status !== "Resolved") {
+    if (!isDrawer || !isDesktop) {
+      actionItems.push({
+        label: "Resolve",
+        icon: <CheckCircle className="w-4 h-4 text-amber-600" />,
+        onClick: handleResolveButtonClick,
+      });
+    }
+    if (showCloseTicketButton(ticket.status) || !isDesktop) {
+      actionItems.push({
+        label: isClosing ? "Closing..." : "Close Ticket",
+        icon: <CheckCircle className="w-4 h-4 text-green-600" />,
+        onClick: handleCloseButtonClick,
+      });
+    }
+  }
+
+  // Show Forms action
+  if (!!creationForm?.schema || !!closeForm?.schema || !!feedbackForm?.schema) {
+    actionItems.push({
+      label: "Show Forms",
+      icon: <FileText className="w-4 h-4 text-blue-600" />,
+      onClick: () => setShowForms(true),
+    });
+  }
 
   const handleContentClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
@@ -995,112 +1209,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         setPreviewFile({ url: anchor.href, name: fileName });
       }
     }
-  };
-
-  // Quoted message component
-  const QuotedMessage = ({ content, sender, isCurrentUser }: { content: string; sender?: string | null; isCurrentUser: boolean }) => (
-    <div
-      onClick={handleContentClick}
-      className={`mb-2 p-3 rounded-lg border-l-4 cursor-pointer${isCurrentUser
-        ? 'bg-blue-400/20 border-blue-300 text-blue-100'
-        : 'bg-gray-100 border-gray-300 text-gray-600'
-        }`}>
-      <div className={`text-xs mb-1 font-medium ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}>
-        {sender ? `${sender} wrote:` : 'Previous message:'}
-      </div>
-      <div
-        className={`text-sm line-clamp-3 prose prose-sm max-w-none ${isCurrentUser ? 'prose-invert' : ''} [&>p]:mb-0`}
-        dangerouslySetInnerHTML={{ __html: content }}
-      />
-    </div>
-  );
-
-  // Chat message component (simplified, no type badges)
-  const ChatBubble = ({ message }: { message: SimpleChatMessage }) => {
-    const { content, quotedContent, quotedSender, sender, timestamp, isCurrentUser, attachments } = message;
-
-    if (isCurrentUser) {
-      // Right-aligned message (current user) - blue gradient
-      return (
-        <div className="group flex justify-end gap-3 mb-6  simplified-chat-view-quoted-message-a ">
-          {/* Reply button - shows on hover */}
-          {!isTicketClosed && (
-            <button
-              onClick={() => setReplyingTo(message)}
-              className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-              title="Reply"
-            >
-              <Reply className="w-4 h-4" />
-            </button>
-          )}
-          <div className="flex flex-col items-end max-w-[75%]">
-            {/* Message bubble */}
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md px-5 py-4">
-              {/* Quoted message - appears ABOVE main content */}
-              {quotedContent && (
-                <QuotedMessage content={quotedContent} sender={quotedSender} isCurrentUser={true} />
-              )}
-
-              {/* Main content */}
-              <div
-                onClick={handleContentClick}
-                className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer"
-                dangerouslySetInnerHTML={{ __html: content }}
-              />
-              <AttachmentList attachments={attachments} isCurrentUser={true} />
-            </div>
-
-            {/* Timestamp */}
-            <span className="text-xs text-gray-400 mt-2 mr-1">{formatTime(timestamp)}</span>
-          </div>
-          <Avatar sender={sender} isCurrentUser={true} />
-        </div>
-      );
-    }
-
-    // Left-aligned message (other users) - warm cream color
-    return (
-      <div className="group flex justify-start gap-3 mb-6">
-        <Avatar sender={sender} isCurrentUser={false} />
-
-        <div className="flex flex-col items-start max-w-[75%]">
-          {/* Message bubble - warm cream/beige color */}
-          <div className="bg-[#F5F0E8] rounded-2xl rounded-bl-md px-5 py-4">
-            {/* Sender name */}
-            <div className="text-xs text-gray-500 mb-2 font-medium">
-              {sender.name}
-            </div>
-
-            {/* Quoted message - appears ABOVE main content */}
-            {quotedContent && (
-              <QuotedMessage content={quotedContent} sender={quotedSender} isCurrentUser={false} />
-            )}
-
-            {/* Content */}
-            <div
-              onClick={handleContentClick}
-              className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer"
-              dangerouslySetInnerHTML={{ __html: content }}
-            />
-            <AttachmentList attachments={attachments} isCurrentUser={false} />
-          </div>
-
-          {/* Timestamp */}
-          <span className="text-xs text-gray-400 mt-2 ml-1">{formatTime(timestamp)}</span>
-        </div>
-
-        {/* Reply button - shows on hover */}
-        {!isTicketClosed && (
-          <button
-            onClick={() => setReplyingTo(message)}
-            className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-            title="Reply"
-          >
-            <Reply className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-    );
   };
 
   // Resolution content component
@@ -1287,51 +1395,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   };
 
   const Header = ({ ticket }: { ticket: TicketDetail }) => {
-
-    const creationForm = useMemo(() => {
-      const form = ticket.creation_form_data;
-      if (typeof form === "string") {
-        try {
-          return JSON.parse(form);
-        } catch (error) {
-          console.error("Error parsing form data", error);
-          return {};
-        }
-      }
-      return form;
-
-    }, [ticket.creation_form_data])
-
-    const feedbackForm = useMemo(() => {
-      const form = ticket.feedback_form_data;
-      if (typeof form === "string") {
-        try {
-          return JSON.parse(form);
-        } catch (error) {
-          console.error("Error parsing form data", error);
-          return {};
-        }
-      }
-      return form;
-
-    }, [ticket.feedback_form_data])
-
-    const closeForm = useMemo(() => {
-      const form = ticket.closing_form_data;
-      if (typeof form === "string") {
-        try {
-          return JSON.parse(form);
-        } catch (error) {
-          console.error("Error parsing form data", error);
-          return {};
-        }
-      }
-      return form;
-
-    }, [ticket.closing_form_data])
-
-    const [showForms, setShowForms] = useState<boolean>(false);
-
     return (
       <header className="bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0 shadow-sm">
         <div className="flex items-center gap-4">
@@ -1364,150 +1427,29 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             </div>
           </div>
         </div>
-        <div className="flex items-center justify-end gap-2 w-full md:w-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide">
-          {ticket.status === "Resolved" && ticket.raised_by === currentUserEmail ? (
-            <>
-              {/* Accept Closure - closes the ticket */}
-              <button
-                onClick={handleAcceptClosure}
-                disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-              >
-                <CheckCircle className="w-4 h-4" />
-                {isClosing ? "Closing..." : "Accept Closure"}
-              </button>
-              {/* Reject Resolution - reopens for more work */}
-              <button
-                onClick={() => setIsRejectModalOpen(true)}
-                disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-              >
-                <XCircle className="w-4 h-4" />
-                Reject
-              </button>
-            </>
-          ) : ticket.status !== "Closed" && ticket.status !== "Resolved" ? (
-            <>
-              {!isDrawer && (
+        <div className="flex items-center justify-end gap-2 w-full md:w-auto pb-2 md:pb-0">
+          {/* Actions Dropdown */}
+          {actionItems.length > 0 && (
+            <DropdownMenu items={actionItems} placement="bottom-left">
+              {(isOpen) => (
                 <button
-                  onClick={handleResolveButtonClick}
                   disabled={isClosing}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-colors bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
                 >
-                  <CheckCircle className="w-4 h-4" />
-                  Resolve
+                  Actions
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
                 </button>
               )}
-              {showCloseTicketButton(ticket.status) && (
-                <button
-                  onClick={handleCloseButtonClick}
-                  disabled={isClosing}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  {isClosing ? "Closing..." : "Close Ticket"}
-                </button>
-              )}
-            </>
-          ) : null}
-
-          {
-            (!!creationForm?.schema || !!closeForm?.schema || !!feedbackForm?.schema) && (
-              <Button
-                onClick={() => { setShowForms(true) }}
-                disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Show Forms
-              </Button>
-            )
-          }
-
-          {
-            showForms && (
-              <Modal
-                isOpen={showForms}
-                onClose={() => setShowForms(false)}
-                className="flex flex-col overflow-hidden h-[85vh] sm:h-[80vh]"
-                size="lg"
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10 text-left">
-                  <div>
-                    <Typography variant="h3" color="primary">
-                      Ticket Submission Forms
-                    </Typography>
-                    <Typography variant="bodySmall" color="body2" className="mt-1">
-                      Ticket ID: {ticket.name}
-                    </Typography>
-                  </div>
-                  <button
-                    onClick={() => setShowForms(false)}
-                    className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto hide-attachment-readonly p-4 md:p-6 bg-gray-50/30">
-                  <div className="flex flex-col gap-6">
-                    {closeForm?.schema && (
-                      <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
-                        <Typography variant="subheading" color="primary" className="mb-4 block">
-                          Close Form
-                        </Typography>
-                        <FormPreview
-                          containerId={`close-form-container-chat-read-${ticket.name}`}
-                          schema={closeForm.schema}
-                          submissionData={closeForm.answer || {}}
-                          readOnly={true}
-                        />
-                      </div>
-                    )}
-
-                    {feedbackForm?.schema && (
-                      <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
-                        <Typography variant="subheading" color="primary" className="mb-4 block">
-                          Feedback Form
-                        </Typography>
-                        <FormPreview
-                          containerId={`feedback-form-container-chat-read-${ticket.name}`}
-                          schema={feedbackForm.schema}
-                          submissionData={feedbackForm.answer || {}}
-                          readOnly={true}
-                        />
-                      </div>
-                    )}
-
-                    {creationForm?.schema && (
-                      <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
-                        <Typography variant="subheading" color="primary" className="mb-4 block">
-                          Creation Form
-                        </Typography>
-                        <FormPreview
-                          containerId={`creation-form-container-chat-read-${ticket.name}`}
-                          schema={creationForm.schema}
-                          submissionData={creationForm.answer || {}}
-                          readOnly={true}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Modal>
-            )
-          }
-
+            </DropdownMenu>
+          )}
         </div>
       </header>
-    )
+    );
   };
 
   return (
     <div className={`${isDrawer ? "flex-1 min-h-0" : "h-screen"} flex flex-col bg-app`}>
       {/* Header */}
-
       {isDesktop && <Header ticket={ticket} />}
 
       {/* Info banner when agent has requested closure */}
@@ -1521,54 +1463,62 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
       {/* Tabs - Chat and Resolution */}
       <div className="bg-white border-b border-gray-200 px-6">
-        <nav className="flex gap-1">
-          <button
-            onClick={() => setActiveTab("chat")}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === "chat"
-              ? "border-blue-500 text-blue-600 bg-blue-50/50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              }`}
-          >
-            Messages
-            {messages.length > 0 && (
-              <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === "chat"
-                ? "bg-blue-100 text-blue-700"
-                : "bg-app text-gray-600"
-                }`}>
-                {messages.length}
-              </span>
-            )}
-          </button>
-          {ticket.status !== "Open" && (
+        <nav className="flex items-center justify-between w-full">
+          <div className="flex gap-1">
             <button
-              onClick={() => setActiveTab("resolution")}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === "resolution"
+              onClick={() => setActiveTab("chat")}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === "chat"
                 ? "border-blue-500 text-blue-600 bg-blue-50/50"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                 }`}
             >
-              Resolution
-              {ticket.resolution_details && (
-                <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === "resolution"
+              Messages
+              {messages.length > 0 && (
+                <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === "chat"
                   ? "bg-blue-100 text-blue-700"
                   : "bg-app text-gray-600"
                   }`}>
-                  1
+                  {messages.length}
                 </span>
               )}
             </button>
+            {ticket.status !== "Open" && (
+              <button
+                onClick={() => setActiveTab("resolution")}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === "resolution"
+                  ? "border-blue-500 text-blue-600 bg-blue-50/50"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  }`}
+              >
+                Resolution
+                {ticket.resolution_details && (
+                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === "resolution"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-app text-gray-600"
+                    }`}>
+                    1
+                  </span>
+                )}
+              </button>
+            )}
+          </div>
+          {!isDesktop && actionItems.length > 0 && (
+            <div className="flex items-center">
+              <DropdownMenu items={actionItems} placement="bottom-left">
+                {(isOpen) => (
+                  <button
+                    disabled={isClosing}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                  >
+                    Actions
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                  </button>
+                )}
+              </DropdownMenu>
+            </div>
           )}
-          {!isDesktop &&
-            <button
-              onClick={() => setIsDropDownOpen(!isDropDownOpen)}
-              className="flex ml-auto self-center items-center rounded-full p-1 bg-gray-50 hover:bg-gray-100 cursor-pointer">
-              <ChevronUp
-                className={`w-4 h-4 transition-all duration-300 ${isDropDownOpen ? "rotate-180 " : ""}`} />
-            </button>
-          }
         </nav>
       </div>
-      {isDropDownOpen && <Header ticket={ticket} />}
       {/* Content Area */}
       {activeTab === "resolution" ? (
         <div className="flex-1 overflow-y-auto px-6 py-4">
@@ -1599,7 +1549,15 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
                     {/* Messages for this date */}
                     {dateMessages.map((msg) => (
-                      <ChatBubble key={msg.id} message={msg} />
+                      <ChatBubble
+                        key={msg.id}
+                        message={msg}
+                        isTicketClosed={isTicketClosed}
+                        onReplyingTo={setReplyingTo}
+                        onPreviewFile={setPreviewFile}
+                        onContentClick={handleContentClick}
+                        formatTime={formatTime}
+                      />
                     ))}
                   </div>
                 ))}
@@ -1658,31 +1616,83 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
           onClose={() => setPreviewFile(null)}
         />
       )}
+
+      {/* Forms Modal */}
+      {showForms && (
+        <Modal
+          isOpen={showForms}
+          onClose={() => setShowForms(false)}
+          className="flex flex-col overflow-hidden h-[85vh] sm:h-[80vh]"
+          size="lg"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10 text-left">
+            <div>
+              <Typography variant="h3" color="primary" className="text-lg sm:text-[24px] font-bold">
+                Ticket Submission Forms
+              </Typography>
+              <Typography variant="bodySmall" color="body2" className="mt-1 text-xs sm:text-[14px]">
+                Ticket ID: {ticket.name}
+              </Typography>
+            </div>
+            <button
+              onClick={() => setShowForms(false)}
+              className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto hide-attachment-readonly p-4 md:p-6 bg-gray-50/30">
+            <div className="flex flex-col gap-6">
+              {closeForm?.schema && (
+                <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
+                  <Typography variant="subheading" color="primary" className="mb-4 block text-base sm:text-[18px] font-semibold">
+                    Close Form
+                  </Typography>
+                  <FormPreview
+                    containerId={`close-form-container-chat-read-${ticket.name}`}
+                    schema={closeForm.schema}
+                    submissionData={closeForm.answer || {}}
+                    readOnly={true}
+                  />
+                </div>
+              )}
+
+              {feedbackForm?.schema && (
+                <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
+                  <Typography variant="subheading" color="primary" className="mb-4 block text-base sm:text-[18px] font-semibold">
+                    Feedback Form
+                  </Typography>
+                  <FormPreview
+                    containerId={`feedback-form-container-chat-read-${ticket.name}`}
+                    schema={feedbackForm.schema}
+                    submissionData={feedbackForm.answer || {}}
+                    readOnly={true}
+                  />
+                </div>
+              )}
+
+              {creationForm?.schema && (
+                <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
+                  <Typography variant="subheading" color="primary" className="mb-4 block text-base sm:text-[18px] font-semibold">
+                    Creation Form
+                  </Typography>
+                  <FormPreview
+                    containerId={`creation-form-container-chat-read-${ticket.name}`}
+                    schema={creationForm.schema}
+                    submissionData={creationForm.answer || {}}
+                    readOnly={true}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
 
-// Loading component
-export const SimplifiedChatViewLoading: React.FC = () => (
-  <div className="h-screen flex items-center justify-center bg-app">
-    <div className="flex items-center gap-3">
-      <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-      <span className="text-gray-600">Loading ticket...</span>
-    </div>
-  </div>
-);
-
-// Error component
-export const SimplifiedChatViewError: React.FC<{ onClose: () => void }> = ({ onClose }) => (
-  <div className="h-screen flex flex-col items-center justify-center bg-app">
-    <p className="text-red-500 mb-4">Failed to load ticket</p>
-    <button
-      onClick={onClose}
-      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-    >
-      Back to HelpDesk
-    </button>
-  </div>
-);
 
 export default SimplifiedChatView;

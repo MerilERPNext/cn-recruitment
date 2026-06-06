@@ -1443,12 +1443,15 @@ def _build_preview_payload(jd_name, source, filled_data=None):
 
 
 @frappe.whitelist()
-def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20, include=None):
+def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20, include=None, filters=None):
     """Returns [{id, label}] for a doctype; label uses title_field when set.
     Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins).
     `include` is an id (or comma-separated ids) that must always appear in the
     results — used so a pre-selected value renders its label even when it falls
     outside the fetched/searched page (e.g. one designation out of thousands).
+    `filters` (dict or JSON string) narrows the base record set — e.g. limiting
+    Employees to certain statuses. `include` ids bypass `filters` so a previously
+    saved value always renders even if it no longer matches.
     Accessible to any authenticated Frappe user (desk session or API key/secret)."""
     if not doctype:
         frappe.local.response["http_status_code"] = 400
@@ -1463,6 +1466,9 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
     has_title = bool(title_field) and title_field != "name"
     fields = ["name"] + ([title_field] if has_title else [])
 
+    if isinstance(filters, str):
+        filters = json.loads(filters) if filters.strip() else None
+
     search = (search_text or query or txt or "").strip()
     or_filters = None
     if search:
@@ -1471,7 +1477,7 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
 
     try:
         records = frappe.get_all(
-            doctype, fields=fields, or_filters=or_filters,
+            doctype, fields=fields, filters=filters, or_filters=or_filters,
             limit=int(limit or 20), order_by=f"{title_field or 'name'} asc",
         )
     except Exception as e:
@@ -1497,3 +1503,26 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
             results = [_to_option(r) for r in extra] + results
 
     return {"status": "success", "doctype": doctype, "title_field": title_field, "total": len(results), "results": results}
+
+
+def get_allowed_replacement_employee_statuses():
+    """Employee statuses configured in Recruitment Settings ->
+    'Allowed Replacement Employee Statuses' that an employee must have to be
+    selectable as a 'Replacement For' on a Job Requisition position.
+    Falls back to ['Active'] when nothing is configured."""
+    rows = frappe.get_single("Recruitment Settings").get("allowed_replacement_employee_statuses") or []
+    statuses = [r.employee_status for r in rows if r.employee_status]
+    return statuses or ["Active"]
+
+
+@frappe.whitelist()
+def get_replacement_employee_options(search_text=None, query=None, txt=None, limit=20, include=None):
+    """Employee options for the Job Requisition 'Replacement For' field, limited
+    to the statuses configured in Recruitment Settings -> Allowed Replacement
+    Employee Statuses (defaults to 'Active' only when none are configured).
+    Same response shape as get_link_field_options."""
+    statuses = get_allowed_replacement_employee_statuses()
+    return get_link_field_options(
+        "Employee", search_text=search_text, query=query, txt=txt,
+        limit=limit, include=include, filters={"status": ["in", statuses]},
+    )

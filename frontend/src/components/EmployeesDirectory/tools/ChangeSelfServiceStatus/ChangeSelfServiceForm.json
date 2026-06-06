@@ -27,6 +27,30 @@
                     }
                 ]
             }
+        },
+        {
+            "label": "Allow Mobile Access",
+            "errorLabel": "Allow Mobile Access",
+            "key": "mobile_status",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Allow Mobile Access",
+            "customClass": "mb-4",
+            "validate": {
+                "required": true
+            },
+            "data": {
+                "values": [
+                    {
+                        "label": "Yes",
+                        "value": "Yes"
+                    },
+                    {
+                        "label": "No",
+                        "value": "No"
+                    }
+                ]
+            }
         }
     ]
 }

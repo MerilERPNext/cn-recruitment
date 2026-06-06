@@ -6,6 +6,7 @@ interface ReferralReviewStepProps {
   sections: string[];
   fields: Field[];
   formData: Record<string, ReferralApplicationValue>;
+  rowCounts?: Record<string, number>;
   acknowledged: boolean;
   setAcknowledged: (val: boolean) => void;
   missingRequiredFields: string[];
@@ -16,6 +17,7 @@ export default function ReferralReviewStep({
   sections,
   fields,
   formData,
+  rowCounts = {},
   acknowledged,
   setAcknowledged,
   missingRequiredFields,
@@ -114,20 +116,97 @@ export default function ReferralReviewStep({
                   {sect}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  {sectFields.map((field) => (
-                    <div key={field.reference_name} className="space-y-1">
-                      <span className="text-slate-400 font-medium block">
-                        {field.display_name}{" "}
-                        {field.reqd === 1 && (
-                          <span className="text-rose-500">*</span>
-                        )}
-                      </span>
-                      <span className="font-semibold text-slate-800 block">
-                        {renderValue(field)}
-                      </span>
-                    </div>
-                  ))}
+                  {sectFields
+                    .filter((f) => f.fieldtype !== "Table")
+                    .map((field) => (
+                      <div key={field.reference_name} className="space-y-1">
+                        <span className="text-slate-400 font-medium block">
+                          {field.display_name}{" "}
+                          {field.reqd === 1 && (
+                            <span className="text-rose-500">*</span>
+                          )}
+                        </span>
+                        <span className="font-semibold text-slate-800 block">
+                          {renderValue(field)}
+                        </span>
+                      </div>
+                    ))}
                 </div>
+
+                {/* Child-table entries (reconstructed from the flat per-row keys) */}
+                {sectFields
+                  .filter((f) => f.fieldtype === "Table")
+                  .map((field) => {
+                    const rowCount =
+                      rowCounts[field.reference_name] ??
+                      (field.reqd === 1 ? 1 : 0);
+                    const subFields = field.table_fields || [];
+                    const entries = [];
+                    for (let i = 0; i < rowCount; i++) {
+                      const cells = subFields
+                        .map((sub) => {
+                          const val =
+                            formData[
+                              `${field.reference_name}_${i}_${sub.fieldname}`
+                            ];
+                          if (val === undefined || val === null || val === "")
+                            return null;
+                          return { label: sub.label, value: val };
+                        })
+                        .filter(Boolean) as { label: string; value: ReferralApplicationValue }[];
+                      if (cells.length > 0) entries.push(cells);
+                    }
+                    return (
+                      <div key={field.reference_name} className="space-y-2">
+                        <span className="text-slate-400 font-medium block">
+                          {field.display_name}{" "}
+                          {field.reqd === 1 && (
+                            <span className="text-rose-500">*</span>
+                          )}
+                        </span>
+                        {entries.length === 0 ? (
+                          <span className="text-gray-400 text-xs">
+                            {field.reqd === 1 ? (
+                              <span className="text-rose-500 font-semibold">
+                                Missing required field
+                              </span>
+                            ) : (
+                              "—"
+                            )}
+                          </span>
+                        ) : (
+                          <div className="space-y-2">
+                            {entries.map((cells, idx) => (
+                              <div
+                                key={idx}
+                                className="bg-white border border-slate-200 rounded-lg p-3"
+                              >
+                                <p className="text-[11px] font-bold text-slate-500 mb-1.5">
+                                  Entry #{idx + 1}
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  {cells.map((c) => (
+                                    <div key={c.label}>
+                                      <span className="text-slate-400 font-medium block">
+                                        {c.label}
+                                      </span>
+                                      <span className="font-semibold text-slate-800 block break-words">
+                                        {typeof c.value === "boolean"
+                                          ? c.value
+                                            ? "Yes"
+                                            : "No"
+                                          : String(c.value)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             );
           })}
