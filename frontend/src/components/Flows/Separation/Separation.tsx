@@ -6,13 +6,14 @@ import {
   useEmployee,
 } from "../../../hooks/useEmployee";
 import {
-  useChatAssistantLazy,
+  useChatTrigger,
   useDifinitaionNameForSeparation,
+  getDefinitionByFilter,
 } from "../../../hooks/useFlows";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./components/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -77,89 +78,45 @@ const Separation = () => {
   const reference_name = item?.workflow_stages?.[0]?.todo?.reference_name ?? null;
   const { data: separationType, isLoading: isLoadingSeparationType } = useGetEmployeeSeparationType(reference_name);
 
-
-  const [isTriggeringChat, setIsTriggeringChat] = useState(false);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
 
-
   const isLoading = isLoadingSeparationFunnelDetails || isLoadingSeparationType;
-  function getFunnelData() {
-    const result: any = {
-      termination_funnel_data: null,
-      separation_funnel_data: null,
-    };
 
-    if (!Array.isArray(definitionName)) return result;
-
-    definitionName.forEach((item: any) => {
-      const category = item?.trigger_category?.name;
-      if (category === "Termination") result.termination_funnel_data = item;
-      if (category === "Separation") result.separation_funnel_data = item;
-    });
-
-    return result;
-  }
-
-  const { termination_funnel_data, separation_funnel_data } = getFunnelData();
+  // Use centralized getDefinitionByFilter for finding trigger definitions
+  const terminationDefinition = useMemo(
+    () => getDefinitionByFilter(definitionName, { triggerCategory: "Termination" }),
+    [definitionName],
+  );
+  const separationDefinition = useMemo(
+    () => getDefinitionByFilter(definitionName, { triggerCategory: "Separation" }),
+    [definitionName],
+  );
 
   const l = "true";
 
-  const { mutateAsync: fetchChatAssistantData } = useChatAssistantLazy();
+  // Use centralized chat trigger hook
+  const { triggerChat, isTriggeringChat } = useChatTrigger("Loading separation form...");
 
-  const handleTriggerChat = async (For: "Separation" | "Termination") => {
-    setIsTriggeringChat(true);
-
-    try {
+  const handleTriggerChat = useCallback(
+    (For: "Separation" | "Termination") => {
       const definition_name =
         For === "Separation"
-          ? separation_funnel_data?.name
-          : termination_funnel_data?.name;
+          ? separationDefinition?.name
+          : terminationDefinition?.name;
 
       if (!definition_name) {
-        throw new Error("Missing funnel data for " + For);
+        console.error("Missing funnel data for " + For);
+        return;
       }
 
-      const data = await fetchChatAssistantData({
-        doctype_name,
-        document_name,
-        definition_name,
-        l,
-      });
-
-      const maxAttempts = 50; // 5 seconds max (50 * 100ms)
-      let attempts = 0;
-
-      const checkAndTrigger = () => {
-        if (
-          typeof window !== "undefined" &&
-          typeof window.trigger_chatnext_assistant === "function"
-        ) {
-          window.trigger_chatnext_assistant(true, data?.session);
-          setIsTriggeringChat(false);
-          return;
-        }
-
-        attempts++;
-        if (attempts < maxAttempts) {
-          setTimeout(checkAndTrigger, 100);
-        } else {
-          console.warn(
-            "⚠️ trigger_chatnext_assistant is not available on window after 5 seconds.",
-          );
-          setIsTriggeringChat(false);
-        }
-      };
-
-      checkAndTrigger();
-    } catch (e) {
-      console.error("Failed to trigger chat:", e);
-      setIsTriggeringChat(false);
-    }
-  };
+      triggerChat({ doctype_name, document_name, definition_name, l });
+    },
+    [triggerChat, doctype_name, document_name, separationDefinition, terminationDefinition, l],
+  );
 
   const showTerminationButton =
     isViewingOtherUser &&
-    !!termination_funnel_data?.name &&
+    !!terminationDefinition?.name &&
     enabledActions.terminate &&
     !separationPending &&
     !isLoadingSeparationType &&
@@ -172,7 +129,7 @@ const Separation = () => {
   const hasNoItem = !item;
 
   const showSeparationButton =
-    Boolean(separation_funnel_data?.name) &&
+    Boolean(separationDefinition?.name) &&
     enabledActions?.initiate_separation &&
     (hasNoItem || isRejected);
 

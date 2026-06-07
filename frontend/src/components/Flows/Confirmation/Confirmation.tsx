@@ -4,9 +4,11 @@ import {
   useEmployee,
 } from "../../../hooks/useEmployee";
 import {
-  useChatAssistantLazy,
+  useChatTrigger,
   useDifinitaionNameForSeparation,
   useGetShouldShowConfirmationButton,
+  useGetShouldShowSeparationButton,
+  getDefinitionByFilter,
 } from "../../../hooks/useFlows";
 import {
   useConfirmation,
@@ -15,7 +17,7 @@ import {
 import Button from "../../shared/atoms/Button";
 import { Calendar, CalendarCheck, Clock, FileText } from "lucide-react";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useCallback, useState } from "react";
 import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -32,7 +34,6 @@ import { createPortal } from "react-dom";
 import ViewFormButton from "../ViewFormButton";
 import { FormIOComponent } from "../../../types/formio";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
-import { useLoadingOverlay } from "../../../context/OverlayContext";
 import FormPreview from "../../shared/molecules/FormPreview";
 import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
 import type { FlowRequestItem } from "../../../types/flows";
@@ -55,13 +56,21 @@ const ConfirmationWorkflow = () => {
   const activeEmployee = isViewingOtherUser ? targetEmployee : currentEmployee;
   const { data: definitionName, refetch } = useDifinitaionNameForSeparation();
 
-  function getFunnelData(trigger_category: string) {
-    return Array.isArray(definitionName)
-      ? definitionName.filter(
-        (item: any) => item?.trigger_category?.name === trigger_category,
-      )
-      : [];
-  }
+  // Derive definition names for Confirmation and Separation triggers from the full data
+  const confirmationDefinition = useMemo(
+    () => getDefinitionByFilter(definitionName, { triggerCategory: "Confirmation" }),
+    [definitionName],
+  );
+  const separationDefinition = useMemo(
+    () =>
+      getDefinitionByFilter(definitionName, {
+        triggerCategory: "Confirmation",
+        buttonLabel: "Recommend for Separation",
+      }),
+    [definitionName],
+  );
+
+  const definition_name = confirmationDefinition?.name || "";
 
   // action buttons permission
   const { data: userUiPermission } = useGetUiPermission("HR Process");
@@ -78,6 +87,8 @@ const ConfirmationWorkflow = () => {
     isLoading: loadingCardData,
     refetch: refetchShowConfirmationButton,
   } = useGetShouldShowConfirmationButton(document_name);
+
+  const { data: separationData } = useGetShouldShowSeparationButton();
 
   const {
     data: employeeConfirmationAll,
@@ -104,9 +115,8 @@ const ConfirmationWorkflow = () => {
   const item = employeeConfirmationPending?.[0] || employeeConfirmationClosed?.[0];
 
   const stages = item?.approval_stages;
+  console.log(item);
 
-  const confirmationData = getFunnelData("Confirmation");
-  const definition_name = confirmationData?.[0]?.name || "";
   const l = "true";
 
   const isLoading =
@@ -115,17 +125,8 @@ const ConfirmationWorkflow = () => {
     loadingCurrentEmployee ||
     false;
 
-  const { mutateAsync: fetchChatAssistantData } = useChatAssistantLazy();
-  const [isTriggeringChat, setIsTriggeringChat] = useState(false);
-  const loading = useLoadingOverlay();
-
-  useEffect(() => {
-    if (isTriggeringChat) {
-      loading.show("Loading confirmation form...");
-    } else {
-      loading.hide();
-    }
-  }, [isTriggeringChat, loading]);
+  // Centralized chat trigger for both Confirmation and Separation
+  const { triggerChat, isTriggeringChat } = useChatTrigger("Loading confirmation form...");
 
   const [showSelfInitForm, setShowSelfInitForm] = useState<boolean>(false);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
@@ -158,46 +159,16 @@ const ConfirmationWorkflow = () => {
     setShowSelfInitForm(true);
   };
 
-  const handleInitiateConfirmation = async () => {
-    setIsTriggeringChat(true);
-    try {
-      const data = await fetchChatAssistantData({
-        doctype_name,
-        document_name,
-        definition_name,
-        l,
-      });
+  const handleInitiateConfirmation = useCallback(() => {
+    if (!definition_name) return;
+    triggerChat({ doctype_name, document_name, definition_name, l });
+  }, [triggerChat, doctype_name, document_name, definition_name, l]);
 
-      const maxAttempts = 500; // 50 seconds max (500 * 100ms)
-      let attempts = 0;
-
-      const checkAndTrigger = () => {
-        if (
-          typeof window !== "undefined" &&
-          typeof window.trigger_chatnext_assistant === "function"
-        ) {
-          window.trigger_chatnext_assistant(true, data?.session);
-          setIsTriggeringChat(false);
-          return;
-        }
-
-        attempts++;
-        if (attempts < maxAttempts) {
-          setTimeout(checkAndTrigger, 100);
-        } else {
-          console.warn(
-            "⚠️ trigger_chatnext_assistant is not available on window after 50 seconds.",
-          );
-          setIsTriggeringChat(false);
-        }
-      };
-
-      checkAndTrigger();
-    } catch (error) {
-      console.error("Failed to trigger chat assistant:", error);
-      setIsTriggeringChat(false);
-    }
-  };
+  const handleSeparationClick = useCallback(() => {
+    const sepDefName = separationDefinition?.name;
+    if (!sepDefName) return;
+    triggerChat({ doctype_name, document_name, definition_name: sepDefName, l });
+  }, [triggerChat, doctype_name, document_name, separationDefinition, l]);
 
   /** Actions for approver actions */
 
@@ -340,14 +311,25 @@ const ConfirmationWorkflow = () => {
           </Typography>
         </div>
 
-        <Button
-          variant="outline"
-          onClick={() => setIsActivityLogOpen(true)}
-          className="flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm"
-          disabled={!funnelActivityId}
-        >
-          Activity Log
-        </Button>
+        <div className="flex items-center gap-2">
+          {separationData?.show_button && (
+            <Button
+              variant="contain"
+              size="md"
+              onClick={handleSeparationClick}
+            >
+              Separation
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => setIsActivityLogOpen(true)}
+            className="flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm"
+            disabled={!funnelActivityId}
+          >
+            Activity Log
+          </Button>
+        </div>
       </div>
 
       <ActivityLogDrawer
@@ -370,7 +352,7 @@ const ConfirmationWorkflow = () => {
       {/* Workflow Section  */}
       <Card className="mt-4">
         <Typography variant="subheading">
-          Confirmation Workflow Timeline
+          {(item?.category && item.category === "Recommend for Separation") ? "Recommend for Separation " : "Confirmation "}Workflow Timeline
         </Typography>
 
         {/* TimelineDummy  */}

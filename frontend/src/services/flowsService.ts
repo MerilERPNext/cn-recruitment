@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FrappeAPI from "../utils/frappeAPI";
-import type { FunnelActivityLogResponse } from "../types/flows";
+import type { FunnelActivityLogResponse, ShouldShowSeparationButtonResponse } from "../types/flows";
 
 export const getDifinitionNameForSeparation = async (): Promise<string> => {
   const response = (await FrappeAPI.callMethod(
@@ -116,6 +116,13 @@ export const getShouldShowConfirmationButton = async (
 ) => {
   const response = FrappeAPI.callMethod('recruitment.recruitment.scheduled_jobs.should_show_confirmation_button');
   return response as any;
+};
+
+export const getShouldShowSeparationButton = async () => {
+  const response = await FrappeAPI.callMethod(
+    'recruitment.recruitment.scheduled_jobs.should_show_separation_button'
+  );
+  return response as ShouldShowSeparationButtonResponse;
 };
 
 
