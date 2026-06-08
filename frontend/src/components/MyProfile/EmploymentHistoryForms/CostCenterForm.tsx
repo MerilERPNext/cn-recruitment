@@ -68,21 +68,12 @@ const CostCenterForm = ({
       newData.allocations = initialEditData.allocations.map((a) => ({
         cost_center: a.cost_center_id,
         percentage: a.percentage,
-        start_date: initialEditData.start_date,
-        end_date: initialEditData.end_date || "",
       }));
-      newData.show_end_date = !!initialEditData.end_date;
+      newData.start_date = initialEditData.start_date;
       shouldUpdate = true;
     } else if (!isEdit) {
-      newData.allocations = [
-        {
-          cost_center: "",
-          percentage: "",
-          start_date: defaultStartDate || "",
-          end_date: "",
-        },
-      ];
-      newData.show_end_date = false;
+      newData.allocations = [{ cost_center: "", percentage: "" }];
+      newData.start_date = defaultStartDate || "";
       shouldUpdate = true;
     }
 
@@ -99,7 +90,12 @@ const CostCenterForm = ({
     }
   }, [instance, isEdit, initialEditData, defaultStartDate]);
 
-  const validateForm = (allocations: any[]): boolean => {
+  const validateForm = (allocations: any[], startDate: string): boolean => {
+    if (!startDate) {
+      toast.error("Start Date is required.");
+      return false;
+    }
+
     if (!allocations || allocations.length === 0) {
       toast.error("Please add at least one allocation.");
       return false;
@@ -113,10 +109,6 @@ const CostCenterForm = ({
       }
       if (!row.percentage || Number(row.percentage) <= 0) {
         toast.error(`Row ${i + 1}: Percentage must be greater than 0.`);
-        return false;
-      }
-      if (!row.start_date) {
-        toast.error(`Row ${i + 1}: Start Date is required.`);
         return false;
       }
     }
@@ -143,8 +135,9 @@ const CostCenterForm = ({
       const submission = await instance.submit();
       const data = submission?.data || {};
       const allocations: any[] = data.allocations || [];
+      const startDate: string = data.start_date || "";
 
-      if (!validateForm(allocations)) return;
+      if (!validateForm(allocations, startDate)) return;
 
       await wrap(
         () => updateCostCenters({
@@ -152,13 +145,13 @@ const CostCenterForm = ({
           allocations: allocations.map((a: any) => ({
             cost_center: a.cost_center,
             percentage: Number(a.percentage),
-            start_date: a.start_date,
-            ...(a.end_date ? { end_date: a.end_date } : {}),
+            start_date: startDate,
           })),
           mode: isEdit ? "update" : "new",
         }),
         isEdit ? "Updating Cost Center..." : "Adding Cost Center...",
       );
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       onSuccess ? onSuccess() : onCancel?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
@@ -198,8 +191,6 @@ const CostCenterForm = ({
         <div className="flex-1 min-h-0 overflow-y-auto p-2 md:px-6 md:py-4 pb-20 relative cost-center-form">
           {/* Hide the datagrid "Add Row" button while keeping per-row delete */}
           <style>{`
-            /* Hide add-row button */
-            .cost-center-form .formio-button-add-row, .cost-center-form [ref="addRow"] { display: ${isEdit ? 'none' : 'block'} !important; };
             /* Strip all default table borders */
             .formio-component-allocations table {
               border: none !important;

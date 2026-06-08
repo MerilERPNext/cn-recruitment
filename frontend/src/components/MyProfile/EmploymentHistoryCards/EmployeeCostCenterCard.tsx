@@ -16,7 +16,6 @@ interface EmployeeCostCenterCardProps {
     from_date: string;
     to_date: string | null;
     is_current: boolean;
-    total_percentage: number;
     allocations: Allocation[];
 
     onEdit?: () => void;
@@ -26,7 +25,6 @@ const EmployeeCostCenterCard: React.FC<EmployeeCostCenterCardProps> = ({
     from_date,
     to_date,
     is_current,
-    total_percentage,
     allocations,
     onEdit,
 }) => {
@@ -51,18 +49,8 @@ const EmployeeCostCenterCard: React.FC<EmployeeCostCenterCardProps> = ({
 
             <div className="space-y-4 pr-20">
                 <div>
-                    <p className="text-xs text-gray-500">
-                        Total Allocation
-                    </p>
-
-                    <p className="font-semibold text-lg text-gray-900">
-                        {total_percentage}%
-                    </p>
-                </div>
-
-                <div>
                     <p className="text-xs text-gray-500 mb-2">
-                        Cost Centers
+                        Cost Center Name
                     </p>
 
                     <div className="space-y-2">

@@ -331,7 +331,6 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         from_date={item.from_date}
                         to_date={item.to_date}
                         is_current={item.is_current}
-                        total_percentage={item.total_percentage}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "cost_center") : undefined}
                       />
                     </div>
