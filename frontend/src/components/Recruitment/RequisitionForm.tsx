@@ -237,7 +237,12 @@ function enableUrlSelectLabels(
     if (next.type === "select" && next.dataSrc === "url") {
       // Eager-load top-level selects always; grid selects only when the grid is
       // small enough (eagerGrid) — so their saved id resolves to a label.
-      if (!insideGrid || eagerGrid) next.lazyLoad = false;
+      // EXCEPTION: dependent selects (those with refreshOn, e.g. Department
+      // depends on Company, Designation on Department) must stay lazy. Eager-
+      // loading them fires the request on mount with an empty parent value
+      // (…&company=&disabled=0). Keeping them lazy means they only fetch once
+      // their parent is set, via the refreshOn wiring.
+      if ((!insideGrid || eagerGrid) && !next.refreshOn) next.lazyLoad = false;
       if (!next.searchField) next.searchField = "search_text";
     }
     // Selects nested in a datagrid/editgrid are repeated per row — flag them so
