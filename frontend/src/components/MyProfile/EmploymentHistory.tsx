@@ -17,9 +17,11 @@ import EmploymentHistoryForm from "./EmploymentHistoryForms/EmploymentHistorForm
 import EmploymentTypeForm from "./EmploymentHistoryForms/EmploymentTypeForm";
 import EmployeeRoleForm from "./EmploymentHistoryForms/EmployeeRoleForm";
 import EmploymentSegmentsCard from "./EmploymentHistoryCards/EmploymentSegmentsCard";
+import NoDataFound from "../shared/atoms/NoDataFound";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
+  onActionSuccess?: () => void;
 }
 
 export interface CustomWorkHistory {
@@ -43,6 +45,7 @@ export interface Employee {
 
 const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   employeeId,
+  onActionSuccess,
 }) => {
   const { data, isLoading, error } = useGetEmploymentHistoryData(employeeId || "")
   const history = data?.work_roles || [];
@@ -97,6 +100,11 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
     setIsModalOpen(false);
     setIsEditing(false);
     setEditItem(null);
+  };
+
+  const handleFormSuccess = () => {
+    handleCloseModal();
+    onActionSuccess?.();
   };
 
   return (
@@ -154,193 +162,214 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
         {error && (
           <p className="p-4 text-red-500">Failed to load employment history</p>
         )}
-        {history.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                Work History
-              </Typography>
-              {canAddEmploymentHistory && (
-                <Button onClick={() => handleAddCard("work_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
-                  Add
-                </Button>
+        {!isLoading && !error && employeeId && (
+          <>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                  Work History
+                </Typography>
+                {canAddEmploymentHistory && (
+                  <Button onClick={() => handleAddCard("work_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                    Add
+                  </Button>
+                )}
+              </div>
+              {history.length > 0 ? (
+                <div className="flex gap-2 overflow-auto">
+                  {history.map((item) => (
+                    <div
+                      key={item?.from_date + item?.designation?.id}
+                      className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
+                    >
+                      <EmploymentHistoryCard
+                        company={item.company?.name}
+                        department={item.department?.name}
+                        band={item.band?.name}
+                        grade={item.grade?.name}
+                        start_date={item.from_date}
+                        end_date={item.to_date}
+                        isCurrent={item.is_current}
+                        functionalArea={item.functional_area?.name}
+                        is_promotion={item.is_promotion}
+                        onEdit={canEditEmploymentHistory ? () => handleEditCard(item) : undefined}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <NoDataFound title="No Work History" subtitle="No work history records have been added yet." />
               )}
             </div>
-            <div className="flex gap-2 overflow-auto">
-              {history.map((item) => (
-                <div
-                  key={item?.from_date + item?.designation?.id}
-                  className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
-                >
-                  <EmploymentHistoryCard
-                    company={item.company?.name}
-                    department={item.department?.name}
-                    band={item.band?.name}
-                    grade={item.grade?.name}
-                    start_date={item.from_date}
-                    end_date={item.to_date}
-                    isCurrent={item.is_current}
-                    functionalArea={item.functional_area?.name}
-                    is_promotion={item.is_promotion}
-                    onEdit={canEditEmploymentHistory ? () => handleEditCard(item) : undefined}
-                  />
+
+            <div className="flex flex-col gap-2 mt-6">
+              <div className="flex items-center justify-between">
+                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                  Work Locations
+                </Typography>
+                {canAddEmploymentHistory && (
+                  <Button onClick={() => handleAddCard("work_location")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                    Add
+                  </Button>
+                )}
+              </div>
+              {workLocation.length > 0 ? (
+                <div className="flex gap-2 overflow-auto">
+                  {workLocation.map((item) => (
+                    <div
+                      key={item.from_date + item?.to_date}
+                      className={`${workLocation.length === 1 ? "max-w-md w-full" : ""}`}
+                    >
+                      <EmploymentWorkLocationCard
+                        from_date={item.from_date}
+                        to_date={item.to_date}
+                        is_current={item.is_current}
+                        work_location={item.work_location}
+                        office_area={item.office_area}
+                        country={item.country}
+                        state={item.state}
+                        city={item.city}
+                        onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "work_location") : undefined}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {workLocation.length > 0 && (
-          <div className="flex flex-col gap-2 mt-6">
-            <div className="flex items-center justify-between">
-              <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                Work Locations
-              </Typography>
-              {canAddEmploymentHistory && (
-                <Button onClick={() => handleAddCard("work_location")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
-                  Add
-                </Button>
+              ) : (
+                <NoDataFound title="No Work Locations" subtitle="No work location records have been added yet." />
               )}
             </div>
-            <div className="flex gap-2 overflow-auto">
-              {workLocation.map((item) => (
-                <div
-                  key={item.from_date + item?.to_date}
-                  className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
-                >
-                  <EmploymentWorkLocationCard
-                    from_date={item.from_date}
-                    to_date={item.to_date}
-                    is_current={item.is_current}
-                    work_location={item.work_location}
-                    office_area={item.office_area}
-                    country={item.country}
-                    state={item.state}
-                    city={item.city}
-                    onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "work_location") : undefined}
-                  />
+
+            <div className="flex flex-col gap-2 mt-6">
+              <div className="flex items-center justify-between">
+                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                  Employment Type
+                </Typography>
+                {canAddEmploymentHistory && (
+                  <Button onClick={() => handleAddCard("employment_type")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                    Add
+                  </Button>
+                )}
+              </div>
+              {employmentTypes.length > 0 ? (
+                <div className="flex gap-2 overflow-auto">
+                  {employmentTypes.map((item) => (
+                    <div
+                      key={item.from_date + item?.to_date}
+                      className={`${employmentTypes.length === 1 ? "max-w-md w-full" : ""}`}
+                    >
+                      <EmploymentTypesCard
+                        from_date={item.from_date}
+                        to_date={item.to_date}
+                        is_current={item.is_current}
+                        is_promotion={item.is_promotion}
+                        employment_type={item.employment_type}
+                        employee_subtype={item.employee_subtype}
+                        onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employment_type") : undefined}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {employmentTypes.length > 0 && (
-          <div className="flex flex-col gap-2 mt-6">
-            <div className="flex items-center justify-between">
-              <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                Employment Type
-              </Typography>
-              {canAddEmploymentHistory && (
-                <Button onClick={() => handleAddCard("employment_type")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
-                  Add
-                </Button>
+              ) : (
+                <NoDataFound title="No Employment Types" subtitle="No employment type records have been added yet." />
               )}
             </div>
-            <div className="flex gap-2 overflow-auto">
-              {employmentTypes.map((item) => (
-                <div
-                  key={item.from_date + item?.to_date}
-                  className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
-                >
-                  <EmploymentTypesCard
-                    from_date={item.from_date}
-                    to_date={item.to_date}
-                    is_current={item.is_current}
-                    is_promotion={item.is_promotion}
-                    employment_type={item.employment_type}
-                    employee_subtype={item.employee_subtype}
-                    onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employment_type") : undefined}
-                  />
+
+            <div className="flex flex-col gap-2 mt-6">
+              <div className="flex items-center justify-between">
+                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                  Employment Roles
+                </Typography>
+                {canAddEmploymentHistory && (
+                  <Button onClick={() => handleAddCard("employee_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                    Add
+                  </Button>
+                )}
+              </div>
+              {employeeRoles.length > 0 ? (
+                <div className="flex gap-2 overflow-auto">
+                  {employeeRoles.map((item) => (
+                    <div
+                      key={item.from_date + item?.to_date}
+                      className={`${employeeRoles.length === 1 ? "max-w-md w-full" : ""}`}
+                    >
+                      <EmployeeRolesCard
+                        from_date={item.from_date}
+                        to_date={item.to_date}
+                        is_current={item.is_current}
+                        is_promotion={item.is_promotion}
+                        employee_role={item.employee_role}
+                        onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employee_role") : undefined}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {employeeRoles.length > 0 && (
-          <div className="flex flex-col gap-2 mt-6">
-            <div className="flex items-center justify-between">
-              <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                Employment Roles
-              </Typography>
-              {canAddEmploymentHistory && (
-                <Button onClick={() => handleAddCard("employee_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
-                  Add
-                </Button>
+              ) : (
+                <NoDataFound title="No Employment Roles" subtitle="No employment role records have been added yet." />
               )}
             </div>
-            <div className="flex gap-2 overflow-auto">
-              {employeeRoles.map((item) => (
-                <div
-                  key={item.from_date + item?.to_date}
-                  className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
-                >
-                  <EmployeeRolesCard
-                    from_date={item.from_date}
-                    to_date={item.to_date}
-                    is_current={item.is_current}
-                    is_promotion={item.is_promotion}
-                    employee_role={item.employee_role}
-                    onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employee_role") : undefined}
-                  />
+
+            <div className="flex flex-col gap-2 mt-6">
+              <div className="flex items-center justify-between">
+                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                  Cost Center
+                </Typography>
+                {canAddEmploymentHistory && (
+                  <Button onClick={() => handleAddCard("cost_center")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                    Add
+                  </Button>
+                )}
+              </div>
+              {costCenters.length > 0 ? (
+                <div className="flex gap-2 overflow-auto">
+                  {costCenters.map((item) => (
+                    <div
+                      key={item.from_date}
+                      className={`${costCenters.length === 1 ? "max-w-md w-full" : ""}`}
+                    >
+                      <EmployeeCostCenterCard
+                        allocations={item.allocations}
+                        from_date={item.from_date}
+                        to_date={item.to_date}
+                        is_current={item.is_current}
+                        total_percentage={item.total_percentage}
+                        onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "cost_center") : undefined}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {costCenters.length > 0 && (
-          <div className="flex flex-col gap-2 mt-6">
-            <div className="flex items-center justify-between">
-              <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                Cost Center
-              </Typography>
-              {canAddEmploymentHistory && (
-                <Button onClick={() => handleAddCard("cost_center")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
-                  Add
-                </Button>
+              ) : (
+                <NoDataFound title="No Cost Centers" subtitle="No cost center records have been added yet." />
               )}
             </div>
-            <div className="flex gap-2 overflow-auto">
-              {costCenters.map((item) => (
-                <div
-                  key={item.from_date}
-                  className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
-                >
-                  <EmployeeCostCenterCard
-                    allocations={item.allocations}
-                    from_date={item.from_date}
-                    to_date={item.to_date}
-                    is_current={item.is_current}
-                    total_percentage={item.total_percentage}
-                    onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "cost_center") : undefined}
-                  />
+
+            <div className="flex flex-col gap-2 mt-6">
+              <div className="flex items-center justify-between">
+                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                  Segments
+                </Typography>
+              </div>
+              {segmentTotals.length > 0 ? (
+                <div className="flex gap-2 overflow-auto">
+                  {segmentTotals.map((item) => (
+                    <div
+                      key={item.from_date}
+                      className={`${segmentTotals.length === 1 ? "max-w-md w-full" : ""}`}
+                    >
+                      <EmploymentSegmentsCard
+                        from_date={item.from_date}
+                        to_date={item.to_date}
+                        is_current={item.is_current}
+                        segment_totals={item.segment_totals}
+                        total_percentage={item.total_percentage}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <NoDataFound title="No Segments" subtitle="No segment records have been added yet." />
+              )}
             </div>
-          </div>
-        )}
-        {segmentTotals.length > 0 && (
-          <div className="flex flex-col gap-2 mt-6">
-            <div className="flex items-center justify-between">
-              <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                Segments
-              </Typography>
-            </div>
-            <div className="flex gap-2 overflow-auto">
-              {segmentTotals.map((item) => (
-                <div
-                  key={item.from_date}
-                  className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
-                >
-                  <EmploymentSegmentsCard
-                    from_date={item.from_date}
-                    to_date={item.to_date}
-                    is_current={item.is_current}
-                    segment_totals={item.segment_totals}
-                    total_percentage={item.total_percentage}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+          </>
         )}
 
       </div>
@@ -348,6 +377,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
         <WorkLocationForm
           key={editItem ? `wl-${editItem.from_date}` : "add-wl"}
           onCancel={handleCloseModal}
+          onSuccess={handleFormSuccess}
           isEdit={isEditing}
           defaultStartDate={defaultStartDateForAdd}
           initialEditData={editItem ? {
@@ -362,6 +392,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             <EmploymentHistoryForm
               key={editItem ? `${editItem.from_date}-${(editItem as WorkRole).designation?.id}` : "add"}
               onCancel={handleCloseModal}
+              onSuccess={handleFormSuccess}
               isEdit={isEditing}
               defaultStartDate={defaultStartDateForAdd}
               initialEditData={editItem ? {
@@ -380,6 +411,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
         <EmploymentTypeForm
           key={editItem ? `et-${editItem.from_date}` : "add-et"}
           onCancel={handleCloseModal}
+          onSuccess={handleFormSuccess}
           isEdit={isEditing}
           defaultStartDate={defaultStartDateForAdd}
           initialEditData={editItem ? {
@@ -393,6 +425,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
         <EmployeeRoleForm
           key={editItem ? `er-${editItem.from_date}` : "add-er"}
           onCancel={handleCloseModal}
+          onSuccess={handleFormSuccess}
           isEdit={isEditing}
           defaultStartDate={defaultStartDateForAdd}
           initialEditData={editItem ? {
@@ -405,6 +438,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
         <CostCenterForm
           key={editItem ? `cc-${editItem.from_date}` : "add-cc"}
           onCancel={handleCloseModal}
+          onSuccess={handleFormSuccess}
           isEdit={isEditing}
           defaultStartDate={defaultStartDateForAdd}
           initialEditData={editItem ? {

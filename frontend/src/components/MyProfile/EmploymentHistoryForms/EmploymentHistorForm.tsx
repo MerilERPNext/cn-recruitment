@@ -12,6 +12,7 @@ import {
   useGetEmpDesignationHierarchyCurrentDetails,
 } from "../../../hooks/useEmployee";
 import CircularLoader from "../../shared/atoms/CircularLoader";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 interface InitialEditData {
   company: string;
@@ -32,6 +33,7 @@ interface EmploymentHistoryProps {
 
 const EmploymentHistoryForm = ({
   onCancel,
+  onSuccess,
   isEdit = false,
   defaultStartDate,
   initialEditData,
@@ -55,6 +57,7 @@ const EmploymentHistoryForm = ({
     mutateAsync: addEmployeeHistory,
     isPending: addEmployeeHistoryPending,
   } = useAddEmployeeHistoryMutation();
+  const { wrap } = useLoadingOverlay();
   const {
     data: empDesignationHierarchyCurrentDetails,
     isLoading: empDesignationHierarchyCurrentDetailsPending,
@@ -208,19 +211,22 @@ const EmploymentHistoryForm = ({
         return;
       }
 
-      await addEmployeeHistory({
-        company: data.company,
-        department: data.department,
-        designation: data.designation,
-        start_date: data.startDate,
-        functional_area: data.functional_area,
-        is_promotion: data.is_promotion,
-        mode: isEdit ? "update" : "new",
-      });
-      onCancel?.();
+      await wrap(
+        () => addEmployeeHistory({
+          company: data.company,
+          department: data.department,
+          designation: data.designation,
+          start_date: data.startDate,
+          functional_area: data.functional_area,
+          is_promotion: data.is_promotion,
+          mode: isEdit ? "update" : "new",
+        }),
+        isEdit ? "Updating Employment History..." : "Adding Employment History...",
+      );
+      onSuccess ? onSuccess() : onCancel?.();
     } catch (err) {
-      console.warn("Form submission error -", err);
-      // Redraw if submission failed due to some other validation (though we removed most)
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      toast.error(message);
       instance.redraw();
     }
   };
@@ -344,8 +350,9 @@ const EmploymentHistoryForm = ({
             size="lg"
             variant="contain"
             bgColor="primary"
+            disabled={addEmployeeHistoryPending}
           >
-            {addEmployeeHistoryPending ? <CircularLoader /> : "Submit Request"}
+            Submit Request
           </Button>
         </div>
       </div>

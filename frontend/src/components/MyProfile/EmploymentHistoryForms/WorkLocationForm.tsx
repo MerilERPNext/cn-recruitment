@@ -9,7 +9,7 @@ import {
   useCurrentEmployeeDetails,
   useUpdateEmploymentDetailsMutation,
 } from "../../../hooks/useEmployee";
-import CircularLoader from "../../shared/atoms/CircularLoader";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 interface InitialWorkLocationData {
   work_location: string;
@@ -18,6 +18,7 @@ interface InitialWorkLocationData {
 
 interface WorkLocationFormProps {
   onCancel?: () => void;
+  onSuccess?: () => void;
   isEdit?: boolean;
   defaultStartDate?: string | null;
   initialEditData?: InitialWorkLocationData;
@@ -25,6 +26,7 @@ interface WorkLocationFormProps {
 
 const WorkLocationForm = ({
   onCancel,
+  onSuccess,
   isEdit = false,
   defaultStartDate,
   initialEditData,
@@ -37,6 +39,7 @@ const WorkLocationForm = ({
   });
   const { mutateAsync: updateEmploymentDetails, isPending } =
     useUpdateEmploymentDetailsMutation();
+  const { wrap } = useLoadingOverlay();
 
   useEffect(() => {
     if (!instance || initialDataApplied.current) return;
@@ -112,15 +115,19 @@ const WorkLocationForm = ({
         return;
       }
 
-      await updateEmploymentDetails({
-        employee: currentEmployee?.employee,
-        fields: [{ field: "work_location", value: data.work_location }],
-        start_date: data.startDate,
-        mode: isEdit ? "update" : "new",
-      });
-      onCancel?.();
+      await wrap(
+        () => updateEmploymentDetails({
+          employee: currentEmployee?.employee,
+          fields: [{ field: "work_location", value: data.work_location }],
+          start_date: data.startDate,
+          mode: isEdit ? "update" : "new",
+        }),
+        isEdit ? "Updating Work Location..." : "Adding Work Location...",
+      );
+      onSuccess ? onSuccess() : onCancel?.();
     } catch (err) {
-      console.warn("Form submission error -", err);
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      toast.error(message);
       instance.redraw();
     }
   };
@@ -179,8 +186,9 @@ const WorkLocationForm = ({
             size="lg"
             variant="contain"
             bgColor="primary"
+            disabled={isPending}
           >
-            {isPending ? <CircularLoader /> : "Submit Request"}
+            Submit Request
           </Button>
         </div>
       </div>

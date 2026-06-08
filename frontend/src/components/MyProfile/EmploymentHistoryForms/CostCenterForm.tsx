@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 import costCenterFormSchema from "./costCenterFormSchema.json";
 import "../../../formio.custom.css";
 import Button from "../../shared/atoms/Button";
@@ -22,6 +23,7 @@ interface InitialCostCenterData {
 
 interface CostCenterFormProps {
   onCancel?: () => void;
+  onSuccess?: () => void;
   isEdit?: boolean;
   defaultStartDate?: string | null;
   initialEditData?: InitialCostCenterData;
@@ -29,6 +31,7 @@ interface CostCenterFormProps {
 
 const CostCenterForm = ({
   onCancel,
+  onSuccess,
   isEdit = false,
   defaultStartDate,
   initialEditData,
@@ -42,6 +45,7 @@ const CostCenterForm = ({
   });
   const { mutateAsync: updateCostCenters, isPending } =
     useUpdateEmployeeCostCentersMutation();
+  const { wrap } = useLoadingOverlay();
 
   useEffect(() => {
     if (!instance || !currentEmployee?.company) return;
@@ -142,19 +146,23 @@ const CostCenterForm = ({
 
       if (!validateForm(allocations)) return;
 
-      await updateCostCenters({
-        employee: currentEmployee?.employee,
-        allocations: allocations.map((a: any) => ({
-          cost_center: a.cost_center,
-          percentage: Number(a.percentage),
-          start_date: a.start_date,
-          ...(a.end_date ? { end_date: a.end_date } : {}),
-        })),
-        mode: isEdit ? "update" : "new",
-      });
-      onCancel?.();
+      await wrap(
+        () => updateCostCenters({
+          employee: currentEmployee?.employee,
+          allocations: allocations.map((a: any) => ({
+            cost_center: a.cost_center,
+            percentage: Number(a.percentage),
+            start_date: a.start_date,
+            ...(a.end_date ? { end_date: a.end_date } : {}),
+          })),
+          mode: isEdit ? "update" : "new",
+        }),
+        isEdit ? "Updating Cost Center..." : "Adding Cost Center...",
+      );
+      onSuccess ? onSuccess() : onCancel?.();
     } catch (err) {
-      console.warn("Form submission error -", err);
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      toast.error(message);
       instance.redraw();
     }
   };
@@ -279,11 +287,7 @@ const CostCenterForm = ({
               bgColor="primary"
               className="w-full md:w-auto min-w-[150px]"
             >
-              {isPending ? (
-                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                "Submit Request"
-              )}
+              Submit Request
             </Button>
           </div>
         </div>

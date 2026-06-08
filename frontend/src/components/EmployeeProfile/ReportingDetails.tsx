@@ -18,6 +18,9 @@ import { Link } from "react-router-dom";
 import IconButton from "../shared/atoms/IconButton";
 import ReportingDetailsFormV2 from "./ReportingDetailsFormV2/ReportingDetailsFormV2";
 import ConfirmationModal from "../shared/atoms/ConfirmationModal";
+import NoDataFound from "../shared/atoms/NoDataFound";
+import { useLoadingOverlay } from "../../context/OverlayContext";
+import toast from "react-hot-toast";
 
 const CATEGORY_FIELD_MAP: Record<string, string> = {
   "Reports To": "reports_to",
@@ -28,7 +31,11 @@ const CATEGORY_FIELD_MAP: Record<string, string> = {
   "HRBP": "custom_hrbp",
 };
 
-const ReportingDetails = () => {
+interface ReportingDetailsProps {
+  onActionSuccess?: () => void;
+}
+
+const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const { data: hierarchyData, isLoading: employeeHierarchyHistoryPending } =
@@ -47,6 +54,7 @@ const ReportingDetails = () => {
 
   const { mutateAsync: deleteEmpReportingDetailsRecord, isPending: isDeleting } =
     useDeleteEmpReportingDetailsRecordMutation();
+  const { wrap } = useLoadingOverlay();
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -77,8 +85,17 @@ const ReportingDetails = () => {
 
   const handleDeleteConfirm = async () => {
     if (!pendingDeleteId) return;
-    await deleteEmpReportingDetailsRecord(pendingDeleteId);
-    setPendingDeleteId(null);
+    try {
+      await wrap(
+        () => deleteEmpReportingDetailsRecord(pendingDeleteId),
+        "Deleting record...",
+      );
+      setPendingDeleteId(null);
+      onActionSuccess?.();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      toast.error(message);
+    }
   };
 
   interface HierarchyCardProps {
@@ -221,41 +238,37 @@ const ReportingDetails = () => {
         </div>
 
         {/* Hierarchy History Cards */}
-        {(() => {
-          const sortedCategories = Object.keys(hierarchySections).sort((a, b) =>
-            a.localeCompare(b)
-          );
+        {Object.keys(CATEGORY_FIELD_MAP).map((category) => {
+          const items: any[] = hierarchySections[category] || [];
+          const sortedItems = [...items].sort((a, b) => {
+            const aIsCurrent = !a.end_date;
+            const bIsCurrent = !b.end_date;
+            if (aIsCurrent && !bIsCurrent) return -1;
+            if (!aIsCurrent && bIsCurrent) return 1;
+            const aDate = a.start_date ? new Date(a.start_date).getTime() : 0;
+            const bDate = b.start_date ? new Date(b.start_date).getTime() : 0;
+            return bDate - aDate;
+          });
 
-          return sortedCategories.map((category) => {
-            const items = hierarchySections[category];
-            const sortedItems = [...items].sort((a, b) => {
-              const aIsCurrent = !a.end_date;
-              const bIsCurrent = !b.end_date;
-              if (aIsCurrent && !bIsCurrent) return -1;
-              if (!aIsCurrent && bIsCurrent) return 1;
-              const aDate = a.start_date ? new Date(a.start_date).getTime() : 0;
-              const bDate = b.start_date ? new Date(b.start_date).getTime() : 0;
-              return bDate - aDate;
-            });
+          return (
+            <div key={category} className="mb-5 md:mb-10">
+              <div className="flex items-center justify-between mb-4">
+                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                  {category}
+                </Typography>
+                {canAddReportingDetails && (
+                  <Button
+                    onClick={() => openAddModal(category)}
+                    icon={<PlusIcon className="h-4 w-4" />}
+                    variant="contain"
+                    size="md"
+                  >
+                    Add
+                  </Button>
+                )}
+              </div>
 
-            return (
-              <div key={category} className="mb-5 md:mb-10">
-                <div className="flex items-center justify-between mb-4">
-                  <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                    {category}
-                  </Typography>
-                  {canAddReportingDetails && (
-                    <Button
-                      onClick={() => openAddModal(category)}
-                      icon={<PlusIcon className="h-4 w-4" />}
-                      variant="subtle"
-                      size="sm"
-                    >
-                      Add
-                    </Button>
-                  )}
-                </div>
-
+              {sortedItems.length > 0 ? (
                 <div className="flex gap-2 overflow-auto">
                   {sortedItems.map((item: any) => (
                     <div
@@ -274,15 +287,21 @@ const ReportingDetails = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-            );
-          });
-        })()}
+              ) : (
+                <NoDataFound
+                  title={`No ${category} Records`}
+                  subtitle={`No ${category.toLowerCase()} records have been added yet.`}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {isModalOpen && (
         <ReportingDetailsFormV2
           onCancel={closeModal}
+          onSuccess={() => { closeModal(); onActionSuccess?.(); }}
           isEdit={isEditing}
           category={selectedCategory}
           categoryField={selectedCategoryField}
