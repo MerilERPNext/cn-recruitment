@@ -209,6 +209,23 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
       }
     })
   }, [hide, show, reopenTicketMutation])
+
+  const handleResolve = useCallback((ticket: HDTicket) => {
+    const isRaiserOrAdmin = ticket.raised_by === currentUserEmail || ticket.owner === currentUserEmail;
+    if (isRaiserOrAdmin) {
+
+      // Show resolution modal
+      setSelectedTicketForClose(ticket);
+      setIsRequestClosureMode(false);
+      setIsResolutionModalOpen(true);
+    } else {
+      // Show request closure modal
+      setSelectedTicketForClose(ticket);
+      setIsRequestClosureMode(true);
+      setIsResolutionModalOpen(true);
+    }
+  }, [currentUserEmail])
+
   const { uploadFiles } = useFileUploader();
   const handleResolutionSubmit = useCallback(async (resolution: string, exitFormSubmission?: any, feedbackFormSubmission?: any, exitAttachments?: File[], feedbackAttachments?: File[]) => {
     if (!selectedTicketForClose) return;
@@ -332,6 +349,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
             onClose={handleClose}
             onRevoke={handleRevoke}
             onReopen={handleReopen}
+            onResolve={handleResolve}
             onRowClick={permReply ? handleReply : undefined}
             permRevoke={permRevoke}
             permCloseTicket={permCloseTicket}
@@ -438,6 +456,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
           ticket={selectedTicketForClose}
           isRequestClosure={isRequestClosureMode}
           isLoading={closeTicketMutation.isPending || requestClosureMutation.isPending}
+
         />
         , document.body)}
       {/* Ticket Detail Drawer */}

@@ -168,7 +168,7 @@ interface ResolutionModalProps {
   existingResolution?: string;
 }
 
-const ResolutionModal: React.FC<ResolutionModalProps> = ({
+export const ResolutionModal: React.FC<ResolutionModalProps> = ({
   ticket,
   isOpen,
   onClose,
@@ -572,8 +572,8 @@ const AttachmentList: React.FC<AttachmentListProps> = ({
               onPreviewFile({ url: attachment.file_url, name: attachment.file_name })
             }
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border max-w-full ${isCurrentUser
-                ? "bg-blue-400/10 border-blue-400/20 text-blue-100 hover:bg-blue-400/20"
-                : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
+              ? "bg-blue-400/10 border-blue-400/20 text-blue-100 hover:bg-blue-400/20"
+              : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
               }`}
           >
             <div
@@ -609,8 +609,8 @@ const QuotedMessage: React.FC<QuotedMessageProps> = ({
   <div
     onClick={onContentClick}
     className={`mb-2 p-3 rounded-lg border-l-4 cursor-pointer ${isCurrentUser
-        ? "bg-blue-400/20 border-blue-300 text-blue-100"
-        : "bg-gray-100 border-gray-300 text-gray-600"
+      ? "bg-blue-400/20 border-blue-300 text-blue-100"
+      : "bg-gray-100 border-gray-300 text-gray-600"
       }`}
   >
     <div
@@ -1591,7 +1591,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
           setIsEditingResolution(false);
           setIsResolvingTicket(false);
         }}
-        onSubmit={isEditingResolution || isResolvingTicket ? handleSaveResolution : handleCloseTicket}
+        onSubmit={(isEditingResolution || isResolvingTicket) ? handleSaveResolution : handleCloseTicket}
         isLoading={isClosing}
         isRaiser={true}
         isClosingTicket={!isEditingResolution && !isResolvingTicket}

@@ -23,6 +23,7 @@ interface TicketTableProps {
   onRevoke: (ticket: HDTicket) => void;
   onReopen: (ticket: HDTicket) => void;
   onRowClick?: (ticket: HDTicket) => void;
+  onResolve: (ticket: HDTicket) => void;
   sortField: string;
   sortDirection: "asc" | "desc";
   onSort: (field: string) => void;
@@ -133,6 +134,7 @@ interface TicketCardProps {
   onRevoke: (ticket: HDTicket) => void;
   onReopen: (ticket: HDTicket) => void;
   onRowClick?: (ticket: HDTicket) => void;
+  onResolve: (ticket: HDTicket) => void;
   permRevoke?: boolean;
   permCloseTicket?: boolean;
   permReply?: boolean;
@@ -147,6 +149,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
   onReply,
   onClose,
   onRevoke,
+  onResolve,
   onReopen,
   onRowClick,
   permRevoke = true,
@@ -260,6 +263,8 @@ const TicketCard: React.FC<TicketCardProps> = ({
             onClick={(e) => e.stopPropagation()}
           >
             <HDActionPill
+              canResolve={!["Resolved", "Closed"].includes(ticket.status)}
+              onResolve={() => onResolve(ticket)}
               canClose={permCloseTicket && showCloseTicketButton(ticket.status)}
               canRevoke={permRevoke && ticket.status === "Open" && !ticket.custom_archived}
               canReply={permReply && ticket.status !== "Closed"}
@@ -366,6 +371,7 @@ interface MobileTicketDetailModalProps {
   onReopen: (ticket: HDTicket) => void;
   onCloseTicket: (ticket: HDTicket) => void;
   onRevoke: (ticket: HDTicket) => void;
+  onResolve: (ticket: HDTicket) => void;
   permRevoke?: boolean;
   permCloseTicket?: boolean;
   permReply?: boolean;
@@ -385,6 +391,7 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
   onReopen,
   onCloseTicket,
   onRevoke,
+  onResolve,
   permRevoke = true,
   permCloseTicket = true,
   permReply = true,
@@ -422,63 +429,63 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
   };
 
   // Details Tab Content
-  const renderDetailsContent = () => (
-    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/70">
-      {/* Card 1: Issue Details */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-        <div className="bg-gradient-to-r from-blue-50/80 to-white px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+  const renderDetailsContent = ({ onResolve }: { onResolve: (ticket: HDTicket) => void }) => (
+    <div className="flex-1 flex flex-col overflow-hidden bg-slate-50/70">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {/* Card 1: Issue Details */}
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+          <div className="bg-gradient-to-r from-blue-50/80 to-white px-4 py-3 border-b border-gray-100 flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center">
               <FileText className="w-3.5 h-3.5 text-blue-600" />
             </div>
             <span className="text-xs font-semibold text-gray-700">Issue Details</span>
           </div>
-          <div onClick={(e) => e.stopPropagation()}>
-            <HDActionPill
-              canClose={permCloseTicket && showCloseTicketButton(ticket.status)}
-              canRevoke={permRevoke && ticket.status === "Open" && !ticket.custom_archived}
-              canReply={permReply && ticket.status !== "Closed"}
-              canReopen={permReopen && ticket.status === "Closed"}
-              onReopen={() => { onReopen(ticket); onClose(); }}
-              onClose={() => { onCloseTicket(ticket); onClose(); }}
-              onReply={() => { onReply(ticket); onClose(); }}
-              onRevoke={() => { onRevoke(ticket); onClose(); }}
-              placement="bottom-left"
-            />
+          <div className="p-4 grid grid-cols-2 gap-y-5 gap-x-4">
+            <DetailRow label="Category" value={getCategoryName(ticket.custom_category)} />
+            <DetailRow label="Sub Category" value={getCategoryName(ticket.custom_sub_category)} />
+            <DetailRow label="Requested By" value={ticket.raise_by_name || "-"} />
+            <DetailRow label="Assigned to" value={getAssignedName(ticket._assign, userLookup)} />
+            <DetailRow label="Creator Type" value={ticket.user_type || "-"} />
+            <DetailRow label="Number of Comments" value={ticket.no_of_comments ?? "0"} />
           </div>
         </div>
-        <div className="p-4 grid grid-cols-2 gap-y-5 gap-x-4">
-          <DetailRow label="Category" value={getCategoryName(ticket.custom_category)} />
-          <DetailRow label="Sub Category" value={getCategoryName(ticket.custom_sub_category)} />
-          <DetailRow label="Requested By" value={ticket.raise_by_name || "-"} />
-          <DetailRow label="Assigned to" value={getAssignedName(ticket._assign, userLookup)} />
-          <DetailRow label="Creator Type" value={ticket.user_type || "-"} />
-          <DetailRow label="Number of Comments" value={ticket.no_of_comments ?? "0"} />
-        </div>
-      </div>
 
-      {/* Card 2: SLA & Timings */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-        <div className="bg-gradient-to-r from-amber-50/80 to-white px-4 py-3 border-b border-gray-100 flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center">
-            <TicketIcon className="w-3.5 h-3.5 text-amber-600" />
+        {/* Card 2: SLA & Timings */}
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+          <div className="bg-gradient-to-r from-amber-50/80 to-white px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center">
+              <TicketIcon className="w-3.5 h-3.5 text-amber-600" />
+            </div>
+            <span className="text-xs font-semibold text-gray-700">Timing & SLA</span>
           </div>
-          <span className="text-xs font-semibold text-gray-700">Timing & SLA</span>
-        </div>
-        <div className="p-4 grid grid-cols-2 gap-y-5 gap-x-4">
-          <DetailRow label="Created on" value={formatToIndianDate(ticket.creation)} />
-          <DetailRow label="Last Updated" value={formatToIndianDate(ticket.modified)} />
-          <DetailRow label="SLA Breached TAT" value={formateDateDiff(ticket.resolution_by, ticket.creation)} />
-          <DetailRow label="SLA Breached FRT" value={formateDateDiff(ticket.response_by, ticket.creation)} />
-        </div>
-        {/* Highlighted section for Escalation */}
-        <div className={`px-4 py-3.5 border-t flex gap-3 justify-between items-center ${isExpired ? 'bg-red-50/60 border-red-100' : 'bg-emerald-50/60 border-emerald-100'}`}>
-          <span className={`text-[10px] font-bold uppercase tracking-wider ${isExpired ? 'text-red-700/80' : 'text-emerald-700/80'}`}>Escalation Wait Time</span>
-          <span className={`text-sm font-bold ${isExpired ? 'text-red-600' : 'text-emerald-600'}`}>
-            {isExpired ? "Escalated" : `${hours}h ${minutes}m ${seconds}s`}
-          </span>
+          <div className="p-4 grid grid-cols-2 gap-y-5 gap-x-4">
+            <DetailRow label="Created on" value={formatToIndianDate(ticket.creation)} />
+            <DetailRow label="Last Updated" value={formatToIndianDate(ticket.modified)} />
+            <DetailRow label="SLA Breached TAT" value={formateDateDiff(ticket.resolution_by, ticket.creation)} />
+            <DetailRow label="SLA Breached FRT" value={formateDateDiff(ticket.response_by, ticket.creation)} />
+          </div>
+          {/* Highlighted section for Escalation */}
+          <div className={`px-4 py-3.5 border-t flex gap-3 justify-between items-center ${isExpired ? 'bg-red-50/60 border-red-100' : 'bg-emerald-50/60 border-emerald-100'}`}>
+            <span className={`text-[10px] font-bold uppercase tracking-wider ${isExpired ? 'text-red-700/80' : 'text-emerald-700/80'}`}>Escalation Wait Time</span>
+            <span className={`text-sm font-bold ${isExpired ? 'text-red-600' : 'text-emerald-600'}`}>
+              {isExpired ? "Escalated" : `${hours}h ${minutes}m ${seconds}s`}
+            </span>
+          </div>
         </div>
       </div>
+      <HDActionPill
+        variant="modal"
+        canResolve={!["Resolved", "Closed"].includes(ticket.status)}
+        onResolve={() => onResolve(ticket)}
+        canClose={permCloseTicket && showCloseTicketButton(ticket.status)}
+        canRevoke={permRevoke && ticket.status === "Open" && !ticket.custom_archived}
+        canReply={permReply && ticket.status !== "Closed"}
+        canReopen={permReopen && ticket.status === "Closed"}
+        onReopen={() => { onReopen(ticket); onClose(); }}
+        onClose={() => { onCloseTicket(ticket); onClose(); }}
+        onReply={() => { onReply(ticket); onClose(); }}
+        onRevoke={() => { onRevoke(ticket); onClose(); }}
+      />
     </div>
   );
 
@@ -586,7 +593,7 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
         </div>
 
         {/* Content Area */}
-        {activeTab === "details" ? renderDetailsContent() : renderChatContent()}
+        {activeTab === "details" ? renderDetailsContent({ onResolve }) : renderChatContent()}
       </div>
     </BottomDrawer>
   );
@@ -599,6 +606,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
   onClose,
   onRevoke,
   onReopen,
+  onResolve,
   onRowClick,
   sortField,
   sortDirection,
@@ -768,6 +776,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
               onClose={onClose}
               onRevoke={onRevoke}
               onReopen={onReopen}
+              onResolve={onResolve}
               onRowClick={() => setSelectedMobileTicket(ticket)}
               permRevoke={permRevoke}
               permCloseTicket={permCloseTicket}
@@ -786,6 +795,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
             onReply={onReply}
             onReopen={onReopen}
             onCloseTicket={onClose}
+            onResolve={onResolve}
             onRevoke={onRevoke}
             permRevoke={permRevoke}
             permCloseTicket={permCloseTicket}
