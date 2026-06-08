@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe.utils import add_days, getdate, today
+from frappe.utils import add_days, getdate, today, cint
 
 
 def trigger_confirmation_todos():
@@ -221,8 +221,6 @@ def auto_separate_employees_on_lwd():
   
     current_date = getdate(today())
 
-    auto_terminate_employees(current_date)
-
     separations = frappe.get_all(
         "Employee Separation",
         filters={
@@ -276,41 +274,6 @@ def auto_separate_employees_on_lwd():
     frappe.db.commit()
 
 
-def auto_terminate_employees(current_date):
-    termination_seps = frappe.get_all(
-        "Employee Separation",
-        filters={
-            "custom_resignaion_type": "Termination",
-            "custom_date_of_exit": ["<=", current_date],
-            "custom_marked_employee_as_terminated": 0,
-            "docstatus": ["!=", 2]
-        },
-        fields=["name", "employee", "custom_date_of_exit"]
-    )
-
-    for sep in termination_seps:
-        if not sep.employee:
-            continue
-
-        employee_status = frappe.db.get_value("Employee", sep.employee, "status")
-        if employee_status == "Left":
-            continue
-
-        frappe.db.set_value("Employee", sep.employee, {
-            "status": "Suspended",
-            "custom_employment_status": "Terminated",
-        })
-
-        frappe.db.set_value("Employee Separation", sep.name, "custom_marked_employee_as_terminated", 1)
-
-        employee_name = frappe.db.get_value("Employee", sep.employee, "employee_name")
-
-        frappe.log_error(
-            message=f"Auto-terminated employee {employee_name} ({sep.employee}) on exit date {sep.custom_date_of_exit}. Employee Separation {sep.name}.",
-            title="Auto Termination Executed"
-        )
-
-
 def get_applicable_separation_policy(employee_id):
     policies = frappe.get_all("Separation Policy", fields=["name"])
 
@@ -342,9 +305,14 @@ def mark_relieved_employees_as_left():
     )
 
     for emp in employees:
+        is_termination = frappe.db.exists("Employee Separation", {
+            "employee": emp.name,
+            "custom_resignaion_type": "Termination",
+            "docstatus": 1,
+        })
         frappe.db.set_value("Employee", emp.name, {
             "status": "Left",
-            "custom_employment_status": "Left",
+            "custom_employment_status": "Terminated" if is_termination else "Left",
         })
 
         if emp.user_id:
@@ -357,6 +325,141 @@ def mark_relieved_employees_as_left():
 
     if employees:
         frappe.db.commit()
+
+
+def reassign_reports_to_for_relieved_managers():
+    current_date = getdate(today())
+
+    employees = frappe.get_all(
+        "Employee",
+        filters=[
+            ["relieving_date", "is", "set"],
+            ["relieving_date", "<=", current_date],
+        ],
+        fields=["name"],
+    )
+
+    reassigned_any = False
+
+    for emp in employees:
+        separation = frappe.get_all(
+            "Employee Separation",
+            filters={"employee": emp.name, "docstatus": 1},
+            fields=["name", "custom_new_manager"],
+            order_by="creation desc",
+            limit=1,
+        )
+        if not separation:
+            continue
+
+        new_manager = separation[0].custom_new_manager
+        if not new_manager or new_manager == emp.name:
+            continue
+
+        reportees = frappe.get_all(
+            "Employee",
+            filters={"reports_to": emp.name},
+            pluck="name",
+        )
+        if not reportees:
+            continue
+
+        for reportee in reportees:
+            reportee_doc = frappe.get_doc("Employee", reportee)
+            reportee_doc.reports_to = new_manager
+            reportee_doc.save(ignore_permissions=True)
+
+        reassigned_any = True
+        frappe.log_error(
+            message=f"Reassigned {len(reportees)} reportee(s) of relieved manager {emp.name} to new manager {new_manager}: {', '.join(reportees)}",
+            title="Reports To Reassigned on Relieving",
+        )
+
+    if reassigned_any:
+        frappe.db.commit()
+
+
+def process_separation_leave_attendance_requests():
+    current_date = getdate(today())
+
+    separations = frappe.get_all(
+        "Employee Separation",
+        filters={
+            "custom_leave_attendance_action": ["in", ["Approve", "Reject"]],
+            "docstatus": 1,
+        },
+        fields=[
+            "name",
+            "employee",
+            "custom_leave_attendance_action",
+            "custom_action_days_before_relieving",
+        ],
+    )
+
+    for sep in separations:
+        if not sep.employee:
+            continue
+
+        relieving_date = frappe.db.get_value("Employee", sep.employee, "relieving_date")
+        if not relieving_date:
+            continue
+
+        days_before = cint(sep.custom_action_days_before_relieving)
+        if current_date != add_days(getdate(relieving_date), -days_before):
+            continue
+
+        action = sep.custom_leave_attendance_action
+        _process_separation_leave_applications(sep.employee, action)
+        _process_separation_attendance_requests(sep.employee, action)
+
+    frappe.db.commit()
+
+
+def _process_separation_leave_applications(employee, action):
+    new_status = "Approved" if action == "Approve" else "Rejected"
+
+    leaves = frappe.get_all(
+        "Leave Application",
+        filters={"employee": employee, "docstatus": 0, "status": "Open"},
+        pluck="name",
+    )
+
+    for name in leaves:
+        try:
+            leave_doc = frappe.get_doc("Leave Application", name)
+            leave_doc.status = new_status
+            leave_doc.submit()
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"Separation auto-{action} Leave Application failed: {name}",
+            )
+
+
+def _process_separation_attendance_requests(employee, action):
+    new_status = "Approved" if action == "Approve" else "Rejected"
+
+    requests = frappe.get_all(
+        "Attendance Request",
+        filters={
+            "employee": employee,
+            "docstatus": 0,
+            "custom_status": ["not in", ["Approved", "Rejected"]],
+        },
+        pluck="name",
+    )
+
+    for name in requests:
+        try:
+            req_doc = frappe.get_doc("Attendance Request", name)
+            req_doc.custom_status = new_status
+            req_doc.save(ignore_permissions=True)
+            req_doc.submit()
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                f"Separation auto-{action} Attendance Request failed: {name}",
+            )
 
 
 def auto_confirm_employees_without_policy():
