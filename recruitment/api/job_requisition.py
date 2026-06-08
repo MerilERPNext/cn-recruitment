@@ -1443,7 +1443,7 @@ def _build_preview_payload(jd_name, source, filled_data=None):
 
 
 @frappe.whitelist()
-def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20, include=None, filters=None):
+def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20, include=None, filters=None, skip=0, **kwargs):
     """Returns [{id, label}] for a doctype; label uses title_field when set.
     Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins).
     `include` is an id (or comma-separated ids) that must always appear in the
@@ -1452,22 +1452,37 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
     `filters` (dict or JSON string) narrows the base record set — e.g. limiting
     Employees to certain statuses. `include` ids bypass `filters` so a previously
     saved value always renders even if it no longer matches.
+    Any additional query param that matches a real field on `doctype` is applied
+    as an equality filter (e.g. ?department=DEP_353&custom_status=Active), so the
+    front-end can narrow options without JSON-encoding a `filters` argument.
+    `skip` is the pagination offset (number of records to skip).
     Accessible to any authenticated Frappe user (desk session or API key/secret)."""
     if not doctype:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Doctype is required.")}
 
     try:
-        title_field = frappe.get_meta(doctype).get("title_field") or None
+        meta = frappe.get_meta(doctype)
     except Exception:
         frappe.local.response["http_status_code"] = 404
         return {"status": "error", "message": _("Doctype '{0}' not found.").format(doctype)}
+    title_field = meta.get("title_field") or None
 
     has_title = bool(title_field) and title_field != "name"
     fields = ["name"] + ([title_field] if has_title else [])
 
     if isinstance(filters, str):
         filters = json.loads(filters) if filters.strip() else None
+    filters = dict(filters) if filters else {}
+
+    # Map any extra query param that corresponds to a real field on the doctype
+    # to an equality filter. Empty values (e.g. an unrendered "{{ data.x }}" or a
+    # cleared dependent field) are skipped so they don't filter everything out.
+    for key, value in kwargs.items():
+        if value in (None, "") or key in filters:
+            continue
+        if key == "name" or meta.has_field(key):
+            filters[key] = value
 
     search = (search_text or query or txt or "").strip()
     or_filters = None
@@ -1477,8 +1492,8 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
 
     try:
         records = frappe.get_all(
-            doctype, fields=fields, filters=filters, or_filters=or_filters,
-            limit=int(limit or 20), order_by=f"{title_field or 'name'} asc",
+            doctype, fields=fields, filters=filters or None, or_filters=or_filters,
+            limit=int(limit or 20), start=int(skip or 0), order_by=f"{title_field or 'name'} asc",
         )
     except Exception as e:
         frappe.local.response["http_status_code"] = 500

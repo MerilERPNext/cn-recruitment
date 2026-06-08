@@ -91,7 +91,7 @@ export const todoService = {
         type: "My Todo",
       });
 
-      return (result as TodoCategory[]) || [];
+      return (result as { message?: TodoCategory[] })?.message || [];
     } catch (error) {
       console.error("📡 Error fetching todo categories:", error);
       throw error;

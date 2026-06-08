@@ -68,6 +68,7 @@ const TasksAwaiting: React.FC = () => {
     isLoading: isCategoriesLoading,
   } = useTodoCategories();
 
+  console.log("categories", categories)
   const [activeCategory, setActiveCategory] = useState<string>("");
 
   const navigate = useNavigate();

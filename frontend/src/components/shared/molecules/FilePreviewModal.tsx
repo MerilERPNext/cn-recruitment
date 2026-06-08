@@ -87,14 +87,17 @@ export function FilePreviewModal({ fileUrl, fileName: customFileName, onClose }:
               </div>
             )}
 
-            <a
-              href={fileUrl}
-              download={fileName}
-              className="p-1.5 rounded-md hover:bg-gray-200 transition-colors"
-              title="Download"
-            >
-              <Download className="h-4 w-4 text-gray-600" />
-            </a>
+            {!(window.isApp && fileUrl.startsWith("blob:")) && (
+              <a
+                href={fileUrl}
+                download={fileName}
+                className="p-1.5 rounded-md hover:bg-gray-200 transition-colors"
+                title="Download"
+              >
+                <Download className="h-4 w-4 text-gray-600" />
+              </a>
+            )}
+
             <a
               href={fileUrl}
               target="_blank"

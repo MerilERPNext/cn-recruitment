@@ -30,6 +30,8 @@ export const requisitionFormSchemas = {
           "<span>{{ item.label }} <span style='color:#7f8c8d'>({{item.id}})</span></span>",
         validate: {
           required: true,
+          limit: 20,
+
         },
       },
 
@@ -49,6 +51,8 @@ export const requisitionFormSchemas = {
         valueProperty: "id",
         template: "<span>{{ item.label }}</span>",
         validate: { required: true },
+        limit: 20,
+
       },
 
       {
@@ -60,7 +64,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Department&company={{ data.company }}&disabled=1',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Department&company={{ data.company }}&disabled=0',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -69,6 +73,8 @@ export const requisitionFormSchemas = {
         validate: { required: true },
         refreshOn: "company",
         clearOnRefresh: true,
+        limit: 20,
+
       },
 
       {
@@ -80,7 +86,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation&department={{ data.department }}&custom_status=Active',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Designation&custom_department={{ data.department }}&custom_status=Active',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -89,6 +95,8 @@ export const requisitionFormSchemas = {
         validate: { required: true },
         refreshOn: "department",
         clearOnRefresh: true,
+        limit: 20,
+
       },
 
       {
@@ -100,7 +108,7 @@ export const requisitionFormSchemas = {
         input: true,
         dataSrc: "url",
         data: {
-          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}&disabled=1',
+          url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}&disabled=0',
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -109,6 +117,8 @@ export const requisitionFormSchemas = {
         refreshOn: "designation",
         validate: { required: true },
         clearOnRefresh: true,
+        limit: 20,
+
       },
     ],
   },
@@ -214,6 +224,8 @@ export const requisitionFormSchemas = {
                 template: "<span>{{ item.label }}</span>",
                 defaultValue: "INR",
                 validate: { required: true },
+                limit: 20,
+
               },
             ],
             width: 3,
@@ -342,11 +354,13 @@ export const requisitionFormSchemas = {
                   url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
+                limit: 20,
                 selectValues: "message.results",
                 valueProperty: "id",
                 template:
                   "<span>{{ item.label }} <span style='color:#7f8c8d'>({{item.id}})</span></span>",
               },
+              
             ],
             width: 6,
             offset: 0,
@@ -401,6 +415,8 @@ export const requisitionFormSchemas = {
                 valueProperty: "id",
                 template: "<span>{{ item.label }}</span>",
                 validate: { required: true },
+                limit: 20,
+
               },
             ],
             width: 6,
@@ -431,6 +447,8 @@ export const requisitionFormSchemas = {
                 valueProperty: "id",
                 template: "<span>{{ item.label }}</span>",
                 validate: { required: true },
+                limit: 20,
+
               },
             ],
             width: 6,
@@ -479,6 +497,7 @@ export const requisitionFormSchemas = {
                   url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Preferred Target Company",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
+                limit: 20,
                 selectValues: "message.results",
                 valueProperty: "id",
                 template: "<span>{{ item.label }}</span>",
@@ -523,6 +542,7 @@ export const requisitionFormSchemas = {
                   url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Skill',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
+                limit: 20,
                 selectValues: "message.results",
                 valueProperty: "id",
                 template: "<span>{{ item.label }}</span>",
@@ -607,6 +627,7 @@ export const requisitionFormSchemas = {
                   url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
+                limit: 20,
                 selectValues: "message.results",
                 valueProperty: "id",
                 template: "<span>{{ item.label }}</span>",
@@ -626,6 +647,7 @@ export const requisitionFormSchemas = {
                 },
                 selectValues: "message.results",
                 valueProperty: "id",
+                limit: 20,
                 template: "<span>{{ item.label }}</span>",
                 validate: { required: true },
               },
@@ -641,6 +663,7 @@ export const requisitionFormSchemas = {
                   url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
+                limit: 20,
                 selectValues: "message.results",
                 valueProperty: "id",
                 template:
@@ -700,6 +723,7 @@ export const requisitionFormSchemas = {
                   url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Cost Center",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
+                limit: 20,
                 selectValues: "message.results",
                 valueProperty: "id",
                 template: "<span>{{ item.label }}</span>",

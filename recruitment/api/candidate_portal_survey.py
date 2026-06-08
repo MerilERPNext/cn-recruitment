@@ -67,15 +67,21 @@ def get_post_login_route():
             "job_applicant": applicant_name,
             "job_opening": opening_name,
             "current_step": None,
+            "next_step": None,
             "steps": [],
         }
 
     opening = frappe.get_doc("Job Opening", opening_name)
     steps, current_step = _build_flow(applicant_name, opening)
+    # Next step = the first still-pending step after the ongoing one. Steps are
+    # ordered completed → ongoing → pending, so the first "pending" row is the
+    # step the candidate moves to once the current one is done (None if last).
+    next_step = next((s["key"] for s in steps if s["status"] == "pending"), None)
     flow = {
         "job_applicant": applicant_name,
         "job_opening": opening_name,
         "current_step": current_step,
+        "next_step": next_step,
         "steps": steps,
     }
 

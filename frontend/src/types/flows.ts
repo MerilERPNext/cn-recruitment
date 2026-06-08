@@ -298,3 +298,15 @@ export type FunnelActivityLogData = {
 export type FunnelActivityLogResponse = {
   data: FunnelActivityLogData;
 };
+
+export type ShouldShowSeparationButtonResponse = {
+  show_button: boolean;
+  employee: string;
+  employee_name: string;
+  is_self: boolean;
+  days_until_confirmation: number;
+  trigger_days: number;
+  confirmation_date: string;
+  separation_hidden_from_date: string;
+  extension_count: number;
+};

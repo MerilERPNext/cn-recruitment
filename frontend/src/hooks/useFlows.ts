@@ -1,5 +1,8 @@
 // src/hooks/useChatAssistant.ts
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState, useCallback } from "react";
+import type { ChatNextAssistantTrigger } from "../types/chatnextApiResponses";
+import { useLoadingOverlay } from "../context/OverlayContext";
 import {
   getChatAssistantData,
   getChatAssistantFlowInitiateData,
@@ -9,6 +12,7 @@ import {
   getSeparationFunnelData,
   getSeparationWorkflow,
   getShouldShowConfirmationButton,
+  getShouldShowSeparationButton,
   postSelectEventFromOptions,
   getDifinitionNameForSeparation,
   getFlowRequestById,
@@ -22,6 +26,7 @@ import {
   FlowRequestDetailItem,
   FlowRequestResponse,
   FunnelActivityLogResponse,
+  ShouldShowSeparationButtonResponse,
 } from "../types/flows";
 
 export const useDifinitaionNameForSeparation = () => {
@@ -178,6 +183,13 @@ export const useGetShouldShowConfirmationButton = (
   });
 };
 
+export const useGetShouldShowSeparationButton = () => {
+  return useQuery<ShouldShowSeparationButtonResponse>({
+    queryKey: ["should-show-separation"],
+    queryFn: getShouldShowSeparationButton,
+  });
+};
+
 
 export function useConfirmationApproval() {
 
@@ -232,4 +244,102 @@ export const useUpdateInitiatorFormSubmission = () => {
     }) =>
       updateInitiatorFormSubmission(conversation_doc, submission_data),
   });
+};
+
+/**
+ * Filters the full trigger list by trigger_category_name and optionally button_label.
+ * Use this to find the correct definition_name for a given flow trigger.
+ *
+ * @example
+ * // For Confirmation trigger:
+ * getDefinitionByFilter(data, { triggerCategory: "Confirmation" })
+ *
+ * // For Separation trigger (within Confirmation category):
+ * getDefinitionByFilter(data, { triggerCategory: "Confirmation", buttonLabel: "Recommend for Separation" })
+ */
+export const getDefinitionByFilter = (
+  data: AssistantTriggerResponse | string | undefined,
+  filters: { triggerCategory: string; buttonLabel?: string },
+): ChatNextAssistantTrigger | undefined => {
+  if (!Array.isArray(data)) return undefined;
+
+  return data.find((item: ChatNextAssistantTrigger) => {
+    const categoryMatch =
+      item?.trigger_category?.name === filters.triggerCategory ||
+      item?.trigger_category_name === filters.triggerCategory;
+
+    if (!categoryMatch) return false;
+    if (!filters.buttonLabel) return true;
+
+    return item?.button_label === filters.buttonLabel;
+  });
+};
+
+/**
+ * Centralized hook for triggering a ChatNext assistant flow.
+ * Encapsulates the mutation, polling for `window.trigger_chatnext_assistant`, and overlay management.
+ *
+ * @param overlayMessage - Message to show in the loading overlay while triggering.
+ * @returns { triggerChat, isTriggeringChat }
+ */
+export const useChatTrigger = (overlayMessage = "Loading form...") => {
+  const { mutateAsync: fetchChatAssistantData } = useChatAssistantLazy();
+  const [isTriggeringChat, setIsTriggeringChat] = useState(false);
+  const loading = useLoadingOverlay();
+
+  const triggerChat = useCallback(
+    async (params: {
+      doctype_name: string;
+      document_name: string;
+      definition_name: string;
+      l?: string;
+    }) => {
+      setIsTriggeringChat(true);
+      loading.show(overlayMessage);
+
+      try {
+        const data = await fetchChatAssistantData({
+          doctype_name: params.doctype_name,
+          document_name: params.document_name,
+          definition_name: params.definition_name,
+          l: params.l ?? "true",
+        });
+
+        const maxAttempts = 500; // 50 seconds max (500 * 100ms)
+        let attempts = 0;
+
+        const checkAndTrigger = () => {
+          if (
+            typeof window !== "undefined" &&
+            typeof window.trigger_chatnext_assistant === "function"
+          ) {
+            window.trigger_chatnext_assistant(true, data?.session);
+            setIsTriggeringChat(false);
+            loading.hide();
+            return;
+          }
+
+          attempts++;
+          if (attempts < maxAttempts) {
+            setTimeout(checkAndTrigger, 100);
+          } else {
+            console.warn(
+              "⚠️ trigger_chatnext_assistant is not available on window after 50 seconds.",
+            );
+            setIsTriggeringChat(false);
+            loading.hide();
+          }
+        };
+
+        checkAndTrigger();
+      } catch (error) {
+        console.error("Failed to trigger chat assistant:", error);
+        setIsTriggeringChat(false);
+        loading.hide();
+      }
+    },
+    [fetchChatAssistantData, loading, overlayMessage],
+  );
+
+  return { triggerChat, isTriggeringChat };
 };
