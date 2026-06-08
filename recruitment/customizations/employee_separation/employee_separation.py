@@ -6,6 +6,77 @@ from dateutil.relativedelta import relativedelta
 
 PROBATION_STATUSES = ("On Probation", "Probation Extended")
 CONFIRMED_STATUS = "Confirmed"
+UNSETTLED_EXPENSE_CLAIM_STATUSES = ("Draft", "Unpaid")
+
+
+def add_unpaid_expense_claims(doc, method=None):
+    if not doc.employee:
+        return
+
+    claims = frappe.get_all(
+        "Expense Claim",
+        filters={
+            "employee": doc.employee,
+            "status": ["in", UNSETTLED_EXPENSE_CLAIM_STATUSES],
+        },
+        fields=["name", "total_claimed_amount"],
+        order_by="posting_date asc",
+    )
+
+    doc.set("custom_pending_expense_claims", [])
+    for claim in claims:
+        doc.append("custom_pending_expense_claims", {
+            "expense_claim": claim.name,
+            "claimed_amount": claim.total_claimed_amount,
+        })
+
+
+def add_absent_days(doc, method=None):
+    if not doc.employee:
+        return
+
+    cycle_start, cycle_end = _get_attendance_cycle_window(getdate(today()))
+
+    absents = frappe.get_all(
+        "Attendance",
+        filters={
+            "employee": doc.employee,
+            "status": "Absent",
+            "docstatus": 1,
+            "attendance_date": ["between", [cycle_start, cycle_end]],
+        },
+        fields=["name", "attendance_date"],
+        order_by="attendance_date asc",
+    )
+
+    doc.set("custom_absent_days", [])
+    for absent in absents:
+        doc.append("custom_absent_days", {
+            "attendance": absent.name,
+            "attendance_date": absent.attendance_date,
+        })
+
+
+def _get_attendance_cycle_window(anchor):
+    settings = frappe.get_cached_doc("Payroll Settings")
+
+    if (
+        settings.custom_configure_attendance_cycle
+        and settings.custom_attendance_start_date
+        and settings.custom_attendance_end_date
+    ):
+        start_day = cint(settings.custom_attendance_start_date)
+        end_day = cint(settings.custom_attendance_end_date)
+        if anchor.day <= end_day:
+            cycle_end = anchor.replace(day=end_day)
+        else:
+            cycle_end = (anchor + relativedelta(months=1)).replace(day=end_day)
+        cycle_start = (cycle_end - relativedelta(months=1)).replace(day=start_day)
+        return cycle_start, cycle_end
+
+    cycle_start = anchor.replace(day=1)
+    cycle_end = add_days(cycle_start + relativedelta(months=1), -1)
+    return cycle_start, cycle_end
 
 
 def update_employee_relieving_date(doc, method=None):
@@ -25,12 +96,13 @@ def update_employee_relieving_date(doc, method=None):
         )
 
     if doc.custom_resignaion_type == "Termination" and doc.employee:
-        emp = frappe.get_doc("Employee", doc.employee)
-        emp.custom_employment_status = "Terminated"
-        emp.status = "Suspended"
-        emp.save(ignore_permissions=True)
-        if emp.user_id:
-            frappe.db.set_value("User", emp.user_id, "enabled", 0)
+        relieving = getdate(doc.custom_final_last_working_day)
+        if relieving and relieving <= getdate(today()):
+            frappe.db.set_value("Employee", doc.employee, {
+                "status": "Left",
+                "custom_employment_status": "Terminated",
+            })
+        # future relieving date -> mark_relieved_employees_as_left marks it on the day
 
 
 def calculate_lwd_from_notice_period(doc, method=None):
