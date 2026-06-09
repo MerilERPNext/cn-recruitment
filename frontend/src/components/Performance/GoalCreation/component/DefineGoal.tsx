@@ -112,7 +112,7 @@ const keyResults: KeyResult[] = [
     },
 ];
 
-const fieldClass = 'h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100';
+const fieldClass = 'h-[46px] w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100';
 const labelClass = 'mb-1.5 block text-xs font-medium text-gray-600';
 
 const DefineGoal = () => {
