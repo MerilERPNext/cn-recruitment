@@ -124,6 +124,7 @@ const EmployeeRoleForm = ({
         }),
         isEdit ? "Updating Employee Role..." : "Adding Employee Role...",
       );
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       onSuccess ? onSuccess() : onCancel?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";

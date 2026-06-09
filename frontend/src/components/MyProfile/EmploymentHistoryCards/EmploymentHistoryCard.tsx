@@ -1,5 +1,5 @@
 import React from "react";
-import { Pencil, TrendingUp } from "lucide-react";
+import { Pencil, TrendingUp, Trash2 } from "lucide-react";
 import Tooltip from "../../../components/shared/Tooltip";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 
@@ -15,9 +15,10 @@ interface EmploymentHistoryCardProps {
   is_promotion: boolean;
   designation?: string;
   onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({ company, functionalArea, department, band, grade, start_date, end_date, isCurrent, is_promotion = false, onEdit }) => {
+const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({ company, functionalArea, department, band, grade, start_date, end_date, isCurrent, is_promotion = false, onEdit, onDelete }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift  max-w-[90vw] min-w-[90vw]  md:min-w-[400px] md:max-w-[400px]">
       <div className="absolute top-4 right-4 flex items-center gap-2">
@@ -27,6 +28,11 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({ company, 
         {onEdit && (
           <button className="text-gray-400 hover:text-gray-600" onClick={onEdit}>
             <Pencil className="w-4 h-4" />
+          </button>
+        )}
+        {onDelete && !isCurrent && (
+          <button className="text-gray-400 hover:text-red-500" onClick={onDelete}>
+            <Trash2 className="w-4 h-4" />
           </button>
         )}
       </div>

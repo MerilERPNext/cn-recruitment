@@ -223,6 +223,7 @@ const EmploymentHistoryForm = ({
         }),
         isEdit ? "Updating Employment History..." : "Adding Employment History...",
       );
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       onSuccess ? onSuccess() : onCancel?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";

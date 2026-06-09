@@ -124,6 +124,7 @@ const WorkLocationForm = ({
         }),
         isEdit ? "Updating Work Location..." : "Adding Work Location...",
       );
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       onSuccess ? onSuccess() : onCancel?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";

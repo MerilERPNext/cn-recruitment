@@ -134,6 +134,7 @@ const EmploymentTypeForm = ({
         }),
         isEdit ? "Updating Employment Type..." : "Adding Employment Type...",
       );
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       onSuccess ? onSuccess() : onCancel?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
