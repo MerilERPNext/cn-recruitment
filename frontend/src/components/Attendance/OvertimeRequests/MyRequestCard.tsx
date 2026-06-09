@@ -33,6 +33,7 @@ export function MyRequestCard({
       revoke?: string;
       replace?: string;
       pay?: string;
+      nudge?:string
     }
   };
   request: MyPlannedAttendanceRequest;
@@ -131,6 +132,7 @@ export function MyRequestCard({
                   onEdit(request);
                 }
               }}
+              todoId={request?.todo_id}
               onRevoke={handleRevokeClick}
             />
             {/* {canEditOvertimeRequest && <Button
@@ -224,6 +226,7 @@ export function MyRequestCard({
                       onEdit(request);
                     }
                   }}
+                  todoId={request?.todo_id}
                   onRevoke={handleRevokeClick}
                 />
                 {/* {canEditOvertimeRequest && <Button

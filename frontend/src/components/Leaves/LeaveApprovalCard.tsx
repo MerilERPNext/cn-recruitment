@@ -16,6 +16,7 @@ import { Typography } from "../shared/atoms/Typography";
 import MobileAllocatedTo from "../shared/MobileAllocatedTo";
 import Tooltip from "../shared/Tooltip";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
+import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 
 type LeaveApprovalCardProps = {
   actionsEnabled?: boolean;
@@ -69,7 +70,7 @@ const LeaveApprovalCard = ({
       setRejectionComment("");
     }
   };
-
+  console.log(data , "-----------------------------leave data")
   const handleSaveComment = async () => {
     if (!rejectionComment.trim()) {
       toast.error("Please enter a comment");
@@ -222,16 +223,24 @@ const LeaveApprovalCard = ({
                 )}
             </div>
           )}
+          
           <div className="flex items-center justify-center">
             {data?.todo_status === "Open" && !isActed ? (
-              <TeamApprovalActionPill
-                actionsEnabled={actionsEnabled}
-                actions={actions}
-                status={data?.reference_document?.status}
-                recordId={data?.todo_id}
-                loadingAction={loadingAction}
-                onAction={(action) => handleActionClick(action, data)}
-              />
+              <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
+                <MyApprovalActionPill
+                  uiPermission={{
+                    app: "Leaves & Holidays",
+                    page: "Team Requests",
+                    actionKeysMap: {
+                      edit: "edit",
+                      revoke: "revoke",
+                      nudge:"nudge"
+                    },
+                  }}
+                  
+                todoId={data?.todo_id}
+                />
+              </div>
             ) : (
               <div className="flex items-center justify-center">
                 <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
