@@ -37,7 +37,7 @@ const MandatoryDocumentsHandler = () => {
       filters: [
         ["status", "=", "Acknowledgement Required"],
         ["employee", "=", currentEmployee?.name || ""],
-        ["enable_mandatory_acknowledgement", "=", 1],
+        ["enable_mandatory_acknowledgement", "!=", 1],
       ],
     },
     {

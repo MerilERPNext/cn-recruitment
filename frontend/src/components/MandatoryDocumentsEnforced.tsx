@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FrappeListView from "./ListView";
 import HeaderBar from "./HeaderBar";
@@ -57,6 +57,12 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ item }) => {
   const [showModal, setShowModal] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
 
+  useEffect(() => {
+    if (!showModal) {
+      setAcknowledged(false);
+    }
+  }, [showModal]);
+
   const title = item.document_template || "Employee Document";
   const status = item.status || "Draft";
   const documentId = item.name;
@@ -66,7 +72,8 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ item }) => {
   const getFileUrl = (path?: string) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
-    return `${window.location.origin}${path}`;
+    const safePath = path.startsWith("/") ? path : "/" + path;
+    return window.location.origin + safePath;
   };
 
   const handleAcknowledgeSubmit = async () => {
@@ -352,7 +359,7 @@ const MandatoryDocumentsEnforced: React.FC = () => {
                 defaultFilters={{
                   status: "Acknowledgement Required",
                   employee: currentEmployee?.name || "",
-                  enable_mandatory_acknowledgement: 0,
+                  enable_mandatory_acknowledgement: 1,
                 }}
                 defaultFields={[
                   "name",
