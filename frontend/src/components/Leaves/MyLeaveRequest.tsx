@@ -192,37 +192,39 @@ const MyLeaveRequests = ({
             titles={
               activeStatus === "Rejected"
                 ? [
-                  "Request Id",
-                  "Assigned To",
-                  "Leave Type",
-                  "From Date",
-                  "To Date",
-                  "Created At",
-                  "Description",
-                  "Reason",
-                  "Leave Days",
-                  "Status",
-                  "Reject Reason",
-                  "Actions",
-                ]
+                    "Request Id",
+                    "Assigned To",
+                    "Leave Type",
+                    "From Date",
+                    "To Date",
+                    "Created At",
+                    "Description",
+                    "Reason",
+                    "Leave Days",
+                    "Status",
+                    "Reject Reason",
+                    "Sendback Comment",
+                    "Actions",
+                  ]
                 : [
-                  "Request Id",
-                  "Assigned To",
-                  "Leave Type",
-                  "From Date",
-                  "To Date",
-                  "Created At",
-                  "Description",
-                  "Reason",
-                  "Leave Days",
-                  "Status",
-                  "Actions",
-                ]
+                    "Request Id",
+                    "Assigned To",
+                    "Leave Type",
+                    "From Date",
+                    "To Date",
+                    "Created At",
+                    "Description",
+                    "Reason",
+                    "Leave Days",
+                    "Status",
+                    "Sendback Comment",
+                    "Actions",
+                  ]
             }
             columnWidths={
               activeStatus === "Rejected"
-                ? ["1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr"]
-                : ["1fr 1.5fr 1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr"]
+                ? ["1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1.5fr 1fr"]
+                : ["1fr 1.5fr 1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr"]
             }
             columnSortConfig={COLUMN_SORT_CONFIG_MY_LEAVE_REQUEST}
           >
