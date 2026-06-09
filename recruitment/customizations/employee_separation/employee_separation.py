@@ -53,7 +53,7 @@ def add_absent_days(doc, method=None):
     for absent in absents:
         doc.append("custom_absent_days", {
             "attendance": absent.name,
-            "attendance_date": absent.attendance_date,
+            "attendance_date": frappe.utils.formatdate(absent.attendance_date,)
         })
 
 
