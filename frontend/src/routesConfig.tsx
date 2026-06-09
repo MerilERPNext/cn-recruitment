@@ -227,6 +227,10 @@ const MandatoryHrProcessEnforced = lazyWithRetry(
   () => import("./components/MandatoryHrProcessEnforced"),
   "MandatoryHrProcessEnforced",
 );
+const MandatoryDocumentsEnforced = lazyWithRetry(
+  () => import("./components/MandatoryDocumentsEnforced"),
+  "MandatoryDocumentsEnforced",
+);
 const PolicySignOff = lazyWithRetry(
   () => import("./components/PolicySignOff"),
   "PolicySignOff",
@@ -683,6 +687,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/hr-process-mandatory",
     element: <MandatoryHrProcessEnforced />,
     permissionKey: "HR Process Mandatory",
+  },
+  {
+    path: "/webapp/mandatory-documents",
+    element: <MandatoryDocumentsEnforced />,
+    permissionKey: "Dashboard",
   },
   {
     path: "/webapp/recruitment-app/job-applicant-detail/:id",
