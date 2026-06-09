@@ -48,7 +48,7 @@ const SeparationCard = ({ data }: { data: cardDataType }) => {
 };
 
 const Separation = () => {
-  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: currentEmployee, isLoading: isLoadingCurrentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const doctype_name = "Employee";
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
@@ -81,7 +81,7 @@ const Separation = () => {
 
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
 
-  const isLoading = isLoadingSeparationFunnelDetails || isLoadingSeparationType || isLoadingPolicy;
+  const isLoading = isLoadingSeparationFunnelDetails || isLoadingSeparationType || isLoadingPolicy || isLoadingCurrentEmployee;
 
   // Use centralized getDefinitionByFilter for finding trigger definitions
   const terminationDefinition = useMemo(
