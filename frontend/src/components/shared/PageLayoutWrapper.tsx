@@ -39,7 +39,7 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
         <div className="min-h-screen bg-[#f8fafc] font-sans flex flex-col">
             <div className="bg-white border-b border-gray-200 px-6 sm:px-10 py-5">
                 <div className="max-w-screen mx-auto flex flex-col lg:flex-row md:items-center justify-between gap-6">
-                    <div className="text-left w-full">
+                    <div className="text-left w-full lg:min-w-0 lg:flex-1">
                         <Typography variant="h3" className="text-gray-900 mb-1">
                             {title}
                         </Typography>
@@ -50,7 +50,7 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
                         ) : null}
                     </div>
                     {steps ? (
-                        <div className="flex w-full items-center gap-1 text-xs font-medium md:w-auto md:gap-2 md:overflow-x-auto md:text-sm">
+                        <div className="flex w-full items-center gap-1 overflow-x-auto text-xs font-medium md:gap-2 md:text-sm lg:w-auto lg:flex-none">
                             {steps.map((step, index) => {
                                 const isActive = index === activeStepIndex;
                                 const isCompleted = activeStepIndex > index;
@@ -68,11 +68,11 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
 
                                 return (
                                     <React.Fragment key={step.label}>
-                                        <div className={`flex min-w-0 shrink items-center md:shrink-1 ${stepTextClass}`}>
+                                        <div className={`flex shrink-0 items-center ${stepTextClass}`}>
                                             <div className={`mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold md:mr-2 ${circleClass}`}>
                                                 {isCompleted ? <Check className="h-3.5 w-3.5" /> : index + 1}
                                             </div>
-                                            <span className="truncate">{step.label}</span>
+                                            <span className="whitespace-nowrap">{step.label}</span>
                                         </div>
                                         {index < steps.length - 1 ? <div className={`h-px min-w-4 flex-1 md:w-10 md:flex-none ${connectorClass}`}></div> : null}
                                     </React.Fragment>
