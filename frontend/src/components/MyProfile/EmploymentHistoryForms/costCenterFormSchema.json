@@ -44,26 +44,17 @@
                                 "min": 1,
                                 "max": 100
                             }
-                        },
-                        {
-                            "type": "datetime",
-                            "key": "start_date",
-                            "label": "Start Date",
-                            "errorLabel": "Start Date",
-                            "format": "dd-MM-yyyy",
-                            "enableTime": false,
-                            "input": true
-                        },
-                        {
-                            "type": "datetime",
-                            "key": "end_date",
-                            "label": "End Date",
-                            "format": "dd-MM-yyyy",
-                            "enableTime": false,
-                            "input": true,
-                            "customConditional": "show = data.show_end_date === true;"
                         }
                     ]
+                },
+                {
+                    "type": "datetime",
+                    "key": "start_date",
+                    "label": "Start Date",
+                    "errorLabel": "Start Date",
+                    "format": "dd-MM-yyyy",
+                    "enableTime": false,
+                    "input": true
                 }
             ]
         }

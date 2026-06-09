@@ -9,7 +9,7 @@ import {
   useCurrentEmployeeDetails,
   useUpdateEmploymentDetailsMutation,
 } from "../../../hooks/useEmployee";
-import CircularLoader from "../../shared/atoms/CircularLoader";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 interface InitialEmployeeRoleData {
   employee_role: string;
@@ -18,6 +18,7 @@ interface InitialEmployeeRoleData {
 
 interface EmployeeRoleFormProps {
   onCancel?: () => void;
+  onSuccess?: () => void;
   isEdit?: boolean;
   defaultStartDate?: string | null;
   initialEditData?: InitialEmployeeRoleData;
@@ -25,6 +26,7 @@ interface EmployeeRoleFormProps {
 
 const EmployeeRoleForm = ({
   onCancel,
+  onSuccess,
   isEdit = false,
   defaultStartDate,
   initialEditData,
@@ -37,6 +39,7 @@ const EmployeeRoleForm = ({
   });
   const { mutateAsync: updateEmploymentDetails, isPending } =
     useUpdateEmploymentDetailsMutation();
+  const { wrap } = useLoadingOverlay();
 
   useEffect(() => {
     if (!instance || initialDataApplied.current) return;
@@ -112,15 +115,19 @@ const EmployeeRoleForm = ({
         return;
       }
 
-      await updateEmploymentDetails({
-        employee: currentEmployee?.employee,
-        fields: [{ field: "employee_role", value: data.employee_role }],
-        start_date: data.startDate,
-        mode: isEdit ? "update" : "new",
-      });
-      onCancel?.();
+      await wrap(
+        () => updateEmploymentDetails({
+          employee: currentEmployee?.employee,
+          fields: [{ field: "employee_role", value: data.employee_role }],
+          start_date: data.startDate,
+          mode: isEdit ? "update" : "new",
+        }),
+        isEdit ? "Updating Employee Role..." : "Adding Employee Role...",
+      );
+      onSuccess ? onSuccess() : onCancel?.();
     } catch (err) {
-      console.warn("Form submission error -", err);
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      toast.error(message);
       instance.redraw();
     }
   };
@@ -179,8 +186,9 @@ const EmployeeRoleForm = ({
             size="lg"
             variant="contain"
             bgColor="primary"
+            disabled={isPending}
           >
-            {isPending ? <CircularLoader /> : "Submit Request"}
+            Submit Request
           </Button>
         </div>
       </div>

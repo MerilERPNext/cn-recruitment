@@ -13,23 +13,26 @@ type HDActionPillProp = {
     canClose?: boolean;
     canReply?: boolean;
     canReopen?: boolean;
+    canResolve?: boolean;
 
     onRevoke?: () => void;
     onClose?: () => void;
     onReply?: () => void;
     onReopen?: () => void;
+    onResolve?: () => void;
 
     revokeLoading?: boolean;
     closeLoading?: boolean;
     replyLoading?: boolean;
     reopenLoading?: boolean;
+    resolveLoading?: boolean;
 
-    variant?: "pill" | "buttons";
+    variant?: "pill" | "buttons" | "modal";
     placement?: "top-right" | "bottom-left";
 };
 
 type ActionItem = {
-    key: "revoke" | "close" | "reply" | "reopen";
+    key: "revoke" | "close" | "reply" | "reopen" | "resolve";
     tooltip: string;
     icon: JSX.Element;
     onClick?: () => void;
@@ -42,6 +45,8 @@ const HDActionPill = ({
     canClose,
     canReply,
     canReopen,
+    canResolve,
+    onResolve,
     onRevoke,
     onClose,
     onReply,
@@ -50,6 +55,7 @@ const HDActionPill = ({
     closeLoading = false,
     replyLoading = false,
     reopenLoading = false,
+    resolveLoading = false,
     variant = "pill",
     placement = "top-right"
 }: HDActionPillProp) => {
@@ -73,7 +79,7 @@ const HDActionPill = ({
             tooltip: "Close Ticket",
             loading: closeLoading,
             onClick: onClose,
-            icon: <CheckCircle className="w-4 h-4 text-green-500" />,
+            icon: <CheckCircle className="w-4 h-4" />,
             color: "success"
         });
     }
@@ -84,7 +90,7 @@ const HDActionPill = ({
             tooltip: "Reopen Ticket",
             loading: reopenLoading,
             onClick: onReopen,
-            icon: <RotateCcw className="w-4 h-4 text-warning" />,
+            icon: <RotateCcw className="w-4 h-4" />,
             color: "warning"
         });
     }
@@ -95,20 +101,68 @@ const HDActionPill = ({
             tooltip: "Revoke",
             loading: revokeLoading,
             onClick: onRevoke,
-            icon: <Trash2 className="w-4 h-4 text-error" />,
+            icon: <Trash2 className="w-4 h-4" />,
             color: "error"
         });
     }
 
-    if (canReply && onReply) {
+    if (canReply && onReply && isDesktop) {
         actions.push({
             key: "reply",
             tooltip: "Reply",
             loading: replyLoading,
             onClick: onReply,
-            icon: <MessageSquare className="w-4 h-4 text-primary" />,
+            icon: <MessageSquare className="w-4 h-4" />,
             color: "primary"
         });
+    }
+
+    if (canResolve && onResolve) {
+        actions.push({
+            key: "resolve",
+            tooltip: "Resolve",
+            loading: resolveLoading,
+            onClick: onResolve,
+            icon: <CheckCircle className="w-4 h-4" />,
+            color: "success"
+        });
+    }
+
+    const getIconColorClass = (color: ButtonColor) => {
+        switch (color) {
+            case "success": return "text-green-500";
+            case "warning": return "text-warning";
+            case "error": return "text-error";
+            case "primary": return "text-primary";
+            default: return "text-gray-600";
+        }
+    };
+
+    // ✅ MODAL VARIANT (FLOATING BOTTOM BUTTONS)
+    if (variant === "modal") {
+        return (
+            <div className="sticky bottom-0 left-0 right-0 p-3 bg-white border-t border-gray-100 flex gap-2 w-full z-10 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] overflow-x-auto no-scrollbar">
+                {actions.map((action) => (
+                    <Button
+                        key={action.key}
+                        bgColor={action.color}
+                        variant="contain"
+                        size="md"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            action.onClick?.();
+                        }}
+                        disabled={action.loading}
+                        loading={action.loading}
+                        icon={action.icon}
+                        className="flex-1 min-w-fit whitespace-nowrap"
+                    >
+                        <span className="capitalize">{action.key === "close" ? "Close Ticket" : action.key === "reopen" ? "Reopen Ticket" : action.key}</span>
+                    </Button>
+                ))}
+            </div>
+        );
     }
 
     // ✅ MOBILE VARIANT
@@ -120,7 +174,7 @@ const HDActionPill = ({
                     className="capitalize"
                     items={actions.map((action) => ({
                         label: action.key === "close" ? "Close Ticket" : action.key === "reopen" ? "Reopen Ticket" : action.key,
-                        icon: action.loading ? <span className="w-4 h-4 border border-gray-400 border-t-transparent rounded-full animate-spin" /> : action.icon,
+                        icon: action.loading ? <span className="w-4 h-4 border border-gray-400 border-t-transparent rounded-full animate-spin" /> : <span className={getIconColorClass(action.color)}>{action.icon}</span>,
                         onClick: () => {
                             if (!action.loading) {
                                 action.onClick?.();
@@ -187,7 +241,7 @@ const HDActionPill = ({
                             {action.loading ? (
                                 <span className="w-4 h-4 border border-gray-400 border-t-transparent rounded-full animate-spin" />
                             ) : (
-                                action.icon
+                                <span className={getIconColorClass(action.color)}>{action.icon}</span>
                             )}
                         </button>
                     </Tooltip>

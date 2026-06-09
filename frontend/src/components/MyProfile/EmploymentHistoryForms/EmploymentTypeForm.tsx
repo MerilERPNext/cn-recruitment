@@ -9,7 +9,7 @@ import {
   useCurrentEmployeeDetails,
   useUpdateEmploymentDetailsMutation,
 } from "../../../hooks/useEmployee";
-import CircularLoader from "../../shared/atoms/CircularLoader";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 interface InitialEmploymentTypeData {
   employment_type: string;
@@ -19,6 +19,7 @@ interface InitialEmploymentTypeData {
 
 interface EmploymentTypeFormProps {
   onCancel?: () => void;
+  onSuccess?: () => void;
   isEdit?: boolean;
   defaultStartDate?: string | null;
   initialEditData?: InitialEmploymentTypeData;
@@ -26,6 +27,7 @@ interface EmploymentTypeFormProps {
 
 const EmploymentTypeForm = ({
   onCancel,
+  onSuccess,
   isEdit = false,
   defaultStartDate,
   initialEditData,
@@ -38,6 +40,7 @@ const EmploymentTypeForm = ({
   });
   const { mutateAsync: updateEmploymentDetails, isPending } =
     useUpdateEmploymentDetailsMutation();
+  const { wrap } = useLoadingOverlay();
 
   useEffect(() => {
     if (!instance || initialDataApplied.current) return;
@@ -122,15 +125,19 @@ const EmploymentTypeForm = ({
         fields.push({ field: "employee_subtype", value: data.employee_subtype });
       }
 
-      await updateEmploymentDetails({
-        employee: currentEmployee?.employee,
-        fields,
-        start_date: data.startDate,
-        mode: isEdit ? "update" : "new",
-      });
-      onCancel?.();
+      await wrap(
+        () => updateEmploymentDetails({
+          employee: currentEmployee?.employee,
+          fields,
+          start_date: data.startDate,
+          mode: isEdit ? "update" : "new",
+        }),
+        isEdit ? "Updating Employment Type..." : "Adding Employment Type...",
+      );
+      onSuccess ? onSuccess() : onCancel?.();
     } catch (err) {
-      console.warn("Form submission error -", err);
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      toast.error(message);
       instance.redraw();
     }
   };
@@ -200,8 +207,9 @@ const EmploymentTypeForm = ({
             size="lg"
             variant="contain"
             bgColor="primary"
+            disabled={isPending}
           >
-            {isPending ? <CircularLoader /> : "Submit Request"}
+            Submit Request
           </Button>
         </div>
       </div>

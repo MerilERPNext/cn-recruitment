@@ -210,18 +210,6 @@ const EmployeeProfile: React.FC = () => {
   // Create ref for the scrollable container (desktop layout)
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const tabContent: Record<string, React.ReactNode> = useMemo(
-    () => ({
-      overview: <Overview />,
-      "personal-information": <EmployeeProfileSections />,
-      "employment-history": <EmploymentHistory employeeId={user?.employee} />,
-      // "employee-holidays": <ShowHolidays />,
-      "employee-documents": <DocumentLibrary />,
-      "reporting-details": <ReportingDetails />,
-    }),
-    [user],
-  );
-
   // Scroll to section when tab is clicked
   const scrollToSection = useCallback((key: string) => {
     const section = sectionRefs.current[key];
@@ -229,6 +217,28 @@ const EmployeeProfile: React.FC = () => {
       section.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, []);
+
+  const handleActionSuccess = useCallback(() => {
+    const targetSection = activeTab;
+    if (isDesktop && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    setTimeout(() => scrollToSection(targetSection), 700);
+  }, [activeTab, isDesktop, scrollToSection]);
+
+  const tabContent: Record<string, React.ReactNode> = useMemo(
+    () => ({
+      overview: <Overview />,
+      "personal-information": <EmployeeProfileSections />,
+      "employment-history": <EmploymentHistory employeeId={user?.employee} onActionSuccess={handleActionSuccess} />,
+      // "employee-holidays": <ShowHolidays />,
+      "employee-documents": <DocumentLibrary />,
+      "reporting-details": <ReportingDetails onActionSuccess={handleActionSuccess} />,
+    }),
+    [user, handleActionSuccess],
+  );
 
   // //refetching of the ui permission
   // useEffect(() => {

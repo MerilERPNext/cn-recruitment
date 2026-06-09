@@ -12,6 +12,7 @@ import {
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import Button from "../../shared/atoms/Button";
 import CircularLoader from "../../shared/atoms/CircularLoader";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 interface ReportingDetailsProps {
     onSuccess?: (data?: any) => void;
@@ -23,6 +24,7 @@ interface ReportingDetailsProps {
 
 const ReportingDetailsFormV2 = ({
     onCancel,
+    onSuccess,
     isEdit = false,
     category = "Reports To",
     categoryField = "reports_to",
@@ -30,7 +32,8 @@ const ReportingDetailsFormV2 = ({
     const formInstance = useRef<any>(null);
     const initialSubmissionSet = useRef(false);
     const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
-    const { mutateAsync: updateEmpReportingDetailsRecord } = useUpdateEmpReportingDetailsRecordMutation();
+    const { mutateAsync: updateEmpReportingDetailsRecord, isPending } = useUpdateEmpReportingDetailsRecordMutation();
+    const { wrap } = useLoadingOverlay();
 
     const { data: reportingData, isPending: employeeReportingDetailsPending } =
         useGetEmployeeReportingDetails(currentEmployee?.employee || "");
@@ -68,13 +71,16 @@ const ReportingDetailsFormV2 = ({
             const submission = await formInstance.current?.submit();
             const data = submission?.data;
 
-            await updateEmpReportingDetailsRecord({
-                employee: currentEmployee?.employee || "",
-                field: categoryField,
-                value: String(data?.reports_to ?? ""),
-                start_date: String(data?.start_date ?? ""),
-            });
-            onCancel?.();
+            await wrap(
+                () => updateEmpReportingDetailsRecord({
+                    employee: currentEmployee?.employee || "",
+                    field: categoryField,
+                    value: String(data?.reports_to ?? ""),
+                    start_date: String(data?.start_date ?? ""),
+                }),
+                isEdit ? `Updating ${category}...` : `Adding ${category}...`,
+            );
+            onSuccess ? onSuccess() : onCancel?.();
         } catch (err) {
             const formatedError = errorResponseFormater(
                 err,
@@ -154,12 +160,9 @@ const ReportingDetailsFormV2 = ({
                         size="lg"
                         variant="contain"
                         bgColor="primary"
+                        disabled={isPending}
                     >
-                        {employeeReportingDetailsPending ? (
-                            <CircularLoader />
-                        ) : (
-                            "Submit Request"
-                        )}
+                        Submit Request
                     </Button>
                 </div>
             </div>

@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 import costCenterFormSchema from "./costCenterFormSchema.json";
 import "../../../formio.custom.css";
 import Button from "../../shared/atoms/Button";
@@ -22,6 +23,7 @@ interface InitialCostCenterData {
 
 interface CostCenterFormProps {
   onCancel?: () => void;
+  onSuccess?: () => void;
   isEdit?: boolean;
   defaultStartDate?: string | null;
   initialEditData?: InitialCostCenterData;
@@ -29,6 +31,7 @@ interface CostCenterFormProps {
 
 const CostCenterForm = ({
   onCancel,
+  onSuccess,
   isEdit = false,
   defaultStartDate,
   initialEditData,
@@ -42,6 +45,7 @@ const CostCenterForm = ({
   });
   const { mutateAsync: updateCostCenters, isPending } =
     useUpdateEmployeeCostCentersMutation();
+  const { wrap } = useLoadingOverlay();
 
   useEffect(() => {
     if (!instance || !currentEmployee?.company) return;
@@ -64,21 +68,12 @@ const CostCenterForm = ({
       newData.allocations = initialEditData.allocations.map((a) => ({
         cost_center: a.cost_center_id,
         percentage: a.percentage,
-        start_date: initialEditData.start_date,
-        end_date: initialEditData.end_date || "",
       }));
-      newData.show_end_date = !!initialEditData.end_date;
+      newData.start_date = initialEditData.start_date;
       shouldUpdate = true;
     } else if (!isEdit) {
-      newData.allocations = [
-        {
-          cost_center: "",
-          percentage: "",
-          start_date: defaultStartDate || "",
-          end_date: "",
-        },
-      ];
-      newData.show_end_date = false;
+      newData.allocations = [{ cost_center: "", percentage: "" }];
+      newData.start_date = defaultStartDate || "";
       shouldUpdate = true;
     }
 
@@ -95,7 +90,12 @@ const CostCenterForm = ({
     }
   }, [instance, isEdit, initialEditData, defaultStartDate]);
 
-  const validateForm = (allocations: any[]): boolean => {
+  const validateForm = (allocations: any[], startDate: string): boolean => {
+    if (!startDate) {
+      toast.error("Start Date is required.");
+      return false;
+    }
+
     if (!allocations || allocations.length === 0) {
       toast.error("Please add at least one allocation.");
       return false;
@@ -109,10 +109,6 @@ const CostCenterForm = ({
       }
       if (!row.percentage || Number(row.percentage) <= 0) {
         toast.error(`Row ${i + 1}: Percentage must be greater than 0.`);
-        return false;
-      }
-      if (!row.start_date) {
-        toast.error(`Row ${i + 1}: Start Date is required.`);
         return false;
       }
     }
@@ -139,22 +135,27 @@ const CostCenterForm = ({
       const submission = await instance.submit();
       const data = submission?.data || {};
       const allocations: any[] = data.allocations || [];
+      const startDate: string = data.start_date || "";
 
-      if (!validateForm(allocations)) return;
+      if (!validateForm(allocations, startDate)) return;
 
-      await updateCostCenters({
-        employee: currentEmployee?.employee,
-        allocations: allocations.map((a: any) => ({
-          cost_center: a.cost_center,
-          percentage: Number(a.percentage),
-          start_date: a.start_date,
-          ...(a.end_date ? { end_date: a.end_date } : {}),
-        })),
-        mode: isEdit ? "update" : "new",
-      });
-      onCancel?.();
+      await wrap(
+        () => updateCostCenters({
+          employee: currentEmployee?.employee,
+          allocations: allocations.map((a: any) => ({
+            cost_center: a.cost_center,
+            percentage: Number(a.percentage),
+            start_date: startDate,
+          })),
+          mode: isEdit ? "update" : "new",
+        }),
+        isEdit ? "Updating Cost Center..." : "Adding Cost Center...",
+      );
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      onSuccess ? onSuccess() : onCancel?.();
     } catch (err) {
-      console.warn("Form submission error -", err);
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      toast.error(message);
       instance.redraw();
     }
   };
@@ -190,8 +191,6 @@ const CostCenterForm = ({
         <div className="flex-1 min-h-0 overflow-y-auto p-2 md:px-6 md:py-4 pb-20 relative cost-center-form">
           {/* Hide the datagrid "Add Row" button while keeping per-row delete */}
           <style>{`
-            /* Hide add-row button */
-            .cost-center-form .formio-button-add-row, .cost-center-form [ref="addRow"] { display: ${isEdit ? 'none' : 'block'} !important; };
             /* Strip all default table borders */
             .formio-component-allocations table {
               border: none !important;
@@ -279,11 +278,7 @@ const CostCenterForm = ({
               bgColor="primary"
               className="w-full md:w-auto min-w-[150px]"
             >
-              {isPending ? (
-                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                "Submit Request"
-              )}
+              Submit Request
             </Button>
           </div>
         </div>
