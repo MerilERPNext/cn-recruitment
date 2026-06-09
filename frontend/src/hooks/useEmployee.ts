@@ -1010,3 +1010,19 @@ export const useGetSeparationDetails = (
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 };
+
+export const useDeleteEmployeeAndUserMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["deleteEmployeeAndUser"],
+    mutationFn: (employee: string) =>
+      EmployeeService.deleteEmployeeAndUser(employee),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["directory-employees"] });
+      queryClient.invalidateQueries({ queryKey: ["employee"] });
+    },
+    onError: (error) => {
+      console.error("Error deleting employee:", error);
+    },
+  });
+};
