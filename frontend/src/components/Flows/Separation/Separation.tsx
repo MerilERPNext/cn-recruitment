@@ -22,7 +22,7 @@ import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { SeparationSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { getActionsEnabled } from "../../../utils/uiPermission";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetEmployeeSeparationType, useGetSeparationFunnelDetails } from "../../../hooks/useSeparation";
+import { useGetEmployeeSeparationType, useGetSeparationFunnelDetails, useGetNoticePeriodAndSeparationPolicy } from "../../../hooks/useSeparation";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { FlowRequestItem } from "../../../types/flows";
 import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
@@ -48,7 +48,7 @@ const SeparationCard = ({ data }: { data: cardDataType }) => {
 };
 
 const Separation = () => {
-  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: currentEmployee, isLoading: isLoadingCurrentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const doctype_name = "Employee";
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
@@ -77,10 +77,11 @@ const Separation = () => {
 
   const reference_name = item?.workflow_stages?.[0]?.todo?.reference_name ?? null;
   const { data: separationType, isLoading: isLoadingSeparationType } = useGetEmployeeSeparationType(reference_name);
+  const { data: policyData, isLoading: isLoadingPolicy } = useGetNoticePeriodAndSeparationPolicy(document_name);
 
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
 
-  const isLoading = isLoadingSeparationFunnelDetails || isLoadingSeparationType;
+  const isLoading = isLoadingSeparationFunnelDetails || isLoadingSeparationType || isLoadingPolicy || isLoadingCurrentEmployee;
 
   // Use centralized getDefinitionByFilter for finding trigger definitions
   const terminationDefinition = useMemo(
@@ -137,12 +138,12 @@ const Separation = () => {
     {
       icon: SeparationSvgs[0],
       label: "Notice Period",
-      value: `Remember to serve your notice period ${(activeEmployee as any)?.notice_number_of_days ? "of " + (activeEmployee as any)?.notice_number_of_days + " days" : ""}`,
+      value: policyData?.notice_period ? `Remember to serve your notice period of ${policyData.notice_period}` : `Remember to serve your notice period ${(activeEmployee as any)?.notice_number_of_days ? "of " + (activeEmployee as any)?.notice_number_of_days + " days" : ""}`,
     },
     {
       icon: SeparationSvgs[1],
-      label: "Final Settlement",
-      value: `We'll process your full & final settlement soon`,
+      label: policyData?.separation_policy ? "Separation Policy" : "Final Settlement",
+      value: policyData?.separation_policy || `We'll process your full & final settlement soon`,
     },
   ];
   const queryClient = useQueryClient();

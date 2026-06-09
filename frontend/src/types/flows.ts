@@ -310,3 +310,9 @@ export type ShouldShowSeparationButtonResponse = {
   separation_hidden_from_date: string;
   extension_count: number;
 };
+
+export type NoticePeriodAndSeparationPolicyResponse = {
+  employee: string;
+  notice_period: string;
+  separation_policy: string;
+};
