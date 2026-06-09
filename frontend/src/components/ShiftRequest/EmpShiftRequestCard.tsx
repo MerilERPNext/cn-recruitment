@@ -141,9 +141,11 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
                 page: "All Shifts",
                 actionKeysMap: {
                   edit: "edit_shift_request",
-                  revoke: "revoke_shift_request"
+                  revoke: "revoke_shift_request",
+                  nudge:"nudge"
                 }
               }}
+              todoId={data?.todo_id}
               canEdit={canEdit}
               canRevoke={canRevoke}
               revokeLoading={revokeEventMutation.isPending}
@@ -220,9 +222,11 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
                   page: "All Shifts",
                   actionKeysMap: {
                     edit: "edit_shift_request",
-                    revoke: "revoke_shift_request"
+                    revoke: "revoke_shift_request",
+                    nudge:"nudge"
                   }
                 }}
+                todoId={data?.todo_id}
                 variant="buttons"
                 canEdit={canEdit}
                 canRevoke={canRevoke}
