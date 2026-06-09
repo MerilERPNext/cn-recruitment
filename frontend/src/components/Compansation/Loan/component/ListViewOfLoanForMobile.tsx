@@ -142,8 +142,10 @@ export const LoantItem: React.FC<{
             actionKeysMap: {
               edit: "edit",
               revoke: "revoke",
+              nudge:"nudge"
             },
           }}
+          todoId={todo?.todo_id}
           variant="buttons"
           canRevoke={canRevoke}
           canEdit={canEdit}
