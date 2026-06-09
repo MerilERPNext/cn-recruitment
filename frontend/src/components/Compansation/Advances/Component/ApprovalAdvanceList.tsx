@@ -13,6 +13,7 @@ import StatusBadge from "../../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../../shared/atoms/Typography";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
+import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -42,7 +43,7 @@ const ApprovalRejectionAdvanceList = ({
   const { isDesktop } = useScreenSize();
   const { data: user } = useCurrentUser();
   const commentMutation = useExpenseCommentUpdate();
-
+  console.log(data,'==============================data team advance request')
   const [commentOpen, setCommentOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [comment, setComment] = useState("");
@@ -175,13 +176,21 @@ const ApprovalRejectionAdvanceList = ({
 
           <div className="flex items-center justify-center">
             {actionsEnabled && data?.todo_status === "Open" && !isActed ? (
-              <TeamApprovalActionPill
-                actions={actions}
-                status={data?.status}
-                recordId={data?.todo_id}
-                loadingAction={loadingAction}
-                onAction={(action) => handleActionClick(action)}
-              />
+              <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+                <MyApprovalActionPill
+                  uiPermission={{
+                    app: "Compensation",
+                    page: "Team Advances",
+                    actionKeysMap: {
+                      edit: "edit",
+                      revoke: "revoke",
+                      nudge: "nudge"
+                    },
+                  }}
+                  todoId={data?.todo_id}
+                  
+                />
+              </div>
             ) : (
               <div className="flex items-center justify-center">
                 <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">

@@ -395,7 +395,8 @@ const MY_REQUESTS_UI_PERMISSION = {
   page: "My Requests",
   actionKeysMap: {
     edit: "edit",
-    revoke: "revoke"
+    revoke: "revoke",
+    nudge:"nudge"
   }
 };
 
@@ -528,6 +529,7 @@ const BenefitSlipItem = ({
           canRevoke={canRevoke}
           onRevoke={handleRevokeClick}
           onEdit={() => handleEdit(item.name)}
+          todoId={item?.todo_list[0]?.todo_id}
         />
       </div>
     </div>
@@ -649,6 +651,7 @@ const BenefitSlipItem = ({
               onRevoke={handleRevokeClick}
               onEdit={() => handleEdit(item.name)}
               variant="buttons"
+              todoId={item?.todo_list[0]?.todo_id}
             />
           </div>
         </div>
