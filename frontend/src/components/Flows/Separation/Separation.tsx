@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { AlertCircle, ArrowLeft, CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
 import {
   useCurrentEmployeeDetails,
@@ -14,7 +14,7 @@ import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./components/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useEffect, useMemo, useCallback, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { SeparationSvgs } from "./consts";
@@ -127,6 +127,8 @@ const Separation = () => {
     ;
 
   const isRejected = item?.approval_status === "Rejected";
+  const isCompleted = item?.approval_status === "Completed";
+
   const hasNoItem = !item;
 
   const showSeparationButton =
@@ -299,21 +301,6 @@ const Separation = () => {
           </div>
           {/* Button */}
 
-          {RejectedRequest && (
-            <div className="flex w-full mt-4 mb-2">
-              <div className="flex flex-col sm:flex-row items-center w-full bg-red-50 border border-red-100 p-4 rounded-xl gap-3 text-center sm:text-left shadow-sm">
-                <div className="bg-red-100 p-2 rounded-full shrink-0 text-red-500">
-                  <AlertCircle size={20} />
-                </div>
-                <div>
-                  <Typography variant="bodyMedium" color="body1" className="text-red-800">
-                    Your {RejectedRequest === item ? "current" : "previous"} separation request initiated on <span className="font-semibold">{formatToIndianDate(RejectedRequest?.initiated_on || "")}</span> has been <Link to="/webapp/flow-app/rejected-separation-request" className="font-semibold text-red-600 hover:text-red-700 underline decoration-red-300 underline-offset-4 transition-colors">Rejected</Link>.
-                  </Typography>
-                </div>
-              </div>
-            </div>
-          )}
-
           {item && ["Pending", "Completed", "Approved", "Draft"].includes(item?.approval_status || "") && (
             <div className="flex w-full mt-4 mb-2">
               <div
@@ -386,7 +373,7 @@ const Separation = () => {
             bgColor="black"
             className="hover:bg-gray-900 text-white mx-auto"
             loading={isTriggeringChat}
-            disabled={isTriggeringChat}
+            disabled={isTriggeringChat || isCompleted}
           >
             Terminate
           </Button>
