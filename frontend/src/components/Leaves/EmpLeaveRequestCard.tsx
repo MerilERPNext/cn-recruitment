@@ -141,7 +141,11 @@ const EmpLeaveRequestCard = ({
     <>
       {isDesktop ? (
         <div
-          style={{ gridTemplateColumns: showRejectReason ? "1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr  1fr 1fr 1.5fr 1fr" : "1fr 1.5fr 1fr   1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr" }}
+          style={{
+            gridTemplateColumns: showRejectReason
+              ? "1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1.5fr 1fr"
+              : "1fr 1.5fr 1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr",
+          }}
           className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         >
           <Tooltip
@@ -239,6 +243,17 @@ const EmpLeaveRequestCard = ({
               )}
             </div>
           )}
+          <Tooltip
+            content={data?.send_back_comment || "--"}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full text-gray-700"
+            >
+              {data?.send_back_comment || "--"}
+            </Typography>
+          </Tooltip>
           <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
               uiPermission={{
@@ -357,6 +372,13 @@ const EmpLeaveRequestCard = ({
               <Typography variant="mobileCardLabel">Assigned To</Typography>
               <Typography variant="mobileCardValue">
                 {getAssignedUsersCell(data)}
+              </Typography>
+            </div>
+
+            <div>
+              <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+              <Typography variant="mobileCardValue" className="text-gray-700">
+                {data?.send_back_comment || "--"}
               </Typography>
             </div>
 

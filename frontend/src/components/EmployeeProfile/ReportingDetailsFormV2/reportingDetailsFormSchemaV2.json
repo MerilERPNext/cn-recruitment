@@ -22,11 +22,11 @@
                     "customClass": "mb-4",
                     "dataSrc": "url",
                     "data": {
-                        "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=[%22*%22]&doctype=Employee"
+                        "url": "/api/resource/Employee?fields=[\"name\",\"employee_name\",\"department\",\"branch\"]&filters=[[\"status\",\"=\",\"Active\"]]"
                     },
                     "valueProperty": "name",
                     "template": "<span><div>{{ item.employee_name || '-' }} ({{ item.name || '-' }})</div><div style=\"font-size:0.85em;color:#6b7280;\">{{ item.department ||'' }}, {{item.branch || ''}}</div></span>",
-                    "selectValues": "message",
+                    "selectValues": "data",
                     "refreshOn": "isForOthers",
                     "clearOnRefresh": false,
                     "lazyLoad": false,

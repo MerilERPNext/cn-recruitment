@@ -923,6 +923,14 @@ export class EmployeeService {
     );
     return response as EmployeeSeparationDetails;
   }
+
+  static async deleteEmployeeAndUser(employee: string): Promise<unknown> {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.employee_directory.delete_employee_and_user",
+      { employee },
+    );
+    return response;
+  }
 }
 
 export default EmployeeService;

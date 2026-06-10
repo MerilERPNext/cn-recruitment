@@ -15,6 +15,7 @@ import ResetOtpLimit from "./tools/ResetOtpLimit/ResetOtpLimit";
 import PlatformAccessControls from "./tools/PlatformAccessControls/PlatformAccessControls";
 import UndoDeactivation from "./tools/UndoDeactivation/UndoDeactivation";
 import ActivateEmployee from "./tools/ActivateEmployee/ActivateEmployee";
+import DeleteEmployee from "./tools/DeleteEmployee/DeleteEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 const EmployeeTable = ({
@@ -66,9 +67,14 @@ const EmployeeTable = ({
     "activate_employee",
     "Employee Directory"
   );
+  const canDeleteEmployee = isActionEnabled(
+    userUiPermission,
+    "delete_employee",
+    "Employee Directory"
+  );
 
   const { isDesktop } = useScreenSize();
-  const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | 'otp_limit' | 'platform_access' | 'undo_deactivation' | 'activate' | null>(null);
+  const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | 'otp_limit' | 'platform_access' | 'undo_deactivation' | 'activate' | 'delete' | null>(null);
   const [selectedRowEmployee, setSelectedRowEmployee] = useState<Employee | null>(null);
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -319,6 +325,20 @@ const EmployeeTable = ({
                           >
                             Activate
                           </Button>}
+                          {canDeleteEmployee && item.status === "Pending" && <Button
+                            variant="subtle"
+                            size="md"
+                            contentAlign="start"
+                            fullWidth
+                            className="text-red-600 hover:bg-red-50"
+                            onClick={() => {
+                              setSelectedRowEmployee(item);
+                              setActiveTool('delete');
+                              setOpenPopupId(null);
+                            }}
+                          >
+                            Delete
+                          </Button>}
                         </div>
                       </ContextualPopup>
                     </div>
@@ -550,6 +570,20 @@ const EmployeeTable = ({
                     >
                       Activate
                     </Button>}
+                    {canDeleteEmployee && item.status === "Pending" && <Button
+                      variant="subtle"
+                      size="sm"
+                      contentAlign="start"
+                      fullWidth
+                      onClick={() => {
+                        setSelectedRowEmployee(item);
+                        setActiveTool('delete');
+                        setOpenPopupId(null);
+                      }}
+                      className="text-xs py-2 px-3 text-red-600 hover:bg-red-50"
+                    >
+                      Delete
+                    </Button>}
                   </div>
                 </ContextualPopup>
               </div>
@@ -648,6 +682,15 @@ const EmployeeTable = ({
           />
           <ActivateEmployee
             isOpen={activeTool === 'activate'}
+            onClose={() => {
+              setActiveTool(null);
+              setSelectedRowEmployee(null);
+            }}
+            employeeId={selectedRowEmployee.employee}
+            employeeName={selectedRowEmployee.employee_name}
+          />
+          <DeleteEmployee
+            isOpen={activeTool === 'delete'}
             onClose={() => {
               setActiveTool(null);
               setSelectedRowEmployee(null);

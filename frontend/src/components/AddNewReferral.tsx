@@ -16,6 +16,7 @@ import {
 import { Form } from "@tsed/react-formio";
 import { useCurrentEmployeeDetails } from "../hooks/useEmployee";
 import type { JobOpening } from "../types/jobOpening";
+import FrappeAPI from "../utils/frappeAPI";
 import Modal from "./shared/Modal";
 import DataListView from "./DataListView";
 import { compileFormioSchema, ApplicationField } from "./Recruitment/referralFormSchemas";
@@ -574,27 +575,25 @@ const AddNewReferral: React.FC = () => {
     });
     try {
       setUploading(true);
-      const params = new URLSearchParams();
-      params.append("opening", selectedJob?.name || "");
-      params.append("data", JSON.stringify(cleanData));
-      params.append("referrer_employee", referrerEmployee);
-
-      const res = await fetch("/api/method/recruitment.api.channels.refer.submit_referral", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: params.toString()
-      });
-
-      const result = await res.json();
+      // callMethod posts the body as JSON and unwraps response.data.message →
+      // { status, name, source, employee }.
+      const result: any = await FrappeAPI.callMethod(
+        "recruitment.api.channels.refer.submit_referral",
+        {
+          opening: selectedJob?.name || "",
+          data: JSON.stringify(cleanData),
+          referrer_employee: referrerEmployee,
+        }
+      );
       setUploading(false);
 
-      if (res.ok && result?.message?.status === "ok") {
+      if (result?.status === "ok") {
         setModalTitle("Success");
         setModalMessage("Referral application submitted successfully!");
         setShowModal(true);
       } else {
         setModalTitle("Submission Error");
-        setModalMessage(result?.message || "Referral submission failed.");
+        setModalMessage("Referral submission failed.");
         setShowModal(true);
       }
     } catch (err) {

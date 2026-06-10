@@ -253,6 +253,7 @@ export interface IEmployeeWorkHistory {
  */
 
 export interface WorkRole {
+  name?: string;
   from_date: string;
   to_date: string;
   is_current: boolean;

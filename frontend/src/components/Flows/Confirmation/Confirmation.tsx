@@ -58,7 +58,10 @@ const ConfirmationWorkflow = () => {
 
   // Derive definition names for Confirmation and Separation triggers from the full data
   const confirmationDefinition = useMemo(
-    () => getDefinitionByFilter(definitionName, { triggerCategory: "Confirmation" }),
+    () => getDefinitionByFilter(definitionName, {
+      triggerCategory: "Confirmation",
+      buttonLabel: "Initiate Confirmation",
+    }),
     [definitionName],
   );
   const separationDefinition = useMemo(
@@ -161,6 +164,7 @@ const ConfirmationWorkflow = () => {
 
   const handleInitiateConfirmation = useCallback(() => {
     if (!definition_name) return;
+
     triggerChat({ doctype_name, document_name, definition_name, l });
   }, [triggerChat, doctype_name, document_name, definition_name, l]);
 

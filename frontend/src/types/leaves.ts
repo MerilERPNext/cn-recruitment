@@ -258,6 +258,7 @@ export interface MyLeaveRequestType {
   reference_name: string;
   can_edit?: boolean;
   send_back_user?: string;
+  send_back_comment?: string;
   todo_status: string;
   due_date: string;
 }

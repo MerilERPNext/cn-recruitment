@@ -79,6 +79,43 @@
 	let state = { activeTab: "All", tabCounts: {}, statusOptions: [], stats: {} };
 	let _listview = null;
 
+	// Fieldnames that already have their OWN dedicated column in our designed table
+	// (so we don't draw them twice). Everything else the user adds via Frappe's List
+	// Settings — including fields we only show inside a composite cell, like
+	// designation/department/location in the "Opening" sub-line — is appended as a
+	// real extra column with its own value. (name/title is the Opening column; the
+	// activity column already shows modified time + likes.)
+	const KNOWN_FIELDS = new Set([
+		"name", "job_title", "status", "owner",
+		"modified", "_liked_by", "_comment_count",
+	]);
+
+	// Columns the user added via List Settings that we don't already draw.
+	// Frappe builds `listview.columns` from the doctype's in_list_view fields +
+	// List View Settings, and fetches their data automatically, so doc[fieldname]
+	// is populated for us.
+	function extraColumns(listview) {
+		const cols = (listview && listview.columns) || [];
+		return cols.filter((c) => c && c.type === "Field" && c.df && c.df.fieldname && !KNOWN_FIELDS.has(c.df.fieldname));
+	}
+	function extraHeadCells(listview) {
+		return extraColumns(listview).map((c) =>
+			`<th class="jo-col-extra">${escapeHtml(__(c.df.label || c.df.fieldname))}</th>`
+		).join("");
+	}
+	function extraRowCells(doc, listview) {
+		return extraColumns(listview).map((c) => {
+			let html;
+			try {
+				html = frappe.format(doc[c.df.fieldname], c.df, { inline: true }, doc);
+			} catch (e) {
+				const v = doc[c.df.fieldname];
+				html = escapeHtml(v === null || v === undefined ? "" : v);
+			}
+			return `<td class="jo-col-extra">${html == null ? "" : html}</td>`;
+		}).join("");
+	}
+
 	function injectStyles() {
 		if (document.getElementById("job-opening-list-styles")) return;
 		const style = document.createElement("style");
@@ -117,6 +154,7 @@
 			.jo-col-interviews{ width: 70px;  white-space: nowrap; }
 			.jo-col-days      { width: 52px;  white-space: nowrap; }
 			.jo-col-owner     { width: 110px; white-space: nowrap; }
+			.jo-col-extra     { color: #374151; white-space: nowrap; }
 			.jo-table tbody tr { cursor: pointer; }
 			.jo-table tbody tr:hover { background: #FAFAFA; }
 			.jo-table tbody tr:last-child td { border-bottom: none; }
@@ -301,6 +339,7 @@
 				<td class="jo-col-interviews" data-stat="interviews">${interviewBadge(0)}</td>
 				<td class="jo-col-days"><span class="jo-days">${daysOpen(doc)}d</span></td>
 				<td class="jo-col-owner" data-stat="owner" data-owner="${escapeHtml(doc.owner || "")}">${ownerCellHtml(doc.owner)}</td>
+				${extraRowCells(doc, listview)}
 				<td class="jo-col-activity">${renderActivity(doc, listview)}</td>
 			</tr>`;
 	}
@@ -382,6 +421,7 @@
 				<th class="jo-col-interviews">Interviews</th>
 				<th class="jo-col-days">Open For</th>
 				<th class="jo-col-owner">Owner</th>
+				${extraHeadCells(listview)}
 				<th class="jo-col-activity"></th>
 			</tr>`;
 

@@ -4,7 +4,7 @@ import Button from "../shared/atoms/Button";
 import { PlusIcon } from "lucide-react";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
-import { useGetEmploymentHistoryData } from "../../hooks/useEmployee";
+import { useDeleteEmpReportingDetailsRecordMutation, useGetEmploymentHistoryData } from "../../hooks/useEmployee";
 import { EmployeeCostCenter, EmployeeRole, EmploymentTypes, WorkLocation, WorkRole } from "../../types/employee";
 import EmploymentWorkLocationCard from "./EmploymentHistoryCards/EmploymentWorkLocationsCard";
 import EmploymentHistoryCard from "./EmploymentHistoryCards/EmploymentHistoryCard";
@@ -18,6 +18,9 @@ import EmploymentTypeForm from "./EmploymentHistoryForms/EmploymentTypeForm";
 import EmployeeRoleForm from "./EmploymentHistoryForms/EmployeeRoleForm";
 import EmploymentSegmentsCard from "./EmploymentHistoryCards/EmploymentSegmentsCard";
 import NoDataFound from "../shared/atoms/NoDataFound";
+import ConfirmationModal from "../shared/atoms/ConfirmationModal";
+import { useLoadingOverlay } from "../../context/OverlayContext";
+import toast from "react-hot-toast";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
@@ -75,6 +78,22 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
     "add_employee_history",
     "Employee Profile",
   );
+
+  const { mutateAsync: deleteRecord, isPending: isDeleting } = useDeleteEmpReportingDetailsRecordMutation();
+  const { wrap } = useLoadingOverlay();
+  const [pendingDeleteName, setPendingDeleteName] = React.useState<string | null>(null);
+
+  const handleDeleteConfirm = async () => {
+    if (!pendingDeleteName) return;
+    try {
+      await wrap(() => deleteRecord(pendingDeleteName), "Deleting record...");
+      setPendingDeleteName(null);
+      onActionSuccess?.();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      toast.error(message);
+    }
+  };
 
   const [isModalOpen, setIsModalOpen] = React.useState<boolean>(false);
   const [isEditing, setIsEditing] = React.useState<boolean>(false);
@@ -193,6 +212,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         functionalArea={item.functional_area?.name}
                         is_promotion={item.is_promotion}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item) : undefined}
+                      // onDelete={canEditEmploymentHistory ? () => setPendingDeleteName(item.from_date) : undefined}
                       />
                     </div>
                   ))}
@@ -448,6 +468,16 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             start_date: editItem.from_date,
             end_date: (editItem as unknown as EmployeeCostCenter).to_date,
           } : undefined}
+        />
+      )}
+      {pendingDeleteName && (
+        <ConfirmationModal
+          message="Are you sure you want to delete this work history record? This action cannot be undone."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          isLoading={isDeleting}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setPendingDeleteName(null)}
         />
       )}
     </div>

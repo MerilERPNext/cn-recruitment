@@ -92,6 +92,42 @@
 	let state = { activeTab: "All", tabCounts: {}, statusOptions: [] };
 	let _listview = null;
 
+	// Fieldnames that already have their OWN dedicated column in our designed table
+	// (so we don't draw them twice). Everything else the user adds via Frappe's List
+	// Settings is appended as a real extra column with its own value.
+	const KNOWN_FIELDS = new Set([
+		"name", "designation", "department", "status", "custom_employment_type",
+		"requested_by", "requested_by_name", "no_of_positions",
+		"expected_compensation", "expected_by",
+		"modified", "_liked_by", "_comment_count",
+	]);
+
+	// Columns the user added via List Settings that we don't already draw.
+	// Frappe builds `listview.columns` from the doctype's in_list_view fields +
+	// List View Settings, and fetches their data automatically, so doc[fieldname]
+	// is populated for us.
+	function extraColumns(listview) {
+		const cols = (listview && listview.columns) || [];
+		return cols.filter((c) => c && c.type === "Field" && c.df && c.df.fieldname && !KNOWN_FIELDS.has(c.df.fieldname));
+	}
+	function extraHeadCells(listview) {
+		return extraColumns(listview).map((c) =>
+			`<th class="jr-col-extra">${escapeHtml(__(c.df.label || c.df.fieldname))}</th>`
+		).join("");
+	}
+	function extraRowCells(doc, listview) {
+		return extraColumns(listview).map((c) => {
+			let html;
+			try {
+				html = frappe.format(doc[c.df.fieldname], c.df, { inline: true }, doc);
+			} catch (e) {
+				const v = doc[c.df.fieldname];
+				html = escapeHtml(v === null || v === undefined ? "" : v);
+			}
+			return `<td class="jr-col-extra">${html == null ? "" : html}</td>`;
+		}).join("");
+	}
+
 	function injectStyles() {
 		if (document.getElementById("jr-list-styles")) return;
 		const style = document.createElement("style");
@@ -136,6 +172,7 @@
 			.jr-col-positions    { width: 80px; text-align: right; font-weight: 600; color: #111827; padding-right: 18px !important; }
 			.jr-col-compensation { width: 130px; text-align: right; white-space: nowrap; font-weight: 600; color: #111827; }
 			.jr-col-expected     { width: 130px; white-space: nowrap; padding-right: 12px !important; }
+			.jr-col-extra        { color: #374151; white-space: nowrap; }
 
 			.jr-check { width: 16px; height: 16px; cursor: pointer; }
 			.jr-status-pill {
@@ -268,6 +305,7 @@
 					<div class="jr-expected-date">${escapeHtml(formatDate(doc.expected_by) || "—")}</div>
 					${doc.expected_by ? `<div class="jr-expected-hint">${escapeHtml(relativeDate(doc.expected_by))}</div>` : ""}
 				</td>
+				${extraRowCells(doc, listview)}
 				<td class="jr-col-activity">${renderActivity(doc, listview)}</td>
 			</tr>`;
 	}
@@ -327,6 +365,7 @@
 				<th class="jr-col-positions">Positions</th>
 				<th class="jr-col-compensation">Compensation</th>
 				<th class="jr-col-expected">Expected By</th>
+				${extraHeadCells(listview)}
 				<th class="jr-col-activity"></th>
 			</tr>`;
 

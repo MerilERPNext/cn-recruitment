@@ -484,7 +484,11 @@ export default function ApplyView({
     const transformed: IJPApplicationSubmitPayload = {};
 
     const attachmentFields = new Set<string>();
+    const dateFields = new Set<string>();
+    const datetimeFields = new Set<string>();
     const tableAttachmentFields: Record<string, Set<string>> = {};
+    const tableDateFields: Record<string, Set<string>> = {};
+    const tableDatetimeFields: Record<string, Set<string>> = {};
 
     if (fields) {
       fields.forEach((field) => {
@@ -493,18 +497,32 @@ export default function ApplyView({
           field.fieldtype === "Attach Image"
         ) {
           attachmentFields.add(field.reference_name);
+        } else if (field.fieldtype === "Date") {
+          dateFields.add(field.reference_name);
+        } else if (field.fieldtype === "Datetime") {
+          datetimeFields.add(field.reference_name);
         }
+
         if (field.fieldtype === "Table" && field.table_fields) {
-          const subSet = new Set<string>();
+          const attachSubSet = new Set<string>();
+          const dateSubSet = new Set<string>();
+          const datetimeSubSet = new Set<string>();
+
           field.table_fields.forEach((sub) => {
             if (
               sub.fieldtype === "Attach" ||
               sub.fieldtype === "Attach Image"
             ) {
-              subSet.add(sub.fieldname);
+              attachSubSet.add(sub.fieldname);
+            } else if (sub.fieldtype === "Date") {
+              dateSubSet.add(sub.fieldname);
+            } else if (sub.fieldtype === "Datetime") {
+              datetimeSubSet.add(sub.fieldname);
             }
           });
-          tableAttachmentFields[field.reference_name] = subSet;
+          tableAttachmentFields[field.reference_name] = attachSubSet;
+          tableDateFields[field.reference_name] = dateSubSet;
+          tableDatetimeFields[field.reference_name] = datetimeSubSet;
         }
       });
     }
@@ -529,14 +547,44 @@ export default function ApplyView({
       return "";
     };
 
+    const formatDate = (val: unknown): string => {
+      if (typeof val === "string") {
+        if (/^\d{4}-\d{2}-\d{2}/.test(val)) {
+          return val.split("T")[0];
+        }
+      }
+      return val ? String(val) : "";
+    };
+
+    const formatDatetime = (val: unknown): string => {
+      if (typeof val === "string") {
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
+          return val.replace("T", " ").split(".")[0].split("+")[0];
+        }
+      }
+      return val ? String(val) : "";
+    };
+
+    const allowedFields = new Set((fields || []).map((f) => f.reference_name));
+
     // Copy non-table fields first
     Object.keys(data).forEach((key) => {
+      if (key.endsWith("_title")) {
+        const baseKey = key.slice(0, -6);
+        if (allowedFields.has(baseKey)) return;
+      }
       const match = key.match(/^(.+)_(\d+)_(.+)$/);
       if (!match) {
-        if (attachmentFields.has(key)) {
-          transformed[key] = extractFileUrl(data[key]);
-        } else {
-          transformed[key] = data[key];
+        if (allowedFields.has(key)) {
+          if (attachmentFields.has(key)) {
+            transformed[key] = extractFileUrl(data[key]);
+          } else if (dateFields.has(key)) {
+            transformed[key] = formatDate(data[key]);
+          } else if (datetimeFields.has(key)) {
+            transformed[key] = formatDatetime(data[key]);
+          } else {
+            transformed[key] = data[key];
+          }
         }
       }
     });
@@ -563,11 +611,24 @@ export default function ApplyView({
                 ) {
                   const subAttachments =
                     tableAttachmentFields[field.reference_name];
+                  const subDates = tableDateFields[field.reference_name];
+                  const subDatetimes = tableDatetimeFields[field.reference_name];
+
                   if (
                     subAttachments &&
                     subAttachments.has(subField.fieldname)
                   ) {
                     rowData[subField.fieldname] = extractFileUrl(data[key]);
+                  } else if (
+                    subDates &&
+                    subDates.has(subField.fieldname)
+                  ) {
+                    rowData[subField.fieldname] = formatDate(data[key]);
+                  } else if (
+                    subDatetimes &&
+                    subDatetimes.has(subField.fieldname)
+                  ) {
+                    rowData[subField.fieldname] = formatDatetime(data[key]);
                   } else {
                     rowData[subField.fieldname] = data[key];
                   }
