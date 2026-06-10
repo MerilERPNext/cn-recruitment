@@ -15,6 +15,7 @@ import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { AllowRequestsOnHoldResponse } from "../../../types/expense";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 
 type ApprovalCardProps = {
   actionsEnabled?: boolean;
@@ -338,14 +339,21 @@ const ExpenseApprovalCard = ({
 
           <div className="flex items-center justify-center">
             {(!isActed && (activeStatus === "Pending" || activeStatus === "On Hold" || data?.reference_document?.approval_status === "On Hold")) ? (
-              <TeamApprovalActionPill
-                actionsEnabled={actionsEnabled}
-                actions={actions}
-                status={data?.status}
-                recordId={data?.todo_id}
-                loadingAction={loadingAction}
-                onAction={(action) => handleActionClick(action, data)}
-              />
+              <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+                <MyApprovalActionPill
+                  uiPermission={{
+                    app: "Expenses",
+                    page: "Team Requests",
+                    actionKeysMap: {
+                      edit: "edit",
+                      revoke: "revoke",
+                      nudge: "nudge"
+                    },
+                  }}
+                  todoId={data?.todo_id}
+                  
+                />
+                </div>
             ) : (
               <div className="flex items-center justify-center">
                 <Typography
@@ -508,15 +516,21 @@ const ExpenseApprovalCard = ({
               )}
 
               {(!isActed && (activeStatus === "Pending" || activeStatus === "On Hold" || data?.reference_document?.approval_status === "On Hold")) ? (
-                <TeamApprovalActionPill
-                  actionsEnabled={actionsEnabled}
-                  variant="buttons"
-                  actions={actions}
-                  status={data?.status}
-                  recordId={data?.todo_id}
-                  loadingAction={loadingAction}
-                  onAction={(action) => handleActionClick(action, data)}
-                />
+                  <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+                    <MyApprovalActionPill
+                      uiPermission={{
+                        app: "Expenses",
+                        page: "Team Requests",
+                        actionKeysMap: {
+                          edit: "edit",
+                          revoke: "revoke",
+                          nudge: "nudge"
+                        },
+                      }}
+                      todoId={data?.todo_id}
+
+                    />
+                  </div>
               ) : (
                 <div className="bg-gray-50 px-3 py-1 rounded-md mt-2 w-fit mx-auto">
                   <Typography
