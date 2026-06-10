@@ -108,16 +108,16 @@ const LeaveApprovalCard = ({
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? showRejectReason
-      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
-      : "0.5fr 1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr"
+      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1.5fr 1fr"
+      : "0.5fr 1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr"
     : showRejectReason
-      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
-      : "1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr";
+      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1.5fr 1fr"
+      : "1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr";
   return (
     <>
       {isDesktop ? (
         <div
-          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
+          className="grid w-full items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -222,6 +222,17 @@ const LeaveApprovalCard = ({
                 )}
             </div>
           )}
+          <Tooltip
+            content={data?.send_back_comment || "--"}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full text-gray-700"
+            >
+              {data?.send_back_comment || "--"}
+            </Typography>
+          </Tooltip>
           <div className="flex items-center justify-center">
             {data?.todo_status === "Open" && !isActed ? (
               <TeamApprovalActionPill
@@ -366,6 +377,13 @@ const LeaveApprovalCard = ({
                     </Typography>
                   </div>
                 )}
+
+              <div className="flex flex-col gap-1 px-1">
+                <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+                <Typography variant="mobileCardValue" className="text-gray-700">
+                  {data?.send_back_comment || "--"}
+                </Typography>
+              </div>
 
               {data?.todo_status === "Open" && !isActed ? (
                 <TeamApprovalActionPill

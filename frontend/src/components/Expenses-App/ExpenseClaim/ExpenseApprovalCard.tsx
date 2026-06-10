@@ -116,11 +116,11 @@ const ExpenseApprovalCard = ({
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? activeStatus === "Approved"
-      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
+      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
     : activeStatus === "Approved"
-      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
+      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr";
 
   const totalClaimedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -206,7 +206,7 @@ const ExpenseApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
+          className="grid w-full items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -335,6 +335,18 @@ const ExpenseApprovalCard = ({
               </Typography>
             </div>
           )}
+
+          <Tooltip
+            content={data?.send_back_comment || "--"}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full text-gray-700"
+            >
+              {data?.send_back_comment || "--"}
+            </Typography>
+          </Tooltip>
 
           <div className="flex items-center justify-center">
             {(!isActed && (activeStatus === "Pending" || activeStatus === "On Hold" || data?.reference_document?.approval_status === "On Hold")) ? (
@@ -506,6 +518,13 @@ const ExpenseApprovalCard = ({
                   </div>
                 </div>
               )}
+
+              <div className="flex flex-col gap-1 px-1">
+                <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+                <Typography variant="mobileCardValue" className="text-gray-700">
+                  {data?.send_back_comment || "--"}
+                </Typography>
+              </div>
 
               {(!isActed && (activeStatus === "Pending" || activeStatus === "On Hold" || data?.reference_document?.approval_status === "On Hold")) ? (
                 <TeamApprovalActionPill

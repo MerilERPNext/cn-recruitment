@@ -107,6 +107,7 @@ const TeamLeaveRequest = () => {
   const requestId = searchParams.get("requestId");
   const referenceName = searchParams.get("reference_name");
   const reasonName = searchParams.get("reason_name");
+  const sendBackComment = searchParams.get("send_back_comment");
 
   const handleRequestClick = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -116,6 +117,7 @@ const TeamLeaveRequest = () => {
           requestId: request.todo_id,
           reference_name: request?.reference_document?.name || "",
           reason_name: request?.reference_document?.reason_name || "",
+          send_back_comment: request?.send_back_comment || "",
         });
       }
     },
@@ -146,6 +148,7 @@ const TeamLeaveRequest = () => {
           "Leave Days",
           "Status",
           "Reject Reason",
+          "Sendback Comment",
           "Actions",
         ]
       : [
@@ -158,6 +161,7 @@ const TeamLeaveRequest = () => {
           "Due Date",
           "Leave Days",
           "Status",
+          "Sendback Comment",
           "Actions",
         ]
     : isRejectedFilter
@@ -171,6 +175,7 @@ const TeamLeaveRequest = () => {
           "Leave Days",
           "Status",
           "Reject Reason",
+          "Sendback Comment",
           "Actions",
         ]
       : [
@@ -182,6 +187,7 @@ const TeamLeaveRequest = () => {
           "Due Date",
           "Leave Days",
           "Status",
+          "Sendback Comment",
           "Actions",
         ];
 
@@ -198,6 +204,7 @@ const TeamLeaveRequest = () => {
           "1fr",
           "1fr",
           "1.5fr",
+          "1.5fr",
           "1fr",
         ]
       : [
@@ -210,11 +217,35 @@ const TeamLeaveRequest = () => {
           "1fr",
           "1fr",
           "1fr",
+          "1.5fr",
           "1fr",
         ]
     : isRejectedFilter
-      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr", "1fr"]
-      : ["1fr", "1.5fr", "1.5fr", "1.5fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"];
+      ? [
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1.5fr",
+          "1.5fr",
+          "1fr",
+        ]
+      : [
+          "1fr",
+          "1.5fr",
+          "1.5fr",
+          "1.5fr",
+          "1.5fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1.5fr",
+          "1fr",
+        ];
 
   return (
     <div className="flex flex-col h-full">
@@ -295,6 +326,7 @@ const TeamLeaveRequest = () => {
           onClose={handleCloseModal}
           onAction={handleActionComplete}
           reasonName={reasonName || undefined}
+          sendBackComment={sendBackComment || undefined}
         />
       )}
     </div>
