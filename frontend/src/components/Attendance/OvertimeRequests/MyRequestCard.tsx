@@ -33,6 +33,7 @@ export function MyRequestCard({
       revoke?: string;
       replace?: string;
       pay?: string;
+      nudge?:string
     }
   };
   request: MyPlannedAttendanceRequest;
@@ -49,7 +50,7 @@ export function MyRequestCard({
 
   const canEdit = request?.status === "Open" && request?.can_edit;
   const canRevoke = request?.status === "Open" && request?.custom_allow_revoke;
-  const gridTemplateColumns = "1.5fr  1fr 1fr 1fr 1fr 0.5fr";
+  const gridTemplateColumns = "1.5fr  1fr 1fr 1fr 1fr 1fr 0.5fr";
   const revokeEventMutation = useRevokeEvent();
   const loading = useLoadingOverlay();
 
@@ -121,6 +122,17 @@ export function MyRequestCard({
               <StatusBadge status={request?.status === "Cancelled" ? "Revoked" : request?.status} />
             </AllocatedToTooltip>
           </div>
+          <Tooltip
+            content={request?.send_back_comment || "--"}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full text-gray-700"
+            >
+              {request?.send_back_comment || "--"}
+            </Typography>
+          </Tooltip>
           <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
               uiPermission={uiPermission}
@@ -131,6 +143,7 @@ export function MyRequestCard({
                   onEdit(request);
                 }
               }}
+              todoId={request?.todo_id}
               onRevoke={handleRevokeClick}
             />
             {/* {canEditOvertimeRequest && <Button
@@ -213,7 +226,12 @@ export function MyRequestCard({
                     {getAssignedUsersCell(request)}
                   </Typography>
                 </div>
-
+                  <div>
+                    <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+                    <Typography variant="mobileCardValue" className="text-gray-700">
+                      {request?.send_back_comment || "--"}
+                    </Typography>
+                  </div>
                 <MyApprovalActionPill
                   uiPermission={uiPermission}
                   variant="buttons"
@@ -224,6 +242,7 @@ export function MyRequestCard({
                       onEdit(request);
                     }
                   }}
+                  todoId={request?.todo_id}
                   onRevoke={handleRevokeClick}
                 />
                 {/* {canEditOvertimeRequest && <Button

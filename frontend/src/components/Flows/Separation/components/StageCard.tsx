@@ -15,6 +15,7 @@ import ViewFormButton from "../../ViewFormButton";
 import { Attachment, FlowRequestStage } from "../../../../types/flows";
 import { extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
 import FormPreview from "../../../shared/molecules/FormPreview";
+import NudgeButton from "../../../shared/atoms/NudgeButton";
 
 
 interface CardStagesProps {
@@ -144,7 +145,6 @@ const CardStages = ({
             ? "Rejected by"
             : "Pending inputs from ";
 
-
   return (
     <div className="grid w-full lg:hover:bg-primary/20 cursor-pointer  items-center text-sm  lg:px-6">
       <StatusTimelineRow
@@ -161,28 +161,39 @@ const CardStages = ({
             </Typography>
           </div>
 
-          <div className="flex justify-between max-sm:flex-row-reverse items-start px-4 pt-1 pb-3">
-            <div className="flex gap-3">
-              {stage?.approval_response_data && stage?.status != "Pending" && (
-                <ViewFormButton
-                  onClick={() =>
-                    handleShowFormWithResponse(
-                      stage?.form_json?.components,
-                      stage?.approval_response_data,
-                    )
-                  }
+          <div className="grid grid-cols-[1fr_auto] max-sm:grid-cols-1 gap-3 items-start px-4 pt-1 pb-3">
+            <div className="flex flex-col items-start gap-3 max-sm:order-2">
+              <div className="flex gap-3 items-center">
+                {stage?.approval_response_data && stage?.status != "Pending" ? (
+                  <ViewFormButton
+                    onClick={() =>
+                      handleShowFormWithResponse(
+                        stage?.form_json?.components,
+                        stage?.approval_response_data,
+                      )
+                    }
+                  />
+                ) : (
+                  <div className="w-[126px] h-[36px]" />
+                )}
+                <NudgeButton
+                  todoId={stage?.todo?.name}
+                  app="HR Process"
+                  page="Separation"
                 />
-              )}
-              {canPerformActions &&
-                actions.map((action: string) => (
-                  <Button
-                    onClick={() => onAction(action, stage?.todo)}
-                  >
-                    {action}
-                  </Button>
-                ))}
+                {canPerformActions && actions.length > 0 &&
+                  actions.map((action: string) => (
+                    <Button
+                      key={action}
+                      onClick={() => onAction(action, stage?.todo)}
+                    >
+                      {action}
+                    </Button>
+                  ))
+                }
+              </div>
             </div>
-            <div>
+            <div className="justify-self-end max-sm:justify-self-start max-sm:order-3">
               {status == "action_required"
                 ? "In Progress"
                 : formatToIndianDate(stage?.approval_time || "")}

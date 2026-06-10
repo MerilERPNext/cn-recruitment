@@ -60,6 +60,7 @@ const TeamAttendanceDetails = () => {
       "To Date",
       "Due Date",
       "Status",
+      "Sendback Comment",
       "Actions",
     ]
     : [
@@ -70,13 +71,13 @@ const TeamAttendanceDetails = () => {
       "To Date",
       "Due Date",
       "Status",
+      "Sendback Comment",
       "Actions",
     ];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
     : ["1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
-
   const sortableColumns: ColumnSortConfig[] = [
     {
       sortable: true,

@@ -357,6 +357,32 @@ export const profileService = {
     }
   },
 
+  deleteEmployeeHistoryRecords: async (names: string[]): Promise<any> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.delete_employee_history_records",
+        { names },
+      );
+      return response as any;
+    } catch (error) {
+      console.error("📡 Error while deleting employee history records:", error);
+      throw error;
+    }
+  },
+
+  deleteEmployeeCostCenterRecords: async (names: string[]): Promise<any> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.delete_employee_cost_center_records",
+        { names },
+      );
+      return response as any;
+    } catch (error) {
+      console.error("📡 Error while deleting employee cost center records:", error);
+      throw error;
+    }
+  },
+
   updateEmpReportingDetailsRecord: async (
     employee: string,
     field: string,

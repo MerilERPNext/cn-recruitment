@@ -473,8 +473,10 @@ const AdvanceDesktopRow = ({
             actionKeysMap: {
               edit: "edit",
               revoke: "revoke",
+              nudge:"nudge"
             },
           }}
+          todoId={advance?.todo?.todo_id}
           canRevoke={canRevoke}
           canEdit={canEdit}
           onRevoke={handleRevokeClick}
@@ -588,8 +590,10 @@ const AdvanceMobileRow = ({
               actionKeysMap: {
                 edit: "edit",
                 revoke: "revoke",
+                nudge:"nudge"
               },
             }}
+            todoId={advance?.todo?.todo_id}
             variant="buttons"
             canRevoke={canRevoke}
             canEdit={canEdit}

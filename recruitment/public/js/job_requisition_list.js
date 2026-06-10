@@ -96,7 +96,7 @@
 	// (so we don't draw them twice). Everything else the user adds via Frappe's List
 	// Settings is appended as a real extra column with its own value.
 	const KNOWN_FIELDS = new Set([
-		"name", "designation", "department", "status", "custom_employment_type",
+		"name", "designation", "department", "status", "custom_employment_type_link",
 		"requested_by", "requested_by_name", "no_of_positions",
 		"expected_compensation", "expected_by",
 		"modified", "_liked_by", "_comment_count",
@@ -290,7 +290,7 @@
 					</span>
 				</td>
 				<td class="jr-col-department">${escapeHtml(doc.department || "—")}</td>
-				<td class="jr-col-type">${escapeHtml(doc.custom_employment_type || "—")}</td>
+				<td class="jr-col-type">${escapeHtml(doc.custom_employment_type_link || "—")}</td>
 				<td class="jr-col-requester">
 					${reqName
 						? `<span class="jr-requester">
@@ -434,7 +434,7 @@
 	frappe.listview_settings[DOCTYPE] = {
 		hide_name_column: true,
 		add_fields: [
-			"designation", "department", "status", "custom_employment_type",
+			"designation", "department", "status", "custom_employment_type_link",
 			"requested_by", "requested_by_name", "no_of_positions",
 			"expected_compensation", "expected_by", "company",
 			"modified", "creation", "_liked_by",

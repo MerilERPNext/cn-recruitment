@@ -141,6 +141,7 @@ export type FlowRequestStage = {
       parentfield: string;
       parenttype: string;
       doctype: string;
+      reference_name: string;
     }>;
     custom_assigned_to_roles: RoleSelect[];
     [key: string]: any;
@@ -316,3 +317,17 @@ export type NoticePeriodAndSeparationPolicyResponse = {
   notice_period: string;
   separation_policy: string;
 };
+
+export interface EmployeeSeparationDetails {
+  name: string;
+  custom_resignation_date?: string;
+  custom_notice_period_days?: number;
+  custom_final_recovery_days?: number;
+  custom_final_reason_for_separation?: string;
+  custom_proposed_recovery_days?: number;
+  custom_final_category_for_separation?: string;
+  custom_mark_do_not_rehire?: number;
+  custom_reason_for_proposed_recovery_days?: string;
+  custom_proposed_last_working_day?: string;
+  custom_requested_last_working_date?: string;
+}

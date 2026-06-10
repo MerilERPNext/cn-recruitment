@@ -95,6 +95,7 @@ export interface MyShiftRequest {
   todo_id: string;
   username: string;
   reference_name: string;
+  send_back_comment:string;
   can_edit: boolean;
   due_date: string;
 }

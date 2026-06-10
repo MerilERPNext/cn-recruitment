@@ -34,7 +34,6 @@ interface ApprovalTrackerProps {
 }
 
 export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
-
   const [showSelfForm, setShowSelfForm] = useState(false);
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [formAnswer, setFormAnswer] = useState<Record<string, any>>({});
@@ -104,6 +103,7 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
 
           <ApprovalDetails
             title={For}
+            data={data}
           />
         </div>
       </div>

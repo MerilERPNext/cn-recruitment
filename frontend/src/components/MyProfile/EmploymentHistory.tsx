@@ -4,7 +4,7 @@ import Button from "../shared/atoms/Button";
 import { PlusIcon } from "lucide-react";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
-import { useDeleteEmpReportingDetailsRecordMutation, useGetEmploymentHistoryData } from "../../hooks/useEmployee";
+import { useDeleteEmpReportingDetailsRecordMutation, useDeleteEmployeeCostCenterRecordsMutation, useDeleteEmployeeHistoryRecordsMutation, useGetEmploymentHistoryData } from "../../hooks/useEmployee";
 import { EmployeeCostCenter, EmployeeRole, EmploymentTypes, WorkLocation, WorkRole } from "../../types/employee";
 import EmploymentWorkLocationCard from "./EmploymentHistoryCards/EmploymentWorkLocationsCard";
 import EmploymentHistoryCard from "./EmploymentHistoryCards/EmploymentHistoryCard";
@@ -80,7 +80,16 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   );
 
   const { mutateAsync: deleteRecord, isPending: isDeleting } = useDeleteEmpReportingDetailsRecordMutation();
+  const { mutateAsync: deleteHistoryRecords, isPending: isDeletingHistory } = useDeleteEmployeeHistoryRecordsMutation();
+  const { mutateAsync: deleteCostCenterRecords, isPending: isDeletingCostCenter } = useDeleteEmployeeCostCenterRecordsMutation();
+  const isProcessingHistoryDelete = isDeletingHistory || isDeletingCostCenter;
   const { wrap } = useLoadingOverlay();
+
+  type PendingDelete =
+    | { type: "history"; names: string[] }
+    | { type: "cost_center"; names: string[] };
+
+  const [pendingDelete, setPendingDelete] = React.useState<PendingDelete | null>(null);
   const [pendingDeleteName, setPendingDeleteName] = React.useState<string | null>(null);
 
   const handleDeleteConfirm = async () => {
@@ -94,6 +103,27 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
       toast.error(message);
     }
   };
+
+  const handleHistoryDeleteConfirm = async () => {
+    if (!pendingDelete) return;
+    try {
+      if (pendingDelete.type === "cost_center") {
+        await wrap(() => deleteCostCenterRecords(pendingDelete.names), "Deleting record...");
+      } else {
+        await wrap(() => deleteHistoryRecords(pendingDelete.names), "Deleting record...");
+      }
+      setPendingDelete(null);
+      onActionSuccess?.();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      toast.error(message);
+    }
+  };
+
+  const collectRowNames = (obj: Record<string, unknown>): string[] =>
+    Object.values(obj)
+      .filter((v): v is { row_name: string } => !!v && typeof v === "object" && "row_name" in v && typeof (v as Record<string, unknown>).row_name === "string")
+      .map((v) => v.row_name);
 
   const [isModalOpen, setIsModalOpen] = React.useState<boolean>(false);
   const [isEditing, setIsEditing] = React.useState<boolean>(false);
@@ -202,17 +232,17 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                       className={`${history.length === 1 ? "max-w-md w-full" : ""}`}
                     >
                       <EmploymentHistoryCard
-                        company={item.company?.name}
-                        department={item.department?.name}
-                        band={item.band?.name}
-                        grade={item.grade?.name}
+                        company={item.company?.name || ""}
+                        department={item.department?.name || ""}
+                        band={item.band?.name || ""}
+                        grade={item.grade?.name || ""}
                         start_date={item.from_date}
                         end_date={item.to_date}
                         isCurrent={item.is_current}
-                        functionalArea={item.functional_area?.name}
+                        functionalArea={item?.functional_area?.name || ""}
                         is_promotion={item.is_promotion}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item) : undefined}
-                      // onDelete={canEditEmploymentHistory ? () => setPendingDeleteName(item.from_date) : undefined}
+                        onDelete={canEditEmploymentHistory ? () => setPendingDelete({ type: "history", names: collectRowNames(item as unknown as Record<string, unknown>) }) : undefined}
                       />
                     </div>
                   ))}
@@ -250,6 +280,10 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         state={item.state}
                         city={item.city}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "work_location") : undefined}
+                        onDelete={canEditEmploymentHistory ? () => {
+                          const names = [item.work_location?.row_name].filter(Boolean) as string[];
+                          setPendingDelete({ type: "history", names });
+                        } : undefined}
                       />
                     </div>
                   ))}
@@ -285,6 +319,10 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         employment_type={item.employment_type}
                         employee_subtype={item.employee_subtype}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employment_type") : undefined}
+                        onDelete={canEditEmploymentHistory ? () => {
+                          const names = [item.employment_type?.row_name, item.employee_subtype?.row_name].filter(Boolean) as string[];
+                          setPendingDelete({ type: "history", names });
+                        } : undefined}
                       />
                     </div>
                   ))}
@@ -319,6 +357,10 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         is_promotion={item.is_promotion}
                         employee_role={item.employee_role}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employee_role") : undefined}
+                        onDelete={canEditEmploymentHistory ? () => {
+                          const names = [item.employee_role?.row_name].filter(Boolean) as string[];
+                          setPendingDelete({ type: "history", names });
+                        } : undefined}
                       />
                     </div>
                   ))}
@@ -352,6 +394,10 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         to_date={item.to_date}
                         is_current={item.is_current}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "cost_center") : undefined}
+                        onDelete={canEditEmploymentHistory ? () => {
+                          const names = item.allocations.map((a) => a.row_name).filter(Boolean) as string[];
+                          setPendingDelete({ type: "cost_center", names });
+                        } : undefined}
                       />
                     </div>
                   ))}
@@ -400,7 +446,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           isEdit={isEditing}
           defaultStartDate={defaultStartDateForAdd}
           initialEditData={editItem ? {
-            work_location: (editItem as WorkLocation).work_location?.id,
+            work_location: (editItem as WorkLocation).work_location?.id || "",
             start_date: editItem.from_date,
           } : undefined}
         />
@@ -415,10 +461,10 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               isEdit={isEditing}
               defaultStartDate={defaultStartDateForAdd}
               initialEditData={editItem ? {
-                company: (editItem as WorkRole).company?.id,
-                department: (editItem as WorkRole).department?.id,
-                designation: (editItem as WorkRole).designation?.id,
-                functional_area: (editItem as WorkRole).functional_area?.id,
+                company: (editItem as WorkRole).company?.id || "",
+                department: (editItem as WorkRole).department?.id || "",
+                designation: (editItem as WorkRole).designation?.id || "",
+                functional_area: (editItem as WorkRole).functional_area?.id || "",
                 start_date: editItem.from_date,
                 is_promotion: (editItem as WorkRole).is_promotion,
               } : undefined}
@@ -434,8 +480,8 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           isEdit={isEditing}
           defaultStartDate={defaultStartDateForAdd}
           initialEditData={editItem ? {
-            employment_type: (editItem as unknown as EmploymentTypes).employment_type?.id,
-            employee_subtype: (editItem as unknown as EmploymentTypes).employee_subtype?.id,
+            employment_type: (editItem as unknown as EmploymentTypes).employment_type?.id || "",
+            employee_subtype: (editItem as unknown as EmploymentTypes).employee_subtype?.id || "",
             start_date: editItem.from_date,
           } : undefined}
         />
@@ -448,7 +494,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           isEdit={isEditing}
           defaultStartDate={defaultStartDateForAdd}
           initialEditData={editItem ? {
-            employee_role: (editItem as unknown as EmployeeRole).employee_role?.id,
+            employee_role: (editItem as unknown as EmployeeRole).employee_role?.id || "",
             start_date: editItem.from_date,
           } : undefined}
         />
@@ -478,6 +524,16 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           isLoading={isDeleting}
           onConfirm={handleDeleteConfirm}
           onCancel={() => setPendingDeleteName(null)}
+        />
+      )}
+      {pendingDelete && (
+        <ConfirmationModal
+          message="Are you sure you want to delete this record? This action cannot be undone."
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          isLoading={isProcessingHistoryDelete}
+          onConfirm={handleHistoryDeleteConfirm}
+          onCancel={() => setPendingDelete(null)}
         />
       )}
     </div>

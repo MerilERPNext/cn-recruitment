@@ -1,6 +1,7 @@
 import React from "react";
-import { Pencil } from "lucide-react";
+import { EditIcon, TrashIcon } from "lucide-react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import IconButton from "../../shared/atoms/IconButton";
 
 interface LocationField {
   id: string;
@@ -19,6 +20,7 @@ interface EmploymentWorkLocationCardProps {
   city?: LocationField | null;
 
   onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const EmploymentWorkLocationCard: React.FC<
@@ -33,6 +35,7 @@ const EmploymentWorkLocationCard: React.FC<
   state,
   city,
   onEdit,
+  onDelete,
 }) => {
     return (
       <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift  max-w-[90vw] min-w-[90vw]  md:min-w-[400px] md:max-w-[400px]">
@@ -44,12 +47,24 @@ const EmploymentWorkLocationCard: React.FC<
           )}
 
           {onEdit && (
-            <button
-              className="text-gray-400 hover:text-gray-600"
-              onClick={onEdit}
-            >
-              <Pencil className="w-4 h-4" />
-            </button>
+            <IconButton
+              onClick={() => onEdit?.()}
+              icon={<EditIcon className="h-4 w-4" />}
+              className="cursor-pointer"
+              color="primary"
+              variant="subtle"
+              size="xs"
+            />
+          )}
+          {onDelete && (
+            <IconButton
+              onClick={() => onDelete?.()}
+              icon={<TrashIcon className="h-4 w-4" />}
+              className="cursor-pointer"
+              color="error"
+              variant="subtle"
+              size="xs"
+            />
           )}
         </div>
 

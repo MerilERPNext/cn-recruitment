@@ -37,6 +37,7 @@ const RequestDetails: React.FC = () => {
   const { id } = useParams();
   const { data: flowResponse, isLoading } = useGetFlowRequestById(id || "");
   const data = flowResponse?.data;
+  console.log(flowResponse,'================================data')
   const { isDesktop } = useScreenSize();
   const [approvalExpanded, setApprovalExpanded] = useState(false);
   const [workflowExpanded, setWorkflowExpanded] = useState(false);

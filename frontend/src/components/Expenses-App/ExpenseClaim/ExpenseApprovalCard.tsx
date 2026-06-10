@@ -15,6 +15,7 @@ import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { AllowRequestsOnHoldResponse } from "../../../types/expense";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 
 type ApprovalCardProps = {
   actionsEnabled?: boolean;
@@ -116,11 +117,11 @@ const ExpenseApprovalCard = ({
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? activeStatus === "Approved"
-      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
+      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
     : activeStatus === "Approved"
-      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
+      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr";
 
   const totalClaimedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -206,7 +207,7 @@ const ExpenseApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
+          className="grid w-full items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -336,16 +337,35 @@ const ExpenseApprovalCard = ({
             </div>
           )}
 
+          <Tooltip
+            content={data?.send_back_comment || "--"}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full text-gray-700"
+            >
+              {data?.send_back_comment || "--"}
+            </Typography>
+          </Tooltip>
+
           <div className="flex items-center justify-center">
             {(!isActed && (activeStatus === "Pending" || activeStatus === "On Hold" || data?.reference_document?.approval_status === "On Hold")) ? (
-              <TeamApprovalActionPill
-                actionsEnabled={actionsEnabled}
-                actions={actions}
-                status={data?.status}
-                recordId={data?.todo_id}
-                loadingAction={loadingAction}
-                onAction={(action) => handleActionClick(action, data)}
-              />
+              <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+                <MyApprovalActionPill
+                  uiPermission={{
+                    app: "Expenses",
+                    page: "Team Requests",
+                    actionKeysMap: {
+                      edit: "edit",
+                      revoke: "revoke",
+                      nudge: "nudge"
+                    },
+                  }}
+                  todoId={data?.todo_id}
+                  
+                />
+                </div>
             ) : (
               <div className="flex items-center justify-center">
                 <Typography
@@ -507,16 +527,22 @@ const ExpenseApprovalCard = ({
                 </div>
               )}
 
+              <div className="flex flex-col gap-1 px-1">
+                <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+                <Typography variant="mobileCardValue" className="text-gray-700">
+                  {data?.send_back_comment || "--"}
+                </Typography>
+              </div>
+
               {(!isActed && (activeStatus === "Pending" || activeStatus === "On Hold" || data?.reference_document?.approval_status === "On Hold")) ? (
-                <TeamApprovalActionPill
-                  actionsEnabled={actionsEnabled}
-                  variant="buttons"
-                  actions={actions}
-                  status={data?.status}
-                  recordId={data?.todo_id}
-                  loadingAction={loadingAction}
-                  onAction={(action) => handleActionClick(action, data)}
-                />
+                  <TeamApprovalActionPill
+                    actionsEnabled={actionsEnabled}
+                    actions={actions}
+                    status={data?.status}
+                    recordId={data?.todo_id}
+                    loadingAction={loadingAction}
+                    onAction={(action) => handleActionClick(action, data)}
+                  />
               ) : (
                 <div className="bg-gray-50 px-3 py-1 rounded-md mt-2 w-fit mx-auto">
                   <Typography

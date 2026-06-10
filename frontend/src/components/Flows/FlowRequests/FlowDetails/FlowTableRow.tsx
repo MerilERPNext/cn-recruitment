@@ -25,6 +25,7 @@ import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import ReviewForm from "../../Separation/components/ReviewForm";
 import ActModal from "./ActModal";
 import AttachmentPreview from "./AttachmentPreview";
+import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
 
 const FlowTableRow = ({
   stage,
@@ -51,7 +52,6 @@ const FlowTableRow = ({
       return [];
     }
   }, [stage?.todo?.custom_doctype_actions]);
-
   const actionsWithForm = useMemo(() => {
     try {
       return stage?.todo?.custom_doctype_actions_with_form
@@ -211,7 +211,20 @@ const FlowTableRow = ({
           {formatToIndianDate(stage.completion_date || "") || "-"}
         </Typography>
       </div>
+      <div className={`flex items-center justify-center `}>
+        <MyApprovalActionPill
+          uiPermission={{
+            app: "HR Process",
+            page: "Flow Requests",
+            actionKeysMap: {
+              nudge: "nudge",
+            }
+          }}
 
+          todoId={stage?.todo?.name }
+         
+        />
+        </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <>
           {(stage?.approval_response_data_display ||

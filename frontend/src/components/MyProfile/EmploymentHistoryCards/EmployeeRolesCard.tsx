@@ -1,6 +1,7 @@
 import React from "react";
-import { Pencil } from "lucide-react";
+import { EditIcon, TrashIcon } from "lucide-react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import IconButton from "../../shared/atoms/IconButton";
 
 interface Field {
     id: string | null;
@@ -16,6 +17,7 @@ interface EmploymentRolesCardProps {
     employee_role?: Field | null;
 
     onEdit?: () => void;
+    onDelete?: () => void;
 }
 
 const EmployeeRolesCard: React.FC<EmploymentRolesCardProps> = ({
@@ -25,6 +27,7 @@ const EmployeeRolesCard: React.FC<EmploymentRolesCardProps> = ({
     is_promotion,
     employee_role,
     onEdit,
+    onDelete,
 }) => {
     return (
         <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift  max-w-[90vw] min-w-[90vw]  md:min-w-[400px] md:max-w-[400px]">
@@ -42,12 +45,24 @@ const EmployeeRolesCard: React.FC<EmploymentRolesCardProps> = ({
                 )}
 
                 {onEdit && (
-                    <button
-                        className="text-gray-400 hover:text-gray-600 transition"
-                        onClick={onEdit}
-                    >
-                        <Pencil className="w-4 h-4" />
-                    </button>
+                    <IconButton
+                        onClick={() => onEdit?.()}
+                        icon={<EditIcon className="h-4 w-4" />}
+                        className="cursor-pointer"
+                        color="primary"
+                        variant="subtle"
+                        size="xs"
+                    />
+                )}
+                {onDelete && (
+                    <IconButton
+                        onClick={() => onDelete?.()}
+                        icon={<TrashIcon className="h-4 w-4" />}
+                        className="cursor-pointer"
+                        color="error"
+                        variant="subtle"
+                        size="xs"
+                    />
                 )}
             </div>
 

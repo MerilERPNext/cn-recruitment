@@ -33,6 +33,7 @@ export function LeaveDetailView({
   onAction,
   label = "Leave Request",
   reasonName,
+  sendBackComment,
 }: {
   actionsEnabled?: boolean;
   documentName?: string;
@@ -43,6 +44,7 @@ export function LeaveDetailView({
   onAction?: () => void;
   label?: string;
   reasonName?: string;
+  sendBackComment?: string;
 }) {
   const mutation = useApprovalListActions();
   const updateRejectionReasonMutation = useUpdateRejectionReason();
@@ -299,6 +301,12 @@ export function LeaveDetailView({
                   </Typography>
                 </div>
               )}
+            <div className="flex flex-col gap-2">
+              <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+              <Typography variant="mobileCardValue" className="text-gray-700 whitespace-pre-wrap">
+                {sendBackComment || data?.send_back_comment || "--"}
+              </Typography>
+            </div>
           </div>
 
           {data?.attachments && data?.attachments?.length > 0 ? (
