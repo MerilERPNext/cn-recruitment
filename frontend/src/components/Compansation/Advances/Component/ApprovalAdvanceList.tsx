@@ -13,6 +13,7 @@ import StatusBadge from "../../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../../shared/atoms/Typography";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
+import Tooltip from "../../../shared/Tooltip";
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -98,8 +99,8 @@ const ApprovalRejectionAdvanceList = ({
   };
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
   /* ===================== DESKTOP UI ===================== */
   if (isDesktop) {
@@ -171,7 +172,17 @@ const ApprovalRejectionAdvanceList = ({
               <StatusBadge status={data?.reference_document?.status} />
             </AllocatedToTooltip>
           </div>
-
+          <Tooltip
+            content={data?.send_back_comment || "--"}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full text-gray-700"
+            >
+              {data?.send_back_comment || "--"}
+            </Typography>
+          </Tooltip>
           <div className="flex items-center justify-center">
             {actionsEnabled && data?.todo_status === "Open" && !isActed ? (
               <TeamApprovalActionPill
@@ -306,7 +317,12 @@ const ApprovalRejectionAdvanceList = ({
                 </Typography>
               </div>
             </div>
-
+            <div>
+              <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+              <Typography variant="mobileCardValue" className="text-gray-700">
+                {data?.send_back_comment || "--"}
+              </Typography>
+            </div>
             {actionsEnabled && data?.todo_status === "Open" && !isActed ? (
               <TeamApprovalActionPill
                 variant="buttons"

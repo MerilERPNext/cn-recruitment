@@ -727,6 +727,38 @@ export const useDeleteEmpReportingDetailsRecordMutation = () => {
   });
 };
 
+export const useDeleteEmployeeHistoryRecordsMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["deleteEmployeeHistoryRecords"],
+    mutationFn: (names: string[]) =>
+      profileService.deleteEmployeeHistoryRecords(names),
+    onError: (error) => {
+      toast.error(errorResponseFormater(error));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employment-history-data"] });
+      toast.success("Record deleted successfully");
+    },
+  });
+};
+
+export const useDeleteEmployeeCostCenterRecordsMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["deleteEmployeeCostCenterRecords"],
+    mutationFn: (names: string[]) =>
+      profileService.deleteEmployeeCostCenterRecords(names),
+    onError: (error) => {
+      toast.error(errorResponseFormater(error));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employment-history-data"] });
+      toast.success("Cost center record deleted successfully");
+    },
+  });
+};
+
 export const useUpdateEmpReportingDetailsRecordMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -1008,5 +1040,21 @@ export const useGetSeparationDetails = (
     queryFn: () => EmployeeService.getSeparationDetails(employeeId),
     enabled: !!employeeId && enabled,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+};
+
+export const useDeleteEmployeeAndUserMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["deleteEmployeeAndUser"],
+    mutationFn: (employee: string) =>
+      EmployeeService.deleteEmployeeAndUser(employee),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["directory-employees"] });
+      queryClient.invalidateQueries({ queryKey: ["employee"] });
+    },
+    onError: (error) => {
+      console.error("Error deleting employee:", error);
+    },
   });
 };

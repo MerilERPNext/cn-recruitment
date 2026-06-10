@@ -16,7 +16,7 @@ const tabRoutes: Record<TabName, string> = {
   Separation: "/webapp/flow-app/separation",
 };
 
-type SeparateRouteName = "Initiate Flow" | "Flow Request" | "SeparationWorkflow" | "Rejected Separation Request";
+type SeparateRouteName = "Initiate Flow" | "Flow Request" | "SeparationWorkflow";
 const NoDesktopLayoutRoute: string[] = [];
 
 const FlowApp: React.FC = () => {
@@ -115,8 +115,6 @@ const FlowApp: React.FC = () => {
       setSeprateRoute("SeparationWorkflow");
     } else if (location.pathname.startsWith("/webapp/flow-app/flow-request/")) {
       setSeprateRoute("Flow Request");
-    } else if (location.pathname.startsWith("/webapp/flow-app/rejected-separation-request")) {
-      setSeprateRoute("Rejected Separation Request");
     } else {
       setSeprateRoute(null);
     }

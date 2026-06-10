@@ -24,7 +24,6 @@ import {
   ExpenseNavigationState,
   buildExpenseNavigationState,
 } from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
-import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
 import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
@@ -226,6 +225,10 @@ const PoliciesEnforced = lazyWithRetry(
 const MandatoryHrProcessEnforced = lazyWithRetry(
   () => import("./components/MandatoryHrProcessEnforced"),
   "MandatoryHrProcessEnforced",
+);
+const MandatoryDocumentsEnforced = lazyWithRetry(
+  () => import("./components/MandatoryDocumentsEnforced"),
+  "MandatoryDocumentsEnforced",
 );
 const PolicySignOff = lazyWithRetry(
   () => import("./components/PolicySignOff"),
@@ -683,6 +686,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/hr-process-mandatory",
     element: <MandatoryHrProcessEnforced />,
     permissionKey: "HR Process Mandatory",
+  },
+  {
+    path: "/webapp/mandatory-documents",
+    element: <MandatoryDocumentsEnforced />,
+    permissionKey: "Dashboard",
   },
   {
     path: "/webapp/recruitment-app/job-applicant-detail/:id",
@@ -1249,11 +1257,6 @@ export const routesConfig: AppRoute[] = [
         path: "separation",
         element: <Separation />,
         permissionKey: "Separation",
-      },
-      {
-        path: "rejected-separation-request",
-        element: <RejectedSeparationRequest />,
-        permissionKey: "Rejected Separation Request",
       },
       {
         path: "separation-workflow",

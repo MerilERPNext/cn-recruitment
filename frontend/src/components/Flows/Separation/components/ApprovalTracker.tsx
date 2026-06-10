@@ -103,6 +103,7 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
 
           <ApprovalDetails
             title={For}
+            data={data}
           />
         </div>
       </div>

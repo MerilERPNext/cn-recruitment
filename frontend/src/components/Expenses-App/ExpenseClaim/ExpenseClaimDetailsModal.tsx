@@ -34,6 +34,7 @@ interface ExpenseClaimModalProps {
   todoStatus?: string | null;
   status?: string;
   isDraft?: boolean;
+  sendBackComment?: string | null;
 }
 
 const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
@@ -45,6 +46,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   todoStatus = null,
   status,
   isDraft = false,
+  sendBackComment,
 }) => {
   console.log("Selected Stages", selectedStages)
   const raw = useFrappeDocument("Expense Claim", isDraft ? "" : (id as string));
@@ -671,6 +673,21 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
             </p>
           ) : (
             <>
+              {/* Sendback Comment */}
+              {sendBackComment && (
+                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <Typography
+                    variant="bodySmall"
+                    className="font-bold text-yellow-800 block mb-1 text-left"
+                  >
+                    Sendback Comment
+                  </Typography>
+                  <Typography variant="bodySmall" className="text-gray-700 text-left">
+                    {sendBackComment}
+                  </Typography>
+                </div>
+              )}
+
               {/* Approval Stages */}
               {Array.isArray(selectedStages) && selectedStages.length > 0 && (
                 <div className="mb-4 pt-2">

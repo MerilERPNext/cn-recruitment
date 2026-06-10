@@ -63,6 +63,12 @@ const AdvanceDetailsModal = ({
   const data = item?.data || fetchedData;
   const ref = data?.reference_document || item?.data;
   const loadingAction = item?.loadingAction;
+  const sendBackComment =
+    data?.send_back_comment ||
+    ref?.send_back_comment ||
+    ref?.custom_send_back_comment ||
+    ref?.custom_sendback_comment ||
+    "";
 
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
@@ -218,6 +224,15 @@ const AdvanceDetailsModal = ({
           <div className="bg-primary/10 flex justify-between items-center px-4 py-2 m-4 rounded">
             <Typography variant="bodySmall">Status</Typography>
               <StatusBadge status={ref?.status || data?.status} />
+          </div>
+
+          <div className="px-4 py-2 m-4 rounded border border-gray-200 bg-gray-50 px-4 py-3">
+            <Typography variant="bodySmall" className="mb-1 font-medium text-gray-700">
+              Sendback Comment
+            </Typography>
+            <Typography variant="bodySmall" className="whitespace-pre-wrap break-words text-gray-700">
+              {sendBackComment || "--"}
+            </Typography>
           </div>
 
           {/* FORM */}

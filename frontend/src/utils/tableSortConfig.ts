@@ -107,6 +107,9 @@ export const getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST = (
     config.push({ sortable: false });
   }
 
+  // Sendback Comment
+  config.push({ sortable: false });
+
   // Actions
   config.push({ sortable: false });
 
@@ -292,6 +295,9 @@ export const getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_CLAIM = (
   if (isApproved) {
     config.push({ sortable: false });
   }
+
+  // Sendback Comment
+  config.push({ sortable: false });
 
   // Actions
   config.push({ sortable: false });

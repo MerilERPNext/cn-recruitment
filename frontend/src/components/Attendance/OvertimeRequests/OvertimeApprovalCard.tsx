@@ -93,8 +93,7 @@ const OvertimeApprovalCard = ({
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? "0.5fr 1fr 1fr 1.5fr 1fr 1fr 1fr"
-    : "1fr 1fr 1fr 1.5fr 1fr 1fr";
-
+    : "1fr 1fr 1fr 1.5fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (
@@ -160,13 +159,24 @@ const OvertimeApprovalCard = ({
               <StatusBadge
                 status={
                   data?.todo_status === "Closed" &&
-                  data?.reference_document?.status !== "Rejected"
+                    data?.reference_document?.status !== "Rejected"
                     ? "Approved"
                     : data?.reference_document?.status
                 }
               />
             </AllocatedToTooltip>
           </div>
+          <Tooltip
+            content={data?.send_back_comment || "--"}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full text-gray-700"
+            >
+              {data?.send_back_comment || "--"}
+            </Typography>
+          </Tooltip>
           <div className="flex items-center justify-center">
             {data?.reference_document?.status === "Open" && !isActed ? (
               <TeamApprovalActionPill
@@ -235,7 +245,7 @@ const OvertimeApprovalCard = ({
                 <StatusBadge
                   status={
                     data?.todo_status === "Closed" &&
-                    data?.reference_document?.status !== "Rejected"
+                      data?.reference_document?.status !== "Rejected"
                       ? "Approved"
                       : data?.reference_document?.status
                   }
@@ -274,6 +284,12 @@ const OvertimeApprovalCard = ({
                   {getAssignedUsersCell(data)}
                 </Typography>
               </div>
+                <div>
+                  <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+                  <Typography variant="mobileCardValue" className="text-gray-700">
+                    {data?.send_back_comment || "--"}
+                  </Typography>
+                </div>
               {data?.reference_document?.status === "Open" && !isActed ? (
                 <TeamApprovalActionPill
                   actionsEnabled={actionsEnabled}

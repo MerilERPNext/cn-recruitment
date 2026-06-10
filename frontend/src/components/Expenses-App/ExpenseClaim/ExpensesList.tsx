@@ -230,6 +230,14 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           </Typography>
         </div>
 
+        {/* Sendback Comment */}
+        <div className="flex flex-col gap-1">
+          <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+          <Typography variant="mobileCardValue" className="text-gray-700">
+            {item?.send_back_comment || "--"}
+          </Typography>
+        </div>
+
         {/* Allocated To */}
         <MobileAllocatedTo
           users={item?.allocated_to}
@@ -361,8 +369,8 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
       style={{
         gridTemplateColumns: isPaidFilter
-          ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-          : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr",
+          ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
+          : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr",
       }}
     >
       <Tooltip
@@ -441,6 +449,18 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         </AllocatedToTooltip>
       </div>
 
+      <Tooltip
+        content={item?.send_back_comment || "--"}
+        triggerClassName="w-full truncate min-w-0 block"
+      >
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate block w-full text-gray-700"
+        >
+          {item?.send_back_comment || "--"}
+        </Typography>
+      </Tooltip>
+
       <div
         className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}
       >
@@ -507,6 +527,9 @@ const ExpensesList: React.FC = () => {
     [],
   );
   const [selectedSendBackUser, setSelectedSendBackUser] = React.useState<
+    string | null
+  >(null);
+  const [selectedSendBackComment, setSelectedSendBackComment] = React.useState<
     string | null
   >(null);
   const [selectedCanEdit, setSelectedCanEdit] = React.useState<boolean>(false);
@@ -678,6 +701,7 @@ const ExpensesList: React.FC = () => {
     todoStatus: string | null,
     status?: string,
     isDraft: boolean = false,
+    sendBackComment: string | null = null,
   ) => {
     setSelectedStages(stages);
     setTimeout(() => {
@@ -689,6 +713,7 @@ const ExpensesList: React.FC = () => {
     setSelectedTodoStatus(todoStatus);
     setSelectedStatus(status);
     setSelectedIsDraft(isDraft);
+    setSelectedSendBackComment(sendBackComment);
   };
 
   const closeModal = () => {
@@ -699,6 +724,7 @@ const ExpensesList: React.FC = () => {
     setSelectedTodoStatus(null);
     setSelectedStatus(undefined);
     setSelectedIsDraft(false);
+    setSelectedSendBackComment(null);
     if (urlRequestId || urlReferenceName) {
       setSearchParams({});
     }
@@ -886,6 +912,7 @@ const ExpensesList: React.FC = () => {
             todoStatus,
             status,
             isDraft,
+            item?.send_back_comment,
           )
         }
         className="cursor-pointer"
@@ -922,6 +949,7 @@ const ExpensesList: React.FC = () => {
             todoStatus,
             status,
             isDraft,
+            item?.send_back_comment,
           )
         }
         className="cursor-pointer"
@@ -1025,6 +1053,7 @@ const ExpensesList: React.FC = () => {
       "Claimed Date",
       "Assigned To",
       "Status",
+      "Sendback Comment",
       "Actions",
     ];
 
@@ -1041,6 +1070,7 @@ const ExpensesList: React.FC = () => {
       "1fr",
       "1fr",
       "1fr",
+      "1.5fr",
       "1fr",
     ];
 
@@ -1310,6 +1340,7 @@ const ExpensesList: React.FC = () => {
                             todoStatus,
                             approvalStatus,
                             isDraft,
+                            item?.send_back_comment,
                           )
                         }
                       >
@@ -1479,6 +1510,7 @@ const ExpensesList: React.FC = () => {
                             todoStatus,
                             approvalStatus,
                             isDraft,
+                            item?.send_back_comment,
                           )
                         }
                       >
@@ -1871,6 +1903,9 @@ const ExpensesList: React.FC = () => {
           }
           status={selectedStatus}
           isDraft={shouldUseDraftReferenceApi}
+          sendBackComment={
+            selectedSendBackComment || todoData?.send_back_comment
+          }
         />
       )}
       <ExpensePolicyDrawer

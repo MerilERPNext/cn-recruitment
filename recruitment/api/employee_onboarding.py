@@ -73,14 +73,24 @@ def _sanitize_order_by(order_by, allowed_fields, default_field):
 
 
 @candidate_required
-def update_onboarding_details(email, data):
+def update_onboarding_details(email, data, action="submit"):
     """
     Updates an Employee Onboarding record identified by the job_applicant email.
     Only fields configured in the candidate portal form AND in Pending/Rejected status are accepted.
-    After save, marks each updated field as Filled and snapshots current_value.
+
+    `action` controls the post-write field state:
+      - "submit" (default, legacy behavior): marks each updated field as Filled and
+        snapshots current_value, so the fields lock (read-only) and go to HR review.
+      - "save": persists the values only and leaves approval_status untouched
+        (stays Pending/Rejected), so the fields remain editable on the next fetch.
+    Any unknown value falls back to "submit" to preserve existing callers.
     """
     enforce_candidate_identity(email=email)
     frappe.local.response["http_status_code"] = 200
+
+    # Normalize the action flag; default/unknown -> "submit" (legacy behavior).
+    action = (action or "submit").strip().lower()
+    is_submit = action != "save"
 
     if isinstance(data, str):
         try:
@@ -187,8 +197,10 @@ def update_onboarding_details(email, data):
 
         doc.save(ignore_permissions=True)
 
-        # Mark updated portal fields as Filled and snapshot current_value
-        if updated:
+        # On "submit": mark updated portal fields as Filled, snapshot current_value
+        # (locks fields read-only for HR review) and sync the action center.
+        # On "save": skip all of this so the fields stay editable on next fetch.
+        if is_submit and updated:
             import json as _json
             doc.reload()
             for prow in (doc.get("custom_candidate_portal_fields") or []):
@@ -212,24 +224,29 @@ def update_onboarding_details(email, data):
 
             doc.save(ignore_permissions=True)
 
-        # ── Sync Candidate Action Center Item ─────────────────────────────────
-        try:
-            from recruitment.api.action_center import sync_onboarding_field_rejection_action
-            doc.reload()
-            sync_onboarding_field_rejection_action(doc)
-        except Exception:
-            frappe.log_error(frappe.get_traceback(), "Action Center Sync Failed (Candidate Refill)")
+            # ── Sync Candidate Action Center Item ─────────────────────────────
+            try:
+                from recruitment.api.action_center import sync_onboarding_field_rejection_action
+                doc.reload()
+                sync_onboarding_field_rejection_action(doc)
+            except Exception:
+                frappe.log_error(frappe.get_traceback(), "Action Center Sync Failed (Candidate Refill)")
 
         frappe.db.commit()
 
         return {
             "status": "success",
             "code": 200,
-            "message": "Employee Onboarding updated successfully. Fields are now pending HR review.",
+            "message": (
+                "Employee Onboarding updated successfully. Fields are now pending HR review."
+                if is_submit
+                else "Progress saved. Fields remain editable."
+            ),
             "data": {
                 "name": doc.name,
                 "job_applicant": doc.job_applicant,
                 "updated_fields": updated,
+                "action": "submit" if is_submit else "save",
             },
         }
 
@@ -349,7 +366,7 @@ def get_employee_onboarding_list(
 
         count_result = frappe.get_list(
             DOCTYPENAME,
-            fields=["count(name) as total_count"],
+            fields=[{"COUNT": "name", "as": "total_count"}],
             filters=filters,
             or_filters=or_filters if or_filters else None,
             page_length=1,

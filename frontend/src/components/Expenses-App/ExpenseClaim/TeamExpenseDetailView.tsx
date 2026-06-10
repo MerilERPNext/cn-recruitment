@@ -62,6 +62,7 @@ export function TeamExpenseDetailView({
   onAction,
   label = "Expense Claim",
   allowHoldData,
+  sendBackComment,
 }: {
   actionsEnabled?: boolean;
   documentName?: string;
@@ -72,6 +73,7 @@ export function TeamExpenseDetailView({
   onAction?: () => void;
   label?: string;
   allowHoldData?: AllowRequestsOnHoldResponse;
+  sendBackComment?: string;
 }) {
   const updateMutation = useExpenseLineItemUpdate();
   const mutation = useApprovalListActions();
@@ -806,6 +808,12 @@ export function TeamExpenseDetailView({
                     {ref?.employee || "N/A"}
                   </Typography>
                 </div>
+              </div>
+              <div className="flex flex-col gap-1 mt-3 pt-3 border-t border-gray-200">
+                <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+                <Typography variant="mobileCardValue" className="text-gray-700 whitespace-pre-wrap">
+                  {sendBackComment || data?.send_back_comment || "--"}
+                </Typography>
               </div>
             </div>
 

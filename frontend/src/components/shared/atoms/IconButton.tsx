@@ -159,14 +159,16 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
           </span>
         </div>
 
-        <span
-          className={[
-            SIZE_STYLES[size].text,
-            "font-medium text-center text-text-body2  mt-2",
-          ].join(" ")}
-        >
-          {label}
-        </span>
+        {label && (
+          <span
+            className={[
+              SIZE_STYLES[size].text,
+              "font-medium text-center text-text-body2  mt-2",
+            ].join(" ")}
+          >
+            {label}
+          </span>
+        )}
       </button>
     );
   }

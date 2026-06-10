@@ -61,6 +61,7 @@ const TeamExpense = () => {
 
   const requestId = searchParams.get("requestId");
   const referenceName = searchParams.get("reference_name");
+  const sendBackComment = searchParams.get("send_back_comment");
 
   const handleRequestClick = useCallback(
     (request: any) => {
@@ -68,6 +69,7 @@ const TeamExpense = () => {
         setSearchParams({
           requestId: request.todo_id,
           reference_name: request?.reference_document?.name || "",
+          send_back_comment: request?.send_back_comment || "",
         });
       }
     },
@@ -153,6 +155,7 @@ const TeamExpense = () => {
         "Due Date",
         "Status",
         ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+        "Sendback Comment",
         "Actions",
       ]
     : [
@@ -166,6 +169,7 @@ const TeamExpense = () => {
         "Due Date",
         "Status",
         ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+        "Sendback Comment",
         "Actions",
       ];
 
@@ -184,6 +188,7 @@ const TeamExpense = () => {
           "1fr",
           "1fr",
           "1fr",
+          "1.5fr",
           "1fr",
         ]
       : [
@@ -197,6 +202,7 @@ const TeamExpense = () => {
           "1fr",
           "1fr",
           "1fr",
+          "1.5fr",
           "1fr",
         ]
     : activeStatus === "Approved"
@@ -211,6 +217,7 @@ const TeamExpense = () => {
           "1fr",
           "1fr",
           "1fr",
+          "1.5fr",
           "1fr",
         ]
       : [
@@ -223,7 +230,7 @@ const TeamExpense = () => {
           "1fr",
           "1fr",
           "1fr",
-          "1fr",
+          "1.5fr",
           "1fr",
         ];
 
@@ -391,6 +398,7 @@ const TeamExpense = () => {
           onClose={handleCloseModal}
           onAction={handleActionComplete}
           allowHoldData={allowHoldData}
+          sendBackComment={sendBackComment || undefined}
         />
       )}
     </div>

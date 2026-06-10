@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { AlertCircle, ArrowLeft, CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
 import {
   useCurrentEmployeeDetails,
@@ -14,7 +14,7 @@ import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./components/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useEffect, useMemo, useCallback, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { SeparationSvgs } from "./consts";
@@ -22,7 +22,7 @@ import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { SeparationSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { getActionsEnabled } from "../../../utils/uiPermission";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetEmployeeSeparationType, useGetSeparationFunnelDetails } from "../../../hooks/useSeparation";
+import { useGetEmployeeSeparationType, useGetSeparationFunnelDetails, useGetNoticePeriodAndSeparationPolicy } from "../../../hooks/useSeparation";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { FlowRequestItem } from "../../../types/flows";
 import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
@@ -48,7 +48,7 @@ const SeparationCard = ({ data }: { data: cardDataType }) => {
 };
 
 const Separation = () => {
-  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: currentEmployee, isLoading: isLoadingCurrentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const doctype_name = "Employee";
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
@@ -77,10 +77,11 @@ const Separation = () => {
 
   const reference_name = item?.workflow_stages?.[0]?.todo?.reference_name ?? null;
   const { data: separationType, isLoading: isLoadingSeparationType } = useGetEmployeeSeparationType(reference_name);
+  const { data: policyData, isLoading: isLoadingPolicy } = useGetNoticePeriodAndSeparationPolicy(document_name);
 
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
 
-  const isLoading = isLoadingSeparationFunnelDetails || isLoadingSeparationType;
+  const isLoading = isLoadingSeparationFunnelDetails || isLoadingSeparationType || isLoadingPolicy || isLoadingCurrentEmployee;
 
   // Use centralized getDefinitionByFilter for finding trigger definitions
   const terminationDefinition = useMemo(
@@ -126,6 +127,8 @@ const Separation = () => {
     ;
 
   const isRejected = item?.approval_status === "Rejected";
+  const isCompleted = item?.approval_status === "Completed";
+
   const hasNoItem = !item;
 
   const showSeparationButton =
@@ -137,12 +140,12 @@ const Separation = () => {
     {
       icon: SeparationSvgs[0],
       label: "Notice Period",
-      value: `Remember to serve your notice period ${(activeEmployee as any)?.notice_number_of_days ? "of " + (activeEmployee as any)?.notice_number_of_days + " days" : ""}`,
+      value: policyData?.notice_period ? `Remember to serve your notice period of ${policyData.notice_period}` : `Remember to serve your notice period ${(activeEmployee as any)?.notice_number_of_days ? "of " + (activeEmployee as any)?.notice_number_of_days + " days" : ""}`,
     },
     {
       icon: SeparationSvgs[1],
-      label: "Final Settlement",
-      value: `We'll process your full & final settlement soon`,
+      label: policyData?.separation_policy ? "Separation Policy" : "Final Settlement",
+      value: policyData?.separation_policy || `We'll process your full & final settlement soon`,
     },
   ];
   const queryClient = useQueryClient();
@@ -182,21 +185,6 @@ const Separation = () => {
     }
   }, [item]);
 
-  // check for current and previous request
-  const RejectedRequest = useMemo(() => {
-    if (!separationFunnelDetails?.data?.length || separationFunnelDetails?.data?.length == 0) {
-      return null;
-    }
-
-    if (separationFunnelDetails.data[0]?.approval_status === "Rejected") {
-      return separationFunnelDetails.data[0];
-    }
-
-    if (separationFunnelDetails.data[1]?.approval_status === "Rejected")
-      return separationFunnelDetails.data[1];
-    return null;
-  }, [separationFunnelDetails]);
-
   const canViewWorkflow = useMemo(() => {
     if (!showRequestPage) return false;
     if (!separationFunnelDetails?.data?.[0]) return false;
@@ -215,17 +203,6 @@ const Separation = () => {
   return (
     <div className=" md:p-4 md:gap-4">
       <div className="flex items-center gap-1 mb-2">
-        {!!RejectedRequest &&
-          showRequestPage && (
-            <Button
-              bgColor="text"
-              variant="subtle"
-              onClick={() => setShowRequestPage(false)}
-              className="p-2 rounded-full min-w-0 h-fit ml-2 md:ml-0"
-            >
-              <ArrowLeft size={20} />
-            </Button>
-          )}
         <div className="flex flex-col md:mb-4 max-md:px-4">
           {isDesktop && <Typography variant="h4">Separation</Typography>}
           <Typography variant="bodySmall" color="body2">
@@ -297,21 +274,6 @@ const Separation = () => {
             </div>
           </div>
           {/* Button */}
-
-          {RejectedRequest && (
-            <div className="flex w-full mt-4 mb-2">
-              <div className="flex flex-col sm:flex-row items-center w-full bg-red-50 border border-red-100 p-4 rounded-xl gap-3 text-center sm:text-left shadow-sm">
-                <div className="bg-red-100 p-2 rounded-full shrink-0 text-red-500">
-                  <AlertCircle size={20} />
-                </div>
-                <div>
-                  <Typography variant="bodyMedium" color="body1" className="text-red-800">
-                    Your {RejectedRequest === item ? "current" : "previous"} separation request initiated on <span className="font-semibold">{formatToIndianDate(RejectedRequest?.initiated_on || "")}</span> has been <Link to="/webapp/flow-app/rejected-separation-request" className="font-semibold text-red-600 hover:text-red-700 underline decoration-red-300 underline-offset-4 transition-colors">Rejected</Link>.
-                  </Typography>
-                </div>
-              </div>
-            </div>
-          )}
 
           {item && ["Pending", "Completed", "Approved", "Draft"].includes(item?.approval_status || "") && (
             <div className="flex w-full mt-4 mb-2">
@@ -385,7 +347,7 @@ const Separation = () => {
             bgColor="black"
             className="hover:bg-gray-900 text-white mx-auto"
             loading={isTriggeringChat}
-            disabled={isTriggeringChat}
+            disabled={isTriggeringChat || isCompleted}
           >
             Terminate
           </Button>
