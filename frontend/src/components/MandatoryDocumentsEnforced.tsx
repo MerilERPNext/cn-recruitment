@@ -20,6 +20,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import Button from "./shared/atoms/Button";
 import { FilePreview } from "./shared/molecules/FilePreview";
 import { useFrappeDocumentCount } from "../hooks/useFrappeQuery";
+import { formatDateToDDMMYYYY } from "../utils/helperUtils";
+
 
 // Skeleton component for loading states
 const DocumentItemSkeleton: React.FC = () => {
@@ -44,6 +46,7 @@ interface DocumentItemProps {
     document_template?: string;
     enable_mandatory_acknowledgement?: number;
     file_name?: string;
+    end_date?: string;
   };
   index?: number;
   doctype: string;
@@ -63,9 +66,9 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ item }) => {
     }
   }, [showModal]);
 
-  const title = item.document_template || "Employee Document";
-  const status = item.status || "Draft";
-  const documentId = item.name;
+  const title = item?.document_template || "Employee Document";
+  const status = item?.status || "Draft";
+  const documentId = item?.name;
 
   const isComplete = status === "Acknowledged" || status === "Approved";
 
@@ -110,15 +113,20 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ item }) => {
             </Typography>
           </div>
 
-          <div className="flex items-center gap-3 mt-1 pl-1">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-3 mt-1 pl-1">
             <span
-              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${item.enable_mandatory_acknowledgement
+              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${item?.enable_mandatory_acknowledgement
                 ? "bg-red-50 text-red-700 border border-red-100"
                 : "bg-blue-50 text-blue-700 border border-blue-100"
                 }`}
             >
-              {item.enable_mandatory_acknowledgement ? "Mandatory" : "Optional"}
+              {item?.enable_mandatory_acknowledgement ? "Mandatory" : "Optional"}
             </span>
+            {item?.end_date && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                Due: {formatDateToDDMMYYYY(item.end_date)}
+              </span>
+            )}
           </div>
         </div>
 
@@ -170,7 +178,7 @@ const DocumentItem: React.FC<DocumentItemProps> = ({ item }) => {
             </div>
 
             <div className="flex-1 overflow-hidden bg-gray-50">
-              {item.file_name ? (
+              {item?.file_name ? (
                 <FilePreview
                   fileUrl={getFileUrl(item.file_name)}
                   fileName={item.file_name}
@@ -367,6 +375,7 @@ const MandatoryDocumentsEnforced: React.FC = () => {
                   "document_template",
                   "enable_mandatory_acknowledgement",
                   "file_name",
+                  "end_date"
                 ]}
                 searchFields={["document_template", "name"]}
                 infiniteScroll={true}
