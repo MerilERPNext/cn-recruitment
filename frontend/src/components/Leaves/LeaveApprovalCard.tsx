@@ -16,7 +16,6 @@ import { Typography } from "../shared/atoms/Typography";
 import MobileAllocatedTo from "../shared/MobileAllocatedTo";
 import Tooltip from "../shared/Tooltip";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
-import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 
 type LeaveApprovalCardProps = {
   actionsEnabled?: boolean;
