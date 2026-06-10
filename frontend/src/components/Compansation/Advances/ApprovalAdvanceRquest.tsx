@@ -72,6 +72,7 @@ const TeamAdvanceRequest = () => {
       "Start Date",
       "End Date",
       "Status",
+      "Sendback Comment",
       "Actions",
     ]
     : [
@@ -81,6 +82,7 @@ const TeamAdvanceRequest = () => {
       "Start Date",
       "End Date",
       "Status",
+      "Sendback Comment",
       "Actions",
     ];
 
@@ -136,8 +138,8 @@ const TeamAdvanceRequest = () => {
   ];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
     <div className="flex flex-col h-full">
