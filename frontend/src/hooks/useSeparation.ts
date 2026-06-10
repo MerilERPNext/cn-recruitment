@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { getEmployeeSeparationType, getSeparationFunnelDetails, SeparationEmployeeService, getNoticePeriodAndSeparationPolicy } from "../services/SeparationService";
-import { SeparationFunnelDetails, NoticePeriodAndSeparationPolicyResponse } from "../types/flows";
+import { getEmployeeSeparationType, getSeparationFunnelDetails, SeparationEmployeeService, getNoticePeriodAndSeparationPolicy, getEmployeeSeparationDetails } from "../services/SeparationService";
+import { SeparationFunnelDetails, NoticePeriodAndSeparationPolicyResponse, EmployeeSeparationDetails } from "../types/flows";
 
 export const useSeparationEmployee = () => {
   return useQuery({
@@ -30,5 +30,13 @@ export const useGetNoticePeriodAndSeparationPolicy = (employee: string) => {
     queryKey: ["notice-period-separation-policy", employee],
     queryFn: () => getNoticePeriodAndSeparationPolicy(employee),
     enabled: Boolean(employee),
+  });
+};
+
+export const useEmployeeSeparationDetails = (docname: string) => {
+  return useQuery<EmployeeSeparationDetails>({
+    queryKey: ["employee-separation-details", docname],
+    queryFn: () => getEmployeeSeparationDetails(docname),
+    enabled: Boolean(docname),
   });
 };
