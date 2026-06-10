@@ -197,6 +197,18 @@ def update_onboarding_details(email, data, action="submit"):
 
         doc.save(ignore_permissions=True)
 
+        # On "save": recompute boarding_status, then ensure a save advances
+        # Pending -> In Process. A save persists values but leaves fields
+        # Pending (so they stay editable), so the count-based derivation can't
+        # move past Pending on its own — nudge it to reflect partial progress.
+        # Field-level approval_status stays untouched.
+        if not is_submit and updated:
+            from recruitment.api.field_level_approval import _sync_overall_status
+            doc.reload()
+            _sync_overall_status(doc)
+            if (doc.get("boarding_status") or "Pending") == "Pending":
+                doc.db_set("boarding_status", "In Process", update_modified=False)
+
         # On "submit": mark updated portal fields as Filled, snapshot current_value
         # (locks fields read-only for HR review) and sync the action center.
         # On "save": skip all of this so the fields stay editable on next fetch.
@@ -232,7 +244,17 @@ def update_onboarding_details(email, data, action="submit"):
             except Exception:
                 frappe.log_error(frappe.get_traceback(), "Action Center Sync Failed (Candidate Refill)")
 
+            # Recompute boarding_status: flips to Submitted when no field is
+            # left Pending or Rejected, otherwise In Process.
+            from recruitment.api.field_level_approval import _sync_overall_status
+            doc.reload()
+            _sync_overall_status(doc)
+
         frappe.db.commit()
+
+        from recruitment.api.field_level_approval import _compute_field_status_counts
+        doc.reload()
+        field_status_counts = _compute_field_status_counts(doc)
 
         return {
             "status": "success",
@@ -247,6 +269,8 @@ def update_onboarding_details(email, data, action="submit"):
                 "job_applicant": doc.job_applicant,
                 "updated_fields": updated,
                 "action": "submit" if is_submit else "save",
+                "boarding_status": doc.get("boarding_status"),
+                "field_status_counts": field_status_counts,
             },
         }
 
@@ -363,6 +387,44 @@ def get_employee_onboarding_list(
             start=start_value,
             page_length=page_length_value,
         )
+
+        # Per-row field status counts so the HR list view can render progress
+        # without N+1 round trips. One grouped query over the EO's portal child
+        # table, then folded back into each row.
+        if data:
+            eo_names = [row["name"] for row in data]
+            agg_rows = frappe.db.sql(
+                """
+                SELECT
+                    parent,
+                    COUNT(*) AS total,
+                    SUM(CASE WHEN COALESCE(approval_status,'Pending')='Pending'  THEN 1 ELSE 0 END) AS pending,
+                    SUM(CASE WHEN approval_status='Filled'   THEN 1 ELSE 0 END) AS filled,
+                    SUM(CASE WHEN approval_status='Approved' THEN 1 ELSE 0 END) AS approved,
+                    SUM(CASE WHEN approval_status='Rejected' THEN 1 ELSE 0 END) AS rejected
+                FROM `tabEmployee Onboarding Portal Field`
+                WHERE parenttype=%s
+                  AND parentfield='custom_candidate_portal_fields'
+                  AND COALESCE(hidden,0)=0
+                  AND parent IN %s
+                GROUP BY parent
+                """,
+                (DOCTYPENAME, tuple(eo_names)),
+                as_dict=True,
+            )
+            counts_by_name = {
+                r["parent"]: {
+                    "total":    int(r.get("total")    or 0),
+                    "pending":  int(r.get("pending")  or 0),
+                    "filled":   int(r.get("filled")   or 0),
+                    "approved": int(r.get("approved") or 0),
+                    "rejected": int(r.get("rejected") or 0),
+                }
+                for r in agg_rows
+            }
+            empty_counts = {"total": 0, "pending": 0, "filled": 0, "approved": 0, "rejected": 0}
+            for row in data:
+                row["field_status_counts"] = counts_by_name.get(row["name"], dict(empty_counts))
 
         count_result = frappe.get_list(
             DOCTYPENAME,

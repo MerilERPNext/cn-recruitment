@@ -187,12 +187,75 @@ def _compute_counts(approval_list):
     return counts
 
 
+def _compute_field_status_counts(doc):
+    """Per-doc field status counts derived from custom_candidate_portal_fields.
+
+    Hidden rows are excluded so they don't drag visible-field math off.
+    Returns: {total, pending, filled, approved, rejected}.
+    """
+    counts = {"total": 0, "pending": 0, "filled": 0, "approved": 0, "rejected": 0}
+    for row in (doc.get("custom_candidate_portal_fields") or []):
+        if row.get("hidden"):
+            continue
+        counts["total"] += 1
+        status = (row.get("approval_status") or "Pending").strip().lower()
+        if status in counts:
+            counts[status] += 1
+        else:
+            counts["pending"] += 1
+    return counts
+
+
+def _derive_boarding_status(counts):
+    """Map per-field counts to the doc-level boarding_status.
+
+    Skipped when there are no visible portal fields at all (counts['total']==0) —
+    nothing to derive a status from, so caller leaves boarding_status alone.
+
+    Rules:
+      total > 0 and approved == total  -> Completed
+      pending == 0 and rejected == 0   -> Submitted   (all fields Filled/Approved)
+      any non-pending field            -> In Process
+      everything still Pending         -> Pending
+    """
+    total = counts.get("total", 0)
+    if total <= 0:
+        return None
+    if counts.get("approved", 0) == total:
+        return "Completed"
+    if counts.get("pending", 0) == 0 and counts.get("rejected", 0) == 0:
+        return "Submitted"
+    if counts.get("pending", 0) < total:
+        return "In Process"
+    return "Pending"
+
+
 def _sync_overall_status(doc):
+    """Recompute boarding_status from custom_candidate_portal_fields and persist.
+
+    Uses db_set (no validate cascade) so this can be safely called from candidate
+    save/submit endpoints and HR approval endpoints without recursion. No-op when
+    the doc has no visible portal fields, or when the computed status matches.
+    Returns the (possibly new) boarding_status, or None if unchanged/skipped.
     """
-    Previously set a custom status field, but removed by request because 
-    the doctype's row size is full, and 'boarding_status' already tracks overall state.
-    """
-    pass
+    counts = _compute_field_status_counts(doc)
+    new_status = _derive_boarding_status(counts)
+    if not new_status:
+        return None
+    if (doc.get("boarding_status") or "") == new_status:
+        return new_status
+    doc.db_set("boarding_status", new_status, update_modified=False)
+    return new_status
+
+
+def get_field_status_counts(onboarding_doc_or_name):
+    """Public helper: accepts an EO doc or its name and returns the per-field counts."""
+    if isinstance(onboarding_doc_or_name, str):
+        try:
+            onboarding_doc_or_name = frappe.get_doc("Employee Onboarding", onboarding_doc_or_name)
+        except Exception:
+            return {"total": 0, "pending": 0, "filled": 0, "approved": 0, "rejected": 0}
+    return _compute_field_status_counts(onboarding_doc_or_name)
 
 
 def _save_doc(doc):

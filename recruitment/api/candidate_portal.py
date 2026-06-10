@@ -960,6 +960,20 @@ def get_candidate_portal_form(job_applicant_id):
 
     meta_lookup = {f["fieldname"]: f for f in _read_onboarding_meta()}
 
+    # Per-doc field status counts (visible portal fields only). Derived from
+    # custom_candidate_portal_fields when an EO exists; otherwise computed from
+    # the same portal_rows so a not-yet-materialized form still reports totals.
+    if doc is not None:
+        from recruitment.api.field_level_approval import _compute_field_status_counts
+        field_status_counts = _compute_field_status_counts(doc)
+    else:
+        field_status_counts = {"total": 0, "pending": 0, "filled": 0, "approved": 0, "rejected": 0}
+        for row in portal_rows:
+            if row.get("hidden"):
+                continue
+            field_status_counts["total"] += 1
+            field_status_counts["pending"] += 1
+
     return {
         "status": "success",
         "job_applicant": applicant_name,
@@ -967,6 +981,7 @@ def get_candidate_portal_form(job_applicant_id):
         "onboarding_name": doc.name if doc else None,
         "pre_release_name": pre_release["name"] if pre_release else None,
         "boarding_status": doc.boarding_status if doc else None,
+        "field_status_counts": field_status_counts,
         "tabs": _build_tabbed_response(portal_rows, meta_lookup, doc, applicant_doc),
     }
 
@@ -1090,6 +1105,14 @@ def save_candidate_portal_data(job_applicant_id, data):
         except Exception:
             frappe.log_error(frappe.get_traceback(), "Action Center Sync Failed (Candidate Refill)")
 
+        # Recompute boarding_status (Pending / In Process / Submitted / Completed)
+        # so the candidate-side save reflects overall progress.
+        from recruitment.api.field_level_approval import _sync_overall_status, _compute_field_status_counts
+        doc.reload()
+        _sync_overall_status(doc)
+        doc.reload()
+        field_status_counts = _compute_field_status_counts(doc)
+
         # Stamp applicant substatus on first candidate fill
         try:
             current_substatus = frappe.db.get_value("Job Applicant", applicant_name, "custom_substatus")
@@ -1108,6 +1131,8 @@ def save_candidate_portal_data(job_applicant_id, data):
             "status": "success",
             "message": _("Data saved successfully. Fields are now pending HR review."),
             "updated_fields": updated,
+            "boarding_status": doc.get("boarding_status"),
+            "field_status_counts": field_status_counts,
         }
 
     except Exception as e:
