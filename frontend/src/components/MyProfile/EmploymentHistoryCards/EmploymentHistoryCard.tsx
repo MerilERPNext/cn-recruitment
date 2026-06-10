@@ -1,7 +1,8 @@
 import React from "react";
-import { Pencil, TrendingUp, Trash2 } from "lucide-react";
+import { EditIcon, TrendingUp, TrashIcon } from "lucide-react";
 import Tooltip from "../../../components/shared/Tooltip";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import IconButton from "../../shared/atoms/IconButton";
 
 interface EmploymentHistoryCardProps {
   company: string;
@@ -26,14 +27,24 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({ company, 
           Current
         </span>}
         {onEdit && (
-          <button className="text-gray-400 hover:text-gray-600" onClick={onEdit}>
-            <Pencil className="w-4 h-4" />
-          </button>
+          <IconButton
+            onClick={() => onEdit?.()}
+            icon={<EditIcon className="h-4 w-4" />}
+            className="cursor-pointer"
+            color="primary"
+            variant="subtle"
+            size="xs"
+          />
         )}
-        {onDelete && !isCurrent && (
-          <button className="text-gray-400 hover:text-red-500" onClick={onDelete}>
-            <Trash2 className="w-4 h-4" />
-          </button>
+        {onDelete && (
+          <IconButton
+            onClick={() => onDelete?.()}
+            icon={<TrashIcon className="h-4 w-4" />}
+            className="cursor-pointer"
+            color="error"
+            variant="subtle"
+            size="xs"
+          />
         )}
       </div>
 

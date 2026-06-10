@@ -252,35 +252,23 @@ export interface IEmployeeWorkHistory {
  * Enriched / list-view / legacy UI fields not always present on the raw Employee doc.
  */
 
+export interface WorkRoleField {
+  id: string;
+  name: string;
+  row_name?: string;
+}
+
 export interface WorkRole {
   name?: string;
   from_date: string;
   to_date: string;
   is_current: boolean;
-  company: {
-    id: string;
-    name: string;
-  };
-  department: {
-    id: string;
-    name: string;
-  };
-  designation: {
-    id: string;
-    name: string;
-  };
-  functional_area: {
-    id: string;
-    name: string;
-  };
-  band: {
-    id: string;
-    name: string;
-  };
-  grade: {
-    id: string;
-    name: string;
-  };
+  company: WorkRoleField | null;
+  department: WorkRoleField | null;
+  designation: WorkRoleField | null;
+  functional_area: WorkRoleField | null;
+  band: WorkRoleField | null;
+  grade: WorkRoleField | null;
   is_promotion: boolean;
 }
 export interface WorkLocation {
@@ -289,24 +277,25 @@ export interface WorkLocation {
   is_current: boolean,
   work_location: {
     id: string,
-    name: string
-  },
+    name: string,
+    row_name?: string,
+  } | null,
   office_area: {
     id: string,
     name: string
-  },
+  } | null,
   country: {
     id: string,
     name: string
-  },
+  } | null,
   state: {
     id: string,
     name: string
-  },
+  } | null,
   city: {
     id: string,
     name: string
-  }
+  } | null,
 }
 export interface EmploymentTypes {
   from_date: string;
@@ -314,13 +303,15 @@ export interface EmploymentTypes {
   is_current: boolean;
   is_promotion: boolean;
   employment_type: {
-    name: string;
-    id: string
-  };
+    name: string | null;
+    id: string | null;
+    row_name?: string;
+  } | null;
   employee_subtype: {
-    name: string;
-    id: string
-  };
+    name: string | null;
+    id: string | null;
+    row_name?: string;
+  } | null;
 }
 
 export interface EmployeeRole {
@@ -331,7 +322,8 @@ export interface EmployeeRole {
   employee_role: {
     id: string;
     name: string;
-  }
+    row_name?: string;
+  } | null;
 }
 
 export interface CostCenter {
@@ -341,7 +333,9 @@ export interface CostCenter {
 
 export interface CostCenterAllocation {
   cost_center: CostCenter;
+  segment?: string | null;
   percentage: number;
+  row_name?: string;
 }
 
 export interface EmployeeCostCenter {
