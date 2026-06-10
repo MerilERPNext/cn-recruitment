@@ -30,64 +30,64 @@ export default function ApprovalDetails({
     const fields: { label: string; value: string }[] = [
       {
         label: "Date of Resignation",
-        value: separationDetails.custom_resignation_date
-          ? formatToIndianDate(separationDetails.custom_resignation_date)
+        value: separationDetails?.custom_resignation_date
+          ? formatToIndianDate(separationDetails?.custom_resignation_date)
           : "—",
       },
       {
         label: "Assigned Notice Period (Day(s))",
-        value: separationDetails.custom_notice_period_days != null
-          ? String(separationDetails.custom_notice_period_days)
+        value: separationDetails?.custom_notice_period_days != null
+          ? String(separationDetails?.custom_notice_period_days)
           : "—",
       },
       {
         label: "Recovery Days",
-        value: separationDetails.custom_final_recovery_days != null
-          ? String(separationDetails.custom_final_recovery_days)
+        value: separationDetails?.custom_final_recovery_days != null
+          ? String(separationDetails?.custom_final_recovery_days)
           : "—",
       },
       {
         label: "Reason for Separation",
-        value: separationDetails.custom_final_reason_for_separation || "—",
+        value: separationDetails?.custom_final_reason_for_separation || "—",
       },
       {
         label: "Proposed Recovery Day (Days)",
-        value: separationDetails.custom_proposed_recovery_days != null
-          ? String(separationDetails.custom_proposed_recovery_days)
+        value: separationDetails?.custom_proposed_recovery_days != null
+          ? String(separationDetails?.custom_proposed_recovery_days)
           : "—",
       },
       {
         label: "Final Separation Category",
-        value: separationDetails.custom_final_category_for_separation || "—",
+        value: separationDetails?.custom_final_category_for_separation || "—",
       },
       {
         label: "Final Reason for Separation",
-        value: separationDetails.custom_final_reason_for_separation || "—",
+        value: separationDetails?.custom_final_reason_for_separation || "—",
       },
       {
         label: "Do Not Rehire",
-        value: separationDetails.custom_mark_do_not_rehire ? "Yes" : "No",
+        value: separationDetails?.custom_mark_do_not_rehire ? "Yes" : "No",
       },
       {
         label: "Reason for Proposed Recovery Days",
-        value: separationDetails.custom_reason_for_proposed_recovery_days || "—",
+        value: separationDetails?.custom_reason_for_proposed_recovery_days || "—",
       },
       {
         label: "Proposed Last Working Day",
-        value: separationDetails.custom_proposed_last_working_day
-          ? formatToIndianDate(separationDetails.custom_proposed_last_working_day)
+        value: separationDetails?.custom_proposed_last_working_day
+          ? formatToIndianDate(separationDetails?.custom_proposed_last_working_day)
           : "—",
       },
       {
         label: "Requested Last Working Day",
-        value: separationDetails.custom_requested_last_working_date
-          ? formatToIndianDate(separationDetails.custom_requested_last_working_date)
+        value: separationDetails?.custom_requested_last_working_date
+          ? formatToIndianDate(separationDetails?.custom_requested_last_working_date)
           : "—",
       },
       {
         label: "LWD as per Notice Period",
-        value: separationDetails.custom_proposed_last_working_day
-          ? formatToIndianDate(separationDetails.custom_proposed_last_working_day)
+        value: separationDetails?.custom_proposed_last_working_day
+          ? formatToIndianDate(separationDetails?.custom_proposed_last_working_day)
           : "—",
       },
     ];
