@@ -17,6 +17,7 @@ import FormPreview from "../../../shared/molecules/FormPreview";
 import ActModal from "./ActModal";
 import { handleActionType } from "../../../../hooks/userApprovalList";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
+import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
 
 const getIcon = (status: string) => {
     const iconProps = { size: 20, strokeWidth: 3, className: "text-white" };
@@ -304,6 +305,19 @@ const FlowTableRow = ({
                             </Typography>
                         </div>
                     </div>
+                </div>
+                <div className={`flex items-center justify-center `}>
+                    <MyApprovalActionPill
+                        variant="buttons"
+                        uiPermission={{
+                            app: "HR Process",
+                            page: "Flow Requests",
+                            actionKeysMap: {
+                                nudge: "nudge",
+                            }
+                        }}
+                        todoId={stage?.todo?.name}
+                    />
                 </div>
                 {(stage?.approval_response_data_display || stage?.approval_response_data) && (
                     <Button

@@ -4,11 +4,8 @@ import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useApprovalAction } from "../../../../hooks/userApprovalList";
 import { FormIOComponent } from "../../../../types/formio";
 import { useCallback, useMemo, useState } from "react";
-import type { JSX } from "react";
-import { BellRing } from "lucide-react";
 import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
-import Tooltip from "../../../shared/Tooltip";
 import ReviewForm from "./ReviewForm";
 import StatusTimelineRow from "../../Confirmation/components/StatusTimelineRow";
 import AttachmentPreview from "../../FlowRequests/FlowDetails/AttachmentPreview";
@@ -18,7 +15,7 @@ import ViewFormButton from "../../ViewFormButton";
 import { Attachment, FlowRequestStage } from "../../../../types/flows";
 import { extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
 import FormPreview from "../../../shared/molecules/FormPreview";
-import { useNudge } from "../../../../hooks/useNudge";
+import NudgeButton from "../../../shared/atoms/NudgeButton";
 
 
 interface CardStagesProps {
@@ -26,14 +23,6 @@ interface CardStagesProps {
   isActive: boolean;
   isLastStage: boolean;
 }
-
-type ActionPillItem = {
-  key: string;
-  tooltip: string;
-  icon: JSX.Element;
-  onClick: () => void;
-  loading?: boolean;
-};
 
 const CardStages = ({
   stage,
@@ -44,7 +33,6 @@ const CardStages = ({
   const [show, setShow] = useState(false);
   const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
   const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
-  const { mutate: sendNudge, isPending: nudging } = useNudge();
 
   const handleShowForm = (
     schema: FormIOComponent[] | undefined,
@@ -157,18 +145,6 @@ const CardStages = ({
             ? "Rejected by"
             : "Pending inputs from ";
 
-  const actionPillActions: ActionPillItem[] = [];
-
-  if (stage?.todo?.name) {
-    actionPillActions.push({
-      key: "nudge",
-      tooltip: "Nudge",
-      loading: nudging,
-      onClick: () => sendNudge(stage.todo.name),
-      icon: <BellRing className="w-4 h-4 text-blue-500" />,
-    });
-  }
-
   return (
     <div className="grid w-full lg:hover:bg-primary/20 cursor-pointer  items-center text-sm  lg:px-6">
       <StatusTimelineRow
@@ -187,8 +163,8 @@ const CardStages = ({
 
           <div className="grid grid-cols-[1fr_auto] max-sm:grid-cols-1 gap-3 items-start px-4 pt-1 pb-3">
             <div className="flex flex-col items-start gap-3 max-sm:order-2">
-              <div className="flex gap-3">
-                {stage?.approval_response_data && stage?.status != "Pending" && (
+              <div className="flex gap-3 items-center">
+                {stage?.approval_response_data && stage?.status != "Pending" ? (
                   <ViewFormButton
                     onClick={() =>
                       handleShowFormWithResponse(
@@ -197,45 +173,25 @@ const CardStages = ({
                       )
                     }
                   />
+                ) : (
+                  <div className="w-[126px] h-[36px]" />
                 )}
-                {canPerformActions &&
+                <NudgeButton
+                  todoId={stage?.todo?.name}
+                  app="HR Process"
+                  page="Separation"
+                />
+                {canPerformActions && actions.length > 0 &&
                   actions.map((action: string) => (
                     <Button
+                      key={action}
                       onClick={() => onAction(action, stage?.todo)}
                     >
                       {action}
                     </Button>
-                  ))}
+                  ))
+                }
               </div>
-              {actionPillActions.length > 0 && (
-                <div className="h-8 flex items-center gap-1 px-3 py-1 rounded-3xl bg-gray-10 w-fit">
-                  {actionPillActions.map((action, index) => (
-                    <div key={action.key} className="flex items-center gap-2">
-                      <Tooltip content={action.tooltip} position="top">
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            action.onClick();
-                          }}
-                          disabled={action.loading}
-                          className="flex items-center justify-center"
-                        >
-                          {action.loading ? (
-                            <span className="w-4 h-4 border border-gray-400 border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            action.icon
-                          )}
-                        </button>
-                      </Tooltip>
-
-                      {index < actionPillActions.length - 1 && (
-                        <span className="w-px h-4 bg-gray-300" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
             <div className="justify-self-end max-sm:justify-self-start max-sm:order-3">
               {status == "action_required"

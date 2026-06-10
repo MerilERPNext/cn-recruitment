@@ -13,6 +13,7 @@ import ViewFormButton from "../ViewFormButton";
 import { FormIOForm } from "../../../utils/flowUtils";
 import AttachmentPreview from "../FlowRequests/FlowDetails/AttachmentPreview";
 import FormPreview from "../../shared/molecules/FormPreview";
+import NudgeButton from "../../shared/atoms/NudgeButton";
 
 type handleActPropsType = {
   name: string;
@@ -120,7 +121,6 @@ const StageCard: React.FC<StageCardProps> = ({
         ? "Approved by "
         : "Pending input from ";
 
-
   return (
     <>
       <StatusTimelineItem isLast={idx === stages.length - 1} status={status} />
@@ -133,38 +133,46 @@ const StageCard: React.FC<StageCardProps> = ({
           </Typography>
         </div>
 
-        <div className="flex max-lg:flex-row-reverse justify-between items-center px-4 pt-1 pb-3">
-          {stage?.approval_response_data && stage?.status != "pending" && (
-            <ViewFormButton
-              onClick={() =>
-                handleShowFormWithResponse(
-                  stage?.form_json?.components,
-                  stage?.approval_response_data,
-                )
-              }
-            />
-          )}
-          {canPerformAction && status == "action_required" ? (
-            <Button
-              variant="contain"
-              size="md"
-              onClick={() =>
-                handleAct({
-                  name: "Act",
-                  hasForm: true,
-                  todoId: stage?.todo?.name ?? "",
-                  customApprovalType: stage?.todo?.custom_approval_type,
-                })
-              }
-              disabled={!stage?.todo?.name}
-            >
-              Act
-            </Button>
-          ) : (
-            <div></div>
-          )}
-
-          <div>
+        <div className="grid grid-cols-[1fr_auto] max-sm:grid-cols-1 gap-3 items-start px-4 pt-1 pb-3">
+          <div className="flex flex-col items-start gap-3 max-sm:order-2">
+            <div className="flex gap-3 items-center">
+              {stage?.approval_response_data && stage?.status != "pending" ? (
+                <ViewFormButton
+                  onClick={() =>
+                    handleShowFormWithResponse(
+                      stage?.form_json?.components,
+                      stage?.approval_response_data,
+                    )
+                  }
+                />
+              ) : (
+                <div className="w-[126px] h-[36px]" />
+              )}
+              <NudgeButton
+                todoId={stage?.todo?.name}
+                app="HR Process"
+                page="Confirmation"
+              />
+              {canPerformAction && status == "action_required" && (
+                <Button
+                  variant="contain"
+                  size="md"
+                  onClick={() =>
+                    handleAct({
+                      name: "Act",
+                      hasForm: true,
+                      todoId: stage?.todo?.name ?? "",
+                      customApprovalType: stage?.todo?.custom_approval_type,
+                    })
+                  }
+                  disabled={!stage?.todo?.name}
+                >
+                  Act
+                </Button>
+              )}
+            </div>
+          </div>
+          <div className="justify-self-end max-sm:justify-self-start max-sm:order-3">
             {status == "action_required"
               ? "In Progress"
               : formatToIndianDate(stage?.approval_time || "")}
