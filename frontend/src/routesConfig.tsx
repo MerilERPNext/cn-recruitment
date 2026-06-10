@@ -24,7 +24,6 @@ import {
   ExpenseNavigationState,
   buildExpenseNavigationState,
 } from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
-import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
 import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
@@ -1258,11 +1257,6 @@ export const routesConfig: AppRoute[] = [
         path: "separation",
         element: <Separation />,
         permissionKey: "Separation",
-      },
-      {
-        path: "rejected-separation-request",
-        element: <RejectedSeparationRequest />,
-        permissionKey: "Rejected Separation Request",
       },
       {
         path: "separation-workflow",
