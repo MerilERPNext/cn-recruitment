@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ArrowLeft, CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
 import {
   useCurrentEmployeeDetails,
@@ -185,21 +185,6 @@ const Separation = () => {
     }
   }, [item]);
 
-  // check for current and previous request
-  const RejectedRequest = useMemo(() => {
-    if (!separationFunnelDetails?.data?.length || separationFunnelDetails?.data?.length == 0) {
-      return null;
-    }
-
-    if (separationFunnelDetails.data[0]?.approval_status === "Rejected") {
-      return separationFunnelDetails.data[0];
-    }
-
-    if (separationFunnelDetails.data[1]?.approval_status === "Rejected")
-      return separationFunnelDetails.data[1];
-    return null;
-  }, [separationFunnelDetails]);
-
   const canViewWorkflow = useMemo(() => {
     if (!showRequestPage) return false;
     if (!separationFunnelDetails?.data?.[0]) return false;
@@ -218,17 +203,6 @@ const Separation = () => {
   return (
     <div className=" md:p-4 md:gap-4">
       <div className="flex items-center gap-1 mb-2">
-        {!!RejectedRequest &&
-          showRequestPage && (
-            <Button
-              bgColor="text"
-              variant="subtle"
-              onClick={() => setShowRequestPage(false)}
-              className="p-2 rounded-full min-w-0 h-fit ml-2 md:ml-0"
-            >
-              <ArrowLeft size={20} />
-            </Button>
-          )}
         <div className="flex flex-col md:mb-4 max-md:px-4">
           {isDesktop && <Typography variant="h4">Separation</Typography>}
           <Typography variant="bodySmall" color="body2">
