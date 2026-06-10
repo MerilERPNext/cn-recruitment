@@ -9,7 +9,6 @@ import { Typography } from "../../shared/atoms/Typography";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import Tooltip from "../../shared/Tooltip";
-import da from "date-fns/locale/da/index.js";
 
 // Props type
 type ApprovalRejectionQueueProps = {

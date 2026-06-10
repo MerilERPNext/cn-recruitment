@@ -244,8 +244,8 @@ const AllMyShiftRequestsList = () => {
           onSeeAll={() => navigate("/webapp/shift-request/shift-list")}
         />
         <CardTable
-          titles={["","Shift Type", "From Date", "To Date", "Status","Sendback Comment", "Actions"]}
-          columnWidths={["1fr" , "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          titles={["Shift Type", "Assigned To", "From Date", "To Date", "Created At", "Status", "Sendback Comment", "Actions"]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
           columnSortConfig={COLUMN_SORT_CONFIG}
         >
           {currentEmployee?.employee ? (

@@ -97,9 +97,8 @@ const ApprovalCard = ({
     : [];
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1.5fr  1fr 1fr 1fr 1fr 1fr 1fr"
-    : "1fr 1.5fr 1fr  1fr 1fr 1fr 1fr 1fr";
-
+    ? "0.5fr 1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+    : "1fr 1.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
   const cleanExplaination = sanitizeToPlainText(
     data?.reference_document?.explanation,
   );

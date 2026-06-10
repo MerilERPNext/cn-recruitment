@@ -93,8 +93,7 @@ const OvertimeApprovalCard = ({
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? "0.5fr 1fr 1fr 1.5fr 1fr 1fr 1fr"
-    : "1fr 1fr 1fr 1.5fr 1fr 1fr";
-
+    : "1fr 1fr 1fr 1.5fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (
