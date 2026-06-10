@@ -167,8 +167,11 @@ const EmpAttendanceRequestCard = ({
                 actionKeysMap: {
                   edit: "edit",
                   revoke: "revoke",
+                  nudge: "nudge",
                 }
               }}
+
+              todoId={data?.todo_id}
               canRevoke={!!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}
               canEdit={!!data?.can_edit && !isActed}
               revokeLoading={revokeEventMutation.isPending}
@@ -249,8 +252,11 @@ const EmpAttendanceRequestCard = ({
                   actionKeysMap: {
                     edit: "edit",
                     revoke: "revoke",
+                    nudge: "nudge",
                   }
                 }}
+
+                todoId={data?.todo_id}
                 variant="buttons"
                 canRevoke={type === "pending" && !!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}
                 canEdit={type === "pending" && !!data?.can_edit && !isActed}

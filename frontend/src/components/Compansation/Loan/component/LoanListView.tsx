@@ -130,7 +130,6 @@ export const LoanRow = ({
 }: LoanRowProps) => {
   const [expanded, setExpanded] = useState<boolean>(false);
   const [isActed, setIsActed] = useState(false);
-
   const onToggle = () => {
     setExpanded(prev => !prev);
   }
@@ -268,8 +267,10 @@ export const LoanRow = ({
               actionKeysMap: {
                 edit: "edit",
                 revoke: "revoke",
+                nudge:"nudge"
               },
             }}
+            todoId={loan?.todo_list?.[0]?.todo_id}
             canRevoke={canRevoke}
             canEdit={canEdit}
             onRevoke={handleRevokeClick}

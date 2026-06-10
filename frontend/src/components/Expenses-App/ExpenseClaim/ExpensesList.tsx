@@ -255,8 +255,10 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
               actionKeysMap: {
                 edit: "edit",
                 revoke: "revoke",
+                nudge:"nudge"
               },
             }}
+            todoId={item?.todo_id}
             variant="buttons"
             canEdit={canEdit && !isActed}
             onEdit={handleEditClick}
@@ -469,8 +471,10 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
             actionKeysMap: {
               edit: "edit",
               revoke: "revoke",
+              nudge:"nudge"
             },
           }}
+          todoId={item?.todo_id}
           canEdit={
             currentUser?.name?.toLowerCase() ===
               item?.send_back_user?.toLowerCase() &&

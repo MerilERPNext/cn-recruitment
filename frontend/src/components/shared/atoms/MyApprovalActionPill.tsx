@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Repeat1, SquarePen, Trash2, Wallet, X } from "lucide-react";
+import { Repeat1, SquarePen, Trash2, Wallet, X, BellRing } from "lucide-react";
 import type { JSX } from "react";
 import Tooltip from "../Tooltip";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { getActionsEnabled } from "../../../utils/uiPermission";
+import { useNudge } from "../../../hooks/useNudge";
 
 type MyApprovalActionPillProps = {
   /** to inforce ui permission to show hide action buttons
@@ -19,6 +20,7 @@ type MyApprovalActionPillProps = {
       revoke?: string;
       replace?: string;
       pay?: string;
+      nudge?: string;
     }
   };
   canRevoke?: boolean;
@@ -35,10 +37,11 @@ type MyApprovalActionPillProps = {
   revokeLoading?: boolean;
   variant?: "pill" | "buttons";
   isResubmit?: boolean;
+  todoId?: string | string[];
 };
 
 type ActionItem = {
-  key: "revoke" | "edit" | "replace" | "pay";
+  key: "revoke" | "edit" | "replace" | "pay" | "nudge";
   tooltip: string;
   icon: JSX.Element;
   onClick?: () => void;
@@ -59,9 +62,11 @@ const MyApprovalActionPill = ({
   onPay,
   payLoading = false,
   isResubmit = false,
+  todoId,
 }: MyApprovalActionPillProps) => {
   const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
   const { isDesktop } = useScreenSize();
+  const { mutate: sendNudge, isPending: nudging } = useNudge();
 
   const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
   const actionsEnabledFromKeys = Object.values(uiPermission?.actionKeysMap ?? []);
@@ -87,7 +92,12 @@ const MyApprovalActionPill = ({
     (!uiPermission?.actionKeysMap?.pay ||
       actionsEnabled[uiPermission?.actionKeysMap?.pay]);
 
-  const hasActions = revokeAllowed || editAllowed || replaceAllowed || payAllowed;
+  const nudgeAllowed =
+    !!todoId &&
+    (!uiPermission?.actionKeysMap?.nudge ||
+      actionsEnabled[uiPermission?.actionKeysMap?.nudge]);
+
+  const hasActions = revokeAllowed || editAllowed || replaceAllowed || payAllowed || nudgeAllowed;
   if (!hasActions) {
     if (variant === "buttons") return null;
 
@@ -147,17 +157,26 @@ const MyApprovalActionPill = ({
     });
   }
 
+  if (nudgeAllowed && todoId) {
+    actions.push({
+      key: "nudge",
+      tooltip: "Nudge",
+      loading: nudging,
+      onClick: () => sendNudge(todoId),
+      icon: <BellRing className="w-4 h-4 text-white md:text-blue-500" />,
+    });
+  }
+
   const revokeConfirmModal = showRevokeConfirm ? (
     <div
       className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center bg-black bg-opacity-50 md:backdrop-blur-sm"
       onClick={() => setShowRevokeConfirm(false)}
     >
       <div
-        className={`bg-white w-full ${
-          isDesktop
+        className={`bg-white w-full ${isDesktop
             ? "max-w-sm rounded-lg shadow-xl"
             : "rounded-t-2xl shadow-2xl"
-        }`}
+          }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

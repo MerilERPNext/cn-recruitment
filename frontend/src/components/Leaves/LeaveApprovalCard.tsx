@@ -69,7 +69,6 @@ const LeaveApprovalCard = ({
       setRejectionComment("");
     }
   };
-
   const handleSaveComment = async () => {
     if (!rejectionComment.trim()) {
       toast.error("Please enter a comment");
@@ -238,7 +237,7 @@ const LeaveApprovalCard = ({
               <TeamApprovalActionPill
                 actionsEnabled={actionsEnabled}
                 actions={actions}
-                status={data?.reference_document?.status}
+                status={data?.status}
                 recordId={data?.todo_id}
                 loadingAction={loadingAction}
                 onAction={(action) => handleActionClick(action, data)}

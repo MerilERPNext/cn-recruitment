@@ -121,8 +121,10 @@ const MyOvertimeRequests = () => {
           actionKeysMap: {
             edit: "edit_overtime_request",
             revoke: "can_revoke_overtime",
+            nudge:"nudge"
           },
         }}
+        
         request={props.item}
         onClick={handleRequestClick}
         onEdit={handleEditRequest}
