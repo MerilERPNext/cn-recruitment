@@ -42,7 +42,6 @@ const ApprovalRejectionAdvanceList = ({
   const { isDesktop } = useScreenSize();
   const { data: user } = useCurrentUser();
   const commentMutation = useExpenseCommentUpdate();
-  console.log(data,'==============================data team advance request')
   const [commentOpen, setCommentOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [comment, setComment] = useState("");

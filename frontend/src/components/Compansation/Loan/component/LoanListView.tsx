@@ -130,7 +130,6 @@ export const LoanRow = ({
 }: LoanRowProps) => {
   const [expanded, setExpanded] = useState<boolean>(false);
   const [isActed, setIsActed] = useState(false);
-console.log(loan,'=====================loan')
   const onToggle = () => {
     setExpanded(prev => !prev);
   }

@@ -69,7 +69,6 @@ const LeaveApprovalCard = ({
       setRejectionComment("");
     }
   };
-  console.log(data , "-----------------------------leave data")
   const handleSaveComment = async () => {
     if (!rejectionComment.trim()) {
       toast.error("Please enter a comment");
