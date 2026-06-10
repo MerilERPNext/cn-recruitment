@@ -13,6 +13,7 @@ import { Typography } from "../shared/atoms/Typography";
 import StatusBadge from "../shared/atoms/statusBadge";
 import ShiftRequestFormModal from "./ShiftRequestFormModal";
 import { getAssignedUsersCell } from "../../utils/getAssignedUsersCell";
+import Tooltip from "../shared/Tooltip";
 
 interface EmpShiftRequestCardProps {
   data: MyShiftRequest;
@@ -70,7 +71,7 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
     return "";
   };
 
-  const gridTemplateColumns = "1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+  const gridTemplateColumns = "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
   const canEdit = Boolean(data?.can_edit && !isActed);
   const canRevoke = Boolean(
     data?.custom_allow_revoke &&
@@ -134,6 +135,17 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
               <StatusBadge status={badgeStatus} />
             </AllocatedToTooltip>
           </div>
+          <Tooltip
+            content={data?.send_back_comment || "--"}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full text-gray-700"
+            >
+              {data?.send_back_comment || "--"}
+            </Typography>
+          </Tooltip>
           <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
               uiPermission={{
@@ -212,6 +224,12 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
                 {getAssignedUsersCell(data)}
               </Typography>
             </div>
+              <div>
+                <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+                <Typography variant="mobileCardValue" className="text-gray-700">
+                  {data?.send_back_comment || "--"}
+                </Typography>
+              </div>
             {/* Actions */}
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill

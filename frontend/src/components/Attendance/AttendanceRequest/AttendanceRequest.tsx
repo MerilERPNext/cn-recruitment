@@ -116,7 +116,7 @@ const AttendanceRequest = ({
 
           <div className="flex-1 overflow-y-auto md:px-4 pb-20">
             <CardTable
-              columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "0.8fr", "1fr", "1fr", "1fr"]}
+                columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "0.8fr", "1fr", "1fr", "1fr", "1fr"]}
               titles={[
                 "Request Type",
                 "Assigned To",
@@ -126,6 +126,7 @@ const AttendanceRequest = ({
                 "Created At",
                 "Duration",
                 "Status",
+                "Sendback Comment",
                 "Actions",
               ]}
               columnSortConfig={COLUMN_SORT_CONFIG}

@@ -6,6 +6,7 @@ import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill
 import { Typography } from "../../../shared/atoms/Typography";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
+import Tooltip from "../../../shared/Tooltip";
 
 type Props = {
   actionsEnabled?: boolean;
@@ -79,7 +80,7 @@ const TeamProofApprovalCard = ({
         <div className="flex justify-center">
           <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
         </div>
-
+      
         {/* Actions */}
         <div
           className="flex justify-center"
@@ -129,7 +130,7 @@ const TeamProofApprovalCard = ({
               data?.reference_document?.total_actual_amount
             ).toLocaleString("en-IN")}
           </Typography>
-
+           
           {data?.todo_status === "Open" && !isActed ? (
             <TeamApprovalActionPill
               actionsEnabled={actionsEnabled}
