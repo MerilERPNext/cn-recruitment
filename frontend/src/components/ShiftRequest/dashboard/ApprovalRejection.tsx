@@ -8,6 +8,8 @@ import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import Tooltip from "../../shared/Tooltip";
+import da from "date-fns/locale/da/index.js";
 
 // Props type
 type ApprovalRejectionQueueProps = {
@@ -48,8 +50,8 @@ const ApprovalRejectionQueue = ({
     : [];
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
   return (
     <>
@@ -127,6 +129,18 @@ const ApprovalRejectionQueue = ({
               />
             </AllocatedToTooltip>
           </div>
+          <Tooltip
+            content={data?.send_back_comment || "--"}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full text-gray-700"
+            >
+              {data?.send_back_comment || "--"}
+            </Typography>
+          </Tooltip>
+
           <div className="flex items-center justify-center">
             {data?.todo_status === "Open" && !isActed ? (
               <TeamApprovalActionPill
@@ -247,7 +261,12 @@ const ApprovalRejectionQueue = ({
                   />
                 </div>
               </div>
-
+                <div>
+                  <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+                  <Typography variant="mobileCardValue" className="text-gray-700">
+                    {data?.send_back_comment || "--"}
+                  </Typography>
+                </div>
               {data?.todo_status === "Open" && !isActed ? (
                 <TeamApprovalActionPill
                   actionsEnabled={actionsEnabled}
