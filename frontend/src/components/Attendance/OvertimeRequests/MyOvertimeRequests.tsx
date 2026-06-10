@@ -147,8 +147,8 @@ const MyOvertimeRequests = () => {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-20">
         <CardTable
-          columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "0.5fr"]}
-          titles={["Description", "Assigned To", "Creation", "Due Date", "Status", "Actions"]}
+          columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr","1fr", "0.5fr"]}
+          titles={["Description", "Assigned To", "Creation", "Due Date", "Status","Sendback Comment", "Actions"]}
           columnSortConfig={COLUMN_SORT_CONFIG}
         >
           {effectiveEmployeeId ? (

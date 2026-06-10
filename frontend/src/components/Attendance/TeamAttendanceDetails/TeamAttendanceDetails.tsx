@@ -60,6 +60,7 @@ const TeamAttendanceDetails = () => {
       "To Date",
       "Due Date",
       "Status",
+      "Sendback Comment",
       "Actions",
     ]
     : [
@@ -70,6 +71,7 @@ const TeamAttendanceDetails = () => {
       "To Date",
       "Due Date",
       "Status",
+      "Sendback Comment",
       "Actions",
     ];
 

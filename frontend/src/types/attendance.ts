@@ -171,9 +171,9 @@ export interface MyPlannedAttendanceRequest {
   date?: string;
   description?: string;
   allocated_to_name?: string;
+  send_back_comment?:string;
   todo_status: string;
   can_edit?: boolean;
-
 }
 export interface AttendanceRequestValidations {
   attendance_adjustment_requests: number;
