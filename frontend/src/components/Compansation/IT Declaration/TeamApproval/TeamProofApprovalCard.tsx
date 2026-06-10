@@ -34,7 +34,7 @@ const TeamProofApprovalCard = ({
     ? JSON.parse(data.custom_doctype_actions)
     : [];
 
-  const gridTemplateColumns = "1fr 2fr 2fr 1fr 1fr 1fr 1fr";
+  const gridTemplateColumns = "1fr 2fr 2fr 1fr 1fr 1fr";
 
   return (
     <>
@@ -80,17 +80,7 @@ const TeamProofApprovalCard = ({
         <div className="flex justify-center">
           <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
         </div>
-        <Tooltip
-          content={data?.send_back_comment || "--"}
-          triggerClassName="w-full truncate min-w-0 block"
-        >
-          <Typography
-            variant="bodySmall"
-            className="font-medium text-center truncate block w-full text-gray-700"
-          >
-            {data?.send_back_comment || "--"}
-          </Typography>
-        </Tooltip>
+      
         {/* Actions */}
         <div
           className="flex justify-center"
@@ -140,12 +130,7 @@ const TeamProofApprovalCard = ({
               data?.reference_document?.total_actual_amount
             ).toLocaleString("en-IN")}
           </Typography>
-            <div>
-              <Typography variant="mobileCardLabel">Sendback Comment</Typography>
-              <Typography variant="mobileCardValue" className="text-gray-700">
-                {data?.send_back_comment || "--"}
-              </Typography>
-            </div>
+           
           {data?.todo_status === "Open" && !isActed ? (
             <TeamApprovalActionPill
               actionsEnabled={actionsEnabled}

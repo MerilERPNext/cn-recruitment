@@ -55,11 +55,10 @@ const TeamProofSubmissionList = () => {
     "Regime Type",
     "Actual Amount",
     "Status",
-    "Sendback Comment",
     "Actions",
   ];
 
-  const columnWidths: string[] = ["1fr", "2fr", "2fr", "1fr", "1fr", "1fr", "1fr"];
+  const columnWidths: string[] = ["1fr", "2fr", "2fr", "1fr", "1fr", "1fr"];
 
   // ---------------- Empty Screen ----------------
   const noRecordsScreen = () => (
