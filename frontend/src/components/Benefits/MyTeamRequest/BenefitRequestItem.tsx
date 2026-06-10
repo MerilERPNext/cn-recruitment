@@ -14,6 +14,7 @@ import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { formatCurrency } from "../../../utils/currency";
 import { BenefitType } from "../../../types/benefit";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 
 
 
@@ -169,17 +170,21 @@ const BenefitRequestItem = ({
           </div>
           <div className="flex items-center justify-center">
             {data?.todo_status === "Open" && !isActed ? (
-              <TeamApprovalActionPill
-                actionsEnabled={actionsEnabled}
-                actions={actions}
-                status={data.status === "Closed" &&
-                  data.reference_document.custom_status !== "Rejected"
-                  ? "Approved"
-                  : data.reference_document.custom_status}
-                recordId={data?.todo_id}
-                loadingAction={loadingAction}
-                onAction={(action) => onAction(action, data)}
-              />
+              <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+                <MyApprovalActionPill
+                  uiPermission={{
+                    app: "Benifits",
+                    page: "My Requests",
+                    actionKeysMap: {
+                      edit: "edit",
+                      revoke: "revoke",
+                      nudge: "nudge"
+                    },
+                  }}
+                  todoId={data?.todo_id}
+
+                />
+              </div>
             ) : (
               <div className="flex items-center justify-center">
                 <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
