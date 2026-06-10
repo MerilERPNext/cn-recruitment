@@ -74,8 +74,7 @@ export interface MyAttendanceRequest {
     employee_id: string;
     role: string;
     status: string;
-
-  }[]
+  }[];
   reference_document: AttendanceRequest;
   reference_type: string;
   allocated_to: string[];
@@ -89,6 +88,7 @@ export interface MyAttendanceRequest {
   status: string;
   can_edit?: boolean;
   todo_status: string;
+  send_back_comment?: string;
   attachments?: [
     {
       file_url: string;

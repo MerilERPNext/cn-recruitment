@@ -90,7 +90,7 @@ const EmpAttendanceRequestCard = ({
   const formattedDueDate = formatToIndianDate(data?.due_date);
   const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation);
   const duration = getDays(formattedFromDate, formattedToDate);
-  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 0.8fr 1fr 1fr 1fr";
+  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 0.8fr 1fr 1fr 1fr 1fr";
 
   return (
     <>
@@ -148,6 +148,17 @@ const EmpAttendanceRequestCard = ({
 
             </AllocatedToTooltip>
           </div>
+          <Tooltip
+            content={data?.send_back_comment || "--"}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full text-gray-700"
+            >
+              {data?.send_back_comment || "--"}
+            </Typography>
+          </Tooltip>
           <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
               uiPermission={{
@@ -223,6 +234,12 @@ const EmpAttendanceRequestCard = ({
                 {getAssignedUsersCell(data)}
               </Typography>
             </div>
+              <div>
+                <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+                <Typography variant="mobileCardValue" className="text-gray-700">
+                  {data?.send_back_comment || "--"}
+                </Typography>
+              </div>
             {/* Actions */}
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
