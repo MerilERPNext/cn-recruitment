@@ -45,20 +45,35 @@ const RetriggerButton: React.FC<RetriggerButtonProps> = ({
         },
       );
       const session = res?.session;
-      if (session && typeof window.trigger_chatnext_assistant === "function") {
-        window.trigger_chatnext_assistant(true, session);
+      if (session) {
+        const maxAttempts = 30; // 3 seconds max
+        let attempts = 0;
+        const checkAndTrigger = () => {
+          if (typeof window !== "undefined" && typeof window.trigger_chatnext_assistant === "function") {
+            window.trigger_chatnext_assistant(true, session);
+            setIsRetriggering(false);
+          } else if (attempts < maxAttempts) {
+            attempts++;
+            setTimeout(checkAndTrigger, 100);
+          } else {
+            toast.error("Chat assistant is not available. Please refresh the page.");
+            setIsRetriggering(false);
+          }
+        };
+        checkAndTrigger();
+      } else {
+        setIsRetriggering(false);
       }
     } catch (e) {
       const formatedError = errorResponseFormater(e, "Retrigger Failed");
       toast.error(formatedError);
       console.log("Flow Retrigger Error: ", e);
-    } finally {
       setIsRetriggering(false);
     }
   };
 
-  const buttonText = showRetriggerForText
-    ? `Retrigger for ${employeeName || ""}`.trim()
+  const buttonText = showRetriggerForText && employeeName
+    ? `Retrigger for ${employeeName}`
     : "Retrigger Flow";
 
   return (

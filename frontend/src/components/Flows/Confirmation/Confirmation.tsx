@@ -120,7 +120,7 @@ const ConfirmationWorkflow = () => {
   const item = employeeConfirmationPending?.[0] || employeeConfirmationClosed?.[0];
 
   const funnelActivityId = item?.request_id || "";
-  const { data: flowRequestResponse } = useGetFlowRequestById(funnelActivityId);
+  const { data: flowRequestResponse, isLoading: isLoadingFlowRequest } = useGetFlowRequestById(funnelActivityId);
   const flowRequestData = flowRequestResponse?.data;
 
   const stages = item?.approval_stages;
@@ -132,7 +132,7 @@ const ConfirmationWorkflow = () => {
     loadingCardData ||
     loadingConfirmationTodo ||
     loadingCurrentEmployee ||
-    false;
+    (!!funnelActivityId && isLoadingFlowRequest);
 
   // Centralized chat trigger for both Confirmation and Separation
   const { triggerChat, isTriggeringChat } = useChatTrigger("Loading confirmation form...");

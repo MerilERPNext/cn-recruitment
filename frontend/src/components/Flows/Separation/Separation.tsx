@@ -81,7 +81,7 @@ const Separation = () => {
 
 
   const item = separationFunnelDetails?.data?.[0];
-  const { data: flowRequestResponse } = useGetFlowRequestById(item?.request_id || "");
+  const { data: flowRequestResponse, isLoading: isLoadingFlowRequest } = useGetFlowRequestById(item?.request_id || "");
   const flowRequestData = flowRequestResponse?.data;
 
   const separationPending = item?.approval_status === "Pending";
@@ -97,7 +97,7 @@ const Separation = () => {
 
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
 
-  const isLoading = isLoadingSeparationFunnelDetails || isLoadingSeparationType || isLoadingPolicy || isLoadingCurrentEmployee;
+  const isLoading = isLoadingSeparationFunnelDetails || isLoadingSeparationType || isLoadingPolicy || isLoadingCurrentEmployee || (!!item?.request_id && isLoadingFlowRequest);
 
   // Use centralized getDefinitionByFilter for finding trigger definitions
   const terminationDefinition = useMemo(
