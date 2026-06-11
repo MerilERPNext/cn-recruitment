@@ -9,12 +9,14 @@ import {
   useGetShouldShowConfirmationButton,
   useGetShouldShowSeparationButton,
   getDefinitionByFilter,
+  useGetFlowRequestById,
 } from "../../../hooks/useFlows";
 import {
   useConfirmation,
   // useConfirmationEmployee,
 } from "../../../hooks/useConfiremnation";
 import Button from "../../shared/atoms/Button";
+import RetriggerButton from "../RetriggerButton";
 import { Calendar, CalendarCheck, Clock, FileText } from "lucide-react";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useEffect, useMemo, useCallback, useState } from "react";
@@ -79,7 +81,7 @@ const ConfirmationWorkflow = () => {
   const { data: userUiPermission } = useGetUiPermission("HR Process");
   const enabledActions = getActionsEnabled(
     userUiPermission,
-    ["act_confirmation", "initiate_confirmation"],
+    ["act_confirmation", "initiate_confirmation", "retrigger"],
     "Confirmation",
   );
 
@@ -116,6 +118,10 @@ const ConfirmationWorkflow = () => {
   );
 
   const item = employeeConfirmationPending?.[0] || employeeConfirmationClosed?.[0];
+
+  const funnelActivityId = item?.request_id || "";
+  const { data: flowRequestResponse } = useGetFlowRequestById(funnelActivityId);
+  const flowRequestData = flowRequestResponse?.data;
 
   const stages = item?.approval_stages;
   console.log(item);
@@ -300,7 +306,6 @@ const ConfirmationWorkflow = () => {
   }
   /* ---------------------------------------------------------- */
 
-  const funnelActivityId = item?.request_id || "";
   const canActOnThisRequest = Boolean(
     (item as FlowRequestItem | undefined)?.approval_stages?.some((s) => s?.todo?.custom_doctype_actions),
   );
@@ -333,8 +338,29 @@ const ConfirmationWorkflow = () => {
           >
             Activity Log
           </Button>
+          {isDesktop && !!item && enabledActions.retrigger && flowRequestData?.retrigger_definition_name && flowRequestData?.initiated_for_employee_id && (
+            <RetriggerButton
+              retriggerDefinitionName={flowRequestData.retrigger_definition_name}
+              retriggerFunnel={flowRequestData.funnel || flowRequestData.category || ""}
+              retriggerEmployee={flowRequestData.initiated_for_employee_id}
+              employeeName={flowRequestData.initiated_for}
+              showRetriggerForText={true}
+            />
+          )}
         </div>
       </div>
+      {!isDesktop && !!item && enabledActions.retrigger && flowRequestData?.retrigger_definition_name && flowRequestData?.initiated_for_employee_id && (
+        <div className="px-2 mb-3">
+          <RetriggerButton
+            retriggerDefinitionName={flowRequestData.retrigger_definition_name}
+            retriggerFunnel={flowRequestData.funnel || flowRequestData.category || ""}
+            retriggerEmployee={flowRequestData.initiated_for_employee_id}
+            employeeName={flowRequestData.initiated_for}
+            showRetriggerForText={true}
+            fullWidth
+          />
+        </div>
+      )}
 
       <ActivityLogDrawer
         open={isActivityLogOpen}
