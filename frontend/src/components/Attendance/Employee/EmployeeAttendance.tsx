@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { differenceInCalendarDays, endOfMonth, format, parse, startOfMonth } from "date-fns";
+import { differenceInCalendarDays, eachDayOfInterval, endOfMonth, format, parse, startOfMonth } from "date-fns";
 import { useNavigate } from "react-router";
 import {
   useGetAllEventsAndAttendance,
@@ -32,6 +32,7 @@ import { ViewAll } from "../../shared/atoms/ViewAll";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
 import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
+import AttendanceCardList, { AttendanceCardItem } from "./EmployeeAttendence/AttendanceCardList";
 import Cardtable from "./EmployeeAttendence/CardTable";
 import DesktopAttendanceCalendar from "./EmployeeAttendence/DesktopAttendanceCalendar";
 
@@ -311,6 +312,41 @@ const EmployeeAttendance = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allAttendance]);
 
+  const completeMonthData = useMemo(() => {
+    const allDates = eachDayOfInterval({
+      start: startOfMonth(selectedDate as Date),
+      end: endOfMonth(selectedDate as Date),
+    });
+
+    return allDates.map((date) => ({
+      date,
+      statusInfo: getAttendanceStatus(date),
+    }));
+  }, [getAttendanceStatus, selectedDate]);
+
+  const handleCardClick = useCallback((item: AttendanceCardItem) => {
+    const { date, statusInfo } = item;
+    const dateKey = formatDateKey(date);
+    setShowDetailsFor({
+      date,
+      data:
+        statusInfo.record ||
+        ({
+          name: `placeholder-${dateKey}`,
+          doctype: "Attendance",
+          start: dateKey,
+          end: dateKey,
+          title: "No Data",
+          status: statusInfo.status,
+          docstatus: "",
+          employee: "",
+        } as AttendanceRecord),
+      status: statusInfo.status.replace(/-/g, " "),
+      events: statusInfo.events,
+      isWeeklyOff: statusInfo.isWeeklyOff,
+    });
+  }, []);
+
   if (isError) {
     return <AttendanceError error={error?.message} />;
   }
@@ -365,42 +401,55 @@ const EmployeeAttendance = () => {
             </div>
           </div>
         )}
-        {/* My Attendance Requests */}
-        <Card padding="sm" className="p-0 md:pb-20 mt-2 md:mt-4">
-          <div className="flex justify-between items-center w-full pb-2">
-            <Typography variant="subheading">My Attendance Requests</Typography>
 
-            <ViewAll
-              title="View All"
-              onClick={() => navigate("/webapp/attendance/attendance-request")}
+        {/* Attendance card list - Only show for mobile */}
+        {!isDesktop && (
+          <Card padding="sm" className="p-2 mt-2">
+            <AttendanceCardList
+              completeMonthData={completeMonthData}
+              onCardClick={handleCardClick}
             />
-          </div>
-          <CardTable
-            columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "0.8fr", "1fr", "1fr", "1fr"]}
-            titles={[
-              "Request Type",
-              "Assigned To",
-              "From Date",
-              "To Date",
-              "Due Date",
-              "Created At",
-              "Duration",
-              "Status",
-              "Actions",
-            ]}
-            columnSortConfig={COLUMN_SORT_CONFIG}
-          >
-            <Cardtable
-              currentEmployee={
-                currentEmployee
-                  ? { employee: currentEmployee.employee }
-                  : undefined
-              }
-              refetchAttendance={refetchAttendance}
-              setRefetchAttendance={setRefetchAttendance}
-            />
-          </CardTable>
-        </Card>
+          </Card>
+        )}
+
+        {/* My Attendance Requests - Hidden on mobile */}
+        {isDesktop && (
+          <Card padding="sm" className="p-0 md:pb-20 mt-2 md:mt-4">
+            <div className="flex justify-between items-center w-full pb-2">
+              <Typography variant="subheading">My Attendance Requests</Typography>
+
+              <ViewAll
+                title="View All"
+                onClick={() => navigate("/webapp/attendance/attendance-request")}
+              />
+            </div>
+            <CardTable
+              columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "0.8fr", "1fr", "1fr", "1fr"]}
+              titles={[
+                "Request Type",
+                "Assigned To",
+                "From Date",
+                "To Date",
+                "Due Date",
+                "Created At",
+                "Duration",
+                "Status",
+                "Actions",
+              ]}
+              columnSortConfig={COLUMN_SORT_CONFIG}
+            >
+              <Cardtable
+                currentEmployee={
+                  currentEmployee
+                    ? { employee: currentEmployee.employee }
+                    : undefined
+                }
+                refetchAttendance={refetchAttendance}
+                setRefetchAttendance={setRefetchAttendance}
+              />
+            </CardTable>
+          </Card>
+        )}
         {showReqAttendanceCorrection && (
           <AttendanceRequestFormV2 onClose={handleCloseAttendanceRequest} />
         )}

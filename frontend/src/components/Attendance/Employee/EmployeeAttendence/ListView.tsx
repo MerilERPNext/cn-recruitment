@@ -40,13 +40,13 @@ const ListView = () => {
       )}
       <div className="flex gap-2 justify-end w-full md:w-fit md:justify-center items-center  mt-4 px-2">
 
-        <ViewAll
+        {isDesktop && <ViewAll
           title="List View"
           className="text-gray-500 px-2 flex gap-1 justify-center items-center"
           onClick={() => {
             navigate("/webapp/attendance/emp-attendance/all");
           }}
-        />
+        />}
         <div className="flex gap-2">
 
           {canRegularize && <RegularizeDrawer />}
