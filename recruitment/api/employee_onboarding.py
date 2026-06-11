@@ -73,6 +73,63 @@ def _sanitize_order_by(order_by, allowed_fields, default_field):
     return f"{fieldname} {direction}"
 
 
+def _lock_filled_portal_fields(doc, updated_fields):
+    """Mark submitted portal fields Filled and snapshot current_value, in memory.
+
+    Only fields that actually hold a value are locked (read-only for HR review);
+    an empty field in the submit payload stays Pending so it remains editable and
+    isn't counted as filled. For Table fields "has value" means at least one row
+    with at least one non-empty cell. Mutates `doc` in place — the caller saves.
+    """
+    import json as _json
+    for prow in (doc.get("custom_candidate_portal_fields") or []):
+        if prow.fieldname not in updated_fields:
+            continue
+        ft = prow.get("fieldtype") or "Data"
+        live_val = doc.get(prow.fieldname)
+
+        if ft == "Table":
+            rows_data = live_val or []
+            has_value = any(
+                any(v not in (None, "", [], {}) for v in
+                    (r.as_dict() if hasattr(r, "as_dict") else r).values())
+                for r in rows_data
+            )
+        else:
+            has_value = live_val not in (None, "", [])
+
+        if not has_value:
+            continue
+
+        if ft == "Table":
+            prow.current_value = _json.dumps(
+                [{k: str(v or "") for k, v in (r.as_dict() if hasattr(r, "as_dict") else r).items()
+                  if not k.startswith("_") and k not in {
+                      "doctype", "parent", "parenttype", "parentfield",
+                      "docstatus", "owner", "creation", "modified", "modified_by"
+                  }} for r in (live_val or [])],
+                ensure_ascii=False, default=str
+            )
+        else:
+            prow.current_value = str(live_val) if live_val is not None else ""
+        prow.approval_status = "Filled"
+
+
+def _is_concurrent_edit_error(err):
+    """True for an optimistic-lock / concurrent-edit clash on save.
+
+    Covers Frappe's TimestampMismatchError and MySQL error 1020 (ER_CHECKREAD,
+    "Record has changed since last read"), which surfaces from SELECT ... FOR
+    UPDATE during save under concurrency (e.g. a double submit)."""
+    if isinstance(err, frappe.TimestampMismatchError):
+        return True
+    args = getattr(err, "args", None)
+    if args and args[0] == 1020:
+        return True
+    text = str(err)
+    return "Record has changed since last read" in text or "has been modified after you have opened it" in text
+
+
 @candidate_required
 def update_onboarding_details(email, data, action="submit"):
     """
@@ -130,142 +187,113 @@ def update_onboarding_details(email, data, action="submit"):
         onboarding_name = materialize_onboarding_from_applicant(applicant_name, prefill=data)
 
     try:
-        doc = frappe.get_doc("Employee Onboarding", onboarding_name)
-
-        portal_rows, _ = _get_onboarding_portal_rows(doc)
-
-        # Only allow fields in Pending or Rejected state
-        _EDITABLE = frozenset({"Pending", "Rejected"})
-        allowed_map = {
-            r.fieldname: r for r in portal_rows
-            if not r.get("hidden")
-            and not r.get("read_only")
-            and (r.get("approval_status") or "Pending") in _EDITABLE
-        }
-
-        if not allowed_map:
-            frappe.local.response["http_status_code"] = 400
-            return {"status": "error", "code": 400, "message": "No editable portal fields available. All fields are under review or already approved."}
-
-        # Only validate mandatory constraint for fields actually being submitted.
-        # A candidate may update one rejected field at a time without needing to
-        # supply all other editable/mandatory fields in the same request.
-        submitted_keys = set(data.keys()) & set(allowed_map.keys())
-        missing = [
-            allowed_map[fn].label or fn for fn in submitted_keys
-            if allowed_map[fn].get("is_mandatory") and data[fn] in (None, "", [])
-        ]
-        if missing:
-            frappe.local.response["http_status_code"] = 422
-            return {
-                "status": "error",
-                "code": 422,
-                "message": "The following mandatory fields are missing: " + ", ".join(missing),
-                "missing_fields": missing,
-            }
-
-        if not submitted_keys:
-            frappe.local.response["http_status_code"] = 400
-            return {"status": "error", "code": 400, "message": "None of the submitted fields are editable. They may be approved, read-only, or hidden."}
-
-        meta_lookup = {f["fieldname"]: f for f in _read_onboarding_meta()}
+        # Apply the candidate's values — and, on submit, lock the filled fields —
+        # in a SINGLE save. Retry on a concurrent-edit clash (e.g. a double submit,
+        # or HR touching the same record) by re-fetching and re-applying instead of
+        # surfacing a 500. One save also avoids firing on_update hooks twice.
         updated = []
+        for _attempt in range(3):
+            try:
+                doc = frappe.get_doc("Employee Onboarding", onboarding_name)
 
-        for fn, value in data.items():
-            if fn not in allowed_map:
-                continue
+                portal_rows, _ = _get_onboarding_portal_rows(doc)
 
-            meta = meta_lookup.get(fn, {})
-            row = allowed_map[fn]
-            fieldtype = (
-                getattr(row, "fieldtype", None) or
-                (row.get("fieldtype") if isinstance(row, dict) else None) or
-                meta.get("fieldtype", "Data")
-            )
+                # Only allow fields in Pending or Rejected state
+                _EDITABLE = frozenset({"Pending", "Rejected"})
+                allowed_map = {
+                    r.fieldname: r for r in portal_rows
+                    if not r.get("hidden")
+                    and not r.get("read_only")
+                    and (r.get("approval_status") or "Pending") in _EDITABLE
+                }
 
-            if fieldtype == "Table" and isinstance(value, list):
-                doc.set(fn, [])
-                for row_data in value:
-                    if not isinstance(row_data, dict):
+                if not allowed_map:
+                    frappe.local.response["http_status_code"] = 400
+                    return {"status": "error", "code": 400, "message": "No editable portal fields available. All fields are under review or already approved."}
+
+                # Only validate mandatory constraint for fields actually being submitted.
+                # A candidate may update one rejected field at a time without needing to
+                # supply all other editable/mandatory fields in the same request.
+                submitted_keys = set(data.keys()) & set(allowed_map.keys())
+                missing = [
+                    allowed_map[fn].label or fn for fn in submitted_keys
+                    if allowed_map[fn].get("is_mandatory") and data[fn] in (None, "", [])
+                ]
+                if missing:
+                    frappe.local.response["http_status_code"] = 422
+                    return {
+                        "status": "error",
+                        "code": 422,
+                        "message": "The following mandatory fields are missing: " + ", ".join(missing),
+                        "missing_fields": missing,
+                    }
+
+                if not submitted_keys:
+                    frappe.local.response["http_status_code"] = 400
+                    return {"status": "error", "code": 400, "message": "None of the submitted fields are editable. They may be approved, read-only, or hidden."}
+
+                meta_lookup = {f["fieldname"]: f for f in _read_onboarding_meta()}
+                updated = []
+
+                for fn, value in data.items():
+                    if fn not in allowed_map:
                         continue
-                    if not any(v not in (None, "", [], {}) for v in row_data.values()):
-                        continue
-                    doc.append(fn, row_data)
-            else:
-                doc.set(fn, value)
 
-            updated.append(fn)
+                    meta = meta_lookup.get(fn, {})
+                    row = allowed_map[fn]
+                    fieldtype = (
+                        getattr(row, "fieldtype", None) or
+                        (row.get("fieldtype") if isinstance(row, dict) else None) or
+                        meta.get("fieldtype", "Data")
+                    )
 
-        doc.save(ignore_permissions=True)
+                    if fieldtype == "Table" and isinstance(value, list):
+                        doc.set(fn, [])
+                        for row_data in value:
+                            if not isinstance(row_data, dict):
+                                continue
+                            if not any(v not in (None, "", [], {}) for v in row_data.values()):
+                                continue
+                            doc.append(fn, row_data)
+                    else:
+                        doc.set(fn, value)
 
-        # On "save": recompute boarding_status, then ensure a save advances
-        # Pending -> In Process. A save persists values but leaves fields
-        # Pending (so they stay editable), so the count-based derivation can't
-        # move past Pending on its own — nudge it to reflect partial progress.
-        # Field-level approval_status stays untouched.
-        if not is_submit and updated:
-            from recruitment.api.field_level_approval import _sync_overall_status
-            doc.reload()
-            _sync_overall_status(doc)
-            if (doc.get("boarding_status") or "Pending") == "Pending":
-                doc.db_set("boarding_status", "In Process", update_modified=False)
+                    updated.append(fn)
 
-        # On "submit": mark updated portal fields as Filled, snapshot current_value
-        # (locks fields read-only for HR review) and sync the action center.
-        # On "save": skip all of this so the fields stay editable on next fetch.
+                # On submit, lock the filled portal fields (mark Filled + snapshot
+                # value) BEFORE saving so values and statuses persist in one write.
+                if is_submit and updated:
+                    _lock_filled_portal_fields(doc, updated)
+
+                doc.save(ignore_permissions=True)
+                break
+            except Exception as _save_err:
+                if _is_concurrent_edit_error(_save_err) and _attempt < 2:
+                    frappe.db.rollback()
+                    continue
+                raise
+
+        # ── Post-save side effects (no further doc.save()) ────────────────────────
+        from recruitment.api.field_level_approval import _sync_overall_status
         if is_submit and updated:
-            import json as _json
-            doc.reload()
-            for prow in (doc.get("custom_candidate_portal_fields") or []):
-                if prow.fieldname not in updated:
-                    continue
-                ft = prow.get("fieldtype") or "Data"
-                live_val = doc.get(prow.fieldname)
-
-                # Only lock + mark Filled a field that actually holds a value.
-                # An empty field in the submit payload stays Pending: editable,
-                # not read-only, and not counted as "filled".
-                if ft == "Table":
-                    rows_data = live_val or []
-                    has_value = any(
-                        any(v not in (None, "", [], {}) for v in
-                            (r.as_dict() if hasattr(r, "as_dict") else r).values())
-                        for r in rows_data
-                    )
-                else:
-                    has_value = live_val not in (None, "", [])
-
-                if not has_value:
-                    continue
-
-                if ft == "Table":
-                    prow.current_value = _json.dumps(
-                        [{k: str(v or "") for k, v in (r.as_dict() if hasattr(r, "as_dict") else r).items()
-                          if not k.startswith("_") and k not in {
-                              "doctype", "parent", "parenttype", "parentfield",
-                              "docstatus", "owner", "creation", "modified", "modified_by"
-                          }} for r in rows_data],
-                        ensure_ascii=False, default=str
-                    )
-                else:
-                    prow.current_value = str(live_val) if live_val is not None else ""
-                prow.approval_status = "Filled"
-
-            doc.save(ignore_permissions=True)
-
-            # ── Sync Candidate Action Center Item ─────────────────────────────
+            # Sync the candidate action-center item, then recompute boarding_status
+            # (flips to Submitted once no field is left Pending or Rejected).
             try:
                 from recruitment.api.action_center import sync_onboarding_field_rejection_action
                 doc.reload()
                 sync_onboarding_field_rejection_action(doc)
             except Exception:
                 frappe.log_error(frappe.get_traceback(), "Action Center Sync Failed (Candidate Refill)")
-
-            # Recompute boarding_status: flips to Submitted when no field is
-            # left Pending or Rejected, otherwise In Process.
-            from recruitment.api.field_level_approval import _sync_overall_status
             doc.reload()
             _sync_overall_status(doc)
+        elif updated:
+            # A save persists values but leaves fields Pending (editable); the
+            # count-based derivation can't move past Pending on its own, so nudge
+            # Pending -> In Process to reflect partial progress.
+            doc.reload()
+            _sync_overall_status(doc)
+            if (doc.get("boarding_status") or "Pending") == "Pending":
+                doc.db_set("boarding_status", "In Process", update_modified=False)
 
         frappe.db.commit()
 
