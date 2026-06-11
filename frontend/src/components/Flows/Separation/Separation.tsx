@@ -9,10 +9,8 @@ import {
   useChatTrigger,
   useDifinitaionNameForSeparation,
   getDefinitionByFilter,
-  useGetFlowRequestById,
 } from "../../../hooks/useFlows";
 import Button from "../../shared/atoms/Button";
-import RetriggerButton from "../RetriggerButton";
 import ApprovalTracker from "./components/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useEffect, useMemo, useCallback, useState } from "react";
@@ -61,13 +59,7 @@ const Separation = () => {
   const { data: userUiPermission } = useGetUiPermission("HR Process");
   const enabledActions = getActionsEnabled(
     userUiPermission,
-    [
-      "view_workflow",
-      "initiate_separation",
-      "terminate",
-      "retrigger_separation",
-      "retrigger_termination",
-    ],
+    ["view_workflow", "initiate_separation", "terminate"],
     "Separation",
   );
 
@@ -81,19 +73,11 @@ const Separation = () => {
 
 
   const item = separationFunnelDetails?.data?.[0];
-  const { data: flowRequestResponse } = useGetFlowRequestById(item?.request_id || "");
-  const flowRequestData = flowRequestResponse?.data;
-
   const separationPending = item?.approval_status === "Pending";
 
   const reference_name = item?.workflow_stages?.[0]?.todo?.reference_name ?? null;
   const { data: separationType, isLoading: isLoadingSeparationType } = useGetEmployeeSeparationType(reference_name);
   const { data: policyData, isLoading: isLoadingPolicy } = useGetNoticePeriodAndSeparationPolicy(document_name);
-
-  const isTermination = separationType?.custom_resignaion_type === "Termination";
-  const canRetrigger = isTermination
-    ? enabledActions.retrigger_termination
-    : enabledActions.retrigger_separation;
 
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
 
@@ -233,16 +217,6 @@ const Separation = () => {
         >
           Activity Log
         </Button>
-        {isDesktop && !!item && canRetrigger && flowRequestData?.retrigger_definition_name && flowRequestData?.initiated_for_employee_id && (
-          <RetriggerButton
-            retriggerDefinitionName={flowRequestData.retrigger_definition_name}
-            retriggerFunnel={flowRequestData.funnel || flowRequestData.category || ""}
-            retriggerEmployee={flowRequestData.initiated_for_employee_id}
-            employeeName={flowRequestData.initiated_for}
-            showRetriggerForText={true}
-            className="mr-2"
-          />
-        )}
         {canViewWorkflow && (
           <Button
             onClick={handleShowWorkflow}
@@ -254,18 +228,6 @@ const Separation = () => {
           </Button>
         )}
       </div>
-      {!isDesktop && !!item && canRetrigger && flowRequestData?.retrigger_definition_name && flowRequestData?.initiated_for_employee_id && (
-        <div className="px-4 mb-3">
-          <RetriggerButton
-            retriggerDefinitionName={flowRequestData.retrigger_definition_name}
-            retriggerFunnel={flowRequestData.funnel || flowRequestData.category || ""}
-            retriggerEmployee={flowRequestData.initiated_for_employee_id}
-            employeeName={flowRequestData.initiated_for}
-            showRetriggerForText={true}
-            fullWidth
-          />
-        </div>
-      )}
       <ActivityLogDrawer
         open={isActivityLogOpen}
         onClose={() => setIsActivityLogOpen(false)}
