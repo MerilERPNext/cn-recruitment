@@ -347,6 +347,29 @@ export interface EmployeeCostCenter {
   segment_totals: Record<string, number>;
 }
 
+export interface EmployeePreviousDetailNode {
+  employee: string;
+  employee_name: string;
+  designation: string | null;
+  company: string | null;
+  company_name: string | null;
+  department: string | null;
+  department_name: string | null;
+  location: string | null;
+  location_name: string | null;
+  date_of_joining: string | null;
+  relieving_date: string | null;
+  previous: EmployeePreviousDetailNode | null;
+}
+
+export interface EmployeePreviousDetailsResponse {
+  success: boolean;
+  employee: string;
+  tree: EmployeePreviousDetailNode;
+  chain: string[];
+  depth: number;
+}
+
 export interface EmployeeSupplementary {
   designation_name?: string;
   department_display?: string;

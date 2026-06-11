@@ -16,6 +16,7 @@ import {
   EmployeeIdCardResponse,
   EmployeeListItem,
   EmployeeNode,
+  EmployeePreviousDetailsResponse,
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
 import { AddressInfoData } from "../types/profile";
@@ -557,6 +558,14 @@ export const useGetEmploymentHistoryData = (employee_id: string) => {
   return useQuery({
     queryKey: ["employment-history-data", employee_id],
     queryFn: () => profileService.getEmploymentHistoryData(employee_id),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee_id,
+  });
+};
+export const useGetEmployeePreviousDetails = (employee_id: string) => {
+  return useQuery<EmployeePreviousDetailsResponse | null>({
+    queryKey: ["employee-previous-details", employee_id],
+    queryFn: () => profileService.getEmployeePreviousDetails(employee_id),
     staleTime: 1000 * 60 * 5,
     enabled: !!employee_id,
   });

@@ -4,8 +4,9 @@ import Button from "../shared/atoms/Button";
 import { PlusIcon } from "lucide-react";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
-import { useDeleteEmpReportingDetailsRecordMutation, useDeleteEmployeeCostCenterRecordsMutation, useDeleteEmployeeHistoryRecordsMutation, useGetEmploymentHistoryData } from "../../hooks/useEmployee";
-import { EmployeeCostCenter, EmployeeRole, EmploymentTypes, WorkLocation, WorkRole } from "../../types/employee";
+import { useDeleteEmpReportingDetailsRecordMutation, useDeleteEmployeeCostCenterRecordsMutation, useDeleteEmployeeHistoryRecordsMutation, useGetEmployeePreviousDetails, useGetEmploymentHistoryData } from "../../hooks/useEmployee";
+import { EmployeeCostCenter, EmployeePreviousDetailNode, EmployeeRole, EmploymentTypes, WorkLocation, WorkRole } from "../../types/employee";
+import EmployeePreviousJoiningCard from "./EmploymentHistoryCards/EmployeePreviousJoiningCard";
 import EmploymentWorkLocationCard from "./EmploymentHistoryCards/EmploymentWorkLocationsCard";
 import EmploymentHistoryCard from "./EmploymentHistoryCards/EmploymentHistoryCard";
 import EmploymentTypesCard from "./EmploymentHistoryCards/EmploymentTypesCard";
@@ -51,6 +52,19 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   onActionSuccess,
 }) => {
   const { data, isLoading, error } = useGetEmploymentHistoryData(employeeId || "")
+  const { data: employeePreviousDetails } = useGetEmployeePreviousDetails(employeeId || "")
+
+  const flattenPreviousJoiningHistory = (
+    node: EmployeePreviousDetailNode | null,
+  ): EmployeePreviousDetailNode[] => {
+    if (!node) return [];
+    return [node, ...flattenPreviousJoiningHistory(node.previous)];
+  };
+
+  const previousJoiningHistory = flattenPreviousJoiningHistory(
+    employeePreviousDetails?.tree || null,
+  );
+
   const history = data?.work_roles || [];
   const workLocation = data?.work_locations || [];
   const employmentTypes = data?.employment_types || [];
@@ -432,6 +446,37 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 </div>
               ) : (
                 <NoDataFound title="No Segments" subtitle="No segment records have been added yet." />
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2 mt-6">
+              <div className="flex items-center justify-between">
+                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                  Previous Joining History
+                </Typography>
+              </div>
+              {previousJoiningHistory.length > 0 ? (
+                <div className="flex gap-2 overflow-auto">
+                  {previousJoiningHistory.map((item) => (
+                    <div
+                      key={item.employee + item.date_of_joining}
+                      className={`${previousJoiningHistory.length === 1 ? "max-w-md w-full" : ""}`}
+                    >
+                      <EmployeePreviousJoiningCard
+                        employee={item.employee}
+                        employee_name={item.employee_name}
+                        designation={item.designation}
+                        company_name={item.company_name}
+                        department_name={item.department_name}
+                        location_name={item.location_name}
+                        date_of_joining={item.date_of_joining}
+                        relieving_date={item.relieving_date}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <NoDataFound title="No Previous Joining History" subtitle="No previous joining history records found." />
               )}
             </div>
           </>
