@@ -220,8 +220,24 @@ def update_onboarding_details(email, data, action="submit"):
                     continue
                 ft = prow.get("fieldtype") or "Data"
                 live_val = doc.get(prow.fieldname)
+
+                # Only lock + mark Filled a field that actually holds a value.
+                # An empty field in the submit payload stays Pending: editable,
+                # not read-only, and not counted as "filled".
                 if ft == "Table":
                     rows_data = live_val or []
+                    has_value = any(
+                        any(v not in (None, "", [], {}) for v in
+                            (r.as_dict() if hasattr(r, "as_dict") else r).values())
+                        for r in rows_data
+                    )
+                else:
+                    has_value = live_val not in (None, "", [])
+
+                if not has_value:
+                    continue
+
+                if ft == "Table":
                     prow.current_value = _json.dumps(
                         [{k: str(v or "") for k, v in (r.as_dict() if hasattr(r, "as_dict") else r).items()
                           if not k.startswith("_") and k not in {
