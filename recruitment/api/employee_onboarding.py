@@ -4,6 +4,7 @@ from recruitment.api.candidate_portal import (
     _get_active_pre_release,
     _get_onboarding_portal_rows,
     _read_onboarding_meta,
+    _compute_candidate_field_counts,
 )
 from recruitment.api.candidate_auth import candidate_required, enforce_candidate_identity
 
@@ -268,9 +269,14 @@ def update_onboarding_details(email, data, action="submit"):
 
         frappe.db.commit()
 
-        from recruitment.api.field_level_approval import _compute_field_status_counts
+        # Value-aware counts: a field with a value counts as "filled" whether it
+        # was just saved (still editable) or submitted, plus prefilled values
+        # resolved from the Job Applicant. boarding_status stays submit-based.
         doc.reload()
-        field_status_counts = _compute_field_status_counts(doc)
+        portal_rows_now, _ = _get_onboarding_portal_rows(doc)
+        field_status_counts = _compute_candidate_field_counts(
+            portal_rows_now, doc, frappe.get_doc("Job Applicant", applicant_name)
+        )
 
         return {
             "status": "success",
