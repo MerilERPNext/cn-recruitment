@@ -93,26 +93,26 @@ export default function RequisitionReviewStep({
   return (
     <div className="space-y-8 animate-fadeIn">
       <div>
-        <h2 className="text-lg font-bold text-slate-800">Review Requisition</h2>
-        <p className="text-xs text-slate-500 mt-1">
+        <h2 className="text-2xl font-bold text-slate-800">Review Requisition</h2>
+        <p className="text-base text-slate-500 mt-1">
           Please review the job requisition details before submitting.
         </p>
       </div>
 
       {hasValidationErrors && (
         <div className="bg-rose-50/70 border border-rose-200/80 rounded-xl p-4 flex items-start gap-3">
-          <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+          <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-base shrink-0 mt-0.5">
             ⚠️
           </div>
           <div className="space-y-1">
-            <h4 className="text-xs font-semibold text-rose-800">
+            <h4 className="text-base font-semibold text-rose-800">
               Required Information Missing
             </h4>
-            <p className="text-xs text-rose-600 leading-relaxed">
+            <p className="text-base text-rose-600 leading-relaxed">
               The following required fields must be completed before you can
               submit:
             </p>
-            <ul className="list-disc list-inside text-[11px] text-rose-600 space-y-0.5 font-medium mt-1">
+            <ul className="list-disc list-inside text-[15px] text-rose-600 space-y-0.5 font-medium mt-1">
               {validationErrors.map((err, idx) => (
                 <li key={idx}>{err}</li>
               ))}
@@ -124,10 +124,10 @@ export default function RequisitionReviewStep({
       <div className="space-y-6">
         {/* ── Section 1: Basic Details ── */}
         <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-5 space-y-4">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
+          <h3 className="text-base font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
             Basic Details
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
             {[
               {
                 label: "Hiring Manager",
@@ -166,10 +166,10 @@ export default function RequisitionReviewStep({
 
         {/* ── Section 2: Job Details ── */}
         <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-5 space-y-4">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
+          <h3 className="text-base font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
             Job Details
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
             {[
               { label: "Location", value: formData.location_title ?? formData.location },
               {
@@ -211,21 +211,21 @@ export default function RequisitionReviewStep({
 
         {/* ── Section 3: Position Selection ── */}
         <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-5 space-y-4">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
+          <h3 className="text-base font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
             Position Selection
           </h3>
-          <div className="grid grid-cols-3 gap-4 text-xs bg-white border border-slate-100 p-3 rounded-lg">
+          <div className="grid grid-cols-3 gap-4 text-base bg-white border border-slate-100 p-3 rounded-lg">
             <div className="text-center">
               <span className="text-slate-400 font-medium block">
                 Total Positions
               </span>
-              <span className="text-sm font-bold text-slate-800">
+              <span className="text-lg font-bold text-slate-800">
                 {formData.number_of_positions}
               </span>
             </div>
             <div className="text-center border-x">
               <span className="text-slate-400 font-medium block">New</span>
-              <span className="text-sm font-bold text-emerald-600">
+              <span className="text-lg font-bold text-emerald-600">
                 {formData.number_of_new_positions}
               </span>
             </div>
@@ -233,7 +233,7 @@ export default function RequisitionReviewStep({
               <span className="text-slate-400 font-medium block">
                 Replacement
               </span>
-              <span className="text-sm font-bold text-orange-600">
+              <span className="text-lg font-bold text-orange-600">
                 {formData.number_of_replacement_positions}
               </span>
             </div>
@@ -241,14 +241,14 @@ export default function RequisitionReviewStep({
 
           {positions.length > 0 && (
             <div className="space-y-2">
-              <label className="text-xs text-slate-500 font-medium">
+              <label className="text-base text-slate-500 font-medium">
                 Position Details
               </label>
               <div className="space-y-3">
                 {positions.map((pos: Position, idx: number) => (
                   <div
                     key={idx}
-                    className="bg-white border border-slate-150 rounded-lg p-3 shadow-sm space-y-2 text-xs"
+                    className="bg-white border border-slate-150 rounded-lg p-3 shadow-sm space-y-2 text-base"
                   >
                     <div className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded inline-block">
                       Position #{pos.position_number || idx + 1} (
@@ -256,7 +256,7 @@ export default function RequisitionReviewStep({
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-1">
                       <div>
-                        <span className="text-[10px] text-slate-400 font-medium block">
+                        <span className="text-[14px] text-slate-400 font-medium block">
                           Location
                         </span>
                         <span className="font-semibold text-slate-800">
@@ -264,7 +264,7 @@ export default function RequisitionReviewStep({
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-medium block">
+                        <span className="text-[14px] text-slate-400 font-medium block">
                           Functional Area
                         </span>
                         <span className="font-semibold text-slate-800">
@@ -272,7 +272,7 @@ export default function RequisitionReviewStep({
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-medium block">
+                        <span className="text-[14px] text-slate-400 font-medium block">
                           Reporting Manager
                         </span>
                         <span className="font-semibold text-slate-800">
@@ -281,7 +281,7 @@ export default function RequisitionReviewStep({
                       </div>
                       {pos.vacancy_type === "Replacement" && (
                         <div>
-                          <span className="text-[10px] text-slate-400 font-medium block">
+                          <span className="text-[14px] text-slate-400 font-medium block">
                             Replacement For
                           </span>
                           <span className="font-semibold text-slate-800">
@@ -299,10 +299,10 @@ export default function RequisitionReviewStep({
 
         {/* ── Section 4: Other Details ── */}
         <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-5 space-y-4">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
+          <h3 className="text-base font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
             Other Details & Requirements
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
             {[
               { label: "Employee Type", value: formData.custom_employee_type },
               {
@@ -406,7 +406,7 @@ export default function RequisitionReviewStep({
                     return skillsArray.map((skill: string, idx: number) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center text-xs font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200"
+                        className="inline-flex items-center text-base font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200"
                       >
                         {skill}
                       </span>
@@ -426,13 +426,13 @@ export default function RequisitionReviewStep({
                       (q: Qualification, idx: number) => (
                         <div
                           key={idx}
-                          className="bg-white border rounded-lg p-2.5 flex justify-between items-center text-xs shadow-sm"
+                          className="bg-white border rounded-lg p-2.5 flex justify-between items-center text-base shadow-sm"
                         >
                           <span className="font-semibold text-slate-800">
                             {q.qualification}
                           </span>
                           <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${q.mandatory === "Required" ? "bg-red-50 text-red-700 border border-red-100" : "bg-blue-50 text-blue-700 border border-blue-100"}`}
+                            className={`px-2 py-0.5 rounded text-[14px] font-bold ${q.mandatory === "Required" ? "bg-red-50 text-red-700 border border-red-100" : "bg-blue-50 text-blue-700 border border-blue-100"}`}
                           >
                             {q.mandatory || "Required"}
                           </span>
@@ -447,21 +447,21 @@ export default function RequisitionReviewStep({
           {/* ── Pre-Screened Candidates ── */}
           {candidates.length > 0 && (
             <div className="space-y-2 pt-2">
-              <label className="text-xs text-slate-500 font-medium">
+              <label className="text-base text-slate-500 font-medium">
                 Pre-Screened Candidates
               </label>
               <div className="space-y-3">
                 {candidates.map((cand: Candidate, idx: number) => (
                   <div
                     key={idx}
-                    className="bg-white border border-slate-150 rounded-lg p-3 shadow-sm space-y-2 text-xs"
+                    className="bg-white border border-slate-150 rounded-lg p-3 shadow-sm space-y-2 text-base"
                   >
                     <div className="font-bold text-slate-700">
                       {cand.candidate_name || `Candidate #${idx + 1}`}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-1">
                       <div>
-                        <span className="text-[10px] text-slate-400 font-medium block">
+                        <span className="text-[14px] text-slate-400 font-medium block">
                           Email
                         </span>
                         <span className="font-semibold text-slate-800">
@@ -469,7 +469,7 @@ export default function RequisitionReviewStep({
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-medium block">
+                        <span className="text-[14px] text-slate-400 font-medium block">
                           Phone
                         </span>
                         <span className="font-semibold text-slate-800">
@@ -477,13 +477,13 @@ export default function RequisitionReviewStep({
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-medium block">
+                        <span className="text-[14px] text-slate-400 font-medium block">
                           Attachment
                         </span>
                         {renderCandidateCV(cand.cv)}
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-medium block">
+                        <span className="text-[14px] text-slate-400 font-medium block">
                           Offer Directly?
                         </span>
                         <span className="font-semibold text-slate-800">
@@ -511,7 +511,7 @@ export default function RequisitionReviewStep({
           />
           <label
             htmlFor="acknowledge"
-            className="text-xs text-slate-700 font-medium cursor-pointer select-none leading-relaxed"
+            className="text-base text-slate-700 font-medium cursor-pointer select-none leading-relaxed"
           >
             I hereby declare that the details provided in this job requisition
             are accurate, complete, and authorized according to the company's

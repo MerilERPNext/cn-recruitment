@@ -642,7 +642,7 @@ export const requisitionFormSchemas = {
                 validateOn: "blur",
                 dataSrc: "url",
                 data: {
-                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area',
+                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}&disabled=0',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message.results",
