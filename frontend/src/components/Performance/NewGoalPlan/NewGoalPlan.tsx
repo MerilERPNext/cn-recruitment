@@ -140,6 +140,7 @@ const NewGoalPlan: React.FC = () => {
           {/* Button is visible if a plan is selected OR if we are loading a selected plan */}
           {(selectedGoalPlanId) && (
             <button
+              aria-label="Add goal"
               className='px-5 py-2.5 nowrap whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-2 disabled:opacity-70'
               onClick={() => setIsDialogOpen(true)}
               disabled={goalPlanLoading} // Prevent clicks while loading

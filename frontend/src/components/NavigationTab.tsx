@@ -30,16 +30,10 @@ const NavigationTabs: React.FC<NavigationProps> = ({
     const index = tabs.findIndex((t) => t.key === activeTab);
     const currentTab = tabRefs.current[index];
     if (currentTab && containerRef.current) {
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const tabRect = currentTab.getBoundingClientRect();
-      const tabOffsetLeft = tabRect.left - containerRect.left;
-
       setUnderlineStyle({
-        left: tabOffsetLeft + containerRef.current.scrollLeft,
-        width: tabRect.width,
+        left: currentTab.offsetLeft,
+        width: currentTab.offsetWidth,
       });
-      // Auto-focus and scroll into view
-      currentTab.focus();
       currentTab.scrollIntoView({
         behavior: "smooth",
         block: "nearest",
@@ -49,10 +43,10 @@ const NavigationTabs: React.FC<NavigationProps> = ({
   }, [activeTab, tabs]);
 
   return (
-    <nav className="sticky top-0 z-10 bg-white px-4">
+    <nav className="sticky top-0 z-10 min-w-0 bg-white px-3 sm:px-4">
       <div
         ref={containerRef}
-        className="relative flex overflow-x-auto hide-scrollbar gap-4"
+        className="relative flex min-w-0 gap-2 overflow-x-auto hide-scrollbar sm:gap-4"
       >
         {tabs.map((tab, idx) => (
           <Button
@@ -64,7 +58,7 @@ const NavigationTabs: React.FC<NavigationProps> = ({
               tabRefs.current[idx] = el;
             }}
             onClick={() => onTabChange(tab.key)}
-            className={`hover:bg-transparent flex-1 min-w-fit text-center w-fit px-2 py-3 outline-none focus:outline-none font-semibold  transition-colors duration-200
+            className={`hover:bg-transparent shrink-0 text-center px-2 py-3 outline-none focus:outline-none font-semibold transition-colors duration-200
               ${activeTab === tab.key ? "text-primary-500" : "text-gray-600 "}`}
           >
             {tab.label}
