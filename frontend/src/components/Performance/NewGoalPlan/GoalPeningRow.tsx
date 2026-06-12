@@ -84,7 +84,7 @@ const GoalPeningRow: React.FC<GoalPeningRowProps> = ({
               },
             ]}
           >
-            <button className="p-2 border-1 rounded-lg hover:bg-gray-200">
+            <button className="p-2 border-1 rounded-lg hover:bg-gray-200" aria-label={`Open actions for ${data.goal}`}>
               <MoreVertical className="h-5 w-5" />
             </button>
           </DropdownMenu>

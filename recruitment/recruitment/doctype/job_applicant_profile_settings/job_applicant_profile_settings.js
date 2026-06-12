@@ -193,7 +193,7 @@
 		});
 
 		if (!rows.length) {
-			host.innerHTML = `<div class="apf-empty">No fields configured. The list auto-syncs from Job Applicant.</div>`;
+			host.innerHTML = `<div class="apf-empty">No fields configured. Use <b>Add Row</b> to add Job Applicant fields.</div>`;
 			return;
 		}
 

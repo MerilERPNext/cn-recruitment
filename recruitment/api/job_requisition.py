@@ -471,6 +471,8 @@ def _resolve_jd_html(designation, department):
     """
     if not designation or not department:
         return ""
+    designation = _coerce_to_record_name("Designation", designation)
+    department = _coerce_to_record_name("Department", department)
     try:
         rows = frappe.db.sql(
             """
@@ -1085,6 +1087,38 @@ def update_job_requisition(name=None, payload=None):
 JOB_DESCRIPTION = "Job Description"
 
 
+def _coerce_to_record_name(doctype, value):
+    """Return the record `name` (id) for `value`, accepting either the id or a
+    unique title/label.
+
+    The Preview-JD caller may send `designation_title || designation` (the human
+    label) rather than the record id. JD applicability is stored by id, so a label
+    has to be resolved back to an id before matching. Left unchanged when:
+      - `value` is already a record name, or
+      - the label is ambiguous (e.g. 304 Designations share the label
+        "Professor" — a label can't pick one, so the caller must send the id), or
+      - nothing resolves.
+    """
+    if not value or frappe.db.exists(doctype, value):
+        return value
+    try:
+        meta = frappe.get_meta(doctype)
+    except Exception:
+        return value
+    title_fields = []
+    tf = meta.get("title_field")
+    if tf and meta.get_field(tf):
+        title_fields.append(tf)
+    guess = doctype.lower().replace(" ", "_") + "_name"
+    if meta.get_field(guess) and guess not in title_fields:
+        title_fields.append(guess)
+    for fld in title_fields:
+        names = frappe.get_all(doctype, filters={fld: value}, pluck="name", limit=2)
+        if len(names) == 1:
+            return names[0]
+    return value
+
+
 def _match_jd_name(designation, department, functional_area=None):
     """Best-matching Job Description name for the given applicability.
 
@@ -1242,9 +1276,21 @@ def preview_job_description(designation=None, department=None, data=None, functi
         if not isinstance(filled_data, dict):
             filled_data = {}
 
+        # The form posts display labels at the top level (designation="Professor")
+        # but the canonical link ids live inside `data` (the requisition values:
+        # designation="PRF_ACD_DEF_OFF_TEACHING", department="DEP_1097", …). JD
+        # applicability matches by id, so prefer the ids from `data`; fall back to
+        # coercing the top-level label to an id (works only when the label is
+        # unique — designation labels usually aren't, which is why the `data` id
+        # is what makes the match reliable).
+        match_designation = filled_data.get("designation") or _coerce_to_record_name("Designation", designation)
+        match_department = filled_data.get("department") or _coerce_to_record_name("Department", department)
+        match_fa = (filled_data.get("custom_functional_area")
+                    or (functional_area and _coerce_to_record_name("Functional Area", functional_area)))
+
         # 1) Best applicability match: designation + department (+ functional
         #    area when supplied), tiered inside the helper.
-        matched_name = _match_jd_name(designation, department, functional_area)
+        matched_name = _match_jd_name(match_designation, match_department, match_fa)
         if matched_name:
             return _ok(
                 message=_("Job Description found."),
@@ -1387,6 +1433,7 @@ def _build_preview_payload(jd_name, source, filled_data=None):
     """
     from recruitment.recruitment.doctype.job_description.job_description import (
         _render_preview,
+        _jd_context_with_titles,
         plain_text_to_html,
         render_with_context,
         substitute_field_tokens,
@@ -1403,17 +1450,27 @@ def _build_preview_payload(jd_name, source, filled_data=None):
         # Company, Branch — no distinct title_field) pass through unchanged.
         filled_data = _resolve_link_titles(filled_data)
 
-        # Two placeholder formats coexist:
+        # Three placeholder formats coexist:
         #   1. Jinja `{{ field }}` (seeded default template) — resolved against
         #      the JD doc's own fields, overlaid with the filled values.
-        #   2. Builder tokens `#*Field*#` — substituted from the filled values.
-        context = doc.as_dict()
+        #   2. Jinja `{{ data.field }}` — resolved against the requisition values
+        #      regardless of name. Use this for `designation`/`department`, whose
+        #      bare names collide with the JD's own child tables (see below).
+        #   3. Builder tokens `#*Field*#` — substituted from the filled values.
+        # Resolve the JD doc's own Link fields (top-level + child rows) to titles
+        # so JD-group loops like `{% for row in department %}{{ row.department }}`
+        # show "Academics Defence Offline", not "DEP_1097".
+        context = _jd_context_with_titles(doc)
         for key, value in filled_data.items():
             # Don't let a scalar requisition value overwrite a JD child table
             # (would break the template's `{% for %}` loops).
             if isinstance(context.get(key), list):
                 continue
             context[key] = value
+        # Always expose the (link-resolved) requisition values under `data` so a
+        # template can fetch any field — including the colliding designation /
+        # department — as pure Jinja `{{ data.<fieldname> }}`.
+        context["data"] = filled_data
         rendered = render_with_context(doc.get("description") or "", context)
         rendered = substitute_field_tokens(rendered, filled_data)
     else:

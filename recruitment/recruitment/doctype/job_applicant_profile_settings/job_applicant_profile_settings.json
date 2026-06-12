@@ -13,7 +13,7 @@
   {
    "fieldname": "description_block",
    "fieldtype": "HTML",
-   "options": "<div style='padding:8px;color:#4B5563;font-size:13px;'>Configure the <b>default Job Applicant profile setup</b> that every new Job Opening inherits. Admins can override these per-opening on the Job Opening's <i>Job application</i> tab. The list auto-syncs from the Job Applicant doctype every time you open this page — new fields appear automatically.</div>"
+   "options": "<div style='padding:8px;color:#4B5563;font-size:13px;'>Configure the <b>default Job Applicant profile setup</b> that every new Job Opening inherits. Admins can override these per-opening on the Job Opening's <i>Job application</i> tab. This is a <b>curated list</b> — internal-process fields (the Job Applicant <i>Feedback</i> tab: PIP, induction/onboarding feedback, goals) are intentionally excluded. New Job Applicant fields are <b>not</b> added automatically; add the ones you want with <i>Add Row</i>.</div>"
   },
   {
    "fieldname": "default_fields_ui",
@@ -33,7 +33,7 @@
    "label": "Synced field refs (internal)",
    "hidden": 1,
    "read_only": 1,
-   "description": "Newline-separated list of Job Applicant field refs that have already been imported. Anything in this list is never re-added by auto-sync — lets manual deletes stick while still picking up brand-new fields added to Job Applicant later."
+   "description": "Newline-separated list of Job Applicant field refs already seen by the reconcile (imported, deleted, or deliberately kept out). Anything in this list is never auto-added — this is what keeps manual deletes sticky and stops the curated list from being flooded by the rest of the doctype."
   }
  ],
  "index_web_pages_for_search": 1,

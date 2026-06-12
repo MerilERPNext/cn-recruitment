@@ -1,6 +1,8 @@
 "use client"
 
 import { Calendar, Clock, Users, ArrowRight } from "lucide-react"
+import Badge, { type BadgeVariant } from "../../../shared/Badge"
+import { Typography } from "../../../shared/atoms/Typography"
 
 
 interface ReviewItem {
@@ -41,23 +43,27 @@ const getStatusColor = (status: string) => {
   }
 }
 
-const getStatusBadgeColor = (status: string) => {
+const getStatusBadgeVariant = (status: string): BadgeVariant => {
   switch (status) {
     case "active":
-      return "bg-blue-100 text-blue-700"
+      return "info"
     case "pending":
-      return "bg-amber-100 text-amber-700"
+      return "warning"
     case "completed":
-      return "bg-emerald-100 text-emerald-700"
+      return "success"
     default:
-      return "bg-slate-100 text-slate-700"
+      return "default"
   }
 }
+
+const formatStatus = (status: string) => status.charAt(0).toUpperCase() + status.slice(1)
 
 export function ReviewDetails() {
   return (
     <div className="space-y-4">
-      <h1 className=" font-bold text-slate-900 mb-6">Active Reviews</h1>
+      <Typography variant="h3" className="mb-6 font-bold text-slate-900">
+        Active Reviews
+      </Typography>
 
       {reviewItems.map((item) => (
         <div
@@ -67,50 +73,65 @@ export function ReviewDetails() {
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-lg font-semibold text-slate-900">{item.name}</h3>
-                <span className={`text-xs font-semibold px-3 py-1 rounded-lg ${getStatusBadgeColor(item.status)}`}>
-                  {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                </span>
+                <Typography variant="h4" className="text-lg font-semibold text-slate-900">
+                  {item.name}
+                </Typography>
+                <Badge label={formatStatus(item.status)} variant={getStatusBadgeVariant(item.status)} size="sm" />
               </div>
-              <p className="text-sm text-slate-600">Employee: {item.employee}</p>
+              <Typography variant="bodySmall" className="text-slate-600">
+                Employee: {item.employee}
+              </Typography>
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             {/* Employee Info */}
             <div>
-              <p className="text-xs font-medium text-slate-500 mb-1">Department</p>
-              <p className="text-sm font-medium text-slate-900">{item.department}</p>
+              <Typography variant="caption" className="mb-1 block font-medium text-slate-500">
+                Department
+              </Typography>
+              <Typography variant="bodySmall" className="font-medium text-slate-900">
+                {item.department}
+              </Typography>
             </div>
 
             {/* Start Date */}
             <div>
-              <p className="text-xs font-medium text-slate-500 mb-1 flex items-center gap-1">
+              <Typography variant="caption" className="mb-1 flex items-center gap-1 font-medium text-slate-500">
                 <Calendar className="w-3 h-3" /> Start Date
-              </p>
-              <p className="text-sm font-medium text-slate-900">{item.startDate}</p>
+              </Typography>
+              <Typography variant="bodySmall" className="font-medium text-slate-900">
+                {item.startDate}
+              </Typography>
             </div>
 
             {/* Due Date */}
             <div>
-              <p className="text-xs font-medium text-slate-500 mb-1 flex items-center gap-1">
+              <Typography variant="caption" className="mb-1 flex items-center gap-1 font-medium text-slate-500">
                 <Clock className="w-3 h-3" /> Due Date
-              </p>
-              <p className="text-sm font-medium text-slate-900">{item.dueDate}</p>
+              </Typography>
+              <Typography variant="bodySmall" className="font-medium text-slate-900">
+                {item.dueDate}
+              </Typography>
             </div>
 
             {/* Reviewer */}
             <div>
-              <p className="text-xs font-medium text-slate-500 mb-1 flex items-center gap-1">
+              <Typography variant="caption" className="mb-1 flex items-center gap-1 font-medium text-slate-500">
                 <Users className="w-3 h-3" /> Reviewer
-              </p>
-              <p className="text-sm font-medium text-slate-900">{item.reviewer}</p>
+              </Typography>
+              <Typography variant="bodySmall" className="font-medium text-slate-900">
+                {item.reviewer}
+              </Typography>
             </div>
           </div>
 
           <div className="flex items-center justify-start">
-            <button className="bg-blue-600 p-2 hover:bg-blue-700 text-white rounded-lg font-medium text-sm flex items-center gap-2">
-              Go To Review <ArrowRight className="w-4 h-4" />
+            <button className="bg-blue-600 p-2 hover:bg-blue-700 text-white rounded-lg font-medium text-sm flex items-center gap-2" aria-label={`Go to ${item.name}`}>
+              <Typography variant="bodySmall" component="span" className="font-medium text-white">
+                Go To Review
+              </Typography>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>

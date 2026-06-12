@@ -138,17 +138,29 @@ def _employee_prefill_values(emp, fields):
 
 	Returns ``{reference_name: value}`` for the fields the employee actually has
 	a value for. Identity fields are mapped via ``_EMPLOYEE_PREFILL_ALIASES``;
-	everything else is matched by identical fieldname against the Employee record
-	(Job Applicant mirrors the Employee field structure).
+	child tables fall back to matching by child doctype when their fieldname
+	differs; everything else is matched by identical fieldname against the
+	Employee record (Job Applicant mirrors the Employee field structure).
 	"""
+	emp_meta = frappe.get_meta("Employee")
 	ja_lookup = {
 		df.fieldname: df
 		for df in frappe.get_meta("Job Applicant").fields
 		if df.fieldname
 	}
-	emp_fields = {
-		df.fieldname for df in frappe.get_meta("Employee").fields if df.fieldname
-	}
+	emp_fields = {df.fieldname for df in emp_meta.fields if df.fieldname}
+
+	# Child tables are frequently mirrored onto Job Applicant under a *different*
+	# fieldname while pointing at the same child doctype (e.g. JA
+	# `custom_educational_qualification` ↔ Employee `education`, both "Employee
+	# Education"; JA `custom_previous_work_experience` ↔ Employee
+	# `external_work_history`). Map child doctype → the Employee field(s) using
+	# it so such tables prefill by matching child doctype when the name differs —
+	# but only when it's unambiguous (exactly one Employee field uses it).
+	emp_child_by_doctype = {}
+	for df in emp_meta.fields:
+		if df.fieldtype in ("Table", "Table MultiSelect") and df.options and df.fieldname:
+			emp_child_by_doctype.setdefault(df.options, []).append(df.fieldname)
 
 	values = {}
 	for f in fields:
@@ -159,10 +171,20 @@ def _employee_prefill_values(emp, fields):
 		if not df:
 			continue
 		candidates = _EMPLOYEE_PREFILL_ALIASES.get(ref, ()) + (ref,)
+		if df.fieldtype in ("Table", "Table MultiSelect"):
+			same = emp_child_by_doctype.get(df.options or "", [])
+			if len(same) == 1:
+				candidates += tuple(s for s in same if s not in candidates)
 		for src in candidates:
 			if src not in emp_fields:
 				continue
 			val = _common._serialize_field_value(emp, src, df.fieldtype)
+			if df.fieldtype in ("Table", "Table MultiSelect") and isinstance(val, list):
+				# Drop the source row identity: the child doctype (e.g. "Employee
+				# Education") is shared with Employee, so reusing its `name` on a
+				# new Job Applicant would collide on insert. Strip it so the rows
+				# are created fresh under the applicant.
+				val = [{k: v for k, v in row.items() if k != "name"} for row in val]
 			if val not in (None, "", []):
 				values[ref] = val
 				break

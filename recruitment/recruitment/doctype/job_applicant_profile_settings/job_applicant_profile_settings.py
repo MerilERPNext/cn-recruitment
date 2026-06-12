@@ -18,30 +18,54 @@ NON_DATA_FIELDTYPES = {
 	"Read Only",
 }
 
+# Whole Job Applicant tabs that are internal HR-process surfaces, not anything a
+# candidate ever fills on an application form. Every field under one of these
+# tabs is permanently kept out of the applicant-profile config. Add tab labels
+# here to exclude more internal areas.
+EXCLUDED_TABS = {
+	"Feedback",  # PIP, induction/onboarding feedback, goal-setting, performance
+}
+
 
 class JobApplicantProfileSettings(Document):
 	"""Singleton holding default applicant-profile rows.
 
-	Auto-syncs on every load: any new Job Applicant fields are appended to the
-	table so admins always see the current set without clicking anything.
+	Reconciles with the Job Applicant doctype on load via _auto_sync, but only
+	the first sync of an empty table bulk-imports; afterwards the list is the
+	admin's curated set and new doctype fields are recorded-but-not-added.
 	"""
 
 	def onload(self):
 		self._auto_sync()
 
 	def _auto_sync(self):
-		"""Idempotently import Job Applicant fields. Skips:
-		  - hidden sections (and all fields inside)
-		  - hidden / read-only / no-fieldname fields
-		  - layout fieldtypes (Section/Column/Tab Break, HTML, Heading, Button, etc.)
-		  - refs that are already tracked in synced_field_refs (deleted refs stay deleted)
+		"""Idempotently reconcile the table with the Job Applicant doctype.
+
+		Every eligible Job Applicant field is surfaced in the config table so the
+		admin has one place to enable/disable anything per channel. Newly imported
+		fields land with ALL channel View boxes OFF (view_careers/ijp/refer/preoffer
+		= 0), so they never reach a candidate form until the admin turns them on —
+		the channel forms only render view_<channel>=1 rows. Existing rows are left
+		exactly as configured.
+
+		A field is kept OUT of the table only when it is:
+		  - inside a hidden section (the whole section is dropped)
+		  - hidden / read-only / no fieldname / a layout fieldtype
+		  - under an EXCLUDED_TABS tab (e.g. "Feedback": PIP, induction/onboarding
+		    feedback, goals) — internal process data, never an application field
+		  - already tracked in synced_field_refs (so manual deletes stay deleted)
+
+		Every kept-out ref is still written to synced_field_refs, so the decision is
+		durable: after the first reconcile each subsequent load is a no-op (no
+		fragile save-on-every-open) and the Settings form and Job Opening form
+		always render the exact same set.
 		"""
 		existing_refs = {row.reference_name for row in self.default_application_fields if row.reference_name}
 		synced_refs = {
 			r.strip() for r in (self.synced_field_refs or "").split("\n") if r.strip()
 		}
 		# Anything we've ever seen is off-limits to re-import. existing keeps the table consistent;
-		# synced keeps deletes sticky.
+		# synced keeps deletes (and deliberate skips) sticky.
 		seen = existing_refs | synced_refs
 
 		meta = frappe.get_meta("Job Applicant")
@@ -49,7 +73,8 @@ class JobApplicantProfileSettings(Document):
 		current_tab = ""
 		current_section = ""
 		current_section_skipped = False
-		added_refs = []
+		added_refs = []     # newly imported into the table (channels off by default)
+		recorded_refs = []  # kept out (excluded tab), but snapshotted so it sticks
 		for f in meta.fields:
 			if f.fieldtype == "Tab Break":
 				# New tab: its label is the grouping fallback for any fields that
@@ -82,10 +107,25 @@ class JobApplicantProfileSettings(Document):
 			if f.fieldname in seen:
 				continue
 
+			# Internal-process tabs are never application fields: keep them out
+			# of the table entirely, but record them so they stay out.
+			if current_tab in EXCLUDED_TABS:
+				recorded_refs.append(f.fieldname)
+				continue
+
+			# Eligible and never seen: surface it with every channel View OFF, so
+			# it's available to enable but invisible to candidates until then.
+			# (The child doctype defaults view_careers/view_ijp to 1, so the zeros
+			# below must be explicit.)
 			self.append("default_application_fields", {
 				"section": current_section or current_tab or "General",
 				"reference_name": f.fieldname,
 				"display_name": f.label or f.fieldname,
+				"view_careers": 0, "mandatory_careers": 0,
+				"view_ijp": 0, "mandatory_ijp": 0,
+				"view_refer": 0, "mandatory_refer": 0,
+				"view_preoffer": 0, "mandatory_preoffer": 0,
+				"ctq_flag": 0,
 				"visibility": "All",
 				"editability": "Editable",
 				"preoffer_visibility": "Same as visibility",
@@ -93,9 +133,10 @@ class JobApplicantProfileSettings(Document):
 			})
 			added_refs.append(f.fieldname)
 
-		if added_refs:
-			# Persist the discoveries to the tracker so deletes stick on next load.
-			all_refs = sorted(synced_refs | set(added_refs))
+		if added_refs or recorded_refs:
+			# Persist imports AND deliberate skips so the next load is a no-op and
+			# every exclusion (deletes, Feedback) sticks.
+			all_refs = sorted(synced_refs | set(added_refs) | set(recorded_refs))
 			self.synced_field_refs = "\n".join(all_refs)
 			self.save(ignore_permissions=True)
 
@@ -109,10 +150,11 @@ def get_job_applicant_profile_template(opening=None):
 	  - otherwise the matching row from Job Applicant Profile Settings
 	"""
 	settings = frappe.get_single("Job Applicant Profile Settings")
-	# onload only fires for the desk form view — when this method is called
-	# from the Job Opening form, the table can be empty, so force the sync.
-	if not settings.default_application_fields:
-		settings._auto_sync()
+	# onload only fires for the desk form view. Reconcile here too so the Job
+	# Opening form and the Settings form can never drift apart. _auto_sync is
+	# idempotent and only writes when something actually changed, so after the
+	# first reconcile this is a cheap no-op.
+	settings._auto_sync()
 	defaults = {row.reference_name: row for row in settings.default_application_fields if row.reference_name}
 
 	overrides = {}

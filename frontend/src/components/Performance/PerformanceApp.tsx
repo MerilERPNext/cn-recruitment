@@ -7,22 +7,72 @@ import HeaderBar from '../HeaderBar';
 import { GoalModelProvider } from './GoalModelContext';
 type TabName =
     "Overview"
+    | "My Goals"
+    | "My Team"
+    | "Self Review" | "Peer Nomination" | "Skill And Proficiency"
+    | "Feedback"
     | "New Goal Plan"
-    | "Performance Review";
+    | "Performance Review"
+    | "Cycle"
+    | "Calibrator";
 
+type TeamTabName =
+    "Overview"
+    | "Team Goals"
+    | "Reviews"
+    | "Calibration"
+    | "Check-Ins";
+
+type CalibratorTabName =
+    "Session"
+    | "9-Box Grid";
 
 const tabRoutes: Record<TabName, string> = {
     Overview: "/webapp/performance-app/overview",
+    "My Goals": "/webapp/performance-app/my-goals",
+    "My Team": "/webapp/performance-app/team-overview",
+    "Self Review": "/webapp/performance-app/review",
+    "Skill And Proficiency":"/webapp/performance-app/skills",
+    "Peer Nomination": "/webapp/performance-app/review/peer-nomination",
+    Feedback: "/webapp/performance-app/feedback",
     "New Goal Plan": "/webapp/performance-app/new-goal-plan",
     "Performance Review": "/webapp/performance-app/performance-review",
+    Cycle: "/webapp/performance-app/appraisal-cycle-wizard",
+    Calibrator: "/webapp/performance-app/calibrator/session",
 };
 
+const teamTabRoutes: Record<TeamTabName, string> = {
+    Overview: "/webapp/performance-app/team-overview",
+    "Team Goals": "/webapp/performance-app/team-goals",
+    Reviews: "/webapp/performance-app/team-reviews",
+    Calibration: "/webapp/performance-app/team-calibration",
+    "Check-Ins": "/webapp/performance-app/team-check-ins",
+};
+
+const teamRoutePrefixes = Object.values(teamTabRoutes);
+
+const calibratorTabRoutes: Record<CalibratorTabName, string> = {
+    Session: "/webapp/performance-app/calibrator/session",
+    "9-Box Grid": "/webapp/performance-app/calibrator/box-grid",
+};
+
+const calibratorRoutePrefixes = Object.values(calibratorTabRoutes);
 
 const PerformanceApp: React.FC = () => {
     const { isDesktop } = useScreenSize();
     const [activeTab, setActiveTab] = useState<TabName>("Overview");
+    const [activeTeamTab, setActiveTeamTab] = useState<TeamTabName>("Overview");
+    const [activeCalibratorTab, setActiveCalibratorTab] = useState<CalibratorTabName>("Session");
     const navigate = useNavigate();
     const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
+        key,
+        label: key,
+    }));
+    const teamTabs: Tab[] = (Object.keys(teamTabRoutes) as TeamTabName[]).map((key) => ({
+        key,
+        label: key,
+    }));
+    const calibratorTabs: Tab[] = (Object.keys(calibratorTabRoutes) as CalibratorTabName[]).map((key) => ({
         key,
         label: key,
     }));
@@ -33,11 +83,31 @@ const PerformanceApp: React.FC = () => {
         navigate(tabRoutes[tab]);
     };
 
+    const handleTeamTabChange = (tab: TeamTabName) => {
+        setActiveTeamTab(tab);
+        navigate(teamTabRoutes[tab]);
+    };
+
+    const handleCalibratorTabChange = (tab: CalibratorTabName) => {
+        setActiveCalibratorTab(tab);
+        navigate(calibratorTabRoutes[tab]);
+    };
+
 
     useEffect(() => {
-        const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
-            location.pathname.startsWith(tabRoutes[tab])
+        const isTeamRoute = teamRoutePrefixes.some((route) =>
+            location.pathname.startsWith(route)
         );
+        const isCalibratorRoute = calibratorRoutePrefixes.some((route) =>
+            location.pathname.startsWith(route)
+        );
+        const matchedTab = isTeamRoute
+            ? "My Team"
+            : isCalibratorRoute
+                ? "Calibrator"
+            : (Object.keys(tabRoutes) as TabName[]).find((tab) =>
+                location.pathname.startsWith(tabRoutes[tab])
+            );
 
         if (matchedTab) {
             setActiveTab(matchedTab);
@@ -54,6 +124,33 @@ const PerformanceApp: React.FC = () => {
 
     }, [location.pathname, navigate]);
 
+    useEffect(() => {
+        const matchedTeamTab = (Object.keys(teamTabRoutes) as TeamTabName[]).find((tab) =>
+            location.pathname.startsWith(teamTabRoutes[tab])
+        );
+
+        if (matchedTeamTab) {
+            setActiveTeamTab(matchedTeamTab);
+        }
+    }, [location.pathname]);
+
+    useEffect(() => {
+        const matchedCalibratorTab = (Object.keys(calibratorTabRoutes) as CalibratorTabName[]).find((tab) =>
+            location.pathname.startsWith(calibratorTabRoutes[tab])
+        );
+
+        if (matchedCalibratorTab) {
+            setActiveCalibratorTab(matchedCalibratorTab);
+        }
+    }, [location.pathname]);
+
+    const isTeamRoute = teamRoutePrefixes.some((route) =>
+        location.pathname.startsWith(route)
+    );
+    const isCalibratorRoute = calibratorRoutePrefixes.some((route) =>
+        location.pathname.startsWith(route)
+    );
+
     const mobileLayout = (
         <div className="flex flex-col min-h-screen bg-white">
 
@@ -68,6 +165,24 @@ const PerformanceApp: React.FC = () => {
                 activeTab={activeTab}
                 onTabChange={(tab) => handleTabChange(tab as TabName)}
             />
+            {isTeamRoute && (
+                <div className="border-t border-gray-100">
+                    <NavigationTabs
+                        tabs={teamTabs}
+                        activeTab={activeTeamTab}
+                        onTabChange={(tab) => handleTeamTabChange(tab as TeamTabName)}
+                    />
+                </div>
+            )}
+            {isCalibratorRoute && (
+                <div className="border-t border-gray-100">
+                    <NavigationTabs
+                        tabs={calibratorTabs}
+                        activeTab={activeCalibratorTab}
+                        onTabChange={(tab) => handleCalibratorTabChange(tab as CalibratorTabName)}
+                    />
+                </div>
+            )}
             </header>
             <main className="z-10 flex-grow">
                 <Outlet />

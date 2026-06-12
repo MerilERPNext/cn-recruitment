@@ -1,27 +1,66 @@
-import { ReviewDetails } from "./component/ReviewDetails"
-import { ReviewWorkflow } from "./component/ReviewWorkflow"
+import { lazy, Suspense, useState } from "react";
+import type { BreakdownItem } from "./component/types";
 
+const PerformanceReviewHeader = lazy(
+  () => import("./component/PerformanceReviewHeader"),
+);
+const SectionBreakdownCard = lazy(
+  () => import("./component/SectionBreakdownCard"),
+);
+const AcknowledgeRatingCard = lazy(
+  () => import("./component/AcknowledgeRatingCard"),
+);
+
+const breakdownItems: BreakdownItem[] = [
+  {
+    title: "Goals & KPIs",
+    weight: "60% weight",
+    note: '"Pallavi consistently shipped against goals; Oxygen 2.0 rollout is on plan."',
+    progress: "80%",
+    rating: "Exceeds · 4/5",
+  },
+  {
+    title: "Competencies",
+    weight: "30% weight",
+    note: '"Standout in Craft and Cross-functional Partnership."',
+    progress: "100%",
+    rating: "Outstanding · 5/5",
+  },
+  {
+    title: "Career Growth",
+    weight: "10% weight",
+    note: '"Promotion-ready to Staff Designer in 12-18 months."',
+    progress: "80%",
+    rating: "Exceeds · 4/5",
+  },
+];
+
+const PerformanceReviewFallback = () => (
+  <div className="rounded-xl border border-gray-100 bg-white p-6 text-center text-sm font-medium text-gray-500 shadow-sm">
+    Loading...
+  </div>
+);
 
 const PerformanceReviewApp = () => {
+  const [agreed, setAgreed] = useState(true);
+  const [comment, setComment] = useState("");
+
   return (
-    <main className="min-h-screen z-50 bg-gradient-to-b from-slate-50 to-slate-100">
-    <div className="w-full mx-auto px-6 py-2">
-      {/* Header */}
-      <div className="mb-2 border bg-blue-100 rounded py-2 px-4 border-slate-200 pb-4">
-        <h6 className=" font-bold text-slate-900 ">Review</h6>
-        <p className="text-slate-600">Track and manage team member evaluations through each stage</p>
-      </div>
-
-      {/* Workflow Section */}
-      <ReviewWorkflow />
-
-      {/* Details Section */}
-      <div className="mt-12">
-        <ReviewDetails />
+    <div className="min-h-full overflow-y-auto bg-[#f8fafc] px-3 py-4 font-sans sm:p-6">
+      <div className="mx-auto flex w-full  flex-col gap-4 sm:gap-6">
+        <Suspense fallback={<PerformanceReviewFallback />}>
+          <PerformanceReviewHeader />
+          <SectionBreakdownCard items={breakdownItems} />
+          <AcknowledgeRatingCard
+            agreed={agreed}
+            comment={comment}
+            onAgreedChange={setAgreed}
+            onCommentChange={setComment}
+          />
+        </Suspense>
       </div>
     </div>
-  </main>
-  )
-}
+  );
+};
 
-export default PerformanceReviewApp
+export default PerformanceReviewApp;

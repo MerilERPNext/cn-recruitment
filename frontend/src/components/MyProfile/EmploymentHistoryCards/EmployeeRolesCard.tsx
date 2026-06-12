@@ -54,7 +54,7 @@ const EmployeeRolesCard: React.FC<EmploymentRolesCardProps> = ({
                         size="xs"
                     />
                 )}
-                {onDelete && (
+                {onDelete && !is_current && (
                     <IconButton
                         onClick={() => onDelete?.()}
                         icon={<TrashIcon className="h-4 w-4" />}

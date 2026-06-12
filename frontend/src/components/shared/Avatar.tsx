@@ -11,6 +11,7 @@ interface AvatarProps {
   indicatorPositionClass?: string;
   avatarBgColor?: string;
   avatarTextColor?: string;
+  fontSize?: string;
 }
 
 const Avatar: React.FC<AvatarProps> = ({
@@ -24,6 +25,7 @@ const Avatar: React.FC<AvatarProps> = ({
   indicatorPositionClass = "absolute bottom-0 right-0",
   avatarBgColor = "bg-indigo-100",
   avatarTextColor = "text-indigo-800",
+  fontSize = "text-lg",
 }) => {
   const [imageError, setImageError] = useState(false);
 
@@ -54,7 +56,7 @@ const Avatar: React.FC<AvatarProps> = ({
       />
     ) : (
       <div
-        className={`flex items-center justify-center rounded-full font-bold text-lg uppercase ${avatarBgColor} ${avatarTextColor} ${size}`}
+        className={`flex items-center justify-center rounded-full font-bold ${fontSize} uppercase ${avatarBgColor} ${avatarTextColor} ${size}`}
       >
         {initials}
       </div>

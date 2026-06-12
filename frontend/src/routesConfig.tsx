@@ -26,11 +26,25 @@ import {
 } from "./components/Expenses-App/ExpenseClaim/expenseNavigationHelper";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
-import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
 import Onboarding from "./components/Onboarding/Onboarding";
 import Requests from "./components/Requests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import SearchMembers from "./components/SearchMembers";
+import AppraisalCycleWizard from "./components/Performance/AppraisalCycleWizard/AppraisalCycleWizard.tsx";
+import Eligibility from "./components/Performance/AppraisalCycleWizard/Eligibility.tsx";
+import Stages from "./components/Performance/AppraisalCycleWizard/Stages.tsx";
+import FormBuilder from "./components/Performance/AppraisalCycleWizard/FormBuilder.tsx";
+import GoalPullIn from "./components/Performance/AppraisalCycleWizard/GoalPullIn.tsx";
+import Competencies from "./components/Performance/AppraisalCycleWizard/Competencies.tsx";
+import Workflow from "./components/Performance/AppraisalCycleWizard/Workflow.tsx";
+import Normalisation from "./components/Performance/AppraisalCycleWizard/Normalisation.tsx";
+import Notifications from "./components/Performance/AppraisalCycleWizard/Notifications.tsx";
+import LettersRelease from "./components/Performance/AppraisalCycleWizard/LettersRelease.tsx";
+import ReviewLaunch from "./components/Performance/AppraisalCycleWizard/ReviewLaunch.tsx";
+
+import CalibratorSession from "./components/Performance/Calibrator/Calibrator.tsx";
+import BoxGrid from "./components/Performance/Calibrator/BoxGrid.tsx";
+import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval.tsx";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -85,6 +99,75 @@ const RequisitionDetails = lazyWithRetry(
 const ReferralList = lazyWithRetry(
   () => import("./components/ReferralList"),
   "ReferralList",
+);
+const MyGoals = lazyWithRetry(
+  () => import("./components/Performance/MyGoals/MyGoals"),
+  "MyGoals",
+);
+
+const TeamOverview = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/TeamOverview"),
+  "TeamOverview",
+);
+const TeamGoals = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/TeamGoals"),
+  "TeamGoals",
+);
+
+const AssignGoal = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/AssignGoal"),
+  "AssignGoal",
+);
+
+const TeamReviews = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/TeamReviews"),
+  "TeamReviews",
+);
+
+const PreReleasePreview = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/PreReleasePreview"),
+  "PreReleasePreview",
+);
+
+const TeamCalibration = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/TeamCalibration"),
+  "TeamCalibration",
+);
+
+const TeamCheckIns = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/TeamCheckIns.tsx"),
+  "TeamCheckIns",
+);
+
+const TeamNotes = lazyWithRetry(
+  () => import("./components/Performance/MyTeam/TeamNotes"),
+  "TeamNotes",
+);
+
+const GoalDetails = lazyWithRetry(
+  () => import("./components/Performance/MyGoals/components/GoalDetails"),
+  "GoalDetails",
+);
+const Review = lazyWithRetry(
+  () => import("./components/Performance/Review/SelfReview"),
+  "Review",
+);
+const PeerNominationPage = lazyWithRetry(
+  () => import("./components/Performance/Review/PeerNominationPage"),
+  "PeerNominationPage",
+);
+const Feedback = lazyWithRetry(
+  () => import("./components/Performance/Feedback/Feedback"),
+  "Feedback",
+);
+const NewGoal = lazyWithRetry(
+  () => import("./components/Performance/GoalCreation/NewGaol"),
+  "NewGoal",
+);
+const SkillsAndProficiency = lazyWithRetry(
+  () =>
+    import("./components/Performance/SkillsAndProficiency/SkillsAndProficiency"),
+  "SkillsAndProficiency",
 );
 const JobOpeningsUI = lazyWithRetry(
   () => import("./components/JobOpening/JobOpening"),
@@ -1287,17 +1370,159 @@ export const routesConfig: AppRoute[] = [
     children: [
       { path: "overview", element: <Overview />, permissionKey: "Overview" },
       {
+        path: "my-goals",
+        element: <MyGoals />,
+        permissionKey: "My Goals",
+      },
+      {
+        path: "team-overview",
+        element: <TeamOverview />,
+        permissionKey: "Team Overview",
+      },
+      {
+        path: "team-goals",
+        element: <TeamGoals />,
+        permissionKey: "Team Goals",
+      },
+      {
+        path: "team-goals/assign-goal",
+        element: <AssignGoal />,
+        permissionKey: "Team Goals",
+      },
+      {
+        path: "team-reviews",
+        element: <TeamReviews />,
+        permissionKey: "Team Reviews",
+      },
+      {
+        path: "team-pre-release-preview",
+        element: <PreReleasePreview />,
+        permissionKey: "Team Reviews",
+      },
+      {
+        path: "team-calibration",
+        element: <TeamCalibration />,
+        permissionKey: "Team Calibration",
+      },
+      {
+        path: "team-check-ins",
+        element: <TeamCheckIns />,
+        permissionKey: "Team Check-Ins",
+      },
+      {
+        path: "team-notes",
+        element: <TeamNotes />,
+        permissionKey: "Team Notes",
+      },
+      {
+        path: "my-goals/:id",
+        element: <GoalDetails />,
+        permissionKey: "My Goals",
+      },
+      {
+        path: "review",
+        element: <Review />,
+        permissionKey: "Review",
+      },
+      {
+        path: "review/peer-nomination",
+        element: <PeerNominationPage />,
+        permissionKey: "Review",
+      },
+      {
+        path: "feedback",
+        element: <Feedback />,
+        permissionKey: "Feedback",
+      },
+
+      {
         path: "new-goal-plan",
         element: <NewGoalPlan />,
+        permissionKey: "New Goal",
+      },
+      {
+        path: "my-goals/new-goal",
+        element: <NewGoal />,
         permissionKey: "New Goal Plan",
+      },
+      {
+        path: "skills",
+        element: <SkillsAndProficiency />,
+        permissionKey: "Skills And Proficiency",
       },
       {
         path: "performance-review",
         element: <PerformanceReviewApp />,
         permissionKey: "Performance Review",
       },
+      {
+        path: "appraisal-cycle-wizard",
+        element: <AppraisalCycleWizard />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "appraisal-cycle-wizard/eligibility",
+        element: <Eligibility />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "appraisal-cycle-wizard/stages",
+        element: <Stages />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "appraisal-cycle-wizard/form-builder",
+        element: <FormBuilder />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "appraisal-cycle-wizard/goal-pull-in",
+        element: <GoalPullIn />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "appraisal-cycle-wizard/competencies",
+        element: <Competencies />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "appraisal-cycle-wizard/workflow",
+        element: <Workflow />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "appraisal-cycle-wizard/notifications",
+        element: <Notifications />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "appraisal-cycle-wizard/normalisation-calibration",
+        element: <Normalisation />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "appraisal-cycle-wizard/letters-release",
+        element: <LettersRelease />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "appraisal-cycle-wizard/review-launch",
+        element: <ReviewLaunch />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "calibrator/session",
+        element: <CalibratorSession />,
+        permissionKey: "Performance Admin",
+      },
+      {
+        path: "calibrator/box-grid",
+        element: <BoxGrid />,
+        permissionKey: "Performance Admin",
+      },
     ],
   },
+
   {
     path: "/webapp/organizational-chart",
     element: <OrganizationChart />,

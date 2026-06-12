@@ -7,23 +7,26 @@ interface SelectOption<T = string> {
     value: T;
 }
 
-interface SelectProps<T> {
+interface SelectProps<T, O extends SelectOption<T> = SelectOption<T>> {
     label?: string;
-    options: SelectOption<T>[];
-    value: SelectOption<T>;
-    onChange: (value: SelectOption<T>) => void;
+    options: O[];
+    value: O;
+    onChange: (value: O) => void;
     disabled?: boolean;
     className?: string;
 }
 
-export const Select = <T extends string | number>({
+export const Select = <
+    T extends string | number,
+    O extends SelectOption<T> = SelectOption<T>,
+>({
     label,
     options,
     value,
     onChange,
     disabled = false,
     className = "",
-}: SelectProps<T>) => {
+}: SelectProps<T, O>) => {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
