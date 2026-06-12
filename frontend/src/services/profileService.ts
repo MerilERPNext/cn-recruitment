@@ -3,6 +3,7 @@ import {
   Award,
   Employee,
   EmployeeFieldsToTrack,
+  EmployeePreviousDetailsResponse,
   EmployeeProfileOverview,
   IDesignationHierarchy,
   IGetEmpDesignationHierarchyCurrentDetails,
@@ -119,6 +120,24 @@ export const profileService = {
       // Handle different response structures
 
       return result as Employee;
+    } catch (e) {
+      throw new Error(
+        `Some error occured while fetching employee details.- ${e}`,
+      );
+    }
+  },
+  getEmployeePreviousDetails: async (
+    employee_id: string,
+  ): Promise<EmployeePreviousDetailsResponse | null> => {
+    try {
+      const result = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.employee_history.get_previous_employee_details",
+        {
+          employee: employee_id,
+        },
+      );
+
+      return result as EmployeePreviousDetailsResponse;
     } catch (e) {
       throw new Error(
         `Some error occured while fetching employee details.- ${e}`,

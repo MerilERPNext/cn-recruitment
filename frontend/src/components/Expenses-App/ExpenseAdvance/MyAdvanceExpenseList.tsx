@@ -190,8 +190,8 @@ const MyAdvanceExpenseList = () => {
             <StatusBadge
               status={
                 item?.custom_allow_revoke === 1 &&
-                item?.todo_status?.toLowerCase() === "cancelled" &&
-                item?.reference_document?.docstatus === 2
+                  item?.todo_status?.toLowerCase() === "cancelled" &&
+                  item?.reference_document?.docstatus === 2
                   ? "Revoked"
                   : item?.reference_document?.custom_final_status
               }
@@ -210,8 +210,11 @@ const MyAdvanceExpenseList = () => {
               actionKeysMap: {
                 edit: "edit",
                 revoke: "revoke",
+                nudge: "nudge"
               },
             }}
+
+            todoId={item?.todo_id}
             canEdit={canEdit && !isActed}
             onEdit={() => handleEditClick(item)}
             canRevoke={canRevoke && !isActed}
@@ -254,8 +257,8 @@ const MyAdvanceExpenseList = () => {
                 <StatusBadge
                   status={
                     item?.custom_allow_revoke === 1 &&
-                    item?.todo_status?.toLowerCase() === "cancelled" &&
-                    item?.reference_document?.docstatus === 2
+                      item?.todo_status?.toLowerCase() === "cancelled" &&
+                      item?.reference_document?.docstatus === 2
                       ? "Revoked"
                       : item?.reference_document?.custom_final_status
                   }
@@ -274,8 +277,8 @@ const MyAdvanceExpenseList = () => {
                 <StatusBadge
                   status={
                     item?.custom_allow_revoke === 1 &&
-                    item?.todo_status?.toLowerCase() === "cancelled" &&
-                    item?.reference_document?.docstatus === 2
+                      item?.todo_status?.toLowerCase() === "cancelled" &&
+                      item?.reference_document?.docstatus === 2
                       ? "Revoked"
                       : item?.reference_document?.custom_final_status
                   }
@@ -356,8 +359,11 @@ const MyAdvanceExpenseList = () => {
                   actionKeysMap: {
                     edit: "edit",
                     revoke: "revoke",
+                    nudge: "nudge"
                   },
                 }}
+
+                todoId={item?.todo_id}
                 variant="buttons"
                 canEdit={canEdit && !isActed}
                 onEdit={() => handleEditClick(item)}
@@ -379,8 +385,8 @@ const MyAdvanceExpenseList = () => {
 
     const status =
       item?.custom_allow_revoke === 1 &&
-      item?.todo_status?.toLowerCase() === "cancelled" &&
-      item?.reference_document?.docstatus === 2
+        item?.todo_status?.toLowerCase() === "cancelled" &&
+        item?.reference_document?.docstatus === 2
         ? "Revoked"
         : item?.reference_document?.custom_final_status;
 

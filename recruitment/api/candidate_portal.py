@@ -428,6 +428,46 @@ def _resolve_field_value(eo_doc, applicant_doc, fieldname, fieldtype):
     return None
 
 
+def _is_empty_value(val):
+    return val in (None, "", [], {})
+
+
+def _field_count_bucket(approval_status, has_value):
+    """Bucket a portal field for candidate-facing progress counts.
+
+    Value-based, not purely approval-status based: a field that holds a value
+    counts as 'filled' even while still editable (a saved draft, or an
+    auto-prefilled value), so the candidate's progress reflects what they've
+    actually entered. HR decisions still win — Approved/Rejected take precedence
+    over the value check.
+    """
+    status = (approval_status or "Pending").strip().lower()
+    if status == "approved":
+        return "approved"
+    if status == "rejected":
+        return "rejected"
+    return "filled" if has_value else "pending"
+
+
+def _compute_candidate_field_counts(portal_rows, eo_doc=None, applicant_doc=None):
+    """Value-aware {total,pending,filled,approved,rejected} over visible portal rows.
+
+    Unlike field_level_approval._compute_field_status_counts (approval_status only,
+    which drives boarding_status), this resolves each field's actual value (EO value,
+    falling back to the Job Applicant) so saved/prefilled fields report as 'filled'.
+    Candidate-facing responses only — boarding_status stays submit-based.
+    """
+    counts = {"total": 0, "pending": 0, "filled": 0, "approved": 0, "rejected": 0}
+    for row in portal_rows:
+        if row.get("hidden"):
+            continue
+        counts["total"] += 1
+        ft = row.get("fieldtype") or "Data"
+        val = _resolve_field_value(eo_doc, applicant_doc, row.get("fieldname"), ft)
+        counts[_field_count_bucket(row.get("approval_status"), not _is_empty_value(val))] += 1
+    return counts
+
+
 def _build_tabbed_response(portal_rows, meta_lookup, doc=None, applicant_doc=None):
     tab_order = []
     tab_map = {}
@@ -491,24 +531,19 @@ def _build_tabbed_response(portal_rows, meta_lookup, doc=None, applicant_doc=Non
             for sec_lbl in tab_entry["section_order"]
         ]
 
-        # Compute per-tab field status counts
-        # "filled" = candidate has submitted (Approved + Rejected + Filled)
-        # "pending" = candidate hasn't filled yet
+        # Compute per-tab field status counts (value-aware, mutually exclusive):
+        #   "filled"   = field holds a value (saved, prefilled, or submitted)
+        #   "pending"  = field is empty
+        #   "approved"/"rejected" = HR decision (takes precedence)
         counts = {"total": 0, "filled": 0, "approved": 0, "rejected": 0, "pending": 0}
         for sec in sections:
             for field in sec["fields"]:
                 counts["total"] += 1
-                status = (field.get("approval_status") or "Pending").strip().lower()
-                if status == "approved":
-                    counts["approved"] += 1
-                    counts["filled"] += 1
-                elif status == "rejected":
-                    counts["rejected"] += 1
-                    counts["filled"] += 1
-                elif status == "filled":
-                    counts["filled"] += 1
-                else:
-                    counts["pending"] += 1
+                bucket = _field_count_bucket(
+                    field.get("approval_status"),
+                    not _is_empty_value(field.get("value")),
+                )
+                counts[bucket] += 1
 
         tabs.append({
             "tab": tab_lbl,
@@ -960,19 +995,11 @@ def get_candidate_portal_form(job_applicant_id):
 
     meta_lookup = {f["fieldname"]: f for f in _read_onboarding_meta()}
 
-    # Per-doc field status counts (visible portal fields only). Derived from
-    # custom_candidate_portal_fields when an EO exists; otherwise computed from
-    # the same portal_rows so a not-yet-materialized form still reports totals.
-    if doc is not None:
-        from recruitment.api.field_level_approval import _compute_field_status_counts
-        field_status_counts = _compute_field_status_counts(doc)
-    else:
-        field_status_counts = {"total": 0, "pending": 0, "filled": 0, "approved": 0, "rejected": 0}
-        for row in portal_rows:
-            if row.get("hidden"):
-                continue
-            field_status_counts["total"] += 1
-            field_status_counts["pending"] += 1
+    # Value-aware field status counts (visible portal fields only): a field with a
+    # value counts as "filled" whether it was saved, prefilled, or submitted, so
+    # progress reflects what the candidate has actually entered. Works before the
+    # EO is materialized too (values resolve from the Job Applicant).
+    field_status_counts = _compute_candidate_field_counts(portal_rows, doc, applicant_doc)
 
     return {
         "status": "success",
@@ -1107,11 +1134,14 @@ def save_candidate_portal_data(job_applicant_id, data):
 
         # Recompute boarding_status (Pending / In Process / Submitted / Completed)
         # so the candidate-side save reflects overall progress.
-        from recruitment.api.field_level_approval import _sync_overall_status, _compute_field_status_counts
+        from recruitment.api.field_level_approval import _sync_overall_status
         doc.reload()
         _sync_overall_status(doc)
         doc.reload()
-        field_status_counts = _compute_field_status_counts(doc)
+        portal_rows_now, _ = _get_onboarding_portal_rows(doc)
+        field_status_counts = _compute_candidate_field_counts(
+            portal_rows_now, doc, frappe.get_doc("Job Applicant", applicant_name)
+        )
 
         # Stamp applicant substatus on first candidate fill
         try:

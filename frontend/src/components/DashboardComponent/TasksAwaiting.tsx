@@ -68,7 +68,6 @@ const TasksAwaiting: React.FC = () => {
     isLoading: isCategoriesLoading,
   } = useTodoCategories();
 
-  console.log("categories", categories)
   const [activeCategory, setActiveCategory] = useState<string>("");
 
   const navigate = useNavigate();
@@ -111,7 +110,7 @@ const TasksAwaiting: React.FC = () => {
   );
 
   // Show only top 3 items
-  const displayedTodos = useMemo(() => todos.slice(0, 3), [todos]);
+  const displayedTodos = useMemo(() => todos.slice(0, 5), [todos]);
 
   const filterOptions = useMemo(() => {
     return categories.map((cat) => ({

@@ -2,14 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Attachment } from "../../../../types/flows";
 import HeaderBar from "../../../HeaderBar";
 
-import { ChevronDown, Eye, Pencil, RotateCcw, Save } from "lucide-react";
+import { ChevronDown, Eye, Pencil, Save } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetFlowRequestById, useUpdateInitiatorFormSubmission } from "../../../../hooks/useFlows";
+import { useGetUiPermission } from "../../../../hooks/userUiPermission";
+import { getActionsEnabled } from "../../../../utils/uiPermission";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { FormIOComponent } from "../../../../types/formio";
 import { FormIOForm } from "../../../../utils/flowUtils";
-import { FrappeAPI } from "../../../../utils/frappeAPI";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import Button from "../../../shared/atoms/Button";
 import NoDataFound from "../../../shared/atoms/NoDataFound";
@@ -22,11 +23,11 @@ import AttachmentPreview from "./AttachmentPreview";
 import FlowTable from "./FlowTable";
 import WorkflowTable from "./WorkflowTable";
 import ActivityLogDrawer from "../../../shared/ActivityLogDrawer";
+import RetriggerButton from "../../RetriggerButton";
 
 import { useQueryClient } from "@tanstack/react-query";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import toast from "react-hot-toast";
-import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 
 type JsonToFormData = {
   form?: { components?: FormIOComponent[] };
@@ -37,7 +38,7 @@ const RequestDetails: React.FC = () => {
   const { id } = useParams();
   const { data: flowResponse, isLoading } = useGetFlowRequestById(id || "");
   const data = flowResponse?.data;
-  console.log(flowResponse,'================================data')
+
   const { isDesktop } = useScreenSize();
   const [approvalExpanded, setApprovalExpanded] = useState(false);
   const [workflowExpanded, setWorkflowExpanded] = useState(false);
@@ -53,7 +54,14 @@ const RequestDetails: React.FC = () => {
   const editedSubmissionDataRef = useRef<Record<string, unknown>>({});
 
   const updateInitiatorMutation = useUpdateInitiatorFormSubmission();
-  const [isRetriggering, setIsRetriggering] = useState(false);
+
+  const { data: userUiPermission } = useGetUiPermission("HR Process");
+  const enabledActions = getActionsEnabled(
+    userUiPermission,
+    ["retrigger"],
+    "Flow Requests"
+  );
+  const canRetrigger = enabledActions.retrigger;
 
   const haveInitiatorForm =
     data?.initiator_forms && data.initiator_forms.length > 0;
@@ -61,32 +69,7 @@ const RequestDetails: React.FC = () => {
   const retriggerDefinitionName = data?.retrigger_definition_name || "";
   const retriggerFunnel = data?.funnel || data?.category || "";
   const retriggerEmployee = data?.initiated_for_employee_id || "";
-  const showRetriggerButton = !!retriggerDefinitionName && !!retriggerFunnel && !!retriggerEmployee;
-
-  const handleRetrigger = async () => {
-    if (!retriggerDefinitionName) return;
-    setIsRetriggering(true);
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const res: any = await FrappeAPI.callMethod(
-        "nextai.funnel.doctype.funnel_task.triggers.chatnext_assistant_trigger.trigger",
-        {
-          definition_name: retriggerDefinitionName,
-          variables: { docname: retriggerEmployee, funnel: retriggerFunnel },
-        },
-      );
-      const session = res?.session;
-      if (session && typeof window.trigger_chatnext_assistant === "function") {
-        window.trigger_chatnext_assistant(true, session);
-      }
-    } catch (e) {
-      const formatedError = errorResponseFormater(e, "Retrigger Failed");
-      toast.error(formatedError);
-      console.log("Flow Retrigger Error: ", e);
-    } finally {
-      setIsRetriggering(false);
-    }
-  };
+  const showRetriggerButton = canRetrigger && !!retriggerDefinitionName && !!retriggerFunnel && !!retriggerEmployee;
 
   const handleShowSelfForm = () => {
     let displayData: JsonToFormData;
@@ -333,16 +316,12 @@ const RequestDetails: React.FC = () => {
                   {!isDesktop && <span>Log</span>}
                 </Button>
                 {isDesktop && showRetriggerButton && (
-                  <Button
-                    bgColor="blue-600"
-                    size="md"
-                    className="hover:bg-blue-700 text-white flex items-center gap-2"
-                    onClick={handleRetrigger}
-                    disabled={isRetriggering}
-                  >
-                    <RotateCcw size={15} className={isRetriggering ? "animate-spin" : ""} />
-                    {isRetriggering ? "Retriggering..." : "Retrigger Flow"}
-                  </Button>
+                  <RetriggerButton
+                    retriggerDefinitionName={retriggerDefinitionName}
+                    retriggerFunnel={retriggerFunnel}
+                    retriggerEmployee={retriggerEmployee}
+                    employeeName={data?.initiated_for}
+                  />
                 )}
               </div>
             }
@@ -351,17 +330,13 @@ const RequestDetails: React.FC = () => {
         {/* Retrigger button - mobile only (above metadata) */}
         {!isDesktop && showRetriggerButton && (
           <div className="px-4 mt-1 mb-2">
-            <Button
-              bgColor="blue-600"
-              size="md"
+            <RetriggerButton
+              retriggerDefinitionName={retriggerDefinitionName}
+              retriggerFunnel={retriggerFunnel}
+              retriggerEmployee={retriggerEmployee}
+              employeeName={data?.initiated_for}
               fullWidth
-              className="hover:bg-blue-700 text-white flex items-center justify-center gap-2"
-              onClick={handleRetrigger}
-              disabled={isRetriggering}
-            >
-              <RotateCcw size={15} className={isRetriggering ? "animate-spin" : ""} />
-              {isRetriggering ? "Retriggering..." : "Retrigger Flow"}
-            </Button>
+            />
           </div>
         )}
         <div className="px-4 sm:px-8 flex flex-row flex-wrap items-center gap-3 mb-5 mt-1">
