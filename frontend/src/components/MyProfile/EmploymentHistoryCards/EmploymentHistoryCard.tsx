@@ -36,7 +36,7 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({ company, 
             size="xs"
           />
         )}
-        {onDelete && (
+        {onDelete && !isCurrent && (
           <IconButton
             onClick={() => onDelete?.()}
             icon={<TrashIcon className="h-4 w-4" />}
