@@ -1,6 +1,8 @@
 import React from "react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Tooltip from "../../shared/Tooltip";
+import { Link } from "react-router-dom";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 interface EmployeePreviousJoiningCardProps {
     employee: string;
@@ -28,9 +30,13 @@ const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = 
             <div className="space-y-4">
                 <div>
                     <p className="text-xs text-gray-500">Employee</p>
-                    <p className="font-semibold text-gray-900">
-                        {employee_name || "-"} {employee ? `(${employee})` : ""}
-                    </p>
+                    <WrapperHoverCard employeeId={employee}>
+                        <Link to={`/webapp/employee-profile?target_user=${employee}`} target="_blank">
+                            <p className="font-semibold text-gray-900 hover:text-primary">
+                                {employee_name || "-"} {employee ? `(${employee})` : ""}
+                            </p>
+                        </Link>
+                    </WrapperHoverCard>
                 </div>
 
                 <div>
