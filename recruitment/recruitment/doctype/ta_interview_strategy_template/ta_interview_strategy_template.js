@@ -12,6 +12,16 @@
  */
 
 frappe.ui.form.on("TA Interview Strategy Template", {
+	onload(frm) {
+		// `skip_stage_for_sources` is a Table MultiSelect nested inside the
+		// interview-rounds child grid. The form's meta bundle only reaches one
+		// level deep, so this grandchild target doctype is never shipped to the
+		// browser — and rendering the control in the grid-row form (the pencil
+		// edit) throws "Table MultiSelect requires a Table with atleast one Link
+		// field". Warm its meta up-front so the control can resolve its Link field.
+		frappe.model.with_doctype("TA Hiring Source Item");
+	},
+
 	setup(frm) {
 		// `applicable_to` is a Table MultiSelect (extends Link), so the query is
 		// set on the field directly (2-arg form) — NOT the grid/child form.

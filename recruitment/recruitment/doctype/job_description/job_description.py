@@ -121,6 +121,49 @@ def plain_text_to_html(text):
 	return "".join(html_blocks)
 
 
+def _jd_context_with_titles(doc):
+	"""`doc.as_dict()` with Link fields — top-level and inside child tables —
+	replaced by their target doctype's title, so JD templates render readable
+	names (e.g. 'Academics Defence Offline' rather than 'DEP_1097', 'Professor'
+	rather than 'PRF_ACD_DEF_OFF_TEACHING'). Falls back to the id when the target
+	has no distinct title field. Never raises."""
+	d = doc.as_dict()
+
+	def _title_of(link_doctype, value):
+		if not value or not isinstance(value, str):
+			return value
+		try:
+			tmeta = frappe.get_meta(link_doctype)
+			tf = tmeta.get("title_field")
+			if tf and tf != "name":
+				return frappe.db.get_value(link_doctype, value, tf) or value
+		except Exception:
+			pass
+		return value
+
+	try:
+		meta = frappe.get_meta(doc.doctype)
+	except Exception:
+		return d
+
+	for df in meta.fields:
+		if df.fieldtype == "Link" and df.options:
+			d[df.fieldname] = _title_of(df.options, d.get(df.fieldname))
+		elif df.fieldtype in ("Table", "Table MultiSelect") and df.options:
+			try:
+				cmeta = frappe.get_meta(df.options)
+			except Exception:
+				continue
+			link_fields = [(f.fieldname, f.options) for f in cmeta.fields
+						   if f.fieldtype == "Link" and f.options]
+			if not link_fields:
+				continue
+			for row in (d.get(df.fieldname) or []):
+				for fn, opt in link_fields:
+					row[fn] = _title_of(opt, row.get(fn))
+	return d
+
+
 def _render_preview(doc):
 	"""Render `description` as Jinja against the doc's fields and write the
 	result to `preview`. Broken templates surface as an inline error so the
@@ -151,7 +194,13 @@ def _render_preview(doc):
 		from frappe.utils.jinja import get_jenv
 		jenv = get_jenv()  # SandboxedEnvironment with Frappe's safe filters
 		compiled = jenv.from_string(template)
-		doc.preview = _blank_undefined(compiled.render(doc.as_dict()))
+		# `data` is the requisition-values namespace used by the Preview-JD flow
+		# (see job_requisition._build_preview_payload). It doesn't exist when the
+		# JD is previewed standalone here, so expose an empty dict — `{{ data.x }}`
+		# then renders blank instead of raising "'data' is undefined".
+		context = _jd_context_with_titles(doc)
+		context.setdefault("data", {})
+		doc.preview = _blank_undefined(compiled.render(context))
 	except Exception as exc:
 		doc.preview = _err_html(str(exc))
 
@@ -298,9 +347,18 @@ def _primary_child_fieldname(child_doctype):
 	return "name"
 
 
-def _fields_as_tokens(doctype):
+def _fields_as_tokens(doctype, namespace=None):
 	"""Insertable fields of `doctype` as {label, token} — scalars become
-	`{{ fieldname }}`, child tables become a comma-joined `{% for %}` loop."""
+	`{{ fieldname }}`, child tables become a comma-joined `{% for %}` loop.
+
+	When `namespace` is given (e.g. "data"), tokens reference that namespace
+	(`{{ data.fieldname }}`) instead of the bare fieldname. This is how Job
+	Requisition fields are inserted: they resolve from the in-progress
+	requisition the Preview-JD flow posts under `data`, and never collide with
+	the JD doc's own fields (designation/department/…). Loops over a namespaced
+	list are guarded with `or []` so a standalone JD preview (no `data`) renders
+	empty instead of erroring."""
+	prefix = (namespace + ".") if namespace else ""
 	out = []
 	for df in frappe.get_meta(doctype).fields:
 		if not df.fieldname or df.fieldtype in _NON_INSERTABLE_FIELDTYPES:
@@ -309,12 +367,13 @@ def _fields_as_tokens(doctype):
 			continue
 		if df.fieldtype in ("Table", "Table MultiSelect"):
 			child_fn = _primary_child_fieldname(df.options)
+			loop_src = (f"({prefix}{df.fieldname} or [])" if namespace else df.fieldname)
 			token = (
-				"{% for row in " + df.fieldname + " %}{{ row." + child_fn + " }}"
+				"{% for row in " + loop_src + " %}{{ row." + child_fn + " }}"
 				"{% if not loop.last %}, {% endif %}{% endfor %}"
 			)
 		else:
-			token = "{{ " + df.fieldname + " }}"
+			token = "{{ " + prefix + df.fieldname + " }}"
 		out.append({
 			"label": (df.label or df.fieldname).strip(),
 			"fieldname": df.fieldname,
@@ -338,7 +397,7 @@ def get_jd_template_fields():
 	return {
 		"groups": [
 			{"group": "Job Description Fields", "fields": _fields_as_tokens("Job Description")},
-			{"group": "Job Requisition Fields", "fields": _fields_as_tokens("Job Requisition")},
+			{"group": "Job Requisition Fields", "fields": _fields_as_tokens("Job Requisition", namespace="data")},
 		]
 	}
 

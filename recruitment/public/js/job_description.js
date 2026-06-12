@@ -71,10 +71,24 @@ function jdb_insertPill(editor, item, range) {
 		r = document.createRange(); r.selectNodeContents(editor); r.collapse(false);
 	}
 	r.deleteContents();
-	const tpl = document.createElement("template");
-	tpl.innerHTML = jdb_pillHtml(item) + " ";
-	const last = tpl.content.lastChild;
-	r.insertNode(tpl.content);
+	// Table fields carry a Jinja loop ({% for row in … %}{{ row.x }}{% endfor %}).
+	// Insert those as EDITABLE text so the author can format each row (bullets,
+	// labels, line breaks); a single non-editable pill would lock the whole loop
+	// in one opaque box. Scalar fields stay as friendly pills.
+	const isBlock = /{%/.test(item.token || "");
+	let last;
+	if (isBlock) {
+		const frag = document.createDocumentFragment();
+		frag.appendChild(document.createTextNode(item.token));
+		last = document.createTextNode(" ");
+		frag.appendChild(last);
+		r.insertNode(frag);
+	} else {
+		const tpl = document.createElement("template");
+		tpl.innerHTML = jdb_pillHtml(item) + " ";
+		last = tpl.content.lastChild;
+		r.insertNode(tpl.content);
+	}
 	if (last) {
 		const after = document.createRange();
 		after.setStartAfter(last); after.collapse(true);
@@ -183,13 +197,21 @@ function jdb_render(frm, groups) {
 		jdb_drag = null;
 	});
 
-	$ui.on("input", ".jdb-search", function () {
+	$ui.on("input search", ".jdb-search", function () {
 		const q = ($(this).val() || "").toLowerCase().trim();
 		$ui.find(".jdb-field").each(function () {
 			const txt = ($(this).text() + " " + ($(this).attr("data-token") || "")).toLowerCase();
-			$(this).toggle(!q || txt.indexOf(q) !== -1);
+			this.style.display = (!q || txt.indexOf(q) !== -1) ? "" : "none";
 		});
-		$ui.find(".jdb-group").each(function () { $(this).toggle($(this).find(".jdb-field:visible").length > 0); });
+		// Show a group when any of its fields is shown. Check the field's own
+		// inline display (not jQuery :visible) — :visible reports false while the
+		// group is hidden, which would wrongly keep groups collapsed after the
+		// search box is cleared.
+		$ui.find(".jdb-group").each(function () {
+			const anyShown = $(this).find(".jdb-field").toArray()
+				.some(el => el.style.display !== "none");
+			this.style.display = anyShown ? "" : "none";
+		});
 	});
 
 	editor._previewEl = $ui.find(".jdb-preview")[0];
