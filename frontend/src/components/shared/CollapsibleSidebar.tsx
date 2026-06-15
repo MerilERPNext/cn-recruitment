@@ -50,6 +50,7 @@ import { useAppNotificationCounts } from "../../hooks/useAppNotificationCounts";
 import { useSingleCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { useTodoPendingCount } from "../../hooks/useTodo";
 import { Typography } from "./atoms/Typography";
 import SidebarSkeleton from "./molecules/Skeletons/SidebarSkeleton";
 
@@ -119,6 +120,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   const companyName = getTruncatedCompanyName(originalCompanyName);
   const { getCount, getSubModuleCount } = useAppNotificationCounts();
+  const { data: todoPendingCount = 0 } = useTodoPendingCount();
+
+  // Returns the badge count for a nav item — todo uses its own API, others use notification counts
+  const getNavItemCount = (label: string): number => {
+    if (label === "Todo") return todoPendingCount;
+    return getCount(label);
+  };
 
   const allNavigationItems: NavigationItem[] = [
     {
@@ -904,9 +912,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           <Icon className="h-5 w-5" />
-                          {!isExpanded && getCount(item.label) > 0 && (
+                          {!isExpanded && getNavItemCount(item.label) > 0 && (
                             <span className="absolute -top-0.5 -right-1 min-w-[16px] size-4 p-2 rounded-full bg-error text-white text-[10px] font-bold flex items-center justify-center">
-                              {getCount(item.label)}
+                              {getNavItemCount(item.label)}
                             </span>
                           )}
                         </div>
@@ -924,9 +932,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                             {item.label}
                           </Typography>
                         </span>
-                        {isExpanded && getCount(item.label) > 0 && (
+                        {isExpanded && getNavItemCount(item.label) > 0 && (
                           <span className="ml-auto min-w-[22px] size-5 p-2 rounded-full bg-error-50 text-error text-xs font-semibold flex items-center justify-center">
-                            {getCount(item.label)}
+                            {getNavItemCount(item.label)}
                           </span>
                         )}
                       </div>
@@ -948,11 +956,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0 relative">
+                        <div className="flex-shrink-0">
                           <Icon className="h-5 w-5" />
-                          {!isExpanded && getCount(item.label) > 0 && (
+                          {!isExpanded && getNavItemCount(item.label) > 0 && (
                             <span className="absolute -top-0.5 -right-1 min-w-[16px] size-4 p-2 rounded-full bg-error text-white text-[10px] font-bold flex items-center justify-center">
-                              {getCount(item.label)}
+                              {getNavItemCount(item.label)}
                             </span>
                           )}
                         </div>
@@ -970,9 +978,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                             {item.label}
                           </Typography>
                         </span>
-                        {isExpanded && getCount(item.label) > 0 && (
+                        {isExpanded && getNavItemCount(item.label) > 0 && (
                           <span className="ml-auto min-w-[22px] size-5 p-2 rounded-full bg-error-50 text-error text-xs font-semibold flex items-center justify-center">
-                            {getCount(item.label)}
+                            {getNavItemCount(item.label)}
                           </span>
                         )}
                       </div>
