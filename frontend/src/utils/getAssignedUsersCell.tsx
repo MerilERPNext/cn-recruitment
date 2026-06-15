@@ -16,7 +16,7 @@ export const getStageAssignedUsersCell = (
 
     const roles = stage.role ? stage.role.split(',').map((r: string) => r.trim()) : [];
 
-    const text = totalUsers ? `Assign(${totalUsers})` : `AssignRole(${roleAssignedUsers.length})`;
+    const text = totalUsers ? `Assign(${totalUsers})` : `Assign(${roleAssignedUsers.length})`;
     return (
       <AllocatedToTooltip
         title="Assigned To"

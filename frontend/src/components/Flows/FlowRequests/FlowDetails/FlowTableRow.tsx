@@ -222,6 +222,7 @@ const FlowTableRow = ({
               }
             }}
 
+            isPendingStatus={stage.status === "Pending"}
             todoId={stage?.todo?.name}
 
           />

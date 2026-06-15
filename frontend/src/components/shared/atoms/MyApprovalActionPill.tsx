@@ -9,6 +9,7 @@ import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { getActionsEnabled } from "../../../utils/uiPermission";
 import { useNudge } from "../../../hooks/useNudge";
 
+
 type MyApprovalActionPillProps = {
   /** to inforce ui permission to show hide action buttons
    */
@@ -38,6 +39,7 @@ type MyApprovalActionPillProps = {
   variant?: "pill" | "buttons";
   isResubmit?: boolean;
   todoId?: string | string[];
+  isPendingStatus?: boolean;
 };
 
 type ActionItem = {
@@ -63,7 +65,9 @@ const MyApprovalActionPill = ({
   payLoading = false,
   isResubmit = false,
   todoId,
+  isPendingStatus
 }: MyApprovalActionPillProps) => {
+
   const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
   const { isDesktop } = useScreenSize();
   const { mutate: sendNudge, isPending: nudging } = useNudge();
@@ -94,6 +98,7 @@ const MyApprovalActionPill = ({
 
   const nudgeAllowed =
     !!todoId &&
+    !!isPendingStatus &&
     (!uiPermission?.actionKeysMap?.nudge ||
       actionsEnabled[uiPermission?.actionKeysMap?.nudge]);
 
@@ -174,8 +179,8 @@ const MyApprovalActionPill = ({
     >
       <div
         className={`bg-white w-full ${isDesktop
-            ? "max-w-sm rounded-lg shadow-xl"
-            : "rounded-t-2xl shadow-2xl"
+          ? "max-w-sm rounded-lg shadow-xl"
+          : "rounded-t-2xl shadow-2xl"
           }`}
         onClick={(e) => e.stopPropagation()}
       >

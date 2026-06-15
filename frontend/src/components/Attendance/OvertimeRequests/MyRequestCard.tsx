@@ -33,7 +33,7 @@ export function MyRequestCard({
       revoke?: string;
       replace?: string;
       pay?: string;
-      nudge?:string
+      nudge?: string
     }
   };
   request: MyPlannedAttendanceRequest;
@@ -143,6 +143,7 @@ export function MyRequestCard({
                   onEdit(request);
                 }
               }}
+              isPendingStatus={request?.status === "Open" || request?.status === "Pending"}
               todoId={request?.todo_id}
               onRevoke={handleRevokeClick}
             />
@@ -226,12 +227,12 @@ export function MyRequestCard({
                     {getAssignedUsersCell(request)}
                   </Typography>
                 </div>
-                  <div>
-                    <Typography variant="mobileCardLabel">Sendback Comment</Typography>
-                    <Typography variant="mobileCardValue" className="text-gray-700">
-                      {request?.send_back_comment || "--"}
-                    </Typography>
-                  </div>
+                <div>
+                  <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+                  <Typography variant="mobileCardValue" className="text-gray-700">
+                    {request?.send_back_comment || "--"}
+                  </Typography>
+                </div>
                 <MyApprovalActionPill
                   uiPermission={uiPermission}
                   variant="buttons"
@@ -242,6 +243,7 @@ export function MyRequestCard({
                       onEdit(request);
                     }
                   }}
+                  isPendingStatus={request?.status === "Open" || request?.status === "Pending"}
                   todoId={request?.todo_id}
                   onRevoke={handleRevokeClick}
                 />

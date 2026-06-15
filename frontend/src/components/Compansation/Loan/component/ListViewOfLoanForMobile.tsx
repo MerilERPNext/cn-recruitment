@@ -142,10 +142,11 @@ export const LoantItem: React.FC<{
             actionKeysMap: {
               edit: "edit",
               revoke: "revoke",
-              nudge:"nudge"
+              nudge: "nudge"
             },
           }}
           todoId={todo?.todo_id}
+          isPendingStatus={item.status === "Pending"}
           variant="buttons"
           canRevoke={canRevoke}
           canEdit={canEdit}
