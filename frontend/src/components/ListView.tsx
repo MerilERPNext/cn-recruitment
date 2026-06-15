@@ -1002,41 +1002,43 @@ export const StaticListView = <T extends BaseItemStatic>({
   return (
     <div>
       {/* HEADER — sticky top, constrained to visible width */}
-      <div
-        className="sticky top-0 left-0 z-10 bg-white pb-2"
-        style={{ width: 'var(--card-table-visible-width, 100%)', top: 'var(--search-bar-offset, 0px)' }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
-            {isSearch && (
-              <SearchInputWrapper
-                searchTerm={searchTerm}
-                handleSearch={(e) => setSearchTerm(e.target.value)}
-              />
-            )}
+      {(isSearch || (isFilter && filterFields && filterFields.length > 0) || showRefreshButton) && (
+        <div
+          className="sticky top-0 left-0 z-10 bg-white pb-2"
+          style={{ width: 'var(--card-table-visible-width, 100%)', top: 'var(--search-bar-offset, 0px)' }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+              {isSearch && (
+                <SearchInputWrapper
+                  searchTerm={searchTerm}
+                  handleSearch={(e) => setSearchTerm(e.target.value)}
+                />
+              )}
 
-            {isFilter && filterFields.length > 0 && (
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`h-12 px-3 flex items-center border-l border-gray-300 text-gray-600 hover:bg-gray-50 transition ${showFilters ? "bg-gray-100" : ""
-                  }`}
-              >
-                <Filter className="h-4 w-4" />
-              </button>
-            )}
+              {isFilter && filterFields.length > 0 && (
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`h-12 px-3 flex items-center border-l border-gray-300 text-gray-600 hover:bg-gray-50 transition ${showFilters ? "bg-gray-100" : ""
+                    }`}
+                >
+                  <Filter className="h-4 w-4" />
+                </button>
+              )}
 
-            {showRefreshButton && (
-              <button
-                disabled={isLoading}
-                onClick={() => onRefresh?.()}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-              </button>
-            )}
+              {showRefreshButton && (
+                <button
+                  disabled={isLoading}
+                  onClick={() => onRefresh?.()}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* FILTERS DRAWER — right sidebar on desktop, portal to body on mobile */}
       {isFilter && showFilters && filterFields.length > 0 && (() => {
@@ -1141,7 +1143,12 @@ export const StaticListView = <T extends BaseItemStatic>({
           SkeletonComponent ? (
             <SkeletonComponent />
           ) : (
-            <div className="flex justify-center py-8">Loading…</div>
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center space-x-2 text-gray-500">
+                <RefreshCw className="h-5 w-5 animate-spin" />
+                <span>Loading...</span>
+              </div>
+            </div>
           )
         ) : paginatedData.length === 0 ? (
           <NoDataFound />
