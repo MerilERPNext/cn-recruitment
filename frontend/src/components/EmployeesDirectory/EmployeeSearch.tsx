@@ -125,26 +125,22 @@ const EmployeeSearch = ({
   const { data = [], isLoading } = useGetEmployeesForDirectory(
     filters.length > 0 ? filters : undefined,
     employeeSelfService,
-    ["*"]
-    // [
-    //   "name",
-    //   "employee",
-    //   "employee_name",
-    //   "status",
-    //   "image",
-    //   "custom_weekly_off",
-    //   "user_id",
-    //   "designation_name",
-    //   "designation",
-    //   "department",
-    //   "department_name",
-    //   "branch",
-    //   "branch_name",
-    //   "company",
-    //   "employment_type",
-    //   "date_of_joining",
-    //   "custom_business_unit",
-    // ],
+    [
+      "name",
+      "employee",
+      "employee_name",
+      "status",
+      "image",
+      "custom_weekly_off",
+      "user_id",
+      "designation",
+      "department",
+      "branch",
+      "company",
+      "employment_type",
+      "date_of_joining",
+      "custom_business_unit",
+    ],
   );
 
   const employeeOptions: Employee[] = data.map((emp: Employee) => ({
