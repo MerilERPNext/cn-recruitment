@@ -1,0 +1,57 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-06-15 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "timeframe",
+  "detail",
+  "icon"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1,
+   "columns": 3
+  },
+  {
+   "fieldname": "timeframe",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Timeframe",
+   "description": "e.g. Day 1, Day 1–2, Week 1, End of Week 1",
+   "columns": 2
+  },
+  {
+   "fieldname": "detail",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Detail",
+   "columns": 4
+  },
+  {
+   "fieldname": "icon",
+   "fieldtype": "Data",
+   "label": "Icon",
+   "description": "Optional icon key for the frontend (e.g. users, laptop, calendar)."
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-15 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Onboarding Journey Step",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

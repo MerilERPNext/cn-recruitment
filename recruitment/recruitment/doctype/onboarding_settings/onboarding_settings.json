@@ -11,7 +11,11 @@
   "enable_auto_manager_mapping",
   "enable_doj_outcome_automation",
   "review_section",
-  "enable_onboarding_review_actions"
+  "enable_onboarding_review_actions",
+  "candidate_journey_section",
+  "onboarding_journey_title",
+  "onboarding_journey_subtitle",
+  "onboarding_journey"
  ],
  "fields": [
   {
@@ -56,6 +60,31 @@
    "fieldname": "enable_onboarding_review_actions",
    "fieldtype": "Check",
    "label": "Enable Onboarding Review Actions (Approve / Send Back)"
+  },
+  {
+   "fieldname": "candidate_journey_section",
+   "fieldtype": "Section Break",
+   "label": "Candidate Portal — \"After you're onboarded\""
+  },
+  {
+   "default": "After you're onboarded",
+   "description": "Heading shown above the onboarding journey on the candidate portal.",
+   "fieldname": "onboarding_journey_title",
+   "fieldtype": "Data",
+   "label": "Journey Heading"
+  },
+  {
+   "description": "Sub-heading shown under the journey heading (e.g. \"Your first two weeks — at a glance.\").",
+   "fieldname": "onboarding_journey_subtitle",
+   "fieldtype": "Small Text",
+   "label": "Journey Sub-heading"
+  },
+  {
+   "description": "Define the post-joining journey steps once here; they surface on every candidate portal via get_candidate_portal_form.",
+   "fieldname": "onboarding_journey",
+   "fieldtype": "Table",
+   "label": "Onboarding Journey Steps",
+   "options": "Onboarding Journey Step"
   }
  ],
  "index_web_pages_for_search": 1,
