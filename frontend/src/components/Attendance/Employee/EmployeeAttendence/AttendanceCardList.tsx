@@ -1,7 +1,25 @@
-import { format, isSameDay, isValid as isValidDate, parse } from "date-fns";
+import {
+  compareDesc,
+  endOfDay,
+  format,
+  isSameDay,
+  isValid as isValidDate,
+  parse,
+  parseISO,
+  startOfDay,
+} from "date-fns";
 import { useMemo, useState } from "react";
-import { AttendanceRecord } from "../../../../types/attendance";
+import { toast } from "react-hot-toast";
+import {
+  useClockInOutService,
+  useGetEmployeeShift,
+  useHomeSummaryDetails,
+} from "../../../../hooks/useAttendance";
+import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
+import { AttendanceRecord, CustomError } from "../../../../types/attendance";
+import Button from "../../../shared/atoms/Button";
 import { Typography } from "../../../shared/atoms/Typography";
+import { useTargetUser } from "../../../../context/ViewedUserContext";
 
 const formatTimeSafe = (timeStr?: string) => {
   if (!timeStr) return "--:--";
@@ -68,6 +86,57 @@ const AttendanceCardList = ({
   defaultVisibleCount = 5,
 }: AttendanceCardListProps) => {
   const [showAll, setShowAll] = useState(false);
+  const { targetEmployeeId } = useTargetUser();
+
+  const { data: currentEmployee } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
+  const { data: employeeShift } = useGetEmployeeShift(
+    currentEmployee?.user_id || "",
+  );
+
+  const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
+  const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
+  const encodedFilters = encodeURIComponent(
+    JSON.stringify({ time: ["between", [start, end]] }),
+  );
+  const { data: homeSummary, refetch: refetchHomeSummary } =
+    useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
+  const { mutate: clockInCheckOutMutation, isPending: clockOutPending } =
+    useClockInOutService();
+
+  const lastLog =
+    homeSummary && homeSummary.length > 0
+      ? [...homeSummary].sort((a, b) =>
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T")),
+        ),
+      )[0]
+      : undefined;
+
+  const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
+
+  const handleCheckOut = () => {
+    clockInCheckOutMutation(
+      {
+        employee: currentEmployee?.employee,
+        shift: employeeShift?.shift,
+        action: "Clock Out",
+      },
+      {
+        onSuccess: () => {
+          refetchHomeSummary();
+          toast.success("Successfully clocked out!");
+        },
+        onError: (e: CustomError) => {
+          toast.error(
+            e?.response?.data?.message?.error || "Error while Clocking out",
+          );
+        },
+      },
+    );
+  };
 
   const sortedData = useMemo(
     () =>
@@ -134,10 +203,24 @@ const AttendanceCardList = ({
                   </div>
                 </div>
                 <div
-                  className={`mt-2 pt-2 text-xs border-t ${today ? "border-primary-400 text-primary-100" : "border-gray-200 text-gray-500"
+                  className={`mt-2 pt-2 text-xs border-t flex items-center justify-between gap-2 ${today ? "border-primary-400 text-primary-100" : "border-gray-200 text-gray-500"
                     }`}
                 >
-                  | {getStatusLabel(statusInfo.status)}
+                  <span>| {getStatusLabel(statusInfo.status)}</span>
+                  {today && isCurrentlyCheckedIn && !targetEmployeeId && (
+                    <Button
+                      size="sm"
+                      bgColor="white"
+                      className="text-primary"
+                      disabled={clockOutPending}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCheckOut();
+                      }}
+                    >
+                      {clockOutPending ? "Processing…" : "Check Out"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
