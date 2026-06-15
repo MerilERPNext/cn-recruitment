@@ -17,7 +17,9 @@ import formatToIndianDate from "../../utils/formatToIndianDate";
 export interface EmployeeDirectoryFilterData {
   employee_status?: string;
   company?: string | string[];
-  departments?: string;
+  department?: string | string[];
+  branch?: string | string[];
+  custom_business_unit?: string | string[];
   [key: string]: string | string[] | number | boolean | undefined;
 }
 
