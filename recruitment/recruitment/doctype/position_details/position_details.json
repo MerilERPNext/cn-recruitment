@@ -11,7 +11,7 @@
   "replacement_for",
   "reporting_manager",
   "employee_type",
-  "cost_centers"
+  "cost_center_allocations"
  ],
  "fields": [
   {
@@ -62,9 +62,9 @@
   },
   {
    "description": "JSON array of {cost_center, percentage} entries — one position can be split across multiple cost centers (e.g. [{\"cost_center\": \"CC-001\", \"percentage\": 50}, {\"cost_center\": \"CC-002\", \"percentage\": 50}]).",
-   "fieldname": "cost_centers",
+   "fieldname": "cost_center_allocations",
    "fieldtype": "Long Text",
-   "label": "Cost Centers"
+   "label": "Cost Center Allocations"
   }
  ],
  "grid_page_length": 50,

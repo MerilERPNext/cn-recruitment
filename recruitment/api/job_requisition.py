@@ -228,7 +228,7 @@ def _bypass_hrms_duplicate_check(doc):
 # ---------------------------------------------------------------------------
 
 
-def _deserialise_cost_centers(value):
+def _deserialise_cost_center_allocations(value):
     """Payload value (list of {cost_center, percentage}) → JSON string for DB.
 
     Accepts the canonical list-of-dicts shape. Tolerant of:
@@ -240,6 +240,10 @@ def _deserialise_cost_centers(value):
     The field is plain Long Text on the child doctype, so we serialise
     to a JSON string. No native autocomplete on the link is needed —
     UI dev fetches Cost Center options via the standard Resource API.
+
+    `cost_center` is preserved as-sent (int OR str) — Frappe's Cost Center
+    names are usually strings, but the UI's Cost Center master may use
+    integer IDs; either round-trips correctly through JSON.
     """
     if value in (None, ""):
         return ""
@@ -252,7 +256,7 @@ def _deserialise_cost_centers(value):
     for row in value:
         if not isinstance(row, dict):
             continue
-        cc = row.get("cost_center") or row.get("cost_centre")
+        cc = row.get("cost_center") if row.get("cost_center") is not None else row.get("cost_centre")
         pct = row.get("percentage")
         if cc is None or pct is None:
             continue
@@ -264,7 +268,7 @@ def _deserialise_cost_centers(value):
     return json.dumps(cleaned) if cleaned else ""
 
 
-def _serialise_cost_centers(value):
+def _serialise_cost_center_allocations(value):
     """Stored JSON string → clean list of {cost_center, percentage}.
     Returns [] for any malformed / empty value — never raises."""
     if not value:
@@ -311,11 +315,14 @@ def _position_row(p, position_no, parent_vacancy_default, parent_functional_area
         # `employee_type` is mandatory on the child row. The UI collects the
         # employment type once at parent level, so inherit it per-position.
         "employee_type": p.get("employee_type") or parent_employee_type,
-        # `cost_centers` is a JSON-encoded list of {cost_center, percentage}
-        # entries on the Position Details row — a single position can be
-        # allocated across multiple cost centers (e.g. 50/30/20). Serialised
-        # here so the DB stores a plain Long Text payload.
-        "cost_centers": _deserialise_cost_centers(p.get("cost_centers")),
+        # `cost_center_allocations` is a JSON-encoded list of
+        # {cost_center, percentage} entries on the Position Details row —
+        # a single position can be allocated across multiple cost centers
+        # (e.g. 50/30/20). Serialised here so the DB stores a plain Long
+        # Text payload.
+        "cost_center_allocations": _deserialise_cost_center_allocations(
+            p.get("cost_center_allocations")
+        ),
     }
 
 
@@ -859,7 +866,9 @@ def _serialise_requisition(doc):
             "functional_area": row.get("functional_area"),
             # JSON string in DB → clean list of {cost_center, percentage}
             # for the UI. Empty list when the field is unset or malformed.
-            "cost_centers": _serialise_cost_centers(row.get("cost_centers")),
+            "cost_center_allocations": _serialise_cost_center_allocations(
+                row.get("cost_center_allocations")
+            ),
         }
         for row in doc.get("custom_position_details") or []
     ]
