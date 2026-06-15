@@ -35,7 +35,7 @@ export const getStageAssignedUsersCell = (
       ? [{ name: stage.user, employee: stage.employee_id, designation_name: stage.designation_name }]
       : [];
 
-  const label = (stage?.designation_name || stage?.stage_name || (totalUsers ? `Assign(${totalUsers})` : users.length ? `Assign(${users.length})` : "Not Assigned")) + " ";
+  const label = (stage?.stage_name || stage?.designation_name || (totalUsers ? `Assign(${totalUsers})` : users.length ? `Assign(${users.length})` : "Not Assigned")) + " ";
 
   return (
     <AllocatedToTooltip
