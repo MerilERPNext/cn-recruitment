@@ -741,6 +741,32 @@ export default function OnboardingFieldApproval() {
               })}
             </div>
 
+            {/* ── Bottom action bar (mirrors top section actions to avoid scrolling) ── */}
+            <div className="flex items-center justify-end gap-2 flex-wrap pt-1">
+              {/* Section approve — immediate, no comment */}
+              <button
+                onClick={() => handleSectionApprove(activeSection)}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-50 text-success-800 border border-emerald-200 hover:bg-success-100 transition-colors"
+              >
+                Approve section
+              </button>
+              {/* Section reject — opens comment banner */}
+              <button
+                onClick={() => handleSectionRejectClick(activeSection)}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-error-50 text-error-600 border border-error-200 hover:bg-error-100 transition-colors"
+              >
+                Reject section
+              </button>
+              {/* Bulk approve all pending — no comment required */}
+              <button
+                onClick={bulkApproveAllPending}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-500 text-white border border-parimary-600 hover:bg-primary-700 transition-colors"
+                title="Approve all pending fields across entire document"
+              >
+                Approve all pending
+              </button>
+            </div>
+
             {/* Prev / Next navigation */}
             <div className="flex justify-between pt-1">
               <button
@@ -765,7 +791,7 @@ export default function OnboardingFieldApproval() {
       {/* ── Toast ── */}
       {toast && (
         <div
-          className={`fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl text-xs font-medium border transition-all ${
+          className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl text-xs font-medium border shadow-lg transition-all ${
             toast.type === "error" || toast.msg === "reject"
               ? "bg-error-50 text-error-600 border-error-200"
               : toast.type === "info"
