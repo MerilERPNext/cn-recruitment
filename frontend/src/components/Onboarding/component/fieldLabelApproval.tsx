@@ -9,6 +9,10 @@ import {
 import type { ApprovalField, FieldLocalState } from "../../../types/onboarding";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Check, X } from "lucide-react";
+import {
+  sendBackToCandidate,
+  approveOnboardingForm,
+} from "../../../services/employeeOnboardingService";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -390,6 +394,10 @@ export default function OnboardingFieldApproval() {
     loading: boolean;
   } | null>(null);
 
+  // ── Email-trigger actions (Send Back / Approve form) ──
+  const [sendBackLoading, setSendBackLoading] = useState(false);
+  const [approveFormLoading, setApproveFormLoading] = useState(false);
+
   // ── Hooks ──
   const { toast, showToast } = useToast();
 
@@ -502,6 +510,42 @@ export default function OnboardingFieldApproval() {
     }
   };
 
+  // ── Email-trigger handlers ───────────────────────────────────────────────────
+
+  // Send Back (Reject) — notify candidate of rejected fields
+  const handleSendBack = async () => {
+    if (!onboardingName || sendBackLoading) return;
+    setSendBackLoading(true);
+    try {
+      const res = await sendBackToCandidate(onboardingName);
+      const count = res?.rejected_count ?? 0;
+      showToast(
+        `Sent back to candidate — ${count} rejected field${count === 1 ? "" : "s"}`,
+        "success"
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Request failed";
+      showToast(`Error: ${msg}`, "error");
+    } finally {
+      setSendBackLoading(false);
+    }
+  };
+
+  // Approve — mark the whole form approved
+  const handleApproveForm = async () => {
+    if (!onboardingName || approveFormLoading) return;
+    setApproveFormLoading(true);
+    try {
+      await approveOnboardingForm(onboardingName);
+      showToast("Onboarding form approved", "success");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Request failed";
+      showToast(`Error: ${msg}`, "error");
+    } finally {
+      setApproveFormLoading(false);
+    }
+  };
+
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
@@ -608,6 +652,26 @@ export default function OnboardingFieldApproval() {
                   title="Approve all pending fields across entire document"
                 >
                   Approve all pending
+                </button>
+
+                {/* Send Back (Reject) — email trigger notifying candidate of rejected fields */}
+                <button
+                  onClick={handleSendBack}
+                  disabled={sendBackLoading}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-error-600 text-white border border-error-700 hover:bg-error-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Send back to candidate — notify of rejected fields"
+                >
+                  {sendBackLoading ? "Sending..." : "Send Back (Reject)"}
+                </button>
+
+                {/* Approve — email trigger marking the whole form approved */}
+                <button
+                  onClick={handleApproveForm}
+                  disabled={approveFormLoading}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-600 text-white border border-success-700 hover:bg-success-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Approve the whole onboarding form"
+                >
+                  {approveFormLoading ? "Approving..." : "Approve"}
                 </button>
               </div>
             </div>
@@ -764,6 +828,26 @@ export default function OnboardingFieldApproval() {
                 title="Approve all pending fields across entire document"
               >
                 Approve all pending
+              </button>
+
+              {/* Send Back (Reject) — email trigger notifying candidate of rejected fields */}
+              <button
+                onClick={handleSendBack}
+                disabled={sendBackLoading}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-error-600 text-white border border-error-700 hover:bg-error-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                title="Send back to candidate — notify of rejected fields"
+              >
+                {sendBackLoading ? "Sending..." : "Send Back (Reject)"}
+              </button>
+
+              {/* Approve — email trigger marking the whole form approved */}
+              <button
+                onClick={handleApproveForm}
+                disabled={approveFormLoading}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-600 text-white border border-success-700 hover:bg-success-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                title="Approve the whole onboarding form"
+              >
+                {approveFormLoading ? "Approving..." : "Approve"}
               </button>
             </div>
 
