@@ -7,7 +7,6 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 
 
@@ -156,7 +155,7 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
             <div><Typography variant="bodySmall" className="font-medium text-center">{formatToIndianDate(request.initiated_on)}</Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center"><WrapperHoverCard employeeId={request.initiated_by_emp_id}>{truncateByChars(request.initiated_by, 15)}</WrapperHoverCard></Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center"><WrapperHoverCard employeeId={request.initiated_for_emp_id}>{truncateByChars(request.initiated_for, 15)}</WrapperHoverCard></Typography></div>
-            <div><AllocatedToTooltip users={pendingApprovalAllocatedTo?.allocated_to || []} RoleAssignedUsers={pendingApprovalAllocatedTo?.role_assigned_users || []} position="left"><StatusBadge status={request.approval_status} /></AllocatedToTooltip></div>
+            <div><StatusBadge status={request.approval_status} /></div>
             {/* <div><AllocatedToTooltip users={pendingWorkflowAllocatedTo?.allocated_to || []} RoleAssignedUsers={pendingWorkflowAllocatedTo?.role_assigned_users || []} position="left"><StatusBadge status={request.workflow_status} /></AllocatedToTooltip></div> */}
             <div><StatusBadge status={request.overall_flow_status} /></div>
         </div>

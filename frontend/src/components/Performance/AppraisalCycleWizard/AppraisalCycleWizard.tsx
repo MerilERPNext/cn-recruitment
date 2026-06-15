@@ -1,5 +1,7 @@
+import { Form } from "@tsed/react-formio";
 import { ChevronDown, X } from "lucide-react";
 import { useState } from "react";
+import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { Select } from "../../shared/atoms/Select";
 import { Typography } from "../../shared/atoms/Typography";
@@ -8,6 +10,118 @@ import WizardShell from "./WizardShell";
 
 type AppraisalCycleWizardProps = {
   data?: AppraisalCycleWizardData;
+};
+
+const parseCycleDate = (value: string, pattern = "MM/dd/yyyy") => {
+  if (!value) return null;
+
+  const parsedDate = parse(value, pattern, new Date());
+  return isValid(parsedDate) ? parsedDate : null;
+};
+
+const formatCycleDate = (date: Date) => format(date, "MM/dd/yyyy");
+
+const formatCycleDateForForm = (value: string) => {
+  const parsedDate = parseCycleDate(value);
+  return parsedDate ? format(parsedDate, "yyyy-MM-dd") : "";
+};
+
+const formatFormDateForCycle = (value?: string) => {
+  if (!value) return "";
+
+  const dateValue = String(value).split("T")[0];
+  const parsedDate =
+    parseCycleDate(dateValue, "yyyy-MM-dd") ||
+    parseCycleDate(dateValue, "dd-MM-yyyy") ||
+    parseCycleDate(dateValue, "MM/dd/yyyy");
+
+  return parsedDate ? formatCycleDate(parsedDate) : "";
+};
+
+const appraisalPeriodFormSchema = {
+  display: "form",
+  components: [
+    {
+      type: "columns",
+      key: "periodDates",
+      label: "",
+      hideLabel: true,
+      columns: [
+        {
+          width: 6,
+          offset: 0,
+          push: 0,
+          pull: 0,
+          components: [
+            {
+              type: "datetime",
+              key: "period_start",
+              label: "Period Start",
+              placeholder: "Select start date",
+              format: "dd-MM-yyyy",
+              enableTime: false,
+              validate: { required: true },
+              customClass: "mb-0",
+              input: true,
+              widget: {
+                type: "calendar",
+                displayInTimezone: "viewer",
+                locale: "en",
+                useLocaleSettings: false,
+                allowInput: true,
+                mode: "single",
+                enableTime: false,
+                noCalendar: false,
+                format: "yyyy-MM-dd",
+                hourIncrement: 1,
+                minuteIncrement: 5,
+                time_24hr: false,
+                minDate: null,
+                disabledDates: "",
+                maxDate: null,
+              },
+            },
+          ],
+        },
+        {
+          width: 6,
+          offset: 0,
+          push: 0,
+          pull: 0,
+          components: [
+            {
+              type: "datetime",
+              key: "period_end",
+              label: "Period End",
+              placeholder: "Select end date",
+              format: "dd-MM-yyyy",
+              enableTime: false,
+              validate: { required: true },
+              customClass: "mb-0",
+              input: true,
+              widget: {
+                type: "calendar",
+                displayInTimezone: "viewer",
+                locale: "en",
+                useLocaleSettings: false,
+                allowInput: true,
+                mode: "single",
+                enableTime: false,
+                noCalendar: false,
+                format: "yyyy-MM-dd",
+                hourIncrement: 1,
+                minuteIncrement: 5,
+                time_24hr: false,
+                minDate: null,
+                disabledDates: "",
+                maxDate: null,
+              },
+            },
+          ],
+        },
+      ],
+    },
+  ],
 };
 
 export const mockWizardData: AppraisalCycleWizardData = {
@@ -261,47 +375,37 @@ const AppraisalCycleWizard = ({
                   className="relative w-full [&>button]:min-h-[48px] [&>button]:rounded-lg [&>button]:border-gray-200 [&>button]:px-3 [&>button]:text-left [&>button]:text-sm [&>button]:shadow-sm [&>div]:w-full sm:[&>button]:min-h-[54px] sm:[&>button]:px-4 sm:[&>button]:text-base"
                 />
               </div>
-              {[
-                {
-                  label: "Period Start",
-                  value: basics.periodStart,
-                  field: "periodStart" as const,
-                  required: true,
-                },
-                {
-                  label: "Period End",
-                  value: basics.periodEnd,
-                  field: "periodEnd" as const,
-                  required: true,
-                },
-              ].map((field) => (
-                <div key={field.label}>
-                  <label className="mb-2 block">
-                    <Typography
-                      variant="caption"
-                      className="font-semibold text-gray-700"
-                    >
-                      {field.label}{" "}
-                      {field.required && (
-                        <span className="text-red-500">*</span>
-                      )}
-                    </Typography>
-                  </label>
-                  <div className="flex min-h-[44px] items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 shadow-sm focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
-                    <input
-                      type="date"
-                      value={field.value}
-                      onChange={(event) =>
-                        setBasics((current) => ({
-                          ...current,
-                          [field.field]: event.target.value,
-                        }))
-                      }
-                      className="min-w-0 flex-1 bg-transparent text-sm font-normal text-gray-700 outline-none"
-                    />
-                  </div>
-                </div>
-              ))}
+              <div className="md:col-span-2 [&_.formio-component]:mb-0 [&_.formio-component-datetime_input]:mb-0 [&_.formio-component-label]:mb-2 [&_.formio-component-label]:text-xs [&_.formio-component-label]:font-semibold [&_.formio-component-label]:text-gray-700 [&_.formio-component-label]:sm:text-sm [&_.form-control]:min-h-[48px] [&_.form-control]:rounded-lg [&_.form-control]:border-gray-200 [&_.form-control]:px-3 [&_.form-control]:py-2 [&_.form-control]:text-sm [&_.form-control]:font-normal [&_.form-control]:text-gray-700 [&_.form-control]:shadow-sm [&_.form-control:focus]:border-blue-400 [&_.form-control:focus]:shadow-none [&_.form-control:focus]:ring-2 [&_.form-control:focus]:ring-blue-100 [&_.row]:-mx-2 [&_.row>div]:px-2 sm:[&_.form-control]:min-h-[54px] sm:[&_.form-control]:px-4 sm:[&_.form-control]:text-base">
+                <Form
+                  form={appraisalPeriodFormSchema}
+                  submission={{
+                    data: {
+                      period_start: formatCycleDateForForm(
+                        basics.periodStart,
+                      ),
+                      period_end: formatCycleDateForForm(basics.periodEnd),
+                    },
+                  }}
+                  onChange={(form: { data: Record<string, string> }) => {
+                    const periodStart = formatFormDateForCycle(
+                      form.data.period_start,
+                    );
+                    const periodEnd = formatFormDateForCycle(
+                      form.data.period_end,
+                    );
+
+                    setBasics((current) => ({
+                      ...current,
+                      periodStart: periodStart || current.periodStart,
+                      periodEnd: periodEnd || current.periodEnd,
+                    }));
+                  }}
+                  options={{
+                    noAlerts: true,
+                    submitButton: false,
+                  }}
+                />
+              </div>
             </div>
           </div>
         </section>
