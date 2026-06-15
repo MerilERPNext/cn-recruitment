@@ -9,7 +9,9 @@
   "enable_statutory_forms_button",
   "automation_section",
   "enable_auto_manager_mapping",
-  "enable_doj_outcome_automation"
+  "enable_doj_outcome_automation",
+  "review_section",
+  "enable_onboarding_review_actions"
  ],
  "fields": [
   {
@@ -42,6 +44,18 @@
    "fieldname": "enable_doj_outcome_automation",
    "fieldtype": "Check",
    "label": "Automate DOJ Outcome (Joined / Not Joined / Postponed)"
+  },
+  {
+   "fieldname": "review_section",
+   "fieldtype": "Section Break",
+   "label": "Onboarding Review Actions"
+  },
+  {
+   "default": "0",
+   "description": "When enabled, HR can Approve the onboarding form or Send Back rejected fields to the candidate — from the Employee Onboarding desk form AND the portal UI. These actions drive the Flow Config emails (Form Approved / Updates Needed). Leave OFF for projects that don't use this review flow. Per-site setting, so enable only on the one project's site.",
+   "fieldname": "enable_onboarding_review_actions",
+   "fieldtype": "Check",
+   "label": "Enable Onboarding Review Actions (Approve / Send Back)"
   }
  ],
  "index_web_pages_for_search": 1,
