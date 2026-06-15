@@ -5,6 +5,26 @@ from frappe import _
 from frappe.utils import now_datetime
 
 ACTION_DOCTYPE = "Candidate Action Center Item"
+SETTINGS_DOCTYPE = "Action Center Settings"
+
+
+def _resolve_action_item_title(reference_doctype):
+    """Configurable, per-DocType card title shown on the candidate Action Center.
+
+    Reads the `Title by DocType` table on the `Action Center Settings` single and
+    returns the title mapped to `reference_doctype`. Returns "" when there is no
+    mapping (or on any error) so action-item creation is never blocked — the card
+    then simply shows no title (UI falls back to its previous behaviour)."""
+    if not reference_doctype:
+        return ""
+    try:
+        settings = frappe.get_cached_doc(SETTINGS_DOCTYPE)
+    except Exception:
+        return ""
+    for row in (settings.get("title_mappings") or []):
+        if row.reference_doctype == reference_doctype:
+            return (row.title or "").strip()
+    return ""
 
 
 def _resolve_candidate_email(candidate_id=None, candidate_email=None):
@@ -44,8 +64,12 @@ def _upsert_minimal_item(
         "name",
     )
 
+    # Configurable per-DocType title (Action Center Settings -> Title by DocType).
+    title = _resolve_action_item_title(reference_doctype)
+
     if existing_name:
         doc = frappe.get_doc(ACTION_DOCTYPE, existing_name)
+        doc.title = title
         doc.description = description or ""
         doc.attachment = attachment or ""
         doc.redirect_url = redirect_url or ""
@@ -55,6 +79,7 @@ def _upsert_minimal_item(
             {
                 "doctype": ACTION_DOCTYPE,
                 "candidate_email": candidate_email,
+                "title": title,
                 "reference_doctype": reference_doctype,
                 "reference_docname": reference_docname,
                 "redirect_url": redirect_url or "",
@@ -904,6 +929,7 @@ def get_action_center_items(candidate_id=None, candidate_email=None, limit=100):
         fields=[
             "name",
             "candidate_email",
+            "title",
             "reference_doctype",
             "reference_docname",
             "redirect_url",

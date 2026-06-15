@@ -3,7 +3,83 @@ import json
 from  hrms.payroll.doctype.salary_slip import salary_slip
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
-from frappe.utils import formatdate, now_datetime, time_diff_in_hours
+from frappe.utils import formatdate, now_datetime, time_diff_in_hours, flt, fmt_money
+
+
+def get_job_offer_print_format(job_offer=None):
+    """Resolve which Job Offer Print Format to use.
+
+    Picks the print format mapped to the applicant's Employment Type in
+    Recruitment Settings (`job_offer_print_format_mapping`). Falls back to the
+    single `job_offer_print_format` default when there is no matching row.
+
+    Backward compatible by design: an empty mapping table resolves to the exact
+    same value as before. Never raises — on any error it degrades to the default
+    (or None / Frappe default) so existing render / download paths keep working.
+
+    `job_offer` may be a Job Offer name (str) or a Job Offer doc; if omitted,
+    only the default is returned.
+    """
+    try:
+        settings = frappe.get_cached_doc("Recruitment Settings")
+    except Exception:
+        settings = None
+
+    default_pf = (getattr(settings, "job_offer_print_format", None) or None) if settings else None
+
+    if not job_offer or not settings:
+        return default_pf
+
+    try:
+        if isinstance(job_offer, str):
+            job_applicant = frappe.db.get_value("Job Offer", job_offer, "job_applicant")
+        else:
+            job_applicant = job_offer.get("job_applicant")
+
+        if not job_applicant:
+            return default_pf
+
+        employment_type = frappe.db.get_value(
+            "Job Applicant", job_applicant, "custom_employment_type"
+        )
+        if not employment_type:
+            return default_pf
+
+        for row in (settings.get("job_offer_print_format_mapping") or []):
+            if row.employment_type == employment_type and row.print_format:
+                return row.print_format
+    except Exception:
+        # Any unexpected issue -> safe default, never break rendering.
+        pass
+
+    return default_pf
+
+
+@frappe.whitelist()
+def get_job_offer_print_preview_url(job_offer):
+    """Build the Print-view URL for a Job Offer using the employment-type-specific
+    print format (Recruitment Settings mapping), falling back to the default.
+
+    Used by the "Preview Offer Letter" button on the Job Offer desk form so it
+    always opens the correct format — unlike Frappe's own print icon, which only
+    knows the doctype default. Returns a plain URL string the client opens."""
+    if not job_offer:
+        frappe.throw("Missing job_offer parameter")
+
+    from urllib.parse import urlencode
+
+    params = {
+        "doctype": "Job Offer",
+        "name": job_offer,
+        "trigger_print": 0,
+        "no_letterhead": 0,
+    }
+    pf = get_job_offer_print_format(job_offer)
+    if pf:
+        params["format"] = pf
+
+    return "/printview?" + urlencode(params)
+
 
 @frappe.whitelist(allow_guest=True)
 def download_job_offer_pdf(appl):
@@ -24,11 +100,7 @@ def download_job_offer_pdf(appl):
 
         jo_doc = frappe.get_doc("Job Offer", jo_id)
 
-        pf = None
-        try:
-            pf = frappe.db.get_single_value("Recruitment Settings", "job_offer_print_format") or None
-        except Exception:
-            pf = None
+        pf = get_job_offer_print_format(jo_doc)
 
         pdf_content = frappe.get_print(
             "Job Offer", jo_id, doc=jo_doc,
@@ -58,9 +130,7 @@ def preview_job_offer_html(appl):
         if not jo_id:
             frappe.throw("No active Job Offer found")
 
-        pf = frappe.db.get_single_value(
-            "Recruitment Settings", "job_offer_print_format"
-        ) or None
+        pf = get_job_offer_print_format(jo_id)
 
         # Exact same call your Jinja route makes on line 37 — just no as_pdf.
         html = frappe.get_print("Job Offer", jo_id, print_format=pf)
@@ -153,13 +223,68 @@ def get_job_offer_summary(appl):
         if jo.designation:
             designation_name = frappe.db.get_value("Designation", jo.designation, "custom_designation_title") or jo.designation
 
+        # --- Compensation: dynamic by Employment Type -----------------------
+        # The Employment Type lives on the Job Applicant as a Link
+        # (custom_employment_type -> Employment Type). Resolve it to its title
+        # ("Intern", "Employee", ...). Only Intern carries a single Stipend; every
+        # other type carries Fixed (Base) + Variable (Variable Incentive) + Total.
+        # Raw numeric amounts are returned as-is — formatting is done on the UI.
+        employment_type = None
+        if jo.get("job_applicant"):
+            et_id = frappe.db.get_value("Job Applicant", jo.job_applicant, "custom_employment_type")
+            if et_id:
+                employment_type = frappe.db.get_value("Employment Type", et_id, "employee_type_name") or et_id
+
+        is_intern = (employment_type or "").strip().lower() == "intern"
+
+        def num(value):
+            """Raw amount with no trailing .0 — whole numbers become int
+            (38000.0 -> 38000), real decimals are kept (2000.5 -> 2000.5)."""
+            v = flt(value)
+            return int(v) if v == int(v) else v
+
+        def fmt(value):
+            """Comma-grouped string matching how the document displays the amount
+            (uses the site Number Format setting, e.g. "3,500,000"). No currency
+            symbol; no decimals for whole numbers."""
+            v = flt(value)
+            precision = 0 if v == int(v) else 2
+            return fmt_money(v, precision=precision)
+
+        compensation = {
+            "compensation_type": "stipend" if is_intern else "fixed_variable",
+            "stipend": None,
+            "fixed": None,
+            "variable": None,
+            "total": None,
+            # Comma-grouped display strings (match the doc); UI may use these directly.
+            "stipend_formatted": None,
+            "fixed_formatted": None,
+            "variable_formatted": None,
+            "total_formatted": None,
+        }
+
+        if is_intern:
+            compensation["stipend"] = num(stipend)
+            compensation["stipend_formatted"] = fmt(stipend)
+        else:
+            fixed = flt(jo.get("custom_base_salary"))
+            variable = flt(jo.get("custom_variable_incentive"))
+            compensation["fixed"] = num(fixed)
+            compensation["variable"] = num(variable)
+            compensation["total"] = num(fixed + variable)
+            compensation["fixed_formatted"] = fmt(fixed)
+            compensation["variable_formatted"] = fmt(variable)
+            compensation["total_formatted"] = fmt(fixed + variable)
+
         return {
             "applicant_name": f"{jo.get('applicant_name') or ''} {jo.get('applicant_last_name') or ''}".strip(),
             "designation": designation_name or "Intern",
             "duration_display": f"{duration} Month{'s' if int(duration) != 1 else ''}" if duration else None,
             "expected_doj_display": formatdate(expected_doj) if expected_doj else None,
-            "stipend_display": f"₹ {stipend}" if stipend else None,
             "expiry_display": expiry_display,
+            "employment_type": employment_type,
+            **compensation,
         }
     finally:
         frappe.flags.ignore_permissions = original_ignore
@@ -198,7 +323,7 @@ def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
     settings = frappe.get_doc("Recruitment Settings")
     job_offer_temp = settings.job_offer_template
 
-    pf = getattr(settings, "job_offer_print_format", None) or None
+    pf = get_job_offer_print_format(jo_doc)
 
     output_pdf = frappe.get_print(
         "Job Offer", jo_name, doc=jo_doc, print_format=pf, as_pdf=True, output=None

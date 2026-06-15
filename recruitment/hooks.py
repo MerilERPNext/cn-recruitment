@@ -11,7 +11,9 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/recruitment/css/job_applicant.css"
-app_include_js = ["/assets/recruitment/js/teams_utils.js"]
+app_include_js = [
+	"/assets/recruitment/js/teams_utils.js",
+]
 
 add_to_apps_screen = [
 	{
@@ -101,6 +103,7 @@ doctype_list_js = {
     "Task": "public/js/task_onboarding_listview.js",
     "Job Opening": "public/js/job_opening_list.js",
     "Job Requisition": "public/js/job_requisition_list.js",
+    "Employee Onboarding": "public/js/employee_onboarding_list.js",
 }
 
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
