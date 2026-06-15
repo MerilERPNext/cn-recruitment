@@ -75,25 +75,25 @@ export default function IJPReviewStep({
   return (
     <div className="space-y-6 animate-fadeIn">
       <div>
-        <h2 className="text-base font-bold text-slate-800">Review Application</h2>
-        <p className="text-xs text-slate-500 mt-1">
+        <h2 className="text-2xl font-bold text-slate-800">Review Application</h2>
+        <p className="text-base text-slate-500 mt-1">
           Please review all the information you entered. Once submitted, you will not be able to edit these details.
         </p>
       </div>
 
       {hasMissingRequiredFields && (
         <div className="bg-rose-50/70 border border-rose-200/80 rounded-xl p-4 flex items-start gap-3">
-          <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+          <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-base shrink-0 mt-0.5">
             ⚠️
           </div>
           <div className="space-y-1">
-            <h4 className="text-xs font-semibold text-rose-800">
+            <h4 className="text-base font-semibold text-rose-800">
               Required Information Missing
             </h4>
-            <p className="text-xs text-rose-600 leading-relaxed">
+            <p className="text-base text-rose-600 leading-relaxed">
               The following required fields must be completed before you can submit:
             </p>
-            <ul className="list-disc list-inside text-[11px] text-rose-600 space-y-0.5 font-medium mt-1">
+            <ul className="list-disc list-inside text-[15px] text-rose-600 space-y-0.5 font-medium mt-1">
               {missingRequiredFields.map((f, idx) => (
                 <li key={idx}>{f}</li>
               ))}
@@ -114,7 +114,7 @@ export default function IJPReviewStep({
               key={sect}
               className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-5 space-y-4"
             >
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
+              <h3 className="text-base font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
                 {sect}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -149,11 +149,11 @@ export default function IJPReviewStep({
                         key={field.reference_name}
                         className="col-span-1 md:col-span-2 space-y-2"
                       >
-                        <label className="text-xs text-slate-500 font-medium">
+                        <label className="text-base text-slate-500 font-medium">
                           {field.display_name}
                         </label>
                         {rows.length === 0 ? (
-                          <div className="text-xs text-slate-400 italic">
+                          <div className="text-base text-slate-400 italic">
                             No entries added
                           </div>
                         ) : (
@@ -163,7 +163,7 @@ export default function IJPReviewStep({
                                 key={row.index}
                                 className="bg-white border border-slate-150 rounded-lg p-3.5 shadow-sm space-y-3"
                               >
-                                <div className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded inline-block">
+                                <div className="text-base font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded inline-block">
                                   Entry #{row.index + 1}
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -182,7 +182,7 @@ export default function IJPReviewStep({
                                         key={sub.fieldname}
                                         className="space-y-0.5"
                                       >
-                                        <span className="text-[11px] text-slate-400 font-medium block">
+                                        <span className="text-[14px] text-slate-400 font-medium block">
                                           {sub.label}{" "}
                                           {sub.reqd === 1 && (
                                             <span className="text-rose-500">
@@ -191,7 +191,7 @@ export default function IJPReviewStep({
                                           )}
                                         </span>
                                         <span
-                                          className={`text-xs font-semibold block ${
+                                          className={`text-base font-semibold block ${
                                             isMissing
                                               ? "text-rose-500"
                                               : "text-slate-800"
@@ -230,14 +230,14 @@ export default function IJPReviewStep({
                         key={field.reference_name}
                         className="space-y-1"
                       >
-                        <span className="text-xs text-slate-400 font-medium block">
+                        <span className="text-base text-slate-400 font-medium block">
                           {field.display_name}{" "}
                           {field.reqd === 1 && (
                             <span className="text-rose-500">*</span>
                           )}
                         </span>
                         <span
-                          className={`text-xs font-semibold block ${
+                          className={`text-base font-semibold block ${
                             isMissing ? "text-rose-500" : "text-slate-800"
                           }`}
                         >
@@ -273,7 +273,7 @@ export default function IJPReviewStep({
           />
           <label
             htmlFor="acknowledge"
-            className="text-xs text-slate-700 font-medium cursor-pointer select-none leading-relaxed"
+            className="text-base text-slate-700 font-medium cursor-pointer select-none leading-relaxed"
           >
             I hereby declare that all the information provided in this application is true, complete, and correct to the best of my knowledge and belief. I understand that any false statement or omission may result in rejection of my application or termination of employment if hired.
           </label>
