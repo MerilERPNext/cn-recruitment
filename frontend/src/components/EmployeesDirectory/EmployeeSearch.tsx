@@ -153,12 +153,27 @@ const EmployeeSearch = ({
   // so users see their reportees immediately without search+select+apply.
   // Also resets to full list when the user clears their search selection.
   const dataIds = data.map((emp) => emp.name).join(",");
+
+  const hasNonStatusFilters = Object.keys(activeFilters).some(
+    (key) => key !== 'status' && 
+             activeFilters[key] !== undefined && 
+             activeFilters[key] !== null && 
+             activeFilters[key] !== "" && 
+             (!Array.isArray(activeFilters[key]) || (activeFilters[key] as string[]).length > 0)
+  );
+
   useEffect(() => {
     if (activeTab === 'my_reportees' && appliedSearchEmployees.length === 0) {
       setEmployees(data);
+    } else if (activeTab === 'directory' && appliedSearchEmployees.length === 0) {
+      if (hasNonStatusFilters) {
+        setEmployees(data);
+      } else {
+        setEmployees([]);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, dataIds, setEmployees, appliedSearchEmployees]);
+  }, [activeTab, dataIds, setEmployees, appliedSearchEmployees, hasNonStatusFilters]);
 
   const handleFilterUpdate = (data: EmployeeDirectoryFilterData) => {
     setActiveFilters(data);
@@ -186,6 +201,8 @@ const EmployeeSearch = ({
     // On the reportees tab, applying an empty selection should show all reportees
     if (activeTab === 'my_reportees' && pendingEmployees.length === 0) {
       setEmployees(data);
+    } else if (activeTab === 'directory' && pendingEmployees.length === 0) {
+      setEmployees(hasNonStatusFilters ? data : []);
     } else {
       setEmployees(pendingEmployees);
     }
