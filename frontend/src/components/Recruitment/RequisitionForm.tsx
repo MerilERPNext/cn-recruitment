@@ -172,6 +172,8 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
 
       replacement_for: p.replacement_for,
       replacement_for_title: p.replacement_for_title,
+
+      cost_center_allocations: p.cost_center_allocations,
     })),
 
     // Requirements
@@ -1183,6 +1185,10 @@ const RequisitionForm = () => {
         reporting_manager: pos.reporting_manager,
         functional_area: pos.functional_area,
         replacement_for: pos.vacancy_type === "Replacement" ? pos.replacement_for : undefined,
+        cost_center_allocations: (pos.cost_center_allocations || []).map((a: any) => ({
+          cost_center: a.cost_center,
+          percentage: a.percentage,
+        })),
       })),
       // ── Attachment URL (uploaded via useFileUpload, same as Invoice.tsx) ──
     };
