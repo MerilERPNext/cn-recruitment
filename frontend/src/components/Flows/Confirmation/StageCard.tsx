@@ -148,10 +148,12 @@ const StageCard: React.FC<StageCardProps> = ({
               ) : (
                 <div className="w-[126px] h-[36px]" />
               )}
+
               <NudgeButton
                 todoId={stage?.todo?.name}
                 app="HR Process"
                 page="Confirmation"
+                isPending={status === "action_required"}
               />
               {canPerformAction && status == "action_required" && (
                 <Button

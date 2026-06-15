@@ -396,7 +396,7 @@ const MY_REQUESTS_UI_PERMISSION = {
   actionKeysMap: {
     edit: "edit",
     revoke: "revoke",
-    nudge:"nudge"
+    nudge: "nudge"
   }
 };
 
@@ -530,6 +530,7 @@ const BenefitSlipItem = ({
           onRevoke={handleRevokeClick}
           onEdit={() => handleEdit(item.name)}
           todoId={item?.todo_list[0]?.todo_id}
+          isPendingStatus={badgeStatus === "Pending"}
         />
       </div>
     </div>
@@ -652,6 +653,7 @@ const BenefitSlipItem = ({
               onEdit={() => handleEdit(item.name)}
               variant="buttons"
               todoId={item?.todo_list[0]?.todo_id}
+              isPendingStatus={badgeStatus === "Pending"}
             />
           </div>
         </div>

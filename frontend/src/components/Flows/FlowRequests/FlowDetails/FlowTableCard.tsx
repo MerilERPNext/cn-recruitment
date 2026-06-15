@@ -317,6 +317,7 @@ const FlowTableRow = ({
                             }
                         }}
                         todoId={stage?.todo?.name}
+                        isPendingStatus={stage.status === "Pending"}
                     />
                 </div>
                 {(stage?.approval_response_data_display || stage?.approval_response_data) && (

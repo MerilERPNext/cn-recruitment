@@ -267,9 +267,10 @@ export const LoanRow = ({
               actionKeysMap: {
                 edit: "edit",
                 revoke: "revoke",
-                nudge:"nudge"
+                nudge: "nudge"
               },
             }}
+            isPendingStatus={loan.status === "Pending"}
             todoId={loan?.todo_list?.[0]?.todo_id}
             canRevoke={canRevoke}
             canEdit={canEdit}
