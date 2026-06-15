@@ -257,7 +257,10 @@ doc_events = {
             "recruitment.customizations.employee_separation.employee_separation.add_unpaid_expense_claims",
             "recruitment.customizations.employee_separation.employee_separation.add_absent_days",
         ],
-        "on_submit": "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date"
+        "on_submit": [
+            "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date",
+            "recruitment.customizations.employee_separation.employee_separation.create_attendance_regularize_todo",
+        ],
     },
 }
 

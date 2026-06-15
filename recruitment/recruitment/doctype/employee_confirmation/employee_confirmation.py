@@ -35,7 +35,8 @@ class EmployeeConfirmation(Document):
 			employee.save()
 		elif confirmation_status == "Probation Extended":
 			employee = frappe.get_doc("Employee", self.employee)
-			employee.custom_probation_period = self.extension_probation_period
+			if self.extension_probation_period:
+				employee.custom_probation_period = self.extension_probation_period
 			employee.custom_employment_status = "Probation Extended"
 			employee.save()
 		elif confirmation_status == "Initiate Separation":

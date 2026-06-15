@@ -341,6 +341,7 @@
   {
    "fieldname": "initiator_form",
    "fieldtype": "JSON",
+   "hidden": 1,
    "label": "Initiator Form",
    "read_only": 1
   },
@@ -368,7 +369,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-05 17:00:01.496258",
+ "modified": "2026-06-15 18:14:58.063378",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Employee Confirmation",
@@ -404,5 +405,6 @@
  "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
