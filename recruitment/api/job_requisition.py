@@ -228,6 +228,56 @@ def _bypass_hrms_duplicate_check(doc):
 # ---------------------------------------------------------------------------
 
 
+def _deserialise_cost_centers(value):
+    """Payload value (list of {cost_center, percentage}) → JSON string for DB.
+
+    Accepts the canonical list-of-dicts shape. Tolerant of:
+      - missing / None / "" / non-list           → stored as ""
+      - either spelling (`cost_center` / `cost_centre`)
+      - already-encoded JSON string              → trusted as-is
+      - non-numeric `percentage`                 → entry dropped
+
+    The field is plain Long Text on the child doctype, so we serialise
+    to a JSON string. No native autocomplete on the link is needed —
+    UI dev fetches Cost Center options via the standard Resource API.
+    """
+    if value in (None, ""):
+        return ""
+    if isinstance(value, str):
+        return value  # caller has already encoded — trust it
+    if not isinstance(value, list):
+        return ""
+
+    cleaned = []
+    for row in value:
+        if not isinstance(row, dict):
+            continue
+        cc = row.get("cost_center") or row.get("cost_centre")
+        pct = row.get("percentage")
+        if cc is None or pct is None:
+            continue
+        try:
+            pct = float(pct)
+        except (TypeError, ValueError):
+            continue
+        cleaned.append({"cost_center": cc, "percentage": pct})
+    return json.dumps(cleaned) if cleaned else ""
+
+
+def _serialise_cost_centers(value):
+    """Stored JSON string → clean list of {cost_center, percentage}.
+    Returns [] for any malformed / empty value — never raises."""
+    if not value:
+        return []
+    if isinstance(value, list):
+        return value  # already structured (defensive)
+    try:
+        parsed = json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return []
+    return parsed if isinstance(parsed, list) else []
+
+
 def _row_vacancy_type(row):
     """Single source of truth for a position's New / Replacement type.
 
@@ -261,6 +311,11 @@ def _position_row(p, position_no, parent_vacancy_default, parent_functional_area
         # `employee_type` is mandatory on the child row. The UI collects the
         # employment type once at parent level, so inherit it per-position.
         "employee_type": p.get("employee_type") or parent_employee_type,
+        # `cost_centers` is a JSON-encoded list of {cost_center, percentage}
+        # entries on the Position Details row — a single position can be
+        # allocated across multiple cost centers (e.g. 50/30/20). Serialised
+        # here so the DB stores a plain Long Text payload.
+        "cost_centers": _deserialise_cost_centers(p.get("cost_centers")),
     }
 
 
@@ -802,6 +857,9 @@ def _serialise_requisition(doc):
             "replacement_for": row.get("replacement_for"),
             "employee_type": row.get("employee_type"),
             "functional_area": row.get("functional_area"),
+            # JSON string in DB → clean list of {cost_center, percentage}
+            # for the UI. Empty list when the field is unset or malformed.
+            "cost_centers": _serialise_cost_centers(row.get("cost_centers")),
         }
         for row in doc.get("custom_position_details") or []
     ]
