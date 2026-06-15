@@ -104,7 +104,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   const logoToShow = singleCompanyLogo?.company_logo || "logo not found";
   const originalCompanyName =
-    currentEmployeeCompany || "Company name not found";;
+    currentEmployeeCompany || "Company name not found";
   const getTruncatedCompanyName = (name: string, maxLength: number = 20) => {
     if (name.length <= maxLength) {
       return name;

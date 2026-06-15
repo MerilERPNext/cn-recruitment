@@ -1002,7 +1002,7 @@ export const StaticListView = <T extends BaseItemStatic>({
   return (
     <div>
       {/* HEADER — sticky top, constrained to visible width */}
-      {(isSearch || isFilter || showRefreshButton) && (
+      {(isSearch || (isFilter && filterFields && filterFields.length > 0) || showRefreshButton) && (
         <div
           className="sticky top-0 left-0 z-10 bg-white pb-2"
           style={{ width: 'var(--card-table-visible-width, 100%)', top: 'var(--search-bar-offset, 0px)' }}

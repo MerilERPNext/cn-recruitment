@@ -24,7 +24,7 @@ export const DocumentMobileCard: React.FC<DocumentMobileCardProps> = ({
   setSelectedDocId,
 }) => {
   return (
-    <div className="flex flex-col gap-3 p-4 border-1 borer-primary shadow-sm mt-3 rounded-lg bg-white ">
+    <div className="flex flex-col gap-3 p-4 border-1 shadow-sm mt-3 rounded-lg bg-white ">
       <div className="flex justify-between items-start mb-1 gap-2 pb-2">
         <div className="flex flex-col min-w-0 flex-1">
           <Tooltip content={getFileNameFromUrl(doc.file_name)} position="tl" triggerClassName="w-full">
