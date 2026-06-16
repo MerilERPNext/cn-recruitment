@@ -20,6 +20,7 @@ export interface EmployeeDirectoryFilterData {
   department?: string | string[];
   branch?: string | string[];
   custom_business_unit?: string | string[];
+  employment_type?: string | string[];
   [key: string]: string | string[] | number | boolean | undefined;
 }
 
