@@ -709,17 +709,32 @@ export const requisitionFormSchemas = {
                       url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Cost Center",
                       headers: [{ key: "Accept", value: "application/json" }],
                     },
+                    // Use the native HTML5 select instead of the default Choices.js
+                    // widget. Inside a nested datagrid, the Choices widget reuses
+                    // its instance/DOM state across rows during the grid redraw,
+                    // which makes a selected Cost Center replicate into the other
+                    // allocation rows (and across position rows). A native <select>
+                    // binds its value per element, so each row keeps its own value
+                    // and nothing is duplicated. It also avoids the Choices rebuild
+                    // flash on "Add Cost Center".
+                    widget: "html5",
                     limit: 20,
                     selectValues: "message.results",
                     valueProperty: "id",
                     template: "<span>{{ item.label }}</span>",
+                    // Mandatory — shows the required asterisk on the column header.
+                    // validateOn: "blur" (above) keeps empty rows from flagging
+                    // red on render.
+                    validate: { required: true },
                   },
                   {
                     type: "number",
                     key: "percentage",
                     label: "Percentage (%)",
                     placeholder: "e.g., 100",
-                    validate: { min: 0, max: 100 },
+                    // Mandatory — shows the required asterisk on the column header.
+                    validateOn: "blur",
+                    validate: { required: true, min: 0, max: 100 },
                   },
                 ],
               },
