@@ -97,5 +97,24 @@ export const todoService = {
       throw error;
     }
   },
+
+  getTodoPendingCount: async (): Promise<number> => {
+    try {
+      // Reuse the categories API — FrappeAPI.callMethod unwraps response.data.message,
+      // so result is { message: [...] }. Sum all counts except "Uncategorized".
+      const result = await FrappeAPI.callMethod(TODO_CATEGORIES_API_METHOD, {
+        type: "My Todo",
+      });
+
+      const categories = (result as { message?: { name: string; count: number }[] })?.message || [];
+
+      return categories
+        .filter((cat) => cat.name !== "Uncategorized")
+        .reduce((sum, cat) => sum + (cat.count || 0), 0);
+    } catch (error) {
+      console.error("📡 Error fetching todo pending count:", error);
+      return 0;
+    }
+  },
 };
 

@@ -229,6 +229,129 @@ def _append_key_contact_rows(doc, applicant):
         existing.add((employee, role_label))
 
 
+# Employee Onboarding fields that materialize_onboarding_from_applicant manages
+# explicitly (or that must never be auto-overwritten) — auto-map leaves these alone.
+_ONBOARDING_AUTOMAP_SKIP = frozenset({
+    "job_applicant", "job_offer", "employee", "amended_from", "naming_series",
+    "boarding_status", "employee_onboarding_template", "date_of_joining",
+    "boarding_begins_on", "custom_onboarding_portal_form", "custom_bgv_vendor",
+    "custom_onboarding_buddy", "custom_joining_buddy", "custom_manager",
+    "custom_key_contacts",
+})
+
+# Fieldtypes safe to copy by value. Excludes attachments, JSON, signatures, ratings
+# etc. (handled elsewhere / candidate-supplied), so auto-map only touches plain data.
+_ONBOARDING_AUTOMAP_TYPES = frozenset({
+    "Data", "Small Text", "Text", "Long Text", "Text Editor", "Select", "Link",
+    "Date", "Datetime", "Time", "Int", "Float", "Currency", "Percent", "Check",
+})
+
+# Same-meaning fields whose NAME differs across doctypes. Each Employee Onboarding
+# field maps to an ordered list of (source, source_fieldname); the first present &
+# valid value wins. source is "offer" (Job Offer) or "applicant" (Job Applicant).
+_ONBOARDING_FIELD_ALIASES = {
+    "custom_first_name":        [("offer", "applicant_name"), ("applicant", "applicant_name")],
+    "custom_last_name":         [("offer", "applicant_last_name"), ("applicant", "custom_applicant_last_name")],
+    "custom_mobile_number":     [("applicant", "phone_number"), ("offer", "custom_phone_number")],
+    "custom_personal_email_id": [("applicant", "email_id"), ("offer", "applicant_email")],
+    "department":               [("applicant", "custom_department"), ("applicant", "custom_division_finalized")],
+    "custom_work_location":     [("applicant", "custom_location")],
+    "custom_nationality":       [("applicant", "country")],
+}
+
+
+def _auto_map_offer_applicant_fields(doc, applicant, job_offer_name=None):
+    """Best-effort prefill: copy Job Offer / Job Applicant values into the matching
+    Employee Onboarding fields at creation, so HR and the candidate start from a
+    populated draft instead of a blank form.
+
+    Contract (important): NEVER raises and NEVER blocks onboarding creation. Any
+    field whose source value is missing, or whose Link/Select value would be
+    invalid, is simply skipped and left blank/editable — so the later
+    doc.insert() can't fail because of an auto-mapped value. Precedence is Job
+    Offer first (final terms), then Job Applicant. Fields the materialize flow
+    sets explicitly (DOJ, portal form, buddies, BGV vendor, links) are untouched."""
+    try:
+        offer = None
+        if job_offer_name:
+            try:
+                offer = frappe.get_doc("Job Offer", job_offer_name)
+            except Exception:
+                offer = None
+
+        source_docs = {"offer": offer, "applicant": applicant}
+        source_meta = {}
+        for key, sdoc in source_docs.items():
+            if sdoc is None:
+                continue
+            try:
+                source_meta[key] = frappe.get_meta(sdoc.doctype)
+            except Exception:
+                source_meta[key] = None
+
+        def src_value(src_key, fieldname):
+            sdoc = source_docs.get(src_key)
+            smeta = source_meta.get(src_key)
+            if not sdoc or not smeta or not smeta.get_field(fieldname):
+                return None
+            val = sdoc.get(fieldname)
+            return val if val not in (None, "") else None
+
+        def assign(eo_df, value):
+            """Validate-then-set; returns True only if the value was applied."""
+            if value in (None, ""):
+                return False
+            ft = eo_df.fieldtype
+            if ft == "Link":
+                if not eo_df.options or not frappe.db.exists(eo_df.options, value):
+                    return False
+            elif ft == "Select":
+                options = [o.strip() for o in (eo_df.options or "").split("\n")]
+                if value not in options:
+                    return False
+            try:
+                doc.set(eo_df.fieldname, value)
+                return True
+            except Exception:
+                return False
+
+        eo_meta = frappe.get_meta("Employee Onboarding")
+
+        # (1) Same fieldname on both sides — Offer precedence, then Applicant.
+        for df in eo_meta.fields:
+            f = df.fieldname
+            if not f or df.fieldtype not in _ONBOARDING_AUTOMAP_TYPES:
+                continue
+            if f in _ONBOARDING_AUTOMAP_SKIP or f in _ONBOARDING_FIELD_ALIASES:
+                continue
+            for src_key in ("offer", "applicant"):
+                if assign(df, src_value(src_key, f)):
+                    break
+
+        # (2) Same meaning, different fieldname — curated aliases.
+        for eo_field, candidates in _ONBOARDING_FIELD_ALIASES.items():
+            df = eo_meta.get_field(eo_field)
+            if not df:
+                continue
+            for src_key, src_field in candidates:
+                if assign(df, src_value(src_key, src_field)):
+                    break
+
+        # (3) employee_name = First + Last (only if still blank).
+        if not doc.get("employee_name"):
+            first = doc.get("custom_first_name") or src_value("offer", "applicant_name") or src_value("applicant", "applicant_name")
+            last = doc.get("custom_last_name") or src_value("offer", "applicant_last_name") or src_value("applicant", "custom_applicant_last_name")
+            full = " ".join(p for p in [first, last] if p).strip()
+            if full:
+                try:
+                    doc.employee_name = full
+                except Exception:
+                    pass
+    except Exception:
+        # Auto-map is purely additive convenience — never let it break creation.
+        frappe.log_error(frappe.get_traceback(), "materialize_onboarding: auto-map fields failed")
+
+
 def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
     """Creates the Employee Onboarding doc from the applicant's pre-onboarding fields,
     stamps the release fields onto it, links back via custom_pre_onboarding_employee_onboarding,
@@ -296,6 +419,11 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
     bbo = prefill.get("boarding_begins_on") or doc.date_of_joining
     if bbo:
         doc.boarding_begins_on = bbo
+
+    # Auto-fill every matching Job Offer / Job Applicant value into the draft so the
+    # candidate/HR start from a populated form. Best-effort and non-fatal: missing or
+    # invalid data is skipped (field stays blank/editable), never raises.
+    _auto_map_offer_applicant_fields(doc, applicant, job_offer)
 
     doc.insert(ignore_permissions=True)
 
@@ -545,13 +673,167 @@ def _build_tabbed_response(portal_rows, meta_lookup, doc=None, applicant_doc=Non
                 )
                 counts[bucket] += 1
 
+        # Flat list of this tab's mandatory fields, so the portal can render the
+        # "Required fields" checklist without walking every section itself.
+        required_fields = [
+            {
+                "fieldname": field["fieldname"],
+                "label": field["label"],
+                "fieldtype": field["fieldtype"],
+                "section": sec["section"],
+                "value": field["value"],
+                "filled": not _is_empty_value(field["value"]),
+            }
+            for sec in sections
+            for field in sec["fields"]
+            if field.get("is_mandatory")
+        ]
+
         tabs.append({
             "tab": tab_lbl,
             "field_counts": counts,
+            "required_fields": required_fields,
             "sections": sections,
         })
 
     return tabs
+
+
+def _initials(name):
+    parts = [p for p in (name or "").split() if p]
+    if not parts:
+        return ""
+    if len(parts) == 1:
+        return parts[0][:2].upper()
+    return (parts[0][0] + parts[-1][0]).upper()
+
+
+def _link_title(doctype, name):
+    """Title-field label for a Link value, falling back to the raw id."""
+    if not name:
+        return None
+    try:
+        tf = frappe.get_meta(doctype).get_title_field()
+        if not tf or tf == "name":
+            return name
+        return frappe.get_cached_value(doctype, name, tf) or name
+    except Exception:
+        return name
+
+
+def _get_branding(eo_doc, applicant_doc):
+    """Company badge shown atop the candidate portal. Sourced from the Employee
+    Onboarding company, falling back to the Job Applicant's finalized company."""
+    company = eo_doc.get("company") if eo_doc is not None else None
+    if not company and applicant_doc is not None:
+        company = applicant_doc.get("custom_company_finalized") or applicant_doc.get("company")
+    if not company:
+        return {"company": None, "company_name": None, "logo": None, "badge_label": None}
+
+    name = frappe.db.get_value("Company", company, "company_name") or company
+    # Company logo is optional / site-specific — read it defensively.
+    logo = None
+    try:
+        if frappe.get_meta("Company").get_field("company_logo"):
+            logo = frappe.db.get_value("Company", company, "company_logo")
+    except Exception:
+        logo = None
+    return {
+        "company": company,
+        "company_name": name,
+        "logo": logo,
+        "badge_label": f"{name} Candidate".upper(),
+    }
+
+
+def _get_joining_info(eo_doc, applicant_doc):
+    """Date-of-joining block driving the "days to joining" / "pick a date" header."""
+    from frappe.utils import getdate, nowdate, date_diff
+
+    doj = eo_doc.get("date_of_joining") if eo_doc is not None else None
+    bbo = eo_doc.get("boarding_begins_on") if eo_doc is not None else None
+    if not doj and applicant_doc is not None:
+        doj = applicant_doc.get("custom_date_of_joining")
+    days = date_diff(getdate(doj), getdate(nowdate())) if doj else None
+    return {
+        "date_of_joining": doj,
+        "boarding_begins_on": bbo,
+        "days_to_joining": days,
+        "is_set": bool(doj),
+    }
+
+
+def _get_key_contacts(eo_doc, applicant_doc):
+    """Resolve Onboarding Buddy / Joining Buddy / Manager into ready-to-render
+    contact cards. Prefers the Employee Onboarding custom_key_contacts child rows;
+    falls back to the buddy/manager User fields on the onboarding (or applicant)."""
+    contacts = []
+    seen = set()
+
+    def add(emp_name, role, email=None, phone=None):
+        if not emp_name or (emp_name, role) in seen:
+            return
+        emp = frappe.db.get_value(
+            "Employee", emp_name,
+            ["employee_name", "designation", "cell_number", "company_email",
+             "personal_email", "image", "branch"],
+            as_dict=True,
+        )
+        if not emp:
+            return
+        seen.add((emp_name, role))
+        name = emp.employee_name or emp_name
+        contacts.append({
+            "role": role,
+            "employee": emp_name,
+            "name": name,
+            "initials": _initials(name),
+            "designation": emp.designation,
+            "designation_label": _link_title("Designation", emp.designation),
+            "location": emp.branch,
+            "location_label": _link_title("Branch", emp.branch),
+            "email": email or emp.company_email or emp.personal_email,
+            "phone": phone or emp.cell_number,
+            "image": emp.image,
+        })
+
+    rows = list(eo_doc.get("custom_key_contacts") or []) if eo_doc is not None else []
+    for r in rows:
+        add(r.employee, (r.role or "Contact").strip(), r.get("email"), r.get("phone_number"))
+
+    # Fallback: resolve the buddy/manager User links when no child rows exist yet.
+    if not contacts:
+        for source_field, role_label in _KEY_CONTACT_ROLES:
+            user_id = (eo_doc.get(source_field) if eo_doc is not None else None) \
+                or (applicant_doc.get(source_field) if applicant_doc is not None else None)
+            if not user_id:
+                continue
+            add(frappe.db.get_value("Employee", {"user_id": user_id}, "name"), role_label)
+
+    return contacts
+
+
+def _get_onboarding_journey():
+    """The "After you're onboarded" timeline, defined once in Onboarding Settings."""
+    try:
+        settings = frappe.get_cached_doc("Onboarding Settings")
+    except Exception:
+        return {"title": "After you're onboarded", "subtitle": "", "steps": []}
+
+    steps = [
+        {
+            "title": s.get("title"),
+            "timeframe": s.get("timeframe"),
+            "detail": s.get("detail"),
+            "icon": s.get("icon"),
+        }
+        for s in (settings.get("onboarding_journey") or [])
+    ]
+    return {
+        "title": settings.get("onboarding_journey_title") or "After you're onboarded",
+        "subtitle": settings.get("onboarding_journey_subtitle") or "",
+        "steps": steps,
+    }
 
 
 @frappe.whitelist()
@@ -1009,6 +1291,10 @@ def get_candidate_portal_form(job_applicant_id):
         "pre_release_name": pre_release["name"] if pre_release else None,
         "boarding_status": doc.boarding_status if doc else None,
         "field_status_counts": field_status_counts,
+        "branding": _get_branding(doc, applicant_doc),
+        "joining": _get_joining_info(doc, applicant_doc),
+        "key_contacts": _get_key_contacts(doc, applicant_doc),
+        "onboarding_journey": _get_onboarding_journey(),
         "tabs": _build_tabbed_response(portal_rows, meta_lookup, doc, applicant_doc),
     }
 

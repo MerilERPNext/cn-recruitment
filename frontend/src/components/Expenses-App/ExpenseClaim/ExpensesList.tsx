@@ -255,9 +255,10 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
               actionKeysMap: {
                 edit: "edit",
                 revoke: "revoke",
-                nudge:"nudge"
+                nudge: "nudge"
               },
             }}
+            isPendingStatus={(item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2 ? "Revoked" : item?.reference_document?.approval_status) === "Pending"}
             todoId={item?.todo_id}
             variant="buttons"
             canEdit={canEdit && !isActed}
@@ -471,13 +472,14 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
             actionKeysMap: {
               edit: "edit",
               revoke: "revoke",
-              nudge:"nudge"
+              nudge: "nudge"
             },
           }}
+          isPendingStatus={(item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2 ? "Revoked" : item?.reference_document?.approval_status) === "Pending"}
           todoId={item?.todo_id}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-              item?.send_back_user?.toLowerCase() &&
+            item?.send_back_user?.toLowerCase() &&
             item?.can_edit &&
             !isActed
           }
@@ -765,9 +767,9 @@ const ExpensesList: React.FC = () => {
 
         const sanctioned =
           Array.isArray(item?.approval_stages_status) &&
-          item.approval_stages_status.some(
-            (stage: any) => stage.status === "Approved",
-          )
+            item.approval_stages_status.some(
+              (stage: any) => stage.status === "Approved",
+            )
             ? doc?.total_sanctioned_amount
             : "--";
 
@@ -1009,39 +1011,39 @@ const ExpensesList: React.FC = () => {
 
   const tableTitles = isDraftFilter
     ? [
-        <div className="flex items-center justify-center" key="select-all">
-          <input
-            type="checkbox"
-            checked={
-              selectedMyExpensesDraftIds.size === currentListData.length &&
-              currentListData.length > 0
+      <div className="flex items-center justify-center" key="select-all">
+        <input
+          type="checkbox"
+          checked={
+            selectedMyExpensesDraftIds.size === currentListData.length &&
+            currentListData.length > 0
+          }
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedMyExpensesDraftIds(
+                new Set(
+                  currentListData
+                    .map((d: any) => d?.reference_document?.name)
+                    .filter(Boolean),
+                ),
+              );
+            } else {
+              setSelectedMyExpensesDraftIds(new Set());
             }
-            onChange={(e) => {
-              if (e.target.checked) {
-                setSelectedMyExpensesDraftIds(
-                  new Set(
-                    currentListData
-                      .map((d: any) => d?.reference_document?.name)
-                      .filter(Boolean),
-                  ),
-                );
-              } else {
-                setSelectedMyExpensesDraftIds(new Set());
-              }
-            }}
-            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-          />
-        </div>,
-        "Expense Id",
-        "Expense Category",
-        "Expense Type",
-        "Claimed Amount",
-        "Sanctioned Amount",
-        "Expense Date",
-        "Claimed Date",
-        "Status",
-        "Actions",
-      ]
+          }}
+          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+        />
+      </div>,
+      "Expense Id",
+      "Expense Category",
+      "Expense Type",
+      "Claimed Amount",
+      "Sanctioned Amount",
+      "Expense Date",
+      "Claimed Date",
+      "Status",
+      "Actions",
+    ]
     : [
       "Expense Id",
       "Expense Category",
@@ -1468,7 +1470,7 @@ const ExpensesList: React.FC = () => {
                                   setDeleteConfirmModal({
                                     isOpen: false,
                                     message: "",
-                                    onConfirm: () => {},
+                                    onConfirm: () => { },
                                   });
                                 },
                               });
@@ -1575,7 +1577,7 @@ const ExpensesList: React.FC = () => {
                                       setDeleteConfirmModal({
                                         isOpen: false,
                                         message: "",
-                                        onConfirm: () => {},
+                                        onConfirm: () => { },
                                       });
                                     },
                                   });
@@ -1731,8 +1733,8 @@ const ExpensesList: React.FC = () => {
                 noRecordsScreen={noRecordsScreen}
                 PostListComponent={() =>
                   isDraftFilter &&
-                  isDesktop &&
-                  selectedMyExpensesDraftIds.size > 0 ? (
+                    isDesktop &&
+                    selectedMyExpensesDraftIds.size > 0 ? (
                     <div className="border-t border-gray-100 bg-gray-50/30 px-6 py-2 flex items-center justify-end gap-3 animate-in slide-in-from-bottom-1">
                       <span className="text-sm font-medium text-gray-500 mr-2">
                         {selectedMyExpensesDraftIds.size} selected
@@ -1787,7 +1789,7 @@ const ExpensesList: React.FC = () => {
                               setDeleteConfirmModal({
                                 isOpen: false,
                                 message: "",
-                                onConfirm: () => {},
+                                onConfirm: () => { },
                               });
                             },
                           });

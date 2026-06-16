@@ -180,6 +180,7 @@ const CardStages = ({
                   todoId={stage?.todo?.name}
                   app="HR Process"
                   page="Separation"
+                  isPending={isActive}
                 />
                 {canPerformActions && actions.length > 0 &&
                   actions.map((action: string) => (

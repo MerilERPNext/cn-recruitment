@@ -2,6 +2,7 @@ import React, {
   ReactNode,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -14,7 +15,7 @@ interface TooltipProps {
   className?: string;
   triggerClassName?: string;
   delay?: number;
-  type?: "default" | "custom"
+  type?: "default" | "custom";
 }
 
 const Tooltip: React.FC<TooltipProps> = ({
@@ -24,7 +25,7 @@ const Tooltip: React.FC<TooltipProps> = ({
   className = "",
   triggerClassName = "",
   delay = 200,
-  type = "default"
+  type = "default",
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
@@ -33,25 +34,28 @@ const Tooltip: React.FC<TooltipProps> = ({
   const tooltipRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ✅ Position Calculation
+  const isTouchDevice = () =>
+    window.matchMedia("(pointer: coarse)").matches ||
+    "ontouchstart" in window ||
+    navigator.maxTouchPoints > 0;
+
   const calculatePosition = useCallback(() => {
     if (!triggerRef.current || !tooltipRef.current) return;
 
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const tooltipRect = tooltipRef.current.getBoundingClientRect();
 
-    const scrollY = window.scrollY;
-    const scrollX = window.scrollX;
-
+    // IMPORTANT:
+    // Since tooltip uses position: fixed,
+    // getBoundingClientRect coordinates should be used directly.
     let top = 0;
     let left = 0;
 
     switch (position) {
       case "bottom":
-        top = triggerRect.bottom + scrollY + 8;
+        top = triggerRect.bottom + 8;
         left =
           triggerRect.left +
-          scrollX +
           triggerRect.width / 2 -
           tooltipRect.width / 2;
         break;
@@ -59,102 +63,124 @@ const Tooltip: React.FC<TooltipProps> = ({
       case "left":
         top =
           triggerRect.top +
-          scrollY +
           triggerRect.height / 2 -
           tooltipRect.height / 2;
-        left = triggerRect.left + scrollX - tooltipRect.width - 8;
+        left = triggerRect.left - tooltipRect.width - 8;
         break;
 
       case "right":
         top =
           triggerRect.top +
-          scrollY +
           triggerRect.height / 2 -
           tooltipRect.height / 2;
-        left = triggerRect.right + scrollX + 8;
+        left = triggerRect.right + 8;
         break;
 
       case "tl":
-        top = triggerRect.top + scrollY - tooltipRect.height - 8;
-        left = triggerRect.left + scrollX;
+        top = triggerRect.top - tooltipRect.height - 8;
+        left = triggerRect.left;
         break;
 
       case "tr":
-        top = triggerRect.top + scrollY - tooltipRect.height - 8;
-        left = triggerRect.right + scrollX - tooltipRect.width;
+        top = triggerRect.top - tooltipRect.height - 8;
+        left = triggerRect.right - tooltipRect.width;
         break;
 
       case "top":
       default:
-        top = triggerRect.top + scrollY - tooltipRect.height - 8;
+        top = triggerRect.top - tooltipRect.height - 8;
         left =
           triggerRect.left +
-          scrollX +
           triggerRect.width / 2 -
           tooltipRect.width / 2;
+        break;
+    }
+
+    // Prevent viewport overflow
+    const padding = 8;
+
+    left = Math.max(
+      padding,
+      Math.min(
+        left,
+        window.innerWidth - tooltipRect.width - padding
+      )
+    );
+
+    // If tooltip goes above screen, move below trigger
+    if (top < padding) {
+      top = triggerRect.bottom + 8;
+    }
+
+    // If tooltip goes below screen
+    if (top + tooltipRect.height > window.innerHeight - padding) {
+      top = window.innerHeight - tooltipRect.height - padding;
     }
 
     setCoords({ top, left });
   }, [position]);
 
-  // ✅ Visibility effect
+  useLayoutEffect(() => {
+    if (!isVisible) return;
+
+    calculatePosition();
+  }, [isVisible, calculatePosition]);
+
   useEffect(() => {
     if (!isVisible) return;
 
-    requestAnimationFrame(() => {
-      calculatePosition();
-    });
-
     const handleScroll = () => {
-      // On mobile, hide tooltip on scroll to prevent persistence
-      if (window.matchMedia("(pointer: coarse)").matches) {
-        hide();
-      } else {
-        calculatePosition();
-      }
+      calculatePosition();
     };
 
-    const handleGlobalClick = (e: MouseEvent) => {
+    const handlePointerDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+
       if (
-        triggerRef.current &&
-        !triggerRef.current.contains(e.target as Node) &&
-        tooltipRef.current &&
-        !tooltipRef.current.contains(e.target as Node)
+        triggerRef.current?.contains(target) ||
+        tooltipRef.current?.contains(target)
       ) {
-        hide();
+        return;
       }
+
+      setIsVisible(false);
     };
 
-    window.addEventListener("scroll", handleScroll, true);
     window.addEventListener("resize", calculatePosition);
-    document.addEventListener("mousedown", handleGlobalClick);
+    window.addEventListener("scroll", handleScroll, true);
+    document.addEventListener("pointerdown", handlePointerDown);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll, true);
       window.removeEventListener("resize", calculatePosition);
-      document.removeEventListener("mousedown", handleGlobalClick);
+      window.removeEventListener("scroll", handleScroll, true);
+      document.removeEventListener("pointerdown", handlePointerDown);
     };
   }, [isVisible, calculatePosition]);
 
-  // Cleanup
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
   }, []);
 
   const show = () => {
-    if (window.matchMedia("(pointer: coarse)").matches) return;
-
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
 
     timeoutRef.current = setTimeout(() => {
       setIsVisible(true);
     }, delay);
   };
 
+
   const hide = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
     setIsVisible(false);
   };
 
@@ -181,31 +207,32 @@ const Tooltip: React.FC<TooltipProps> = ({
     }
   };
 
-  if (!content) return <>{children}</>;
+  if (!content) {
+    return <>{children}</>;
+  }
 
   const tooltipEl = isVisible && (
     <div
       ref={tooltipRef}
       role="tooltip"
-      className="fixed z-[9999] pointer-events-none"
+      className={`fixed z-[9999] ${type === "custom" ? "pointer-events-auto" : "pointer-events-none"
+        }`}
       style={{
         top: coords.top,
         left: coords.left,
       }}
     >
       {type === "custom" ? (
-        <div className={`relative ${className}`}
-        >
-          {content}
-        </div>
+        <div className={`relative ${className}`}>{content}</div>
       ) : (
         <div
           className={`relative px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg whitespace-normal break-words text-center max-w-xs ${className}`}
         >
           {content}
 
-          {/* ✅ Arrow */}
-          <div className={`absolute w-0 h-0 border-4 ${getArrowClasses()}`} />
+          <div
+            className={`absolute w-0 h-0 border-4 ${getArrowClasses()}`}
+          />
         </div>
       )}
     </div>
@@ -216,11 +243,35 @@ const Tooltip: React.FC<TooltipProps> = ({
       <div
         ref={triggerRef}
         className={triggerClassName || "inline-block"}
-        onMouseEnter={show}
-        onMouseLeave={hide}
-        onFocus={show}
-        onBlur={hide}
-        onClick={hide}
+        onMouseEnter={() => {
+          if (!isTouchDevice()) {
+            show();
+          }
+        }}
+        onMouseLeave={() => {
+          if (!isTouchDevice()) {
+            hide();
+          }
+        }}
+        onFocus={() => {
+          if (!isTouchDevice()) {
+            show();
+          }
+        }}
+        onBlur={() => {
+          if (!isTouchDevice()) {
+            hide();
+          }
+        }}
+        onClick={(e) => {
+          if (!isTouchDevice()) {
+            return;
+          }
+
+          e.stopPropagation();
+
+          setIsVisible((prev) => !prev);
+        }}
       >
         {children}
       </div>

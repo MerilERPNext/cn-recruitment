@@ -7,6 +7,40 @@ from dateutil.relativedelta import relativedelta
 PROBATION_STATUSES = ("On Probation", "Probation Extended")
 CONFIRMED_STATUS = "Confirmed"
 UNSETTLED_EXPENSE_CLAIM_STATUSES = ("Draft", "Unpaid")
+ATTENDANCE_REGULARIZE_TODO_TYPE = "Regularize Separation Attendance"
+
+
+def create_attendance_regularize_todo(doc, method=None):
+    if doc.custom_is_the_attendance_completely_marked_of_the_member_ != "No":
+        return
+
+    if not doc.employee:
+        return
+
+    hrbp = frappe.db.get_value("Employee", doc.employee, "custom_hrbp")
+    hrbp_user = frappe.db.get_value("Employee", hrbp, "user_id") if hrbp else None
+    if not hrbp_user:
+        return
+
+    if frappe.db.exists("ToDo", {
+        "custom_todo_type": ATTENDANCE_REGULARIZE_TODO_TYPE,
+        "reference_type": "Employee",
+        "reference_name": doc.employee,
+        "status": "Open",
+    }):
+        return
+
+    todo = frappe.new_doc("ToDo")
+    todo.owner = "Administrator"
+    todo.allocated_to = hrbp_user
+    todo.reference_type = "Employee"
+    todo.reference_name = doc.employee
+    todo.custom_todo_type = ATTENDANCE_REGULARIZE_TODO_TYPE
+    todo.status = "Open"
+    todo.priority = "High"
+    todo.description = f"Regularize absent days for {doc.employee_name} before separation"
+    todo.flags.ignore_permissions = True
+    todo.insert()
 
 
 def add_unpaid_expense_claims(doc, method=None):

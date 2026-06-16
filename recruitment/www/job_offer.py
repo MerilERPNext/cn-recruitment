@@ -28,11 +28,8 @@ def get_context(context):
         if job_offers:
             context.doc = job_offers[0]["name"]
 
-            pf = None
-            try:
-                pf = frappe.db.get_single_value("Recruitment Settings", "job_offer_print_format") or None
-            except Exception:
-                pf = None
+            from recruitment.job_offer_utils import get_job_offer_print_format
+            pf = get_job_offer_print_format(context.doc)
 
             context.print = frappe.get_print('Job Offer', context.doc, print_format=pf)
 

@@ -349,12 +349,12 @@ const EmployeeTable = ({
                 </td>
                 <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
                   <div className="flex flex-col">
-                    <span className="font-medium text-gray-700">{item.custom_designation_name || "-"}</span>
+                    <span className="font-medium text-gray-700">{item.designation_name || "-"}</span>
                   </div>
                 </td>
                 <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-50 text-gray-600 border border-gray-100">
-                    {item.department || "-"}
+                    {item.department_name || "-"}
                   </span>
                 </td>
                 <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100 font-brand">
@@ -375,7 +375,7 @@ const EmployeeTable = ({
                   </div>
                 </td>
                 <td className="whitespace-nowrap px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100">
-                  {item.branch || "-"}
+                  {item.branch_name || "-"}
                 </td>
 
               </tr>
@@ -600,20 +600,20 @@ const EmployeeTable = ({
               <div className="flex flex-col gap-1 items-start justify-start">
                 <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold">Department</span>
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-600">
-                  {item.department || "-"}
+                  {item.department_name || "-"}
                 </span>
               </div>
-              {item.branch && <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold">Location</span>
-                <div className="flex items-center gap-1.5 font-medium text-gray-700">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary-400"></div>
-                  {item.branch || "-"}
-                </div>
-              </div>}
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold">Designation</span>
-                <span className="font-medium text-gray-700">{item.custom_designation_name || "-"}</span>
+                <span className="font-medium text-gray-700">{item.designation_name || "-"}</span>
               </div>
+              {item.branch_name && <div className="flex flex-col text-sm">
+                <div className="text-gray-400 text-xs uppercase tracking-wider font-semibold">Location</div>
+                <div className="flex items-center gap-1.5 font-medium text-gray-700">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary-400"></div>
+                  {item.branch_name || "-"}
+                </div>
+              </div>}
 
             </div>
 

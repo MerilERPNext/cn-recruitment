@@ -11,6 +11,7 @@ interface NudgeButtonProps {
   app: string;
   /** The page name for uiPermission check (e.g. "Separation", "Confirmation") */
   page: string;
+  isPending?: boolean;
 }
 
 /**
@@ -19,12 +20,12 @@ interface NudgeButtonProps {
  * - Gated behind uiPermission (app + page + "nudge" action)
  * - Returns null when permission is denied or no todoId
  */
-const NudgeButton = ({ todoId, app, page }: NudgeButtonProps) => {
+const NudgeButton = ({ todoId, app, page, isPending }: NudgeButtonProps) => {
   const { mutate: sendNudge, isPending: nudging } = useNudge();
   const { data: userUiPermission } = useGetUiPermission(app);
   const canNudge = isActionEnabled(userUiPermission, "nudge", page);
 
-  if (!canNudge || !todoId) return <div className="w-[96px] h-[36px]" />;
+  if (!canNudge || !todoId || !isPending) return <div className="w-[96px] h-[36px]" />;
 
   return (
     <Button

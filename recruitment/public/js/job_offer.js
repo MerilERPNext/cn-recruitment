@@ -24,6 +24,22 @@ frappe.ui.form.on("Job Offer", {
     },
 	refresh: function(frm) {
 		frm.trigger("filter_jo_expiry_date");
+
+		// Open the print preview using the employment-type-specific print format
+		// (Recruitment Settings mapping), not the doctype default that Frappe's
+		// own print icon uses. Always available for any saved Job Offer.
+		if (!frm.is_new()) {
+			frm.add_custom_button(__("Preview Offer Letter"), function() {
+				frappe.call({
+					method: "recruitment.job_offer_utils.get_job_offer_print_preview_url",
+					args: { job_offer: frm.doc.name },
+				}).then(function(r) {
+					if (r && r.message) {
+						window.open(r.message, "_blank");
+					}
+				});
+			});
+		}
 	},
     filter_jo_expiry_date: function(frm) {
         if (frm.doc.offer_date) {

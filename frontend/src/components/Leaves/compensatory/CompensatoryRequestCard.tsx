@@ -130,6 +130,7 @@ const CompensatoryRequestCard = ({
             }
           }}
           canPay={item?.pay_button_required}
+          isPendingStatus={resolveCompOffStatus(item?.custom_status, item?.docstatus) === "Pending"}
           onPay={handlePay}
           payLoading={isPending}
         />
@@ -206,6 +207,7 @@ const CompensatoryRequestCard = ({
           }}
           variant="buttons"
           canPay={item?.pay_button_required}
+          isPendingStatus={resolveCompOffStatus(item?.custom_status, item?.docstatus) === "Pending"}
           onPay={handlePay}
           payLoading={isPending}
         />

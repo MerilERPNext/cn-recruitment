@@ -5,6 +5,7 @@
  "engine": "InnoDB",
  "field_order": [
   "candidate_email",
+  "title",
   "reference_doctype",
   "reference_docname",
   "redirect_url",
@@ -19,6 +20,13 @@
    "in_list_view": 1,
    "label": "Candidate Email",
    "reqd": 1
+  },
+  {
+   "description": "Auto-set from Action Center Settings (Title by DocType) on creation; falls back to blank when the reference DocType has no mapping.",
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title"
   },
   {
    "fieldname": "reference_doctype",

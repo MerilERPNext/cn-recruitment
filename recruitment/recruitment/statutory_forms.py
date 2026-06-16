@@ -96,6 +96,70 @@ def generate_gratuity_nomination(onboarding_name, force=False):
     return {"name": form.name, "status": form.status, "pdf_url": pdf_url, "skipped": False}
 
 
+@frappe.whitelist()
+def generate_bulk(onboarding_names, mode="all", force=True):
+    """Bulk variant of the per-record statutory generators for the list view.
+
+    `onboarding_names` is a JSON list (or list) of Employee Onboarding names.
+    `mode` is one of: "pf" (PF Form 11 only), "gratuity" (Gratuity Nomination
+    only), or "all" (both). Each onboarding is processed independently and a bad
+    one never aborts the batch — failures are logged and tallied. Reuses the exact
+    same single-record logic (autofill -> render -> attach to the EO Statutory
+    fields), so behaviour matches the on-form button precisely.
+
+    Returns processed / succeeded / skipped (locked) / failed counts plus per-row
+    details for the UI summary."""
+    force = _coerce_bool(force)
+
+    if isinstance(onboarding_names, str):
+        onboarding_names = frappe.parse_json(onboarding_names or "[]")
+    onboarding_names = onboarding_names or []
+
+    if mode not in ("pf", "gratuity", "all"):
+        frappe.throw(_("Invalid mode: {0}").format(mode))
+
+    succeeded = skipped = failed = 0
+    details = []
+
+    for name in onboarding_names:
+        try:
+            if not frappe.db.exists("Employee Onboarding", name):
+                failed += 1
+                details.append({"name": name, "ok": False, "message": _("Onboarding not found")})
+                continue
+
+            if mode == "pf":
+                results = {"pf_form_11": generate_pf_form_11(name, force=force)}
+            elif mode == "gratuity":
+                results = {"gratuity_nomination": generate_gratuity_nomination(name, force=force)}
+            else:
+                results = generate_all(name, force=force)
+
+            sub_results = list(results.values())
+            # "Skipped" only when EVERY requested form was locked (Signed/Filed).
+            was_skipped = bool(sub_results) and all(r.get("skipped") for r in sub_results)
+            if was_skipped:
+                skipped += 1
+                details.append({"name": name, "ok": True, "skipped": True, "results": results})
+            else:
+                succeeded += 1
+                details.append({"name": name, "ok": True, "skipped": False, "results": results})
+        except Exception:
+            failed += 1
+            frappe.log_error(frappe.get_traceback(), "Bulk Statutory Forms")
+            details.append({"name": name, "ok": False, "message": _("Error — see Error Log")})
+
+    frappe.db.commit()
+
+    return {
+        "processed": len(onboarding_names),
+        "succeeded": succeeded,
+        "skipped": skipped,
+        "failed": failed,
+        "details": details,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

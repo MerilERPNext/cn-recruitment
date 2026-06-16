@@ -171,6 +171,7 @@ const EmpAttendanceRequestCard = ({
                 }
               }}
 
+              isPendingStatus={data?.reference_document?.custom_status === "Pending" || data?.reference_document?.custom_status === "Open"}
               todoId={data?.todo_id}
               canRevoke={!!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}
               canEdit={!!data?.can_edit && !isActed}
@@ -237,12 +238,12 @@ const EmpAttendanceRequestCard = ({
                 {getAssignedUsersCell(data)}
               </Typography>
             </div>
-              <div>
-                <Typography variant="mobileCardLabel">Sendback Comment</Typography>
-                <Typography variant="mobileCardValue" className="text-gray-700">
-                  {data?.send_back_comment || "--"}
-                </Typography>
-              </div>
+            <div>
+              <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+              <Typography variant="mobileCardValue" className="text-gray-700">
+                {data?.send_back_comment || "--"}
+              </Typography>
+            </div>
             {/* Actions */}
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
@@ -256,6 +257,7 @@ const EmpAttendanceRequestCard = ({
                   }
                 }}
 
+                isPendingStatus={data?.reference_document?.custom_status === "Pending" || data?.reference_document?.custom_status === "Open"}
                 todoId={data?.todo_id}
                 variant="buttons"
                 canRevoke={type === "pending" && !!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}

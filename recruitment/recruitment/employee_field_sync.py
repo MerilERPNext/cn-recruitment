@@ -225,19 +225,47 @@ def sync_target(target, allowed=None):
 
 
 @frappe.whitelist()
-def sync_employee_fields(targets=None):
+def sync_employee_fields(targets=None, enqueue=True):
     """Mirror Employee fields + layout onto the recruitment lifecycle doctypes.
 
     Pass a comma-separated string or list to restrict the targets; defaults to
     Job Applicant and Employee Onboarding.
+
+    Mirroring a full Employee form creates hundreds of system-generated Custom
+    Fields. Done inline in a web request, that easily blows the gunicorn/nginx
+    timeout (HTTP 504) part-way through. So `enqueue` defaults to True: the sync
+    runs on a background worker (no web timeout) and the call returns
+    immediately. The pass is idempotent and resumable — re-running only creates
+    the fields still missing — so an interrupted run can simply be retried.
+
+    Pass `enqueue=False` for a synchronous run (e.g. from `bench execute` or a
+    migrate patch, where there may be no worker and the caller needs the result
+    inline). Patches should call `_run_sync(targets)` directly.
     """
     if isinstance(targets, str):
         targets = [t.strip() for t in targets.split(",") if t.strip()]
     targets = targets or list(TARGET_DOCTYPES)
 
-    allowed = _allowed_row_fieldtypes()
-    results = [sync_target(target, allowed) for target in targets]
+    if frappe.utils.sbool(enqueue):
+        frappe.enqueue(
+            "recruitment.recruitment.employee_field_sync._run_sync",
+            queue="long",
+            timeout=3600,
+            targets=targets,
+        )
+        return {"enqueued": True, "targets": targets}
 
-    frappe.db.commit()
-    frappe.clear_cache()
+    return _run_sync(targets)
+
+
+def _run_sync(targets):
+    """Run the mirror for each target, committing + clearing cache after each so
+    progress persists incrementally (and the meta cache stays fresh between
+    targets, keeping the per-target idempotency checks accurate)."""
+    allowed = _allowed_row_fieldtypes()
+    results = []
+    for target in targets:
+        results.append(sync_target(target, allowed))
+        frappe.db.commit()
+        frappe.clear_cache()
     return {"results": results}

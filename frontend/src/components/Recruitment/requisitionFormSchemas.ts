@@ -689,6 +689,40 @@ export const requisitionFormSchemas = {
                 validate: { required: true },
                 customConditional: "show = row.vacancy_type === 'Replacement'",
               },
+              {
+                // Child table: multiple cost centers per position, each with
+                // its own percentage allocation.
+                type: "datagrid",
+                key: "cost_center_allocations",
+                label: "Cost Center Allocation",
+                addAnother: "Add Cost Center",
+                reorder: false,
+                components: [
+                  {
+                    type: "select",
+                    key: "cost_center",
+                    label: "Cost Center",
+                    placeholder: "Select Cost Center",
+                    validateOn: "blur",
+                    dataSrc: "url",
+                    data: {
+                      url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Cost Center",
+                      headers: [{ key: "Accept", value: "application/json" }],
+                    },
+                    limit: 20,
+                    selectValues: "message.results",
+                    valueProperty: "id",
+                    template: "<span>{{ item.label }}</span>",
+                  },
+                  {
+                    type: "number",
+                    key: "percentage",
+                    label: "Percentage (%)",
+                    placeholder: "e.g., 100",
+                    validate: { min: 0, max: 100 },
+                  },
+                ],
+              },
             ],
           },
         ],
@@ -704,53 +738,6 @@ export const requisitionFormSchemas = {
         placeholder: "Enter any comments or instructions for recruiters",
         input: true,
         rows: 3,
-      },
-      {
-        type: "columns",
-        customClass: "my-3",
-        columns: [
-          {
-            components: [
-              {
-                type: "select",
-                key: "cost_centre",
-                label: "Cost Center",
-                placeholder: "Select Cost Center",
-                customClass: "required-field",
-                input: true,
-                dataSrc: "url",
-                data: {
-                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Cost Center",
-                  headers: [{ key: "Accept", value: "application/json" }],
-                },
-                limit: 20,
-                selectValues: "message.results",
-                valueProperty: "id",
-                template: "<span>{{ item.label }}</span>",
-                validate: { required: true },
-              },
-            ],
-            width: 6,
-            offset: 0,
-            push: 0,
-            pull: 0,
-          },
-          {
-            components: [
-              {
-                type: "textfield",
-                key: "designation_change",
-                label: "Designation Change",
-                placeholder: "Enter designation change",
-                input: true,
-              },
-            ],
-            width: 6,
-            offset: 0,
-            push: 0,
-            pull: 0,
-          },
-        ],
       },
       {
         type: "datagrid",

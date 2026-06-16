@@ -11,7 +11,9 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/recruitment/css/job_applicant.css"
-app_include_js = ["/assets/recruitment/js/teams_utils.js"]
+app_include_js = [
+	"/assets/recruitment/js/teams_utils.js",
+]
 
 add_to_apps_screen = [
 	{
@@ -90,6 +92,7 @@ doctype_js = {
     "Employee Promotion": ["public/js/employee_promotion.js"],
     "Employee": ["public/js/employee.js"],
     "Custom Doctype Fields": ["public/js/custom_doctype_fields.js"],
+    "Candidate Portal User": ["public/js/candidate_portal_user.js"],
     "Exit Interview": ["public/js/exit_interview.js"],
     "Training Event": ["public/js/training_event.js"],
     "Task": ["public/js/task_onboarding_form.js"],
@@ -101,6 +104,7 @@ doctype_list_js = {
     "Task": "public/js/task_onboarding_listview.js",
     "Job Opening": "public/js/job_opening_list.js",
     "Job Requisition": "public/js/job_requisition_list.js",
+    "Employee Onboarding": "public/js/employee_onboarding_list.js",
 }
 
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -253,7 +257,10 @@ doc_events = {
             "recruitment.customizations.employee_separation.employee_separation.add_unpaid_expense_claims",
             "recruitment.customizations.employee_separation.employee_separation.add_absent_days",
         ],
-        "on_submit": "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date"
+        "on_submit": [
+            "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date",
+            "recruitment.customizations.employee_separation.employee_separation.create_attendance_regularize_todo",
+        ],
     },
 }
 

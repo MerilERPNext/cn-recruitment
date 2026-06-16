@@ -13,6 +13,7 @@
 "enable_pre_onboarding_form",
 "section_break_xbvj",
 "job_offer_print_format",
+"job_offer_print_format_mapping",
 "job_offer_template",
 "employee_onboarding_webform",
 "mapping_fields",
@@ -67,11 +68,18 @@
 "fieldtype": "Section Break"
 },
 {
-"description": "Print Format used for the candidate-facing Job Offer page and PDF download.",
+"description": "Default Print Format used for the candidate-facing Job Offer page and PDF download. Used as a fallback when no employment-type-specific format is mapped below.",
 "fieldname": "job_offer_print_format",
 "fieldtype": "Link",
 "label": "Job Offer Print Format",
 "options": "Print Format"
+},
+{
+"description": "Pick the Job Offer Print Format per Employment Type (Intern, Trainee, Employee, ...). When a row matches the applicant's Employment Type it is used; otherwise the default \"Job Offer Print Format\" above is used.",
+"fieldname": "job_offer_print_format_mapping",
+"fieldtype": "Table",
+"label": "Job Offer Print Format by Employment Type",
+"options": "Job Offer Print Format Mapping"
 },
 {
 "fieldname": "job_offer_template",

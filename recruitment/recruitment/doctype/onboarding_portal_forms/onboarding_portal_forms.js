@@ -4,24 +4,30 @@
 frappe.ui.form.on("Onboarding Portal Forms", {
 
     refresh(frm) {
-        frm.fields_dict["available_fields_html"].$wrapper.html("");
-    },
-
-    fetch_fields_btn(frm) {
-        frappe.call({
-            method: "recruitment.api.candidate_portal.get_all_onboarding_fields",
-            freeze: true,
-            freeze_message: __("Reading Employee Onboarding fields…"),
-            callback(r) {
-                if (!r.message || r.message.status !== "success") {
-                    frappe.msgprint(__("Could not fetch fields."));
-                    return;
-                }
-                _render_field_inspector(frm, r.message.fields);
-            }
-        });
+        // The Field Inspector opens automatically on form load — no button click
+        // needed. It renders at the top; the read-only Portal Fields table below
+        // reflects whatever is selected here.
+        _load_field_inspector(frm);
     }
 });
+
+
+// Fetch the Employee Onboarding field list and render the inspector inline.
+function _load_field_inspector(frm) {
+    const wrapper = frm.fields_dict["available_fields_html"];
+    if (!wrapper) return;
+    wrapper.$wrapper.html(`<div class="text-muted" style="padding:8px 0;">${__("Loading available fields…")}</div>`);
+    frappe.call({
+        method: "recruitment.api.candidate_portal.get_all_onboarding_fields",
+        callback(r) {
+            if (!r.message || r.message.status !== "success") {
+                wrapper.$wrapper.html(`<div class="text-muted" style="padding:8px 0;">${__("Could not load fields.")}</div>`);
+                return;
+            }
+            _render_field_inspector(frm, r.message.fields);
+        }
+    });
+}
 
 
 // ─────────────────────────────────────────────────────────────────────────────
