@@ -77,7 +77,9 @@ const CardStages = ({
     ? JSON.parse(stage?.todo?.custom_doctype_actions)
     : [];
 
-  const filteredActions = actions.filter((action: string) => action.toLowerCase() !== "reject");
+  const filteredActions = Array.isArray(actions)
+    ? actions.filter((action: string) => action.toLowerCase() !== "reject")
+    : [];
 
   const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
     ? JSON.parse(

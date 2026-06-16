@@ -93,6 +93,7 @@ export interface FilterField {
     filterValue?: any; // Value to use when empty/Select option is chosen
     customAPIParams?: Record<string, any>; // Additional params for empty state
   };
+  clearable?: boolean; // If true, allows removing the default filter
 }
 
 interface DateInputProps {
@@ -756,7 +757,13 @@ const DataListView = <T extends BaseItem>({
     setPendingFilters((prev: Record<string, any>) => {
       if (value === "") {
         const newFilters = { ...prev };
-        delete newFilters[fieldname];
+        const fieldConfig = filterFields.find((f) => f.fieldname === fieldname);
+        
+        if (defaultFilters && defaultFilters[fieldname] !== undefined && fieldConfig?.clearable === false) {
+          newFilters[fieldname] = defaultFilters[fieldname];
+        } else {
+          delete newFilters[fieldname];
+        }
         return newFilters;
       }
       return {
