@@ -756,11 +756,7 @@ const DataListView = <T extends BaseItem>({
     setPendingFilters((prev: Record<string, any>) => {
       if (value === "") {
         const newFilters = { ...prev };
-        if (defaultFilters && defaultFilters[fieldname] !== undefined) {
-          newFilters[fieldname] = defaultFilters[fieldname];
-        } else {
-          delete newFilters[fieldname];
-        }
+        delete newFilters[fieldname];
         return newFilters;
       }
       return {

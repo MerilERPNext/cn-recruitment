@@ -76,6 +76,9 @@ const CardStages = ({
   const actions = stage?.todo?.custom_doctype_actions
     ? JSON.parse(stage?.todo?.custom_doctype_actions)
     : [];
+
+  const filteredActions = actions.filter((action: string) => action.toLowerCase() !== "reject");
+
   const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
     ? JSON.parse(
       stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'),
@@ -182,8 +185,8 @@ const CardStages = ({
                   page="Separation"
                   isPending={isActive}
                 />
-                {canPerformActions && actions.length > 0 &&
-                  actions.map((action: string) => (
+                {canPerformActions && filteredActions.length > 0 &&
+                  filteredActions.map((action: string) => (
                     <Button
                       key={action}
                       onClick={() => onAction(action, stage?.todo)}
