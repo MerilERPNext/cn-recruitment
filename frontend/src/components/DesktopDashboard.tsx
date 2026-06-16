@@ -46,7 +46,7 @@ import { useGetUiPermission } from "../hooks/userUiPermission";
 import { useShiftRequestConfig } from "../hooks/useShift";
 import { CustomError } from "../types/attendance";
 import { formatTimeSafe, formatTo24HourTime } from "../utils/helperUtils";
-import ResetPassword from "./EmployeesDirectory/tools/ResetPassword/ResetPassword";
+import ChangePassword from "./ChangePassword/ChangePassword";
 import { isActionEnabled } from "../utils/uiPermission";
 import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
@@ -102,14 +102,12 @@ export default function DesktopDashboard() {
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || "",
   );
-  // Reset password — open the same modal used in the Employee Directory, which
-  // calls reset_employee_password for the current employee.
-  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
-  const resetPasswordEmployeeId =
-    currentEmployee?.employee || currentEmployee?.name || "";
+  // Change password — self-service modal (current / new / confirm) that calls
+  // the change_password API for the logged-in user.
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const handleReset = () => {
     setShowProfileDropdown(false);
-    setShowResetPasswordModal(true);
+    setShowChangePasswordModal(true);
   };
 
   const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
@@ -1085,11 +1083,10 @@ export default function DesktopDashboard() {
         </Modal>
       )}
 
-      {/* Reset Password modal — same flow/API as the Employee Directory */}
-      <ResetPassword
-        isOpen={showResetPasswordModal}
-        onClose={() => setShowResetPasswordModal(false)}
-        employeeId={resetPasswordEmployeeId}
+      {/* Change Password modal — self-service (current / new / confirm) */}
+      <ChangePassword
+        isOpen={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
       />
     </div>
   );

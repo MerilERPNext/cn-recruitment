@@ -11,7 +11,7 @@ import { useCurrentEmployee, useCurrentEmployeeDetails } from "../hooks/useEmplo
 import { ROUTES } from "../constants/routes";
 import useCurrentUser from "../hooks/useCurrentUser";
 import useLogout from "../hooks/useLogout";
-import ResetPassword from "./EmployeesDirectory/tools/ResetPassword/ResetPassword";
+import ChangePassword from "./ChangePassword/ChangePassword";
 import ViewingAsBanner from "./ViewingAsBanner";
 import { useTargetUser } from "../context/ViewedUserContext";
 import SearchMembers from "./shared/SearchMembers";
@@ -56,14 +56,12 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       console.error("Logout failed:", error);
     }
   };
-  // Reset password — open the same modal used in the Employee Directory, which
-  // calls reset_employee_password for the current employee.
-  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
-  const resetPasswordEmployeeId =
-    currentEmployee?.employee || currentEmployee?.name || "";
+  // Change password — self-service modal (current / new / confirm) that calls
+  // the change_password API for the logged-in user.
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const handleReset = () => {
     setShowProfileDropdown(false);
-    setShowResetPasswordModal(true);
+    setShowChangePasswordModal(true);
   };
 
   const currentUserIsAdmin = currentUser?.roles?.some(
@@ -376,11 +374,10 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
         </div>
       </div>
 
-      {/* Reset Password modal — same flow/API as the Employee Directory */}
-      <ResetPassword
-        isOpen={showResetPasswordModal}
-        onClose={() => setShowResetPasswordModal(false)}
-        employeeId={resetPasswordEmployeeId}
+      {/* Change Password modal — self-service (current / new / confirm) */}
+      <ChangePassword
+        isOpen={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
       />
     </div>
   );

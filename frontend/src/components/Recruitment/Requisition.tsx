@@ -14,6 +14,7 @@ import type { FrappePageResponse } from "../../types/frappe";
 import CardTable, { ColumnSortConfig } from "../shared/CardTable";
 import { Briefcase, CheckCircle, Edit, FileText, FolderOpen } from "lucide-react";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 const EditButton = ({ requisition, onClose }: { requisition: any; onClose: () => void }) => {
   const navigate = useNavigate();
@@ -614,7 +615,15 @@ const Requisition = () => {
                     Hiring Lead
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {selectedRequisition.custom_hiring_lead_title || "—"}
+                    {selectedRequisition.custom_hiring_lead ? (
+                      <WrapperHoverCard employeeId={String(selectedRequisition.custom_hiring_lead)}>
+                        <span className="cursor-help underline decoration-dotted decoration-gray-300 underline-offset-2">
+                          {selectedRequisition.custom_hiring_lead_title || selectedRequisition.custom_hiring_lead}
+                        </span>
+                      </WrapperHoverCard>
+                    ) : (
+                      "—"
+                    )}
                   </Typography>
                 </div>
                 <div>
@@ -692,7 +701,17 @@ const Requisition = () => {
                             <td className="px-4 py-2 font-medium">{idx+1}</td>
                             <td className="px-4 py-2">{pos.vacancy_type}</td>
                             <td className="px-4 py-2">{pos.location_title || "—"}</td>
-                            <td className="px-4 py-2">{pos.reporting_manager_title || "—"}</td>
+                            <td className="px-4 py-2">
+                              {pos.reporting_manager ? (
+                                <WrapperHoverCard employeeId={String(pos.reporting_manager)}>
+                                  <span className="cursor-help underline decoration-dotted decoration-gray-300 underline-offset-2">
+                                    {pos.reporting_manager_title || pos.reporting_manager}
+                                  </span>
+                                </WrapperHoverCard>
+                              ) : (
+                                pos.reporting_manager_title || "—"
+                              )}
+                            </td>
                             <td className="px-4 py-2 align-top">
                               {Array.isArray(pos.cost_center_allocations) &&
                               pos.cost_center_allocations.length > 0 ? (

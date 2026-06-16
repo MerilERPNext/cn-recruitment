@@ -7,6 +7,7 @@ import {
   FormSchemaKeys,
 } from "./requisitionFormSchemas";
 import RequisitionReviewStep from "./RequisitionReviewStep";
+import FormEmployeeHoverLayer from "./FormEmployeeHoverLayer";
 import Button from "../shared/atoms/Button";
 import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails, useFileUpload } from "../../hooks/useEmployee";
@@ -525,6 +526,22 @@ const RequisitionForm = () => {
   // when the step changes. `formSyncTick` bumps to request such a push.
   const formDataRef = useRef(formData);
   formDataRef.current = formData;
+
+  // Employee hover-card support for the Form.io employee <select> inputs.
+  // Resolves the selected employee id from the live form data: top-level fields
+  // (hiring_manager / hiring_lead) read directly, position-row fields
+  // (reporting_manager / replacement_for) read from positions[rowIndex].
+  const formContainerRef = useRef<HTMLDivElement | null>(null);
+  const resolveEmployeeId = useCallback(
+    (fieldKey: string, rowIndex: number | null): string | undefined => {
+      const data: any = formDataRef.current;
+      if (rowIndex != null) {
+        return data?.positions?.[rowIndex]?.[fieldKey];
+      }
+      return data?.[fieldKey];
+    },
+    []
+  );
   const [formSyncTick, setFormSyncTick] = useState(0);
   const pushFormSync = useCallback(() => setFormSyncTick((t) => t + 1), []);
   const formSubmission = useMemo(
@@ -1546,12 +1563,19 @@ const RequisitionForm = () => {
               </div>
             )}
 
-            <Form
-              form={currentSchema}
-              submission={formSubmission}
-              onChange={handleChange}
-              onSubmit={handleSubmit}
-            />
+            <div ref={formContainerRef} className="relative">
+              <Form
+                form={currentSchema}
+                submission={formSubmission}
+                onChange={handleChange}
+                onSubmit={handleSubmit}
+              />
+              {/* Employee hover cards over the Form.io employee select inputs */}
+              <FormEmployeeHoverLayer
+                containerRef={formContainerRef}
+                resolveEmployeeId={resolveEmployeeId}
+              />
+            </div>
 
             {/* ── Position Selection summary bar (totals + bulk vacancy-type toggle) ── */}
             {currentStep === 2 && (() => {
