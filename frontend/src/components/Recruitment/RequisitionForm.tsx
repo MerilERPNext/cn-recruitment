@@ -8,11 +8,13 @@ import {
 } from "./requisitionFormSchemas";
 import RequisitionReviewStep from "./RequisitionReviewStep";
 import FormEmployeeHoverLayer from "./FormEmployeeHoverLayer";
+import PositionColumnCopyButtons from "./PositionColumnCopyButtons";
 import Button from "../shared/atoms/Button";
 import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails, useFileUpload } from "../../hooks/useEmployee";
 import { useDeleteDocument } from "../../hooks/payroll/UseDeleteDocuemt";
 import { useCreateJobRequisition } from "../../hooks/useRecruitment";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 import {
   JobRequisitionFormData,
   CreateJobRequisitionPayload,
@@ -501,6 +503,9 @@ const RequisitionForm = () => {
     });
   };
 
+  // Full-page blocking loader (used while a column copy reflects across rows).
+  const loading = useLoadingOverlay();
+
   // Detect edit mode from navigation state
   const existingRequisition: any | null = (location.state as any)?.requisition ?? null;
   const isEditMode = Boolean(existingRequisition);
@@ -532,6 +537,9 @@ const RequisitionForm = () => {
   // (hiring_manager / hiring_lead) read directly, position-row fields
   // (reporting_manager / replacement_for) read from positions[rowIndex].
   const formContainerRef = useRef<HTMLDivElement | null>(null);
+  // Live Form.io instance (via onFormReady) — used to set datagrid cell values
+  // in place (fast) instead of re-feeding the whole submission (slow).
+  const formInstanceRef = useRef<any>(null);
   const resolveEmployeeId = useCallback(
     (fieldKey: string, rowIndex: number | null): string | undefined => {
       const data: any = formDataRef.current;
@@ -656,6 +664,73 @@ const RequisitionForm = () => {
     // reflects the bulk vacancy-type change.
     pushFormSync();
   };
+
+  // ── Copy one position column's value (first filled row) into all rows ──
+  const copyColumnToAllPositions = useCallback(
+    (fieldKey: string) => {
+      const positions: any[] = formDataRef.current?.positions || [];
+      if (positions.length === 0) return;
+
+      // Source = first row that has a non-empty value in this column.
+      let srcVal: any;
+      let srcTitle: any;
+      let found = false;
+      for (const p of positions) {
+        const v = p?.[fieldKey];
+        if (v !== undefined && v !== null && v !== "") {
+          srcVal = v;
+          srcTitle = p?.[`${fieldKey}_title`];
+          found = true;
+          break;
+        }
+      }
+      if (!found) return;
+
+      // Keep React form data (value + title) in sync — does NOT redraw form.io
+      // (submission identity unchanged), so it's cheap.
+      const syncFormData = () =>
+        setFormData((prev: any) => {
+          const next = (prev.positions || []).map((p: any) => ({
+            ...p,
+            [fieldKey]: srcVal,
+            ...(srcTitle !== undefined ? { [`${fieldKey}_title`]: srcTitle } : {}),
+          }));
+          return { ...prev, positions: next };
+        });
+
+      // Block the page with a loader while values apply + the grid settles,
+      // then reveal the updated form.
+      loading?.wrap(async () => {
+        // Fast path: set each existing cell value in place on the live form.io
+        // instance — updates only the changed cells, no full grid rebuild.
+        const dg = formInstanceRef.current?.getComponent?.("positions");
+        const rows: any[] = dg?.rows;
+        if (dg && Array.isArray(rows) && rows.length > 0) {
+          rows.forEach((row: any) => {
+            const comp = row?.[fieldKey];
+            if (comp && typeof comp.setValue === "function") {
+              comp.setValue(srcVal, { modified: false });
+            }
+          });
+          syncFormData();
+        } else {
+          // Fallback (instance not ready): re-feed submission (slower redraw).
+          syncFormData();
+          pushFormSync();
+        }
+
+        // No reliable "settled" event — wait a couple of frames + a short,
+        // row-count-scaled grace period so labels resolve before unblocking.
+        await new Promise<void>((r) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => r()))
+        );
+        await new Promise<void>((r) =>
+          setTimeout(r, Math.min(1200, 250 + positions.length * 60))
+        );
+      }, "Copying to all rows…");
+    },
+    [loading, pushFormSync]
+  );
 
   // ── Row-level mutations for the custom Pre-Screened Candidates table ──
   const addCandidate = () => {
@@ -1569,12 +1644,22 @@ const RequisitionForm = () => {
                 submission={formSubmission}
                 onChange={handleChange}
                 onSubmit={handleSubmit}
+                onFormReady={(instance: any) => {
+                  formInstanceRef.current = instance;
+                }}
               />
               {/* Employee hover cards over the Form.io employee select inputs */}
               <FormEmployeeHoverLayer
                 containerRef={formContainerRef}
                 resolveEmployeeId={resolveEmployeeId}
               />
+              {/* Per-column "copy to all rows" buttons in the Position table */}
+              {currentStep === 2 && (
+                <PositionColumnCopyButtons
+                  containerRef={formContainerRef}
+                  onCopyColumn={copyColumnToAllPositions}
+                />
+              )}
             </div>
 
             {/* ── Position Selection summary bar (totals + bulk vacancy-type toggle) ── */}
