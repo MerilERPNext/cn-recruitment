@@ -683,6 +683,7 @@ const Requisition = () => {
                           <th className="px-4 py-2 text-left">Vacancy Type</th>
                           <th className="px-4 py-2 text-left">Location</th>
                           <th className="px-4 py-2 text-left">Reporting Manager</th>
+                          <th className="px-4 py-2 text-left">Cost Center Allocation</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-150 text-gray-900">
@@ -692,6 +693,41 @@ const Requisition = () => {
                             <td className="px-4 py-2">{pos.vacancy_type}</td>
                             <td className="px-4 py-2">{pos.location_title || "—"}</td>
                             <td className="px-4 py-2">{pos.reporting_manager_title || "—"}</td>
+                            <td className="px-4 py-2 align-top">
+                              {Array.isArray(pos.cost_center_allocations) &&
+                              pos.cost_center_allocations.length > 0 ? (
+                                <table className="min-w-[180px] border border-gray-200 rounded-md overflow-hidden text-xs">
+                                  <thead className="bg-gray-50 text-gray-600 font-semibold">
+                                    <tr>
+                                      <th className="px-2 py-1 text-left border-b border-gray-200">
+                                        Cost Center
+                                      </th>
+                                      <th className="px-2 py-1 text-left border-b border-gray-200">
+                                        Percentage (%)
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-100">
+                                    {pos.cost_center_allocations.map((alloc: any, aIdx: number) => (
+                                      <tr key={aIdx}>
+                                        <td className="px-2 py-1">
+                                          {alloc.cost_center_title || alloc.cost_center || "—"}
+                                        </td>
+                                        <td className="px-2 py-1">
+                                          {alloc.percentage !== undefined &&
+                                          alloc.percentage !== null &&
+                                          alloc.percentage !== ""
+                                            ? `${alloc.percentage}%`
+                                            : "—"}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

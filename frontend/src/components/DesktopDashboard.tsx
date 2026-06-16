@@ -42,12 +42,11 @@ import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
 import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
 import useLogout from "../hooks/useLogout";
 import { useGetUserNotices } from "../hooks/useNotices";
-import { useRequestPasswordReset } from "../hooks/useResetPassword";
 import { useGetUiPermission } from "../hooks/userUiPermission";
 import { useShiftRequestConfig } from "../hooks/useShift";
 import { CustomError } from "../types/attendance";
-import { errorResponseFormater } from "../utils/errorResponseFormater";
 import { formatTimeSafe, formatTo24HourTime } from "../utils/helperUtils";
+import ResetPassword from "./EmployeesDirectory/tools/ResetPassword/ResetPassword";
 import { isActionEnabled } from "../utils/uiPermission";
 import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
@@ -62,7 +61,6 @@ import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
 import NotificationBell from "./Notification/NotificationBell";
 import Button from "./shared/atoms/Button";
 import { Card } from "./shared/atoms/Card";
-import CircularLoader from "./shared/atoms/CircularLoader";
 import { Typography } from "./shared/atoms/Typography";
 import { ViewAll } from "./shared/atoms/ViewAll";
 import Badge from "./shared/Badge";
@@ -104,22 +102,14 @@ export default function DesktopDashboard() {
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || "",
   );
-  const loginUserEmail = currentEmployee?.user_id || "";
-  const mutation = useRequestPasswordReset();
+  // Reset password — open the same modal used in the Employee Directory, which
+  // calls reset_employee_password for the current employee.
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const resetPasswordEmployeeId =
+    currentEmployee?.employee || currentEmployee?.name || "";
   const handleReset = () => {
-    const email = loginUserEmail;
-    mutation.mutate(email, {
-      onSuccess: () => {
-        toast.success("Password reset email sent successfully!");
-      },
-      onError: (error: any) => {
-        const formatedError = errorResponseFormater(
-          error,
-          "Failed to send password reset email!",
-        );
-        toast.error(formatedError);
-      },
-    });
+    setShowProfileDropdown(false);
+    setShowResetPasswordModal(true);
   };
 
   const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
@@ -737,16 +727,9 @@ export default function DesktopDashboard() {
                       fullWidth
                       contentAlign="start"
                       onClick={handleReset}
-                      disabled={mutation.isPending}
                     >
-                      {mutation.isPending ? (
-                        <CircularLoader size="sm" color="blue-500" />
-                      ) : (
-                        <>
-                          <RotateCcwKey className="w-4 h-4" />
-                          Reset Password
-                        </>
-                      )}
+                      <RotateCcwKey className="w-4 h-4" />
+                      Reset Password
                     </Button>
                     <hr className="my-2 border-gray-100" />
                     <Button
@@ -1101,6 +1084,13 @@ export default function DesktopDashboard() {
           <AdvanceForm user={user} onClose={handleCloseAdvanceModal} />
         </Modal>
       )}
+
+      {/* Reset Password modal — same flow/API as the Employee Directory */}
+      <ResetPassword
+        isOpen={showResetPasswordModal}
+        onClose={() => setShowResetPasswordModal(false)}
+        employeeId={resetPasswordEmployeeId}
+      />
     </div>
   );
 }

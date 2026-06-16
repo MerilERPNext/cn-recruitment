@@ -290,6 +290,38 @@ export default function RequisitionReviewStep({
                         </div>
                       )}
                     </div>
+
+                    {Array.isArray((pos as any).cost_center_allocations) &&
+                      (pos as any).cost_center_allocations.length > 0 && (
+                        <div className="space-y-1.5 mt-1">
+                          <span className="text-[14px] text-slate-400 font-medium block">
+                            Cost Center Allocation
+                          </span>
+                          <div className="space-y-1.5">
+                            {(pos as any).cost_center_allocations.map(
+                              (alloc: any, aIdx: number) => (
+                                <div
+                                  key={aIdx}
+                                  className="bg-slate-50 border border-slate-150 rounded-lg p-2 flex justify-between items-center gap-3"
+                                >
+                                  <span className="font-semibold text-slate-800">
+                                    {renderValue(
+                                      alloc.cost_center_title ?? alloc.cost_center,
+                                    )}
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded text-[14px] font-bold bg-blue-50 text-blue-700 border border-blue-100 shrink-0">
+                                    {alloc.percentage !== undefined &&
+                                    alloc.percentage !== null &&
+                                    alloc.percentage !== ""
+                                      ? `${alloc.percentage}%`
+                                      : "—"}
+                                  </span>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      )}
                   </div>
                 ))}
               </div>

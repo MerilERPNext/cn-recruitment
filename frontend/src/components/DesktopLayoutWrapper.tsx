@@ -11,9 +11,7 @@ import { useCurrentEmployee, useCurrentEmployeeDetails } from "../hooks/useEmplo
 import { ROUTES } from "../constants/routes";
 import useCurrentUser from "../hooks/useCurrentUser";
 import useLogout from "../hooks/useLogout";
-import { useRequestPasswordReset } from "../hooks/useResetPassword";
-import { toast } from "react-hot-toast";
-import { errorResponseFormater } from "../utils/errorResponseFormater";
+import ResetPassword from "./EmployeesDirectory/tools/ResetPassword/ResetPassword";
 import ViewingAsBanner from "./ViewingAsBanner";
 import { useTargetUser } from "../context/ViewedUserContext";
 import SearchMembers from "./shared/SearchMembers";
@@ -58,24 +56,14 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       console.error("Logout failed:", error);
     }
   };
-  // reset password logic can be added here
-  const loginUserEmail = currentUser?.email || "";
-  const mutation = useRequestPasswordReset();
+  // Reset password — open the same modal used in the Employee Directory, which
+  // calls reset_employee_password for the current employee.
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const resetPasswordEmployeeId =
+    currentEmployee?.employee || currentEmployee?.name || "";
   const handleReset = () => {
-    const email = loginUserEmail;
-    mutation.mutate(email, {
-      onSuccess: (data) => {
-        toast.success("Password reset email sent successfully!");
-        console.log("Response:", data);
-      },
-      onError: (error: any) => {
-        const formatedError = errorResponseFormater(
-          error,
-          "Failed to send password reset email!",
-        );
-        toast.error(formatedError);
-      },
-    });
+    setShowProfileDropdown(false);
+    setShowResetPasswordModal(true);
   };
 
   const currentUserIsAdmin = currentUser?.roles?.some(
@@ -346,16 +334,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       fullWidth
                       onClick={handleReset}
                       contentAlign="start"
-                      disabled={mutation.isPending}
                     >
-                      {mutation.isPending ? (
-                        "Sending..."
-                      ) : (
-                        <>
-                          <RotateCcwKey className="w-4 h-4" />
-                          Reset Password
-                        </>
-                      )}
+                      <RotateCcwKey className="w-4 h-4" />
+                      Reset Password
                     </Button>
 
                     <hr className="my-2 border-gray-100" />
@@ -394,6 +375,13 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
           )}
         </div>
       </div>
+
+      {/* Reset Password modal — same flow/API as the Employee Directory */}
+      <ResetPassword
+        isOpen={showResetPasswordModal}
+        onClose={() => setShowResetPasswordModal(false)}
+        employeeId={resetPasswordEmployeeId}
+      />
     </div>
   );
 };
