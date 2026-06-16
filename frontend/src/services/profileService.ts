@@ -7,6 +7,7 @@ import {
   EmployeeProfileOverview,
   IDesignationHierarchy,
   IGetEmpDesignationHierarchyCurrentDetails,
+  SalaryStructureAssignmentsResponse,
 } from "../types/employee";
 import FrappeAPI from "../utils/frappeAPI";
 import { FutureTransaction } from "../components/EmployeeProfile/FutureTransactionRowItem";
@@ -435,6 +436,20 @@ export const profileService = {
       }
     );
     return (response as FutureTransaction[]) || [];
+  },
+
+  getSalaryStructureAssignments: async (
+    employee: string,
+  ): Promise<SalaryStructureAssignmentsResponse> => {
+    try {
+      const result = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.salary_structure_assignment.get_salary_structure_assignments",
+        { employee },
+      );
+      return result as SalaryStructureAssignmentsResponse;
+    } catch (e) {
+      throw new Error(`Error fetching salary structure assignments: ${e}`);
+    }
   },
 
   uploadFile: async (
