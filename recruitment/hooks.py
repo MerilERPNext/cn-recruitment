@@ -92,6 +92,7 @@ doctype_js = {
     "Employee Promotion": ["public/js/employee_promotion.js"],
     "Employee": ["public/js/employee.js"],
     "Custom Doctype Fields": ["public/js/custom_doctype_fields.js"],
+    "Candidate Portal User": ["public/js/candidate_portal_user.js"],
     "Exit Interview": ["public/js/exit_interview.js"],
     "Training Event": ["public/js/training_event.js"],
     "Task": ["public/js/task_onboarding_form.js"],

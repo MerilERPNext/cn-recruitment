@@ -18,3 +18,12 @@ export function useTodoCategories() {
     select: (data) => data.filter((cat) => cat.name !== "Uncategorized"),
   });
 }
+
+export function useTodoPendingCount() {
+  return useQuery<number>({
+    queryKey: ["todo-pending-count"],
+    queryFn: () => todoService.getTodoPendingCount(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: true,
+  });
+}

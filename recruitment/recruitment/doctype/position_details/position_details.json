@@ -10,7 +10,8 @@
   "functional_area",
   "replacement_for",
   "reporting_manager",
-  "employee_type"
+  "employee_type",
+  "cost_center_allocations"
  ],
  "fields": [
   {
@@ -58,13 +59,19 @@
    "label": "Employee Type",
    "options": "Employment Type",
    "read_only_depends_on": "doc.custom_type_of_position==\"New\""
+  },
+  {
+   "description": "JSON array of {cost_center, percentage} entries — one position can be split across multiple cost centers (e.g. [{\"cost_center\": \"CC-001\", \"percentage\": 50}, {\"cost_center\": \"CC-002\", \"percentage\": 50}]).",
+   "fieldname": "cost_center_allocations",
+   "fieldtype": "Long Text",
+   "label": "Cost Center Allocations"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-06-01 22:46:45.614209",
+ "modified": "2026-06-15 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Position Details",

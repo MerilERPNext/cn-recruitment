@@ -476,14 +476,22 @@ def get_employee_onboarding_list(
             for row in data:
                 row["field_status_counts"] = counts_by_name.get(row["name"], dict(empty_counts))
 
-        count_result = frappe.get_list(
-            DOCTYPENAME,
-            fields=["count(name) as total_count"],
-            filters=filters,
-            or_filters=or_filters if or_filters else None,
-            page_length=1,
-        )
-        total_count = int((count_result[0] or {}).get("total_count") or 0) if count_result else 0
+        # Count without a SQL-aggregate field. Different Frappe versions accept
+        # only the string form ("count(name)") OR only the dict form
+        # ({"COUNT": ...}) and reject the other, so neither is portable. These
+        # core APIs behave the same across versions.
+        if or_filters:
+            # Search active: db.count doesn't take or_filters, so count the
+            # matching names. Search result sets are small.
+            total_count = len(frappe.get_all(
+                DOCTYPENAME,
+                filters=filters,
+                or_filters=or_filters,
+                fields=["name"],
+                limit_page_length=0,
+            ))
+        else:
+            total_count = frappe.db.count(DOCTYPENAME, filters=filters or None)
 
         return _success_response(
             "Employee onboarding list fetched successfully.",

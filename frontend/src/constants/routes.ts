@@ -6,4 +6,5 @@ export const ROUTES = {
   HELP_DESK: "/helpdesk/my-tickets",
   HELP_DESK_ADMIN: "/helpdesk",
   HELP_DESK_INTERNAL: "/webapp/helpdesk",
+  EMPLOYEE_DOCUMENTS: "/webapp/employee-documents",
 };

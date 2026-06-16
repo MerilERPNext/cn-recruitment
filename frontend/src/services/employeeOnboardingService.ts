@@ -107,3 +107,31 @@ export async function updateSelectedFieldsApprovalStatus(
     }
   );
 }
+
+/**
+ * Send back to candidate (email trigger) — notify candidate of rejected fields.
+ * Returns: { status, rejected_count, comments }
+ */
+export async function sendBackToCandidate(
+  onboardingName: string
+): Promise<{ status: string; rejected_count?: number; comments?: string[] }> {
+  const res = await FrappeAPI.callMethod(
+    "homefirst_customs.api.onboarding_automation.send_back_to_candidate",
+    { onboarding_name: onboardingName }
+  );
+  return res as { status: string; rejected_count?: number; comments?: string[] };
+}
+
+/**
+ * Approve the whole onboarding form (email trigger).
+ * Returns: { status }
+ */
+export async function approveOnboardingForm(
+  onboardingName: string
+): Promise<{ status: string }> {
+  const res = await FrappeAPI.callMethod(
+    "homefirst_customs.api.onboarding_automation.approve_onboarding_form",
+    { onboarding_name: onboardingName }
+  );
+  return res as { status: string };
+}

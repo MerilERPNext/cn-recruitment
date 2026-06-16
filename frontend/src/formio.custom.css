@@ -186,6 +186,67 @@ chatnext-app.field-required::after {
   border-radius: 4px 0 0 4px !important;
 }
 
+/* Dropdown options: show the FULL option text on a single line — no ellipsis
+   ("…") and no wrapping/breaking. The fields are widened below so the text fits
+   instead of breaking onto multiple lines. */
+[data-testid="formioContainer"] .choices__list--dropdown .choices__item,
+[data-testid="formioContainer"] .choices__list[aria-expanded] .choices__item {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: normal !important;
+}
+
+/* Position Details table: allow horizontal scrolling so the columns can keep
+   their full width instead of squashing the dropdown content. */
+[data-testid="formioContainer"] .formio-component-positions {
+  overflow-x: auto;
+}
+/* Only the OUTER positions table gets the wide min-width (so its columns don't
+   squash). The `> .table-responsive > table` / `> table` direct path keeps this
+   off the nested Cost Center child table, which must stay small. */
+[data-testid="formioContainer"] .formio-component-positions > table,
+[data-testid="formioContainer"] .formio-component-positions > .table-responsive > table {
+  min-width: 2250px;
+}
+
+/* Widen the position select columns so the selected value / dropdown data does
+   not break onto multiple lines. Keyed to the top-level position fields only. */
+[data-testid="formioContainer"] .formio-component-positions .formio-component-location,
+[data-testid="formioContainer"] .formio-component-positions .formio-component-functional_area,
+[data-testid="formioContainer"] .formio-component-positions .formio-component-reporting_manager,
+[data-testid="formioContainer"] .formio-component-positions .formio-component-replacement_for {
+  min-width: 230px;
+}
+[data-testid="formioContainer"] .formio-component-positions .formio-component-vacancy_type {
+  min-width: 150px;
+}
+
+/* Keep the Cost Center allocation child table small — never let the outer
+   table's wide min-width leak into it, and cap its column widths. */
+[data-testid="formioContainer"] .formio-component-positions .formio-component-cost_center_allocations {
+  min-width: 240px;
+  max-width: 280px;
+}
+[data-testid="formioContainer"] .formio-component-cost_center_allocations table {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+[data-testid="formioContainer"] .formio-component-cost_center_allocations .formio-component-cost_center {
+  min-width: 110px;
+}
+[data-testid="formioContainer"] .formio-component-cost_center_allocations .formio-component-percentage {
+  min-width: 70px;
+  max-width: 90px;
+}
+/* Cost Center child table must NOT scroll — only the outer positions table is
+   scrollable. Kill the horizontal scroll on the child's responsive wrapper
+   (and the component itself) without changing its width. */
+[data-testid="formioContainer"] .formio-component-cost_center_allocations,
+[data-testid="formioContainer"] .formio-component-cost_center_allocations .table-responsive {
+  overflow-x: visible !important;
+}
+
 @media (max-width: 768px) {
 
   /* Mobile stacked layout for datagrids */

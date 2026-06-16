@@ -587,6 +587,11 @@ const AssignmentDetailsPage = lazyWithRetry(
   "AssignmentDetailsPage",
 );
 
+const EmployeeDocumentsPage = lazyWithRetry(
+  () => import("./components/EmployeeDocuments/EmployeeDocumentsPage"),
+  "EmployeeDocumentsPage",
+);
+
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -1605,6 +1610,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/recognition/leaderboard",
     element: <LeaderboardPage />,
     permissionKey: "Recognition",
+  },
+  {
+    path: "/webapp/employee-documents",
+    element: <EmployeeDocumentsPage />,
+    permissionKey: "Employee Documents",
   },
 ];
 

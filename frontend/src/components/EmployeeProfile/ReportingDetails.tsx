@@ -23,7 +23,6 @@ import { useLoadingOverlay } from "../../context/OverlayContext";
 import toast from "react-hot-toast";
 
 const CATEGORY_FIELD_MAP: Record<string, string> = {
-  "Reports To": "reports_to",
   "Manager": "reports_to",
   "Dotted Line Manager": "custom_dotted_line_manager",
   "HOD": "custom_hod",

@@ -211,22 +211,21 @@ const FlowTableRow = ({
           {formatToIndianDate(stage.completion_date || "") || "-"}
         </Typography>
       </div>
-      <div className={`flex items-center justify-center `}>
-        <MyApprovalActionPill
-          uiPermission={{
-            app: "HR Process",
-            page: "Flow Requests",
-            actionKeysMap: {
-              nudge: "nudge",
-            }
-          }}
-
-          todoId={stage?.todo?.name }
-         
-        />
-        </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <>
+          <MyApprovalActionPill
+            uiPermission={{
+              app: "HR Process",
+              page: "Flow Requests",
+              actionKeysMap: {
+                nudge: "nudge",
+              }
+            }}
+
+            isPendingStatus={stage.status === "Pending"}
+            todoId={stage?.todo?.name}
+
+          />
           {(stage?.approval_response_data_display ||
             stage?.approval_response_data) && (
               <Button variant="outline" onClick={handleShowForm}>

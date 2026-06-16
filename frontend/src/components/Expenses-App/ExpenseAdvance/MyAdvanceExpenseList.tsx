@@ -214,6 +214,7 @@ const MyAdvanceExpenseList = () => {
               },
             }}
 
+            isPendingStatus={(item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2 ? "Revoked" : item?.reference_document?.custom_final_status) === "Pending"}
             todoId={item?.todo_id}
             canEdit={canEdit && !isActed}
             onEdit={() => handleEditClick(item)}
@@ -363,6 +364,7 @@ const MyAdvanceExpenseList = () => {
                   },
                 }}
 
+                isPendingStatus={(item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2 ? "Revoked" : item?.reference_document?.custom_final_status) === "Pending"}
                 todoId={item?.todo_id}
                 variant="buttons"
                 canEdit={canEdit && !isActed}

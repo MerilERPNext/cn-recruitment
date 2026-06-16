@@ -67,9 +67,7 @@ export default function PasswordReset() {
                 toast.success("Password reset successfully!");
                 setNewPassword("");
                 setConfirmPassword("");
-                if (res?.success === true) {
-                  window.location.href = "/login?redirect-to=%2Fwebapp";
-                }
+            
               },
               onError: () => {
                 toast.error("Failed to reset password!");

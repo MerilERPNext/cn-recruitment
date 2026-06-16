@@ -154,9 +154,10 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
                 actionKeysMap: {
                   edit: "edit_shift_request",
                   revoke: "revoke_shift_request",
-                  nudge:"nudge"
+                  nudge: "nudge"
                 }
               }}
+              isPendingStatus={badgeStatus === "Pending" || badgeStatus === "Draft"}
               todoId={data?.todo_id}
               canEdit={canEdit}
               canRevoke={canRevoke}
@@ -226,12 +227,12 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
                 {getAssignedUsersCell(data)}
               </Typography>
             </div>
-              <div>
-                <Typography variant="mobileCardLabel">Sendback Comment</Typography>
-                <Typography variant="mobileCardValue" className="text-gray-700">
-                  {data?.send_back_comment || "--"}
-                </Typography>
-              </div>
+            <div>
+              <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+              <Typography variant="mobileCardValue" className="text-gray-700">
+                {data?.send_back_comment || "--"}
+              </Typography>
+            </div>
             {/* Actions */}
             <div className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
@@ -241,9 +242,10 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
                   actionKeysMap: {
                     edit: "edit_shift_request",
                     revoke: "revoke_shift_request",
-                    nudge:"nudge"
+                    nudge: "nudge"
                   }
                 }}
+                isPendingStatus={badgeStatus === "Pending"}
                 todoId={data?.todo_id}
                 variant="buttons"
                 canEdit={canEdit}

@@ -53,6 +53,7 @@
             "key": "department",
             "type": "select",
             "input": true,
+            "multiple": true,
             "placeholder": "Select Departments",
             "dataSrc": "url",
             "data": {
@@ -70,6 +71,8 @@
             "key": "employment_type",
             "type": "select",
             "input": true,
+            "multiple": true,
+            "customClass": "mb-4",
             "placeholder": "Select Employee Type",
             "dataSrc": "url",
             "data": {
@@ -85,6 +88,7 @@
             "key": "branch",
             "type": "select",
             "input": true,
+            "multiple": true,
             "placeholder": "Select Current Office Location",
             "customClass": "mb-4",
             "dataSrc": "url",
@@ -103,6 +107,7 @@
             "key": "custom_business_unit",
             "type": "select",
             "input": true,
+            "multiple": true,
             "placeholder": "Select Business Unit",
             "customClass": "mb-4",
             "dataSrc": "url",

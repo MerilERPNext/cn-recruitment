@@ -9,7 +9,13 @@
   "enable_statutory_forms_button",
   "automation_section",
   "enable_auto_manager_mapping",
-  "enable_doj_outcome_automation"
+  "enable_doj_outcome_automation",
+  "review_section",
+  "enable_onboarding_review_actions",
+  "candidate_journey_section",
+  "onboarding_journey_title",
+  "onboarding_journey_subtitle",
+  "onboarding_journey"
  ],
  "fields": [
   {
@@ -42,6 +48,43 @@
    "fieldname": "enable_doj_outcome_automation",
    "fieldtype": "Check",
    "label": "Automate DOJ Outcome (Joined / Not Joined / Postponed)"
+  },
+  {
+   "fieldname": "review_section",
+   "fieldtype": "Section Break",
+   "label": "Onboarding Review Actions"
+  },
+  {
+   "default": "0",
+   "description": "When enabled, HR can Approve the onboarding form or Send Back rejected fields to the candidate — from the Employee Onboarding desk form AND the portal UI. These actions drive the Flow Config emails (Form Approved / Updates Needed). Leave OFF for projects that don't use this review flow. Per-site setting, so enable only on the one project's site.",
+   "fieldname": "enable_onboarding_review_actions",
+   "fieldtype": "Check",
+   "label": "Enable Onboarding Review Actions (Approve / Send Back)"
+  },
+  {
+   "fieldname": "candidate_journey_section",
+   "fieldtype": "Section Break",
+   "label": "Candidate Portal — \"After you're onboarded\""
+  },
+  {
+   "default": "After you're onboarded",
+   "description": "Heading shown above the onboarding journey on the candidate portal.",
+   "fieldname": "onboarding_journey_title",
+   "fieldtype": "Data",
+   "label": "Journey Heading"
+  },
+  {
+   "description": "Sub-heading shown under the journey heading (e.g. \"Your first two weeks — at a glance.\").",
+   "fieldname": "onboarding_journey_subtitle",
+   "fieldtype": "Small Text",
+   "label": "Journey Sub-heading"
+  },
+  {
+   "description": "Define the post-joining journey steps once here; they surface on every candidate portal via get_candidate_portal_form.",
+   "fieldname": "onboarding_journey",
+   "fieldtype": "Table",
+   "label": "Onboarding Journey Steps",
+   "options": "Onboarding Journey Step"
   }
  ],
  "index_web_pages_for_search": 1,

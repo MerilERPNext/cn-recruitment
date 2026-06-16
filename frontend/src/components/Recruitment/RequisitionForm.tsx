@@ -7,11 +7,14 @@ import {
   FormSchemaKeys,
 } from "./requisitionFormSchemas";
 import RequisitionReviewStep from "./RequisitionReviewStep";
+import FormEmployeeHoverLayer from "./FormEmployeeHoverLayer";
+import PositionColumnCopyButtons from "./PositionColumnCopyButtons";
 import Button from "../shared/atoms/Button";
 import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails, useFileUpload } from "../../hooks/useEmployee";
 import { useDeleteDocument } from "../../hooks/payroll/UseDeleteDocuemt";
 import { useCreateJobRequisition } from "../../hooks/useRecruitment";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 import {
   JobRequisitionFormData,
   CreateJobRequisitionPayload,
@@ -40,6 +43,8 @@ const stepValidationRules: Record<number, { key: string; label: string }[]> = {
     { key: "salary_min", label: "Salary Range (Min)" },
     { key: "salary_max", label: "Salary Range (Max)" },
     { key: "salary_timeframe", label: "Salary Timeframe" },
+    { key: "expected_by", label: "Expected By Date" },
+    { key: "employment_type", label: "Employment Type" },
     { key: "location", label: "Location" },
   ],
   2: [
@@ -81,12 +86,43 @@ function validateStep(
       if (!pos.location) {
         errors.push(`Position ${i + 1}: Location is required.`);
       }
+      if (!pos.functional_area) {
+        errors.push(`Position ${i + 1}: Functional Area is required.`);
+      }
       if (!pos.reporting_manager) {
         errors.push(`Position ${i + 1}: Reporting Manager is required.`);
       }
       if (pos.vacancy_type === "Replacement" && !pos.replacement_for) {
         errors.push(`Position ${i + 1}: Replacement for is required.`);
       }
+
+      // Cost Center Allocation: each position must have at least one allocation
+      // with a cost center, and any partially-filled allocation row must be
+      // completed (both Cost Center and Percentage).
+      const allocations: any[] = Array.isArray(pos.cost_center_allocations)
+        ? pos.cost_center_allocations
+        : [];
+      const isFilled = (v: any) =>
+        v !== undefined && v !== null && v !== "";
+      const hasAllocation = allocations.some((a) => a && isFilled(a.cost_center));
+      if (!hasAllocation) {
+        errors.push(`Position ${i + 1}: Cost Center Allocation is required.`);
+      }
+      allocations.forEach((a, j) => {
+        if (!a) return;
+        const hasCC = isFilled(a.cost_center);
+        const hasPct = isFilled(a.percentage);
+        if (hasCC && !hasPct) {
+          errors.push(
+            `Position ${i + 1} (Allocation ${j + 1}): Percentage is required.`
+          );
+        }
+        if (!hasCC && hasPct) {
+          errors.push(
+            `Position ${i + 1} (Allocation ${j + 1}): Cost Center is required.`
+          );
+        }
+      });
     });
   }
 
@@ -172,6 +208,8 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
 
       replacement_for: p.replacement_for,
       replacement_for_title: p.replacement_for_title,
+
+      cost_center_allocations: p.cost_center_allocations,
     })),
 
     // Requirements
@@ -242,7 +280,13 @@ function enableUrlSelectLabels(
       // loading them fires the request on mount with an empty parent value
       // (…&company=&disabled=0). Keeping them lazy means they only fetch once
       // their parent is set, via the refreshOn wiring.
-      if ((!insideGrid || eagerGrid) && !next.refreshOn) next.lazyLoad = false;
+      // EXCEPTION 2: honor an explicit `lazyLoad: true` from the schema. Selects
+      // in a *nested* repeating grid (e.g. Cost Center inside each position's
+      // Cost Center Allocation table) must stay lazy — eager-loading rebuilds &
+      // re-fetches every row's widget on each "Add Row", which flashes/resets
+      // the already-filled rows.
+      if ((!insideGrid || eagerGrid) && !next.refreshOn && next.lazyLoad !== true)
+        next.lazyLoad = false;
       if (!next.searchField) next.searchField = "search_text";
     }
     // Selects nested in a datagrid/editgrid are repeated per row — flag them so
@@ -447,6 +491,21 @@ const RequisitionForm = () => {
   const location = useLocation();
   const queryClient = useQueryClient();
 
+  // Refetch the Requisition list after create/update. DataListView (fetchFunction
+  // mode) nests its list key as [["job-requisitions", <employee>], "pagination",
+  // ...], so we wrap the key one level deep for React Query's partial matcher to
+  // hit it, and use refetchType: "all" so it refetches even though the list is
+  // unmounted while we're on this form.
+  const invalidateRequisitionList = () => {
+    queryClient.invalidateQueries({
+      queryKey: [["job-requisitions"]],
+      refetchType: "all",
+    });
+  };
+
+  // Full-page blocking loader (used while a column copy reflects across rows).
+  const loading = useLoadingOverlay();
+
   // Detect edit mode from navigation state
   const existingRequisition: any | null = (location.state as any)?.requisition ?? null;
   const isEditMode = Boolean(existingRequisition);
@@ -472,6 +531,25 @@ const RequisitionForm = () => {
   // when the step changes. `formSyncTick` bumps to request such a push.
   const formDataRef = useRef(formData);
   formDataRef.current = formData;
+
+  // Employee hover-card support for the Form.io employee <select> inputs.
+  // Resolves the selected employee id from the live form data: top-level fields
+  // (hiring_manager / hiring_lead) read directly, position-row fields
+  // (reporting_manager / replacement_for) read from positions[rowIndex].
+  const formContainerRef = useRef<HTMLDivElement | null>(null);
+  // Live Form.io instance (via onFormReady) — used to set datagrid cell values
+  // in place (fast) instead of re-feeding the whole submission (slow).
+  const formInstanceRef = useRef<any>(null);
+  const resolveEmployeeId = useCallback(
+    (fieldKey: string, rowIndex: number | null): string | undefined => {
+      const data: any = formDataRef.current;
+      if (rowIndex != null) {
+        return data?.positions?.[rowIndex]?.[fieldKey];
+      }
+      return data?.[fieldKey];
+    },
+    []
+  );
   const [formSyncTick, setFormSyncTick] = useState(0);
   const pushFormSync = useCallback(() => setFormSyncTick((t) => t + 1), []);
   const formSubmission = useMemo(
@@ -586,6 +664,73 @@ const RequisitionForm = () => {
     // reflects the bulk vacancy-type change.
     pushFormSync();
   };
+
+  // ── Copy one position column's value (first filled row) into all rows ──
+  const copyColumnToAllPositions = useCallback(
+    (fieldKey: string) => {
+      const positions: any[] = formDataRef.current?.positions || [];
+      if (positions.length === 0) return;
+
+      // Source = first row that has a non-empty value in this column.
+      let srcVal: any;
+      let srcTitle: any;
+      let found = false;
+      for (const p of positions) {
+        const v = p?.[fieldKey];
+        if (v !== undefined && v !== null && v !== "") {
+          srcVal = v;
+          srcTitle = p?.[`${fieldKey}_title`];
+          found = true;
+          break;
+        }
+      }
+      if (!found) return;
+
+      // Keep React form data (value + title) in sync — does NOT redraw form.io
+      // (submission identity unchanged), so it's cheap.
+      const syncFormData = () =>
+        setFormData((prev: any) => {
+          const next = (prev.positions || []).map((p: any) => ({
+            ...p,
+            [fieldKey]: srcVal,
+            ...(srcTitle !== undefined ? { [`${fieldKey}_title`]: srcTitle } : {}),
+          }));
+          return { ...prev, positions: next };
+        });
+
+      // Block the page with a loader while values apply + the grid settles,
+      // then reveal the updated form.
+      loading?.wrap(async () => {
+        // Fast path: set each existing cell value in place on the live form.io
+        // instance — updates only the changed cells, no full grid rebuild.
+        const dg = formInstanceRef.current?.getComponent?.("positions");
+        const rows: any[] = dg?.rows;
+        if (dg && Array.isArray(rows) && rows.length > 0) {
+          rows.forEach((row: any) => {
+            const comp = row?.[fieldKey];
+            if (comp && typeof comp.setValue === "function") {
+              comp.setValue(srcVal, { modified: false });
+            }
+          });
+          syncFormData();
+        } else {
+          // Fallback (instance not ready): re-feed submission (slower redraw).
+          syncFormData();
+          pushFormSync();
+        }
+
+        // No reliable "settled" event — wait a couple of frames + a short,
+        // row-count-scaled grace period so labels resolve before unblocking.
+        await new Promise<void>((r) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => r()))
+        );
+        await new Promise<void>((r) =>
+          setTimeout(r, Math.min(1200, 250 + positions.length * 60))
+        );
+      }, "Copying to all rows…");
+    },
+    [loading, pushFormSync]
+  );
 
   // ── Row-level mutations for the custom Pre-Screened Candidates table ──
   const addCandidate = () => {
@@ -1183,6 +1328,10 @@ const RequisitionForm = () => {
         reporting_manager: pos.reporting_manager,
         functional_area: pos.functional_area,
         replacement_for: pos.vacancy_type === "Replacement" ? pos.replacement_for : undefined,
+        cost_center_allocations: (pos.cost_center_allocations || []).map((a: any) => ({
+          cost_center: a.cost_center,
+          percentage: a.percentage,
+        })),
       })),
       // ── Attachment URL (uploaded via useFileUpload, same as Invoice.tsx) ──
     };
@@ -1205,7 +1354,7 @@ const RequisitionForm = () => {
           }
         );
         toast.success("Requisition updated successfully!");
-        queryClient.invalidateQueries({ queryKey: ["job-requisitions"] });
+        invalidateRequisitionList();
         navigate("/webapp/recruitment/requisition");
       } catch (error: any) {
         console.error("Error updating job requisition:", error);
@@ -1217,6 +1366,7 @@ const RequisitionForm = () => {
       try {
         await createJobRequisition.mutateAsync(payload);
         toast.success("Job requisition created successfully!");
+        invalidateRequisitionList();
         navigate("/webapp/recruitment/requisition");
       } catch (error) {
         console.error("Error  creating job requisition:", error);
@@ -1488,12 +1638,29 @@ const RequisitionForm = () => {
               </div>
             )}
 
-            <Form
-              form={currentSchema}
-              submission={formSubmission}
-              onChange={handleChange}
-              onSubmit={handleSubmit}
-            />
+            <div ref={formContainerRef} className="relative">
+              <Form
+                form={currentSchema}
+                submission={formSubmission}
+                onChange={handleChange}
+                onSubmit={handleSubmit}
+                onFormReady={(instance: any) => {
+                  formInstanceRef.current = instance;
+                }}
+              />
+              {/* Employee hover cards over the Form.io employee select inputs */}
+              <FormEmployeeHoverLayer
+                containerRef={formContainerRef}
+                resolveEmployeeId={resolveEmployeeId}
+              />
+              {/* Per-column "copy to all rows" buttons in the Position table */}
+              {currentStep === 2 && (
+                <PositionColumnCopyButtons
+                  containerRef={formContainerRef}
+                  onCopyColumn={copyColumnToAllPositions}
+                />
+              )}
+            </div>
 
             {/* ── Position Selection summary bar (totals + bulk vacancy-type toggle) ── */}
             {currentStep === 2 && (() => {

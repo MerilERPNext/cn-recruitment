@@ -263,9 +263,11 @@ const EmpLeaveRequestCard = ({
                   revoke: "revoke",
                   replace: "replace",
                   edit: "edit",
-                  nudge:"nudge"
+                  nudge: "nudge"
                 }
               }}
+
+              isPendingStatus={data?.reference_document?.status === "Open" || data?.reference_document?.status === "Pending"}
               todoId={data?.todo_id}
               canRevoke={
                 ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && !isActed
@@ -393,9 +395,10 @@ const EmpLeaveRequestCard = ({
                     revoke: "revoke",
                     replace: "replace",
                     edit: "edit",
-                    nudge:"nudge"
+                    nudge: "nudge"
                   }
                 }}
+                isPendingStatus={data?.reference_document?.status === "Open" || data?.reference_document?.status === "Pending"}
                 todoId={data?.todo_id}
                 variant="buttons"
                 canRevoke={

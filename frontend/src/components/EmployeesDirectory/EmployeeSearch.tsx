@@ -17,7 +17,10 @@ import formatToIndianDate from "../../utils/formatToIndianDate";
 export interface EmployeeDirectoryFilterData {
   employee_status?: string;
   company?: string | string[];
-  departments?: string;
+  department?: string | string[];
+  employment_type?: string | string[];
+  branch?: string | string[];
+  custom_business_unit?: string | string[];
   [key: string]: string | string[] | number | boolean | undefined;
 }
 
@@ -133,7 +136,6 @@ const EmployeeSearch = ({
       "image",
       "custom_weekly_off",
       "user_id",
-      "custom_designation_name",
       "designation",
       "department",
       "branch",
@@ -154,12 +156,27 @@ const EmployeeSearch = ({
   // so users see their reportees immediately without search+select+apply.
   // Also resets to full list when the user clears their search selection.
   const dataIds = data.map((emp) => emp.name).join(",");
+
+  const hasNonStatusFilters = Object.keys(activeFilters).some(
+    (key) => key !== 'status' &&
+      activeFilters[key] !== undefined &&
+      activeFilters[key] !== null &&
+      activeFilters[key] !== "" &&
+      (!Array.isArray(activeFilters[key]) || (activeFilters[key] as string[]).length > 0)
+  );
+
   useEffect(() => {
     if (activeTab === 'my_reportees' && appliedSearchEmployees.length === 0) {
       setEmployees(data);
+    } else if (activeTab === 'directory' && appliedSearchEmployees.length === 0) {
+      if (hasNonStatusFilters) {
+        setEmployees(data);
+      } else {
+        setEmployees([]);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, dataIds, setEmployees, appliedSearchEmployees]);
+  }, [activeTab, dataIds, setEmployees, appliedSearchEmployees, hasNonStatusFilters]);
 
   const handleFilterUpdate = (data: EmployeeDirectoryFilterData) => {
     setActiveFilters(data);
@@ -187,6 +204,8 @@ const EmployeeSearch = ({
     // On the reportees tab, applying an empty selection should show all reportees
     if (activeTab === 'my_reportees' && pendingEmployees.length === 0) {
       setEmployees(data);
+    } else if (activeTab === 'directory' && pendingEmployees.length === 0) {
+      setEmployees(hasNonStatusFilters ? data : []);
     } else {
       setEmployees(pendingEmployees);
     }
@@ -284,13 +303,13 @@ const EmployeeSearch = ({
               <Button key={key} variant="soft" size="sm">
                 <span className="font-medium text-gray-500">{label}:</span>
                 <span>
-                  {Array.isArray(value) 
-                    ? value.join(", ") 
+                  {Array.isArray(value)
+                    ? value.join(", ")
                     : (key === "doj_from" || key === "doj_to"
-                        ? formatToIndianDate(String(value))
-                        : key === "employee_self_service"
-                            ? (value === 1 || value === "1" || value === true || value === "Yes" ? "Yes" : "No")
-                            : String(value))}
+                      ? formatToIndianDate(String(value))
+                      : key === "employee_self_service"
+                        ? (value === 1 || value === "1" || value === true || value === "Yes" ? "Yes" : "No")
+                        : String(value))}
                 </span>
                 <span
                   role="button"

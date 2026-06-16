@@ -17,6 +17,7 @@ import {
   EmployeeListItem,
   EmployeeNode,
   EmployeePreviousDetailsResponse,
+  SalaryStructureAssignmentsResponse,
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
 import { AddressInfoData } from "../types/profile";
@@ -566,6 +567,15 @@ export const useGetEmployeePreviousDetails = (employee_id: string) => {
   return useQuery<EmployeePreviousDetailsResponse | null>({
     queryKey: ["employee-previous-details", employee_id],
     queryFn: () => profileService.getEmployeePreviousDetails(employee_id),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee_id,
+  });
+};
+
+export const useGetSalaryStructureAssignments = (employee_id: string) => {
+  return useQuery<SalaryStructureAssignmentsResponse>({
+    queryKey: ["salary-structure-assignments", employee_id],
+    queryFn: () => profileService.getSalaryStructureAssignments(employee_id),
     staleTime: 1000 * 60 * 5,
     enabled: !!employee_id,
   });

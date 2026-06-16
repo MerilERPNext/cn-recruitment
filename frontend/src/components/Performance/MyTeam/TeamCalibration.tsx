@@ -1,13 +1,19 @@
-import { Check, ChevronDown } from "lucide-react";
+import { Check } from "lucide-react";
 import React from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Avatar from "../../shared/Avatar";
 import Button from "../../shared/atoms/Button";
+import CardTable from "../../shared/CardTable";
+import CustomDropdown from "../../shared/CustomDropdown";
+import DataListView from "../../DataListView";
+import { Typography } from "../../shared/atoms/Typography";
 import { CALIBRATION_EMPLOYEES, DISTRIBUTION } from "./mockData";
+import type { FrappePageResponse } from "../../../types/frappe";
+import type { CalibrationEmployee, PerfRating } from "./types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const getRatingColor = (rating: any) => {
+const getRatingColor = (rating: PerfRating) => {
   switch (rating) {
     case "Outstanding":
     case "Exceeds":
@@ -27,20 +33,55 @@ const getRatingColor = (rating: any) => {
   }
 };
 
-const RatingCell = ({ rating }: { rating: any }) => {
-  if (rating === "-") return <span className="text-gray-400 font-bold">—</span>;
+const RATING_OPTIONS = [
+  { label: "Outstanding", value: "Outstanding" },
+  { label: "Exceeds", value: "Exceeds" },
+  { label: "Meets", value: "Meets" },
+  { label: "Below", value: "Below" },
+  { label: "Unsatisfactory", value: "Unsatisfactory" },
+];
 
-  const { text, dot, bg } = getRatingColor(rating);
+const RatingCell = ({ rating }: { rating: PerfRating }) => {
+  if (rating === "-") {
+    return (
+      <Typography variant="bodySmall" className="font-bold text-gray-400">
+        —
+      </Typography>
+    );
+  }
+
+  const { text, bg } = getRatingColor(rating);
 
   return (
     <div
-      className={`flex items-center gap-1.5 ${text} ${bg} font-bold text-xs px-2 py-0.5 rounded-xl w-fit`}
+      className={`flex items-center ${text} ${bg} font-bold text-xs px-2 py-0.5 rounded-xl w-fit`}
     >
-      <div className={`w-1.5 h-1.5 rounded-xl ${dot}`} />
-      {rating}
+      <Typography variant="label" className={text}>
+        {rating}
+      </Typography>
     </div>
   );
 };
+
+const CALIBRATION_TABLE_TITLES = [
+  "Employee",
+  "FY24",
+  "FY25",
+  "Self",
+  "Peer Avg",
+  "My Proposal",
+  "9-Box",
+];
+
+const CALIBRATION_TABLE_COLUMN_WIDTHS = [
+  "minmax(260px, 2fr)",
+  "minmax(120px, 0.9fr)",
+  "minmax(140px, 1fr)",
+  "minmax(160px, 1.1fr)",
+  "minmax(160px, 1.1fr)",
+  "minmax(150px, 1fr)",
+  "minmax(110px, 0.8fr)",
+];
 
 const NineBox = ({ highlight }: { highlight: [number, number] }) => (
   <div className="grid grid-cols-3 gap-[2px] w-[28px] h-[28px]">
@@ -62,11 +103,194 @@ const NineBox = ({ highlight }: { highlight: [number, number] }) => (
   </div>
 );
 
+interface CalibrationEmployeeItemProps {
+  item: CalibrationEmployee;
+  onProposalChange: (employeeId: string, value: PerfRating) => void;
+}
+
+const CalibrationEmployeeItem = ({
+  item: emp,
+  onProposalChange,
+}: CalibrationEmployeeItemProps) => {
+  const { isDesktop } = useScreenSize();
+  const handleProposalChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    onProposalChange(emp.id, event.target.value as PerfRating);
+  };
+
+  if (!isDesktop) {
+    return (
+      <div className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl mt-2 w-full">
+        <div className="p-4 flex items-start gap-3 w-full">
+          <Avatar
+            name={emp.name}
+            fontSize="text-xs"
+            size="h-9 w-9"
+            avatarBgColor="bg-blue-50"
+            avatarTextColor="text-blue-600"
+          />
+          <div className="min-w-0 flex-1">
+            <Typography variant="mobileCardTitle" className="break-words">
+              {emp.name}
+            </Typography>
+            <Typography variant="mobileCardSubtitle" className="block">
+              {emp.role}
+            </Typography>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="min-w-0">
+                <Typography variant="mobileCardLabel" className="block">
+                  FY24
+                </Typography>
+                <RatingCell rating={emp.fy24} />
+              </div>
+              <div className="min-w-0">
+                <Typography variant="mobileCardLabel" className="block">
+                  FY25
+                </Typography>
+                <RatingCell rating={emp.fy25} />
+              </div>
+              <div className="min-w-0">
+                <Typography variant="mobileCardLabel" className="block">
+                  Self
+                </Typography>
+                <RatingCell rating={emp.self} />
+              </div>
+              <div className="min-w-0">
+                <Typography variant="mobileCardLabel" className="block">
+                  Peer Avg
+                </Typography>
+                <RatingCell rating={emp.peerAvg} />
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-end justify-between gap-3 border-t border-slate-100 pt-4">
+              <div className="min-w-0">
+                <Typography variant="mobileCardLabel" className="block">
+                  My Proposal
+                </Typography>
+                <CustomDropdown
+                  value={emp.myProposal}
+                  onChange={handleProposalChange}
+                  options={RATING_OPTIONS}
+                  position="bottom-right"
+                  className="mt-1 [&>button]:w-36 [&>button]:justify-between"
+                  menuClassName="w-40 min-w-0"
+                />
+              </div>
+              <div className="shrink-0 text-right">
+                <Typography variant="mobileCardLabel" className="block">
+                  9-Box
+                </Typography>
+                <div className="mt-1 flex justify-end">
+                  <NineBox highlight={emp.gridHighlight} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="grid min-h-20 items-center gap-4 border-b border-gray-100 px-6 py-5 transition-colors hover:bg-primary/10"
+      style={{
+        gridTemplateColumns: CALIBRATION_TABLE_COLUMN_WIDTHS.join(" "),
+      }}
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <Avatar
+          name={emp.name}
+          fontSize="text-xs"
+          size="h-8 w-8"
+          avatarBgColor="bg-blue-50"
+          avatarTextColor="text-blue-600"
+        />
+        <div className="flex min-w-0 flex-col">
+          <Typography
+            variant="bodySmall"
+            className="truncate font-bold leading-tight text-gray-900"
+          >
+            {emp.name}
+          </Typography>
+          <Typography
+            variant="caption"
+            className="mt-[1px] block truncate text-gray-500"
+          >
+            {emp.role}
+          </Typography>
+        </div>
+      </div>
+
+      <div className="flex justify-center">
+        <RatingCell rating={emp.fy24} />
+      </div>
+      <div className="flex justify-center">
+        <RatingCell rating={emp.fy25} />
+      </div>
+      <div className="flex justify-center">
+        <RatingCell rating={emp.self} />
+      </div>
+      <div className="flex justify-center">
+        <RatingCell rating={emp.peerAvg} />
+      </div>
+
+      <div className="flex justify-center">
+        <CustomDropdown
+          value={emp.myProposal}
+          onChange={handleProposalChange}
+          options={RATING_OPTIONS}
+          position="bottom-right"
+          className="[&>button]:w-36 [&>button]:justify-between"
+          menuClassName="w-40 min-w-0"
+        />
+      </div>
+
+      <div className="flex justify-center">
+        <NineBox highlight={emp.gridHighlight} />
+      </div>
+    </div>
+  );
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const TeamCalibration: React.FC = () => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
+  const [proposals, setProposals] = React.useState<Record<string, PerfRating>>(
+    () =>
+      CALIBRATION_EMPLOYEES.reduce<Record<string, PerfRating>>(
+        (acc, employee) => {
+          acc[employee.id] = employee.myProposal;
+          return acc;
+        },
+        {},
+      ),
+  );
+  const calibrationEmployees = React.useMemo(
+    () =>
+      CALIBRATION_EMPLOYEES.map((employee) => ({
+        ...employee,
+        myProposal: proposals[employee.id] ?? employee.myProposal,
+      })),
+    [proposals],
+  );
+  const handleProposalChange = React.useCallback(
+    (employeeId: string, value: PerfRating) => {
+      setProposals((prev) => ({ ...prev, [employeeId]: value }));
+    },
+    [],
+  );
+  const fetchEmployees = React.useCallback(async (): Promise<FrappePageResponse> => {
+    return {
+      data: calibrationEmployees as unknown as FrappePageResponse["data"],
+      totalCount: calibrationEmployees.length,
+      hasNextPage: false,
+      pages: [],
+    };
+  }, [calibrationEmployees]);
 
   // Max value in distribution to scale heights (60 is the max target)
   const maxScale = Math.max(
@@ -84,16 +308,25 @@ const TeamCalibration: React.FC = () => {
           className={`flex ${isCompact ? "flex-col gap-4" : "items-end justify-between"} mb-6`}
         >
           <div className="space-y-1">
-            <span className="inline-block px-2.5 py-0.5 rounded-xl text-xs font-bold text-amber-800 bg-amber-100 mb-1">
+            <Typography
+              variant="label"
+              className="mb-1 inline-block rounded-xl bg-amber-100 px-2.5 py-0.5 text-amber-800"
+            >
               Pre-calibration - Manager view
-            </span>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-tight">
+            </Typography>
+            <Typography
+              variant="h4"
+              className="tracking-tight leading-tight text-gray-900"
+            >
               Calibration Prep · Design Oxygen Team
-            </h1>
-            <span className="text-sm text-gray-500 font-medium block">
+            </Typography>
+            <Typography
+              variant="bodySmall"
+              className="block font-medium text-gray-500"
+            >
               Aditi Sharma's session · 5 Jun 2026 - 14:00 IST · Soft target
               distribution
-            </span>
+            </Typography>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -120,15 +353,18 @@ const TeamCalibration: React.FC = () => {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.02)] p-6">
           <div className="flex justify-between items-start mb-8">
             <div>
-              <h3 className="text-base font-bold text-gray-900">
+              <Typography variant="subheading" className="text-gray-900">
                 Your team's distribution
-              </h3>
-              <span className="text-xs text-gray-500">
+              </Typography>
+              <Typography variant="caption" className="block text-gray-500">
                 vs target (soft curve)
-              </span>
+              </Typography>
             </div>
             <div className="flex items-center gap-1.5 text-green-700 font-bold text-xs">
-              <Check className="w-3.5 h-3.5" /> Within ±5% of target
+              <Check className="w-3.5 h-3.5" />
+              <Typography variant="label" className="text-green-700">
+                Within ±5% of target
+              </Typography>
             </div>
           </div>
 
@@ -157,12 +393,18 @@ const TeamCalibration: React.FC = () => {
 
                     {/* Labels */}
                     <div className="text-center shrink-0">
-                      <div className="text-xs font-bold text-gray-900 leading-tight">
+                      <Typography
+                        variant="label"
+                        className="block text-gray-900 leading-tight"
+                      >
                         {bucket.label}
-                      </div>
-                      <div className="text-xs font-semibold text-gray-400 mt-[1px]">
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        className="mt-[1px] block font-semibold text-gray-400"
+                      >
                         Target {bucket.target}% / Actual {bucket.actual}%
-                      </div>
+                      </Typography>
                     </div>
                   </div>
                 );
@@ -173,99 +415,59 @@ const TeamCalibration: React.FC = () => {
           {/* Legend */}
           <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 text-xs font-bold text-gray-500">
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-gray-200 rounded-sm" /> Target
-              distribution
+              <div className="w-2.5 h-2.5 bg-gray-200 rounded-sm" />
+              <Typography variant="label" className="text-gray-500">
+                Target distribution
+              </Typography>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-[#1a73e8] rounded-sm" /> Actual
+              <div className="w-2.5 h-2.5 bg-[#1a73e8] rounded-sm" />
+              <Typography variant="label" className="text-gray-500">
+                Actual
+              </Typography>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 bg-[#e11d48] rounded-sm" /> Outside
-              band
+              <div className="w-2.5 h-2.5 bg-[#e11d48] rounded-sm" />
+              <Typography variant="label" className="text-gray-500">
+                Outside band
+              </Typography>
             </div>
           </div>
         </div>
 
         {/* ── Employee Table ──────────────────────────────────────────── */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
-          <div className="overflow-x-auto">
-            <div className="min-w-[900px]">
-              {/* Table Header */}
-              <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-widest text-center items-center">
-                <div className="col-span-3 text-left">Employee</div>
-                <div className="col-span-1">FY24</div>
-                <div className="col-span-2">FY25</div>
-                <div className="col-span-2">Self</div>
-                <div className="col-span-2">Peer Avg</div>
-                <div className="col-span-1">My Proposal</div>
-                <div className="col-span-1 flex justify-center">9-Box</div>
-              </div>
-
-              {/* Table Body */}
-              <div className="divide-y divide-gray-100">
-                {CALIBRATION_EMPLOYEES.map((emp) => (
-                  <div
-                    key={emp.id}
-                    className="grid grid-cols-12 gap-4 px-6 py-5 items-center hover:bg-gray-50/50 transition-colors"
-                  >
-                    {/* Employee Info */}
-                    <div className="col-span-3 flex items-center gap-3">
-                      <Avatar
-                        name={emp.name}
-                        fontSize="text-xs"
-                        size="h-8 w-8"
-                        avatarBgColor="bg-blue-50"
-                        avatarTextColor="text-blue-600"
-                      />
-                      <div className="flex flex-col">
-                        <span className="text-sm font-bold text-gray-900 leading-tight">
-                          {emp.name}
-                        </span>
-                        <span className="text-xs text-gray-500 mt-[1px]">
-                          {emp.role}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Ratings Columns */}
-                    <div className="col-span-1 flex justify-center">
-                      <RatingCell rating={emp.fy24} />
-                    </div>
-                    <div className="col-span-2 flex justify-center">
-                      <RatingCell rating={emp.fy25} />
-                    </div>
-                    <div className="col-span-2 flex justify-center">
-                      <RatingCell rating={emp.self} />
-                    </div>
-                    <div className="col-span-2 flex justify-center">
-                      <RatingCell rating={emp.peerAvg} />
-                    </div>
-
-                    {/* My Proposal Dropdown */}
-                    <div className="col-span-1 relative flex justify-center">
-                      <select
-                        className="appearance-none w-24 bg-white border border-gray-200 text-gray-900 text-xs font-bold rounded-md px-2.5 py-1.5 pr-6 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300 transition-shadow cursor-pointer"
-                        defaultValue={emp.myProposal}
-                        aria-label={`Select proposal rating for ${emp.name}`}
-                      >
-                        <option value="Outstanding">Outstanding</option>
-                        <option value="Exceeds">Exceeds</option>
-                        <option value="Meets">Meets</option>
-                        <option value="Below">Below</option>
-                        <option value="Unsatisfactory">Unsatisfactory</option>
-                      </select>
-                      <ChevronDown className="absolute right-6 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-                    </div>
-
-                    {/* 9-Box Grid */}
-                    <div className="col-span-1 flex justify-center">
-                      <NineBox highlight={emp.gridHighlight} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+          <CardTable
+            titles={CALIBRATION_TABLE_TITLES}
+            columnWidths={CALIBRATION_TABLE_COLUMN_WIDTHS}
+            noBorder
+            noShadow
+            noRound
+          >
+            <div className={isCompact ? "w-full" : "w-full min-w-[1100px]"}>
+              <DataListView<CalibrationEmployee>
+                queryKey={[
+                  "team-calibration-employees",
+                  JSON.stringify(proposals),
+                ]}
+                fetchFunction={fetchEmployees}
+                isSearch={false}
+                showPagination={false}
+                showRefreshButton={false}
+                pageSize={calibrationEmployees.length}
+                infiniteScroll={false}
+                loadMorePagination={false}
+                enableUrlParams={false}
+                getItemKey={(item) => item.id}
+                ItemComponent={({ item: emp }) => (
+                  <CalibrationEmployeeItem
+                    item={emp}
+                    onProposalChange={handleProposalChange}
+                  />
+                )}
+              />
             </div>
-          </div>
+          </CardTable>
         </div>
       </div>
     </main>
