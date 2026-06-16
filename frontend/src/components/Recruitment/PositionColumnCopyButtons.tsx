@@ -71,10 +71,25 @@ export default function PositionColumnCopyButtons({
       });
     };
 
+    // Coalesce the burst of DOM mutations from a grid update (N rows × selects)
+    // into a single inject per animation frame. Without this, injecting per
+    // mutation is very slow when the table has many rows.
+    let scheduled = 0;
+    const scheduleInject = () => {
+      if (scheduled) return;
+      scheduled = requestAnimationFrame(() => {
+        scheduled = 0;
+        inject();
+      });
+    };
+
     inject();
-    const observer = new MutationObserver(() => inject());
+    const observer = new MutationObserver(scheduleInject);
     observer.observe(container, { childList: true, subtree: true });
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (scheduled) cancelAnimationFrame(scheduled);
+    };
   }, [containerRef, onCopyColumn]);
 
   return null;
