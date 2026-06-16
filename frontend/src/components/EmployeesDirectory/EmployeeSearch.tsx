@@ -18,9 +18,9 @@ export interface EmployeeDirectoryFilterData {
   employee_status?: string;
   company?: string | string[];
   department?: string | string[];
+  employment_type?: string | string[];
   branch?: string | string[];
   custom_business_unit?: string | string[];
-  employment_type?: string | string[];
   [key: string]: string | string[] | number | boolean | undefined;
 }
 
@@ -158,11 +158,11 @@ const EmployeeSearch = ({
   const dataIds = data.map((emp) => emp.name).join(",");
 
   const hasNonStatusFilters = Object.keys(activeFilters).some(
-    (key) => key !== 'status' && 
-             activeFilters[key] !== undefined && 
-             activeFilters[key] !== null && 
-             activeFilters[key] !== "" && 
-             (!Array.isArray(activeFilters[key]) || (activeFilters[key] as string[]).length > 0)
+    (key) => key !== 'status' &&
+      activeFilters[key] !== undefined &&
+      activeFilters[key] !== null &&
+      activeFilters[key] !== "" &&
+      (!Array.isArray(activeFilters[key]) || (activeFilters[key] as string[]).length > 0)
   );
 
   useEffect(() => {
@@ -303,13 +303,13 @@ const EmployeeSearch = ({
               <Button key={key} variant="soft" size="sm">
                 <span className="font-medium text-gray-500">{label}:</span>
                 <span>
-                  {Array.isArray(value) 
-                    ? value.join(", ") 
+                  {Array.isArray(value)
+                    ? value.join(", ")
                     : (key === "doj_from" || key === "doj_to"
-                        ? formatToIndianDate(String(value))
-                        : key === "employee_self_service"
-                            ? (value === 1 || value === "1" || value === true || value === "Yes" ? "Yes" : "No")
-                            : String(value))}
+                      ? formatToIndianDate(String(value))
+                      : key === "employee_self_service"
+                        ? (value === 1 || value === "1" || value === true || value === "Yes" ? "Yes" : "No")
+                        : String(value))}
                 </span>
                 <span
                   role="button"
