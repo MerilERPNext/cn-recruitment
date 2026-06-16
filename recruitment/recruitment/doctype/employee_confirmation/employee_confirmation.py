@@ -6,21 +6,6 @@ from frappe.model.document import Document
 from datetime import timedelta
 
 
-SEPARATION_TODO_TYPE = "Initiate Separation"
-
-
-def ensure_separation_todo_type():
-	if frappe.db.exists("Todo Type", SEPARATION_TODO_TYPE):
-		return
-	frappe.get_doc({
-		"doctype": "Todo Type",
-		"todo_type_name": SEPARATION_TODO_TYPE,
-		"is_active": 1,
-		"redirect_only": 1,
-		"dynamic_route": '"flow-app/separation?target_user=" + (todo.reference_name or "")',
-	}).insert(ignore_permissions=True)
-
-
 class EmployeeConfirmation(Document):
     	
 	def on_submit(self):
@@ -44,24 +29,29 @@ class EmployeeConfirmation(Document):
 			employee.custom_employment_status = "Pending Separation"
 			employee.save()
 
-			hrbp_user = None
-			if employee.custom_hrbp:
-				hrbp_user = frappe.db.get_value("Employee", employee.custom_hrbp, "user_id")
+			self.create_employee_separation_from_map(employee)
 
-			if hrbp_user:
-				ensure_separation_todo_type()
+	def create_employee_separation_from_map(self, employee=None):
+		if employee is None:
+			employee = frappe.get_doc("Employee", self.employee)
 
-				todo = frappe.new_doc("ToDo")
-				todo.owner = "Administrator"
-				todo.allocated_to = hrbp_user
-				todo.reference_type = "Employee"
-				todo.reference_name = self.employee
-				todo.description = f"Initiate separation for {employee.employee_name}"
-				todo.status = "Open"
-				todo.priority = "High"
-				todo.custom_todo_type = SEPARATION_TODO_TYPE
-				todo.flags.ignore_permissions = True
-				todo.insert()
+		separation = frappe.new_doc("Employee Separation")
+		separation.employee = self.employee
+		separation.custom_created_from_confirmation = 1
+		if employee.company:
+			separation.company = employee.company
+		separation.boarding_begins_on = frappe.utils.today()
+
+		mapping = frappe.get_single("Confirmation To Separation Map")
+		for row in mapping.mapping or []:
+			if not row.confirmation_fieldname or not row.separation_fieldname:
+				continue
+			value = self.get(row.confirmation_fieldname)
+			separation.set(row.separation_fieldname, value)
+
+		separation.flags.ignore_mandatory = True
+		separation.insert(ignore_permissions=True)
+		return separation.name
 
 	def validate(self):
 		draft_exists = frappe.db.exists(
