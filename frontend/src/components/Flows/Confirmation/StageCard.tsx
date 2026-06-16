@@ -76,6 +76,33 @@ const StageCard: React.FC<StageCardProps> = ({
   const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
   const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
 
+  const actions = useMemo(() => {
+    if (!stage?.todo?.custom_doctype_actions) return [];
+    try {
+      const parsed = JSON.parse(stage.todo.custom_doctype_actions);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions", e);
+      return [];
+    }
+  }, [stage?.todo?.custom_doctype_actions]);
+
+  const filteredActions = useMemo(() => {
+    return actions.filter((action: string) => action.toLowerCase() !== "reject");
+  }, [actions]);
+
+  const actionsWithForm = useMemo(() => {
+    if (!stage?.todo?.custom_doctype_actions_with_form) return [];
+    try {
+      const formatted = stage.todo.custom_doctype_actions_with_form.replace(/'/g, '"');
+      const parsed = JSON.parse(formatted);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions_with_form", e);
+      return [];
+    }
+  }, [stage?.todo?.custom_doctype_actions_with_form]);
+
   const handleShowForm = (
     schema: FormIOComponent[] | undefined,
     approval_response_data: string,
@@ -155,23 +182,27 @@ const StageCard: React.FC<StageCardProps> = ({
                 page="Confirmation"
                 isPending={status === "action_required"}
               />
-              {canPerformAction && status == "action_required" && (
-                <Button
-                  variant="contain"
-                  size="md"
-                  onClick={() =>
-                    handleAct({
-                      name: "Act",
-                      hasForm: true,
-                      todoId: stage?.todo?.name ?? "",
-                      customApprovalType: stage?.todo?.custom_approval_type,
-                    })
-                  }
-                  disabled={!stage?.todo?.name}
-                >
-                  Act
-                </Button>
-              )}
+              {canPerformAction && status === "action_required" && filteredActions.length > 0 && (
+                filteredActions.map((action: string) => (
+                  <Button
+                    key={action}
+                    variant="contain"
+                    size="md"
+                    onClick={() =>
+                      handleAct({
+                        name: action,
+                        hasForm: actionsWithForm.includes(action),
+                        todoId: stage?.todo?.name ?? "",
+                        customApprovalType: stage?.todo?.custom_approval_type,
+                      })
+                    }
+                    disabled={!stage?.todo?.name}
+                  >
+                    {action}
+                  </Button>
+                )))}
+
+
             </div>
           </div>
           <div className="justify-self-end max-sm:justify-self-start max-sm:order-3">
@@ -182,7 +213,7 @@ const StageCard: React.FC<StageCardProps> = ({
         </div>
 
         {/* <div>{stage?.user_id}</div> */}
-      </div>
+      </div >
       {formSchema &&
         show &&
         createPortal(
@@ -196,7 +227,8 @@ const StageCard: React.FC<StageCardProps> = ({
             <AttachmentPreview attachments={responseData?.addAttachment || []} />
           </ReviewForm>,
           document.body,
-        )}
+        )
+      }
     </>
   );
 };
