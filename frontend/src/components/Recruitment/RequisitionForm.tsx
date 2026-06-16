@@ -8,6 +8,7 @@ import {
 } from "./requisitionFormSchemas";
 import RequisitionReviewStep from "./RequisitionReviewStep";
 import FormEmployeeHoverLayer from "./FormEmployeeHoverLayer";
+import PositionColumnCopyButtons from "./PositionColumnCopyButtons";
 import Button from "../shared/atoms/Button";
 import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails, useFileUpload } from "../../hooks/useEmployee";
@@ -656,6 +657,42 @@ const RequisitionForm = () => {
     // reflects the bulk vacancy-type change.
     pushFormSync();
   };
+
+  // ── Copy one position column's value (first filled row) into all rows ──
+  const copyColumnToAllPositions = useCallback(
+    (fieldKey: string) => {
+      setFormData((prev: any) => {
+        const positions = [...(prev.positions || [])];
+        if (positions.length === 0) return prev;
+
+        // Source = first row that has a non-empty value in this column.
+        let srcVal: any;
+        let srcTitle: any;
+        let found = false;
+        for (const p of positions) {
+          const v = p?.[fieldKey];
+          if (v !== undefined && v !== null && v !== "") {
+            srcVal = v;
+            srcTitle = p?.[`${fieldKey}_title`];
+            found = true;
+            break;
+          }
+        }
+        if (!found) return prev;
+
+        const next = positions.map((p: any) => ({
+          ...p,
+          [fieldKey]: srcVal,
+          ...(srcTitle !== undefined ? { [`${fieldKey}_title`]: srcTitle } : {}),
+        }));
+        return { ...prev, positions: next };
+      });
+      // Mutated positions outside form.io → push the new submission so the grid
+      // reflects the copied values.
+      pushFormSync();
+    },
+    [pushFormSync]
+  );
 
   // ── Row-level mutations for the custom Pre-Screened Candidates table ──
   const addCandidate = () => {
@@ -1575,6 +1612,13 @@ const RequisitionForm = () => {
                 containerRef={formContainerRef}
                 resolveEmployeeId={resolveEmployeeId}
               />
+              {/* Per-column "copy to all rows" buttons in the Position table */}
+              {currentStep === 2 && (
+                <PositionColumnCopyButtons
+                  containerRef={formContainerRef}
+                  onCopyColumn={copyColumnToAllPositions}
+                />
+              )}
             </div>
 
             {/* ── Position Selection summary bar (totals + bulk vacancy-type toggle) ── */}
