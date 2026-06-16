@@ -20,6 +20,7 @@ interface CustomDropdownProps {
   contentAlign?: ButtonContentAlign;
   variant?: "contain" | "outline" | "subtle" | "soft";
   emptyMessage?: string;
+  menuClassName?: string;
 }
 
 const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -31,6 +32,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   label = "Select",
   contentAlign = "center",
   emptyMessage = "No options available",
+  menuClassName,
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
@@ -116,7 +118,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       <div
         ref={menuRef}
         style={menuStyle}
-        className="bg-white rounded-lg shadow-lg border border-gray-200 py-1 max-h-60 overflow-y-auto"
+        className={`bg-white rounded-lg shadow-lg border border-gray-200 py-1 max-h-60 overflow-y-auto ${menuClassName || ""}`}
       >
         {options.length === 0 ? (
           <div className="px-4 py-2.5 text-sm text-gray-500 whitespace-nowrap">
