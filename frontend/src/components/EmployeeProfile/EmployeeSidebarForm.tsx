@@ -59,7 +59,7 @@ const EmployeeSidebarForm = ({
         return field.field_name == edit?.key
     })
     useEffect(() => {
-        setIsDirty(false);
+        setIsDirty(edit?.rowIndex === -1);
         isInitializing.current = true;
     }, [edit]);
     const { data: employeeDataQueryResult } = useGetEmployeeDetailsByEmpIdForProfile(employeeId);
@@ -141,7 +141,7 @@ const EmployeeSidebarForm = ({
         let data: any = {};
         if (edit.fieldname) {
             const component = findComponentByKey(sectionSchema.components, edit.fieldname);
-            if (edit.rowIndex !== undefined && (employee as any)[edit.fieldname]) {
+            if (edit.rowIndex !== undefined && edit.rowIndex !== -1 && (employee as any)[edit.fieldname]) {
                 const row = (employee as any)[edit.fieldname][edit.rowIndex];
                 data = recursiveFixFileData(row, component?.components || []);
             } else {
@@ -174,14 +174,17 @@ const EmployeeSidebarForm = ({
                 const submittedFieldData = await getSubmissionData(storageKey);
 
                 if (edit.rowIndex !== undefined) {
-                    // Table Row Case: Fetch existing array and update the specific index
                     const existingTableData = (employee as any)?.[edit.fieldname] || [];
-                    const updatedTableData = [...existingTableData];
-                    updatedTableData[edit.rowIndex] = {
-                        ...updatedTableData[edit.rowIndex],
-                        ...submittedFieldData
-                    };
-                    allData[edit.fieldname] = updatedTableData;
+                    if (edit.rowIndex === -1) {
+                        allData[edit.fieldname] = [...existingTableData, submittedFieldData];
+                    } else {
+                        const updatedTableData = [...existingTableData];
+                        updatedTableData[edit.rowIndex] = {
+                            ...updatedTableData[edit.rowIndex],
+                            ...submittedFieldData
+                        };
+                        allData[edit.fieldname] = updatedTableData;
+                    }
                 } else {
                     // Regular Field Case
                     Object.assign(allData, submittedFieldData);
@@ -332,7 +335,9 @@ const EmployeeSidebarForm = ({
                                 {mutation?.isPending || employeeIsLoading ? (
                                     <CircularLoader size="sm" color="white" />
                                 ) : (
-                                    `Submit ${edit?.fieldname ? "Field" : "Section"} ${isApprovable ? "For Approval" : ""}`
+                                    edit?.rowIndex === -1
+                                ? `Add Entry ${isApprovable ? "For Approval" : ""}`
+                                : `Submit ${edit?.fieldname ? "Field" : "Section"} ${isApprovable ? "For Approval" : ""}`
                                 )}{" "}
                             </Button>
                         </div>
