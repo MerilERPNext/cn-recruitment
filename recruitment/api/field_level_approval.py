@@ -123,6 +123,28 @@ def _deserialize_value(raw, fieldtype):
     return raw or ""
 
 
+def _resolve_child_doctype(doc, row, fieldname):
+    """Child doctype for a Table row. The row's `options` is often blank, so
+    fall back to the live field meta on the doc."""
+    cd = row.get("options") or ""
+    if not cd:
+        df = doc.meta.get_field(fieldname)
+        cd = (df.options or "") if df else ""
+    return cd
+
+
+def _table_has_content(rows):
+    """True only if at least one row carries a non-empty value. Guards against
+    degenerate snapshots like [] or [{}] that were serialized without the child
+    field columns resolved."""
+    if not isinstance(rows, list):
+        return False
+    for r in rows:
+        if isinstance(r, dict) and any(v not in (None, "") for v in r.values()):
+            return True
+    return False
+
+
 # ─── Doc helpers ──────────────────────────────────────────────────────────────
 
 def _get_doc(onboarding_name):
@@ -171,20 +193,17 @@ def _load_approval_list(doc):
             "reviewed_on":  row.get("reviewed_on") or None,
         }
         if fieldtype == "Table":
-            # The child doctype is often not stored on the row (options is blank);
-            # fall back to the live field meta so child_fields can be resolved.
-            cd = row.get("options") or ""
-            if not cd:
-                df = doc.meta.get_field(fn)
-                cd = (df.options or "") if df else ""
+            cd = _resolve_child_doctype(doc, row, fn)
             child_fields = _get_child_meta_fields(cd) if cd else []
             entry["child_doctype"] = cd
             entry["child_fields"]  = child_fields
-            # If the stored snapshot is empty, read the live table value so rows
-            # added directly on the doc (not via candidate submit) still show.
-            if not current_v:
+            # The stored snapshot may be empty ([]) or degenerate ([{}]) when it
+            # was serialized without the child columns resolved. In that case read
+            # the live table value, keyed by the resolved child fields, so the
+            # actual row data is returned.
+            if not _table_has_content(current_v):
                 live_val = _get_field_value(doc, fn, "Table", child_fields)
-                if live_val:
+                if _table_has_content(live_val):
                     entry["current_value"] = live_val
 
         result.append(entry)
@@ -306,7 +325,7 @@ def initialize_approval_json(onboarding_name):
 
         # Refresh current_value snapshot from the live doc field value
         ft  = row.get("fieldtype") or "Data"
-        cfs = _get_child_meta_fields(row.get("options") or "") if ft == "Table" else None
+        cfs = _get_child_meta_fields(_resolve_child_doctype(doc, row, row.fieldname)) if ft == "Table" else None
         live_val = _get_field_value(doc, row.fieldname, ft, cfs)
         new_cv   = _serialize_value(live_val, ft)
         if row.get("current_value") != new_cv:
