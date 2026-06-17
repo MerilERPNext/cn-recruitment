@@ -123,6 +123,37 @@ function validateStep(
           );
         }
       });
+
+      // No duplicate cost centers within the same position.
+      const seenCC = new Set<string>();
+      const reportedDup = new Set<string>();
+      allocations.forEach((a) => {
+        const cc = a?.cost_center;
+        if (!isFilled(cc)) return;
+        if (seenCC.has(cc) && !reportedDup.has(cc)) {
+          errors.push(
+            `Position ${i + 1}: Cost Center "${cc}" is selected more than once.`
+          );
+          reportedDup.add(cc);
+        }
+        seenCC.add(cc);
+      });
+
+      // All cost center allocation percentages must total exactly 100%.
+      const filledAllocs = allocations.filter((a) => a && isFilled(a.cost_center));
+      if (filledAllocs.length > 0) {
+        const sum = filledAllocs.reduce(
+          (acc, a) => acc + (Number(a.percentage) || 0),
+          0
+        );
+        // Round to 2 decimals to avoid floating-point drift.
+        const rounded = Math.round(sum * 100) / 100;
+        if (rounded !== 100) {
+          errors.push(
+            `Position ${i + 1}: Cost Center Allocation percentages must total 100% (currently ${rounded}%).`
+          );
+        }
+      }
     });
   }
 
