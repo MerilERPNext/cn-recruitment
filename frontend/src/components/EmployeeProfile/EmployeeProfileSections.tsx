@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import DOMPurify from "dompurify";
 import { useEffect, useRef, useState } from "react";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import {
@@ -282,6 +283,15 @@ const FieldCell = ({ field, tabKey, tabLabel, canEdit, isTable, onEdit }: FieldC
                 <FileText size={14} />
                 <span className="truncate max-w-[200px] inline-block">{field.value}</span>
             </Link>) : "—"
+        ) : field.type === "html" ? (
+            field.value ? (
+                <div
+                    className="prose prose-sm max-w-none text-gray-900 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-gray-200 [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:border-gray-200 [&_th]:px-2 [&_th]:py-1 [&_th]:bg-gray-50"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(field.value) }}
+                />
+            ) : (
+                <Typography variant="bodyMedium" className="font-bold text-gray-900">—</Typography>
+            )
         ) : isTable ? (
             <CardsRenderer
                 items={field.value}
@@ -352,7 +362,7 @@ const CardsRenderer = ({ items, onEdit, canEdit }: { items: Record<string, any>[
                     ))}
                 </div>
             ) : (
-                <Typography variant="bodySmall" color="secondary" className="italic">No data available</Typography>
+                <Typography variant="bodySmall" color="secondary" className="italic">—</Typography>
             )}
             {canEdit && (
                 <button
