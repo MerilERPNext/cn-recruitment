@@ -150,7 +150,7 @@ const RecognitionPage: React.FC = () => {
 
   const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
-      <HeaderBar title="Recognition" onBack={() => navigate("/webapp")} />
+      <HeaderBar title="Recognition" onBack={() => navigate(-1)} />
       <main className="p-4 z-100 flex-grow overflow-y-auto">
         {dashboardContent}
       </main>
