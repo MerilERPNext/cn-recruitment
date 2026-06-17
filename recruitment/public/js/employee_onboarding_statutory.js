@@ -22,6 +22,10 @@ frappe.ui.form.on("Employee Onboarding", {
         );
         if (!enabled) return;
 
+        // Only once the onboarding is fully approved (boarding_status = Completed)
+        // can statutory forms be generated — keep the buttons hidden until then.
+        if (frm.doc.boarding_status !== "Completed") return;
+
         const group = __("Statutory Forms");
 
         frm.add_custom_button(
