@@ -9,6 +9,7 @@ import {
 import type { ApprovalField, FieldLocalState, ChildField } from "../../../types/onboarding";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Check, X } from "lucide-react";
+import { BeatLoader } from "react-spinners";
 import {
   sendBackToCandidate,
   approveOnboardingForm,
@@ -667,7 +668,7 @@ export default function OnboardingFieldApproval() {
         {pageLoading && (
           <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
             <div className="text-center space-y-3">
-              <div className="h-10 w-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
+              <BeatLoader color="#6172f3" size={10} className="mx-auto" />
               <p>Fetching onboarding data...</p>
             </div>
           </div>
