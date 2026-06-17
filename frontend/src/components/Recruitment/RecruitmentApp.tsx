@@ -126,7 +126,7 @@ const RecruitmentApp: React.FC = () => {
   const mobileLayout = (
     <div className="flex flex-col min-h-screen">
       <div className="sticky top-0 z-50 bg-white border-b">
-        <HeaderBar title={title} onBack={() => navigate("/webapp")} />
+        <HeaderBar title={title} onBack={() => navigate(-1)} />
         {!isFormPage && (
           <NavigationTabs
             tabs={tabs}

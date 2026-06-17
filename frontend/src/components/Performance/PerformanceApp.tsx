@@ -158,7 +158,7 @@ const PerformanceApp: React.FC = () => {
  
             <HeaderBar
                 title={"Performance"}
-                onBack={() => navigate("/webapp")}
+                onBack={() => navigate(-1)}
             />
             <NavigationTabs
                 tabs={tabs}
