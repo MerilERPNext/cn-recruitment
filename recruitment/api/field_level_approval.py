@@ -171,9 +171,21 @@ def _load_approval_list(doc):
             "reviewed_on":  row.get("reviewed_on") or None,
         }
         if fieldtype == "Table":
+            # The child doctype is often not stored on the row (options is blank);
+            # fall back to the live field meta so child_fields can be resolved.
             cd = row.get("options") or ""
+            if not cd:
+                df = doc.meta.get_field(fn)
+                cd = (df.options or "") if df else ""
+            child_fields = _get_child_meta_fields(cd) if cd else []
             entry["child_doctype"] = cd
-            entry["child_fields"]  = _get_child_meta_fields(cd) if cd else []
+            entry["child_fields"]  = child_fields
+            # If the stored snapshot is empty, read the live table value so rows
+            # added directly on the doc (not via candidate submit) still show.
+            if not current_v:
+                live_val = _get_field_value(doc, fn, "Table", child_fields)
+                if live_val:
+                    entry["current_value"] = live_val
 
         result.append(entry)
     return result
