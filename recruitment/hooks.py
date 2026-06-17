@@ -76,6 +76,7 @@ doctype_js = {
     "Job Opening": [
         "public/js/job_opening.js",
         "public/js/job_opening_hiring_workflow.js",
+        "public/js/job_opening_attach_resumes.js",
     ],
     "Job Description": ["public/js/job_description.js"],
     "Job Requisition": ["public/js/job_requisition.js"],

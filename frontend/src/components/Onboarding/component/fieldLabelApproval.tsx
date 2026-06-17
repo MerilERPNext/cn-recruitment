@@ -6,9 +6,10 @@ import {
   useApprovalActions,
   useSectionNav,
 } from "../../../hooks/useOnboarding";
-import type { ApprovalField, FieldLocalState } from "../../../types/onboarding";
+import type { ApprovalField, FieldLocalState, ChildField } from "../../../types/onboarding";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Check, X } from "lucide-react";
+import { BeatLoader } from "react-spinners";
 import {
   sendBackToCandidate,
   approveOnboardingForm,
@@ -38,6 +39,72 @@ function displayValue(val: string | any[] | null | undefined): string {
       : "[Empty table]";
   }
   return String(val);
+}
+
+// ─── ChildTable ─────────────────────────────────────────────────────────────
+// Renders a child-table (Table fieldtype) value as an actual table using the
+// field's child_fields as columns and current_value as rows.
+function ChildTable({ fields, rows }: { fields?: ChildField[]; rows: any[] }) {
+  const cols = fields ?? [];
+
+  if (!Array.isArray(rows) || rows.length === 0 || cols.length === 0) {
+    return (
+      <div className="mt-1 text-xs text-gray-500 border rounded-lg p-2">
+        Empty table
+      </div>
+    );
+  }
+
+  // Strip HTML (e.g. Text Editor values like `<div class="ql-editor"><p>..</p></div>`)
+  // down to plain text so cells show readable content, not markup.
+  const stripHtml = (s: string): string => {
+    if (!/<[^>]+>/.test(s)) return s;
+    if (typeof window !== "undefined" && typeof DOMParser !== "undefined") {
+      const doc = new DOMParser().parseFromString(s, "text/html");
+      return (doc.body.textContent || "").trim();
+    }
+    return s.replace(/<[^>]+>/g, "").trim();
+  };
+
+  const cellText = (raw: any, fieldtype: string): string => {
+    if (raw === undefined || raw === null || raw === "") return "—";
+    if (fieldtype === "Check") return String(raw) === "1" ? "Yes" : "No";
+    const text = stripHtml(String(raw));
+    return text === "" ? "—" : text;
+  };
+
+  return (
+    <div className="mt-1 border rounded-lg overflow-x-auto">
+      <table className="min-w-full text-xs">
+        <thead className="bg-gray-50 text-gray-600">
+          <tr>
+            {cols.map((c) => (
+              <th
+                key={c.fieldname}
+                className="px-2 py-1 text-left font-semibold whitespace-nowrap border-b border-gray-100"
+              >
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className="border-b border-gray-50 last:border-0">
+              {cols.map((c) => (
+                <td
+                  key={c.fieldname}
+                  className="px-2 py-1 text-gray-800 align-top whitespace-nowrap"
+                >
+                  {cellText(row?.[c.fieldname], c.fieldtype)}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 // ─── FieldRow ─────────────────────────────────────────────────────────────────
@@ -123,7 +190,12 @@ function FieldRow({
           <span className="text-sm font-medium text-gray-800">{field.label}</span>
         </div>
 
-        {val ? (
+        {field.fieldtype === "Table" ? (
+  <ChildTable
+    fields={field.child_fields}
+    rows={Array.isArray(field.current_value) ? field.current_value : []}
+  />
+) : val ? (
   <div className="mt-1">
     {field.fieldtype === "Attach" || field.fieldtype === "Attach Image" ? (
       <a
@@ -596,7 +668,7 @@ export default function OnboardingFieldApproval() {
         {pageLoading && (
           <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
             <div className="text-center space-y-3">
-              <div className="h-10 w-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
+              <BeatLoader color="#6172f3" size={10} className="mx-auto" />
               <p>Fetching onboarding data...</p>
             </div>
           </div>
