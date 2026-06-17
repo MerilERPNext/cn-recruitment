@@ -14,6 +14,7 @@ import type { FrappePageResponse } from "../../types/frappe";
 import CardTable, { ColumnSortConfig } from "../shared/CardTable";
 import { Briefcase, CheckCircle, Edit, FileText, FolderOpen } from "lucide-react";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 const EditButton = ({ requisition, onClose }: { requisition: any; onClose: () => void }) => {
   const navigate = useNavigate();
@@ -614,7 +615,15 @@ const Requisition = () => {
                     Hiring Lead
                   </Typography>
                   <Typography variant="bodySmall" className="font-semibold text-gray-900">
-                    {selectedRequisition.custom_hiring_lead_title || "—"}
+                    {selectedRequisition.custom_hiring_lead ? (
+                      <WrapperHoverCard employeeId={String(selectedRequisition.custom_hiring_lead)}>
+                        <span className="cursor-help underline decoration-dotted decoration-gray-300 underline-offset-2">
+                          {selectedRequisition.custom_hiring_lead_title || selectedRequisition.custom_hiring_lead}
+                        </span>
+                      </WrapperHoverCard>
+                    ) : (
+                      "—"
+                    )}
                   </Typography>
                 </div>
                 <div>
@@ -683,6 +692,7 @@ const Requisition = () => {
                           <th className="px-4 py-2 text-left">Vacancy Type</th>
                           <th className="px-4 py-2 text-left">Location</th>
                           <th className="px-4 py-2 text-left">Reporting Manager</th>
+                          <th className="px-4 py-2 text-left">Cost Center Allocation</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-150 text-gray-900">
@@ -691,7 +701,52 @@ const Requisition = () => {
                             <td className="px-4 py-2 font-medium">{idx+1}</td>
                             <td className="px-4 py-2">{pos.vacancy_type}</td>
                             <td className="px-4 py-2">{pos.location_title || "—"}</td>
-                            <td className="px-4 py-2">{pos.reporting_manager_title || "—"}</td>
+                            <td className="px-4 py-2">
+                              {pos.reporting_manager ? (
+                                <WrapperHoverCard employeeId={String(pos.reporting_manager)}>
+                                  <span className="cursor-help underline decoration-dotted decoration-gray-300 underline-offset-2">
+                                    {pos.reporting_manager_title || pos.reporting_manager}
+                                  </span>
+                                </WrapperHoverCard>
+                              ) : (
+                                pos.reporting_manager_title || "—"
+                              )}
+                            </td>
+                            <td className="px-4 py-2 align-top">
+                              {Array.isArray(pos.cost_center_allocations) &&
+                              pos.cost_center_allocations.length > 0 ? (
+                                <table className="min-w-[180px] border border-gray-200 rounded-md overflow-hidden text-xs">
+                                  <thead className="bg-gray-50 text-gray-600 font-semibold">
+                                    <tr>
+                                      <th className="px-2 py-1 text-left border-b border-gray-200">
+                                        Cost Center
+                                      </th>
+                                      <th className="px-2 py-1 text-left border-b border-gray-200">
+                                        Percentage (%)
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-100">
+                                    {pos.cost_center_allocations.map((alloc: any, aIdx: number) => (
+                                      <tr key={aIdx}>
+                                        <td className="px-2 py-1">
+                                          {alloc.cost_center_title || alloc.cost_center || "—"}
+                                        </td>
+                                        <td className="px-2 py-1">
+                                          {alloc.percentage !== undefined &&
+                                          alloc.percentage !== null &&
+                                          alloc.percentage !== ""
+                                            ? `${alloc.percentage}%`
+                                            : "—"}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

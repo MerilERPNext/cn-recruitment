@@ -71,6 +71,8 @@
             "key": "employment_type",
             "type": "select",
             "input": true,
+            "multiple": true,
+            "customClass": "mb-4",
             "placeholder": "Select Employee Type",
             "dataSrc": "url",
             "data": {

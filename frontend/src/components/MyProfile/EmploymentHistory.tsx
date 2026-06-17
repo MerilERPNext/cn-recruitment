@@ -4,7 +4,7 @@ import Button from "../shared/atoms/Button";
 import { PlusIcon } from "lucide-react";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
-import { useDeleteEmpReportingDetailsRecordMutation, useDeleteEmployeeCostCenterRecordsMutation, useDeleteEmployeeHistoryRecordsMutation, useGetEmployeePreviousDetails, useGetEmploymentHistoryData } from "../../hooks/useEmployee";
+import { useDeleteEmpReportingDetailsRecordMutation, useDeleteEmployeeCostCenterRecordsMutation, useDeleteEmployeeHistoryRecordsMutation, useGetEmployeePreviousDetails, useGetEmploymentHistoryData, useGetSalaryStructureAssignments } from "../../hooks/useEmployee";
 import { EmployeeCostCenter, EmployeePreviousDetailNode, EmployeeRole, EmploymentTypes, WorkLocation, WorkRole } from "../../types/employee";
 import EmployeePreviousJoiningCard from "./EmploymentHistoryCards/EmployeePreviousJoiningCard";
 import EmploymentWorkLocationCard from "./EmploymentHistoryCards/EmploymentWorkLocationsCard";
@@ -18,6 +18,7 @@ import EmploymentHistoryForm from "./EmploymentHistoryForms/EmploymentHistorForm
 import EmploymentTypeForm from "./EmploymentHistoryForms/EmploymentTypeForm";
 import EmployeeRoleForm from "./EmploymentHistoryForms/EmployeeRoleForm";
 import EmploymentSegmentsCard from "./EmploymentHistoryCards/EmploymentSegmentsCard";
+import CompensationDetailsCard from "./EmploymentHistoryCards/CompensationDetailsCard";
 import NoDataFound from "../shared/atoms/NoDataFound";
 import ConfirmationModal from "../shared/atoms/ConfirmationModal";
 import { useLoadingOverlay } from "../../context/OverlayContext";
@@ -53,6 +54,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 }) => {
   const { data, isLoading, error } = useGetEmploymentHistoryData(employeeId || "")
   const { data: employeePreviousDetails } = useGetEmployeePreviousDetails(employeeId || "")
+  const { data: salaryStructureData } = useGetSalaryStructureAssignments(employeeId || "")
 
   const flattenPreviousJoiningHistory = (
     node: EmployeePreviousDetailNode | null,
@@ -446,6 +448,37 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 </div>
               ) : (
                 <NoDataFound title="No Segments" subtitle="No segment records have been added yet." />
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2 mt-6">
+              <div className="flex items-center justify-between">
+                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                  Compensation Details
+                </Typography>
+              </div>
+              {salaryStructureData?.assignments && salaryStructureData.assignments.length > 0 ? (
+                <div className="flex gap-2 overflow-auto">
+                  {salaryStructureData.assignments.map((item) => (
+                    <div
+                      key={item.name}
+                      className={`${salaryStructureData.assignments.length === 1 ? "max-w-md w-full" : ""}`}
+                    >
+                      <CompensationDetailsCard assignment={{
+                        name: "dsaf",
+                        salary_structure: "asdf",
+                        from_date: "2026-06-16",
+                        base: 200000,
+                        currency: "asdf",
+                        company: "asdf",
+                        docstatus: 0
+
+                      }} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <NoDataFound title="No Compensation Details" subtitle="No salary structure assignments found." />
               )}
             </div>
 

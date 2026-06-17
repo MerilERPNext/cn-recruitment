@@ -396,6 +396,20 @@ export interface Employee extends EmployeeFromAPI, EmployeeSupplementary { }
 
 export type CurrentEmployeeAllDetails = Employee;
 
+export interface SalaryStructureAssignment {
+  name: string;
+  salary_structure: string;
+  from_date: string;
+  base: number;
+  currency: string;
+  company: string;
+  docstatus: number;
+}
+
+export interface SalaryStructureAssignmentsResponse {
+  assignments: SalaryStructureAssignment[];
+}
+
 export interface EmployeeIdCardResponse {
   blood_group: string;
   branch: string;

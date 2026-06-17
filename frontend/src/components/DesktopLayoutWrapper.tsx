@@ -11,9 +11,7 @@ import { useCurrentEmployee, useCurrentEmployeeDetails } from "../hooks/useEmplo
 import { ROUTES } from "../constants/routes";
 import useCurrentUser from "../hooks/useCurrentUser";
 import useLogout from "../hooks/useLogout";
-import { useRequestPasswordReset } from "../hooks/useResetPassword";
-import { toast } from "react-hot-toast";
-import { errorResponseFormater } from "../utils/errorResponseFormater";
+import ChangePassword from "./ChangePassword/ChangePassword";
 import ViewingAsBanner from "./ViewingAsBanner";
 import { useTargetUser } from "../context/ViewedUserContext";
 import SearchMembers from "./shared/SearchMembers";
@@ -58,24 +56,12 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       console.error("Logout failed:", error);
     }
   };
-  // reset password logic can be added here
-  const loginUserEmail = currentUser?.email || "";
-  const mutation = useRequestPasswordReset();
+  // Change password — self-service modal (current / new / confirm) that calls
+  // the change_password API for the logged-in user.
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const handleReset = () => {
-    const email = loginUserEmail;
-    mutation.mutate(email, {
-      onSuccess: (data) => {
-        toast.success("Password reset email sent successfully!");
-        console.log("Response:", data);
-      },
-      onError: (error: any) => {
-        const formatedError = errorResponseFormater(
-          error,
-          "Failed to send password reset email!",
-        );
-        toast.error(formatedError);
-      },
-    });
+    setShowProfileDropdown(false);
+    setShowChangePasswordModal(true);
   };
 
   const currentUserIsAdmin = currentUser?.roles?.some(
@@ -346,16 +332,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       fullWidth
                       onClick={handleReset}
                       contentAlign="start"
-                      disabled={mutation.isPending}
                     >
-                      {mutation.isPending ? (
-                        "Sending..."
-                      ) : (
-                        <>
-                          <RotateCcwKey className="w-4 h-4" />
-                          Reset Password
-                        </>
-                      )}
+                      <RotateCcwKey className="w-4 h-4" />
+                      Reset Password
                     </Button>
 
                     <hr className="my-2 border-gray-100" />
@@ -394,6 +373,12 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
           )}
         </div>
       </div>
+
+      {/* Change Password modal — self-service (current / new / confirm) */}
+      <ChangePassword
+        isOpen={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
+      />
     </div>
   );
 };
