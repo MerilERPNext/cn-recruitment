@@ -8,13 +8,14 @@
 // The actions appear in the list "Actions" menu (shown only when rows are
 // checked) and only when `Onboarding Settings.enable_statutory_forms_button`
 // is on — the same global gate as the on-form buttons. In addition, only
-// onboardings with boarding_status = "Completed" (form approved by SPOC) are
-// processed; any other selected rows are skipped with a clear message. The list
-// menu items can't be shown/hidden per selection, so this is enforced on click.
+// onboardings with custom_onboarding_review_status = "Approved" (form approved
+// by SPOC) are processed; any other selected rows are skipped with a clear
+// message. The list menu items can't be shown/hidden per selection, so this is
+// enforced on click.
 
 frappe.listview_settings["Employee Onboarding"] = {
-    // Make sure boarding_status is available on each checked row so we can gate on it.
-    add_fields: ["boarding_status"],
+    // Make sure the review status is available on each checked row so we can gate on it.
+    add_fields: ["custom_onboarding_review_status"],
 
     onload(listview) {
         frappe.db
@@ -42,30 +43,30 @@ function runBulkStatutory(listview, mode) {
         return;
     }
 
-    // Only fully-approved onboardings (boarding_status = Completed) qualify; skip the rest.
-    const completed = selected.filter((d) => d.boarding_status === "Completed");
-    const skipped_not_completed = selected.length - completed.length;
+    // Only SPOC-approved onboardings (custom_onboarding_review_status = Approved) qualify; skip the rest.
+    const approved = selected.filter((d) => d.custom_onboarding_review_status === "Approved");
+    const skipped_not_approved = selected.length - approved.length;
 
-    if (!completed.length) {
+    if (!approved.length) {
         frappe.msgprint(
-            __("Statutory forms can only be generated for onboardings with Boarding Status = Completed (form approved by SPOC). None of the selected records qualify.")
+            __("Statutory forms can only be generated for onboardings whose form is Approved by the SPOC. None of the selected records qualify.")
         );
         return;
     }
 
-    const names = completed.map((d) => d.name);
+    const names = approved.map((d) => d.name);
     const labelByMode = {
         pf: __("PF Form 11"),
         gratuity: __("Gratuity Nomination"),
         all: __("PF Form 11 + Gratuity Nomination"),
     };
 
-    const skip_note = skipped_not_completed
-        ? __("<br><br>{0} selected record(s) are not Completed and will be skipped.", [skipped_not_completed])
+    const skip_note = skipped_not_approved
+        ? __("<br><br>{0} selected record(s) are not Approved and will be skipped.", [skipped_not_approved])
         : "";
 
     frappe.confirm(
-        __("Generate {0} for {1} Completed onboarding(s)? Existing PDFs are overwritten unless a form is Signed or Filed.", [
+        __("Generate {0} for {1} Approved onboarding(s)? Existing PDFs are overwritten unless a form is Signed or Filed.", [
             labelByMode[mode],
             names.length,
         ]) + skip_note,

@@ -22,9 +22,10 @@ frappe.ui.form.on("Employee Onboarding", {
         );
         if (!enabled) return;
 
-        // Only once the onboarding is fully approved (boarding_status = Completed)
-        // can statutory forms be generated — keep the buttons hidden until then.
-        if (frm.doc.boarding_status !== "Completed") return;
+        // Only once the onboarding form is approved by the SPOC
+        // (custom_onboarding_review_status = Approved) can statutory forms be
+        // generated — keep the buttons hidden until then.
+        if (frm.doc.custom_onboarding_review_status !== "Approved") return;
 
         const group = __("Statutory Forms");
 
