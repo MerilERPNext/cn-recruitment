@@ -811,6 +811,7 @@ export const requisitionFormSchemas = {
         key: "custom_qualifications",
         label: "Qualifications",
         addAnother: "Add Qualification",
+        customClass: "required-field",
         components: [
           {
             type: "textfield",
