@@ -56,6 +56,15 @@
   "separation_column",
   "date_separation",
   "are_you_sure_that_you_want_to_initiate_separation",
+  "separation_details_section",
+  "notice_period",
+  "proposed_last_working_day",
+  "requested_last_working_date",
+  "separation_details_column",
+  "pay_days",
+  "recovery_days",
+  "proposed_recovery_days",
+  "final_recovery_days",
   "is_extension_confirmation",
   "extension_workflow"
  ],
@@ -337,6 +346,52 @@
    "fieldtype": "Select",
    "label": "Are you sure that you want to initiate Separation process for the following member?",
    "options": "\nYes\nNo"
+  },
+  {
+   "fieldname": "separation_details_section",
+   "fieldtype": "Section Break",
+   "label": "Separation Details"
+  },
+  {
+   "fetch_from": "employee.custom_notice_period",
+   "fieldname": "notice_period",
+   "fieldtype": "Link",
+   "label": "Notice Period",
+   "options": "Notice Period"
+  },
+  {
+   "fieldname": "proposed_last_working_day",
+   "fieldtype": "Date",
+   "label": "Proposed Last Working Day"
+  },
+  {
+   "fieldname": "requested_last_working_date",
+   "fieldtype": "Date",
+   "label": "Requested Last Working Date"
+  },
+  {
+   "fieldname": "separation_details_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "pay_days",
+   "fieldtype": "Int",
+   "label": "Pay Days"
+  },
+  {
+   "fieldname": "recovery_days",
+   "fieldtype": "Int",
+   "label": "Recovery Days"
+  },
+  {
+   "fieldname": "proposed_recovery_days",
+   "fieldtype": "Int",
+   "label": "Proposed Number Of Recovery Days"
+  },
+  {
+   "fieldname": "final_recovery_days",
+   "fieldtype": "Int",
+   "label": "Final Recovery Days"
   },
   {
    "fieldname": "initiator_form",
