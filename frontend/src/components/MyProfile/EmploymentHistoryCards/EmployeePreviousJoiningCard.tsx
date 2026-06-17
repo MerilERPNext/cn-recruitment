@@ -22,6 +22,7 @@ interface EmployeePreviousJoiningCardProps {
     location_name: string | null;
     date_of_joining: string | null;
     relieving_date: string | null;
+    current_employee_joining_date: string | null;
 }
 
 const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = ({
@@ -33,9 +34,8 @@ const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = 
     location_name,
     date_of_joining,
     relieving_date,
+    current_employee_joining_date,
 }) => {
-    const isCurrent = !relieving_date;
-
     return (
         <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift max-w-[90vw] min-w-[90vw] md:min-w-[400px] md:max-w-[400px]">
             {/* Header */}
@@ -122,15 +122,13 @@ const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = 
                     <span className="text-sm text-gray-500">Relieving Date</span>
 
                     <span
-                        className="text-sm font-medium px-3 py-1 rounded-md"
-                        style={{
-                            backgroundColor: isCurrent ? "#DCFCE7" : "#F9FAFB",
-                            color: isCurrent ? "#166534" : undefined,
-                        }}
+                        className="text-sm font-medium px-3 py-1 rounded-md bg-gray-50"
                     >
                         {relieving_date
                             ? formatToIndianDate(relieving_date)
-                            : "Present"}
+                            : current_employee_joining_date
+                                ? formatToIndianDate(current_employee_joining_date)
+                                : "-"}
                     </span>
                 </div>
             </div>
