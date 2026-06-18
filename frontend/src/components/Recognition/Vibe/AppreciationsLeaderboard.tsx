@@ -11,10 +11,12 @@ import {
   LeaderboardPerson,
 } from "./vibeMockData";
 
+// Classic podium staircase: rank 1 (center) sits highest, rank 2 (left) a step
+// lower, rank 3 (right) lowest — matching the uploaded leaderboard layout.
 const PODIUM_ORDER = [
-  { person: LEADERBOARD_TOP3.find((p) => p.rank === 2)!, height: "mt-8", size: 80 },
+  { person: LEADERBOARD_TOP3.find((p) => p.rank === 2)!, height: "mt-10", size: 80 },
   { person: LEADERBOARD_TOP3.find((p) => p.rank === 1)!, height: "mt-0", size: 96 },
-  { person: LEADERBOARD_TOP3.find((p) => p.rank === 3)!, height: "mt-12", size: 80 },
+  { person: LEADERBOARD_TOP3.find((p) => p.rank === 3)!, height: "mt-16", size: 80 },
 ];
 
 const StarBadge: React.FC<{ rank: number }> = ({ rank }) => (
@@ -98,8 +100,16 @@ const AppreciationsLeaderboard: React.FC = () => {
             </div>
 
             {/* Podium */}
-            <div className="relative mb-8 rounded-2xl bg-gradient-to-b from-blue-50/60 to-transparent px-2 pt-10 pb-6">
-              <div className="grid grid-cols-3 gap-3 items-end">
+            <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-b from-blue-50/40 to-transparent px-2 pt-12 pb-6">
+              {/* Decorative concentric arc background behind the winners */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center">
+                <div className="flex h-[260px] w-[520px] max-w-full items-end justify-center rounded-t-full bg-blue-100/50">
+                  <div className="flex h-[220px] w-[440px] items-end justify-center rounded-t-full bg-blue-100/60">
+                    <div className="h-[180px] w-[360px] rounded-t-full bg-blue-200/40" />
+                  </div>
+                </div>
+              </div>
+              <div className="relative grid grid-cols-3 gap-3 items-start">
                 {PODIUM_ORDER.map((col) => (
                   <PodiumColumn key={col.person.rank} {...col} />
                 ))}
