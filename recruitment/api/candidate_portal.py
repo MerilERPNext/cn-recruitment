@@ -755,11 +755,25 @@ def _get_joining_info(eo_doc, applicant_doc):
     if not doj and applicant_doc is not None:
         doj = applicant_doc.get("custom_date_of_joining")
     days = date_diff(getdate(doj), getdate(nowdate())) if doj else None
+
+    # Role (Designation) and Department — Employee Onboarding wins, falling back
+    # to the Job Applicant (designation / custom_department) when EO is empty.
+    role = eo_doc.get("designation") if eo_doc is not None else None
+    if not role and applicant_doc is not None:
+        role = applicant_doc.get("designation")
+    department = eo_doc.get("department") if eo_doc is not None else None
+    if not department and applicant_doc is not None:
+        department = applicant_doc.get("custom_department")
+
     return {
         "date_of_joining": doj,
         "boarding_begins_on": bbo,
         "days_to_joining": days,
         "is_set": bool(doj),
+        "role": role,
+        "role_name": _link_title("Designation", role),
+        "department": department,
+        "department_name": _link_title("Department", department),
     }
 
 

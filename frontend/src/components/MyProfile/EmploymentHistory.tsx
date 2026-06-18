@@ -449,6 +449,37 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               )}
             </div>
 
+            {/* <div className="flex flex-col gap-2 mt-6">
+              <div className="flex items-center justify-between">
+                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                  Compensation Details
+                </Typography>
+              </div>
+              {salaryStructureData?.assignments && salaryStructureData.assignments.length > 0 ? (
+                <div className="flex gap-2 overflow-auto">
+                  {salaryStructureData.assignments.map((item) => (
+                    <div
+                      key={item.name}
+                      className={`${salaryStructureData.assignments.length === 1 ? "max-w-md w-full" : ""}`}
+                    >
+                      <CompensationDetailsCard assignment={{
+                        name: item.name,
+                        salary_structure: item.salary_structure,
+                        from_date: item.from_date,
+                        base: item.base,
+                        currency: item.currency,
+                        company: item.company,
+                        docstatus: 0
+
+                      }} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <NoDataFound title="No Compensation Details" subtitle="No salary structure assignments found." />
+              )}
+            </div> */}
+
             <div className="flex flex-col gap-2 mt-6">
               <div className="flex items-center justify-between">
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
@@ -471,6 +502,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         location_name={item.location_name}
                         date_of_joining={item.date_of_joining}
                         relieving_date={item.relieving_date}
+                        current_employee_joining_date={data?.date_of_joining || null}
                       />
                     </div>
                   ))}

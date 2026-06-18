@@ -169,7 +169,10 @@ const ConfirmationWorkflow = () => {
   };
 
   const handleInitiateConfirmation = useCallback(() => {
-    if (!definition_name) return;
+    if (!definition_name) {
+      console.error("definition name not found", definition_name);
+      return;
+    }
 
     triggerChat({ doctype_name, document_name, definition_name, l });
   }, [triggerChat, doctype_name, document_name, definition_name, l]);

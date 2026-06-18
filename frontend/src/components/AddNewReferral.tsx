@@ -225,7 +225,11 @@ const AddNewReferral: React.FC = () => {
           const match = list.find(j => j.name === jobName);
           if (match) {
             setSelectedJob(match);
-            setActiveView("detail");
+            // Pasting/opening a shared referral link should land straight on the
+            // referral form for that job (same as clicking REFER), not the detail
+            // view. Start at the first step.
+            setActiveStepIndex(0);
+            setActiveView("form");
           }
         })
         .catch(err => console.error("Linking error", err));

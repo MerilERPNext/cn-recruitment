@@ -26,9 +26,11 @@
    "options": "<div class=\"alert alert-info\" style=\"padding:12px 16px;border-radius:6px;\">\n  <strong>\ud83d\udccb Employee Onboarding Portal Field Configuration</strong><br>\n  <ul style=\"margin-top:8px;margin-bottom:0;\">\n    <li>Add rows to the table below specifying which <strong>Employee Onboarding</strong> fields to expose in the candidate portal.</li>\n    <li>Set <strong>Tab</strong> and <strong>Section</strong> to control how fields are grouped in the portal form.</li>\n    <li>Use <strong>Mandatory</strong> to enforce required fields on the candidate side.</li>\n    <li>Use <strong>Read Only</strong> to display pre-filled values that the candidate cannot change.</li>\n    <li>The <strong>Field Inspector</strong> opens automatically below — use it to add, remove, or mark fields mandatory. The <strong>Portal Fields</strong> table at the bottom is a read-only summary of your selection.</li>\n  </ul>\n</div>"
   },
   {
+   "collapsible": 1,
+   "collapsible_depends_on": "eval:false",
    "fieldname": "fields_config_section",
    "fieldtype": "Section Break",
-   "label": "Portal Field Configuration"
+   "label": "Advanced (raw field table)"
   },
   {
    "description": "Read-only summary of the fields selected in the Field Inspector above. Use the inspector to add, remove, or mark fields mandatory.",
@@ -41,7 +43,7 @@
   {
    "fieldname": "helper_section",
    "fieldtype": "Section Break",
-   "label": "Field Inspector"
+   "label": "Form Builder"
   },
   {
    "fieldname": "available_fields_html",

@@ -207,7 +207,7 @@ chatnext-app.field-required::after {
    off the nested Cost Center child table, which must stay small. */
 [data-testid="formioContainer"] .formio-component-positions > table,
 [data-testid="formioContainer"] .formio-component-positions > .table-responsive > table {
-  min-width: 2200px;
+  min-width: 2250px;
 }
 
 /* Widen the position select columns so the selected value / dropdown data does

@@ -16,7 +16,7 @@ const TodoPage = () => {
 
   const mobileLayout = (
     <div className="flex flex-col h-screen bg-white">
-      <HeaderBar title="Todo" onBack={() => navigate("/webapp/")} />
+      <HeaderBar title="Todo" onBack={() => navigate(-1)} />
       <main className="flex-1 overflow-y-auto z-100">{content}</main>
     </div>
   );

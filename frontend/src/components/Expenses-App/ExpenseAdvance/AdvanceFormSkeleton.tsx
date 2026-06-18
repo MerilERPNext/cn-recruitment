@@ -1,9 +1,12 @@
+import { useNavigate } from "react-router-dom";
 import HeaderBar from "../../HeaderBar";
 
 const AdvanceFormSkeleton = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-col h-full bg-white">
-      <HeaderBar title="New Expense Advance" onBack={() => {}} />
+      <HeaderBar title="New Expense Advance" onBack={() => {navigate(-1)}} />
 
       <div className="flex-1 overflow-y-auto p-4 animate-pulse">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

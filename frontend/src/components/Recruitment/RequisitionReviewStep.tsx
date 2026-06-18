@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Button from "../shared/atoms/Button";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 import {
   RequisitionPosition as Position,
@@ -128,10 +129,11 @@ export default function RequisitionReviewStep({
             Basic Details
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
-            {[
+            {([
               {
                 label: "Hiring Manager",
                 value: formData.hiring_manager_title ?? formData.hiring_manager,
+                employeeId: formData.hiring_manager,
               },
               { label: "Company", value: formData.company_title ?? formData.company },
               {
@@ -149,15 +151,24 @@ export default function RequisitionReviewStep({
               {
                 label: "Hiring Lead",
                 value: formData.hiring_lead_title ?? formData.hiring_lead,
+                employeeId: formData.hiring_lead,
               },
               { label: "Division", value: formData.custom_division },
-            ].map((f) => (
+            ] as { label: string; value: any; employeeId?: string }[]).map((f) => (
               <div key={f.label} className="space-y-1">
                 <span className="text-slate-400 font-medium block">
                   {f.label}
                 </span>
                 <span className="font-semibold text-slate-800">
-                  {renderValue(f.value)}
+                  {f.employeeId ? (
+                    <WrapperHoverCard employeeId={String(f.employeeId)}>
+                      <span className="cursor-help underline decoration-dotted decoration-slate-300 underline-offset-2">
+                        {renderValue(f.value)}
+                      </span>
+                    </WrapperHoverCard>
+                  ) : (
+                    renderValue(f.value)
+                  )}
                 </span>
               </div>
             ))}
@@ -276,7 +287,15 @@ export default function RequisitionReviewStep({
                           Reporting Manager
                         </span>
                         <span className="font-semibold text-slate-800">
-                          {renderValue(pos.reporting_manager_title ?? pos.reporting_manager)}
+                          {pos.reporting_manager ? (
+                            <WrapperHoverCard employeeId={String(pos.reporting_manager)}>
+                              <span className="cursor-help underline decoration-dotted decoration-slate-300 underline-offset-2">
+                                {renderValue(pos.reporting_manager_title ?? pos.reporting_manager)}
+                              </span>
+                            </WrapperHoverCard>
+                          ) : (
+                            renderValue(pos.reporting_manager_title ?? pos.reporting_manager)
+                          )}
                         </span>
                       </div>
                       {pos.vacancy_type === "Replacement" && (
@@ -285,11 +304,51 @@ export default function RequisitionReviewStep({
                             Replacement For
                           </span>
                           <span className="font-semibold text-slate-800">
-                            {renderValue(pos.replacement_for_title ?? pos.replacement_for)}
+                            {pos.replacement_for ? (
+                              <WrapperHoverCard employeeId={String(pos.replacement_for)}>
+                                <span className="cursor-help underline decoration-dotted decoration-slate-300 underline-offset-2">
+                                  {renderValue(pos.replacement_for_title ?? pos.replacement_for)}
+                                </span>
+                              </WrapperHoverCard>
+                            ) : (
+                              renderValue(pos.replacement_for_title ?? pos.replacement_for)
+                            )}
                           </span>
                         </div>
                       )}
                     </div>
+
+                    {Array.isArray((pos as any).cost_center_allocations) &&
+                      (pos as any).cost_center_allocations.length > 0 && (
+                        <div className="space-y-1.5 mt-1">
+                          <span className="text-[14px] text-slate-400 font-medium block">
+                            Cost Center Allocation
+                          </span>
+                          <div className="space-y-1.5">
+                            {(pos as any).cost_center_allocations.map(
+                              (alloc: any, aIdx: number) => (
+                                <div
+                                  key={aIdx}
+                                  className="bg-slate-50 border border-slate-150 rounded-lg p-2 flex justify-between items-center gap-3"
+                                >
+                                  <span className="font-semibold text-slate-800">
+                                    {renderValue(
+                                      alloc.cost_center_title ?? alloc.cost_center,
+                                    )}
+                                  </span>
+                                  <span className="px-2 py-0.5 rounded text-[14px] font-bold bg-blue-50 text-blue-700 border border-blue-100 shrink-0">
+                                    {alloc.percentage !== undefined &&
+                                    alloc.percentage !== null &&
+                                    alloc.percentage !== ""
+                                      ? `${alloc.percentage}%`
+                                      : "—"}
+                                  </span>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      )}
                   </div>
                 ))}
               </div>

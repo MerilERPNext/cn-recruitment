@@ -709,17 +709,84 @@ export const requisitionFormSchemas = {
                       url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Cost Center",
                       headers: [{ key: "Accept", value: "application/json" }],
                     },
+                    // Use the native HTML5 select instead of the default Choices.js
+                    // widget. Inside a nested datagrid, the Choices widget reuses
+                    // its instance/DOM state across rows during the grid redraw,
+                    // which makes a selected Cost Center replicate into the other
+                    // allocation rows (and across position rows). A native <select>
+                    // binds its value per element, so each row keeps its own value
+                    // and nothing is duplicated. It also avoids the Choices rebuild
+                    // flash on "Add Cost Center".
+                    widget: "html5",
                     limit: 20,
                     selectValues: "message.results",
                     valueProperty: "id",
                     template: "<span>{{ item.label }}</span>",
+                    // Mandatory — shows the required asterisk on the column header.
+                    // validateOn: "blur" (above) keeps empty rows from flagging
+                    // red on render.
+                    validate: {
+                      required: true,
+                      // Reject the same Cost Center selected twice in the same
+                      // position's allocation table.
+                      custom: `
+                        var allocs = [];
+                        if (instance && instance.parent && Array.isArray(instance.parent.dataValue)) {
+                          allocs = instance.parent.dataValue;
+                        } else {
+                          var positions = (data && data.positions) || [];
+                          for (var pi = 0; pi < positions.length; pi++) {
+                            var p = positions[pi];
+                            if (p && Array.isArray(p.cost_center_allocations) && p.cost_center_allocations.indexOf(row) !== -1) {
+                              allocs = p.cost_center_allocations; break;
+                            }
+                          }
+                        }
+                        var dup = false;
+                        if (input) {
+                          for (var k = 0; k < allocs.length; k++) {
+                            if (allocs[k] === row) continue;
+                            if (allocs[k] && String(allocs[k].cost_center) === String(input)) { dup = true; break; }
+                          }
+                        }
+                        valid = dup ? 'This Cost Center is already selected in this position' : true;
+                      `,
+                    },
                   },
                   {
                     type: "number",
                     key: "percentage",
                     label: "Percentage (%)",
                     placeholder: "e.g., 100",
-                    validate: { min: 0, max: 100 },
+                    // Mandatory — shows the required asterisk on the column header.
+                    validateOn: "blur",
+                    validate: {
+                      required: true,
+                      min: 0,
+                      max: 100,
+                      // The sum of all allocation percentages in a position must
+                      // not exceed 100%.
+                      custom: `
+                        var allocs = [];
+                        if (instance && instance.parent && Array.isArray(instance.parent.dataValue)) {
+                          allocs = instance.parent.dataValue;
+                        } else {
+                          var positions = (data && data.positions) || [];
+                          for (var pi = 0; pi < positions.length; pi++) {
+                            var p = positions[pi];
+                            if (p && Array.isArray(p.cost_center_allocations) && p.cost_center_allocations.indexOf(row) !== -1) {
+                              allocs = p.cost_center_allocations; break;
+                            }
+                          }
+                        }
+                        var sum = Number(input) || 0;
+                        for (var k = 0; k < allocs.length; k++) {
+                          if (allocs[k] === row) continue;
+                          sum += Number(allocs[k] && allocs[k].percentage) || 0;
+                        }
+                        valid = sum > 100 ? ('Total cost center allocation cannot exceed 100% (currently ' + sum + '%)') : true;
+                      `,
+                    },
                   },
                 ],
               },
@@ -744,6 +811,7 @@ export const requisitionFormSchemas = {
         key: "custom_qualifications",
         label: "Qualifications",
         addAnother: "Add Qualification",
+        customClass: "required-field",
         components: [
           {
             type: "textfield",
