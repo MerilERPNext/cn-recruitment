@@ -577,6 +577,10 @@ const LeaderboardPage = lazyWithRetry(
   () => import("./components/Recognition/LeaderboardPage"),
   "LeaderboardPage",
 );
+const MyAppreciationsHistory = lazyWithRetry(
+  () => import("./components/Recognition/MyAppreciationsHistory"),
+  "MyAppreciationsHistory",
+);
 const ScheduledImportsPage = lazyWithRetry(
   () => import("./components/ScheduledImports/ScheduledImportsPage"),
   "ScheduledImportsPage",
@@ -1602,6 +1606,11 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Recognition",
   },
   {
+    path: "/webapp/recognition/",
+    element: <RecognitionPage />,
+    permissionKey: "Recognition",
+  },
+  {
     path: "/webapp/recognition/hall-of-fame",
     element: <HallOfFamePage />,
     permissionKey: "Recognition",
@@ -1609,6 +1618,11 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/recognition/leaderboard",
     element: <LeaderboardPage />,
+    permissionKey: "Recognition",
+  },
+  {
+    path: "/webapp/recognition/my-appreciations-history",
+    element: <MyAppreciationsHistory />,
     permissionKey: "Recognition",
   },
   {
