@@ -248,6 +248,29 @@ def _column_label(jo_meta, fieldname):
 	return fieldname.replace("_", " ").title()
 
 
+def _column_def(jo_meta, fieldname):
+	"""Full column descriptor the list UI needs to map a card to a cell:
+
+	  fieldname  – the configured Job Opening field
+	  label      – column header
+	  fieldtype  – so the UI can pick a renderer (Link / Date / Select / …)
+	  value_key  – card key holding the DISPLAY value  (== fieldname; links carry
+	               the resolved label here)
+	  id_key     – card key holding the raw id for Link fields
+	               (`<fieldname>_id`); null for non-link fields
+
+	`name` (Opening ID) isn't in field meta, so it's treated as plain Data."""
+	df = jo_meta.get_field(fieldname) if fieldname != "name" else None
+	is_link = bool(df and df.fieldtype == "Link")
+	return {
+		"fieldname": fieldname,
+		"label": _column_label(jo_meta, fieldname),
+		"fieldtype": df.fieldtype if df else "Data",
+		"value_key": fieldname,
+		"id_key": f"{fieldname}_id" if is_link else None,
+	}
+
+
 def get_configured_columns(channel):
 	"""Ordered, enabled list columns for `channel`, from Recruitment Settings
 	(ijp_page_columns / refer_page_columns). Returns a list of
@@ -276,7 +299,7 @@ def get_configured_columns(channel):
 		if fn in seen or (fn != "name" and not jo_meta.has_field(fn)):
 			continue
 		seen.add(fn)
-		columns.append({"fieldname": fn, "label": _column_label(jo_meta, fn)})
+		columns.append(_column_def(jo_meta, fn))
 	return columns
 
 
