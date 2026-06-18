@@ -123,6 +123,8 @@ class OnbBuilder {
 				mandatory: !!row.is_mandatory,
 				read_only: !!row.read_only,
 				hidden: !!row.hidden,
+				selected_child_fields: row.selected_child_fields || "",
+				mandatory_child_fields: row.mandatory_child_fields || "",
 			});
 		});
 
@@ -152,9 +154,17 @@ class OnbBuilder {
 						is_mandatory: f.mandatory ? 1 : 0,
 						read_only: f.read_only ? 1 : 0,
 						hidden: f.hidden ? 1 : 0,
-						// Preserve everything the builder doesn't own.
-						selected_child_fields: old.selected_child_fields || "",
-						mandatory_child_fields: old.mandatory_child_fields || "",
+						// Child-column selection is builder-owned; fall back to the
+						// existing row value when the field was never edited here.
+						selected_child_fields:
+							f.selected_child_fields != null
+								? f.selected_child_fields
+								: old.selected_child_fields || "",
+						mandatory_child_fields:
+							f.mandatory_child_fields != null
+								? f.mandatory_child_fields
+								: old.mandatory_child_fields || "",
+						// Preserve everything else the builder doesn't own.
 						approval_status: old.approval_status || undefined,
 						reviewed_by: old.reviewed_by || undefined,
 						reviewed_on: old.reviewed_on || undefined,
@@ -329,6 +339,106 @@ class OnbBuilder {
 			__("Move field"),
 			__("Move")
 		);
+	}
+
+	edit_child_fields(f) {
+		const child = f.options;
+		if (!child) {
+			frappe.msgprint(__("This field is not linked to a child table."));
+			return;
+		}
+		frappe.call({
+			method: "recruitment.api.candidate_portal.get_child_doctype_fields",
+			args: { child_doctype: child },
+			callback: (r) => {
+				const cols = (r.message && r.message.fields) || [];
+				if (!cols.length) {
+					frappe.msgprint(__("No columns found for {0}.", [child]));
+					return;
+				}
+
+				let selected = [];
+				let mandatory = [];
+				try {
+					selected = JSON.parse(f.selected_child_fields || "[]");
+				} catch (e) {
+					selected = [];
+				}
+				try {
+					mandatory = JSON.parse(f.mandatory_child_fields || "[]");
+				} catch (e) {
+					mandatory = [];
+				}
+				const allShown = !selected.length; // empty = all columns
+				const selSet = new Set(selected);
+				const manSet = new Set(mandatory);
+
+				const rows = cols
+					.map((c) => {
+						const showChecked = allShown || selSet.has(c.fieldname) ? "checked" : "";
+						const manChecked = manSet.has(c.fieldname) ? "checked" : "";
+						return (
+							"<tr>" +
+							'<td>' +
+							frappe.utils.escape_html(c.label || c.fieldname) +
+							' <span class="text-muted" style="font-size:11px">' +
+							frappe.utils.escape_html(c.fieldname) +
+							"</span></td>" +
+							'<td style="text-align:center"><input type="checkbox" class="cf-show" data-fn="' +
+							c.fieldname +
+							'" ' +
+							showChecked +
+							"></td>" +
+							'<td style="text-align:center"><input type="checkbox" class="cf-man" data-fn="' +
+							c.fieldname +
+							'" ' +
+							manChecked +
+							"></td></tr>"
+						);
+					})
+					.join("");
+
+				const d = new frappe.ui.Dialog({
+					title: __("Child columns — {0}", [f.label]),
+					fields: [{ fieldtype: "HTML", fieldname: "html" }],
+					primary_action_label: __("Apply"),
+					primary_action: () => {
+						const $w = d.fields_dict.html.$wrapper;
+						const show = $w
+							.find(".cf-show:checked")
+							.map((i, el) => el.dataset.fn)
+							.get();
+						const man = $w
+							.find(".cf-man:checked")
+							.map((i, el) => el.dataset.fn)
+							.get();
+						// Empty "selected" means all columns, so store '' when everything is shown.
+						f.selected_child_fields = show.length === cols.length ? "" : JSON.stringify(show);
+						f.mandatory_child_fields = man.length ? JSON.stringify(man) : "";
+						d.hide();
+						this.commit();
+						frappe.show_alert({ message: __("Updated child columns"), indicator: "green" });
+					},
+				});
+
+				d.fields_dict.html.$wrapper.html(
+					'<div class="text-muted" style="font-size:12px;margin-bottom:6px">' +
+						__("Choose which columns of this table the candidate sees, and which are mandatory.") +
+						"</div>" +
+						'<table class="table table-bordered" style="font-size:12px;margin:0">' +
+						"<thead><tr><th>" +
+						__("Column") +
+						'</th><th style="width:60px;text-align:center">' +
+						__("Show") +
+						'</th><th style="width:90px;text-align:center">' +
+						__("Mandatory") +
+						"</th></tr></thead><tbody>" +
+						rows +
+						"</tbody></table>"
+				);
+				d.show();
+			},
+		});
 	}
 
 	sync_from_dom() {
@@ -581,6 +691,11 @@ class OnbBuilder {
 			f.hidden = !f.hidden;
 			this.commit();
 		});
+		if (f.fieldtype === "Table" || f.fieldtype === "Table MultiSelect") {
+			$('<span class="jrfb-mini" title="Child columns">⊞</span>')
+				.appendTo($tools)
+				.on("click", () => this.edit_child_fields(f));
+		}
 		$('<span class="jrfb-mini" title="Move to tab / section">⤿</span>')
 			.appendTo($tools)
 			.on("click", () => this.move_field(tab, sec, f));
