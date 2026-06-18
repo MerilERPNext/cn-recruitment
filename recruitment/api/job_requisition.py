@@ -721,6 +721,25 @@ _CHILD_TABLE_BY_GROUP = {
     "Pre-screened Candidates": "custom_pre_screened_candidates",
 }
 
+# Virtual "table inside a table" columns. These are stored as a JSON string in a
+# Long Text field on a child row (NOT a real Frappe child table), so meta alone
+# can't tell the frontend they're a sub-table. We declare the inner schema here
+# so the form config can describe the nested editor, while the existing
+# serialise/deserialise helpers keep handling the JSON <-> list conversion on
+# read/write. `cost_center_allocations` lives on Position Details rows and holds
+# a list of {cost_center, percentage}.
+_VIRTUAL_NESTED_TABLES = {
+    "cost_center_allocations": {
+        "label": "Cost Center Allocation",
+        "fields": [
+            {"fieldname": "cost_center", "label": "Cost Center",
+             "fieldtype": "Link", "options": "Cost Center", "is_mandatory": 1},
+            {"fieldname": "percentage", "label": "Percentage (%)",
+             "fieldtype": "Float", "is_mandatory": 1},
+        ],
+    },
+}
+
 
 def _get_form_settings():
     """The single Job Requisition Form Settings doc, or None when it can't be
@@ -789,7 +808,7 @@ def _child_columns(child_doctype, ov=None):
             continue
         if selected is not None and df.fieldname not in selected:
             continue
-        columns.append({
+        col = {
             "fieldname": df.fieldname,
             "label": (df.label or df.fieldname).strip(),
             "fieldtype": df.fieldtype,
@@ -798,7 +817,17 @@ def _child_columns(child_doctype, ov=None):
             "read_only": int(df.read_only or 0),
             "depends_on": df.get("depends_on") or "",
             "mandatory_depends_on": df.get("mandatory_depends_on") or "",
-        })
+        }
+        # A JSON-backed sub-table (e.g. cost_center_allocations): expose its inner
+        # schema so the frontend renders a nested row editor. Stored value is a
+        # list of dicts matching `nested_fields` (handled by the
+        # serialise/deserialise helpers on read/write).
+        nested = _VIRTUAL_NESTED_TABLES.get(df.fieldname)
+        if nested:
+            col["is_nested_table"] = 1
+            col["nested_label"] = nested["label"]
+            col["nested_fields"] = nested["fields"]
+        columns.append(col)
     return columns
 
 
