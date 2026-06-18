@@ -577,6 +577,10 @@ const LeaderboardPage = lazyWithRetry(
   () => import("./components/Recognition/LeaderboardPage"),
   "LeaderboardPage",
 );
+const MyAppreciationsHistory = lazyWithRetry(
+  () => import("./components/Recognition/MyAppreciationsHistory"),
+  "MyAppreciationsHistory",
+);
 const VibeApp = lazyWithRetry(
   () => import("./components/Recognition/Vibe/VibeApp"),
   "VibeApp",
@@ -1641,6 +1645,11 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/recognition/leaderboard",
     element: <LeaderboardPage />,
+    permissionKey: "Recognition",
+  },
+  {
+    path: "/webapp/recognition/my-appreciations-history",
+    element: <MyAppreciationsHistory />,
     permissionKey: "Recognition",
   },
   {
