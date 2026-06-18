@@ -14,6 +14,8 @@ import { Typography } from "../../shared/atoms/Typography";
 import FAQAccordion from "../FAQ/FAQAccordion";
 import RequestIssueModal from "../RequestIssueModal";
 import emptyStateImage from "../../../assets/helpdesk-empty-state.png";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 const FAQPage: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -62,6 +64,13 @@ const FAQPage: React.FC = () => {
   const handleRequestIssue = () => {
     setIsRequestModalOpen(true);
   };
+
+  const { data: userUiPermission } = useGetUiPermission("Help Desk");
+  const canRequestIssue = isActionEnabled(
+    userUiPermission,
+    "request_issue",
+    "Help Desk",
+  );
 
   const renderContent = () => (
     <div className="flex flex-col h-full">
@@ -197,16 +206,18 @@ const FAQPage: React.FC = () => {
         >
           View Requests
         </Button>
-        <Button
-          variant="contain"
-          bgColor="primary"
-          size="lg"
-          onClick={handleRequestIssue}
-          className="max-sm:w-full"
-        >
-          <Plus className="w-4 h-4" />
-          Request Issue
-        </Button>
+        {canRequestIssue &&
+          <Button
+            variant="contain"
+            bgColor="primary"
+            size="lg"
+            onClick={handleRequestIssue}
+            className="max-sm:w-full"
+          >
+            <Plus className="w-4 h-4" />
+            Request Issue
+          </Button>
+        }
       </div>
     </div>
   );

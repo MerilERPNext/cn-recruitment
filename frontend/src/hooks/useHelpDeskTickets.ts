@@ -27,6 +27,7 @@ export interface HDTicket {
   resolution_by: string;
   agreement_status: "First Response Due" | "Resolution Due" | "Failed" | "Fulfilled" | "Paused";
   response_by: string;
+  custom_sub_category_name?: string;
 }
 
 export interface TicketListResponse {
