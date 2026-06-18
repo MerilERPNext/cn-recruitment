@@ -1669,6 +1669,11 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Recognition",
       },
       {
+        path: "my-appreciations-history",
+        element: <MyAppreciationsHistory />,
+        permissionKey: "Recognition",
+      },
+      {
         path: "feed",
         element: <VibeFeed />,
         permissionKey: "Recognition",

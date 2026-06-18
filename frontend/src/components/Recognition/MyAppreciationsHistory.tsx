@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
@@ -15,10 +15,12 @@ import {
 
 const MyAppreciationsHistory: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isDesktop } = useScreenSize();
   const [activeTab, setActiveTab] =
     useState<AppreciationHistoryTab>("received");
   const [searchTerm, setSearchTerm] = useState("");
+  const isVibeRoute = location.pathname.startsWith("/webapp/recognition/vibe");
 
   const filteredAppreciations = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -60,6 +62,23 @@ const MyAppreciationsHistory: React.FC = () => {
   const tabs = (
     <HistoryTabs activeTab={activeTab} onTabChange={setActiveTab} />
   );
+
+  if (isVibeRoute) {
+    return (
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
+        <div className="border-b border-gray-200 bg-white px-4 py-4 md:px-6">
+          <h1 className="text-xl font-bold text-gray-900 md:text-2xl">
+            My Appreciations History
+          </h1>
+          <p className="mt-1 text-sm font-medium text-gray-500">
+            Manage your appreciations history
+          </p>
+        </div>
+        {tabs}
+        <div className="min-h-0 flex-1 overflow-y-auto">{content}</div>
+      </div>
+    );
+  }
 
   if (!isDesktop) {
     return (
