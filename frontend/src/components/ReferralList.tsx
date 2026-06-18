@@ -13,6 +13,8 @@ import { Typography } from "./shared/atoms/Typography";
 import CardTable from "./shared/CardTable";
 import { ColumnSortConfig } from "./shared/CardTableContext";
 import Badge from "./shared/Badge";
+import { useReferralListColumns } from "../hooks/useReferralDetails";
+import type { ReferralListColumn } from "../types/referral";
 
 const REFERRAL_SORT_CONFIG: ColumnSortConfig[] = [
   {
@@ -41,6 +43,64 @@ const REFERRAL_SORT_CONFIG: ColumnSortConfig[] = [
   },
 ];
 
+const DEFAULT_REFERRAL_COLUMNS: ReferralListColumn[] = [
+  { fieldname: "candidate_name", label: "Candidate", value_key: "candidate_name" },
+  { fieldname: "designation", label: "Designation & Opening", value_key: "designation_label" },
+  { fieldname: "status", label: "Status", value_key: "status" },
+  { fieldname: "applied_on", label: "Applied On", value_key: "applied_on" },
+];
+
+const REFERRAL_DATE_KEYS = new Set(["applied_on", "creation", "modified"]);
+const MAX_COLUMNS_BEFORE_SCROLL = 6;
+
+const getReferralColumnValue = (item: any, column: ReferralListColumn) =>
+  item[column.value_key] ?? item[column.fieldname];
+
+const getReferralDisplayValue = (value: unknown) => {
+  if (value === null || value === undefined || value === "") return "--";
+  if (Array.isArray(value)) return value.filter(Boolean).join(", ") || "--";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+};
+
+const getReferralColumnWidth = (
+  column: ReferralListColumn,
+  totalColumns: number
+) => {
+  if (totalColumns <= MAX_COLUMNS_BEFORE_SCROLL) {
+    return "minmax(0, 1fr)";
+  }
+
+  const key = (column.value_key || column.fieldname).toLowerCase();
+  if (key.includes("candidate")) return "13rem";
+  if (key.includes("designation")) return "12rem";
+  if (key.includes("opening") || key.includes("job_title")) return "14rem";
+  if (key === "status" || key.includes("status")) return "8rem";
+  if (REFERRAL_DATE_KEYS.has(key) || key.includes("date")) return "9rem";
+  if (key.includes("email")) return "14rem";
+  return "12rem";
+};
+
+const getReferralSortConfig = (
+  columns: ReferralListColumn[]
+): ColumnSortConfig[] =>
+  columns.map((column) => {
+    const key = column.value_key || column.fieldname;
+    const existingConfig = REFERRAL_SORT_CONFIG.find((config: any) => {
+      if (!config.sortable) return false;
+      return config.field === key || config.field === column.fieldname;
+    });
+
+    if (existingConfig) return existingConfig;
+
+    return {
+      sortable: true,
+      type: REFERRAL_DATE_KEYS.has(key) || key.includes("date") ? "date" : "string",
+      field: key,
+      getValue: (item: any) => getReferralColumnValue(item, column) ?? "",
+    };
+  });
+
 const mapStatusToGroup = (status: string) => {
   switch (status?.toLowerCase()) {
     case "draft":
@@ -57,8 +117,33 @@ const mapStatusToGroup = (status: string) => {
   }
 };
 
+const getReferralStatusColor = (status: string) => {
+  switch (status?.toLowerCase()) {
+    case "open":
+    case "applied":
+      return "bg-blue-100 text-blue-700";
+    case "interview":
+    case "shortlisted":
+      return "bg-purple-100 text-purple-700";
+    case "accepted":
+    case "hired":
+    case "offer":
+      return "bg-green-100 text-green-700";
+    case "rejected":
+    case "cancelled":
+      return "bg-red-100 text-red-700";
+    case "draft":
+      return "bg-orange-100 text-orange-700";
+    case "pending":
+      return "bg-yellow-100 text-yellow-700";
+    default:
+      return "bg-gray-50 text-gray-600";
+  }
+};
+
 const ReferralList = () => {
   const { isDesktop } = useScreenSize();
+  const { data: referralColumns } = useReferralListColumns();
 
   const SUMMARY_STORAGE_KEY = "my-referrals-summary-cache";
 
@@ -89,55 +174,116 @@ const ReferralList = () => {
     }
   }, []);
 
-  const titles = [
-    "Candidate",
-    "Designation & Opening",
-    "Status",
-    "Applied On",
-  ];
+  const columns = useMemo(() => {
+    const apiColumns = referralColumns?.filter(
+      (column) => column.label && (column.value_key || column.fieldname)
+    );
+    return apiColumns?.length ? apiColumns : DEFAULT_REFERRAL_COLUMNS;
+  }, [referralColumns]);
 
-  const columnWidths = [
-    "minmax(200px, 1fr)",
-    "minmax(220px, 1fr)",
-    "150px",
-    "160px",
-  ];
+  const titles = useMemo(
+    () => columns.map((column) => column.label),
+    [columns]
+  );
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "open":
-      case "applied":
-        return "bg-blue-100 text-blue-700";
-      case "interview":
-      case "shortlisted":
-        return "bg-purple-100 text-purple-700";
-      case "accepted":
-      case "hired":
-      case "offer":
-        return "bg-green-100 text-green-700";
-      case "rejected":
-      case "cancelled":
-        return "bg-red-100 text-red-700";
-      case "draft":
-        return "bg-orange-100 text-orange-700";
-      case "pending":
-        return "bg-yellow-100 text-yellow-700";
-      default:
-        return "bg-gray-50 text-gray-600";
+  const columnWidths = useMemo(
+    () =>
+      columns.map((column) => getReferralColumnWidth(column, columns.length)),
+    [columns]
+  );
+
+  const columnSortConfig = useMemo(
+    () => getReferralSortConfig(columns),
+    [columns]
+  );
+
+  const renderReferralColumnValue = useCallback((
+    item: any,
+    column: ReferralListColumn
+  ) => {
+    const key = column.value_key || column.fieldname;
+    const normalizedKey = key.toLowerCase();
+    const value = getReferralColumnValue(item, column);
+    const displayValue =
+      (REFERRAL_DATE_KEYS.has(normalizedKey) || normalizedKey.includes("date")) && value
+        ? String(value).split(" ")[0]
+        : getReferralDisplayValue(value);
+
+    if (normalizedKey === "status" || normalizedKey.includes("status")) {
+      return (
+        <div className="flex justify-center items-center min-w-0">
+          <Badge
+            label={displayValue}
+            backgroundColor={getReferralStatusColor(displayValue)}
+            size="sm"
+          />
+        </div>
+      );
     }
-  };
 
-  const ReferralListItem = ({ item, onView }: { item: any; onView: (item: any) => void }) => {
-    const { isDesktop } = useScreenSize();
+    if (normalizedKey === "candidate_name" || normalizedKey.includes("candidate")) {
+      return (
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <Typography
+            variant="bodySmall"
+            className="font-medium text-center text-gray-900 truncate"
+            title={displayValue}
+          >
+            {displayValue}
+          </Typography>
+          {item.email || item.name ? (
+            <Typography
+              variant="bodySmall"
+              className="text-gray-500 text-center text-xs truncate"
+              title={item.email || item.name}
+            >
+              {item.email || item.name}
+            </Typography>
+          ) : null}
+        </div>
+      );
+    }
 
+    if (normalizedKey.includes("designation")) {
+      const opening = item.job_title || item.opening_label || item.opening;
+      return (
+        <div className="flex flex-col gap-0.5 min-w-0">
+          <Typography
+            variant="bodySmall"
+            className="font-medium text-center text-blue-600 truncate"
+            title={displayValue}
+          >
+            {displayValue}
+          </Typography>
+          {opening ? (
+            <Typography
+              variant="bodySmall"
+              className="text-gray-400 text-center text-xs truncate"
+              title={String(opening)}
+            >
+              {String(opening)}
+            </Typography>
+          ) : null}
+        </div>
+      );
+    }
+
+    return (
+      <Typography
+        variant="bodySmall"
+        className="text-gray-600 text-center truncate"
+        title={displayValue}
+      >
+      {displayValue}
+    </Typography>
+  );
+  }, []);
+
+  const ReferralListItem = useCallback(({ item, onView }: { item: any; onView: (item: any) => void }) => {
     const candidateName = item.candidate_name;
-    const email = item.name;
-    const designation = item.designation_label || item.designation;
-    const openingCode = item.job_title;
     const status = item.status;
-    const appliedOn = item.applied_on ? item.applied_on.split(" ")[0] : "--";
 
-    const statusColor = getStatusColor(status);
+    const statusColor = getReferralStatusColor(status);
 
     if (isDesktop) {
       return (
@@ -146,37 +292,11 @@ const ReferralList = () => {
           style={{ gridTemplateColumns: columnWidths.join(" ") }}
           onClick={() => onView(item)}
         >
-          {/* Candidate */}
-          <div className="flex flex-col gap-0.5">
-            <Typography variant="bodySmall" className="font-medium text-center text-gray-900">
-              {candidateName}
-            </Typography>
-            <Typography variant="bodySmall" className="text-gray-500 text-center text-xs">
-              {email}
-            </Typography>
-          </div>
-
-          {/* Designation & Opening */}
-          <div className="flex flex-col gap-0.5">
-            <Typography variant="bodySmall" className="font-medium text-center text-blue-600">
-              {designation}
-            </Typography>
-            <Typography variant="bodySmall" className="text-gray-400 text-center text-xs">
-              {openingCode}
-            </Typography>
-          </div>
-
-          {/* Status */}
-          <div className="flex justify-center items-center">
-            <Badge label={status} backgroundColor={statusColor} size="sm" />
-          </div>
-
-          {/* Applied On */}
-          <div className="flex justify-center items-center">
-            <Typography variant="bodySmall" className="text-gray-600 text-center">
-              {appliedOn}
-            </Typography>
-          </div>
+          {columns.map((column) => (
+            <div key={`${column.fieldname}-${column.value_key}`} className="min-w-0">
+              {renderReferralColumnValue(item, column)}
+            </div>
+          ))}
         </div>
       );
     }
@@ -198,26 +318,44 @@ const ReferralList = () => {
             <Badge label={status} backgroundColor={statusColor} size="sm" />
           </div>
 
-          {/* Designation & Opening */}
-          <div className="space-y-0.5">
-            <Typography variant="bodySmall" className="font-medium text-blue-600">
-              {designation}
-            </Typography>
-            <Typography variant="bodySmall" className="text-gray-400 text-xs">
-              {openingCode}
-            </Typography>
-          </div>
+          <div className="grid grid-cols-1 gap-3">
+            {columns.slice(1).map((column) => {
+              const key = column.value_key || column.fieldname;
+              const normalizedKey = key.toLowerCase();
+              if (normalizedKey === "status" || normalizedKey.includes("status")) {
+                return null;
+              }
 
-          {/* Footer */}
-          <div className="pt-2 border-t">
-            <Typography variant="bodySmall" className="text-gray-500 text-xs">
-              Applied on: <span className="font-semibold text-gray-700">{appliedOn}</span>
-            </Typography>
+              const value = getReferralColumnValue(item, column);
+              const displayValue =
+                (REFERRAL_DATE_KEYS.has(normalizedKey) || normalizedKey.includes("date")) && value
+                  ? String(value).split(" ")[0]
+                  : getReferralDisplayValue(value);
+
+              return (
+                <div key={`${column.fieldname}-${column.value_key}`} className="min-w-0">
+                  <Typography variant="bodySmall" className="text-gray-500 text-xs mb-0.5">
+                    {column.label}
+                  </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className={`truncate ${
+                      normalizedKey.includes("designation")
+                        ? "font-medium text-blue-600"
+                        : "text-gray-700"
+                    }`}
+                    title={displayValue}
+                  >
+                    {displayValue}
+                  </Typography>
+                </div>
+              );
+            })}
           </div>
         </div>
       </Card>
     );
-  };
+  }, [columnWidths, columns, isDesktop, renderReferralColumnValue]);
 
   const fetchReferrals = useCallback(async (_params: FetchParams): Promise<FrappePageResponse> => {
     const response: any = await FrappeAPI.callMethod(
@@ -263,12 +401,12 @@ const ReferralList = () => {
     // Client-side sorting
     const orderBy = _params.orderBy || "applied_on desc";
     const [field, direction] = orderBy.split(" ");
-    const config = REFERRAL_SORT_CONFIG.find((c: any) => c.sortable && c.field === field) as any;
-    if (config && config.getValue) {
+    const config = columnSortConfig.find((c: any) => c.sortable && c.field === field) as any;
+    if (config?.getValue || field) {
       filtered.sort((a, b) => {
-        const valA = config.getValue(a);
-        const valB = config.getValue(b);
-        if (config.type === "date") {
+        const valA = config?.getValue ? config.getValue(a) : a[field];
+        const valB = config?.getValue ? config.getValue(b) : b[field];
+        if (config?.type === "date") {
           const timeA = valA ? new Date(valA).getTime() : 0;
           const timeB = valB ? new Date(valB).getTime() : 0;
           return direction?.toLowerCase() === "desc" ? timeB - timeA : timeA - timeB;
@@ -296,7 +434,7 @@ const ReferralList = () => {
       nextCursor: start + paginated.length < filtered.length ? start + limit : undefined,
       pages: [Math.floor(start / limit) + 1],
     };
-  }, [setSummary]);
+  }, [columnSortConfig, setSummary]);
 
   const filterFields: FilterField[] = [
     {
@@ -433,8 +571,7 @@ const ReferralList = () => {
       ({ item }: { item: any }) => (
         <ReferralListItem item={item} onView={setSelectedReferral} />
       ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [ReferralListItem]
   );
 
   const statCards = [
@@ -518,7 +655,7 @@ const ReferralList = () => {
         <CardTable
           titles={titles}
           columnWidths={columnWidths}
-          columnSortConfig={REFERRAL_SORT_CONFIG}
+          columnSortConfig={columnSortConfig}
         >
           <DataListView
             queryKey={["my-referrals"]}
@@ -585,7 +722,7 @@ const ReferralList = () => {
                   <div>
                     <Badge
                       label={selectedReferral.status}
-                      backgroundColor={getStatusColor(selectedReferral.status)}
+                      backgroundColor={getReferralStatusColor(selectedReferral.status)}
                       size="sm"
                     />
                   </div>

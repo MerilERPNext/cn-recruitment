@@ -1,5 +1,23 @@
 import FrappeAPI from "../utils/frappeAPI"
-import type { GetReferralStatusResponse, DesignationResponse } from "../types/referral"
+import type { GetReferralStatusResponse, DesignationResponse, ReferralListColumn } from "../types/referral"
+
+const normalizeReferralColumns = (result: unknown): ReferralListColumn[] => {
+  if (Array.isArray(result)) return result as ReferralListColumn[]
+
+  if (result && typeof result === "object") {
+    const response = result as {
+      message?: unknown
+      columns?: unknown
+      data?: unknown
+    }
+
+    if (Array.isArray(response.message)) return response.message as ReferralListColumn[]
+    if (Array.isArray(response.columns)) return response.columns as ReferralListColumn[]
+    if (Array.isArray(response.data)) return response.data as ReferralListColumn[]
+  }
+
+  return []
+}
 
 export const referralService = {
   getReferralDetails: async (referralId: string): Promise<GetReferralStatusResponse> => {
@@ -28,5 +46,13 @@ export const referralService = {
       console.error("Failed to fetch designations:", error);
       throw error;
     }
-  }
+  },
+
+  getReferralListColumns: async (): Promise<ReferralListColumn[]> => {
+    const result = await FrappeAPI.callMethod(
+      "recruitment.api.channels.refer.list_columns"
+    )
+
+    return normalizeReferralColumns(result)
+  },
 }
