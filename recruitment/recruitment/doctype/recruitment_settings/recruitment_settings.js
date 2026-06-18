@@ -100,6 +100,43 @@ function set_field_options(frm, cdt, cdn, doctype_name, doctype_fields, filter_b
     }
 }
 
+// ---- Job Posting page column settings ----
+// The "Column" cell in both the IJP and Refer column tables is a dynamic
+// dropdown of Job Opening fields (not a fixed list). Populate it on load.
+frappe.ui.form.on('Recruitment Settings', {
+    refresh: function(frm) {
+        set_job_opening_column_options(frm);
+    }
+});
+
+function set_job_opening_column_options(frm) {
+    frappe.call({
+        method: 'recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.get_doctype_fields',
+        args: { doctype_name: 'Job Opening' },
+        callback: function(r) {
+            if (!r.message) return;
+
+            const skip = ['Section Break', 'Column Break', 'Tab Break', 'HTML',
+                'Button', 'Heading', 'Fold', 'Image', 'Table', 'Table MultiSelect'];
+
+            // "name" is the Opening ID — it isn't part of meta.fields, so add it
+            // explicitly as a selectable column.
+            const options = ['Opening ID (name)'].concat(
+                r.message
+                    .filter(d => d.fieldname && d.label && !skip.includes(d.fieldtype))
+                    .map(d => `${d.label} (${d.fieldname})`)
+            ).join('\n');
+
+            ['ijp_page_columns', 'refer_page_columns', 'career_page_filter_columns'].forEach(function(tablefield) {
+                if (frm.fields_dict[tablefield]) {
+                    frm.fields_dict[tablefield].grid.update_docfield_property('column', 'options', options);
+                    frm.refresh_field(tablefield);
+                }
+            });
+        }
+    });
+}
+
 frappe.ui.form.on('Recruitment Tool', {
     source_doctype: function(frm, cdt, cdn) {
         set_field_options(frm, cdt, cdn, 'source_doctype', 'source_field');

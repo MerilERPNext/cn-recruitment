@@ -223,9 +223,19 @@ doc_events = {
         "on_update_after_submit": "recruitment.api.action_center.sync_job_offer_action_item"
     },
     "Job Requisition": {
-        # Keep no_of_positions in sync with the actual custom_position_details
-        # row count on every save (Desk UI edits, scripted updates, etc.).
-        "validate": "recruitment.api.job_requisition.sync_no_of_positions",
+        "validate": [
+            # Keep no_of_positions in sync with the actual custom_position_details
+            # row count on every save (Desk UI edits, scripted updates, etc.).
+            "recruitment.api.job_requisition.sync_no_of_positions",
+            # Enforce Recruitment Settings -> Job Requisition Settings
+            # (max positions, replacement-employee restriction & uniqueness).
+            "recruitment.api.job_requisition.validate_requisition_settings",
+        ],
+    },
+    "Job Opening": {
+        # Enforce Recruitment Settings -> Job Posting Settings
+        # (mandatory Job Description, no posting without linked positions).
+        "validate": "recruitment.customizations.job_opening_settings.validate_job_posting_settings",
     },
     "Employee": {
         "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",
