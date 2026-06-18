@@ -1,47 +1,88 @@
 // Copyright (c) 2026, NextAI and contributors
 // For license information, please see license.txt
 
-// Onboarding Portal Forms — visual Form Builder
-// ---------------------------------------------
-// Replaces the old Field Inspector with a drag-and-drop builder rendered into
-// `available_fields_html`: a palette of Employee Onboarding fields on the left,
-// a Tabs -> Sections canvas on the right. It reads/writes the `portal_fields`
-// child table (the candidate portal already consumes it). Per-field approval
-// data on existing rows (approval_status, hr_comment, current_value, reviewer)
-// is PRESERVED across edits — only layout/flag columns are rewritten.
+// Job Requisition Form Settings — visual Form Builder
+// ---------------------------------------------------
+// Renders an HTML builder into the `builder_html` field: a palette of the
+// available Job Requisition fields (parent + each child table) on the left, and
+// a Tabs -> Sections canvas on the right. HR drags fields into sections and
+// arranges them. The builder is pure UI: it reads/writes the `field_overrides`
+// child table (the canonical store the API already consumes), so the backend is
+// untouched. The raw grid stays under "Advanced" as a fallback.
 
-frappe.ui.form.on("Onboarding Portal Forms", {
+frappe.ui.form.on("Job Requisition Form Settings", {
 	onload(frm) {
-		load_onb_fields(frm);
+		load_available_fields(frm);
 	},
 	refresh(frm) {
-		if (frm._onb_fields) {
-			mount_onb_builder(frm);
+		if (frm._jrfb_fields) {
+			mount_builder(frm);
 		} else {
-			load_onb_fields(frm);
+			load_available_fields(frm);
 		}
 	},
 });
 
-function load_onb_fields(frm) {
+// Keep the raw-grid Fieldname cell as a filtered picker too (advanced users).
+frappe.ui.form.on("Job Requisition Form Field", {
+	applies_to(frm, cdt, cdn) {
+		const row = locals[cdt][cdn];
+		if (row.fieldname) frappe.model.set_value(cdt, cdn, "fieldname", "");
+		set_grid_fieldname_options(frm, row.applies_to);
+	},
+	form_render(frm, cdt, cdn) {
+		set_grid_fieldname_options(frm, locals[cdt][cdn].applies_to);
+	},
+});
+
+function load_available_fields(frm) {
 	frappe.call({
-		method: "recruitment.api.candidate_portal.get_all_onboarding_fields",
+		method: "recruitment.api.job_requisition.get_available_job_requisition_fields",
 		callback(r) {
-			if (!r.message || r.message.status !== "success") return;
-			frm._onb_fields = (r.message.fields || []).map((f) => ({
-				fieldname: f.fieldname,
-				label: f.label || f.fieldname,
-				fieldtype: f.fieldtype || "Data",
-				options: f.options || "",
-			}));
-			frm._onb_lookup = {};
-			frm._onb_fields.forEach((f) => (frm._onb_lookup[f.fieldname] = f));
-			mount_onb_builder(frm);
+			const msg = r.message;
+			if (!msg || msg.status === "error") return;
+
+			const map = { Parent: (msg.parent_fields || []).map(simplify) };
+			const child = msg.child_fields || {};
+			Object.keys(child).forEach((group) => {
+				map[group] = (child[group].fields || []).map(simplify);
+			});
+			frm._jrfb_fields = map;
+			frm._jrfb_lookup = {};
+			Object.keys(map).forEach((group) => {
+				map[group].forEach((f) => {
+					frm._jrfb_lookup[`${group}::${f.fieldname}`] = f;
+				});
+			});
+			mount_builder(frm);
 		},
 	});
 }
 
-const ONB_FT = {
+function simplify(f) {
+	return {
+		fieldname: f.fieldname,
+		label: f.label || f.fieldname,
+		fieldtype: f.fieldtype || "Data",
+		tab_label: f.tab_label || "",
+		section_label: f.section_label || "",
+	};
+}
+
+function set_grid_fieldname_options(frm, applies_to) {
+	const map = frm._jrfb_fields;
+	const grid = frm.fields_dict.field_overrides && frm.fields_dict.field_overrides.grid;
+	if (!map || !grid) return;
+	const opts = (map[applies_to || "Parent"] || []).map((f) => ({
+		value: f.fieldname,
+		label: `${f.label} — ${f.fieldname}`,
+		description: f.fieldtype,
+	}));
+	grid.update_docfield_property("fieldname", "options", opts);
+}
+
+// Field-type → accent colour + short tag, for at-a-glance scanning.
+const FT_META = {
 	Link: { c: "#2490ef", t: "Link" },
 	"Dynamic Link": { c: "#2490ef", t: "Link" },
 	Table: { c: "#8a3ffc", t: "Table" },
@@ -50,58 +91,68 @@ const ONB_FT = {
 	Check: { c: "#21a366", t: "Check" },
 	Date: { c: "#0fb5ae", t: "Date" },
 	Datetime: { c: "#0fb5ae", t: "Date" },
-	Attach: { c: "#d4380d", t: "File" },
-	"Attach Image": { c: "#d4380d", t: "Img" },
+	Time: { c: "#0fb5ae", t: "Time" },
+	Duration: { c: "#0fb5ae", t: "Dur" },
 	Currency: { c: "#4f46e5", t: "₹" },
 	Float: { c: "#4f46e5", t: "Num" },
 	Int: { c: "#4f46e5", t: "Num" },
+	Percent: { c: "#4f46e5", t: "%" },
 	"Text Editor": { c: "#6b7280", t: "Rich" },
 	"Small Text": { c: "#6b7280", t: "Text" },
 	Text: { c: "#6b7280", t: "Text" },
+	"Long Text": { c: "#6b7280", t: "Text" },
 };
-function onb_ft(ft) {
-	return ONB_FT[ft] || { c: "#6b7280", t: "Data" };
+function ftmeta(ft) {
+	return FT_META[ft] || { c: "#6b7280", t: "Data" };
 }
 
-function mount_onb_builder(frm) {
-	const field = frm.get_field("available_fields_html");
+// ---------------------------------------------------------------------------
+// Builder
+// ---------------------------------------------------------------------------
+
+function mount_builder(frm) {
+	const field = frm.get_field("builder_html");
 	if (!field || !field.$wrapper) return;
-	onb_inject_styles();
-	const b = new OnbBuilder(frm, field.$wrapper);
-	frm._onb_builder = b;
+	inject_styles();
+	const b = new FormBuilder(frm, field.$wrapper);
+	frm._jrfb = b;
 	b.init_state_from_table();
 	b.render();
 }
 
-class OnbBuilder {
+class FormBuilder {
 	constructor(frm, $wrapper) {
 		this.frm = frm;
 		this.$wrapper = $wrapper;
-		this.fields = frm._onb_fields || [];
-		this.lookup = frm._onb_lookup || {};
+		this.fields = frm._jrfb_fields || {};
+		this.lookup = frm._jrfb_lookup || {};
 		this.uid = 0;
 		this.state = { tabs: [], activeTab: null };
 		this.search = "";
 	}
 
-	nid(p) {
+	nid(prefix) {
 		this.uid += 1;
-		return `${p}${this.uid}`;
+		return `${prefix}${this.uid}`;
 	}
 
-	// --- state <-> portal_fields -----------------------------------------
+	// --- state <-> child table -------------------------------------------
 
 	init_state_from_table() {
-		const rows = this.frm.doc.portal_fields || [];
+		const rows = (this.frm.doc.field_overrides || [])
+			.slice()
+			.sort((a, b) => (a.order || 0) - (b.order || 0));
+
 		const tabs = [];
 		const tabIdx = {};
 		const secIdx = {};
 
 		rows.forEach((row) => {
 			if (!row.fieldname) return;
-			const meta = this.lookup[row.fieldname] || {};
-			const tabTitle = row.tab_label || "General";
-			const secTitle = row.section_label || "";
+			const applies_to = row.applies_to || "Parent";
+			const meta = this.lookup[`${applies_to}::${row.fieldname}`] || {};
+			const tabTitle = row.tab_override || meta.tab_label || "Details";
+			const secTitle = row.section_override || meta.section_label || "";
 
 			if (!(tabTitle in tabIdx)) {
 				const tab = { id: this.nid("tab"), title: tabTitle, sections: [] };
@@ -116,13 +167,14 @@ class OnbBuilder {
 				secIdx[secKey] = sec;
 			}
 			secIdx[secKey].fields.push({
+				applies_to,
 				fieldname: row.fieldname,
-				label: row.label || meta.label || row.fieldname,
-				fieldtype: row.fieldtype || meta.fieldtype || "Data",
-				options: row.options || meta.options || "",
-				mandatory: !!row.is_mandatory,
-				read_only: !!row.read_only,
-				hidden: !!row.hidden,
+				label: meta.label || row.fieldname,
+				fieldtype: meta.fieldtype || "Data",
+				mandatory: row.mandatory_override === "Required",
+				read_only: row.read_only_override === "Read Only",
+				hidden: row.expose === "Hide",
+				label_override: row.label_override || "",
 			});
 		});
 
@@ -132,45 +184,40 @@ class OnbBuilder {
 
 	sync_to_table() {
 		const frm = this.frm;
-		const prev = {};
-		(frm.doc.portal_fields || []).forEach((r) => {
-			if (r.fieldname) prev[r.fieldname] = r;
-		});
-
-		frm.clear_table("portal_fields");
+		frm.clear_table("field_overrides");
+		let order = 0;
 		this.state.tabs.forEach((tab) => {
 			tab.sections.forEach((sec) => {
 				sec.fields.forEach((f) => {
-					const old = prev[f.fieldname] || {};
-					frm.add_child("portal_fields", {
+					order += 10;
+					frm.add_child("field_overrides", {
+						applies_to: f.applies_to,
 						fieldname: f.fieldname,
-						label: f.label,
-						fieldtype: f.fieldtype,
-						options: f.options || old.options || "",
-						tab_label: tab.title,
-						section_label: sec.title,
-						is_mandatory: f.mandatory ? 1 : 0,
-						read_only: f.read_only ? 1 : 0,
-						hidden: f.hidden ? 1 : 0,
-						// Preserve everything the builder doesn't own.
-						selected_child_fields: old.selected_child_fields || "",
-						mandatory_child_fields: old.mandatory_child_fields || "",
-						approval_status: old.approval_status || undefined,
-						reviewed_by: old.reviewed_by || undefined,
-						reviewed_on: old.reviewed_on || undefined,
-						hr_comment: old.hr_comment || undefined,
-						current_value: old.current_value || undefined,
+						tab_override: tab.title,
+						section_override: sec.title,
+						order: order,
+						expose: f.hidden ? "Hide" : "Show",
+						mandatory_override: f.mandatory ? "Required" : "Default",
+						read_only_override: f.read_only ? "Read Only" : "Default",
+						label_override: f.label_override || "",
 					});
 				});
 			});
 		});
-		frm.refresh_field("portal_fields");
+		frm.refresh_field("field_overrides");
+
+		const has = this.state.tabs.some((t) => t.sections.some((s) => s.fields.length));
+		if (cint(frm.doc.restrict_to_configured) !== (has ? 1 : 0)) {
+			frm.set_value("restrict_to_configured", has ? 1 : 0);
+		}
 		frm.dirty();
 	}
 
-	is_placed(fieldname) {
+	is_placed(applies_to, fieldname) {
 		return this.state.tabs.some((t) =>
-			t.sections.some((s) => s.fields.some((f) => f.fieldname === fieldname))
+			t.sections.some((s) =>
+				s.fields.some((f) => f.applies_to === applies_to && f.fieldname === fieldname)
+			)
 		);
 	}
 
@@ -185,6 +232,38 @@ class OnbBuilder {
 	}
 
 	// --- mutations --------------------------------------------------------
+
+	load_current_form() {
+		const run = (overwrite) => {
+			frappe.call({
+				method: "recruitment.api.job_requisition.load_current_form_into_settings",
+				args: { overwrite: overwrite ? 1 : 0 },
+				freeze: true,
+				freeze_message: __("Loading current Job Requisition form..."),
+				callback: (r) => {
+					if (r.message && r.message.success) {
+						frappe.show_alert({ message: r.message.message, indicator: "green" });
+						this.frm.reload_doc().then(() => {
+							this.fields = this.frm._jrfb_fields;
+							this.init_state_from_table();
+							this.render();
+						});
+					} else if (r.message) {
+						frappe.msgprint({ message: r.message.message, indicator: "orange" });
+					}
+				},
+			});
+		};
+
+		if (this.counts() > 0) {
+			frappe.confirm(
+				__("This replaces the current builder layout with the live Job Requisition form. Continue?"),
+				() => run(true)
+			);
+		} else {
+			run(false);
+		}
+	}
 
 	add_tab() {
 		frappe.prompt(
@@ -237,32 +316,35 @@ class OnbBuilder {
 		this.commit();
 	}
 
-	add_field_to_active(fieldname) {
-		if (this.is_placed(fieldname)) return;
+	add_field_to_active(applies_to, fieldname) {
+		if (this.is_placed(applies_to, fieldname)) return;
 		let tab = this.active();
 		if (!tab) {
-			tab = { id: this.nid("tab"), title: "General", sections: [] };
+			tab = { id: this.nid("tab"), title: "Details", sections: [] };
 			this.state.tabs.push(tab);
 			this.state.activeTab = tab.id;
 		}
 		if (!tab.sections.length) {
 			tab.sections.push({ id: this.nid("sec"), title: "", fields: [] });
 		}
-		const meta = this.lookup[fieldname] || {};
+		const meta = this.lookup[`${applies_to}::${fieldname}`] || {};
 		tab.sections[tab.sections.length - 1].fields.push({
+			applies_to,
 			fieldname,
 			label: meta.label || fieldname,
 			fieldtype: meta.fieldtype || "Data",
-			options: meta.options || "",
 			mandatory: false,
 			read_only: false,
 			hidden: false,
+			label_override: "",
 		});
 		this.commit();
 	}
 
 	remove_field(sec, f) {
-		sec.fields = sec.fields.filter((x) => x.fieldname !== f.fieldname);
+		sec.fields = sec.fields.filter(
+			(x) => !(x.applies_to === f.applies_to && x.fieldname === f.fieldname)
+		);
 		this.commit();
 	}
 
@@ -270,7 +352,9 @@ class OnbBuilder {
 		const NEW_TAB = "➕ New tab";
 		const NEW_SEC = "➕ New section";
 		const tabTitles = this.state.tabs.map((t) => t.title);
-		const secTitles = Array.from(new Set(fromTab.sections.map((s) => s.title)));
+		const secTitles = Array.from(
+			new Set(fromTab.sections.map((s) => s.title))
+		);
 
 		frappe.prompt(
 			[
@@ -311,18 +395,27 @@ class OnbBuilder {
 					ttab = { id: this.nid("tab"), title: tabTitle, sections: [] };
 					this.state.tabs.push(ttab);
 				}
-				const secTitle = v.target_section === NEW_SEC ? (v.new_section || "").trim() : v.target_section;
+
+				const secTitle =
+					v.target_section === NEW_SEC ? (v.new_section || "").trim() : v.target_section;
 				let tsec = ttab.sections.find((s) => s.title === secTitle);
 				if (!tsec) {
 					tsec = { id: this.nid("sec"), title: secTitle, fields: [] };
 					ttab.sections.push(tsec);
 				}
-				fromSec.fields = fromSec.fields.filter((x) => x.fieldname !== f.fieldname);
-				if (!tsec.fields.some((x) => x.fieldname === f.fieldname)) tsec.fields.push(f);
+
+				// Remove from origin, then add to target (guard against duplicates).
+				fromSec.fields = fromSec.fields.filter(
+					(x) => !(x.applies_to === f.applies_to && x.fieldname === f.fieldname)
+				);
+				if (!tsec.fields.some((x) => x.applies_to === f.applies_to && x.fieldname === f.fieldname)) {
+					tsec.fields.push(f);
+				}
+
 				this.state.activeTab = ttab.id;
 				this.commit();
 				frappe.show_alert({
-					message: __("Moved “{0}” to {1}", [f.label, tabTitle]),
+					message: __("Moved “{0}” to {1}", [f.label_override || f.label, tabTitle]),
 					indicator: "green",
 				});
 			},
@@ -344,17 +437,19 @@ class OnbBuilder {
 					const key = el.getAttribute("data-fkey");
 					if (seen[key]) return;
 					seen[key] = true;
-					let f = find_onb_field(this.state, key);
+					const [applies_to, fieldname] = key.split("::");
+					let f = find_field(this.state, applies_to, fieldname);
 					if (!f) {
 						const meta = this.lookup[key] || {};
 						f = {
-							fieldname: key,
-							label: meta.label || key,
+							applies_to,
+							fieldname,
+							label: meta.label || fieldname,
 							fieldtype: meta.fieldtype || "Data",
-							options: meta.options || "",
 							mandatory: false,
 							read_only: false,
 							hidden: false,
+							label_override: "",
 						};
 					}
 					ordered.push(f);
@@ -375,10 +470,12 @@ class OnbBuilder {
 	render() {
 		const $root = $('<div class="jrfb"></div>');
 		$root.append(this.render_header());
+
 		const $body = $('<div class="jrfb-body"></div>');
 		$body.append(this.render_palette());
 		$body.append(this.render_canvas());
 		$root.append($body);
+
 		this.$wrapper.empty().append($root);
 		this.wire_sortables();
 	}
@@ -387,16 +484,20 @@ class OnbBuilder {
 		const total = this.counts();
 		const $h = $('<div class="jrfb-header"></div>');
 		$h.append(
-			'<div class="jrfb-brand"><span class="jrfb-logo">⚡</span><div>' +
-				'<div class="jrfb-title">' +
-				__("Onboarding Form Builder") +
+			'<div class="jrfb-brand">' +
+				'<span class="jrfb-logo">⚡</span>' +
+				'<div><div class="jrfb-title">' +
+				__("Form Builder") +
 				'</div><div class="jrfb-sub">' +
 				(total
 					? __("{0} field(s) placed · drag to rearrange", [total])
-					: __("Drag Employee Onboarding fields from the left to design the portal form")) +
+					: __("Drag fields from the left, or leave empty to serve the full form")) +
 				"</div></div></div>"
 		);
 		const $actions = $('<div class="jrfb-actions"></div>');
+		$('<button class="jrfb-btn jrfb-btn-ghost">⟲ ' + __("Load current form") + "</button>")
+			.appendTo($actions)
+			.on("click", () => this.load_current_form());
 		$('<button class="jrfb-btn jrfb-btn-primary">＋ ' + __("Add Tab") + "</button>")
 			.appendTo($actions)
 			.on("click", () => this.add_tab());
@@ -407,7 +508,7 @@ class OnbBuilder {
 	render_palette() {
 		const $p = $('<div class="jrfb-palette"></div>');
 		const $top = $('<div class="jrfb-palette-top"></div>');
-		$top.append('<div class="jrfb-palette-title">' + __("Onboarding Fields") + "</div>");
+		$top.append('<div class="jrfb-palette-title">' + __("Available Fields") + "</div>");
 		const $search = $(
 			'<div class="jrfb-searchbox"><span>🔎</span><input type="text" placeholder="' +
 				__("Search fields") +
@@ -424,37 +525,44 @@ class OnbBuilder {
 	}
 
 	render_groups() {
-		const items = this.fields.filter((f) => this.match(f));
 		const $scroll = $('<div class="jrfb-groups"></div>');
-		$scroll.append(
-			'<div class="jrfb-group-head">' +
-				__("Employee Onboarding") +
-				'<span class="jrfb-group-count">' +
-				items.length +
-				"</span></div>"
-		);
-		items.forEach((f) => {
-			const placed = this.is_placed(f.fieldname);
-			const fm = onb_ft(f.fieldtype);
-			const $it = $('<div class="jrfb-pitem ' + (placed ? "is-placed" : "") + '" draggable="true"></div>')
-				.attr("data-fkey", f.fieldname)
-				.attr("title", f.fieldname)
-				.css("--accent", fm.c);
-			$it.append('<span class="jrfb-grip">⠿</span>');
-			$it.append(
-				'<span class="jrfb-pmain"><span class="jrfb-plabel">' +
-					frappe.utils.escape_html(f.label) +
-					'</span><span class="jrfb-pname">' +
-					frappe.utils.escape_html(f.fieldname) +
-					"</span></span>"
+		Object.keys(this.fields).forEach((group) => {
+			const items = (this.fields[group] || []).filter((f) => this.match(f));
+			if (!items.length) return;
+			$scroll.append(
+				'<div class="jrfb-group-head">' +
+					frappe.utils.escape_html(group) +
+					'<span class="jrfb-group-count">' +
+					items.length +
+					"</span></div>"
 			);
-			$it.append('<span class="jrfb-ptag" style="background:' + fm.c + '1a;color:' + fm.c + '">' + fm.t + "</span>");
-			if (placed) {
-				$it.append('<span class="jrfb-check">✓</span>');
-			} else {
-				$it.on("dblclick", () => this.add_field_to_active(f.fieldname));
-			}
-			$scroll.append($it);
+			items.forEach((f) => {
+				const placed = this.is_placed(group, f.fieldname);
+				const fm = ftmeta(f.fieldtype);
+				const $it = $('<div class="jrfb-pitem ' + (placed ? "is-placed" : "") + '" draggable="true"></div>')
+					.attr("data-fkey", `${group}::${f.fieldname}`)
+					.attr("title", f.fieldname)
+					.css("--accent", fm.c);
+				$it.append('<span class="jrfb-grip">⠿</span>');
+				$it.append(
+					'<span class="jrfb-pmain"><span class="jrfb-plabel">' +
+						frappe.utils.escape_html(f.label) +
+						'</span><span class="jrfb-pname">' +
+						frappe.utils.escape_html(f.fieldname) +
+						"</span></span>"
+				);
+				$it.append(
+					'<span class="jrfb-ptag" style="background:' + fm.c + '1a;color:' + fm.c + '">' +
+						fm.t +
+						"</span>"
+				);
+				if (placed) {
+					$it.append('<span class="jrfb-check">✓</span>');
+				} else {
+					$it.on("dblclick", () => this.add_field_to_active(group, f.fieldname));
+				}
+				$scroll.append($it);
+			});
 		});
 		return $scroll;
 	}
@@ -468,15 +576,21 @@ class OnbBuilder {
 	match(f) {
 		if (!this.search) return true;
 		const s = this.search.toLowerCase();
-		return (f.label || "").toLowerCase().includes(s) || (f.fieldname || "").toLowerCase().includes(s);
+		return (
+			(f.label || "").toLowerCase().includes(s) ||
+			(f.fieldname || "").toLowerCase().includes(s)
+		);
 	}
 
 	render_canvas() {
 		const $c = $('<div class="jrfb-canvas"></div>');
+
 		const $tabs = $('<div class="jrfb-tabs"></div>');
 		this.state.tabs.forEach((tab) => {
 			const n = tab.sections.reduce((a, s) => a + s.fields.length, 0);
-			const $pill = $('<div class="jrfb-pill ' + (tab.id === this.state.activeTab ? "active" : "") + '"></div>');
+			const $pill = $(
+				'<div class="jrfb-pill ' + (tab.id === this.state.activeTab ? "active" : "") + '"></div>'
+			);
 			$pill.append(
 				'<span class="jrfb-pill-label">' +
 					frappe.utils.escape_html(tab.title || "—") +
@@ -508,10 +622,10 @@ class OnbBuilder {
 		if (!tab) {
 			const $empty = $('<div class="jrfb-empty"></div>');
 			$empty.append('<div class="jrfb-empty-ico">🗂️</div>');
-			$empty.append('<div class="jrfb-empty-title">' + __("Start building the portal form") + "</div>");
+			$empty.append('<div class="jrfb-empty-title">' + __("Start building your form") + "</div>");
 			$empty.append(
 				'<div class="jrfb-empty-sub">' +
-					__("Add a tab, then drag Employee Onboarding fields into it.") +
+					__("Add a tab, then drag fields into it. Leave the builder empty to serve the complete Job Requisition form.") +
 					"</div>"
 			);
 			$('<button class="jrfb-btn jrfb-btn-primary">＋ ' + __("Add your first tab") + "</button>")
@@ -557,14 +671,23 @@ class OnbBuilder {
 	}
 
 	render_chip(tab, sec, f) {
-		const fm = onb_ft(f.fieldtype);
-		const $chip = $('<div class="jrfb-chip"></div>').attr("data-fkey", f.fieldname).css("--accent", fm.c);
+		const fm = ftmeta(f.fieldtype);
+		const $chip = $('<div class="jrfb-chip"></div>')
+			.attr("data-fkey", `${f.applies_to}::${f.fieldname}`)
+			.css("--accent", fm.c);
 		if (f.hidden) $chip.addClass("is-hidden");
+
 		$chip.append('<span class="jrfb-grip">⠿</span>');
+		const tag =
+			f.applies_to === "Parent"
+				? ""
+				: '<span class="jrfb-chip-src">' + frappe.utils.escape_html(f.applies_to) + "</span>";
 		$chip.append(
 			'<span class="jrfb-chip-main"><span class="jrfb-chip-label">' +
-				frappe.utils.escape_html(f.label) +
-				"</span></span>"
+				frappe.utils.escape_html(f.label_override || f.label) +
+				"</span>" +
+				tag +
+				"</span>"
 		);
 		$chip.append('<span class="jrfb-ptag" style="background:' + fm.c + '1a;color:' + fm.c + '">' + fm.t + "</span>");
 
@@ -588,9 +711,9 @@ class OnbBuilder {
 			.appendTo($tools)
 			.on("click", () => {
 				frappe.prompt(
-					[{ fieldname: "label", label: __("Label"), fieldtype: "Data", default: f.label }],
+					[{ fieldname: "label", label: __("Label override"), fieldtype: "Data", default: f.label_override }],
 					(v) => {
-						f.label = v.label || f.label;
+						f.label_override = v.label || "";
 						this.commit();
 					},
 					__("Relabel field"),
@@ -600,6 +723,7 @@ class OnbBuilder {
 		$('<span class="jrfb-mini jrfb-mini-danger" title="Remove">✕</span>')
 			.appendTo($tools)
 			.on("click", () => this.remove_field(sec, f));
+
 		$chip.append($tools);
 		return $chip;
 	}
@@ -613,19 +737,21 @@ class OnbBuilder {
 	wire_sortables() {
 		const Sortable = window.Sortable;
 		if (!Sortable) return;
+
 		this.$wrapper.find(".jrfb-groups").each((_, el) => {
 			Sortable.create(el, {
-				group: { name: "onb", pull: "clone", put: false },
+				group: { name: "jrfb", pull: "clone", put: false },
 				sort: false,
 				filter: ".is-placed, .jrfb-group-head",
 				draggable: ".jrfb-pitem",
 				animation: 150,
 			});
 		});
+
 		const self = this;
 		this.$wrapper.find(".jrfb-droplist").each((_, el) => {
 			Sortable.create(el, {
-				group: { name: "onb", pull: true, put: true },
+				group: { name: "jrfb", pull: true, put: true },
 				draggable: ".jrfb-chip, .jrfb-pitem",
 				animation: 150,
 				ghostClass: "jrfb-ghost",
@@ -640,17 +766,17 @@ class OnbBuilder {
 	}
 }
 
-function find_onb_field(state, fieldname) {
+function find_field(state, applies_to, fieldname) {
 	for (const tab of state.tabs) {
 		for (const sec of tab.sections) {
-			const hit = sec.fields.find((f) => f.fieldname === fieldname);
+			const hit = sec.fields.find((f) => f.applies_to === applies_to && f.fieldname === fieldname);
 			if (hit) return hit;
 		}
 	}
 	return null;
 }
 
-function onb_inject_styles() {
+function inject_styles() {
 	if (document.getElementById("jrfb-styles")) return;
 	const css = `
 .jrfb { border:1px solid var(--border-color); border-radius:12px; overflow:hidden; background:var(--card-bg,#fff); box-shadow:0 1px 3px rgba(0,0,0,.06); font-size:13.5px; }
@@ -663,7 +789,10 @@ function onb_inject_styles() {
 .jrfb-btn { border:none; border-radius:8px; padding:7px 14px; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s ease; }
 .jrfb-btn-primary { background:#2490ef; color:#fff; box-shadow:0 1px 2px rgba(36,144,239,.4); }
 .jrfb-btn-primary:hover { background:#1a7ad4; transform:translateY(-1px); }
+.jrfb-btn-ghost { background:rgba(255,255,255,.12); color:#fff; }
+.jrfb-btn-ghost:hover { background:rgba(255,255,255,.22); }
 .jrfb-body { display:flex; min-height:380px; }
+
 .jrfb-palette { width:280px; border-right:1px solid var(--border-color); display:flex; flex-direction:column; background:var(--subtle-fg,#fafbfc); }
 .jrfb-palette-top { padding:12px 12px 8px; border-bottom:1px solid var(--border-color); }
 .jrfb-palette-title { font-weight:600; font-size:12px; margin-bottom:8px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); }
@@ -683,6 +812,7 @@ function onb_inject_styles() {
 .jrfb-pname { font-size:11px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .jrfb-ptag { font-size:10px; font-weight:700; padding:2px 6px; border-radius:5px; letter-spacing:.02em; }
 .jrfb-check { color:#21a366; font-weight:700; }
+
 .jrfb-canvas { flex:1; padding:16px; overflow:auto; max-height:540px; background:repeating-linear-gradient(45deg,transparent,transparent 11px,rgba(0,0,0,.012) 11px,rgba(0,0,0,.012) 12px); }
 .jrfb-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
 .jrfb-pill { display:flex; align-items:center; gap:7px; padding:6px 12px; border:1px solid var(--border-color); border-radius:20px; cursor:pointer; background:var(--card-bg,#fff); transition:all .12s ease; }
@@ -694,6 +824,7 @@ function onb_inject_styles() {
 .jrfb-mini { cursor:pointer; opacity:.55; font-size:11px; padding:0 2px; transition:opacity .12s; }
 .jrfb-mini:hover { opacity:1; }
 .jrfb-mini-danger:hover { color:#e24c4c; }
+
 .jrfb-section { border:1px solid var(--border-color); border-radius:10px; margin-bottom:12px; background:var(--card-bg,#fff); box-shadow:0 1px 2px rgba(0,0,0,.04); }
 .jrfb-sec-head { display:flex; align-items:center; gap:8px; padding:9px 12px; border-bottom:1px solid var(--border-color); background:var(--subtle-fg,#fafbfc); border-radius:10px 10px 0 0; }
 .jrfb-sec-dot { width:7px; height:7px; border-radius:50%; background:#2490ef; }
@@ -709,6 +840,7 @@ function onb_inject_styles() {
 .jrfb-chip.is-hidden .jrfb-chip-label { text-decoration:line-through; }
 .jrfb-chip-main { flex:1; display:flex; align-items:center; gap:8px; min-width:0; }
 .jrfb-chip-label { font-size:13.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.jrfb-chip-src { font-size:9px; color:var(--text-muted); background:var(--subtle-fg,#eef0f2); border-radius:5px; padding:2px 6px; }
 .jrfb-chip-tools { display:flex; align-items:center; gap:5px; }
 .jrfb-tg { width:20px; height:20px; line-height:20px; text-align:center; border-radius:5px; font-size:10px; font-weight:700; cursor:pointer; background:var(--subtle-fg,#eef0f2); color:var(--text-muted); transition:all .12s; }
 .jrfb-tg:hover { transform:scale(1.08); }
@@ -716,6 +848,7 @@ function onb_inject_styles() {
 .jrfb-ghost { opacity:.4; }
 .jrfb-addsec { width:100%; padding:9px; border:1px dashed var(--border-color); border-radius:8px; background:transparent; color:var(--text-muted); font-size:12px; font-weight:600; cursor:pointer; transition:all .12s; }
 .jrfb-addsec:hover { border-color:#2490ef; color:#2490ef; background:rgba(36,144,239,.04); }
+
 .jrfb-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:48px 24px; gap:8px; }
 .jrfb-empty-ico { font-size:42px; opacity:.8; }
 .jrfb-empty-title { font-size:15px; font-weight:600; }
