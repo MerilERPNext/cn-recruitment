@@ -1,12 +1,19 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, type ReactNode } from "react";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import DataListView, { FilterField } from "../DataListView";
 import CardTable from "../shared/CardTable";
 import DetailView from "./IJPDetailView";
 import ApplyView from "./IJPApplyView";
-import { JobType, propsListViewComponents } from "./IJPTypes";
-import { useMyApplications } from "../../hooks/useRecruitment";
+import {
+  IJPOpeningColumn,
+  JobType,
+  propsListViewComponents,
+} from "./IJPTypes";
+import {
+  useIJPOpeningColumns,
+  useMyApplications,
+} from "../../hooks/useRecruitment";
 import { Employee } from "../../types/employee";
 import { Typography } from "../shared/atoms/Typography";
 import Badge from "../shared/Badge";
@@ -42,27 +49,105 @@ const renderStatusBadge = (status: string | null) => {
 
 // ─── Views ────────────────────────────────────────────────────────────────────
 
-const COLUMN_WIDTHS = [
-  "1.25fr",
-  "1.75fr",
-  "1.25fr",
-  "1.25fr",
-  "1.25fr",
-  "1.25fr",
-  "1fr",
-  "1fr",
+const DEFAULT_COLUMNS: IJPOpeningColumn[] = [
+  { fieldname: "name", label: "Opening ID", value_key: "name" },
+  { fieldname: "job_title", label: "Job Title", value_key: "job_title" },
+  { fieldname: "designation", label: "Designation", value_key: "designation" },
+  { fieldname: "department", label: "Department", value_key: "department" },
+  { fieldname: "company", label: "Company", value_key: "company" },
+  { fieldname: "location", label: "Location", value_key: "location" },
+  { fieldname: "posted_on", label: "Posted On", value_key: "posted_on" },
+  { fieldname: "status", label: "Status", value_key: "status" },
 ];
 
-const TITLES = [
-  "Opening ID",
-  "Job Title",
-  "Designation",
-  "Department",
-  "Company",
-  "Location",
-  "Posted On",
-  "Status",
-];
+const DATE_VALUE_KEYS = new Set([
+  "posted_on",
+  "closes_on",
+  "applied_on",
+  "creation",
+  "modified",
+]);
+
+const getColumnValue = (item: JobType, column: IJPOpeningColumn) =>
+  item[column.value_key] ?? item[column.fieldname];
+
+const getDisplayValue = (value: unknown) => {
+  if (value === null || value === undefined || value === "") return "--";
+  if (Array.isArray(value)) return value.filter(Boolean).join(", ") || "--";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+};
+
+const isDesignationColumn = (key: string) =>
+  key.toLowerCase().includes("designation");
+
+const MAX_COLUMNS_BEFORE_SCROLL = 6;
+
+const getColumnWidth = (column: IJPOpeningColumn, totalColumns: number) => {
+  if (totalColumns <= MAX_COLUMNS_BEFORE_SCROLL) {
+    return "minmax(0, 1fr)";
+  }
+
+  const key = (column.value_key || column.fieldname).toLowerCase();
+  if (key === "name" || key.includes("opening")) return "9rem";
+  if (key === "job_title" || key.includes("job_title")) return "14rem";
+  if (isDesignationColumn(key)) return "12rem";
+  if (key.includes("department")) return "12rem";
+  if (key.includes("company")) return "12rem";
+  if (key.includes("location")) return "11rem";
+  if (key === "status") return "8rem";
+  if (DATE_VALUE_KEYS.has(key) || key.includes("date")) return "9rem";
+  return "12rem";
+};
+
+const renderColumnValue = (
+  item: JobType,
+  column: IJPOpeningColumn,
+  applied: boolean,
+): ReactNode => {
+  const key = column.value_key || column.fieldname;
+  const value = getColumnValue(item, column);
+
+  if (key === "status") {
+    return (
+      <div className="flex justify-center items-center">
+        {renderStatusBadge(String(value || ""))}
+      </div>
+    );
+  }
+
+  if (key === "job_title") {
+    return (
+      <div className="flex items-center justify-center gap-1.5 min-w-0">
+        <span className="text-blue-600 hover:text-blue-700 font-semibold cursor-pointer no-underline truncate block">
+          {getDisplayValue(value)}
+        </span>
+        {applied && (
+          <Badge
+            label="Applied"
+            backgroundColor="bg-emerald-100"
+            textColor="text-emerald-800"
+            size="sm"
+          />
+        )}
+      </div>
+    );
+  }
+
+  const displayValue =
+    DATE_VALUE_KEYS.has(key) && value
+      ? formatToIndianDate(String(value)) || "--"
+      : getDisplayValue(value);
+
+  return (
+    <div
+      className={`text-slate-800 truncate text-center ${key === "name" ? "font-medium" : ""}`}
+      title={isDesignationColumn(key) ? displayValue : undefined}
+    >
+      {displayValue}
+    </div>
+  );
+};
 
 function ListView({
   appliedIds,
@@ -72,6 +157,21 @@ function ListView({
   const { isDesktop } = useScreenSize();
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const { data: openingColumns } = useIJPOpeningColumns();
+
+  const columns = useMemo(() => {
+    const apiColumns = openingColumns?.filter(
+      (column) => column.label && (column.value_key || column.fieldname),
+    );
+    return apiColumns?.length ? apiColumns : DEFAULT_COLUMNS;
+  }, [openingColumns]);
+
+  const titles = useMemo(() => columns.map((column) => column.label), [columns]);
+
+  const columnWidths = useMemo(
+    () => columns.map((column) => getColumnWidth(column, columns.length)),
+    [columns],
+  );
 
   const filterFields: FilterField[] = useMemo(
     () => [
@@ -136,43 +236,14 @@ function ListView({
           return (
             <div
               className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer items-center min-w-max bg-white text-sm"
-              style={{ gridTemplateColumns: COLUMN_WIDTHS.join(" ") }}
+              style={{ gridTemplateColumns: columnWidths.join(" ") }}
               onClick={handleRowClick}
             >
-              <div className="text-slate-800 font-medium truncate text-center">
-                {item.name || "--"}
-              </div>
-              <div className="flex items-center justify-center gap-1.5 min-w-0">
-                <span className="text-blue-600 hover:text-blue-700 font-semibold cursor-pointer no-underline truncate block">
-                  {item.job_title}
-                </span>
-                {applied && (
-                  <Badge
-                    label="Applied"
-                    backgroundColor="bg-emerald-100"
-                    textColor="text-emerald-800"
-                    size="sm"
-                  />
-                )}
-              </div>
-              <div className="text-slate-800 truncate text-center">
-                {item.designation || "--"}
-              </div>
-              <div className="text-slate-800 truncate text-center">
-                {item.department || "--"}
-              </div>
-              <div className="text-slate-800 truncate text-center">
-                {item.company || "--"}
-              </div>
-              <div className="text-slate-800 truncate text-center">
-                {item.location || "--"}
-              </div>
-              <div className="text-slate-800 truncate text-center">
-                {formatToIndianDate(item.posted_on) || "--"}
-              </div>
-              <div className="flex justify-center items-center">
-                {renderStatusBadge(item.status)}
-              </div>
+              {columns.map((column) => (
+                <div key={`${column.fieldname}-${column.value_key}`} className="min-w-0">
+                  {renderColumnValue(item, column, applied)}
+                </div>
+              ))}
             </div>
           );
         }
@@ -184,12 +255,15 @@ function ListView({
             onClick={handleRowClick}
           >
             <div className="p-4 flex flex-col gap-4 w-full">
-              {/* Header: ID + Status */}
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel">Opening ID</Typography>
+                  <Typography variant="mobileCardLabel">
+                    {columns[0]?.label || "Opening ID"}
+                  </Typography>
                   <Typography variant="mobileCardValue">
-                    {item.name || "--"}
+                    {getDisplayValue(
+                      getColumnValue(item, columns[0] || DEFAULT_COLUMNS[0]),
+                    )}
                   </Typography>
                 </div>
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
@@ -205,69 +279,50 @@ function ListView({
                 </div>
               </div>
 
-              {/* Job Title */}
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel">Job Title</Typography>
-                <Typography
-                  variant="mobileCardValue"
-                  className="font-semibold text-gray-900"
-                >
-                  {item.job_title}
-                </Typography>
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {columns.slice(1).map((column) => {
+                  const key = column.value_key || column.fieldname;
+                  if (key === "status") return null;
+                  const value = getColumnValue(item, column);
+                  const displayValue =
+                    DATE_VALUE_KEYS.has(key) && value
+                      ? formatToIndianDate(String(value)) || "--"
+                      : getDisplayValue(value);
 
-              {/* Designation + Department */}
-              <div className="flex justify-between w-full">
-                <div className="flex flex-col gap-1 max-w-[50%]">
-                  <Typography variant="mobileCardLabel">Designation</Typography>
-                  <Typography variant="mobileCardValue" className="truncate">
-                    {item.designation || "--"}
-                  </Typography>
-                </div>
-
-                <div className="flex flex-col gap-1 text-right max-w-[50%]">
-                  <Typography variant="mobileCardLabel">Department</Typography>
-                  <Typography variant="mobileCardValue" className="truncate">
-                    {item.department || "--"}
-                  </Typography>
-                </div>
-              </div>
-
-              {/* Company + Location */}
-              <div className="flex justify-between w-full">
-                <div className="flex flex-col gap-1 max-w-[50%]">
-                  <Typography variant="mobileCardLabel">Company</Typography>
-                  <Typography variant="mobileCardValue" className="truncate">
-                    {item.company || "--"}
-                  </Typography>
-                </div>
-
-                <div className="flex flex-col gap-1 text-right max-w-[50%]">
-                  <Typography variant="mobileCardLabel">Location</Typography>
-                  <Typography variant="mobileCardValue" className="truncate">
-                    {item.location || "--"}
-                  </Typography>
-                </div>
-              </div>
-
-              {/* Posted On */}
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel">Posted On</Typography>
-                <Typography variant="mobileCardValue">
-                  {formatToIndianDate(item.posted_on) || "--"}
-                </Typography>
+                  return (
+                    <div
+                      key={`${column.fieldname}-${column.value_key}`}
+                      className="flex flex-col gap-1 min-w-0"
+                    >
+                      <Typography variant="mobileCardLabel">
+                        {column.label}
+                      </Typography>
+                      <Typography
+                        variant="mobileCardValue"
+                        className={`truncate ${
+                          key === "job_title"
+                            ? "font-semibold text-gray-900"
+                            : ""
+                        }`}
+                        title={isDesignationColumn(key) ? displayValue : undefined}
+                      >
+                        {displayValue}
+                      </Typography>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         );
       },
-    [isDesktop, appliedIds, onSelectJob],
+    [isDesktop, appliedIds, onSelectJob, columns, columnWidths],
   );
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden w-full max-w-full">
       {isDesktop ? (
-        <CardTable titles={TITLES} columnWidths={COLUMN_WIDTHS}>
+        <CardTable titles={titles} columnWidths={columnWidths}>
           <DataListView
             queryKey={["ijp-openings", currentEmployee?.name || ""]}
             customAPI={{
