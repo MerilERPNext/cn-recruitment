@@ -111,7 +111,7 @@ const SalarySlipApp: React.FC = () => {
         `}</style>
 
         <header className="sticky top-0 z-50 bg-white shadow-sm">
-          <HeaderBar title={activeTab} onBack={() => navigate("/webapp")} />
+          <HeaderBar title={activeTab} onBack={() => navigate(-1)} />
 
           <NavigationTabs
             tabs={tabs}
