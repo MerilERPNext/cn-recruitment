@@ -577,6 +577,38 @@ const LeaderboardPage = lazyWithRetry(
   () => import("./components/Recognition/LeaderboardPage"),
   "LeaderboardPage",
 );
+const VibeApp = lazyWithRetry(
+  () => import("./components/Recognition/Vibe/VibeApp"),
+  "VibeApp",
+);
+const VibeDashboard = lazyWithRetry(
+  () => import("./components/Recognition/Vibe/VibeDashboard"),
+  "VibeDashboard",
+);
+const VibeFeed = lazyWithRetry(
+  () => import("./components/Recognition/Vibe/VibeFeed"),
+  "VibeFeed",
+);
+const AppreciationsLeaderboard = lazyWithRetry(
+  () => import("./components/Recognition/Vibe/AppreciationsLeaderboard"),
+  "AppreciationsLeaderboard",
+);
+const AwardsLivePrograms = lazyWithRetry(
+  () => import("./components/Recognition/Vibe/AwardsLivePrograms"),
+  "AwardsLivePrograms",
+);
+const AwardsHistory = lazyWithRetry(
+  () => import("./components/Recognition/Vibe/AwardsHistory"),
+  "AwardsHistory",
+);
+const AwardsNominationWorkflows = lazyWithRetry(
+  () => import("./components/Recognition/Vibe/AwardsNominationWorkflows"),
+  "AwardsNominationWorkflows",
+);
+const EarnedPointsSummary = lazyWithRetry(
+  () => import("./components/Recognition/Vibe/EarnedPointsSummary"),
+  "EarnedPointsSummary",
+);
 const ScheduledImportsPage = lazyWithRetry(
   () => import("./components/ScheduledImports/ScheduledImportsPage"),
   "ScheduledImportsPage",
@@ -1610,6 +1642,54 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/recognition/leaderboard",
     element: <LeaderboardPage />,
     permissionKey: "Recognition",
+  },
+  {
+    path: "/webapp/recognition/vibe",
+    element: <VibeApp />,
+    permissionKey: "Recognition",
+    children: [
+      {
+        path: "",
+        index: true,
+        element: <Navigate to="dashboard" replace />,
+        permissionKey: "Recognition",
+      },
+      {
+        path: "dashboard",
+        element: <VibeDashboard />,
+        permissionKey: "Recognition",
+      },
+      {
+        path: "feed",
+        element: <VibeFeed />,
+        permissionKey: "Recognition",
+      },
+      {
+        path: "appreciations-leaderboard",
+        element: <AppreciationsLeaderboard />,
+        permissionKey: "Recognition",
+      },
+      {
+        path: "awards-live",
+        element: <AwardsLivePrograms />,
+        permissionKey: "Recognition",
+      },
+      {
+        path: "awards-history",
+        element: <AwardsHistory />,
+        permissionKey: "Recognition",
+      },
+      {
+        path: "nomination-workflows",
+        element: <AwardsNominationWorkflows />,
+        permissionKey: "Recognition",
+      },
+      {
+        path: "earned-points",
+        element: <EarnedPointsSummary />,
+        permissionKey: "Recognition",
+      },
+    ],
   },
   {
     path: "/webapp/employee-documents",

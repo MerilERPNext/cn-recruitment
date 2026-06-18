@@ -606,6 +606,50 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Recognition",
       path: "/webapp/recognition",
       permissionKey: "Recognition",
+      subItems: [
+        {
+          name: "Dashboard",
+          icon: Home,
+          href: "/webapp/recognition/vibe/dashboard",
+          permissionKey: "Recognition",
+        },
+        {
+          name: "Feed",
+          icon: Telescope,
+          href: "/webapp/recognition/vibe/feed",
+          permissionKey: "Recognition",
+        },
+        {
+          name: "Appreciations-Leaderboard",
+          icon: ChartNoAxesCombined,
+          href: "/webapp/recognition/vibe/appreciations-leaderboard",
+          permissionKey: "Recognition",
+        },
+        {
+          name: "Awards-Live Programs & Winners",
+          icon: Award,
+          href: "/webapp/recognition/vibe/awards-live",
+          permissionKey: "Recognition",
+        },
+        {
+          name: "Awards-History",
+          icon: FileText,
+          href: "/webapp/recognition/vibe/awards-history",
+          permissionKey: "Recognition",
+        },
+        {
+          name: "Awards-Nomination Workflows",
+          icon: Workflow,
+          href: "/webapp/recognition/vibe/nomination-workflows",
+          permissionKey: "Recognition",
+        },
+        {
+          name: "Earned Points Summary",
+          icon: Coins,
+          href: "/webapp/recognition/vibe/earned-points",
+          permissionKey: "Recognition",
+        },
+      ],
     },
     {
       icon: SquarePlus,
@@ -661,6 +705,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         }
 
         if (!item.subItems || item.subItems.length === 0) {
+          return item;
+        }
+
+        // Recognition's sub-sections are all gated by the single "Recognition"
+        // app permission (no per-page entries in the backend), so once the app
+        // is enabled we keep all of its sub-items as-is.
+        if (item.permissionKey === "Recognition") {
           return item;
         }
 
