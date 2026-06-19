@@ -191,3 +191,18 @@ export const updateInitiatorFormSubmission = async (
 
   return response as any;
 };
+
+export const reinitiateStage = async (
+  funnel_task: string,
+  with_dependents: 0 | 1
+) => {
+  const response = await FrappeAPI.callMethod(
+    'nextai.funnel.doctype.funnel_task.reinitiate.reinitiate_stage',
+    {
+      funnel_task,
+      with_dependents,
+    },
+  );
+
+  return response as any;
+};

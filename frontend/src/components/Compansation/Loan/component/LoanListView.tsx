@@ -139,6 +139,9 @@ export const LoanRow = ({
     : null;
   const formattedCreationDate = formatToIndianDate(loan?.todo_list?.[0].reference_document?.creation ?? "");
 
+  const status = todo?.custom_allow_revoke === 1 && todo?.reference_document?.docstatus === 2 && todo?.todo_status?.toLowerCase() === "cancelled" ? "Revoked" : loan.status;
+  const isPendingStatus = ["pending", "open"].includes(status?.toLowerCase());
+
   const canRevoke =
     loan.status === "Open" && todo?.custom_allow_revoke === 1 && !isActed;
   const canEdit = todo?.can_edit === true &&
@@ -254,7 +257,7 @@ export const LoanRow = ({
             role={todo?.role ?? ""}
             position="left"
           >
-            <StatusBadge status={loan.status} />
+            <StatusBadge status={status} />
           </AllocatedToTooltip>
         </div>
 
@@ -270,7 +273,7 @@ export const LoanRow = ({
                 nudge: "nudge"
               },
             }}
-            isPendingStatus={loan.status === "Pending"}
+            isPendingStatus={isPendingStatus}
             todoId={loan?.todo_list?.[0]?.todo_id}
             canRevoke={canRevoke}
             canEdit={canEdit}
