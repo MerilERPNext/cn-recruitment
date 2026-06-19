@@ -5,6 +5,7 @@ import {
   getPayrollPeriods,
   getSalaryStructureAssignments,
   getSalaryStructures,
+  updateSalaryStructureAssignment,
   type CreateSalaryStructureAssignmentPayload,
   type LinkOption,
   type SalaryStructureAssignmentRow,
@@ -51,6 +52,26 @@ export const useCreateSalaryStructureAssignment = () => {
   return useMutation({
     mutationFn: (payload: CreateSalaryStructureAssignmentPayload) =>
       createAndSubmitSalaryStructureAssignment(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["salary-structure-assignments"],
+      });
+    },
+  });
+};
+
+/** Update an existing DRAFT Salary Structure Assignment, then refresh the list. */
+export const useUpdateSalaryStructureAssignment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      name,
+      payload,
+    }: {
+      name: string;
+      payload: Partial<CreateSalaryStructureAssignmentPayload> &
+        Record<string, unknown>;
+    }) => updateSalaryStructureAssignment(name, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["salary-structure-assignments"],
