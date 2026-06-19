@@ -233,6 +233,12 @@ const FAQPage: React.FC = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  const { data: userUiPermission } = useGetUiPermission("Help Desk");
+  const canRequestIssue = isActionEnabled(
+    userUiPermission,
+    "request_issue",
+    "Help Desk",
+  );
 
 
   if (!isDesktop) {
