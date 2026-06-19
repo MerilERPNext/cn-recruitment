@@ -3,10 +3,8 @@ import { useNavigate, useSearchParams } from "react-router";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetLeaveBalance } from "../../hooks/useLeaves";
-import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST } from "../../utils/tableSortConfig";
-import { isActionEnabled } from "../../utils/uiPermission";
 import { FilterField } from "../DataListView";
 import ApprovalList from "../shared/ApprovalList";
 import { Typography } from "../shared/atoms/Typography";
@@ -31,17 +29,8 @@ const TeamLeaveRequest = () => {
     today,
   );
 
-  const uiPermission = {
-    app: "Leaves and Holidays",
-    page: "Team Requests",
-    actionKey: "team_leave_request_actions",
-  };
-  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
-  const actionsEnabled = isActionEnabled(
-    uiPermissionData,
-    uiPermission?.actionKey ?? "",
-    uiPermission?.page,
-  );
+  const actionsEnabled = true;
+
 
   // Build filter fields dynamically to include leave type options from balance API
   const dynamicFilterFields: FilterField[] = useMemo(() => {

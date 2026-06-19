@@ -302,8 +302,13 @@ export function LeaveDetailView({
                 </div>
               )}
             <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel">Sendback Comment</Typography>
-              <Typography variant="mobileCardValue" className="text-gray-700 whitespace-pre-wrap">
+              <Typography variant="mobileCardLabel">
+                Sendback Comment
+              </Typography>
+              <Typography
+                variant="mobileCardValue"
+                className="text-gray-700 whitespace-pre-wrap"
+              >
                 {sendBackComment || data?.send_back_comment || "--"}
               </Typography>
             </div>
@@ -316,6 +321,7 @@ export function LeaveDetailView({
               </Typography>
 
               <div className="space-y-2">
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 {data.attachments.map((item: any) => (
                   <AttachmentCard key={item.file_url} fileUrl={item.file_url} />
                 ))}
@@ -324,7 +330,10 @@ export function LeaveDetailView({
           ) : null}
         </div>
 
-        {actions?.length > 0 && data?.status === "Open" && !isActed ? (
+        {actionsEnabled &&
+        actions?.length > 0 &&
+        data?.status === "Open" &&
+        !isActed ? (
           <div className="w-full bg-white border-t shadow-md p-4 z-20">
             <TeamApprovalActionPill
               actionsEnabled={actionsEnabled}
