@@ -44,8 +44,19 @@ function load_available_fields(frm) {
 
 			const map = { Parent: (msg.parent_fields || []).map(simplify) };
 			const child = msg.child_fields || {};
+			// table fieldname -> its child columns, so a placed Table field can
+			// open a child-columns picker.
+			frm._jrfb_child_by_table = {};
 			Object.keys(child).forEach((group) => {
-				map[group] = (child[group].fields || []).map(simplify);
+				const info = child[group] || {};
+				map[group] = (info.fields || []).map(simplify);
+				if (info.table_field) {
+					frm._jrfb_child_by_table[info.table_field] = {
+						group,
+						doctype: info.child_doctype,
+						fields: info.fields || [],
+					};
+				}
 			});
 			frm._jrfb_fields = map;
 			frm._jrfb_lookup = {};
@@ -126,6 +137,7 @@ class FormBuilder {
 		this.$wrapper = $wrapper;
 		this.fields = frm._jrfb_fields || {};
 		this.lookup = frm._jrfb_lookup || {};
+		this.childByTable = frm._jrfb_child_by_table || {};
 		this.uid = 0;
 		this.state = { tabs: [], activeTab: null };
 		this.search = "";
@@ -175,6 +187,8 @@ class FormBuilder {
 				read_only: row.read_only_override === "Read Only",
 				hidden: row.expose === "Hide",
 				label_override: row.label_override || "",
+				selected_child_fields: row.selected_child_fields || "",
+				mandatory_child_fields: row.mandatory_child_fields || "",
 			});
 		});
 
@@ -200,6 +214,8 @@ class FormBuilder {
 						mandatory_override: f.mandatory ? "Required" : "Default",
 						read_only_override: f.read_only ? "Read Only" : "Default",
 						label_override: f.label_override || "",
+						selected_child_fields: f.selected_child_fields || "",
+						mandatory_child_fields: f.mandatory_child_fields || "",
 					});
 				});
 			});
@@ -422,6 +438,90 @@ class FormBuilder {
 			__("Move field"),
 			__("Move")
 		);
+	}
+
+	edit_child_fields(f) {
+		const info = this.childByTable[f.fieldname];
+		const cols = info && info.fields;
+		if (!cols || !cols.length) {
+			frappe.msgprint(__("No configurable columns found for this table."));
+			return;
+		}
+
+		let selected = [];
+		let mandatory = [];
+		try {
+			selected = JSON.parse(f.selected_child_fields || "[]");
+		} catch (e) {
+			selected = [];
+		}
+		try {
+			mandatory = JSON.parse(f.mandatory_child_fields || "[]");
+		} catch (e) {
+			mandatory = [];
+		}
+		const allShown = !selected.length; // empty = all columns
+		const selSet = new Set(selected);
+		const manSet = new Set(mandatory);
+
+		const rows = cols
+			.map((c) => {
+				const showChecked = allShown || selSet.has(c.fieldname) ? "checked" : "";
+				const manChecked = manSet.has(c.fieldname) ? "checked" : "";
+				return (
+					"<tr><td>" +
+					frappe.utils.escape_html(c.label || c.fieldname) +
+					' <span class="text-muted" style="font-size:11px">' +
+					frappe.utils.escape_html(c.fieldname) +
+					'</span></td><td style="text-align:center"><input type="checkbox" class="cf-show" data-fn="' +
+					c.fieldname +
+					'" ' +
+					showChecked +
+					'></td><td style="text-align:center"><input type="checkbox" class="cf-man" data-fn="' +
+					c.fieldname +
+					'" ' +
+					manChecked +
+					"></td></tr>"
+				);
+			})
+			.join("");
+
+		const d = new frappe.ui.Dialog({
+			title: __("Child columns — {0}", [f.label_override || f.label]),
+			fields: [{ fieldtype: "HTML", fieldname: "html" }],
+			primary_action_label: __("Apply"),
+			primary_action: () => {
+				const $w = d.fields_dict.html.$wrapper;
+				const show = $w
+					.find(".cf-show:checked")
+					.map((i, el) => el.dataset.fn)
+					.get();
+				const man = $w
+					.find(".cf-man:checked")
+					.map((i, el) => el.dataset.fn)
+					.get();
+				f.selected_child_fields = show.length === cols.length ? "" : JSON.stringify(show);
+				f.mandatory_child_fields = man.length ? JSON.stringify(man) : "";
+				d.hide();
+				this.commit();
+				frappe.show_alert({ message: __("Updated child columns"), indicator: "green" });
+			},
+		});
+
+		d.fields_dict.html.$wrapper.html(
+			'<div class="text-muted" style="font-size:12px;margin-bottom:6px">' +
+				__("Choose which columns of this table appear, and which are mandatory.") +
+				'</div><table class="table table-bordered" style="font-size:12px;margin:0"><thead><tr><th>' +
+				__("Column") +
+				'</th><th style="width:60px;text-align:center">' +
+				__("Show") +
+				'</th><th style="width:90px;text-align:center">' +
+				__("Mandatory") +
+				"</th></tr></thead><tbody>" +
+				rows +
+				"</tbody></table>"
+		);
+		d.show();
 	}
 
 	sync_from_dom() {
@@ -704,6 +804,11 @@ class FormBuilder {
 			f.hidden = !f.hidden;
 			this.commit();
 		});
+		if (f.fieldtype === "Table" || f.fieldtype === "Table MultiSelect") {
+			$('<span class="jrfb-mini" title="Child columns">⊞</span>')
+				.appendTo($tools)
+				.on("click", () => this.edit_child_fields(f));
+		}
 		$('<span class="jrfb-mini" title="Move to tab / section">⤿</span>')
 			.appendTo($tools)
 			.on("click", () => this.move_field(tab, sec, f));
