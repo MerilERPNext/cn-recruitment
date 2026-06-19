@@ -507,7 +507,7 @@ const BenefitsSlips = lazyWithRetry(
 const MyTeamBenefitsRequests = lazyWithRetry(
   () => import("./components/Benefits/MyTeamRequest/MyTeamRequest"),
   "MyTeamBenefitsRequests",
-);
+); 
 
 const HelpDeskApp = lazyWithRetry(
   () => import("./components/HelpDesk/Helpdesk/HelpDeskApp"),
