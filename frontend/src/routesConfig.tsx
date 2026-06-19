@@ -1663,11 +1663,7 @@ export const routesConfig: AppRoute[] = [
     element: <LeaderboardPage />,
     permissionKey: "Recognition",
   },
-  {
-    path: "/webapp/recognition/my-appreciations-history",
-    element: <MyAppreciationsHistory />,
-    permissionKey: "Recognition",
-  },
+
   {
     path: "/webapp/recognition/vibe",
     element: <VibeApp />,
@@ -1679,9 +1675,15 @@ export const routesConfig: AppRoute[] = [
         element: <Navigate to="dashboard" replace />,
         permissionKey: "Recognition",
       },
+      
       {
         path: "dashboard",
         element: <VibeDashboard />,
+        permissionKey: "Recognition",
+      },
+      {
+        path: "my-appreciations-history",
+        element: <MyAppreciationsHistory />,
         permissionKey: "Recognition",
       },
       {

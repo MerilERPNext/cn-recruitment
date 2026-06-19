@@ -622,7 +622,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         {
           name: "My Appreciations History",
           icon: FileText,
-          href: "/webapp/recognition/my-appreciations-history",
+          href: "/webapp/recognition/vibe/my-appreciations-history",
           permissionKey: "Recognition",
         },
         {

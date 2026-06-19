@@ -9,6 +9,7 @@ export const VIBE_BASE = "/webapp/recognition/vibe";
 
 export const VIBE_TABS: Tab[] = [
   { key: "dashboard", label: "Dashboard" },
+  { key: "my-appreciations-history", label: "My Appreciations History" },
   { key: "feed", label: "Feed" },
   { key: "appreciations-leaderboard", label: "Appreciations-Leaderboard" },
   { key: "awards-live", label: "Awards-Live Programs & Winners" },
