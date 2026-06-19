@@ -375,10 +375,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     <XCircle className="w-3.5 h-3.5 text-red-500" />
                     <span>Absent</span>
                 </div>
-                <div className="flex items-center gap-1">
-                    <Home className="w-3.5 h-3.5 text-purple-500" />
-                    <span>WFH</span>
-                </div>
+                
                 <div className="flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5 text-yellow-500" />
                     <span>On Leave</span>
@@ -398,14 +395,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
 
                 <div className="w-px h-3.5 bg-gray-200 mx-1" />
 
-                <div className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block" />
-                    <span>Pending</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
-                    <span>Approved</span>
-                </div>
+              
                 {/* <div className="flex items-center gap-1">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
                     <span>Rejected</span>
