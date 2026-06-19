@@ -37,11 +37,11 @@ const SeparationDetailsView: React.FC<SeparationDetailsViewProps> = ({ employeeI
       </div>
       <div className="flex flex-col gap-1">
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Separation Approved By</span>
-        <span className="text-sm font-medium text-gray-800">{data.separation_approved_by}</span>
+        <span className="text-sm font-medium text-gray-800">{data.separation_approved_by ? data.separation_approved_by : "N.A."}</span>
       </div>
       <div className="flex flex-col gap-1">
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">De-Activated By</span>
-        <span className="text-sm font-medium text-gray-800">{data.de_activated_by}</span>
+        <span className="text-sm font-medium text-gray-800">{data.de_activated_by ? data.de_activated_by : "N.A."}</span>
       </div>
       <div className="flex flex-col gap-1">
         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Deactivation Type</span>

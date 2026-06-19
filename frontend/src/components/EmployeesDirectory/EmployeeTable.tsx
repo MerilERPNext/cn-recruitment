@@ -171,27 +171,26 @@ const EmployeeTable = ({
               >
                 {hasCheckboxesOrChevrons && (
                   <td className="whitespace-nowrap border-r border-gray-100 px-4 py-4 text-sm font-medium border-b">
-                    {isSelectableStatus(item.status) ? (
-                      <input
-                        type="checkbox"
-                        checked={isItemSelected}
-                        onChange={() => handleSelectOne(item)}
-                        className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
-                      />
-                    ) : (
-                      item.status === "Inactive" ? (
+                    <div className="flex items-center gap-2">
+                      {isSelectableStatus(item.status) && (
+                        <input
+                          type="checkbox"
+                          checked={isItemSelected}
+                          onChange={() => handleSelectOne(item)}
+                          className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
+                        />
+                      )}
+                      {(item.status === "Inactive" || item.status === "Pending") && (
                         <button
                           onClick={() => toggleRow(item.name)}
                           className="p-1 text-gray-500 hover:text-primary-600 transition-colors rounded-full hover:bg-primary-50"
-                          aria-label={expandedRows.includes(item.name) ? "Hide separation details" : "Show separation details"}
-                          title={expandedRows.includes(item.name) ? "Hide separation details" : "Show separation details"}
+                          aria-label={expandedRows.includes(item.name) ? "Hide details" : "Show details"}
+                          title={expandedRows.includes(item.name) ? "Hide details" : "Show details"}
                         >
                           {expandedRows.includes(item.name) ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                         </button>
-                      ) : (
-                        <div className="w-4 h-4" />
-                      )
-                    )}
+                      )}
+                    </div>
                   </td>
                 )}
                 <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
@@ -370,6 +369,20 @@ const EmployeeTable = ({
                   </td>
                 </tr>
               )}
+              {item.status === "Pending" && expandedRows.includes(item.name) && (
+                <tr className="bg-gray-50/50 border-b border-gray-100">
+                  <td colSpan={7} className="p-0">
+                    <div className="border-l-4 border-l-primary-500 p-6">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Date of Joining</span>
+                        <span className="text-sm text-gray-900 font-medium">
+                          {item.date_of_joining ? item.date_of_joining.split('-').reverse().join('-') : 'N.A.'}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
               </React.Fragment>
             );
           })}
@@ -394,27 +407,26 @@ const EmployeeTable = ({
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 {hasCheckboxesOrChevrons && (
-                  isSelectableStatus(item.status) ? (
-                    <input
-                      type="checkbox"
-                      checked={isItemSelected}
-                      onChange={() => handleSelectOne(item)}
-                      className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm shrink-0"
-                    />
-                  ) : (
-                    item.status === "Inactive" ? (
+                  <div className="flex items-center gap-2">
+                    {isSelectableStatus(item.status) && (
+                      <input
+                        type="checkbox"
+                        checked={isItemSelected}
+                        onChange={() => handleSelectOne(item)}
+                        className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm shrink-0"
+                      />
+                    )}
+                    {(item.status === "Inactive" || item.status === "Pending") && (
                       <button
                         onClick={() => toggleRow(item.name)}
                         className="p-1 text-gray-500 hover:text-primary-600 transition-colors rounded-full hover:bg-primary-50 shrink-0"
-                        aria-label={expandedRows.includes(item.name) ? "Hide separation details" : "Show separation details"}
-                        title={expandedRows.includes(item.name) ? "Hide separation details" : "Show separation details"}
+                        aria-label={expandedRows.includes(item.name) ? "Hide details" : "Show details"}
+                        title={expandedRows.includes(item.name) ? "Hide details" : "Show details"}
                       >
                         {expandedRows.includes(item.name) ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                       </button>
-                    ) : (
-                      <div className="w-4 h-4 shrink-0" />
-                    )
-                  )
+                    )}
+                  </div>
                 )}
                 <Avatar name={item.employee_name} src={item.image} />
                 <div>
@@ -588,6 +600,16 @@ const EmployeeTable = ({
             {item.status === "Inactive" && expandedRows.includes(item.name) && (
               <div className="mt-4 border-t border-gray-100 pt-4">
                 <SeparationDetailsView employeeId={item.employee} />
+              </div>
+            )}
+            {item.status === "Pending" && expandedRows.includes(item.name) && (
+              <div className="mt-4 border-t border-gray-100 pt-4">
+                <div className="flex flex-col gap-1">
+                  <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold">Date of Joining</span>
+                  <span className="text-sm text-gray-900 font-medium">
+                    {item.date_of_joining ? item.date_of_joining.split('-').reverse().join('-') : 'N.A.'}
+                  </span>
+                </div>
               </div>
             )}
           </div>
