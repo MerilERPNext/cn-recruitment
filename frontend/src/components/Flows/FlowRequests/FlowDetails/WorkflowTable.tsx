@@ -7,7 +7,7 @@ import {
 } from "../../../../types/flows";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Clock, User, X } from "lucide-react";
+import { Check, Clock, RefreshCw, User, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import {
@@ -34,6 +34,7 @@ import Tooltip from "../../../shared/Tooltip";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import ReviewForm from "../../Separation/components/ReviewForm";
 import AttachmentPreview from "./AttachmentPreview";
+import RetriggerModal from "./RetriggerModal";
 
 interface WorkflowTableProps {
   data: FlowRequestItem;
@@ -49,6 +50,9 @@ const titles = [
   "Due Date",
   "Actions",
 ];
+
+const columnWidths = ["1fr", "1fr", "1fr", "0.8fr", "1fr", "0.8fr", "1.5fr"];
+const gridTemplate = columnWidths.join(" ");
 
 const WorkflowTable: React.FC<WorkflowTableProps> = ({ data, noPadding = false }) => {
   const { isDesktop } = useScreenSize();
@@ -77,6 +81,7 @@ const WorkflowTable: React.FC<WorkflowTableProps> = ({ data, noPadding = false }
     <div className={noPadding ? "px-4 sm:px-0" : "sm:px-7 px-4"}>
       <CardTable
         titles={titles}
+        columnWidths={columnWidths}
         noBorder={noPadding}
         noShadow={noPadding}
         noRound={noPadding}
@@ -271,6 +276,9 @@ const WorkflowCard = ({
   } | null>(null);
   const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
 
+  // Retrigger modal state
+  const [showRetriggerModal, setShowRetriggerModal] = useState(false);
+
   const handleShowForm = () => {
     let formData: Record<string, unknown> = {};
     try {
@@ -296,7 +304,8 @@ const WorkflowCard = ({
       {isDesktop ? (
         <div
           key={idx}
-          className="hover:bg-primary-100 py-4 px-6 text-center grid grid-cols-7 cursor-pointer text-xs w-full border-b gap-4"
+          className="hover:bg-primary-100 py-4 px-6 text-center grid cursor-pointer text-xs w-full border-b gap-4"
+          style={{ gridTemplateColumns: gridTemplate }}
         >
           {/* Stage Name */}
           <div className="flex justify-center items-center">
@@ -382,6 +391,15 @@ const WorkflowCard = ({
             {canPerformActions && actions.length > 0 && (
               <Button onClick={() => onAction(actions[0], stage?.todo)}>
                 Act
+              </Button>
+            )}
+            {stage.can_retrigger && (
+              <Button
+                variant="outline"
+                onClick={() => setShowRetriggerModal(true)}
+                icon={<RefreshCw size={14} />}
+              >
+                Retrigger
               </Button>
             )}
           </div>
@@ -538,6 +556,18 @@ const WorkflowCard = ({
                 </Button>
               </div>
             )}
+            {stage.can_retrigger && (
+              <div className="mt-2">
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => setShowRetriggerModal(true)}
+                  icon={<RefreshCw size={14} />}
+                >
+                  Retrigger
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -558,6 +588,13 @@ const WorkflowCard = ({
           </ReviewForm>,
           document.body,
         )}
+
+      {/* Retrigger Confirmation Modal */}
+      <RetriggerModal
+        isOpen={showRetriggerModal}
+        onClose={() => setShowRetriggerModal(false)}
+        stage={stage}
+      />
     </>
   );
 };

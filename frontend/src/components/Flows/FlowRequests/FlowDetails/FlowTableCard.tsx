@@ -95,6 +95,7 @@ const FlowTableRow = ({
     const { data: currentUser } = useCurrentUser();
 
     const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
+    const isPendingStatus = ["pending", "open"].includes(stage.status?.toLowerCase());
     const canPerformActions = useMemo(() => {
         if (!isActive || !stage.can_act) return false;
         let actionPermission = false;
@@ -317,7 +318,7 @@ const FlowTableRow = ({
                             }
                         }}
                         todoId={stage?.todo?.name}
-                        isPendingStatus={stage.status === "Pending"}
+                        isPendingStatus={isPendingStatus}
                     />
                 </div>
                 {(stage?.approval_response_data_display || stage?.approval_response_data) && (

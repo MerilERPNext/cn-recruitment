@@ -755,11 +755,25 @@ def _get_joining_info(eo_doc, applicant_doc):
     if not doj and applicant_doc is not None:
         doj = applicant_doc.get("custom_date_of_joining")
     days = date_diff(getdate(doj), getdate(nowdate())) if doj else None
+
+    # Role (Designation) and Department — Employee Onboarding wins, falling back
+    # to the Job Applicant (designation / custom_department) when EO is empty.
+    role = eo_doc.get("designation") if eo_doc is not None else None
+    if not role and applicant_doc is not None:
+        role = applicant_doc.get("designation")
+    department = eo_doc.get("department") if eo_doc is not None else None
+    if not department and applicant_doc is not None:
+        department = applicant_doc.get("custom_department")
+
     return {
         "date_of_joining": doj,
         "boarding_begins_on": bbo,
         "days_to_joining": days,
         "is_set": bool(doj),
+        "role": role,
+        "role_name": _link_title("Designation", role),
+        "department": department,
+        "department_name": _link_title("Department", department),
     }
 
 
@@ -1504,9 +1518,24 @@ def get_candidate_feature_flags():
 
 
 @candidate_required
-def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20):
+def get_link_field_options(doctype, search_text=None, query=None, txt=None, limit=20, include=None, filters=None, skip=0, **kwargs):
     """Returns [{id, label}] for a doctype; label uses title_field when set.
+
+    Generic link-options endpoint used by every Link field on the candidate portal,
+    so the defaults below preserve the original behaviour exactly — callers that
+    pass only `doctype`/`search`/`limit` are unaffected.
+
     Accepts `search_text`, `query`, or `txt` as the search term (first non-empty wins).
+    `filters` (dict or JSON string) narrows the base record set — e.g. limiting City
+    to a given State: filters={"state": "Bihar"}. `filters` can only RESTRICT results,
+    never widen them, so it adds no extra data exposure.
+    Any additional query param that matches a real field on `doctype` is also applied
+    as an equality filter (e.g. ?state=Bihar), so the front-end can narrow options
+    without JSON-encoding `filters`. Empty values are ignored so a cleared dependent
+    field (e.g. no State picked yet) doesn't filter everything out.
+    `include` is an id (or comma-separated ids) that must always appear in the results
+    (so a pre-selected value renders its label even when outside the current page);
+    `include` ids bypass `filters`. `skip` is the pagination offset.
     Accessible to any authenticated Frappe user (desk session or API key/secret) — the
     candidate portal frontend authenticates via the candidate user's API key+secret."""
     if not doctype:
@@ -1514,13 +1543,27 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
         return {"status": "error", "message": _("Doctype is required.")}
 
     try:
-        title_field = frappe.get_meta(doctype).get("title_field") or None
+        meta = frappe.get_meta(doctype)
     except Exception:
         frappe.local.response["http_status_code"] = 404
         return {"status": "error", "message": _("Doctype '{0}' not found.").format(doctype)}
+    title_field = meta.get("title_field") or None
 
     has_title = bool(title_field) and title_field != "name"
     fields = ["name"] + ([title_field] if has_title else [])
+
+    if isinstance(filters, str):
+        filters = frappe.parse_json(filters) if filters.strip() else None
+    filters = dict(filters) if filters else {}
+
+    # Map any extra query param that corresponds to a real field on the doctype to an
+    # equality filter. Empty values (an unrendered "{{ ... }}" or a cleared dependent
+    # field) are skipped so they don't filter everything out.
+    for key, value in kwargs.items():
+        if value in (None, "") or key in filters:
+            continue
+        if key == "name" or meta.has_field(key):
+            filters[key] = value
 
     search = (search_text or query or txt or "").strip()
     or_filters = None
@@ -1530,14 +1573,31 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
 
     try:
         records = frappe.get_all(
-            doctype, fields=fields, or_filters=or_filters,
-            limit=int(limit or 20), order_by=f"{title_field or 'name'} asc",
+            doctype, fields=fields, filters=filters or None, or_filters=or_filters,
+            limit=int(limit or 20), start=int(skip or 0), order_by=f"{title_field or 'name'} asc",
         )
     except Exception as e:
         frappe.local.response["http_status_code"] = 500
         return {"status": "error", "message": str(e)}
 
-    results = [{"id": r["name"], "label": (r.get(title_field) if has_title else None) or r["name"]} for r in records]
+    def _to_option(r):
+        return {"id": r["name"], "label": (r.get(title_field) if has_title else None) or r["name"]}
+
+    results = [_to_option(r) for r in records]
+
+    # Always surface the pre-selected value(s) so the dropdown can label them, even
+    # when they're not part of the current (searched/paginated/filtered) page.
+    include_ids = [i.strip() for i in str(include or "").split(",") if i and i.strip()]
+    if include_ids:
+        present = {r["id"] for r in results}
+        missing = [i for i in include_ids if i not in present]
+        if missing:
+            try:
+                extra = frappe.get_all(doctype, fields=fields, filters={"name": ["in", missing]})
+            except Exception:
+                extra = []
+            results = [_to_option(r) for r in extra] + results
+
     return {"status": "success", "doctype": doctype, "title_field": title_field, "total": len(results), "results": results}
 
 

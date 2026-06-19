@@ -200,7 +200,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
             Sub Category
           </Typography>
           <Typography variant="mobileCardValue">
-            {getCategoryName(ticket.custom_sub_category)}
+            {getCategoryName(ticket.custom_sub_category_name || ticket.custom_sub_category)}
           </Typography>
         </div>
 
@@ -285,6 +285,7 @@ const columns = [
   { key: "name", label: "Issue ID", sortable: true, width: "w-28" },
   { key: "subject", label: "Issue Title", sortable: false, width: "w-28" },
   { key: "custom_category", label: "Category", sortable: true, width: "w-32" },
+  { key: "status", label: "Status", sortable: false, width: "w-28" },
   {
     key: "custom_sub_category",
     label: "Sub Category",
@@ -332,8 +333,7 @@ const columns = [
   },
   { key: "_assign", label: "Assigned to", sortable: false, width: "w-40" },
   { key: "creation", label: "Created on", sortable: true, width: "w-32" },
-  { key: "modified", label: "Last Updated", sortable: true, width: "w-32" },
-  { key: "status", label: "Status", sortable: false, width: "w-28" },
+  { key: "modified", label: "Last Updated", sortable: true, width: "w-32" }
 ];
 
 const formateDateDiff = (date1: string, date2: string) => {

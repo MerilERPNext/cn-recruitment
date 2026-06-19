@@ -670,16 +670,52 @@ def _verify_candidate_password(candidate, password):
         frappe.throw(_("Invalid email or password."), frappe.AuthenticationError)
 
 
+def _resolve_candidate_full_name(values):
+    """Prefer the candidate's real name from their Job Applicant record
+    (applicant_name + custom_applicant_last_name) so the dashboard shows the full
+    name instead of the signup email prefix.
+
+    In this flow the Job Applicant (and offer) exist before the candidate logs in,
+    so the name is available. Resolution order: the Candidate Portal User's linked
+    `job_applicant`, then the most recent Job Applicant matching the candidate's
+    email. Returns None when nothing usable is found (callers fall back to the CPU
+    full_name / email). Best-effort — never raises, so `me`/login can't break."""
+    try:
+        job_applicant = values.get("job_applicant")
+        if not job_applicant and values.get("email"):
+            job_applicant = frappe.db.get_value(
+                "Job Applicant", {"email_id": values.get("email")}, "name", order_by="creation desc"
+            )
+        if not job_applicant:
+            return None
+        row = frappe.db.get_value(
+            "Job Applicant", job_applicant,
+            ["applicant_name", "custom_applicant_last_name"],
+            as_dict=True,
+        )
+        if not row:
+            return None
+        full = " ".join(
+            part for part in [
+                (row.applicant_name or "").strip(),
+                (row.custom_applicant_last_name or "").strip(),
+            ] if part
+        ).strip()
+        return full or None
+    except Exception:
+        return None
+
+
 def _public_candidate(candidate):
     values = frappe.db.get_value(
         "Candidate Portal User",
         candidate,
-        ["name", "email", "full_name", "mobile_no", "status", "email_verified", "require_password_reset"],
+        ["name", "email", "full_name", "mobile_no", "status", "email_verified", "require_password_reset", "job_applicant"],
         as_dict=True,
     )
     if not values:
         return None
-    full_name = values.full_name or values.email
+    full_name = _resolve_candidate_full_name(values) or values.full_name or values.email
     doc = frappe.get_doc("Candidate Portal User", values.name)
     password_setup_required = not _candidate_has_password(doc) or bool(cint(values.require_password_reset))
     return {

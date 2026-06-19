@@ -134,6 +134,9 @@ const MyAdvanceExpenseList = () => {
     const doc = item.reference_document;
     const { canEdit, canRevoke } = getActionFlags(item);
 
+    const status = item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2 ? "Revoked" : item?.reference_document?.custom_final_status;
+    const isPendingStatus = ["pending", "open"].includes(status?.toLowerCase());
+
     const showSanctionedAmount =
       Array.isArray(item?.approval_stages_status) &&
       item.approval_stages_status.some(
@@ -187,15 +190,7 @@ const MyAdvanceExpenseList = () => {
             allocated_to_user={item?.allocated_to_user}
             position="left"
           >
-            <StatusBadge
-              status={
-                item?.custom_allow_revoke === 1 &&
-                  item?.todo_status?.toLowerCase() === "cancelled" &&
-                  item?.reference_document?.docstatus === 2
-                  ? "Revoked"
-                  : item?.reference_document?.custom_final_status
-              }
-            />
+            <StatusBadge status={status} />
           </AllocatedToTooltip>
         </div>
         {/* Actions column — stop propagation so click doesn't open detail modal */}
@@ -214,7 +209,7 @@ const MyAdvanceExpenseList = () => {
               },
             }}
 
-            isPendingStatus={(item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2 ? "Revoked" : item?.reference_document?.custom_final_status) === "Pending"}
+            isPendingStatus={isPendingStatus}
             todoId={item?.todo_id}
             canEdit={canEdit && !isActed}
             onEdit={() => handleEditClick(item)}
@@ -230,6 +225,9 @@ const MyAdvanceExpenseList = () => {
   const MobileRow = ({ item }: any) => {
     const doc = item.reference_document;
     const { canEdit, canRevoke } = getActionFlags(item);
+
+    const status = item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2 ? "Revoked" : item?.reference_document?.custom_final_status;
+    const isPendingStatus = ["pending", "open"].includes(status?.toLowerCase());
 
     const showSanctionedAmount =
       Array.isArray(item?.approval_stages_status) &&
@@ -255,15 +253,7 @@ const MyAdvanceExpenseList = () => {
                 role={item?.role}
                 position="left"
               >
-                <StatusBadge
-                  status={
-                    item?.custom_allow_revoke === 1 &&
-                      item?.todo_status?.toLowerCase() === "cancelled" &&
-                      item?.reference_document?.docstatus === 2
-                      ? "Revoked"
-                      : item?.reference_document?.custom_final_status
-                  }
-                />
+                <StatusBadge status={status} />
               </AllocatedToTooltip>
             ) : (
               <>
@@ -275,15 +265,7 @@ const MyAdvanceExpenseList = () => {
                   align="left"
                   RoleAssignedUsers={item?.role_assigned_users}
                 />
-                <StatusBadge
-                  status={
-                    item?.custom_allow_revoke === 1 &&
-                      item?.todo_status?.toLowerCase() === "cancelled" &&
-                      item?.reference_document?.docstatus === 2
-                      ? "Revoked"
-                      : item?.reference_document?.custom_final_status
-                  }
-                />
+                <StatusBadge status={status} />
               </>
             )}
           </div>
@@ -364,7 +346,7 @@ const MyAdvanceExpenseList = () => {
                   },
                 }}
 
-                isPendingStatus={(item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2 ? "Revoked" : item?.reference_document?.custom_final_status) === "Pending"}
+                isPendingStatus={isPendingStatus}
                 todoId={item?.todo_id}
                 variant="buttons"
                 canEdit={canEdit && !isActed}

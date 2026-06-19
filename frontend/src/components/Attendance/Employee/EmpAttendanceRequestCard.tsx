@@ -92,6 +92,9 @@ const EmpAttendanceRequestCard = ({
   const duration = getDays(formattedFromDate, formattedToDate);
   const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 0.8fr 1fr 1fr 1fr 1fr";
 
+  const status = data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.custom_status;
+  const isPendingStatus = ["pending", "open"].includes(status?.toLowerCase());
+
   return (
     <>
       {isDesktop ? (
@@ -144,7 +147,7 @@ const EmpAttendanceRequestCard = ({
               RoleAssignedUsers={data?.role_assigned_users || []}
               position="left"
             >
-              <StatusBadge status={data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.custom_status} />
+              <StatusBadge status={status} />
 
             </AllocatedToTooltip>
           </div>
@@ -171,7 +174,7 @@ const EmpAttendanceRequestCard = ({
                 }
               }}
 
-              isPendingStatus={data?.reference_document?.custom_status === "Pending" || data?.reference_document?.custom_status === "Open"}
+              isPendingStatus={isPendingStatus}
               todoId={data?.todo_id}
               canRevoke={!!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}
               canEdit={!!data?.can_edit && !isActed}
@@ -197,7 +200,7 @@ const EmpAttendanceRequestCard = ({
                 RoleAssignedUsers={data?.role_assigned_users}
               />
 
-              <StatusBadge status={data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.custom_status} />
+              <StatusBadge status={status} />
             </div>
 
             <div className="flex items-start justify-between">
@@ -257,7 +260,7 @@ const EmpAttendanceRequestCard = ({
                   }
                 }}
 
-                isPendingStatus={data?.reference_document?.custom_status === "Pending" || data?.reference_document?.custom_status === "Open"}
+                isPendingStatus={isPendingStatus}
                 todoId={data?.todo_id}
                 variant="buttons"
                 canRevoke={type === "pending" && !!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}

@@ -84,6 +84,7 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
       data?.reference_document?.status?.toLowerCase?.() === "cancelled"
       ? "Revoked"
       : data?.reference_document?.status;
+  const isPendingStatus = ["pending", "open", "draft"].includes(badgeStatus?.toLowerCase());
 
   return (
     <>
@@ -157,7 +158,7 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
                   nudge: "nudge"
                 }
               }}
-              isPendingStatus={badgeStatus === "Pending" || badgeStatus === "Draft"}
+              isPendingStatus={isPendingStatus}
               todoId={data?.todo_id}
               canEdit={canEdit}
               canRevoke={canRevoke}
@@ -245,7 +246,7 @@ const EmpShiftRequestCard = ({ data }: EmpShiftRequestCardProps) => {
                     nudge: "nudge"
                   }
                 }}
-                isPendingStatus={badgeStatus === "Pending"}
+                isPendingStatus={isPendingStatus}
                 todoId={data?.todo_id}
                 variant="buttons"
                 canEdit={canEdit}

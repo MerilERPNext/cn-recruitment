@@ -958,7 +958,7 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/benefits-app",
     element: <BenefitsApp />,
-    permissionKey: "Benefit",
+    permissionKey: "Benefits",
     children: [
       {
         path: "my-benefits",
@@ -1646,60 +1646,6 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/recognition/leaderboard",
     element: <LeaderboardPage />,
     permissionKey: "Recognition",
-  },
-
-  {
-    path: "/webapp/recognition/vibe",
-    element: <VibeApp />,
-    permissionKey: "Recognition",
-    children: [
-      {
-        path: "",
-        index: true,
-        element: <Navigate to="dashboard" replace />,
-        permissionKey: "Recognition",
-      },
-      {
-        path: "dashboard",
-        element: <VibeDashboard />,
-        permissionKey: "Recognition",
-      },
-      {
-        path: "my-appreciations-history",
-        element: <MyAppreciationsHistory />,
-        permissionKey: "Recognition",
-      },
-      {
-        path: "feed",
-        element: <VibeFeed />,
-        permissionKey: "Recognition",
-      },
-      {
-        path: "appreciations-leaderboard",
-        element: <AppreciationsLeaderboard />,
-        permissionKey: "Recognition",
-      },
-      {
-        path: "awards-live",
-        element: <AwardsLivePrograms />,
-        permissionKey: "Recognition",
-      },
-      {
-        path: "awards-history",
-        element: <AwardsHistory />,
-        permissionKey: "Recognition",
-      },
-      {
-        path: "nomination-workflows",
-        element: <AwardsNominationWorkflows />,
-        permissionKey: "Recognition",
-      },
-      {
-        path: "earned-points",
-        element: <EarnedPointsSummary />,
-        permissionKey: "Recognition",
-      },
-    ],
   },
   {
     path: "/webapp/employee-documents",
