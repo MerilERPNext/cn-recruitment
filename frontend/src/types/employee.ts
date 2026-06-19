@@ -29,7 +29,11 @@ export interface EmployeeFromAPI {
 
   // Status
   status: "Active" | "Inactive" | "Suspended" | "Left" | "Pending";
-  custom_employment_status?: "On Probation" | "Confirmation" | "Probation Extended" | "On Notice Period";
+  custom_employment_status?:
+    | "On Probation"
+    | "Confirmation"
+    | "Probation Extended"
+    | "On Notice Period";
 
   // Organization
   company: string;
@@ -272,30 +276,30 @@ export interface WorkRole {
   is_promotion: boolean;
 }
 export interface WorkLocation {
-  from_date: string,
-  to_date: string | null,
-  is_current: boolean,
+  from_date: string;
+  to_date: string | null;
+  is_current: boolean;
   work_location: {
-    id: string,
-    name: string,
-    row_name?: string,
-  } | null,
+    id: string;
+    name: string;
+    row_name?: string;
+  } | null;
   office_area: {
-    id: string,
-    name: string
-  } | null,
+    id: string;
+    name: string;
+  } | null;
   country: {
-    id: string,
-    name: string
-  } | null,
+    id: string;
+    name: string;
+  } | null;
   state: {
-    id: string,
-    name: string
-  } | null,
+    id: string;
+    name: string;
+  } | null;
   city: {
-    id: string,
-    name: string
-  } | null,
+    id: string;
+    name: string;
+  } | null;
 }
 export interface EmploymentTypes {
   from_date: string;
@@ -392,7 +396,7 @@ export interface EmployeeSupplementary {
   cost_centers?: EmployeeCostCenter[];
 }
 
-export interface Employee extends EmployeeFromAPI, EmployeeSupplementary { }
+export interface Employee extends EmployeeFromAPI, EmployeeSupplementary {}
 
 export type CurrentEmployeeAllDetails = Employee;
 
@@ -448,7 +452,6 @@ export interface EmployeeProfileOverview {
   field_label: string;
   display: string;
   value: string;
-
 }
 export interface EmployeeFieldsToTrack {
   field_name: string;
@@ -490,7 +493,7 @@ export interface EmployeeNode {
   expandable: boolean;
   children: EmployeeNode[];
   collapsed?: boolean;
-};
+}
 
 // Simplified Employee interface for ID Card display
 export interface EmployeeIdCard {
@@ -535,17 +538,17 @@ export interface IDesignationHierarchy {
     companies: string[];
     departments: string[];
     designations: string[];
-    functional_areas: string[]
-  }
+    functional_areas: string[];
+  };
 }
 export interface IGetEmpDesignationHierarchyCurrentDetails {
   data: {
-    company: string,
-    department: string,
-    designation: string,
-    functional_area: string,
-    start_date: string
-  }
+    company: string;
+    department: string;
+    designation: string;
+    functional_area: string;
+    start_date: string;
+  };
 }
 
 export interface AttendanceFieldPermissions {
@@ -585,4 +588,6 @@ export interface EmployeeSeparationDetails {
   date_of_approval: string | null;
   separation_approved_by: string | null;
   de_activated_by: string | null;
+  deactivation_type: string | null;
+  deactivation_reason: string | null;
 }
