@@ -136,8 +136,8 @@ const EmpLeaveRequestCard = ({
   );
   const truncatedDescription = truncateByChars(cleanDescription);
 
-  const status = data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.status;
-  const isPendingStatus = ["pending", "open"].includes(status.toLocaleLowerCase());
+  const status = data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status?.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.status;
+  const isPendingStatus = ["pending", "open"].includes(status?.toLowerCase());
 
   return (
     <>

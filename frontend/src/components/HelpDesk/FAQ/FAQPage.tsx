@@ -21,6 +21,13 @@ const FAQPage: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
 
+  const { data: userUiPermission } = useGetUiPermission("Help Desk");
+  const canRequestIssue = isActionEnabled(
+    userUiPermission,
+    "request_issue",
+    "Help Desk",
+  );
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
@@ -226,12 +233,7 @@ const FAQPage: React.FC = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  const { data: userUiPermission } = useGetUiPermission("Help Desk");
-  const canRequestIssue = isActionEnabled(
-    userUiPermission,
-    "request_issue",
-    "Help Desk",
-  );
+
 
   if (!isDesktop) {
     return (
