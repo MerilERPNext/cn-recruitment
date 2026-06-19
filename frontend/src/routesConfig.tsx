@@ -600,7 +600,7 @@ const AppreciationsLeaderboard = lazyWithRetry(
 const AwardsLivePrograms = lazyWithRetry(
   () => import("./components/Recognition/Vibe/AwardsLivePrograms"),
   "AwardsLivePrograms",
-);
+); 
 const AwardsHistory = lazyWithRetry(
   () => import("./components/Recognition/Vibe/AwardsHistory"),
   "AwardsHistory",
