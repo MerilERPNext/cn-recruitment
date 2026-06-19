@@ -200,7 +200,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
             Sub Category
           </Typography>
           <Typography variant="mobileCardValue">
-            {getCategoryName(ticket.custom_sub_category_name)}
+            {getCategoryName(ticket.custom_sub_category_name || ticket.custom_sub_category)}
           </Typography>
         </div>
 

@@ -100,7 +100,7 @@ const TicketTableRow = ({
             </td>
             <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="body1">
-                    {getCategoryName(ticket.custom_sub_category_name)}
+                    {getCategoryName(ticket.custom_sub_category_name || ticket.custom_sub_category)}
                 </Typography>
             </td>
             <td className="px-4 py-3">

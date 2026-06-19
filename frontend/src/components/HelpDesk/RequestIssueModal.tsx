@@ -21,7 +21,7 @@ import { getRequiredKeys } from "../../utils/formioUtils";
 import { useFileUploader } from "../../hooks/useFileUploader";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { FormioPreviewItem, FormioPreviewPortal } from "../shared/molecules/FormioPreview";
-import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
 
 interface RequestIssueModalProps {
   isOpen: boolean;
@@ -54,9 +54,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   const [formioFiles, setFormioFiles] = useState<File[]>([]);
 
   const { data: currentUser } = useCurrentUser();
-  const currentUserIsAdmin = currentUser?.roles?.some(
-    (role) => "Administrator" === role.role,
-  );
+  const currentUserIsAdmin = isAdminUser(currentUser ?? null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: creationFormJson, isLoading: creationFormJsonLoading } = useGetCreationFormJson({ category, sub_category: subcategory });
@@ -315,6 +313,16 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     }
   };
 
+  // Escape HTML special characters to prevent XSS
+  const escapeHtml = (text: string): string => {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
   // Build structured description with separate heading/value sections
   const buildStructuredDescription = (
     titleText: string,
@@ -324,20 +332,22 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     let html = '';
 
     // Title section
-    html += `<div><strong>Title:</strong></div><div>${titleText}</div>`;
+    html += '<div><strong>Title:</strong></div><div>' + escapeHtml(titleText) + '</div>';
 
     // Description section
-    html += `<br/><div><strong>Description:</strong></div><div>${desc}</div>`;
+    html += '<br/><div><strong>Description:</strong></div><div>' + escapeHtml(desc) + '</div>';
 
     // Attachments section
     if (files.length > 0) {
       html += '<br/><div><strong>Attachments:</strong></div><ul>';
       files.forEach((file) => {
         const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.file_name);
+        const escapedUrl = escapeHtml(file.file_url);
+        const escapedName = escapeHtml(file.file_name);
         if (isImage) {
-          html += `<li><a href="${file.file_url}" target="_blank"><img src="${file.file_url}" alt="${file.file_name}" style="max-width: 300px; max-height: 200px;" /><br/>${file.file_name}</a></li>`;
+          html += '<li><a href="' + escapedUrl + '" target="_blank"><img src="' + escapedUrl + '" alt="' + escapedName + '" style="max-width: 300px; max-height: 200px;" /><br/>' + escapedName + '</a></li>';
         } else {
-          html += `<li><a href="${file.file_url}" target="_blank">${file.file_name}</a></li>`;
+          html += '<li><a href="' + escapedUrl + '" target="_blank">' + escapedName + '</a></li>';
         }
       });
       html += '</ul>';

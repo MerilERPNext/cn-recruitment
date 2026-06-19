@@ -65,13 +65,6 @@ const FAQPage: React.FC = () => {
     setIsRequestModalOpen(true);
   };
 
-  const { data: userUiPermission } = useGetUiPermission("Help Desk");
-  const canRequestIssue = isActionEnabled(
-    userUiPermission,
-    "request_issue",
-    "Help Desk",
-  );
-
   const renderContent = () => (
     <div className="flex flex-col h-full">
       {/* Header Section */}
@@ -233,6 +226,12 @@ const FAQPage: React.FC = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  const { data: userUiPermission } = useGetUiPermission("Help Desk");
+  const canRequestIssue = isActionEnabled(
+    userUiPermission,
+    "request_issue",
+    "Help Desk",
+  );
 
   if (!isDesktop) {
     return (

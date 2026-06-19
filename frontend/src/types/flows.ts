@@ -231,6 +231,11 @@ export type WorkflowStage = {
   trigger_title: string;
   can_act: boolean;
   role?: string | null;
+  can_retrigger?: boolean;
+  has_dependents?: boolean;
+  dependent_stage_names?: string[];
+  funnel_task?: string;
+  reinitiated_on?: string | null;
   todo: {
     name: string;
     owner: string;
