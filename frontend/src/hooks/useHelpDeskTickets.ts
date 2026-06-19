@@ -27,6 +27,7 @@ export interface HDTicket {
   resolution_by: string;
   agreement_status: "First Response Due" | "Resolution Due" | "Failed" | "Fulfilled" | "Paused";
   response_by: string;
+  custom_sub_category_name?: string;
 }
 
 export interface TicketListResponse {
@@ -137,6 +138,7 @@ export const useTicketList = (
           "agreement_status",
           "resolution_details",
           "owner",
+          "custom_sub_category_name",
         ],
         show_customer_portal_fields: false,
       });
@@ -341,7 +343,7 @@ export const useCloseTicket = () => {
       //   { status, closing_form_data: closingFormData, feedback_form_data: feedbackFormData }
       // );
 
-      console.log("Close Ticket Response", result)
+
       // Ensure result is an object before mutating
       if (typeof result === "object" && result !== null) {
         const hasDoctype = "doctype" in result;

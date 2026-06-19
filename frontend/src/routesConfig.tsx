@@ -922,7 +922,7 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/benefits-app",
     element: <BenefitsApp />,
-    permissionKey: "Benefit",
+    permissionKey: "Benefits",
     children: [
       {
         path: "my-benefits",

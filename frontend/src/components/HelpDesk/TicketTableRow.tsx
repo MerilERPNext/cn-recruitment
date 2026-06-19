@@ -86,8 +86,21 @@ const TicketTableRow = ({
                 </Typography>
             </td>
             <td className="px-4 py-3">
+                {(() => {
+                    const badgeConfig = getStatusBadgeConfig(ticket.status);
+                    return (
+                        <Badge
+                            size="md"
+                            label={badgeConfig.label}
+                            backgroundColor={badgeConfig.backgroundColor}
+                            textColor={badgeConfig.textColor}
+                        />
+                    );
+                })()}
+            </td>
+            <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="body1">
-                    {getCategoryName(ticket.custom_sub_category)}
+                    {getCategoryName(ticket.custom_sub_category_name || ticket.custom_sub_category)}
                 </Typography>
             </td>
             <td className="px-4 py-3">
@@ -175,19 +188,7 @@ const TicketTableRow = ({
                     {formatToIndianDate(ticket.modified)}
                 </Typography>
             </td>
-            <td className="px-4 py-3">
-                {(() => {
-                    const badgeConfig = getStatusBadgeConfig(ticket.status);
-                    return (
-                        <Badge
-                            size="md"
-                            label={badgeConfig.label}
-                            backgroundColor={badgeConfig.backgroundColor}
-                            textColor={badgeConfig.textColor}
-                        />
-                    );
-                })()}
-            </td>
+
             <td
                 className="pl-4 pr-6 py-3"
                 onClick={(e) => e.stopPropagation()}
