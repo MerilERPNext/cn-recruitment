@@ -38,7 +38,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Applies To",
-   "options": "Parent\nPosition Details\nQualifications\nSkills\nPre-screened Candidates",
+   "options": "Parent\nPosition Details\nPosition Summary\nQualifications\nSkills\nPre-screened Candidates",
    "description": "Which part of the requisition this field belongs to. 'Parent' = a Job Requisition field; the others target a child-table column."
   },
   {

@@ -716,6 +716,7 @@ _SKIP_FIELDNAMES = frozenset({
 # keeps working if a table's child doctype is renamed.
 _CHILD_TABLE_BY_GROUP = {
     "Position Details": "custom_position_details",
+    "Position Summary": "custom_position_summary",
     "Qualifications": "custom_qualifications",
     "Skills": "custom_skills",
     "Pre-screened Candidates": "custom_pre_screened_candidates",
@@ -822,13 +823,63 @@ def _child_columns(child_doctype, ov=None):
         # schema so the frontend renders a nested row editor. Stored value is a
         # list of dicts matching `nested_fields` (handled by the
         # serialise/deserialise helpers on read/write).
-        nested = _VIRTUAL_NESTED_TABLES.get(df.fieldname)
-        if nested:
-            col["is_nested_table"] = 1
-            col["nested_label"] = nested["label"]
-            col["nested_fields"] = nested["fields"]
+        _apply_nested_table(col, df.fieldname)
         columns.append(col)
     return columns
+
+
+def _apply_nested_table(col, fieldname):
+    """Augment a column dict with virtual sub-table schema when applicable."""
+    nested = _VIRTUAL_NESTED_TABLES.get(fieldname)
+    if nested:
+        col["is_nested_table"] = 1
+        col["nested_label"] = nested["label"]
+        col["nested_fields"] = nested["fields"]
+
+
+def _child_group_fields(child_doctype, group, overrides, restrict):
+    """Columns for a child-table group, config-driven.
+
+    When the settings doc has override rows for this group (applies_to == group),
+    ONLY those columns are returned — in their configured order, honouring
+    Hide / mandatory / read-only / label / options overrides. This is what makes
+    removing a child column in the builder actually drop it from the API.
+
+    When the group has no override rows: empty in restrict mode (nothing
+    configured), else meta-first (all columns) so an unconfigured table still
+    renders fully."""
+    try:
+        cmeta = frappe.get_meta(child_doctype)
+    except Exception:
+        return []
+
+    group_rows = sorted(
+        [(fn, row) for (grp, fn), row in overrides.items() if grp == group],
+        key=lambda x: int(x[1].get("order") or 0),
+    )
+    if not group_rows:
+        return [] if restrict else _child_columns(child_doctype)
+
+    cols = []
+    for fn, row in group_rows:
+        if (row.get("expose") or "Default") == "Hide":
+            continue
+        df = cmeta.get_field(fn)
+        if not df:
+            continue
+        col = {
+            "fieldname": fn,
+            "label": (row.get("label_override") or df.label or fn).strip(),
+            "fieldtype": df.fieldtype,
+            "options": row.get("options_override") or df.options or "",
+            "is_mandatory": _three_state(row.get("mandatory_override"), df.reqd, "Required", "Optional"),
+            "read_only": _three_state(row.get("read_only_override"), df.read_only, "Read Only", "Editable"),
+            "depends_on": df.get("depends_on") or "",
+            "mandatory_depends_on": df.get("mandatory_depends_on") or "",
+        }
+        _apply_nested_table(col, fn)
+        cols.append(col)
+    return cols
 
 
 def _build_form_config(doc=None):
@@ -915,17 +966,21 @@ def _build_form_config(doc=None):
             sections.append({"section": sec_lbl, "fields": fields})
         tabs.append({"tab": tab_lbl, "sections": sections})
 
-    # Child-table groups, resolved meta-first from the parent table fields.
+    # Child-table groups, config-driven: only the columns placed in the builder
+    # for each group are returned (so removing one drops it from the response).
     child_groups = {}
     for group, table_field in _CHILD_TABLE_BY_GROUP.items():
         tdf = meta.get_field(table_field)
         if not tdf or tdf.fieldtype not in ("Table", "Table MultiSelect") or not tdf.options:
             continue
-        ov = overrides.get(("Parent", table_field))
+        fields = _child_group_fields(tdf.options, group, overrides, restrict)
+        # Drop a group entirely when restrict is on and nothing is configured for it.
+        if restrict and not fields:
+            continue
         child_groups[table_field] = {
             "group": group,
             "child_doctype": tdf.options,
-            "fields": _child_columns(tdf.options, ov),
+            "fields": fields,
         }
 
     return {

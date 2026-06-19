@@ -386,6 +386,8 @@ const AdvanceDesktopRow = ({
   const [isActed, setIsActed] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const todo = advance.todo ?? null;
+  const status = todo?.custom_allow_revoke === 1 && todo?.reference_document?.docstatus === 2 && todo?.todo_status?.toLowerCase() === "cancelled" ? "Revoked" : advance.advanceStatus;
+  const isPendingStatus = ["pending", "open"].includes(status?.toLowerCase());
   const canRevoke = todo?.custom_allow_revoke === 1 && !isActed;
   const formattedCreationDate = formatToIndianDate(advance?.todo?.reference_document?.creation as string);
   const canEdit =
@@ -461,7 +463,7 @@ const AdvanceDesktopRow = ({
           role={todo?.role ?? ""}
           position="left"
         >
-          <StatusBadge status={advance.advanceStatus} />
+          <StatusBadge status={status} />
         </AllocatedToTooltip>
       </div>
 
@@ -476,7 +478,7 @@ const AdvanceDesktopRow = ({
               nudge: "nudge"
             },
           }}
-          isPendingStatus={advance.advanceStatus === "Pending"}
+          isPendingStatus={isPendingStatus}
           todoId={advance?.todo?.todo_id}
           canRevoke={canRevoke}
           canEdit={canEdit}
@@ -499,6 +501,8 @@ const AdvanceMobileRow = ({
   const [isActed, setIsActed] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const todo = advance.todo ?? null;
+  const status = todo?.custom_allow_revoke === 1 && todo?.reference_document?.docstatus === 2 && todo?.todo_status?.toLowerCase() === "cancelled" ? "Revoked" : advance.advanceStatus;
+  const isPendingStatus = ["pending", "open"].includes(status?.toLowerCase());
   const canRevoke = todo?.custom_allow_revoke === 1 && !isActed;
   const canEdit =
     todo?.can_edit === true &&
@@ -542,7 +546,7 @@ const AdvanceMobileRow = ({
             <Typography variant="mobileCardLabel">Advance Name</Typography>
             <Typography variant="mobileCardValue">{advance.name}</Typography>
           </div>
-          <StatusBadge status={advance.advanceStatus} />
+          <StatusBadge status={status} />
         </div>
 
         <AmountEntry
@@ -595,7 +599,7 @@ const AdvanceMobileRow = ({
               },
             }}
             todoId={advance?.todo?.todo_id}
-            isPendingStatus={advance.advanceStatus === "Pending"}
+            isPendingStatus={isPendingStatus}
             variant="buttons"
             canRevoke={canRevoke}
             canEdit={canEdit}

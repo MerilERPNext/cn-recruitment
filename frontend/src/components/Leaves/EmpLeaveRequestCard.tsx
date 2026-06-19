@@ -136,6 +136,8 @@ const EmpLeaveRequestCard = ({
   );
   const truncatedDescription = truncateByChars(cleanDescription);
 
+  const status = data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status?.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.status;
+  const isPendingStatus = ["pending", "open"].includes(status?.toLowerCase());
 
   return (
     <>
@@ -221,7 +223,7 @@ const EmpLeaveRequestCard = ({
               position="left"
             >
 
-              <StatusBadge status={data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.status} />
+              <StatusBadge status={status} />
 
 
             </AllocatedToTooltip>
@@ -267,7 +269,7 @@ const EmpLeaveRequestCard = ({
                 }
               }}
 
-              isPendingStatus={data?.reference_document?.status === "Open" || data?.reference_document?.status === "Pending"}
+              isPendingStatus={isPendingStatus}
               todoId={data?.todo_id}
               canRevoke={
                 ((isPending && data?.custom_allow_revoke) || (isApproved && !!allowRevoke && isFutureLeave)) && !isActed
@@ -297,7 +299,7 @@ const EmpLeaveRequestCard = ({
                   {data?.reference_document?.name}
                 </Typography>
               </div>
-              <StatusBadge status={data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.status} />
+              <StatusBadge status={status} />
 
             </div>
 
@@ -398,7 +400,7 @@ const EmpLeaveRequestCard = ({
                     nudge: "nudge"
                   }
                 }}
-                isPendingStatus={data?.reference_document?.status === "Open" || data?.reference_document?.status === "Pending"}
+                isPendingStatus={isPendingStatus}
                 todoId={data?.todo_id}
                 variant="buttons"
                 canRevoke={
