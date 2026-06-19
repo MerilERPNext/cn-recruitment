@@ -577,7 +577,7 @@ const RecognitionPage = lazyWithRetry(
   "RecognitionPage",
 );
 const RecognitionAdminDashboard = lazyWithRetry(
-  () => import("./components/Recognition/RecognitionAdminDashboard"),
+  () => import("./components/Recognition/Vibe/RecognitionAdminDashboard"),
   "RecognitionAdminDashboard",
 );
 const HallOfFamePage = lazyWithRetry(
@@ -1654,11 +1654,6 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Recognition",
   },
   {
-    path: "/webapp/recognition/admin-dashboard",
-    element: <RecognitionAdminDashboard />,
-    permissionKey: "Recognition",
-  },
-  {
     path: "/webapp/recognition/hall-of-fame",
     element: <HallOfFamePage />,
     permissionKey: "Recognition",
@@ -1717,6 +1712,11 @@ export const routesConfig: AppRoute[] = [
       {
         path: "earned-points",
         element: <EarnedPointsSummary />,
+        permissionKey: "Recognition",
+      },
+      {
+        path: "admin-dashboard",
+        element: <RecognitionAdminDashboard />,
         permissionKey: "Recognition",
       },
     ],

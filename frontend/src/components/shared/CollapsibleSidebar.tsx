@@ -661,6 +661,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/recognition/vibe/earned-points",
           permissionKey: "Recognition",
         },
+        {
+          name: "Admin Dashboard",
+          icon: Grid3X3,
+          href: "/webapp/recognition/vibe/admin-dashboard",
+          permissionKey: "Recognition",
+        },
       ],
     },
     {

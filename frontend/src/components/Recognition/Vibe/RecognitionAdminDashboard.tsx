@@ -12,7 +12,7 @@ import {
   ArrowDown,
   Inbox,
 } from "lucide-react";
-import Button from "../shared/atoms/Button";
+import Button from "../../shared/atoms/Button";
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Types
