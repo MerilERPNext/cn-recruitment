@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import CardTable from "../../shared/CardTable";
 import { Card } from "../../shared/atoms/Card";
+import { Typography } from "../../shared/atoms/Typography";
 import {
-  ArrowUp,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -9,9 +10,27 @@ import {
   Share2,
   SlidersHorizontal,
   Trophy,
+  Trash2,
   Upload,
 } from "lucide-react";
+import Tooltip from "../../shared/Tooltip";
 import { AWARD_HISTORY } from "./vibeMockData";
+
+const TABLE_TITLES = [
+  "Awards",
+  "Values",
+  "Received From",
+  "Received Date",
+  "Actions",
+];
+
+const TABLE_WIDTHS = [
+  "minmax(260px,1.2fr)",
+  "minmax(300px,1.4fr)",
+  "190px",
+  "150px",
+  "150px",
+];
 
 const ValueChips: React.FC<{ values: string[] }> = ({ values }) => (
   <div className="flex flex-wrap gap-2">
@@ -26,11 +45,48 @@ const ValueChips: React.FC<{ values: string[] }> = ({ values }) => (
   </div>
 );
 
-const ActionButton: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }) => (
-  <button className="flex items-center gap-1.5 rounded-lg border border-purple-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-purple-50 transition-colors">
-    {icon}
-    {label}
-  </button>
+const AwardActions = () => (
+  <div className="flex h-8 w-fit items-center gap-1 rounded-3xl bg-gray-10 px-3 py-1">
+    <Tooltip content="Delete" position="top">
+      <button
+        type="button"
+        className="flex items-center justify-center"
+        aria-label="Delete award"
+      >
+        <Trash2 className="h-4 w-4 text-red-400" />
+      </button>
+    </Tooltip>
+    <span className="h-4 w-px bg-gray-300" />
+    <Tooltip content="Download" position="top">
+      <button
+        type="button"
+        className="flex items-center justify-center"
+        aria-label="Download award"
+      >
+        <Download className="h-4 w-4 text-primary" />
+      </button>
+    </Tooltip>
+    <span className="h-4 w-px bg-gray-300" />
+    <Tooltip content="Share" position="top">
+      <button
+        type="button"
+        className="flex items-center justify-center"
+        aria-label="Share award"
+      >
+        <Share2 className="h-4 w-4 text-info" />
+      </button>
+    </Tooltip>
+    <span className="h-4 w-px bg-gray-300" />
+    <Tooltip content="View" position="top">
+      <button
+        type="button"
+        className="flex items-center justify-center"
+        aria-label="View award"
+      >
+        <Eye className="h-4 w-4 text-primary" />
+      </button>
+    </Tooltip>
+  </div>
 );
 
 const AwardsHistory: React.FC = () => {
@@ -76,48 +132,57 @@ const AwardsHistory: React.FC = () => {
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left">
-            <thead>
-              <tr className="bg-blue-50/40 text-sm text-gray-600">
-                <th className="px-5 py-3 font-semibold">Awards</th>
-                <th className="px-5 py-3 font-semibold">Values</th>
-                <th className="px-5 py-3 font-semibold">Received From</th>
-                <th className="px-5 py-3 font-semibold">
-                  <span className="flex items-center gap-1">
-                    Received Date <ArrowUp className="size-3.5" />
-                  </span>
-                </th>
-                <th className="px-5 py-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="overflow-hidden border-y border-gray-100">
+          <CardTable
+            titles={TABLE_TITLES}
+            columnWidths={TABLE_WIDTHS}
+            noBorder
+            noShadow
+            noRound
+          >
+            <div className="min-w-[1200px]">
               {AWARD_HISTORY.map((row, i) => (
-                <tr key={i} className="border-t border-gray-100 hover:bg-gray-50/60">
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-9 items-center justify-center rounded-full border-2 border-amber-300 bg-amber-50">
-                        <Trophy className="size-4 text-amber-400" />
-                      </div>
-                      <span className="text-sm font-medium text-gray-800">{row.title}</span>
+                <div
+                  key={`${row.title}-${i}`}
+                  className="grid min-h-[78px] items-center gap-4 border-b border-gray-100 px-6 py-4 transition-colors hover:bg-gray-50/70"
+                  style={{ gridTemplateColumns: TABLE_WIDTHS.join(" ") }}
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-amber-300 bg-amber-50">
+                      <Trophy className="size-4 text-amber-400" />
                     </div>
-                  </td>
-                  <td className="px-5 py-4">
-                    <ValueChips values={row.values} />
-                  </td>
-                  <td className="px-5 py-4 text-sm font-medium text-blue-600">{row.receivedFrom}</td>
-                  <td className="px-5 py-4 text-sm text-gray-700">{row.receivedDate}</td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-2">
-                      <ActionButton icon={<Download className="size-3.5" />} label="Download" />
-                      <ActionButton icon={<Share2 className="size-3.5" />} label="Share" />
-                      <ActionButton icon={<Eye className="size-3.5" />} label="View" />
-                    </div>
-                  </td>
-                </tr>
+                    <Typography
+                      variant="bodySmall"
+                      className="truncate font-bold text-gray-800"
+                      title={row.title}
+                    >
+                      {row.title}
+                    </Typography>
+                  </div>
+
+                  <ValueChips values={row.values} />
+
+                  <Typography
+                    variant="bodySmall"
+                    className="truncate text-center font-semibold text-blue-600"
+                  >
+                    {row.receivedFrom}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className="text-center font-semibold text-gray-700"
+                  >
+                    {row.receivedDate}
+                  </Typography>
+
+                  <div className="flex justify-center">
+                    <AwardActions />
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </CardTable>
         </div>
 
         {/* Footer */}
