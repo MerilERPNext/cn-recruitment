@@ -327,7 +327,7 @@ const EmployeeTable = ({
                   </div>
                 </td>
                 <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100">
-                  <span className="font-mono text-[11px] opacity-60">#</span>{item.employee}
+                  <span className="font-mono text-[11px] opacity-60"></span>{item.employee}
                 </td>
                 <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
                   <div className="flex flex-col">
@@ -429,7 +429,7 @@ const EmployeeTable = ({
                       </WrapperHoverCard>
                     </div>
                   </Link>
-                  <p className="text-[10px] font-mono text-gray-400 mt-0.5">#{item.employee}</p>
+                  <p className="text-[10px] font-mono text-gray-400 mt-0.5">{item.employee}</p>
                 </div>
               </div>
 
