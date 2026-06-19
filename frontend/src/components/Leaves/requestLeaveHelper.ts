@@ -295,6 +295,9 @@ export const getExistingAttachmentUrls = (attachments: NormalizedAttachment[]) =
     )
     .filter((url): url is string => typeof url === "string" && url.length > 0);
 
+export const getFirstAttachmentUrl = (...attachmentGroups: unknown[]) =>
+  getExistingAttachmentUrls(normalizeAttachments(...attachmentGroups))[0] || "";
+
 export const resolveLeaveApplicationTarget = (
   response: unknown,
 ): LeaveApplicationTarget | null => {

@@ -12,9 +12,12 @@ import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import Button from "../shared/atoms/Button";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { FilePreviewModal } from "../shared/molecules/FilePreviewModal";
 import {
   getFormioAttachmentFileItems,
+  normalizeAttachments,
   resolvePendingAttachmentUploads,
+  type NormalizedAttachment,
 } from "./requestLeaveHelper";
 
 
@@ -54,6 +57,10 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
   const [isReplaceBoth, setIsReplaceBoth] = useState<boolean>(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [currentAttachments, setCurrentAttachments] = useState<any[]>([]);
+  const [previewFile, setPreviewFile] = useState<{
+    url: string;
+    name: string;
+  } | null>(null);
 
   const { data: singleFields } = useGetLeaveRequestFields(
     activeLeaveType,
@@ -123,6 +130,7 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const formRef = useRef<any>(null);
+  const modalRef = useRef<HTMLDivElement | null>(null);
   const leaveTypeOptions = useMemo(() => {
     if (!leaveBalanceData?.leave_balance)
       return [{ label: "Select Leave Type", value: "" }];
@@ -305,6 +313,90 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const getPreviewUrl = (attachment: NormalizedAttachment) => {
+      const url =
+        attachment.url ||
+        attachment.file_url ||
+        attachment.data?.message?.file_url ||
+        "";
+
+      if (url) {
+        if (
+          url.startsWith("http") ||
+          url.startsWith("/") ||
+          url.startsWith("blob:")
+        ) {
+          return url;
+        }
+
+        return url.startsWith("files/") ? `/${url}` : `/files/${url}`;
+      }
+
+      if (attachment.file instanceof File) {
+        return URL.createObjectURL(attachment.file);
+      }
+
+      return "";
+    };
+
+    const handleFileLinkClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!modalRef.current?.contains(target)) return;
+
+      const fileLink = target.closest('a[ref="fileLink"]');
+      if (
+        !fileLink ||
+        target.closest('[ref="removeLink"]') ||
+        target.closest(".fa-times")
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      const filesFromComponent = getFormioAttachmentFileItems(
+        formRef.current,
+        "attachment",
+      );
+      const attachments = normalizeAttachments(
+        currentAttachments,
+        filesFromComponent,
+        formRef.current?.submission?.data?.attachment,
+      );
+      const clickedText = fileLink.textContent?.trim() || "";
+      const selectedAttachment =
+        attachments.find((attachment) => clickedText.includes(attachment.name)) ||
+        attachments[0];
+
+      if (!selectedAttachment) return;
+
+      const previewUrl = getPreviewUrl(selectedAttachment);
+      if (!previewUrl) return;
+
+      setPreviewFile({
+        url: previewUrl,
+        name: selectedAttachment.name || "Attachment",
+      });
+    };
+
+    document.addEventListener("click", handleFileLinkClick, true);
+    return () => {
+      document.removeEventListener("click", handleFileLinkClick, true);
+    };
+  }, [currentAttachments, isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (previewFile?.url.startsWith("blob:")) {
+        URL.revokeObjectURL(previewFile.url);
+      }
+    };
+  }, [previewFile]);
+
   const handleReplace = async () => {
     if (!formRef.current) {
       return;
@@ -359,7 +451,10 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
       className="fixed inset-0 z-[100] flex justify-center md:items-center items-end"
       style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
     >
-      <div className="bg-white md:rounded-xl rounded-t-xl shadow-md w-full max-w-md relative pb-3">
+      <div
+        ref={modalRef}
+        className="bg-white md:rounded-xl rounded-t-xl shadow-md w-full max-w-md relative pb-3"
+      >
         <div className="flex justify-between items-center border-b px-4 py-4">
           <h2 className="base-title md:text-lg font-semibold">
             Replace Leave Type
@@ -402,6 +497,13 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
           </div>
         </div>
       </div>
+      {previewFile && (
+        <FilePreviewModal
+          fileUrl={previewFile.url}
+          fileName={previewFile.name}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
     </div>
   );
 };

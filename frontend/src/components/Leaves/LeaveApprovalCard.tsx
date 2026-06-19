@@ -107,11 +107,11 @@ const LeaveApprovalCard = ({
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? showRejectReason
-      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1.5fr 1fr"
-      : "0.5fr 1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr"
+      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1.5fr 1fr"
+      : "0.5fr 1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
     : showRejectReason
-      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1.5fr 1fr"
-      : "1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr";
+      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1.5fr 1fr"
+      : "1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr 1.5fr 1fr";
   return (
     <>
       {isDesktop ? (
@@ -185,6 +185,9 @@ const LeaveApprovalCard = ({
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.due_date)}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(data?.reference_document?.creation)}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {data?.reference_document?.total_leave_days > 1
@@ -338,6 +341,15 @@ const LeaveApprovalCard = ({
                   <Typography variant="mobileCardLabel">Due Date</Typography>
                   <Typography variant="mobileCardValue">
                     {formatToIndianDate(data?.due_date)}
+                  </Typography>
+                </div>
+              </div>
+
+              <div className="flex justify-between w-full px-1">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">Initiation Date</Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatToIndianDate(data?.reference_document?.creation)}
                   </Typography>
                 </div>
               </div>
