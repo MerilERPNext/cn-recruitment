@@ -91,7 +91,6 @@ const MultiSelect = <T extends Option>({
     const addOption = (opt: T) => {
         onChange([...selected, opt]);
         setQuery("");
-        onSearchChange?.("");
     };
 
     const removeOption = (opt: T) => {
@@ -193,6 +192,7 @@ const MultiSelect = <T extends Option>({
                                     );
                                     break;
                                 case "Enter":
+                                case " ":
                                     e.preventDefault();
                                     if (filteredOptions[highlightedIndex]) {
                                         addOption(filteredOptions[highlightedIndex]);

@@ -104,7 +104,7 @@ const BenefitsApp: React.FC = () => {
   const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
       <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <HeaderBar title={"Benefits"} onBack={() => navigate(-1)} />
+        <HeaderBar title={"Benefits"} onBack={() => navigate("/webapp")} />
         <NavigationTabs
           tabs={tabs}
           activeTab={activeTab}

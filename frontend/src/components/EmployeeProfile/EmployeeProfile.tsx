@@ -345,7 +345,7 @@ const EmployeeProfile: React.FC = () => {
           if (isViewingOtherUser) {
             clearTargetEmployee();
           }
-          navigate(-1);
+          navigate("/webapp/");
         }}
       />
       <div className="bg-white shadow">

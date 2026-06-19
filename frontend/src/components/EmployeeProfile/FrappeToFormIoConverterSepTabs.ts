@@ -1548,8 +1548,6 @@ export async function convertFieldsToSimpleTabbedData(
       else if (["Attach", "Attach Image"].includes(field.fieldtype))
         simpleType = "file";
       else if (["Table"].includes(field.fieldtype)) simpleType = "table";
-      else if (["Text Editor"].includes(field.fieldtype))
-        simpleType = "html";
 
       const simpleField: SimpleField = {
         label: field.label || field.fieldname,

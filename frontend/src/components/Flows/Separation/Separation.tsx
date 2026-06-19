@@ -28,7 +28,6 @@ import { useGetEmployeeSeparationType, useGetSeparationFunnelDetails, useGetNoti
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { FlowRequestItem } from "../../../types/flows";
 import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
-import Tooltip from "../../shared/Tooltip";
 
 type cardDataType = {
   icon: React.ReactNode;
@@ -159,10 +158,12 @@ const Separation = () => {
       label: "Notice Period",
       value: policyData?.notice_period ? `Remember to serve your notice period of ${policyData.notice_period}` : `Remember to serve your notice period ${(activeEmployee as any)?.notice_number_of_days ? "of " + (activeEmployee as any)?.notice_number_of_days + " days" : ""}`,
     },
+    {
+      icon: SeparationSvgs[1],
+      label: policyData?.separation_policy ? "Separation Policy" : "Final Settlement",
+      value: policyData?.separation_policy || `We'll process your full & final settlement soon`,
+    },
   ];
-
-  const separationPolicyLabel = policyData?.separation_policy ? "Separation Policy" : "Final Settlement";
-  const separationPolicyValue = policyData?.separation_policy || `We'll process your full & final settlement soon`;
   const queryClient = useQueryClient();
   useEffect(() => {
     const handleChatClose = () => {
@@ -297,29 +298,6 @@ const Separation = () => {
                   {cardData.map((data) => (
                     <SeparationCard key={data.label} data={data} />
                   ))}
-                  <div className="w-full sm:max-w-[250px] items-center border-1 hover:bg-gray-10 cursor-pointer p-4 rounded-lg flex overflow-hidden">
-                    <div className="shrink-0">{SeparationSvgs[1]}</div>
-                    <div className="min-w-0 flex-1">
-                      <Typography variant="body">{separationPolicyLabel}</Typography>
-                      {policyData?.separation_policy ? (
-                        <Tooltip content={policyData?.separation_policy} position="bottom"
-                          triggerClassName="truncate line-clamp-1"
-                        >
-                          <Typography
-                            variant="bodySmall"
-                            color="body2"
-                            className="truncate block w-full line-clamp-1"
-                          >
-                            {policyData?.separation_policy}
-                          </Typography>
-                        </Tooltip>
-                      ) : (
-                        <Typography variant="bodySmall" color="body2">
-                          {separationPolicyValue}
-                        </Typography>
-                      )}
-                    </div>
-                  </div>
                 </div>
               </div>
 

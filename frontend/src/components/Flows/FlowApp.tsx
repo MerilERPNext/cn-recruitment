@@ -135,7 +135,7 @@ const FlowApp: React.FC = () => {
           <>
             <HeaderBar
               title={"HR Process"}
-              onBack={() => navigate(-1)}
+              onBack={() => navigate("/webapp")}
             />
             <NavigationTabs
               tabs={tabs}
