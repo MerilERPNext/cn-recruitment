@@ -24,6 +24,10 @@ import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
+type LeaveAttachment = {
+  file_url: string;
+};
+
 export function LeaveDetailView({
   actionsEnabled,
   documentName,
@@ -281,6 +285,16 @@ export function LeaveDetailView({
                 </Typography>
               </div>
             </div>
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel" className="block">
+                  Initiation Date
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.reference_document?.creation)}
+                </Typography>
+              </div>
+            </div>
             <div className="flex flex-col gap-2">
               <Typography variant="mobileCardLabel">Description</Typography>
               <Typography variant="mobileCardValue">
@@ -302,8 +316,13 @@ export function LeaveDetailView({
                 </div>
               )}
             <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel">Sendback Comment</Typography>
-              <Typography variant="mobileCardValue" className="text-gray-700 whitespace-pre-wrap">
+              <Typography variant="mobileCardLabel">
+                Sendback Comment
+              </Typography>
+              <Typography
+                variant="mobileCardValue"
+                className="text-gray-700 whitespace-pre-wrap"
+              >
                 {sendBackComment || data?.send_back_comment || "--"}
               </Typography>
             </div>
@@ -316,7 +335,7 @@ export function LeaveDetailView({
               </Typography>
 
               <div className="space-y-2">
-                {data.attachments.map((item: any) => (
+                {data.attachments.map((item: LeaveAttachment) => (
                   <AttachmentCard key={item.file_url} fileUrl={item.file_url} />
                 ))}
               </div>
@@ -324,7 +343,10 @@ export function LeaveDetailView({
           ) : null}
         </div>
 
-        {actions?.length > 0 && data?.status === "Open" && !isActed ? (
+        {actionsEnabled &&
+        actions?.length > 0 &&
+        data?.status === "Open" &&
+        !isActed ? (
           <div className="w-full bg-white border-t shadow-md p-4 z-20">
             <TeamApprovalActionPill
               actionsEnabled={actionsEnabled}

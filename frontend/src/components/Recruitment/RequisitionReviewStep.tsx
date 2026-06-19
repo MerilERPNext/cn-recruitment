@@ -1,6 +1,14 @@
 import { useState } from "react";
+import type { ReactNode, ReactElement } from "react";
 import Button from "../shared/atoms/Button";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
+import {
+  FlattenedConfig,
+  BackendField,
+  TAB_TO_STEP_KEY,
+  REVIEW_SKIP_SCALAR,
+  resolveReviewField,
+} from "./requisitionDynamicForm";
 
 import {
   RequisitionPosition as Position,
@@ -12,6 +20,7 @@ import {
 
 interface RequisitionReviewStepProps {
   formData: RequisitionFormData;
+  formConfig?: FlattenedConfig | null;
   onSubmit: () => void;
   onBack: () => void;
   submitPending: boolean;
@@ -21,6 +30,7 @@ interface RequisitionReviewStepProps {
 
 export default function RequisitionReviewStep({
   formData,
+  formConfig = null,
   onSubmit,
   onBack,
   submitPending,
@@ -91,6 +101,375 @@ export default function RequisitionReviewStep({
   const candidates = formData.custom_pre_screened_candidates || [];
   const hasValidationErrors = validationErrors.length > 0;
 
+  // ── Shared cell renderers ────────────────────────────────────────────────
+  const cardClass =
+    "bg-slate-50/50 border border-slate-200/60 rounded-xl p-5 space-y-4";
+  const headerClass =
+    "text-base font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2";
+
+  // A single label/value cell, with an optional employee hover card.
+  const FieldCell = ({
+    label,
+    display,
+    employeeId,
+  }: {
+    label: string;
+    display: ReactNode;
+    employeeId?: string;
+  }) => (
+    <div className="space-y-1">
+      <span className="text-slate-400 font-medium block">{label}</span>
+      <span className="font-semibold text-slate-800">
+        {employeeId ? (
+          <WrapperHoverCard employeeId={employeeId}>
+            <span className="cursor-help underline decoration-dotted decoration-slate-300 underline-offset-2">
+              {display}
+            </span>
+          </WrapperHoverCard>
+        ) : (
+          display
+        )}
+      </span>
+    </div>
+  );
+
+  // ── Reusable sub-blocks (used by both the dynamic and static renderers) ──
+  const SkillsBlock = () =>
+    formData.custom_skills ? (
+      <div className="col-span-1 md:col-span-2 space-y-1">
+        <span className="text-slate-400 font-medium block">Skills Required</span>
+        <div className="flex flex-wrap gap-1.5 mt-1 bg-white border rounded p-2">
+          {(() => {
+            const skillsSource =
+              Array.isArray(formData.custom_skills_title) &&
+              formData.custom_skills_title.length > 0
+                ? formData.custom_skills_title
+                : formData.custom_skills;
+            const skillsArray = Array.isArray(skillsSource)
+              ? skillsSource
+              : typeof skillsSource === "string"
+                ? skillsSource.split(",").map((s: string) => s.trim())
+                : [];
+
+            if (
+              skillsArray.length === 0 ||
+              (skillsArray.length === 1 && !skillsArray[0])
+            ) {
+              return <span className="text-slate-400">—</span>;
+            }
+
+            return skillsArray.map((skill: string, idx: number) => (
+              <span
+                key={idx}
+                className="inline-flex items-center text-base font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200"
+              >
+                {skill}
+              </span>
+            ));
+          })()}
+        </div>
+      </div>
+    ) : null;
+
+  const JobDescriptionBlock = () =>
+    formData.description ? (
+      <div className="col-span-1 md:col-span-2 space-y-1">
+        <span className="text-slate-400 font-medium block">Job Description</span>
+        <div
+          className="bg-white border rounded-lg p-3 text-slate-700 prose prose-sm max-w-none max-h-40 overflow-y-auto animate-fadeIn"
+          dangerouslySetInnerHTML={{ __html: formData.description }}
+        />
+      </div>
+    ) : null;
+
+  const QualificationsBlock = () =>
+    Array.isArray(formData.custom_qualifications) &&
+    formData.custom_qualifications.length > 0 ? (
+      <div className="col-span-1 md:col-span-2 space-y-2">
+        <span className="text-slate-400 font-medium block">
+          Qualifications Required
+        </span>
+        <div className="space-y-2">
+          {formData.custom_qualifications.map((q: Qualification, idx: number) => (
+            <div
+              key={idx}
+              className="bg-white border rounded-lg p-2.5 flex justify-between items-center text-base shadow-sm"
+            >
+              <span className="font-semibold text-slate-800">
+                {q.qualification}
+              </span>
+              <span
+                className={`px-2 py-0.5 rounded text-[14px] font-bold ${q.mandatory === "Required" ? "bg-red-50 text-red-700 border border-red-100" : "bg-blue-50 text-blue-700 border border-blue-100"}`}
+              >
+                {q.mandatory || "Required"}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : null;
+
+  const CandidatesBlock = () =>
+    candidates.length > 0 ? (
+      <div className="space-y-2 pt-2">
+        <label className="text-base text-slate-500 font-medium">
+          Pre-Screened Candidates
+        </label>
+        <div className="space-y-3">
+          {candidates.map((cand: Candidate, idx: number) => (
+            <div
+              key={idx}
+              className="bg-white border border-slate-150 rounded-lg p-3 shadow-sm space-y-2 text-base"
+            >
+              <div className="font-bold text-slate-700">
+                {cand.candidate_name || `Candidate #${idx + 1}`}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-1">
+                <div>
+                  <span className="text-[14px] text-slate-400 font-medium block">
+                    Email
+                  </span>
+                  <span className="font-semibold text-slate-800">
+                    {renderValue(cand.email)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[14px] text-slate-400 font-medium block">
+                    Phone
+                  </span>
+                  <span className="font-semibold text-slate-800">
+                    {renderValue(cand.phone)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[14px] text-slate-400 font-medium block">
+                    Attachment
+                  </span>
+                  {renderCandidateCV(cand.cv)}
+                </div>
+                <div>
+                  <span className="text-[14px] text-slate-400 font-medium block">
+                    Offer Directly?
+                  </span>
+                  <span className="font-semibold text-slate-800">
+                    {cand.offer_directly ? "Yes" : "No"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : null;
+
+  // Position counts + the position details table (dynamic columns driven by the
+  // backend `child_groups.custom_position_details`).
+  const PositionSelectionBody = () => {
+    const posFields: BackendField[] =
+      formConfig?.childGroups?.custom_position_details?.fields || [];
+    // Inline columns (everything except the nested Cost Center Allocations).
+    const inlineFields = posFields.filter((f) => !f.is_nested_table);
+    const nestedAllocField = posFields.find((f) => f.is_nested_table);
+
+    return (
+      <>
+        <div className="grid grid-cols-3 gap-4 text-base bg-white border border-slate-100 p-3 rounded-lg">
+          <div className="text-center">
+            <span className="text-slate-400 font-medium block">
+              Total Positions
+            </span>
+            <span className="text-lg font-bold text-slate-800">
+              {formData.number_of_positions}
+            </span>
+          </div>
+          <div className="text-center border-x">
+            <span className="text-slate-400 font-medium block">New</span>
+            <span className="text-lg font-bold text-emerald-600">
+              {formData.number_of_new_positions}
+            </span>
+          </div>
+          <div className="text-center">
+            <span className="text-slate-400 font-medium block">Replacement</span>
+            <span className="text-lg font-bold text-orange-600">
+              {formData.number_of_replacement_positions}
+            </span>
+          </div>
+        </div>
+
+        {positions.length > 0 && (
+          <div className="space-y-2">
+            <label className="text-base text-slate-500 font-medium">
+              Position Details
+            </label>
+            <div className="space-y-3">
+              {positions.map((pos: Position, idx: number) => (
+                <div
+                  key={idx}
+                  className="bg-white border border-slate-150 rounded-lg p-3 shadow-sm space-y-2 text-base"
+                >
+                  <div className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded inline-block">
+                    Position #{pos.position_number || idx + 1} ({pos.vacancy_type})
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-1">
+                    {inlineFields.map((f) => {
+                      // Replacement-only column: hide for New positions.
+                      if (
+                        f.fieldname === "replacement_for" &&
+                        pos.vacancy_type !== "Replacement"
+                      ) {
+                        return null;
+                      }
+                      const anyPos = pos as any;
+                      const title = anyPos[`${f.fieldname}_title`];
+                      const raw = anyPos[f.fieldname];
+                      const value =
+                        title !== undefined && title !== null && title !== ""
+                          ? title
+                          : raw;
+                      const isEmployee =
+                        f.fieldtype === "Link" && f.options === "Employee";
+                      return (
+                        <div key={f.fieldname}>
+                          <span className="text-[14px] text-slate-400 font-medium block">
+                            {f.label}
+                          </span>
+                          <span className="font-semibold text-slate-800">
+                            {isEmployee && raw ? (
+                              <WrapperHoverCard employeeId={String(raw)}>
+                                <span className="cursor-help underline decoration-dotted decoration-slate-300 underline-offset-2">
+                                  {renderValue(value)}
+                                </span>
+                              </WrapperHoverCard>
+                            ) : (
+                              renderValue(value)
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {nestedAllocField &&
+                    Array.isArray((pos as any).cost_center_allocations) &&
+                    (pos as any).cost_center_allocations.length > 0 && (
+                      <div className="space-y-1.5 mt-1">
+                        <span className="text-[14px] text-slate-400 font-medium block">
+                          {nestedAllocField.label || "Cost Center Allocation"}
+                        </span>
+                        <div className="space-y-1.5">
+                          {(pos as any).cost_center_allocations.map(
+                            (alloc: any, aIdx: number) => (
+                              <div
+                                key={aIdx}
+                                className="bg-slate-50 border border-slate-150 rounded-lg p-2 flex justify-between items-center gap-3"
+                              >
+                                <span className="font-semibold text-slate-800">
+                                  {renderValue(
+                                    alloc.cost_center_title ?? alloc.cost_center,
+                                  )}
+                                </span>
+                                <span className="px-2 py-0.5 rounded text-[14px] font-bold bg-blue-50 text-blue-700 border border-blue-100 shrink-0">
+                                  {alloc.percentage !== undefined &&
+                                  alloc.percentage !== null &&
+                                  alloc.percentage !== ""
+                                    ? `${alloc.percentage}%`
+                                    : "—"}
+                                </span>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      </div>
+                    )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </>
+    );
+  };
+
+  // ── Dynamic sections: one card per backend TAB, in the config's order ──
+  const renderDynamicSections = (config: FlattenedConfig) => {
+    return config.tabs.map((tab, tabIdx) => {
+      // Map the tab to a known step key (drives the dedicated blocks). Unknown
+      // tabs (e.g. "teast") simply render their scalar fields.
+      const stepKey = TAB_TO_STEP_KEY[tab.tab];
+
+      // Scalar fields configured for this tab (dedicated-block fields skipped).
+      const scalarFields: BackendField[] = [];
+      (tab.sections || []).forEach((section) => {
+        (section.fields || []).forEach((field) => {
+          if (REVIEW_SKIP_SCALAR.has(field.fieldname)) return;
+          scalarFields.push(field);
+        });
+      });
+
+      const isJob = stepKey === "jobDetails";
+      const isPos = stepKey === "positionSelection";
+      const isOther = stepKey === "otherDetails";
+
+      const hasExtraBlocks =
+        isPos ||
+        (isJob && (formData.custom_skills || formData.description)) ||
+        (isOther &&
+          ((Array.isArray(formData.custom_qualifications) &&
+            formData.custom_qualifications.length > 0) ||
+            candidates.length > 0));
+
+      // Nothing configured and no special content → skip the empty card.
+      if (scalarFields.length === 0 && !hasExtraBlocks) return null;
+
+      return (
+        <div key={`${tab.tab}-${tabIdx}`} className={cardClass}>
+          <h3 className={headerClass}>{tab.tab}</h3>
+
+          {scalarFields.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
+              {scalarFields.map((field) => {
+                const rf = resolveReviewField(field, formData);
+                const display =
+                  rf.fieldtype === "Check"
+                    ? rf.value
+                      ? "Yes"
+                      : "No"
+                    : renderValue(rf.value);
+                return (
+                  <FieldCell
+                    key={rf.fieldname}
+                    label={rf.label}
+                    display={display}
+                    employeeId={rf.employeeId}
+                  />
+                );
+              })}
+              {isJob && <SkillsBlock />}
+              {isJob && <JobDescriptionBlock />}
+            </div>
+          )}
+
+          {/* Job Details extras when there were no scalar fields to host them */}
+          {isJob && scalarFields.length === 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
+              <SkillsBlock />
+              <JobDescriptionBlock />
+            </div>
+          )}
+
+          {isPos && <PositionSelectionBody />}
+
+          {isOther && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
+              <QualificationsBlock />
+            </div>
+          )}
+          {isOther && <CandidatesBlock />}
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="space-y-8 animate-fadeIn">
       <div>
@@ -123,439 +502,22 @@ export default function RequisitionReviewStep({
       )}
 
       <div className="space-y-6">
-        {/* ── Section 1: Basic Details ── */}
-        <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-5 space-y-4">
-          <h3 className="text-base font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
-            Basic Details
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
-            {([
-              {
-                label: "Hiring Manager",
-                value: formData.hiring_manager_title ?? formData.hiring_manager,
-                employeeId: formData.hiring_manager,
-              },
-              { label: "Company", value: formData.company_title ?? formData.company },
-              {
-                label: "Department",
-                value: formData.department_title ?? formData.department,
-              },
-              {
-                label: "Designation",
-                value: formData.designation_title ?? formData.designation,
-              },
-              {
-                label: "Functional Area",
-                value: formData.functional_area_title ?? formData.functional_area,
-              },
-              {
-                label: "Hiring Lead",
-                value: formData.hiring_lead_title ?? formData.hiring_lead,
-                employeeId: formData.hiring_lead,
-              },
-              { label: "Division", value: formData.custom_division },
-            ] as { label: string; value: any; employeeId?: string }[]).map((f) => (
-              <div key={f.label} className="space-y-1">
-                <span className="text-slate-400 font-medium block">
-                  {f.label}
-                </span>
-                <span className="font-semibold text-slate-800">
-                  {f.employeeId ? (
-                    <WrapperHoverCard employeeId={String(f.employeeId)}>
-                      <span className="cursor-help underline decoration-dotted decoration-slate-300 underline-offset-2">
-                        {renderValue(f.value)}
-                      </span>
-                    </WrapperHoverCard>
-                  ) : (
-                    renderValue(f.value)
-                  )}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Section 2: Job Details ── */}
-        <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-5 space-y-4">
-          <h3 className="text-base font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
-            Job Details
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
-            {[
-              { label: "Location", value: formData.location_title ?? formData.location },
-              {
-                label: "Recruitment Start Date",
-                value: formData.recruitment_start_date,
-              },
-              { label: "Expected By Date", value: formData.expected_by },
-              {
-                label: "Position Specific Requirements",
-                value: (formData as any).additional_roles_responsibilities,
-              },
-              {
-                label: "Reason for Requesting",
-                value: formData.reason_for_requesting,
-              },
-            ].map((f) => (
-              <div key={f.label} className="space-y-1">
-                <span className="text-slate-400 font-medium block">
-                  {f.label}
-                </span>
-                <span className="font-semibold text-slate-800">
-                  {renderValue(f.value)}
-                </span>
-              </div>
-            ))}
-            {formData.description && (
-              <div className="col-span-1 md:col-span-2 space-y-1">
-                <span className="text-slate-400 font-medium block">
-                  Job Description
-                </span>
-                <div
-                  className="bg-white border rounded-lg p-3 text-slate-700 prose prose-sm max-w-none max-h-40 overflow-y-auto animate-fadeIn"
-                  dangerouslySetInnerHTML={{ __html: formData.description }}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Section 3: Position Selection ── */}
-        <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-5 space-y-4">
-          <h3 className="text-base font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
-            Position Selection
-          </h3>
-          <div className="grid grid-cols-3 gap-4 text-base bg-white border border-slate-100 p-3 rounded-lg">
-            <div className="text-center">
-              <span className="text-slate-400 font-medium block">
-                Total Positions
-              </span>
-              <span className="text-lg font-bold text-slate-800">
-                {formData.number_of_positions}
-              </span>
-            </div>
-            <div className="text-center border-x">
-              <span className="text-slate-400 font-medium block">New</span>
-              <span className="text-lg font-bold text-emerald-600">
-                {formData.number_of_new_positions}
-              </span>
-            </div>
-            <div className="text-center">
-              <span className="text-slate-400 font-medium block">
-                Replacement
-              </span>
-              <span className="text-lg font-bold text-orange-600">
-                {formData.number_of_replacement_positions}
-              </span>
-            </div>
-          </div>
-
-          {positions.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-base text-slate-500 font-medium">
-                Position Details
-              </label>
-              <div className="space-y-3">
-                {positions.map((pos: Position, idx: number) => (
-                  <div
-                    key={idx}
-                    className="bg-white border border-slate-150 rounded-lg p-3 shadow-sm space-y-2 text-base"
-                  >
-                    <div className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded inline-block">
-                      Position #{pos.position_number || idx + 1} (
-                      {pos.vacancy_type})
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-1">
-                      <div>
-                        <span className="text-[14px] text-slate-400 font-medium block">
-                          Location
-                        </span>
-                        <span className="font-semibold text-slate-800">
-                          {renderValue(pos.location_title ?? pos.location)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[14px] text-slate-400 font-medium block">
-                          Functional Area
-                        </span>
-                        <span className="font-semibold text-slate-800">
-                          {renderValue(pos.functional_area_title ?? pos.functional_area)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[14px] text-slate-400 font-medium block">
-                          Reporting Manager
-                        </span>
-                        <span className="font-semibold text-slate-800">
-                          {pos.reporting_manager ? (
-                            <WrapperHoverCard employeeId={String(pos.reporting_manager)}>
-                              <span className="cursor-help underline decoration-dotted decoration-slate-300 underline-offset-2">
-                                {renderValue(pos.reporting_manager_title ?? pos.reporting_manager)}
-                              </span>
-                            </WrapperHoverCard>
-                          ) : (
-                            renderValue(pos.reporting_manager_title ?? pos.reporting_manager)
-                          )}
-                        </span>
-                      </div>
-                      {pos.vacancy_type === "Replacement" && (
-                        <div>
-                          <span className="text-[14px] text-slate-400 font-medium block">
-                            Replacement For
-                          </span>
-                          <span className="font-semibold text-slate-800">
-                            {pos.replacement_for ? (
-                              <WrapperHoverCard employeeId={String(pos.replacement_for)}>
-                                <span className="cursor-help underline decoration-dotted decoration-slate-300 underline-offset-2">
-                                  {renderValue(pos.replacement_for_title ?? pos.replacement_for)}
-                                </span>
-                              </WrapperHoverCard>
-                            ) : (
-                              renderValue(pos.replacement_for_title ?? pos.replacement_for)
-                            )}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {Array.isArray((pos as any).cost_center_allocations) &&
-                      (pos as any).cost_center_allocations.length > 0 && (
-                        <div className="space-y-1.5 mt-1">
-                          <span className="text-[14px] text-slate-400 font-medium block">
-                            Cost Center Allocation
-                          </span>
-                          <div className="space-y-1.5">
-                            {(pos as any).cost_center_allocations.map(
-                              (alloc: any, aIdx: number) => (
-                                <div
-                                  key={aIdx}
-                                  className="bg-slate-50 border border-slate-150 rounded-lg p-2 flex justify-between items-center gap-3"
-                                >
-                                  <span className="font-semibold text-slate-800">
-                                    {renderValue(
-                                      alloc.cost_center_title ?? alloc.cost_center,
-                                    )}
-                                  </span>
-                                  <span className="px-2 py-0.5 rounded text-[14px] font-bold bg-blue-50 text-blue-700 border border-blue-100 shrink-0">
-                                    {alloc.percentage !== undefined &&
-                                    alloc.percentage !== null &&
-                                    alloc.percentage !== ""
-                                      ? `${alloc.percentage}%`
-                                      : "—"}
-                                  </span>
-                                </div>
-                              ),
-                            )}
-                          </div>
-                        </div>
-                      )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── Section 4: Other Details ── */}
-        <div className="bg-slate-50/50 border border-slate-200/60 rounded-xl p-5 space-y-4">
-          <h3 className="text-base font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">
-            Other Details & Requirements
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
-            {[
-              { label: "Employee Type", value: formData.custom_employee_type },
-              {
-                label: "Employment Type",
-                value: formData.employment_type_title ?? formData.employment_type,
-              },
-              {
-                label: "Work Experience Range",
-                value: formData.custom_work_experience_range,
-              },
-              {
-                label: "Experience Range (From/To)",
-                value:
-                  formData.experience_from !== undefined ||
-                  formData.experience_to !== undefined
-                    ? `${formData.experience_from ?? "0"} - ${formData.experience_to ?? "—"} ${formData.experience_unit ?? "years"}`
-                    : "—",
-              },
-              {
-                label: "Notice Period Required",
-                value: formData.custom_preferred_notice_period,
-              },
-              {
-                label: "Preferred Target Company",
-                value: formData.preferred_company_title ?? formData.preferred_company,
-              },
-              {
-                label: "Other Preferred Companies",
-                value: formData.custom_other_preferred_companies,
-              },
-              {
-                label: "Assign to Recruiter",
-                value: formData.custom_assign_to_recruiter,
-              },
-              {
-                label: "Salary Currency",
-                value: formData.salary_currency_title ?? formData.salary_currency,
-              },
-              {
-                label: "Salary Range",
-                value:
-                  formData.salary_min && formData.salary_max
-                    ? `${formData.salary_min} - ${formData.salary_max}`
-                    : "—",
-              },
-              { label: "Salary Timeframe", value: formData.salary_timeframe },
-              {
-                label: "Expected Compensation",
-                value: formData.expected_compensation,
-              },
-              {
-                label: "Cost Center",
-                value:
-                  (formData as any).cost_centre_title ??
-                  (formData as any).cost_centre,
-              },
-              {
-                label: "Designation Change",
-                value: (formData as any).designation_change,
-              },
-              {
-                label: "Comments / Instruction",
-                value: (formData as any).comments_instructions,
-              },
-            ].map((f) => (
-              <div key={f.label} className="space-y-1">
-                <span className="text-slate-400 font-medium block">
-                  {f.label}
-                </span>
-                <span className="font-semibold text-slate-800">
-                  {renderValue(f.value)}
-                </span>
-              </div>
-            ))}
-            {formData.custom_skills && (
-              <div className="col-span-1 md:col-span-2 space-y-1">
-                <span className="text-slate-400 font-medium block">
-                  Skills Required
-                </span>
-                <div className="flex flex-wrap gap-1.5 mt-1 bg-white border rounded p-2">
-                  {(() => {
-                    // Prefer the captured human-readable skill titles over ids.
-                    const skillsSource =
-                      Array.isArray(formData.custom_skills_title) &&
-                      formData.custom_skills_title.length > 0
-                        ? formData.custom_skills_title
-                        : formData.custom_skills;
-                    const skillsArray = Array.isArray(skillsSource)
-                      ? skillsSource
-                      : typeof skillsSource === "string"
-                        ? skillsSource.split(",").map((s: string) => s.trim())
-                        : [];
-
-                    if (
-                      skillsArray.length === 0 ||
-                      (skillsArray.length === 1 && !skillsArray[0])
-                    ) {
-                      return <span className="text-slate-400">—</span>;
-                    }
-
-                    return skillsArray.map((skill: string, idx: number) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center text-base font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200"
-                      >
-                        {skill}
-                      </span>
-                    ));
-                  })()}
-                </div>
-              </div>
-            )}
-            {Array.isArray(formData.custom_qualifications) &&
-              formData.custom_qualifications.length > 0 && (
-                <div className="col-span-1 md:col-span-2 space-y-2">
-                  <span className="text-slate-400 font-medium block">
-                    Qualifications Required
-                  </span>
-                  <div className="space-y-2">
-                    {formData.custom_qualifications.map(
-                      (q: Qualification, idx: number) => (
-                        <div
-                          key={idx}
-                          className="bg-white border rounded-lg p-2.5 flex justify-between items-center text-base shadow-sm"
-                        >
-                          <span className="font-semibold text-slate-800">
-                            {q.qualification}
-                          </span>
-                          <span
-                            className={`px-2 py-0.5 rounded text-[14px] font-bold ${q.mandatory === "Required" ? "bg-red-50 text-red-700 border border-red-100" : "bg-blue-50 text-blue-700 border border-blue-100"}`}
-                          >
-                            {q.mandatory || "Required"}
-                          </span>
-                        </div>
-                      ),
-                    )}
-                  </div>
-                </div>
-              )}
-          </div>
-
-          {/* ── Pre-Screened Candidates ── */}
-          {candidates.length > 0 && (
-            <div className="space-y-2 pt-2">
-              <label className="text-base text-slate-500 font-medium">
-                Pre-Screened Candidates
-              </label>
-              <div className="space-y-3">
-                {candidates.map((cand: Candidate, idx: number) => (
-                  <div
-                    key={idx}
-                    className="bg-white border border-slate-150 rounded-lg p-3 shadow-sm space-y-2 text-base"
-                  >
-                    <div className="font-bold text-slate-700">
-                      {cand.candidate_name || `Candidate #${idx + 1}`}
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-1">
-                      <div>
-                        <span className="text-[14px] text-slate-400 font-medium block">
-                          Email
-                        </span>
-                        <span className="font-semibold text-slate-800">
-                          {renderValue(cand.email)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[14px] text-slate-400 font-medium block">
-                          Phone
-                        </span>
-                        <span className="font-semibold text-slate-800">
-                          {renderValue(cand.phone)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[14px] text-slate-400 font-medium block">
-                          Attachment
-                        </span>
-                        {renderCandidateCV(cand.cv)}
-                      </div>
-                      <div>
-                        <span className="text-[14px] text-slate-400 font-medium block">
-                          Offer Directly?
-                        </span>
-                        <span className="font-semibold text-slate-800">
-                          {cand.offer_directly ? "Yes" : "No"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        {formConfig ? (
+          renderDynamicSections(formConfig)
+        ) : (
+          <StaticReviewSections
+            formData={formData}
+            positions={positions}
+            renderValue={renderValue}
+            cardClass={cardClass}
+            headerClass={headerClass}
+            FieldCell={FieldCell}
+            SkillsBlock={SkillsBlock}
+            JobDescriptionBlock={JobDescriptionBlock}
+            QualificationsBlock={QualificationsBlock}
+            CandidatesBlock={CandidatesBlock}
+          />
+        )}
       </div>
 
       {/* Acknowledge and Submit */}
@@ -600,5 +562,238 @@ export default function RequisitionReviewStep({
         </Button>
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Static fallback layout — used only when the backend form config hasn't loaded
+// (or failed). Mirrors the original hardcoded review so the page always works.
+// ---------------------------------------------------------------------------
+function StaticReviewSections({
+  formData,
+  positions,
+  renderValue,
+  cardClass,
+  headerClass,
+  FieldCell,
+  SkillsBlock,
+  JobDescriptionBlock,
+  QualificationsBlock,
+  CandidatesBlock,
+}: {
+  formData: RequisitionFormData;
+  positions: Position[];
+  renderValue: (v: any) => ReactNode;
+  cardClass: string;
+  headerClass: string;
+  FieldCell: (p: {
+    label: string;
+    display: ReactNode;
+    employeeId?: string;
+  }) => ReactElement;
+  SkillsBlock: () => ReactElement | null;
+  JobDescriptionBlock: () => ReactElement | null;
+  QualificationsBlock: () => ReactElement | null;
+  CandidatesBlock: () => ReactElement | null;
+}) {
+  const basic: { label: string; value: any; employeeId?: string }[] = [
+    {
+      label: "Hiring Manager",
+      value: formData.hiring_manager_title ?? formData.hiring_manager,
+      employeeId: formData.hiring_manager,
+    },
+    { label: "Company", value: formData.company_title ?? formData.company },
+    {
+      label: "Department",
+      value: formData.department_title ?? formData.department,
+    },
+    {
+      label: "Designation",
+      value: formData.designation_title ?? formData.designation,
+    },
+    {
+      label: "Functional Area",
+      value: formData.functional_area_title ?? formData.functional_area,
+    },
+  ];
+
+  const job: { label: string; value: any; employeeId?: string }[] = [
+    { label: "Recruitment Start Date", value: formData.recruitment_start_date },
+    {
+      label: "Hiring Lead",
+      value: formData.hiring_lead_title ?? formData.hiring_lead,
+      employeeId: formData.hiring_lead,
+    },
+    { label: "Expected By Date", value: formData.expected_by },
+    {
+      label: "Employment Type",
+      value: formData.employment_type_title ?? formData.employment_type,
+    },
+    { label: "Work Location", value: formData.location_title ?? formData.location },
+    {
+      label: "Experience Range (From/To)",
+      value:
+        formData.experience_from !== undefined ||
+        formData.experience_to !== undefined
+          ? `${formData.experience_from ?? "0"} - ${formData.experience_to ?? "—"} ${formData.experience_unit ?? "years"}`
+          : "—",
+    },
+    {
+      label: "Salary Currency",
+      value: formData.salary_currency_title ?? formData.salary_currency,
+    },
+    {
+      label: "Salary Range",
+      value:
+        formData.salary_min && formData.salary_max
+          ? `${formData.salary_min} - ${formData.salary_max}`
+          : "—",
+    },
+    { label: "Salary Timeframe", value: formData.salary_timeframe },
+    { label: "Expected Compensation", value: formData.expected_compensation },
+    {
+      label: "Notice Period Required",
+      value: formData.custom_preferred_notice_period,
+    },
+    {
+      label: "Preferred Target Company",
+      value: formData.preferred_company_title ?? formData.preferred_company,
+    },
+    {
+      label: "Other Preferred Companies",
+      value: formData.custom_other_preferred_companies,
+    },
+    {
+      label: "Position Specific Requirements",
+      value: (formData as any).additional_roles_responsibilities,
+    },
+  ];
+
+  const other: { label: string; value: any }[] = [
+    { label: "Comments / Instruction", value: (formData as any).comments_instructions },
+  ];
+
+  return (
+    <>
+      <div className={cardClass}>
+        <h3 className={headerClass}>Basic Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
+          {basic.map((f) => (
+            <FieldCell
+              key={f.label}
+              label={f.label}
+              display={renderValue(f.value)}
+              employeeId={f.employeeId ? String(f.employeeId) : undefined}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className={cardClass}>
+        <h3 className={headerClass}>Job Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
+          {job.map((f) => (
+            <FieldCell
+              key={f.label}
+              label={f.label}
+              display={renderValue(f.value)}
+              employeeId={f.employeeId ? String(f.employeeId) : undefined}
+            />
+          ))}
+          <SkillsBlock />
+          <JobDescriptionBlock />
+        </div>
+      </div>
+
+      <div className={cardClass}>
+        <h3 className={headerClass}>Position Selection</h3>
+        <div className="grid grid-cols-3 gap-4 text-base bg-white border border-slate-100 p-3 rounded-lg">
+          <div className="text-center">
+            <span className="text-slate-400 font-medium block">
+              Total Positions
+            </span>
+            <span className="text-lg font-bold text-slate-800">
+              {formData.number_of_positions}
+            </span>
+          </div>
+          <div className="text-center border-x">
+            <span className="text-slate-400 font-medium block">New</span>
+            <span className="text-lg font-bold text-emerald-600">
+              {formData.number_of_new_positions}
+            </span>
+          </div>
+          <div className="text-center">
+            <span className="text-slate-400 font-medium block">Replacement</span>
+            <span className="text-lg font-bold text-orange-600">
+              {formData.number_of_replacement_positions}
+            </span>
+          </div>
+        </div>
+        {positions.length > 0 && (
+          <div className="space-y-2">
+            <label className="text-base text-slate-500 font-medium">
+              Position Details
+            </label>
+            <div className="space-y-3">
+              {positions.map((pos: Position, idx: number) => (
+                <div
+                  key={idx}
+                  className="bg-white border border-slate-150 rounded-lg p-3 shadow-sm space-y-2 text-base"
+                >
+                  <div className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded inline-block">
+                    Position #{pos.position_number || idx + 1} ({pos.vacancy_type})
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-1">
+                    <div>
+                      <span className="text-[14px] text-slate-400 font-medium block">
+                        Location
+                      </span>
+                      <span className="font-semibold text-slate-800">
+                        {renderValue(pos.location_title ?? pos.location)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[14px] text-slate-400 font-medium block">
+                        Functional Area
+                      </span>
+                      <span className="font-semibold text-slate-800">
+                        {renderValue(
+                          pos.functional_area_title ?? pos.functional_area,
+                        )}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[14px] text-slate-400 font-medium block">
+                        Reporting Manager
+                      </span>
+                      <span className="font-semibold text-slate-800">
+                        {renderValue(
+                          pos.reporting_manager_title ?? pos.reporting_manager,
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className={cardClass}>
+        <h3 className={headerClass}>Other Details &amp; Requirements</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
+          {other.map((f) => (
+            <FieldCell
+              key={f.label}
+              label={f.label}
+              display={renderValue(f.value)}
+            />
+          ))}
+          <QualificationsBlock />
+        </div>
+        <CandidatesBlock />
+      </div>
+    </>
   );
 }

@@ -96,6 +96,15 @@ export const getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST = (
     getValue: (item: MyLeaveRequestType) => item?.due_date ?? "",
   });
 
+  // Initiation Date
+  config.push({
+    sortable: true,
+    type: "date",
+    field: "creation",
+    getValue: (item: MyLeaveRequestType) =>
+      item.reference_document?.creation ?? "",
+  });
+
   // Leave Days
   config.push({ sortable: false });
 

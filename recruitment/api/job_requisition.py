@@ -716,6 +716,7 @@ _SKIP_FIELDNAMES = frozenset({
 # keeps working if a table's child doctype is renamed.
 _CHILD_TABLE_BY_GROUP = {
     "Position Details": "custom_position_details",
+    "Position Summary": "custom_position_summary",
     "Qualifications": "custom_qualifications",
     "Skills": "custom_skills",
     "Pre-screened Candidates": "custom_pre_screened_candidates",

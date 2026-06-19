@@ -260,6 +260,7 @@ const MyLeaveRequests = ({
                 }}
                 isSearch={true}
                 isFilter={true}
+                defaultFilters={{ status: "Open" }}
                 filterFields={dynamicFilterFields}
                 SkeletonComponent={CardSkeleton}
                 onRefetchComplete={() => setRefetchAttendance(false)}
