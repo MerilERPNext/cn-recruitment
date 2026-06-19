@@ -876,7 +876,7 @@ export const useUpdateEmployeeSelfServiceMutation = () => {
     mutationFn: ({ employee, status, mobile_status }: { employee: string; status: string; mobile_status: string }) =>
       EmployeeService.updateEmployeeSelfService(employee, status, mobile_status),
     onError: (error) => {
-      console.error("Error updating employee self service:", error);
+      console.error("Error updating Platform Access Controls:", error);
     },
   });
 };

@@ -8,7 +8,6 @@ import SeparationDetailsView from "./SeparationDetailsView";
 import React, { useState, useRef } from "react";
 import ContextualPopup from "../shared/molecules/ContextualPopup";
 import Button from "../shared/atoms/Button";
-import ChangeSelfServiceStatus from "./tools/ChangeSelfServiceStatus/ChangeSelfServiceStatus";
 import ChangeWeekOff from "./tools/ChangeWeekOff/ChangeWeekOff";
 import ResetPassword from "./tools/ResetPassword/ResetPassword";
 import ResetOtpLimit from "./tools/ResetOtpLimit/ResetOtpLimit";
@@ -31,11 +30,7 @@ const EmployeeTable = ({
 }) => {
 
   const { data: userUiPermission } = useGetUiPermission("Employee Directory");
-  const canChangeSelfServiceStatus = isActionEnabled(
-    userUiPermission,
-    "change_self_service_status",
-    "Employee Directory"
-  );
+
   const canChangeWeeklyOff = isActionEnabled(
     userUiPermission,
     "change_week_off",
@@ -74,7 +69,7 @@ const EmployeeTable = ({
   );
 
   const { isDesktop } = useScreenSize();
-  const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | 'otp_limit' | 'platform_access' | 'undo_deactivation' | 'activate' | 'delete' | null>(null);
+  const [activeTool, setActiveTool] = useState<'week_off' | 'password' | 'otp_limit' | 'platform_access' | 'undo_deactivation' | 'activate' | 'delete' | null>(null);
   const [selectedRowEmployee, setSelectedRowEmployee] = useState<Employee | null>(null);
   const [openPopupId, setOpenPopupId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -214,7 +209,7 @@ const EmployeeTable = ({
                     </Link>
 
                     <div>
-                      {activeTab !== 'my_reportees' && (canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
+                      {activeTab !== 'my_reportees' && (canChangeWeeklyOff || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
                         ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                         variant="subtle"
                         size="sm"
@@ -245,19 +240,6 @@ const EmployeeTable = ({
                             }}
                           >
                             Assign Weekly Off
-                          </Button>}
-                          {canChangeSelfServiceStatus && item.status === "Active" && <Button
-                            variant="subtle"
-                            contentAlign="start"
-                            fullWidth
-                            size="md"
-                            onClick={() => {
-                              setSelectedRowEmployee(item);
-                              setActiveTool('self_service');
-                              setOpenPopupId(null);
-                            }}
-                          >
-                            Self Service
                           </Button>}
                           {canResetPassword && item.status === "Active" && <Button
                             variant="subtle"
@@ -452,7 +434,7 @@ const EmployeeTable = ({
               </div>
 
               <div className="relative">
-                {activeTab !== 'my_reportees' && (canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
+                {activeTab !== 'my_reportees' && (canChangeWeeklyOff || canResetPassword || canResetOtpAuthLimit || canChangePlatformAccess) && <Button
                   ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                   variant="soft"
                   size="sm"
@@ -484,20 +466,6 @@ const EmployeeTable = ({
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
                       Assign Weekly Off
-                    </Button>}
-                    {canChangeSelfServiceStatus && item.status === "Active" && <Button
-                      variant="subtle"
-                      size="sm"
-                      contentAlign="start"
-                      fullWidth
-                      onClick={() => {
-                        setSelectedRowEmployee(item);
-                        setActiveTool('self_service');
-                        setOpenPopupId(null);
-                      }}
-                      className="text-xs py-2 px-3 hover:bg-primary-50"
-                    >
-                      Self Service
                     </Button>}
                     {canResetPassword && item.status === "Active" && <Button
                       variant="subtle"
@@ -639,14 +607,6 @@ const EmployeeTable = ({
             }}
             current_week_off={selectedRowEmployee.custom_weekly_off as string}
             employee_id={selectedRowEmployee.employee}
-          />
-          <ChangeSelfServiceStatus
-            isOpen={activeTool === 'self_service'}
-            onClose={() => {
-              setActiveTool(null);
-              setSelectedRowEmployee(null);
-            }}
-            employeeId={selectedRowEmployee.employee}
           />
           <ResetPassword
             isOpen={activeTool === 'password'}
