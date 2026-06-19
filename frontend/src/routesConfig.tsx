@@ -288,6 +288,13 @@ const SalarySlipsList = lazyWithRetry(
   () => import("./components/Compansation/SalarySlipList"),
   "SalarySlipsList",
 );
+const SalaryStructureAssignmentList = lazyWithRetry(
+  () =>
+    import(
+      "./components/Compansation/SalaryStructureAssignment/SalaryStructureAssignmentList"
+    ),
+  "SalaryStructureAssignmentList",
+);
 
 // const ShiftRequestList = lazyWithRetry(
 //   () => import("./components/ShiftRequest/MyShiftList"),
@@ -568,6 +575,10 @@ const ConfigureJobBoards = lazyWithRetry(
 const RecognitionPage = lazyWithRetry(
   () => import("./components/Recognition/RecognitionPage"),
   "RecognitionPage",
+);
+const RecognitionAdminDashboard = lazyWithRetry(
+  () => import("./components/Recognition/RecognitionAdminDashboard"),
+  "RecognitionAdminDashboard",
 );
 const HallOfFamePage = lazyWithRetry(
   () => import("./components/Recognition/HallOfFamePage"),
@@ -870,6 +881,11 @@ export const routesConfig: AppRoute[] = [
         path: "salary-slip-list",
         element: <SalarySlipsList />,
         permissionKey: "Salary Slip",
+      },
+      {
+        path: "salary-structure-assignment",
+        element: <SalaryStructureAssignmentList />,
+        permissionKey: "Salary Structure Assignment",
       },
       {
         path: "income-tax-sheet",
@@ -1635,6 +1651,11 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/recognition",
     element: <RecognitionPage />,
+    permissionKey: "Recognition",
+  },
+  {
+    path: "/webapp/recognition/admin-dashboard",
+    element: <RecognitionAdminDashboard />,
     permissionKey: "Recognition",
   },
   {
