@@ -577,42 +577,6 @@ const LeaderboardPage = lazyWithRetry(
   () => import("./components/Recognition/LeaderboardPage"),
   "LeaderboardPage",
 );
-const MyAppreciationsHistory = lazyWithRetry(
-  () => import("./components/Recognition/MyAppreciationsHistory"),
-  "MyAppreciationsHistory",
-);
-const VibeApp = lazyWithRetry(
-  () => import("./components/Recognition/Vibe/VibeApp"),
-  "VibeApp",
-);
-const VibeDashboard = lazyWithRetry(
-  () => import("./components/Recognition/Vibe/VibeDashboard"),
-  "VibeDashboard",
-);
-const VibeFeed = lazyWithRetry(
-  () => import("./components/Recognition/Vibe/VibeFeed"),
-  "VibeFeed",
-);
-const AppreciationsLeaderboard = lazyWithRetry(
-  () => import("./components/Recognition/Vibe/AppreciationsLeaderboard"),
-  "AppreciationsLeaderboard",
-);
-const AwardsLivePrograms = lazyWithRetry(
-  () => import("./components/Recognition/Vibe/AwardsLivePrograms"),
-  "AwardsLivePrograms",
-); 
-const AwardsHistory = lazyWithRetry(
-  () => import("./components/Recognition/Vibe/AwardsHistory"),
-  "AwardsHistory",
-);
-const AwardsNominationWorkflows = lazyWithRetry(
-  () => import("./components/Recognition/Vibe/AwardsNominationWorkflows"),
-  "AwardsNominationWorkflows",
-);
-const EarnedPointsSummary = lazyWithRetry(
-  () => import("./components/Recognition/Vibe/EarnedPointsSummary"),
-  "EarnedPointsSummary",
-);
 const ScheduledImportsPage = lazyWithRetry(
   () => import("./components/ScheduledImports/ScheduledImportsPage"),
   "ScheduledImportsPage",
