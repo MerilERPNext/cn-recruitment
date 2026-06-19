@@ -25,6 +25,9 @@ export const LoantItem: React.FC<{
     : null;
 
   const { data: currentUser } = useCurrentUser();
+  const status = todo?.custom_allow_revoke === 1 && todo?.reference_document?.docstatus === 2 && todo?.todo_status?.toLowerCase() === "cancelled" ? "Revoked" : item.status;
+  const isPendingStatus = ["pending", "open"].includes(status?.toLowerCase());
+
   const canRevoke = item.status === "Open" && todo?.custom_allow_revoke === 1;
   const canEdit = todo?.can_edit === true &&
     currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
@@ -68,7 +71,7 @@ export const LoantItem: React.FC<{
               {item.loan_name}
             </Typography>
           </div>
-          <StatusBadge status={item.status} />
+          <StatusBadge status={status} />
         </div>
 
 
@@ -146,7 +149,7 @@ export const LoantItem: React.FC<{
             },
           }}
           todoId={todo?.todo_id}
-          isPendingStatus={item.status === "Pending"}
+          isPendingStatus={isPendingStatus}
           variant="buttons"
           canRevoke={canRevoke}
           canEdit={canEdit}

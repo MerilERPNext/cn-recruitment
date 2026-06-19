@@ -78,6 +78,8 @@ const CompensatoryRequestCard = ({
   const cleanReason = sanitizeToPlainText(item.reason);
   const truncatedReason = truncateByChars(cleanReason);
 
+  const resolvedStatus = resolveCompOffStatus(item?.custom_status, item?.docstatus);
+  const isPendingStatus = ["pending", "open"].includes(resolvedStatus?.toLowerCase());
 
   return isDesktop ? (
     <div
@@ -114,7 +116,7 @@ const CompensatoryRequestCard = ({
           position="left"
         >
           <StatusBadge
-            status={resolveCompOffStatus(item?.custom_status, item?.docstatus)}
+            status={resolvedStatus}
           />
         </AllocatedToTooltip>
 
@@ -130,7 +132,7 @@ const CompensatoryRequestCard = ({
             }
           }}
           canPay={item?.pay_button_required}
-          isPendingStatus={resolveCompOffStatus(item?.custom_status, item?.docstatus) === "Pending"}
+          isPendingStatus={isPendingStatus}
           onPay={handlePay}
           payLoading={isPending}
         />
@@ -155,7 +157,7 @@ const CompensatoryRequestCard = ({
           </div>
 
           <StatusBadge
-            status={resolveCompOffStatus(item?.custom_status, item?.docstatus)}
+            status={resolvedStatus}
           />
         </div>
 
@@ -207,7 +209,7 @@ const CompensatoryRequestCard = ({
           }}
           variant="buttons"
           canPay={item?.pay_button_required}
-          isPendingStatus={resolveCompOffStatus(item?.custom_status, item?.docstatus) === "Pending"}
+          isPendingStatus={isPendingStatus}
           onPay={handlePay}
           payLoading={isPending}
         />

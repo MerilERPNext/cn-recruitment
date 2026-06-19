@@ -426,6 +426,7 @@ const BenefitSlipItem = ({
       todo?.todo_status?.toLowerCase?.() === "cancelled"
       ? "Revoked"
       : item?.custom_status;
+  const isPendingStatus = ["pending", "open"].includes(badgeStatus?.toLowerCase());
   const revokeEventMutation = useRevokeEvent();
   const loading = useLoadingOverlay();
   const formattedCreationDate = formatToIndianDate(item?.todo_list?.[0].reference_document?.creation ?? "");
@@ -530,7 +531,7 @@ const BenefitSlipItem = ({
           onRevoke={handleRevokeClick}
           onEdit={() => handleEdit(item.name)}
           todoId={item?.todo_list[0]?.todo_id}
-          isPendingStatus={badgeStatus === "Pending"}
+          isPendingStatus={isPendingStatus}
         />
       </div>
     </div>
@@ -653,7 +654,7 @@ const BenefitSlipItem = ({
               onEdit={() => handleEdit(item.name)}
               variant="buttons"
               todoId={item?.todo_list[0]?.todo_id}
-              isPendingStatus={badgeStatus === "Pending"}
+              isPendingStatus={isPendingStatus}
             />
           </div>
         </div>

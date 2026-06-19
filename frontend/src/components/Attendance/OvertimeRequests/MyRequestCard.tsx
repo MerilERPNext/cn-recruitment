@@ -48,6 +48,9 @@ export function MyRequestCard({
   const cleanDescription = sanitizeToPlainText(request?.description);
   const truncatedDescription = truncateByChars(cleanDescription);
 
+  const status = request?.custom_allow_revoke && request?.status === "Cancelled" ? "Revoked" : request?.status;
+  const isPendingStatus = ["pending", "open"].includes(status?.toLowerCase());
+
   const canEdit = request?.status === "Open" && request?.can_edit;
   const canRevoke = request?.status === "Open" && request?.custom_allow_revoke;
   const gridTemplateColumns = "1.5fr  1fr 1fr 1fr 1fr 1fr 0.5fr";
@@ -119,7 +122,7 @@ export function MyRequestCard({
               RoleAssignedUsers={request?.role_assigned_users || []}
               position="left"
             >
-              <StatusBadge status={request?.status === "Cancelled" ? "Revoked" : request?.status} />
+              <StatusBadge status={status} />
             </AllocatedToTooltip>
           </div>
           <Tooltip
@@ -143,7 +146,7 @@ export function MyRequestCard({
                   onEdit(request);
                 }
               }}
-              isPendingStatus={request?.status === "Open" || request?.status === "Pending"}
+              isPendingStatus={isPendingStatus}
               todoId={request?.todo_id}
               onRevoke={handleRevokeClick}
             />
@@ -190,7 +193,7 @@ export function MyRequestCard({
                   RoleAssignedUsers={request?.role_assigned_users}
                 />
 
-                <StatusBadge status={request?.status} />
+                <StatusBadge status={status} />
               </div>
 
               {/* Content */}
@@ -243,7 +246,7 @@ export function MyRequestCard({
                       onEdit(request);
                     }
                   }}
-                  isPendingStatus={request?.status === "Open" || request?.status === "Pending"}
+                  isPendingStatus={isPendingStatus}
                   todoId={request?.todo_id}
                   onRevoke={handleRevokeClick}
                 />

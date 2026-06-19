@@ -114,6 +114,9 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
   const expenseClaim = item?.reference_document;
   const expenseItem = expenseClaim?.expenses?.[0];
 
+  const status = item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2 ? "Revoked" : item?.reference_document?.approval_status;
+  const isPendingStatus = ["pending", "open"].includes(status?.toLowerCase());
+
   const handleEditClick = () => {
     if (!expenseClaim?.name || !expenseItem?.name) return;
 
@@ -162,15 +165,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             <Typography variant="mobileCardValue">{expense?.name}</Typography>
           </div>
 
-          <StatusBadge
-            status={
-              item?.custom_allow_revoke === 1 &&
-                item?.todo_status?.toLowerCase() === "cancelled" &&
-                item?.reference_document?.docstatus === 2
-                ? "Revoked"
-                : item?.reference_document?.approval_status
-            }
-          />
+          <StatusBadge status={status} />
         </div>
 
         {/* Categories / Types */}
@@ -258,7 +253,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
                 nudge: "nudge"
               },
             }}
-            isPendingStatus={(item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2 ? "Revoked" : item?.reference_document?.approval_status) === "Pending"}
+            isPendingStatus={isPendingStatus}
             todoId={item?.todo_id}
             variant="buttons"
             canEdit={canEdit && !isActed}
@@ -349,6 +344,9 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
   const expenseClaim = item?.reference_document;
   const expenseItem = expenseClaim?.expenses?.[0];
 
+  const status = item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2 ? "Revoked" : item?.reference_document?.approval_status;
+  const isPendingStatus = ["pending", "open"].includes(status?.toLowerCase());
+
   const handleEditClick = () => {
     if (!expenseClaim?.name || !expenseItem?.name) return;
 
@@ -438,15 +436,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           role={item?.role}
           position="left"
         >
-          <StatusBadge
-            status={
-              item?.custom_allow_revoke === 1 &&
-                item?.todo_status?.toLowerCase() === "cancelled" &&
-                item?.reference_document?.docstatus === 2
-                ? "Revoked"
-                : item?.reference_document?.approval_status
-            }
-          />
+          <StatusBadge status={status} />
         </AllocatedToTooltip>
       </div>
 
@@ -475,7 +465,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
               nudge: "nudge"
             },
           }}
-          isPendingStatus={(item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2 ? "Revoked" : item?.reference_document?.approval_status) === "Pending"}
+          isPendingStatus={isPendingStatus}
           todoId={item?.todo_id}
           canEdit={
             currentUser?.name?.toLowerCase() ===
