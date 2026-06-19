@@ -476,6 +476,27 @@ def get_ticket_list_data(
             }
         )
 
+        # Resolve category / sub-category display names
+        category_values = list(
+            {
+                value
+                for ticket in data
+                for value in (ticket.get("custom_category"), ticket.get("custom_sub_category"))
+                if value
+            }
+        )
+        category_name_map = {}
+        if category_values:
+            category_rows = frappe.get_all(
+                "HD Category",
+                filters={"name": ["in", category_values]},
+                fields=["name", "category_name"],
+            )
+            category_name_map = {
+                row.name: row.category_name or row.name
+                for row in category_rows
+            }
+
         comment_counts = {}
         if ticket_names:
             comment_rows = frappe.get_all(
@@ -528,6 +549,12 @@ def get_ticket_list_data(
                 tic["raise_by_id"] = employee_ids[raised_by]
             tic["no_of_comments"] = comment_counts.get(tic.get("name"), 0)
             tic["user_type"] = user_status_map.get(raised_by, "Outside user")
+            category = tic.get("custom_category")
+            sub_category = tic.get("custom_sub_category")
+            tic["custom_category_name"] = category_name_map.get(category, category)
+            tic["custom_sub_category_name"] = category_name_map.get(
+                sub_category, sub_category
+            )
     
     # Calculate total count with same filters and or_filters
     # Use frappe.get_list with minimal fields and count the results

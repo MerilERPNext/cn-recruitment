@@ -6,7 +6,9 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "category"
+  "category",
+  "options",
+  "applicability"
  ],
  "fields": [
   {
@@ -16,12 +18,23 @@
    "label": "Category",
    "reqd": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "applicability",
+   "fieldtype": "Table",
+   "label": "Applicability",
+   "options": "Relationship Type Applicability"
+  },
+  {
+   "fieldname": "options",
+   "fieldtype": "Data",
+   "label": "Options"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-19 10:08:09.039926",
+ "modified": "2026-06-18 20:23:28.542819",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Education Category",
