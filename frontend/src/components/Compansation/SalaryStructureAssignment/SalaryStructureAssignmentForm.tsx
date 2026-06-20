@@ -5,7 +5,10 @@ import { Form } from "@tsed/react-formio";
 import toast from "react-hot-toast";
 import Button from "../../shared/atoms/Button";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { useCreateSalaryStructureAssignment } from "../../../hooks/useSalaryStructureAssignment";
+import {
+  useCreateSalaryStructureAssignment,
+  useUpdateSalaryStructureAssignment,
+} from "../../../hooks/useSalaryStructureAssignment";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import FrappeAPI from "../../../utils/frappeAPI";
@@ -41,6 +44,12 @@ interface SalaryStructureAssignmentFormProps {
    * picker.
    */
   employees?: SelectedEmployee[];
+  /**
+   * When provided, the form runs in EDIT mode for this existing (draft)
+   * assignment: fields are pre-filled and saving issues an update instead of
+   * creating a new record. Only Draft (docstatus 0) assignments may be passed.
+   */
+  assignment?: Record<string, any> | null;
 }
 
 // Employee-specific fields. In multi-employee mode these are hidden in the form
@@ -116,13 +125,16 @@ export default function SalaryStructureAssignmentForm({
   isOpen,
   onClose,
   employees,
+  assignment,
 }: SalaryStructureAssignmentFormProps) {
   const { isDesktop } = useScreenSize();
   const loading = useLoadingOverlay();
   const mutation = useCreateSalaryStructureAssignment();
+  const updateMutation = useUpdateSalaryStructureAssignment();
   const formRef = useRef<any>(null);
 
   const isMulti = Array.isArray(employees) && employees.length > 0;
+  const isEdit = !isMulti && !!assignment;
 
   const formSchema = useMemo(
     () =>
@@ -210,6 +222,22 @@ export default function SalaryStructureAssignmentForm({
     if (!instance) return;
     const current = instance.submission?.data || {};
     instance.setSubmission({ data: { ...current, ...patch } });
+  };
+
+  // EDIT mode: seed the Form.io submission from the existing draft document,
+  // then resolve the coded link fields (designation / grade / employment type)
+  // to their human titles so they display the same way as in create mode.
+  const prefillForEdit = async (instance: any) => {
+    if (!assignment) return;
+    const data: Record<string, any> = { ...assignment };
+    // Frappe Date columns are "YYYY-MM-DD"; Form.io datetime widgets accept it.
+    instance.setSubmission({ data });
+    const [designation, grade, employmentType] = await Promise.all([
+      resolveTitle("Designation", assignment.designation),
+      resolveTitle("Employee Grade", assignment.grade),
+      resolveTitle("Employment Type", assignment.custom_employment_type),
+    ]);
+    patchSubmission({ designation, grade, custom_employment_type: employmentType });
   };
 
   // When an Employee is picked, fetch the linked values (employee_name,
@@ -452,6 +480,40 @@ export default function SalaryStructureAssignmentForm({
         (k) => delete cleaned[k],
       );
 
+      // ── Edit mode (draft only) ───────────────────────────────────────────
+      // Update the existing record in place; it stays a draft (docstatus 0).
+      // The duplicate-on-date check is skipped because the record being edited
+      // is the existing assignment for this employee/date.
+      if (isEdit && assignment?.name) {
+        await loading?.wrap(async () => {
+          await new Promise<void>((resolve, reject) => {
+            updateMutation.mutate(
+              { name: assignment.name as string, payload: cleaned },
+              {
+                onSuccess: () => {
+                  toast.success(
+                    "Salary Structure Assignment updated successfully!",
+                  );
+                  onClose();
+                  resolve();
+                },
+                onError: (error: any) => {
+                  toast.error(
+                    errorResponseFormater(
+                      error,
+                      "Failed to update Salary Structure Assignment.",
+                    ),
+                  );
+                  console.error(error);
+                  reject(error);
+                },
+              },
+            );
+          });
+        }, "Updating salary structure assignment…");
+        return;
+      }
+
       // Pre-check: an employee can't have two submitted assignments on the same
       // from_date — surface a clear message instead of the raw backend error.
       const singleEmployee = cleaned.employee as string;
@@ -508,11 +570,13 @@ export default function SalaryStructureAssignmentForm({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-900">
-            {isMulti
-              ? `New Salary Structure Assignment — ${
-                  (employees as SelectedEmployee[]).length
-                } employee(s)`
-              : "New Salary Structure Assignment"}
+            {isEdit
+              ? `Edit Salary Structure Assignment — ${assignment?.name}`
+              : isMulti
+                ? `New Salary Structure Assignment — ${
+                    (employees as SelectedEmployee[]).length
+                  } employee(s)`
+                : "New Salary Structure Assignment"}
           </h2>
           <button
             onClick={onClose}
@@ -596,6 +660,7 @@ export default function SalaryStructureAssignmentForm({
             form={formSchema}
             onFormReady={(instance: any) => {
               formRef.current = instance;
+              if (isEdit) prefillForEdit(instance);
             }}
             onChange={handleFormChange}
             options={{ submitButton: false, noAlerts: true }}
@@ -617,7 +682,7 @@ export default function SalaryStructureAssignmentForm({
               variant="contain"
               className="w-full md:w-auto min-w-[150px]"
             >
-              {isMulti ? "Create for All" : "Create"}
+              {isEdit ? "Update" : isMulti ? "Create for All" : "Create"}
             </Button>
           </div>
         </div>

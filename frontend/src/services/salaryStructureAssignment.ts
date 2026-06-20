@@ -64,6 +64,24 @@ export const getSalaryStructureAssignments = async (
   return res.data as SalaryStructureAssignmentRow[];
 };
 
+/**
+ * Update an existing DRAFT Salary Structure Assignment (docstatus stays 0).
+ * Submitted (1) / Cancelled (2) docs are immutable in Frappe and must not be
+ * edited through this path.
+ */
+export const updateSalaryStructureAssignment = async (
+  name: string,
+  payload: Partial<CreateSalaryStructureAssignmentPayload> &
+    Record<string, unknown>,
+): Promise<SalaryStructureAssignmentRow> => {
+  const updated = (await FrappeAPI.updateDocument(
+    DOCTYPE,
+    name,
+    payload,
+  )) as SalaryStructureAssignmentRow;
+  return updated;
+};
+
 /** GET active Salary Structures for a company (for the dropdown). */
 export const getSalaryStructures = async (
   company?: string,

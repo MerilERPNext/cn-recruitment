@@ -74,6 +74,44 @@ const getStatusBgStyle = (status: string): string => {
     }
 };
 
+const getEventDetail = (event: AttendanceRecord): string => {
+    return (
+        event?.leave_type_name ||
+        event?.leave_type ||
+        event?.request_type ||
+        event?.title ||
+        event?.doctype ||
+        ""
+    );
+};
+
+const getEventDisplay = (event: AttendanceRecord): { label: string; className: string } => {
+    const detail = getEventDetail(event);
+    const detailText = detail ? ` (${detail})` : "";
+    const doctype = event?.doctype || "Request";
+    const status = event?.status || "";
+    const baseClass = "border-l-2";
+
+    if (doctype === "Leave Request" && status === "Approved") {
+        return {
+            label: `On Leave${detailText}`,
+            className: `${baseClass} border-green-500 bg-green-50 text-green-800`,
+        };
+    }
+
+    if (status === "Pending" || status === "Open") {
+        return {
+            label: `Request Pending${detailText}`,
+            className: `${baseClass} border-yellow-400 bg-yellow-50 text-gray-700`,
+        };
+    }
+
+    return {
+        label: `${[getEventBadgeStyle(doctype).label, status].filter(Boolean).join(" ")}${detailText}`,
+        className: getStatusBgStyle(status),
+    };
+};
+
 type ShowDetailsType = {
     date: Date;
     status: string;
@@ -108,7 +146,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
 
     const getAttendanceEvents = (attendance: AttendanceStatusInfo) => {
         const validEvents = (attendance?.events ?? []).filter((event) => {
-            return event.status !== "Rejected" && event.status !== "Revoked";
+            return !["Rejected", "Revoked", "Cancelled"].includes(event?.status || "");
 
         });
 
@@ -132,9 +170,9 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                 event?.doctype === "Attendance Request" &&
                     event?.request_type === "Out Duty"
                     ? "Out Duty"
-                    : event?.doctype,
+                    : event?.doctype || "Request",
         })) || []).sort((a, b) =>
-            (prioritized.has(a.status) ? 0 : 1) - (prioritized.has(b.status) ? 0 : 1)
+            (prioritized.has(a?.status || "") ? 0 : 1) - (prioritized.has(b?.status || "") ? 0 : 1)
         );
         return (
             <div className="flex items-end gap-1 overflow-hidden">
@@ -148,27 +186,27 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                         if (doctypeKey === "Employee Checkin") {
                             return null;
                         }
-                        const badge = getEventBadgeStyle(doctypeKey);
+                        const eventDisplay = getEventDisplay({ ...event, doctype: doctypeKey });
                         return (
-                            <Tooltip content={event.doctype + " " + event.status}>
+                            <Tooltip content={eventDisplay.label}>
 
                                 <div
                                     key={index}
                                     // onClick={(e) => {
                                     // e.stopPropagation();
                                     // }}
-                                    className={`min-w-0 text-[10px] font-medium pl-1.5 pr-1 py-0.5 leading-tight truncate ${getStatusBgStyle(event.status)}`}
-                                    title={`${badge.label} ${event.status}`}
+                                    className={`min-w-0 text-[10px] text-left font-semibold pl-1.5 pr-1 py-0.5 leading-tight truncate rounded-sm ${eventDisplay.className}`}
+                                    title={eventDisplay.label}
                                 >
-                                    {badge.label} {event.status}
+                                    {eventDisplay.label}
                                 </div>
                             </Tooltip>
                         );
                     })}
                 </div>
                 {events.length > 3 && (
-                    <div className="flex-shrink-0 text-[10px] font-semibold px-1 py-0.5 rounded bg-gray-100 text-gray-500 leading-tight">
-                        +{events.length - 3}
+                    <div className="flex-shrink-0 text-[10px] font-semibold px-1 py-0.5 rounded text-blue-600 leading-tight">
+                        +{events.length - 3} more
                     </div>
                 )}
             </div>
@@ -258,6 +296,13 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                 return (
                     <span className="w-fit text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 leading-tight">
                         Opt. Holiday
+                    </span>
+                );
+            case "unpaid":
+                return (
+                    <span className="w-fit inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-50 text-red-700 leading-tight">
+                        <span className="h-2 w-2 rounded-full bg-red-500" />
+                        Unpaid
                     </span>
                 );
             case "half-day": {
@@ -375,10 +420,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     <XCircle className="w-3.5 h-3.5 text-red-500" />
                     <span>Absent</span>
                 </div>
-                <div className="flex items-center gap-1">
-                    <Home className="w-3.5 h-3.5 text-purple-500" />
-                    <span>WFH</span>
-                </div>
+                
                 <div className="flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5 text-yellow-500" />
                     <span>On Leave</span>
@@ -398,14 +440,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
 
                 <div className="w-px h-3.5 bg-gray-200 mx-1" />
 
-                <div className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 inline-block" />
-                    <span>Pending</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
-                    <span>Approved</span>
-                </div>
+              
                 {/* <div className="flex items-center gap-1">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
                     <span>Rejected</span>

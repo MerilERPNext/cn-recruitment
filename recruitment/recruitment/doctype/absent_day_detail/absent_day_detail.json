@@ -7,7 +7,8 @@
  "engine": "InnoDB",
  "field_order": [
   "attendance",
-  "attendance_date"
+  "attendance_date",
+  "status"
  ],
  "fields": [
   {
@@ -22,6 +23,14 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Date"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nMark Present\nKeep Absent"
   }
  ],
  "grid_page_length": 50,
