@@ -6,6 +6,21 @@ import {
   requisitionFormSchemas,
   FormSchemaKeys,
 } from "./requisitionFormSchemas";
+import {
+  applyDynamicConfig,
+  flattenConfig,
+  gateRuleApplies,
+  childGateApplies,
+  buildSteps,
+  buildDynamicTabComponents,
+  isDynamicStepKey,
+  requiredRulesForDynamicTab,
+  collectDynamicTabValues,
+  dynamicChildGroupFieldnames,
+  mergeDynamicValues,
+  FlattenedConfig,
+  JobRequisitionFormConfig,
+} from "./requisitionDynamicForm";
 import RequisitionReviewStep from "./RequisitionReviewStep";
 import FormEmployeeHoverLayer from "./FormEmployeeHoverLayer";
 import PositionColumnCopyButtons from "./PositionColumnCopyButtons";
@@ -30,15 +45,17 @@ import "../../formio.custom.css";
 // ---------------------------------------------------------------------------
 // Validation config per step index
 // ---------------------------------------------------------------------------
-const stepValidationRules: Record<number, { key: string; label: string }[]> = {
-  0: [
+// Keyed by step KEY (not numeric index) so validation survives the dynamic,
+// backend-driven tab order.
+const stepValidationRules: Record<string, { key: string; label: string }[]> = {
+  basicDetails: [
     { key: "hiring_manager", label: "Hiring Manager" },
     { key: "company", label: "Company" },
     { key: "department", label: "Department" },
     { key: "designation", label: "Designation" },
     { key: "functional_area", label: "Functional Area" },
   ],
-  1: [
+  jobDetails: [
     { key: "salary_currency", label: "Salary Range (Currency)" },
     { key: "salary_min", label: "Salary Range (Min)" },
     { key: "salary_max", label: "Salary Range (Max)" },
@@ -47,27 +64,39 @@ const stepValidationRules: Record<number, { key: string; label: string }[]> = {
     { key: "employment_type", label: "Employment Type" },
     { key: "location", label: "Location" },
   ],
-  2: [
+  positionSelection: [
     // positions validated dynamically below
   ],
 };
 
 function validateStep(
-  step: number,
-  formData: JobRequisitionFormData
+  stepKey: string,
+  formData: JobRequisitionFormData,
+  formConfig: FlattenedConfig | null = null
 ): string[] {
   const errors: string[] = [];
 
-  const rules = stepValidationRules[step] ?? [];
+  // Known-step hardcoded gate rules, plus generic required rules for a brand-new
+  // (dynamic) backend tab derived from its config.
+  const rules =
+    stepValidationRules[stepKey] ??
+    (isDynamicStepKey(stepKey)
+      ? requiredRulesForDynamicTab(stepKey, formConfig)
+      : []);
   for (const rule of rules) {
+    // Skip the gate check for fields the backend hides or marks optional, so a
+    // backend-driven field never blocks the step. (Dynamic-tab rules are already
+    // config-derived, so they pass through.)
+    if (!isDynamicStepKey(stepKey) && !gateRuleApplies(rule.key, formConfig))
+      continue;
     const val = (formData as any)[rule.key];
     if (val === undefined || val === null || val === "") {
       errors.push(`${rule.label} is required.`);
     }
   }
 
-  // Step 2: validate position rows
-  if (step === 2) {
+  // Position Selection: validate position rows
+  if (stepKey === "positionSelection") {
     const positions: any[] = (formData as any).positions ?? [];
     const total = Number((formData as any).number_of_positions) || 0;
     const newPos = Number((formData as any).number_of_new_positions) || 0;
@@ -96,6 +125,16 @@ function validateStep(
         errors.push(`Position ${i + 1}: Replacement for is required.`);
       }
 
+      // Cost Center Allocation validation runs only when the backend config
+      // includes the cost_center_allocations column (the column is hidden
+      // otherwise, so requiring it would block submit with no way to fill it).
+      if (
+        childGateApplies(
+          "custom_position_details",
+          "cost_center_allocations",
+          formConfig
+        )
+      ) {
       // Cost Center Allocation: each position must have at least one allocation
       // with a cost center, and any partially-filled allocation row must be
       // completed (both Cost Center and Percentage).
@@ -154,11 +193,12 @@ function validateStep(
           );
         }
       }
+      }
     });
   }
 
-  // Step 3: validate qualifications
-  if (step === 3) {
+  // Other Details: validate qualifications
+  if (stepKey === "otherDetails") {
     const qualifications = (formData as any).custom_qualifications ?? [];
     qualifications.forEach((q: any, i: number) => {
       if (!q.qualification || !q.qualification.trim()) {
@@ -506,11 +546,19 @@ function buildSelectData(data: any): Record<string, any> {
 // Component
 // ---------------------------------------------------------------------------
 const RequisitionForm = () => {
+  // Backend-driven field configuration. Fetched once on mount; drives the
+  // wizard tabs, which fields render, and their label / mandatory / read-only
+  // state. Stays null until loaded (and on failure) so the static schema renders
+  // unchanged — the form always works even if this endpoint is unavailable.
+  const [formConfig, setFormConfig] = useState<FlattenedConfig | null>(null);
+
+  // Wizard steps come from the backend `tabs` (order + names); the trailing
+  // Review step is always appended. Falls back to the static steps until the
+  // config loads.
   const steps = useMemo(() => {
-    const list = [...requisitionSteps];
-    list.push({ label: "Review", key: "review" as FormSchemaKeys });
-    return list;
-  }, []);
+    const list = buildSteps(formConfig, requisitionSteps as any);
+    return [...list, { label: "Review", key: "review" }];
+  }, [formConfig]);
   const [currentStep, setCurrentStep] = useState(0);
   const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: currentUser } = useCurrentUser();
@@ -550,6 +598,27 @@ const RequisitionForm = () => {
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res: any = await FrappeAPI.callMethod(
+          "recruitment.api.job_requisition.get_job_requisition_form_config"
+        );
+        // callMethod returns response.data.message → { success, message, data }.
+        const data: JobRequisitionFormConfig | undefined = res?.data;
+        if (!cancelled && data && Array.isArray(data.tabs)) {
+          setFormConfig(flattenConfig(data));
+        }
+      } catch (err) {
+        console.error("Failed to load job requisition form config:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ── Decoupled form.io submission feed (performance) ──────────────────────
   // form.io is uncontrolled: it manages its own field state and reports edits
@@ -598,15 +667,15 @@ const RequisitionForm = () => {
   const allValidationErrors = useMemo(() => {
     const errors: string[] = [];
     for (let s = 0; s < steps.length - 1; s++) {
-      errors.push(...validateStep(s, formData));
+      errors.push(...validateStep(steps[s].key, formData, formConfig));
     }
     return errors;
-  }, [formData, steps]);
+  }, [formData, steps, formConfig]);
 
   const isStepDisabled = (index: number) => {
     if (index <= currentStep) return false;
     for (let s = 0; s < index; s++) {
-      if (validateStep(s, formData).length > 0) {
+      if (validateStep(steps[s].key, formData, formConfig).length > 0) {
         return true;
       }
     }
@@ -1068,7 +1137,7 @@ const RequisitionForm = () => {
   };
 
   const handleNext = () => {
-    const errors = validateStep(currentStep, formData);
+    const errors = validateStep(steps[currentStep].key, formData, formConfig);
     if (errors.length > 0) {
       setValidationErrors(errors);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1099,7 +1168,7 @@ const RequisitionForm = () => {
     // Moving forward: validate every intermediate step
     const allErrors: string[] = [];
     for (let s = currentStep; s < index; s++) {
-      allErrors.push(...validateStep(s, formData));
+      allErrors.push(...validateStep(steps[s].key, formData, formConfig));
     }
 
     if (allErrors.length > 0) {
@@ -1277,7 +1346,22 @@ const RequisitionForm = () => {
       custom_work_experience_range = "5 - 10 years";
     }
 
-    return {
+    // Child-group columns the backend declares for a position that aren't
+    // already mapped by hand below — so a newly-added Position column is sent.
+    const extraPositionKeys = dynamicChildGroupFieldnames(
+      formConfig,
+      "custom_position_details",
+      [
+        "vacancy_type",
+        "location",
+        "reporting_manager",
+        "functional_area",
+        "replacement_for",
+        "cost_center_allocations",
+      ]
+    );
+
+    const payload: CreateJobRequisitionPayload = {
       // Requisition name (e.g. "HR-HIREQ-00013") — dynamic; present on edit.
       job_title: finalData.name || existingRequisition?.name,
       // Source is always "Refer" for this form.
@@ -1353,19 +1437,36 @@ const RequisitionForm = () => {
           candidate.cv ||
           "",
       })),
-      custom_position_details: (finalData.positions || []).map((pos: any) => ({
-        vacancy_type: pos.vacancy_type || "New",
-        location: pos.location,
-        reporting_manager: pos.reporting_manager,
-        functional_area: pos.functional_area,
-        replacement_for: pos.vacancy_type === "Replacement" ? pos.replacement_for : undefined,
-        cost_center_allocations: (pos.cost_center_allocations || []).map((a: any) => ({
-          cost_center: a.cost_center,
-          percentage: a.percentage,
-        })),
-      })),
+      custom_position_details: (finalData.positions || []).map((pos: any) => {
+        const row: any = {
+          vacancy_type: pos.vacancy_type || "New",
+          location: pos.location,
+          reporting_manager: pos.reporting_manager,
+          functional_area: pos.functional_area,
+          replacement_for:
+            pos.vacancy_type === "Replacement" ? pos.replacement_for : undefined,
+          cost_center_allocations: (pos.cost_center_allocations || []).map(
+            (a: any) => ({
+              cost_center: a.cost_center,
+              percentage: a.percentage,
+            })
+          ),
+        };
+        // Merge any backend-declared Position column we don't map by hand.
+        extraPositionKeys.forEach((k) => {
+          if (pos[k] !== undefined) row[k] = pos[k];
+        });
+        return row;
+      }),
       // ── Attachment URL (uploaded via useFileUpload, same as Invoice.tsx) ──
     };
+
+    // Extend the payload with dynamic / newly-added backend TAB fields (keyed by
+    // their backend fieldname), filling only keys the hardcoded mapping above
+    // left empty — so known, specially-formatted fields always win.
+    mergeDynamicValues(payload, collectDynamicTabValues(formConfig, finalData));
+
+    return payload;
   };
 
 
@@ -1415,8 +1516,9 @@ const RequisitionForm = () => {
     // Validate every step before submitting — a user can jump straight to the
     // last step via the tabs and otherwise submit with missing/invalid fields
     // from earlier steps. Stop at the first invalid step and surface its errors.
-    for (let step = 0; step < requisitionSteps.length; step++) {
-      const errors = validateStep(step, formData);
+    // Iterate all steps except the trailing Review step.
+    for (let step = 0; step < steps.length - 1; step++) {
+      const errors = validateStep(steps[step].key, formData, formConfig);
       if (errors.length > 0) {
         setValidationErrors(errors);
         setCurrentStep(step);
@@ -1474,14 +1576,32 @@ const RequisitionForm = () => {
   const eagerGrid = positionRowCount > 0 && positionRowCount <= 25;
 
   const currentSchema = useMemo(() => {
-    const activeKey = steps[currentStep].key;
-    if (activeKey === "review") {
+    const activeKey = steps[currentStep]?.key;
+    if (!activeKey || activeKey === "review") {
       return { components: [] };
     }
+
+    // Brand-new backend tab (no static schema) → generate its fields from the
+    // config and render them directly.
+    if (isDynamicStepKey(activeKey)) {
+      const components = formConfig
+        ? buildDynamicTabComponents(activeKey, formConfig)
+        : [];
+      return { components: enableUrlSelectLabels(components, false, eagerGrid) };
+    }
+
     const stepKey = activeKey as FormSchemaKeys;
     const schema = requisitionFormSchemas[stepKey];
+    // Defensive: a known tab key with no static schema → nothing to render.
+    if (!schema) return { components: [] };
 
     let components = schema.components as any[];
+
+    // Backend-driven control: hide fields the backend omits, override
+    // label / mandatory / read-only, and append any brand-new backend fields.
+    // No-op until the config loads (and on failure), so the static layout is
+    // the fallback.
+    components = applyDynamicConfig(stepKey, components, formConfig);
 
     // Basic Details: the Hiring Manager (employee) field is editable only for
     // System Manager / Administrator; read-only for everyone else.
@@ -1494,12 +1614,16 @@ const RequisitionForm = () => {
     }
 
     return { ...schema, components: enableUrlSelectLabels(components, false, eagerGrid) };
-  }, [currentStep, canEditEmployeeField, eagerGrid]);
+  }, [currentStep, steps, canEditEmployeeField, eagerGrid, formConfig]);
 
   const isBusy = isUpdating || createJobRequisition.isPending;
   const canPreviewJD = !!(formData as any).designation && !!(formData as any).department;
 
-  // Last step = "Review" (index 4)
+  // Stable key of the active step (drives per-step UI that used to key off a
+  // fixed numeric index, now that the tab order is backend-driven).
+  const activeKey = steps[currentStep]?.key ?? "";
+
+  // Last step = "Review"
   const isLastStep = currentStep === steps.length - 1;
 
   return (
@@ -1560,7 +1684,7 @@ const RequisitionForm = () => {
                     // Triggers validation messages for visual feedback
                     const allErrors: string[] = [];
                     for (let s = 0; s < index; s++) {
-                      allErrors.push(...validateStep(s, formData));
+                      allErrors.push(...validateStep(steps[s].key, formData, formConfig));
                     }
                     setValidationErrors(allErrors);
                     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1600,6 +1724,7 @@ const RequisitionForm = () => {
         {steps[currentStep].key === "review" ? (
           <RequisitionReviewStep
             formData={formData}
+            formConfig={formConfig}
             onSubmit={() => handleSubmit({ data: formData })}
             onBack={handlePrevious}
             submitPending={isBusy}
@@ -1610,7 +1735,7 @@ const RequisitionForm = () => {
           <>
             {/* ── Position counts (plain React inputs, kept out of formio to avoid
                  the controlled-input override issue) ── */}
-            {currentStep === 2 && (
+            {activeKey === "positionSelection" && (
               <div className="mb-4 border rounded-md p-4">
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1685,7 +1810,7 @@ const RequisitionForm = () => {
                 resolveEmployeeId={resolveEmployeeId}
               />
               {/* Per-column "copy to all rows" buttons in the Position table */}
-              {currentStep === 2 && (
+              {activeKey === "positionSelection" && (
                 <PositionColumnCopyButtons
                   containerRef={formContainerRef}
                   onCopyColumn={copyColumnToAllPositions}
@@ -1694,7 +1819,7 @@ const RequisitionForm = () => {
             </div>
 
             {/* ── Position Selection summary bar (totals + bulk vacancy-type toggle) ── */}
-            {currentStep === 2 && (() => {
+            {activeKey === "positionSelection" && (() => {
               const positions: any[] = (formData as any).positions || [];
               const total = positions.length;
               const newCount = positions.filter((p) => p?.vacancy_type === "New").length;
@@ -1746,7 +1871,7 @@ const RequisitionForm = () => {
             })()}
 
             {/* ── Pre-Screened Candidates (custom table with inline Attachment column) ── */}
-            {currentStep === 3 && (
+            {activeKey === "otherDetails" && (
               <div className="mt-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Pre-Screened Candidates

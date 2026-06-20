@@ -16,6 +16,7 @@ export const VIBE_TABS: Tab[] = [
   { key: "awards-history", label: "Awards-History" },
   { key: "nomination-workflows", label: "Awards-Nomination Workflows" },
   { key: "earned-points", label: "Earned Points Summary" },
+  { key: "admin-dashboard", label: "Admin Dashboard" },
 ];
 
 const VibeApp: React.FC = () => {

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import CardTable from "../../shared/CardTable";
 import { Card } from "../../shared/atoms/Card";
-import { Typography } from "../../shared/atoms/Typography";
 import {
+  ArrowUp,
   ChevronLeft,
   ChevronRight,
   ChevronRight as RowChevron,
@@ -13,33 +12,11 @@ import {
   Upload,
 } from "lucide-react";
 import { NOMINATIONS } from "./vibeMockData";
- 
+
 const FILTER_PILLS = [
   { label: "INDIVIDUAL AWARDS RECEIVED", count: 9 },
   { label: "INDIVIDUAL AWARDS RAISED", count: 2 },
   { label: "TEAM AWARDS RAISED", count: 0 },
-];
-
-const TABLE_TITLES = [
-  "",
-  "Nomination ID",
-  "Nomination Program Names(ID)",
-  "Nominated By",
-  "Nomination Date",
-  "Last Action Date",
-  "Approval Status",
-  "Actions",
-];
-
-const TABLE_WIDTHS = [
-  "52px",
-  "150px",
-  "minmax(260px,1.4fr)",
-  "160px",
-  "150px",
-  "150px",
-  "160px",
-  "90px",
 ];
 
 const AwardsNominationWorkflows: React.FC = () => {
@@ -90,77 +67,54 @@ const AwardsNominationWorkflows: React.FC = () => {
           </div>
         </div>
 
-        <div className="overflow-hidden border-y border-gray-100">
-          <CardTable
-            titles={TABLE_TITLES}
-            columnWidths={TABLE_WIDTHS}
-            noBorder
-            noShadow
-            noRound
-          >
-            <div className="min-w-[1170px]">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1050px] text-left">
+            <thead>
+              <tr className="text-sm text-gray-600 border-y border-gray-100">
+                <th className="px-4 py-3 font-semibold">
+                  <input type="checkbox" className="accent-primary" />
+                </th>
+                <th className="px-4 py-3 font-semibold">Nomination ID</th>
+                <th className="px-4 py-3 font-semibold">Nomination Program Names(ID)</th>
+                <th className="px-4 py-3 font-semibold">Nominated By</th>
+                <th className="px-4 py-3 font-semibold">
+                  <span className="flex items-center gap-1">
+                    Nomination Date <ArrowUp className="size-3.5" />
+                  </span>
+                </th>
+                <th className="px-4 py-3 font-semibold">Last Action Date</th>
+                <th className="px-4 py-3 font-semibold">Approval Status</th>
+                <th className="px-4 py-3 font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
               {NOMINATIONS.map((row) => (
-                <div
-                  key={row.id}
-                  className="grid min-h-[68px] items-center gap-4 border-b border-gray-100 px-6 py-4 transition-colors hover:bg-gray-50/70"
-                  style={{ gridTemplateColumns: TABLE_WIDTHS.join(" ") }}
-                >
-                  <div className="flex justify-center">
+                <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50/60">
+                  <td className="px-4 py-4">
                     <input type="checkbox" className="accent-primary" />
-                  </div>
-
-                  <Typography
-                    variant="bodySmall"
-                    className="truncate text-center font-bold text-gray-800"
-                  >
-                    {row.id}
-                  </Typography>
-
-                  <Typography
-                    variant="bodySmall"
-                    className="truncate font-medium text-gray-700"
-                    title={row.program}
-                  >
+                  </td>
+                  <td className="px-4 py-4 text-sm font-medium text-gray-800">{row.id}</td>
+                  <td className="px-4 py-4 text-sm text-gray-700 max-w-[280px] truncate">
                     {row.program}
-                  </Typography>
-
-                  <Typography
-                    variant="bodySmall"
-                    className="truncate text-center font-semibold text-blue-600"
-                  >
-                    {row.nominatedBy}
-                  </Typography>
-
-                  <Typography
-                    variant="bodySmall"
-                    className="text-center font-semibold text-gray-700"
-                  >
-                    {row.nominationDate}
-                  </Typography>
-
-                  <Typography
-                    variant="bodySmall"
-                    className="text-center font-semibold text-gray-700"
-                  >
-                    {row.lastActionDate}
-                  </Typography>
-
-                  <div className="flex justify-center">
+                  </td>
+                  <td className="px-4 py-4 text-sm text-gray-700">{row.nominatedBy}</td>
+                  <td className="px-4 py-4 text-sm text-gray-700">{row.nominationDate}</td>
+                  <td className="px-4 py-4 text-sm text-gray-700">{row.lastActionDate}</td>
+                  <td className="px-4 py-4">
                     <span className="inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
                       <span className="size-1.5 rounded-full bg-green-500" />
                       {row.status}
                     </span>
-                  </div>
-
-                  <div className="flex justify-center">
+                  </td>
+                  <td className="px-4 py-4">
                     <button className="text-gray-400 hover:text-gray-700">
                       <RowChevron className="size-4" />
                     </button>
-                  </div>
-                </div>
+                  </td>
+                </tr>
               ))}
-            </div>
-          </CardTable>
+            </tbody>
+          </table>
         </div>
 
         {/* Footer */}

@@ -285,6 +285,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Salary Slip",
         },
         {
+          name: "Salary Structure Assignment",
+          icon: BadgeIndianRupee,
+          href: "/webapp/salary-slip-app/salary-structure-assignment",
+          permissionKey: "Salary Structure Assignment",
+        },
+        {
           name: "Extra Payment",
           icon: HandCoins,
           href: "/webapp/salary-slip-app/extra-payment",
@@ -653,6 +659,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Earned Points Summary",
           icon: Coins,
           href: "/webapp/recognition/vibe/earned-points",
+          permissionKey: "Recognition",
+        },
+        {
+          name: "Admin Dashboard",
+          icon: Grid3X3,
+          href: "/webapp/recognition/vibe/admin-dashboard",
           permissionKey: "Recognition",
         },
       ],

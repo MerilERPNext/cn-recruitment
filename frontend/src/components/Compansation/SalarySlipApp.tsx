@@ -11,6 +11,7 @@ type TabName =
   | "Annual CTC"
   | "Invoice Slip"
   | "Salary Slip"
+  | "Salary Structure Assignment"
   | "Tax Declaration"
   | "IT Declaration"
   | "Team IT Declaration"
@@ -32,6 +33,8 @@ const tabRoutes: Record<TabName, string> = {
   "Tax Declaration": "/webapp/salary-slip-app/income-tax-sheet",
   "Invoice Slip": "/webapp/salary-slip-app/invoice-page",
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
+  "Salary Structure Assignment":
+    "/webapp/salary-slip-app/salary-structure-assignment",
   "My Loan Requests": "/webapp/salary-slip-app/my-loan-requests",
   "Team Loan Requests": "/webapp/salary-slip-app/team-loan-requests",
   "My Advances": "/webapp/salary-slip-app/advances-list",

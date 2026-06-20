@@ -1,8 +1,8 @@
 import React from "react";
-import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
 import {
+  ArrowUp,
   ChevronLeft,
   ChevronRight,
   Search,
@@ -10,24 +10,6 @@ import {
   Upload,
 } from "lucide-react";
 import { REDEMPTION_HISTORY } from "./vibeMockData";
-
-const TABLE_TITLES = [
-  "Date of Redemption",
-  "Order ID",
-  "Transaction ID",
-  "Redeemed Points",
-  "Source",
-  "Comments",
-];
-
-const TABLE_WIDTHS = [
-  "1fr",
-  "1fr",
-  "1fr",
-  "1fr",
-  "1fr",
-  "1fr",
-];
 
 const Stat: React.FC<{ value: string; label: string }> = ({ value, label }) => (
   <div className="px-2">
@@ -104,62 +86,35 @@ const EarnedPointsSummary: React.FC = () => {
           </div>
         </div>
 
-        <div className="overflow-hidden border-y border-gray-100">
-          <CardTable
-            titles={TABLE_TITLES}
-            columnWidths={TABLE_WIDTHS}
-            noBorder
-            noShadow
-            noRound
-          >
-            <div className="min-w-[900px]">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[900px] text-left">
+            <thead>
+              <tr className="bg-blue-50/40 text-sm text-gray-600">
+                <th className="px-5 py-3 font-semibold">
+                  <span className="flex items-center gap-1">
+                    Date of Redemption <ArrowUp className="size-3.5" />
+                  </span>
+                </th>
+                <th className="px-5 py-3 font-semibold">Order ID</th>
+                <th className="px-5 py-3 font-semibold">Transaction ID</th>
+                <th className="px-5 py-3 font-semibold">Redeemed Points</th>
+                <th className="px-5 py-3 font-semibold">Source</th>
+                <th className="px-5 py-3 font-semibold">Comments</th>
+              </tr>
+            </thead>
+            <tbody>
               {REDEMPTION_HISTORY.map((row, i) => (
-                <div
-                  key={`${row.orderId}-${i}`}
-                  className="grid min-h-[64px] items-center gap-4 border-b border-gray-100 px-6 py-4 transition-colors hover:bg-gray-50/70"
-                  style={{ gridTemplateColumns: TABLE_WIDTHS.join(" ") }}
-                >
-                  <Typography
-                    variant="bodySmall"
-                    className="text-center font-semibold text-gray-700"
-                  >
-                    {row.date}
-                  </Typography>
-                  <Typography
-                    variant="bodySmall"
-                    className="truncate text-center font-semibold text-gray-700"
-                  >
-                    {row.orderId}
-                  </Typography>
-                  <Typography
-                    variant="bodySmall"
-                    className="truncate text-center font-semibold text-gray-700"
-                  >
-                    {row.transactionId}
-                  </Typography>
-                  <Typography
-                    variant="bodySmall"
-                    className="text-center font-bold text-red-500"
-                  >
-                    {row.points}
-                  </Typography>
-                  <Typography
-                    variant="bodySmall"
-                    className="truncate text-center font-semibold text-gray-700"
-                  >
-                    {row.source}
-                  </Typography>
-                  <Typography
-                    variant="bodySmall"
-                    className="truncate font-medium text-gray-700"
-                    title={row.comments}
-                  >
-                    {row.comments}
-                  </Typography>
-                </div>
+                <tr key={i} className="border-t border-gray-100 hover:bg-gray-50/60">
+                  <td className="px-5 py-4 text-sm text-gray-700">{row.date}</td>
+                  <td className="px-5 py-4 text-sm text-gray-700">{row.orderId}</td>
+                  <td className="px-5 py-4 text-sm text-gray-700">{row.transactionId}</td>
+                  <td className="px-5 py-4 text-sm font-semibold text-red-500">{row.points}</td>
+                  <td className="px-5 py-4 text-sm text-gray-700">{row.source}</td>
+                  <td className="px-5 py-4 text-sm text-gray-700">{row.comments}</td>
+                </tr>
               ))}
-            </div>
-          </CardTable>
+            </tbody>
+          </table>
         </div>
 
         <div className="flex items-center justify-between px-5 py-3 text-sm text-gray-500">

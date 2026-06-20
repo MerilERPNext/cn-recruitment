@@ -49,7 +49,9 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
                 target.closest(".choices__button ") ||
                 target.closest(".form-control input active") ||
                 target.closest(".flatpickr-calendar") ||
-                target.closest(".choices");
+                target.closest(".choices") ||
+                target.closest(".react-datepicker") ||
+                target.closest(".react-datepicker-popper");
 
             if (
                 drawerRef.current &&
