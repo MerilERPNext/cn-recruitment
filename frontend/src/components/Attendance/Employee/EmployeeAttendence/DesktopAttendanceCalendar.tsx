@@ -107,7 +107,7 @@ const getEventDisplay = (event: AttendanceRecord): { label: string; className: s
     }
 
     return {
-        label: [getEventBadgeStyle(doctype).label, status].filter(Boolean).join(" "),
+        label: `${[getEventBadgeStyle(doctype).label, status].filter(Boolean).join(" ")}${detailText}`,
         className: getStatusBgStyle(status),
     };
 };
