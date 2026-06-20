@@ -76,6 +76,7 @@ const getStatusBgStyle = (status: string): string => {
 
 const getEventDetail = (event: AttendanceRecord): string => {
     return (
+        event?.leave_type_name ||
         event?.leave_type ||
         event?.request_type ||
         event?.title ||

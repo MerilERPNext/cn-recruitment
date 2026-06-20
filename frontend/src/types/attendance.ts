@@ -290,6 +290,7 @@ export type AttendanceRecord = {
   shift?: string;
   custom_auto_created?: number;
   leave_type?: string;
+  leave_type_name?: string;
   leave_application_name?: string;
   applied_on?: string;
   working_hours?: string;
