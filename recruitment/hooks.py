@@ -257,6 +257,7 @@ doc_events = {
             "recruitment.customizations.employee_separation.employee_separation.calculate_lwd_from_notice_period",
             "recruitment.customizations.employee_separation.employee_separation.add_unpaid_expense_claims",
             "recruitment.customizations.employee_separation.employee_separation.add_absent_days",
+            "recruitment.customizations.employee_separation.employee_separation.populate_relationship_reassignments",
         ],
         "on_submit": [
             "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date",
@@ -282,7 +283,7 @@ scheduler_events = {
         "0 7 * * *": [
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
             "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
-            "recruitment.recruitment.scheduled_jobs.reassign_reports_to_for_relieved_managers",
+            "recruitment.recruitment.scheduled_jobs.reassign_employee_relationships_on_relieving",
             "recruitment.recruitment.scheduled_jobs.process_separation_leave_attendance_requests",
             "recruitment.recruitment.scheduled_jobs.auto_confirm_employees_without_policy",
         ],

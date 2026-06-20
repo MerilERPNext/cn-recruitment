@@ -6,7 +6,6 @@ from dateutil.relativedelta import relativedelta
 
 PROBATION_STATUSES = ("On Probation", "Probation Extended")
 CONFIRMED_STATUS = "Confirmed"
-UNSETTLED_EXPENSE_CLAIM_STATUSES = ("Draft", "Unpaid")
 ATTENDANCE_REGULARIZE_TODO_TYPE = "Regularize Separation Attendance"
 
 
@@ -51,7 +50,8 @@ def add_unpaid_expense_claims(doc, method=None):
         "Expense Claim",
         filters={
             "employee": doc.employee,
-            "status": ["in", UNSETTLED_EXPENSE_CLAIM_STATUSES],
+            "approval_status": "Draft",
+            "docstatus": 0,
         },
         fields=["name", "total_claimed_amount"],
         order_by="posting_date asc",
@@ -89,6 +89,35 @@ def add_absent_days(doc, method=None):
             "attendance": absent.name,
             "attendance_date": frappe.utils.formatdate(absent.attendance_date,)
         })
+
+
+def populate_relationship_reassignments(doc, method=None):
+    if not doc.employee:
+        return
+
+    meta = frappe.get_meta("Employee")
+    link_fields = [
+        f for f in meta.fields
+        if f.fieldtype == "Link"
+        and f.options == "Employee"
+        and f.fieldname != "custom_previous_emp_id"
+    ]
+
+    doc.set("custom_relationship_reassignments", [])
+    for field in link_fields:
+        affected = frappe.get_all(
+            "Employee",
+            filters={field.fieldname: doc.employee, "name": ["!=", doc.employee]},
+            fields=["name", "employee_name"],
+            order_by="name asc",
+        )
+        for emp in affected:
+            doc.append("custom_relationship_reassignments", {
+                "relationship_field": field.fieldname,
+                "relationship": field.label or field.fieldname,
+                "employee": emp.name,
+                "employee_name": emp.employee_name,
+            })
 
 
 def _get_attendance_cycle_window(anchor):
