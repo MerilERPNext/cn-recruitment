@@ -720,9 +720,9 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                 {attachments.map((file, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg min-w-0"
                   >
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <AttachmentCard
                         fileUrl={file.file_url}
                         fileName={file.file_name}
@@ -731,7 +731,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                     </div>
                     <button
                       onClick={() => removeAttachment(index)}
-                      className="p-1 text-gray-400 hover:text-red-600 ml-2"
+                      className="p-1 text-gray-400 hover:text-red-600 ml-2 shrink-0"
                       title="Remove attachment"
                     >
                       <Trash2 className="w-4 h-4" />
