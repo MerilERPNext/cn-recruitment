@@ -76,6 +76,7 @@ const getStatusBgStyle = (status: string): string => {
 
 const getEventDetail = (event: AttendanceRecord): string => {
     return (
+        event?.leave_type_name ||
         event?.leave_type ||
         event?.request_type ||
         event?.title ||
@@ -106,7 +107,7 @@ const getEventDisplay = (event: AttendanceRecord): { label: string; className: s
     }
 
     return {
-        label: [getEventBadgeStyle(doctype).label, status].filter(Boolean).join(" "),
+        label: `${[getEventBadgeStyle(doctype).label, status].filter(Boolean).join(" ")}${detailText}`,
         className: getStatusBgStyle(status),
     };
 };

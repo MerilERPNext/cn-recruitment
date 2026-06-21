@@ -453,11 +453,24 @@ def get_ticket_list_data(
         from helpdesk.api.doc import get_customer_portal_fields
         fields = get_customer_portal_fields(doctype, fields)
     
+    # `rows` may include computed/enriched keys that are NOT real DB columns
+    # (e.g. raise_by_name, custom_category_name, custom_sub_category_name,
+    # no_of_comments, user_type) — these are populated after the query. Select
+    # only actual columns from the DB to avoid "Unknown column" SQL errors, while
+    # keeping the full `rows` for the response so the UI still renders them.
+    from frappe.model import default_fields
+    valid_columns = {f.fieldname for f in meta_fields}
+    valid_columns.update(default_fields)
+    valid_columns.update({"_assign", "_comments", "_liked_by", "_user_tags", "_seen"})
+    query_fields = [r for r in rows if r in valid_columns]
+    if "name" not in query_fields:
+        query_fields.append("name")
+
     # Get ticket data using frappe.get_list with or_filters support
     data = (
         frappe.get_all(
             doctype,
-            fields=rows,
+            fields=query_fields,
             filters=filters,
             or_filters=or_filters if or_filters else None,
             order_by=order_by,
