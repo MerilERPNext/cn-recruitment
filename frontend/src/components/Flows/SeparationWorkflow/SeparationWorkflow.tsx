@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useGetSeparationFunnelDetails } from "../../../hooks/useSeparation";
-import HeaderBar from "../../HeaderBar"; ``
+import HeaderBar from "../../HeaderBar";
 import WorkflowTable from "../FlowRequests/FlowDetails/WorkflowTable";
 import NoDataFound from "../../shared/atoms/NoDataFound";
 import SeparationWorkflowSkeleton from "./components/SeparationWorkflowSkeleton";

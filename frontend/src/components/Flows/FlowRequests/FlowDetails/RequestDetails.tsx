@@ -4,7 +4,7 @@ import HeaderBar from "../../../HeaderBar";
 
 import { ChevronDown, Eye, Pencil, Save } from "lucide-react";
 import { createPortal } from "react-dom";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useGetFlowRequestById, useUpdateInitiatorFormSubmission } from "../../../../hooks/useFlows";
 import { useGetUiPermission } from "../../../../hooks/userUiPermission";
 import { getActionsEnabled } from "../../../../utils/uiPermission";
@@ -39,6 +39,7 @@ const RequestDetails: React.FC = () => {
   const { data: flowResponse, isLoading } = useGetFlowRequestById(id || "");
   const data = flowResponse?.data;
 
+  const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
   const [approvalExpanded, setApprovalExpanded] = useState(false);
   const [workflowExpanded, setWorkflowExpanded] = useState(false);
@@ -272,7 +273,7 @@ const RequestDetails: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <NoDataFound subtitle="Flow Request Record not Found" />
-        <Button variant="outline">
+        <Button variant="outline" onClick={() => navigate(-1)}>
           Go Back
         </Button>
       </div>
