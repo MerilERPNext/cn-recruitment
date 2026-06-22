@@ -43,16 +43,21 @@ import useCurrentUser from "../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails } from "../hooks/useEmployee";
 import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
 import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
+import {
+  getDefinitionByFilter,
+  useChatTrigger,
+  useDifinitaionNameForSeparation,
+} from "../hooks/useFlows";
 import useLogout from "../hooks/useLogout";
 import { useGetUserNotices } from "../hooks/useNotices";
 import { useGetUiPermission } from "../hooks/userUiPermission";
 import { useShiftRequestConfig } from "../hooks/useShift";
 import { CustomError } from "../types/attendance";
 import { formatTimeSafe, formatTo24HourTime } from "../utils/helperUtils";
-import ChangePassword from "./ChangePassword/ChangePassword";
 import { isActionEnabled } from "../utils/uiPermission";
 import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
+import ChangePassword from "./ChangePassword/ChangePassword";
 import AdvanceForm from "./Compansation/Advances/AdvanceForm";
 import Modal from "./Compansation/Advances/commonModal";
 import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
@@ -60,6 +65,8 @@ import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import EmployeeFallback from "./EmployeeFallback";
 import Events from "./Events/Events";
+import InitiateFlow from "./Flows/Initiate/InitiateFlow";
+import RequestIssueModal from "./HelpDesk/RequestIssueModal";
 import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
 import NotificationBell from "./Notification/NotificationBell";
 import Button from "./shared/atoms/Button";
@@ -73,13 +80,6 @@ import { NoticeSlide } from "./shared/molecules/NoticeSlide";
 import SearchMembers from "./shared/SearchMembers";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import ViewingAsBanner from "./ViewingAsBanner";
-import RequestIssueModal from "./HelpDesk/RequestIssueModal";
-import InitiateFlow from "./Flows/Initiate/InitiateFlow";
-import {
-  useChatTrigger,
-  useDifinitaionNameForSeparation,
-  getDefinitionByFilter,
-} from "../hooks/useFlows";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -149,29 +149,29 @@ export default function DesktopDashboard() {
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T")),
+        ),
+      )[0]
     : undefined;
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
-    : undefined;
-
-  const lastLog =
-    homeSummary && homeSummary.length > 0
-      ? [...homeSummary].sort((a, b) =>
         compareDesc(
           parseISO(a.time.replace(" ", "T")),
           parseISO(b.time.replace(" ", "T")),
         ),
       )[0]
+    : undefined;
+
+  const lastLog =
+    homeSummary && homeSummary.length > 0
+      ? [...homeSummary].sort((a, b) =>
+          compareDesc(
+            parseISO(a.time.replace(" ", "T")),
+            parseISO(b.time.replace(" ", "T")),
+          ),
+        )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -440,7 +440,8 @@ export default function DesktopDashboard() {
   const { data: definitionName } = useDifinitaionNameForSeparation();
   const { triggerChat } = useChatTrigger("Loading separation form...");
   const separationDefinition = useMemo(
-    () => getDefinitionByFilter(definitionName, { triggerCategory: "Separation" }),
+    () =>
+      getDefinitionByFilter(definitionName, { triggerCategory: "Separation" }),
     [definitionName],
   );
   const handleInitiateSeparation = useCallback(() => {
@@ -616,8 +617,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee ? (
@@ -654,8 +656,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               )}
@@ -1013,10 +1016,11 @@ export default function DesktopDashboard() {
                 </div>
 
                 <div
-                  className={`flex  h-full ${homeSummary && !homeSummary?.length
-                    ? "flex-col-reverse gap-3"
-                    : "flex-row gap-3 mt-2"
-                    }`}
+                  className={`flex  h-full ${
+                    homeSummary && !homeSummary?.length
+                      ? "flex-col-reverse gap-3"
+                      : "flex-row gap-3 mt-2"
+                  }`}
                 >
                   {canShowClockIn?.can_show && (
                     <div className="flex-1">
@@ -1094,12 +1098,13 @@ export default function DesktopDashboard() {
                         onClick={action.onClick}
                       >
                         <div
-                          className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${action.color === "primary"
-                            ? "bg-primary-100 text-primary-600"
-                            : action.color === "purple"
-                              ? "bg-purple-100 text-purple-600"
-                              : "bg-success-100 text-success"
-                            }`}
+                          className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                            action.color === "primary"
+                              ? "bg-primary-100 text-primary-600"
+                              : action.color === "purple"
+                                ? "bg-purple-100 text-purple-600"
+                                : "bg-success-100 text-success"
+                          }`}
                         >
                           <action.icon className="w-5 h-5 shadow-sm" />
                         </div>
@@ -1159,7 +1164,9 @@ export default function DesktopDashboard() {
       />
 
       {showInitiateFlowModal && (
-        <InitiateFlow handleCloseModel={() => setShowInitiateFlowModal(false)} />
+        <InitiateFlow
+          handleCloseModel={() => setShowInitiateFlowModal(false)}
+        />
       )}
 
       {/* Change Password modal — self-service (current / new / confirm) */}

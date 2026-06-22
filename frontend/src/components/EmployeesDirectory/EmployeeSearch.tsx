@@ -1,18 +1,21 @@
-import { useState, useEffect } from "react";
-import { useScreenSize } from "../../hooks/useScreenSize";
+import { Check, Filter, RefreshCw, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useTargetUser } from "../../context/ViewedUserContext";
 import useDebounce from "../../hooks/useDebounce";
-import { useGetEmployeesForDirectory, useCurrentEmployeeDetails } from "../../hooks/useEmployee";
-import MultiSelect from "../shared/molecules/MultiSelect";
+import {
+  useCurrentEmployeeDetails,
+  useGetEmployeesForDirectory,
+} from "../../hooks/useEmployee";
+import { useScreenSize } from "../../hooks/useScreenSize";
 import { Employee } from "../../types/employee";
-import { Filter, X, Check, RefreshCw } from "lucide-react";
 import Button from "../shared/atoms/Button";
+import MultiSelect from "../shared/molecules/MultiSelect";
 import SideDrawer from "../shared/SideDrawer";
 import EmployeeDirectoryFilters from "./EmployeeDirectoryFilters";
-import { useTargetUser } from "../../context/ViewedUserContext";
 
 import { FilterCondition } from "../../types/frappe";
-import { Typography } from "../shared/atoms/Typography";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { Typography } from "../shared/atoms/Typography";
 
 export interface EmployeeDirectoryFilterData {
   employee_status?: string;
@@ -40,15 +43,18 @@ const EmployeeOption = ({ employee }: { employee: Employee }) => {
         </span>
         <div className="flex gap-2">
           {employee.designation && (
-            <span className="text-xs text-gray-500">{employee.designation},</span>
+            <span className="text-xs text-gray-500">
+              {employee.designation},
+            </span>
           )}
           {employee.department && (
-            <span className="text-xs text-gray-500">{employee.department},</span>
+            <span className="text-xs text-gray-500">
+              {employee.department},
+            </span>
           )}
           {employee.branch && (
             <span className="text-xs text-gray-500">{employee.branch}</span>
           )}
-
         </div>
       </div>
     </div>
@@ -63,11 +69,15 @@ export interface EmployeeSearchProps {
   appliedSearchEmployees: Employee[];
   setAppliedSearchEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
   activeFilters: EmployeeDirectoryFilterData;
-  setActiveFilters: React.Dispatch<React.SetStateAction<EmployeeDirectoryFilterData>>;
+  setActiveFilters: React.Dispatch<
+    React.SetStateAction<EmployeeDirectoryFilterData>
+  >;
   pendingFilters: EmployeeDirectoryFilterData;
-  setPendingFilters: React.Dispatch<React.SetStateAction<EmployeeDirectoryFilterData>>;
+  setPendingFilters: React.Dispatch<
+    React.SetStateAction<EmployeeDirectoryFilterData>
+  >;
   clearTableSelection: () => void;
-  activeTab: 'directory' | 'my_reportees';
+  activeTab: "directory" | "my_reportees";
 }
 
 const EmployeeSearch = ({
@@ -88,7 +98,9 @@ const EmployeeSearch = ({
   const { isDesktop } = useScreenSize();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const debouncedQuery = useDebounce(searchQuery, 350);
-  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: currentEmployee } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
   const { targetEmployeeId } = useTargetUser();
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.name;
 
@@ -99,12 +111,17 @@ const EmployeeSearch = ({
   Object.entries(activeFilters).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== "") {
       if (key === "employee_self_service") {
-        employeeSelfService = (value === 1 || value === "1" || value === true || value === "Yes") ? 1 : 0;
+        employeeSelfService =
+          value === 1 || value === "1" || value === true || value === "Yes"
+            ? 1
+            : 0;
       } else if (key === "doj_from") {
-        const dateStr = typeof value === 'string' ? value.split('T')[0] : String(value);
+        const dateStr =
+          typeof value === "string" ? value.split("T")[0] : String(value);
         filters.push(["date_of_joining", ">=", dateStr]);
       } else if (key === "doj_to") {
-        const dateStr = typeof value === 'string' ? value.split('T')[0] : String(value);
+        const dateStr =
+          typeof value === "string" ? value.split("T")[0] : String(value);
         filters.push(["date_of_joining", "<=", dateStr]);
       } else if (Array.isArray(value) && value.length > 0) {
         filters.push([key, "in", value]);
@@ -114,7 +131,7 @@ const EmployeeSearch = ({
     }
   });
 
-  if (activeTab === 'my_reportees') {
+  if (activeTab === "my_reportees") {
     if (effectiveEmployeeId) {
       filters.push(["reports_to", "=", effectiveEmployeeId]);
     } else {
@@ -141,7 +158,7 @@ const EmployeeSearch = ({
       "date_of_joining",
       "custom_business_unit",
     ],
-    debouncedQuery || undefined
+    debouncedQuery || undefined,
   );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -156,17 +173,22 @@ const EmployeeSearch = ({
   const dataIds = data.map((emp) => emp.name).join(",");
 
   const hasNonStatusFilters = Object.keys(activeFilters).some(
-    (key) => key !== 'status' &&
+    (key) =>
+      key !== "status" &&
       activeFilters[key] !== undefined &&
       activeFilters[key] !== null &&
       activeFilters[key] !== "" &&
-      (!Array.isArray(activeFilters[key]) || (activeFilters[key] as string[]).length > 0)
+      (!Array.isArray(activeFilters[key]) ||
+        (activeFilters[key] as string[]).length > 0),
   );
 
   useEffect(() => {
-    if (activeTab === 'my_reportees' && appliedSearchEmployees.length === 0) {
+    if (activeTab === "my_reportees" && appliedSearchEmployees.length === 0) {
       setEmployees(data);
-    } else if (activeTab === 'directory' && appliedSearchEmployees.length === 0) {
+    } else if (
+      activeTab === "directory" &&
+      appliedSearchEmployees.length === 0
+    ) {
       if (hasNonStatusFilters) {
         setEmployees(data);
       } else {
@@ -174,7 +196,13 @@ const EmployeeSearch = ({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, dataIds, setEmployees, appliedSearchEmployees, hasNonStatusFilters]);
+  }, [
+    activeTab,
+    dataIds,
+    setEmployees,
+    appliedSearchEmployees,
+    hasNonStatusFilters,
+  ]);
 
   const handleFilterUpdate = (data: EmployeeDirectoryFilterData) => {
     setActiveFilters(data);
@@ -200,9 +228,9 @@ const EmployeeSearch = ({
   const handleApplyEmployeeSelection = () => {
     setAppliedSearchEmployees(pendingEmployees);
     // On the reportees tab, applying an empty selection should show all reportees
-    if (activeTab === 'my_reportees' && pendingEmployees.length === 0) {
+    if (activeTab === "my_reportees" && pendingEmployees.length === 0) {
       setEmployees(data);
-    } else if (activeTab === 'directory' && pendingEmployees.length === 0) {
+    } else if (activeTab === "directory" && pendingEmployees.length === 0) {
       setEmployees(hasNonStatusFilters ? data : []);
     } else {
       setEmployees(pendingEmployees);
@@ -214,18 +242,27 @@ const EmployeeSearch = ({
     setPendingEmployees(appliedSearchEmployees);
   };
 
-  const hasPendingChanges = JSON.stringify(pendingEmployees.map(e => e.name).sort()) !== JSON.stringify(appliedSearchEmployees.map(e => e.name).sort());
+  const hasPendingChanges =
+    JSON.stringify(pendingEmployees.map((e) => e.name).sort()) !==
+    JSON.stringify(appliedSearchEmployees.map((e) => e.name).sort());
 
   const activeFilterCount = Object.keys(activeFilters).filter(
-    (key) => activeFilters[key] !== undefined && activeFilters[key] !== null && activeFilters[key] !== "" && (!Array.isArray(activeFilters[key]) || (activeFilters[key] as string[]).length > 0),
+    (key) =>
+      activeFilters[key] !== undefined &&
+      activeFilters[key] !== null &&
+      activeFilters[key] !== "" &&
+      (!Array.isArray(activeFilters[key]) ||
+        (activeFilters[key] as string[]).length > 0),
   ).length;
 
   return (
     <div className="flex flex-col gap-2">
       {/* Search and buttons row */}
-      <div className={`flex gap-2 items-start ${!isDesktop ? 'flex-wrap' : ''}`}>
+      <div
+        className={`flex gap-2 items-start ${!isDesktop ? "flex-wrap" : ""}`}
+      >
         {/* MultiSelect */}
-        <div className={isDesktop ? 'flex-1' : 'w-full'}>
+        <div className={isDesktop ? "flex-1" : "w-full"}>
           <MultiSelect
             options={employeeOptions}
             selected={pendingEmployees}
@@ -244,7 +281,9 @@ const EmployeeSearch = ({
         </div>
 
         {/* Action buttons */}
-        <div className={`flex gap-2 items-start h-full ${!isDesktop ? 'w-full' : ''}`}>
+        <div
+          className={`flex gap-2 items-start h-full ${!isDesktop ? "w-full" : ""}`}
+        >
           {hasPendingChanges && (
             <>
               <Button
@@ -254,7 +293,9 @@ const EmployeeSearch = ({
                 onClick={handleApplyEmployeeSelection}
               >
                 <Check size={12} />
-                {isDesktop && <Typography variant="bodySmall">Apply</Typography>}
+                {isDesktop && (
+                  <Typography variant="bodySmall">Apply</Typography>
+                )}
               </Button>
               <Button
                 variant="outline"
@@ -294,7 +335,13 @@ const EmployeeSearch = ({
             Active Filters:
           </span>
           {Object.entries(activeFilters).map(([key, value]) => {
-            if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) return null;
+            if (
+              value === undefined ||
+              value === null ||
+              value === "" ||
+              (Array.isArray(value) && value.length === 0)
+            )
+              return null;
             const label = key
               .replace(/_/g, " ")
               .replace(/\b\w/g, (l) => l.toUpperCase());
@@ -304,11 +351,16 @@ const EmployeeSearch = ({
                 <span>
                   {Array.isArray(value)
                     ? value.join(", ")
-                    : (key === "doj_from" || key === "doj_to"
+                    : key === "doj_from" || key === "doj_to"
                       ? formatToIndianDate(String(value))
                       : key === "employee_self_service"
-                        ? (value === 1 || value === "1" || value === true || value === "Yes" ? "Yes" : "No")
-                        : String(value))}
+                        ? value === 1 ||
+                          value === "1" ||
+                          value === true ||
+                          value === "Yes"
+                          ? "Yes"
+                          : "No"
+                        : String(value)}
                 </span>
                 <span
                   role="button"
