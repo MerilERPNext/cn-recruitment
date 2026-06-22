@@ -389,30 +389,24 @@ def process_separation_leave_attendance_requests():
     separations = frappe.get_all(
         "Employee Separation",
         filters={
-            "custom_leave_attendance_action": ["in", ["Approve", "Reject"]],
-            "docstatus": 1,
+            "custom_final_last_working_day": ["<=", current_date],
+            "docstatus": ["!=", 2],
         },
-        fields=[
-            "name",
-            "employee",
-            "custom_leave_attendance_action",
-            "custom_action_days_before_relieving",
-        ],
+        fields=["name", "employee", "custom_separation__termination_flow"],
     )
 
     for sep in separations:
-        if not sep.employee:
+        if not sep.employee or not sep.custom_separation__termination_flow:
             continue
 
-        relieving_date = frappe.db.get_value("Employee", sep.employee, "relieving_date")
-        if not relieving_date:
+        action = frappe.db.get_value(
+            "Flow Config",
+            sep.custom_separation__termination_flow,
+            "auto_approvereject_leave_and_attendance_requests_on_lwd",
+        )
+        if action not in ("Approve", "Reject"):
             continue
 
-        days_before = cint(sep.custom_action_days_before_relieving)
-        if current_date != add_days(getdate(relieving_date), -days_before):
-            continue
-
-        action = sep.custom_leave_attendance_action
         _process_separation_leave_applications(sep.employee, action)
         _process_separation_attendance_requests(sep.employee, action)
 

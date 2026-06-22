@@ -72,6 +72,52 @@ def apply_expense_decisions(variables=None, answers_var=None, bulk_pos_key=None,
 	return result
 
 
+def apply_leave_attendance_decisions(variables=None, answers_var=None, bulk_pos_key=None, bulk_neg_key=None, **kwargs):
+	sep = _get_separation(variables)
+	if not sep:
+		return {"approved": 0, "rejected": 0, "skipped": 0, "errors": ["Employee Separation not found"]}
+
+	bulk = _bulk_decision(variables, answers_var, bulk_pos_key, bulk_neg_key, "Approve", "Reject")
+
+	result = {"approved": 0, "rejected": 0, "skipped": 0, "errors": []}
+	for row in (sep.custom_pending_leave_attendance or []):
+		decision = bulk or (row.status or "").strip()
+		if bulk:
+			frappe.db.set_value("Pending Leave Attendance Detail", row.name, "status", bulk, update_modified=False)
+		if decision not in ("Approve", "Reject"):
+			result["skipped"] += 1
+			continue
+		if not row.reference_type or not row.reference_name or not frappe.db.exists(row.reference_type, row.reference_name):
+			result["errors"].append(f"{row.reference_type or '?'} {row.reference_name or '?'} missing")
+			continue
+		new_status = "Approved" if decision == "Approve" else "Rejected"
+		try:
+			ref = frappe.get_doc(row.reference_type, row.reference_name)
+			if ref.docstatus != 0:
+				result["skipped"] += 1
+				continue
+			if row.reference_type == "Leave Application":
+				ref.status = new_status
+				ref.submit()
+			else:
+				ref.custom_status = new_status
+				ref.save(ignore_permissions=True)
+				ref.submit()
+			if decision == "Approve":
+				result["approved"] += 1
+			else:
+				result["rejected"] += 1
+		except Exception as e:
+			result["errors"].append(f"{row.reference_name}: {e}")
+			frappe.log_error(
+				message=frappe.get_traceback(),
+				title=f"Separation Leave/Attendance Decision Error ({row.reference_name})",
+			)
+
+	frappe.db.commit()
+	return result
+
+
 def apply_attendance_regularization(variables=None, answers_var=None, bulk_pos_key=None, bulk_neg_key=None, **kwargs):
 	sep = _get_separation(variables)
 	if not sep:
