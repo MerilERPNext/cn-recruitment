@@ -105,7 +105,7 @@ const EmployeeAttendanceDetails = ({
     data?.employee || targetEmployeeId || currentEmployee?.employee;
 
   const { data: buttonStatus } = useGetButtonsStatus(
-    currentEmployee?.employee || "",
+    effectiveEmployeeId || "",
   );
   const leaveDetailsFromButtonStatusData = buttonStatus?.leave_applications?.filter(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
