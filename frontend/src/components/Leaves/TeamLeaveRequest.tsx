@@ -282,7 +282,7 @@ const TeamLeaveRequest = () => {
                 columnWidths={finalColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                 filterFields={dynamicFilterFields}
-                defaultFilters={{ status: "Open" }}
+                defaultFilters={{ status: "Open", todo_status: ["!=", "Cancelled"] }}
                 SkeletonComponent={CardSkeleton}
                 renderCardContent={(item) => {
                   if (
