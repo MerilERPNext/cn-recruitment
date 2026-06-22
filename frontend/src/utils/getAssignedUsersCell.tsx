@@ -13,7 +13,7 @@ export const getStageAssignedUsersCell = (
   if (!stage) return textWrapper ? textWrapper("—") : <span>—</span>;
   const totalUsers = stage?.assigned_users_count ?? stage?.todo?.assigned_users_count;;
 
-  let stageOrDesignation = stage?.stage_name || stage?.designation_name;
+  let stageOrDesignation = stage?.stage_name || stage?.designation_name || undefined;
   if (typeof stageOrDesignation === 'string') {
     stageOrDesignation = stageOrDesignation.replace(/\s*Approval\s*$/i, '');
   }
