@@ -36,7 +36,7 @@ const EmployeeOption = ({ employee }: { employee: Employee }) => {
       {/* Details */}
       <div className="flex flex-col">
         <span className="text-sm font-medium text-gray-900">
-          {employee.employee_name}
+          {employee.employee_name} ({employee.name})
         </span>
         <div className="flex gap-2">
           {employee.designation && (
@@ -93,9 +93,6 @@ const EmployeeSearch = ({
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.name;
 
   const filters: FilterCondition[] = [];
-  if (debouncedQuery) {
-    filters.push(["employee_name", "like", `%${debouncedQuery}%`]);
-  }
 
   let employeeSelfService: 1 | 0 | undefined = undefined;
 
@@ -144,12 +141,13 @@ const EmployeeSearch = ({
       "date_of_joining",
       "custom_business_unit",
     ],
+    debouncedQuery || undefined
   );
 
-  const employeeOptions: Employee[] = data.map((emp: Employee) => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const employeeOptions: any[] = data.map((emp: Employee) => ({
     ...emp,
-    name: emp.employee_name, // labelKey
-    id: emp.name, // valueKey
+    display_name: `${emp.employee_name} (${emp.name})`,
   }));
 
   // For "My Reportees" tab, auto-populate table with all fetched reportees
@@ -234,8 +232,9 @@ const EmployeeSearch = ({
             onChange={(selected) => {
               setPendingEmployees(selected);
             }}
-            labelKey="name"
+            labelKey="display_name"
             valueKey="name"
+            searchKeys={["employee_name", "name", "employee"]}
             placeholder="Search employees"
             searchValue={searchQuery}
             isLoading={isLoading}

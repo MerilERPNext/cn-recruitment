@@ -448,14 +448,16 @@ export const useGetEmployeesForDirectory = (
   filters?: FilterCondition[],
   employee_self_service?: 1 | 0,
   fields?: string[],
+  search_term?: string,
 ): UseQueryResult<Employee[], Error> => {
   return useQuery<Employee[], Error>({
-    queryKey: ["directory-employees", filters, employee_self_service, fields],
+    queryKey: ["directory-employees", filters, employee_self_service, fields, search_term],
     queryFn: () =>
       EmployeeService.getEmployeesForDirectory(
         filters,
         employee_self_service,
         fields,
+        search_term,
       ),
     staleTime: 1000 * 60 * 5,
   });
