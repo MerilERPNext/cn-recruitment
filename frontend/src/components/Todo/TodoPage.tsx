@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router";
 import HeaderBar from "../HeaderBar";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -6,7 +5,6 @@ import TodoAppShadowWrapper from "../TodoAppShadowWrapper.tsx";
 
 const TodoPage = () => {
   const { isDesktop } = useScreenSize();
-  const navigate = useNavigate();
 
   const content = (
     <div className="bg-white h-full w-full">
@@ -16,7 +14,7 @@ const TodoPage = () => {
 
   const mobileLayout = (
     <div className="flex flex-col h-screen bg-white">
-      <HeaderBar title="Todo" onBack={() => navigate(-1)} />
+      <HeaderBar title="Todo" />
       <main className="flex-1 overflow-y-auto z-100">{content}</main>
     </div>
   );

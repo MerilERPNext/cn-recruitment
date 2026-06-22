@@ -126,7 +126,7 @@ const SearchMembersApp = () => {
     <DesktopLayoutWrapper title="Search Members">
       <div className="min-h-screen bg-white flex flex-col">
         {!isDesktop && (
-          <HeaderBar title="Search Members" onBack={() => navigate(-1)} />
+          <HeaderBar title="Search Members" />
         )}
 
         <main className="flex-grow w-full">

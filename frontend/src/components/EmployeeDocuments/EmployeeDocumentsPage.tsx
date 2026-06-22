@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import {
@@ -24,7 +23,6 @@ import { DocumentTableRow } from "./DocumentTableRow";
 import { DocumentItem } from "../../types/employeeDocument";
 
 const EmployeeDocumentsPage: React.FC = () => {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("awaiting");
   const [isMobile, setIsMobile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -129,7 +127,7 @@ const EmployeeDocumentsPage: React.FC = () => {
 
   return (
     <DesktopLayoutWrapper title="My Documents">
-      {isMobile && <HeaderBar title="My Documents" onBack={() => navigate(-1)} />}
+      {isMobile && <HeaderBar title="My Documents" />}
       <div className={`bg-gray-50  bg-white min-h-screen ${isMobile ? "px-4 py-4" : "px-0 py-3 md:p-6"}`}>
         {!isMobile && (
           <div className="flex items-start justify-between">

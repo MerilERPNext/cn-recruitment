@@ -4,7 +4,7 @@ import HeaderBar from "../../../HeaderBar";
 
 import { ChevronDown, Eye, Pencil, Save } from "lucide-react";
 import { createPortal } from "react-dom";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useGetFlowRequestById, useUpdateInitiatorFormSubmission } from "../../../../hooks/useFlows";
 import { useGetUiPermission } from "../../../../hooks/userUiPermission";
 import { getActionsEnabled } from "../../../../utils/uiPermission";
@@ -203,15 +203,6 @@ const RequestDetails: React.FC = () => {
     }
   }, [isEditingForm, data, haveInitiatorForm]);
 
-  const navigate = useNavigate();
-  const handleNavigateBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/webapp/flow-app/flow-requests");
-    }
-  };
-
   const hasWorkflowStages = !!data?.workflow_stages;
 
   const approvalCounts = useMemo(() => {
@@ -281,7 +272,7 @@ const RequestDetails: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <NoDataFound subtitle="Flow Request Record not Found" />
-        <Button variant="outline" onClick={handleNavigateBack}>
+        <Button variant="outline">
           Go Back
         </Button>
       </div>
@@ -294,7 +285,6 @@ const RequestDetails: React.FC = () => {
         <div className="sm:px-4">
           <HeaderBar
             title={data?.flow_name}
-            onBack={handleNavigateBack}
             rightSlot={
               <div className="flex items-center gap-2">
                 {haveInitiatorForm && (

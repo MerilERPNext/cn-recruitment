@@ -6,7 +6,6 @@ import CompanyInfo from "./CompanyInfo";
 import SalaryInfo from "./SalaryInfo";
 // import HRLetters from "./HRLetters";
 import HeaderBar from "../HeaderBar";
-import { useNavigate } from "react-router-dom";
 import {
   useCurrentEmployeeAddress,
   useCurrentEmployeeAllDetails,
@@ -74,7 +73,6 @@ export interface SalaryInfoProps {
 
 const MyProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
-  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tabs: Tab[] = useMemo(
     () => [
@@ -163,7 +161,7 @@ const MyProfile: React.FC = () => {
   const mobileLayout = (
     <div className="bg-white font-sans scroll-smooth">
       <div className="bg-white shadow">
-        <HeaderBar title="My Profile" onBack={() => navigate(-1)} />
+        <HeaderBar title="My Profile" />
         <input
           ref={fileInputRef}
           type="file"

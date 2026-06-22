@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { useGetSeparationFunnelDetails } from "../../../hooks/useSeparation";
-import { useNavigate } from "react-router-dom";
-import HeaderBar from "../../HeaderBar";
+import HeaderBar from "../../HeaderBar"; ``
 import WorkflowTable from "../FlowRequests/FlowDetails/WorkflowTable";
 import NoDataFound from "../../shared/atoms/NoDataFound";
 import SeparationWorkflowSkeleton from "./components/SeparationWorkflowSkeleton";
@@ -12,8 +11,6 @@ const SeparationWorkflow: React.FC = () => {
     refetch: refetchSeparationWorkflow,
     isLoading,
   } = useGetSeparationFunnelDetails();
-
-  const navigate = useNavigate();
 
   useEffect(() => {
     const handleChatClose = () => {
@@ -34,7 +31,6 @@ const SeparationWorkflow: React.FC = () => {
     <div>
       <HeaderBar
         title="Separation Workflow"
-        onBack={() => navigate(-1)}
       />
 
       <div className="pt-8 pb-12">
