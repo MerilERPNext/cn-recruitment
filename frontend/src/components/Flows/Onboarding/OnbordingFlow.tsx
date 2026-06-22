@@ -1,4 +1,4 @@
-import { memo, Suspense, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import {
   DOCUMENT_DATA,
@@ -17,7 +17,6 @@ import WorkflowTasksSection from "./components/WorkflowTasksSection";
 import ActivityLog from "../ActivityLog";
 import AllReports from "../AllReports";
 
-const SectionFallback = memo(() => null);
 
 const OnbordingFlow = memo(() => {
   const [activeTab, setActiveTab] = useState<OnboardingTab>(
