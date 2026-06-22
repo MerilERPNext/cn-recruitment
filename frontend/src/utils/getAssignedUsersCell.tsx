@@ -12,6 +12,12 @@ export const getStageAssignedUsersCell = (
 ) => {
   if (!stage) return textWrapper ? textWrapper("—") : <span>—</span>;
   const totalUsers = stage?.assigned_users_count ?? stage?.todo?.assigned_users_count;;
+
+  let stageOrDesignation = stage?.stage_name || stage?.designation_name;
+  if (typeof stageOrDesignation === 'string') {
+    stageOrDesignation = stageOrDesignation.replace(/\s*Approval\s*$/i, '');
+  }
+
   if (roleAssignedUsers.length > 0) {
 
     const roles = stage.role ? stage.role.split(',').map((r: string) => r.trim()) : [];
@@ -23,6 +29,7 @@ export const getStageAssignedUsersCell = (
         RoleAssignedUsers={roleAssignedUsers}
         roles={roles}
         position={position}
+        overrideDesignation={stageOrDesignation}
       >
         {textWrapper ? textWrapper(text) : <Typography color="primary" className="underline">{text}</Typography>}
       </AllocatedToTooltip>
@@ -35,13 +42,14 @@ export const getStageAssignedUsersCell = (
       ? [{ name: stage.user, employee: stage.employee_id, designation_name: stage.designation_name }]
       : [];
 
-  const label = (stage?.stage_name || stage?.designation_name || (totalUsers ? `Assign(${totalUsers})` : users.length ? `Assign(${users.length})` : "Not Assigned")) + " ";
+  const label = (stageOrDesignation || (totalUsers ? `Assign(${totalUsers})` : users.length ? `Assign(${users.length})` : "Not Assigned")) + " ";
 
   return (
     <AllocatedToTooltip
       title="Assigned To"
       users={users}
       position={position}
+      overrideDesignation={stageOrDesignation}
     >
       <Typography color="primary" className="underline">
 
