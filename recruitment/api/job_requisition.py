@@ -1685,6 +1685,45 @@ def get_replacement_employee_options(search_text=None, query=None, txt=None, lim
     )
 
 
+@frappe.whitelist()
+def get_hiring_lead_options(company=None, search_text=None, query=None, txt=None, limit=20, include=None):
+    """Employee options for the Job Requisition 'Hiring lead' field.
+
+    When a **Company Wise** Hiring Lead Configuration matches `company`, the list
+    is limited to Employees whose linked User is a configured hiring lead. Falls
+    back to ALL Employees when no configuration matches, so requisition creation
+    is never blocked. Same response shape as get_link_field_options."""
+    from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
+        get_config_users_for_company,
+    )
+
+    leads, _ = get_config_users_for_company(company)
+    filters = {"user_id": ["in", list(leads)]} if leads else None
+    return get_link_field_options(
+        "Employee", search_text=search_text, query=query, txt=txt,
+        limit=limit, include=include, filters=filters,
+    )
+
+
+@frappe.whitelist()
+def get_recruiter_options(company=None, search_text=None, query=None, txt=None, limit=20, include=None):
+    """User options for the Job Requisition 'Assign to Recruiter' field.
+
+    When a **Company Wise** Hiring Lead Configuration matches `company`, the list
+    is limited to the configured recruiters. Falls back to ALL users when no
+    configuration matches. Same response shape as get_link_field_options."""
+    from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
+        get_config_users_for_company,
+    )
+
+    _, recruiters = get_config_users_for_company(company)
+    filters = {"name": ["in", list(recruiters)]} if recruiters else None
+    return get_link_field_options(
+        "User", search_text=search_text, query=query, txt=txt,
+        limit=limit, include=include, filters=filters,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Recruitment Settings → Job Requisition Settings enforcement
 #

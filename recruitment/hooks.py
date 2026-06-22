@@ -216,7 +216,11 @@ doc_events = {
         "on_submit": "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback"
     },
     "Job Offer": {
-        "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+        "validate": [
+            "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+            # Hiring Lead Permission Settings (change designation at offer stage).
+            "recruitment.customizations.hiring_lead_permissions.validate_job_offer_hiring_lead_edits",
+        ],
         "before_save": "recruitment.customizations.job_offer.calculate_salary_structure",
         "after_insert": "recruitment.api.action_center.sync_job_offer_action_item",
         "on_submit": "recruitment.api.action_center.sync_job_offer_action_item",
@@ -233,9 +237,13 @@ doc_events = {
         ],
     },
     "Job Opening": {
-        # Enforce Recruitment Settings -> Job Posting Settings
-        # (mandatory Job Description, no posting without linked positions).
-        "validate": "recruitment.customizations.job_opening_settings.validate_job_posting_settings",
+        "validate": [
+            # Enforce Recruitment Settings -> Job Posting Settings
+            # (mandatory Job Description, no posting without linked positions).
+            "recruitment.customizations.job_opening_settings.validate_job_posting_settings",
+            # Hiring Lead Permission Settings (external recruiter / application fields).
+            "recruitment.customizations.hiring_lead_permissions.validate_job_opening_hiring_lead_edits",
+        ],
     },
     "Employee": {
         "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",
@@ -243,7 +251,9 @@ doc_events = {
         "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
     },
     "Job Applicant": {
-        "before_save": "recruitment.customizations.job_applicant.validate_blacklist"
+        "before_save": "recruitment.customizations.job_applicant.validate_blacklist",
+        # Hiring Lead Permission Settings (update candidate source).
+        "validate": "recruitment.customizations.hiring_lead_permissions.validate_job_applicant_hiring_lead_edits",
     },
     "Appointment Letter": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"

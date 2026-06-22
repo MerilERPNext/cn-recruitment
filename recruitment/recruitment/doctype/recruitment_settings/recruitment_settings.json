@@ -42,7 +42,22 @@
 "job_posting_columns_column_break",
 "refer_page_columns",
 "career_page_filter_section",
-"career_page_filter_columns"
+"career_page_filter_columns",
+"hiring_lead_permission_section",
+"allow_hiring_lead_edit_external_recruiter",
+"allow_hiring_lead_edit_application_fields",
+"allow_hiring_lead_edit_pre_offer_fields",
+"allow_hiring_lead_update_candidate_source",
+"allow_hiring_lead_activate_archive_requisition",
+"allow_hiring_lead_add_employee_from_offer",
+"hiring_lead_permission_column_break",
+"disable_hiring_lead_edit_job_step_1",
+"disable_hiring_lead_edit_job_step_2",
+"disable_hiring_lead_edit_job_step_3",
+"disable_hiring_lead_edit_job_step_4",
+"disable_hiring_lead_edit_job_step_5",
+"restrict_act_as_admin_offer_approval",
+"allow_hiring_lead_change_designation_at_offer"
 ],
 "fields": [
 {
@@ -283,6 +298,93 @@
 "fieldtype": "Table",
 "label": "Career Page Filter Settings (Old)",
 "options": "Job Opening Column Setting"
+},
+{
+"fieldname": "hiring_lead_permission_section",
+"fieldtype": "Section Break",
+"label": "Hiring Lead Permission Settings"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_edit_external_recruiter",
+"fieldtype": "Check",
+"label": "Allow Hiring lead to edit External Recruiter assignment at job opening level"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_edit_application_fields",
+"fieldtype": "Check",
+"label": "Allow Hiring lead to edit application fields at job opening level"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_edit_pre_offer_fields",
+"fieldtype": "Check",
+"label": "Allow Hiring lead to edit Pre-Offer fields at job opening level"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_update_candidate_source",
+"fieldtype": "Check",
+"label": "Allow Hiring lead to update Candidate Source"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_activate_archive_requisition",
+"fieldtype": "Check",
+"label": "Access to Activate/Archive a requisition to Hiring lead"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_add_employee_from_offer",
+"fieldtype": "Check",
+"label": "Allow Hiring lead to Add Employee From Offer"
+},
+{
+"fieldname": "hiring_lead_permission_column_break",
+"fieldtype": "Column Break"
+},
+{
+"default": "0",
+"fieldname": "disable_hiring_lead_edit_job_step_1",
+"fieldtype": "Check",
+"label": "Disable Hiring lead to Edit Job - Step 1"
+},
+{
+"default": "0",
+"fieldname": "disable_hiring_lead_edit_job_step_2",
+"fieldtype": "Check",
+"label": "Disable Hiring lead to Edit Job - Step 2"
+},
+{
+"default": "0",
+"fieldname": "disable_hiring_lead_edit_job_step_3",
+"fieldtype": "Check",
+"label": "Disable Hiring lead to Edit Job - Step 3"
+},
+{
+"default": "0",
+"fieldname": "disable_hiring_lead_edit_job_step_4",
+"fieldtype": "Check",
+"label": "Disable Hiring lead to Edit Job - Step 4"
+},
+{
+"default": "0",
+"fieldname": "disable_hiring_lead_edit_job_step_5",
+"fieldtype": "Check",
+"label": "Disable Hiring lead to Edit Job - Step 5"
+},
+{
+"default": "0",
+"fieldname": "restrict_act_as_admin_offer_approval",
+"fieldtype": "Check",
+"label": "Restrict Act As Admin Offer/Offer Proposal Approval"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_change_designation_at_offer",
+"fieldtype": "Check",
+"label": "Allow Hiring lead to change Designation at Offer Stage"
 }
 ],
 "index_web_pages_for_search": 1,
