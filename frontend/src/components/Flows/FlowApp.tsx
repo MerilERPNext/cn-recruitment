@@ -8,10 +8,11 @@ import HeaderBar from "../HeaderBar";
 import Button from "../shared/atoms/Button";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 
-type TabName = "Flow Requests" | "Confirmation" | "Separation";
+type TabName = "Flow Requests" |"Onboarding" | "Confirmation" | "Separation";
 
 const tabRoutes: Record<TabName, string> = {
   "Flow Requests": "/webapp/flow-app/flow-requests",
+  Onboarding:"/webapp/flow-app/onboarding",
   Confirmation: "/webapp/flow-app/confirmation",
   Separation: "/webapp/flow-app/separation",
 };
@@ -41,6 +42,11 @@ const FlowApp: React.FC = () => {
       {
         key: "Flow Requests",
         label: "Flow Requests",
+        permissionKey: "Flow Requests",
+      },
+      {
+        key: "Onboarding",
+        label: "Onboarding",
         permissionKey: "Flow Requests",
       },
       {
@@ -145,7 +151,7 @@ const FlowApp: React.FC = () => {
           </>
         )}
       </header>
-      <main className="z-100 flex-grow p-2">
+      <main className="z-100 flex-grow overflow-x-hidden p-2">
         <Outlet />
       </main>
 
