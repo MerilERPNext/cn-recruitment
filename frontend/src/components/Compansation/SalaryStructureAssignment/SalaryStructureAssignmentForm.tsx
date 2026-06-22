@@ -398,6 +398,24 @@ export default function SalaryStructureAssignmentForm({
     return cleaned;
   };
 
+  // Form.io rejects submit() with an array of error objects when the form is
+  // invalid. Pull out the human-readable messages (deduped) so they can be
+  // shown in a clean toast instead of being swallowed by the catch block.
+  const extractValidationMessages = (err: any): string[] => {
+    const list = Array.isArray(err)
+      ? err
+      : err?.details || err?.errors || (err ? [err] : []);
+    const messages = (list as any[])
+      .map((e) =>
+        typeof e === "string"
+          ? e
+          : e?.message || e?.context?.message || e?.context?.label || "",
+      )
+      .map((m: string) => String(m).trim())
+      .filter(Boolean);
+    return Array.from(new Set(messages));
+  };
+
   const handleSubmit = async () => {
     try {
       const submission = await formRef.current?.submit();
@@ -553,6 +571,28 @@ export default function SalaryStructureAssignmentForm({
       }, "Creating salary structure assignment…");
     } catch (err) {
       console.error("❌ Form submission error", err);
+      // Surface Form.io validation failures (otherwise the user sees nothing,
+      // since `noAlerts: true` hides the inline banner).
+      const messages = extractValidationMessages(err);
+      if (messages.length > 0) {
+        toast.error(
+          () => (
+            <div className="text-sm leading-snug">
+              <p className="mb-1 font-semibold">
+                Please fix the following before saving:
+              </p>
+              <ul className="list-disc space-y-0.5 pl-4">
+                {messages.map((m, i) => (
+                  <li key={i}>{m}</li>
+                ))}
+              </ul>
+            </div>
+          ),
+          { duration: 6000 },
+        );
+      } else {
+        toast.error("Please fill all required fields correctly.");
+      }
     }
   };
 
