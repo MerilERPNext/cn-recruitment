@@ -68,7 +68,7 @@ const OnbordingFlow = memo(() => {
       <div className="w-full min-w-0 min-h-screen overflow-x-hidden bg-slate-50/50 p-2 sm:p-4 md:p-6 space-y-4 md:space-y-6">
         <PageHeader setShowActivityLog={setShowActivityLog} />
 
-        <ActivityLog show={showActivityLog} setShowActivityLog={setShowActivityLog} />\
+        <ActivityLog show={showActivityLog} setShowActivityLog={setShowActivityLog} />
         <AllReports show={showAllReport} setShowAllReport={setShowAllReport} />
 
         <div className="grid min-w-0 grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
