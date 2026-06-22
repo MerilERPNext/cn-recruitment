@@ -1,15 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGetYearFilterOptions } from "../../../hooks/useBenefit";
 import {
   useFlexiComponents,
   useUpdateFlexiComponents,
-  // useFlexiLockingPeriodVisibility,
-  useIndividualEmployeeFlexiLockingPeriod
+  useIndividualEmployeeFlexiLockingPeriod,
+  useFlexiLockingPeriodVisibility
 } from "../../../hooks/payroll/useFlexiDeclaration";
 import { FlexiComponent, ComponentPartOfCTC } from "../../../types/flexiDeclaration";
 import { IoIosArrowDown } from "react-icons/io";
 import { EditFlexiLockingPeriod } from "./Component/EditFlexiLockingPeriod";
+import { format } from "date-fns";
 // import { format } from "date-fns";
 
 function formatINR(num: string | number | undefined | null) {
@@ -39,13 +41,13 @@ export default function FlexiDeclaration() {
     currentEmployee?.company || ""
   );
 
-  // const { data: visibilityData, refetch: refetchVisibility } = useFlexiLockingPeriodVisibility({
-  //   employee: currentEmployee?.name || "",
-  //   payroll_period: selectedPeriod || "",
-  //   posting_date: format(new Date(), "yyyy-MM-dd"),
-  //   doctype: "Salary Structure Assignment"
-  // });
-
+  const { data: visibilityData, refetch: refetchVisibility } = useFlexiLockingPeriodVisibility({
+    employee: currentEmployee?.name || "",
+    payroll_period: selectedPeriod || "",
+    posting_date: format(new Date(), "yyyy-MM-dd"),
+    doctype: "Salary Structure Assignment"
+  });
+console.log("visibilityData", visibilityData, refetchVisibility);
   const { data: lockingPeriodData, refetch: refetchLockingPeriod } = useIndividualEmployeeFlexiLockingPeriod(
     currentEmployee?.name || ""
   );

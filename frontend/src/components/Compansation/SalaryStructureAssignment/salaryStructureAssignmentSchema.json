@@ -112,27 +112,6 @@
                   "customClass": "w-full"
                 }
               ]
-            },
-            {
-              "width": 4,
-              "components": [
-                {
-                  "type": "select",
-                  "key": "payroll_payable_account",
-                  "label": "Payroll Payable Account",
-                  "placeholder": "Select Account",
-                  "input": true,
-                  "dataSrc": "url",
-                  "data": {
-                    "url": "/api/resource/Account?fields=[\"name\"]&filters=[[\"account_type\",\"=\",\"Payable\"]]&limit_page_length=0",
-                    "headers": [{ "key": "Accept", "value": "application/json" }]
-                  },
-                  "selectValues": "data",
-                  "valueProperty": "name",
-                  "template": "<span>{{ item.name }}</span>",
-                  "customClass": "w-full"
-                }
-              ]
             }
           ]
         },
@@ -269,37 +248,6 @@
       "components": [
         {
           "type": "columns",
-          "key": "baseRow1",
-          "customClass": "mb-2",
-          "columns": [
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "number",
-                  "key": "custom_fixed_gross_annual",
-                  "label": "Fixed Gross (Annual)",
-                  "input": true,
-                  "customClass": "w-full"
-                }
-              ]
-            },
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "number",
-                  "key": "leave_encashment_amount_per_day",
-                  "label": "Leave Encashment Amount Per Day",
-                  "input": true,
-                  "customClass": "w-full"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "columns",
           "key": "baseRow2",
           "customClass": "mb-2",
           "columns": [
@@ -310,18 +258,6 @@
                   "type": "number",
                   "key": "custom_fixed_ctc_annual",
                   "label": "Fixed CTC (Annual)",
-                  "input": true,
-                  "customClass": "w-full"
-                }
-              ]
-            },
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "number",
-                  "key": "base",
-                  "label": "Total CTC (Annual)",
                   "input": true,
                   "customClass": "w-full"
                 }
@@ -360,92 +296,6 @@
               "key": "note",
               "label": "Note",
               "input": true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "panel",
-      "key": "openingBalancesPanel",
-      "title": "Opening Balances",
-      "customClass": "py-3 px-5 mb-3 border rounded-lg",
-      "components": [
-        {
-          "type": "htmlelement",
-          "tag": "p",
-          "className": "text-xs text-gray-500 mb-2",
-          "content": "Set opening balances for earnings and taxes from the previous employer"
-        },
-        {
-          "type": "columns",
-          "key": "openingRow",
-          "columns": [
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "number",
-                  "key": "taxable_earnings_till_date",
-                  "label": "Taxable Earnings Till Date",
-                  "input": true,
-                  "customClass": "w-full"
-                }
-              ]
-            },
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "number",
-                  "key": "tax_deducted_till_date",
-                  "label": "Tax Deducted Till Date",
-                  "input": true,
-                  "customClass": "w-full"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "panel",
-      "key": "costCentersPanel",
-      "title": "Payroll Cost Centers",
-      "customClass": "py-3 px-5 mb-3 border rounded-lg",
-      "components": [
-        {
-          "type": "datagrid",
-          "key": "payroll_cost_centers",
-          "label": "Cost Centers",
-          "addAnother": "Add Row",
-          "initEmpty": true,
-          "reorder": false,
-          "components": [
-            {
-              "type": "select",
-              "key": "cost_center",
-              "label": "Cost Center <span style='color:red;margin-left:3px;'>*</span>",
-              "placeholder": "Select Cost Center",
-              "widget": "html5",
-              "validateOn": "blur",
-              "dataSrc": "url",
-              "data": {
-                "url": "/api/resource/Cost Center?fields=[\"name\"]&filters=[[\"is_group\",\"=\",0]]&limit_page_length=0",
-                "headers": [{ "key": "Accept", "value": "application/json" }]
-              },
-              "selectValues": "data",
-              "valueProperty": "name",
-              "template": "<span>{{ item.name }}</span>",
-              "validate": { "required": true }
-            },
-            {
-              "type": "number",
-              "key": "percentage",
-              "label": "Percentage (%) <span style='color:red;margin-left:3px;'>*</span>",
-              "validateOn": "blur",
-              "validate": { "required": true, "min": 0, "max": 100 }
             }
           ]
         }
@@ -739,32 +589,6 @@
                     ]
                   },
                   "customClass": "w-full"
-                },
-                {
-                  "type": "number",
-                  "key": "custom_epf_amount",
-                  "label": "EPF Amount",
-                  "input": true,
-                  "customClass": "w-full"
-                }
-              ]
-            },
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "textfield",
-                  "key": "custom_pf_account_number",
-                  "label": "PF Account Number",
-                  "input": true,
-                  "customClass": "w-full"
-                },
-                {
-                  "type": "number",
-                  "key": "custom_uan",
-                  "label": "UAN",
-                  "input": true,
-                  "customClass": "w-full"
                 }
               ]
             }
@@ -892,52 +716,6 @@
     },
     {
       "type": "panel",
-      "key": "esicPanel",
-      "title": "Employees' State Insurance Corporation (ESIC)",
-      "customClass": "py-3 px-5 mb-3 border rounded-lg",
-      "components": [
-        {
-          "type": "checkbox",
-          "key": "custom_is_esic",
-          "label": "ESIC",
-          "input": true
-        },
-        {
-          "type": "columns",
-          "key": "esicRow",
-          "customConditional": "show = data.custom_is_esic === true",
-          "columns": [
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "textfield",
-                  "key": "custom_esic_number",
-                  "label": "ESIC Number",
-                  "input": true,
-                  "customClass": "w-full"
-                }
-              ]
-            },
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "datetime",
-                  "key": "custom_esic_applicable_period",
-                  "label": "ESIC Applicable Period",
-                  "format": "yyyy-MM-dd",
-                  "enableTime": false,
-                  "customClass": "w-full"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "panel",
       "key": "ptPanel",
       "title": "Professional Tax (PT)",
       "customClass": "py-3 px-5 mb-3 border rounded-lg",
@@ -982,76 +760,6 @@
             ]
           },
           "customClass": "w-full md:w-1/3"
-        }
-      ]
-    },
-    {
-      "type": "panel",
-      "key": "perquisitePanel",
-      "title": "Perquisite",
-      "customClass": "py-3 px-5 mb-3 border rounded-lg",
-      "components": [
-        {
-          "type": "columns",
-          "key": "perqRow1",
-          "customClass": "mb-2",
-          "columns": [
-            {
-              "width": 6,
-              "components": [
-                { "type": "checkbox", "key": "custom__car_perquisite", "label": "Car Perquisite", "input": true }
-              ]
-            },
-            {
-              "width": 6,
-              "components": [
-                { "type": "checkbox", "key": "custom_driver_provided_by_company", "label": "Driver Provided By Company", "input": true }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "select",
-          "key": "custom_cubic_capacity_of_company",
-          "label": "Cubic Capacity of Company",
-          "customConditional": "show = data.custom__car_perquisite === true",
-          "data": {
-            "values": [
-              { "label": "Car > 1600 CC", "value": "Car > 1600 CC" },
-              { "label": "Car < 1600 CC", "value": "Car < 1600 CC" }
-            ]
-          },
-          "customClass": "w-full md:w-1/3"
-        },
-        {
-          "type": "columns",
-          "key": "perqRow2",
-          "columns": [
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "number",
-                  "key": "custom_car_perquisite_as_per_rules",
-                  "label": "Car Perquisite as per rules",
-                  "customConditional": "show = data.custom__car_perquisite === true",
-                  "customClass": "w-full"
-                }
-              ]
-            },
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "number",
-                  "key": "custom_driver_perquisite_as_per_rules",
-                  "label": "Driver Perquisite as Per Rules",
-                  "customConditional": "show = data.custom_driver_provided_by_company === true",
-                  "customClass": "w-full"
-                }
-              ]
-            }
-          ]
         }
       ]
     },
