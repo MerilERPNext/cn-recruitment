@@ -64,7 +64,7 @@ const OnbordingFlow = memo(() => {
   const [showAllReport, setShowAllReport] = useState(false);
 
   return (
-    <Suspense fallback={<SectionFallback />}>
+   
       <div className="w-full min-w-0 min-h-screen overflow-x-hidden bg-slate-50/50 p-2 sm:p-4 md:p-6 space-y-4 md:space-y-6">
         <PageHeader setShowActivityLog={setShowActivityLog} />
 
@@ -119,7 +119,6 @@ const OnbordingFlow = memo(() => {
           </div>
         </div>
       </div>
-    </Suspense>
   );
 });
 

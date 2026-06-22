@@ -38,11 +38,11 @@ const WorkflowTasksSection = ({
       columnWidths={["2fr", "1fr", "1fr", "1fr", "1fr"]}
     >
       {tasks.length > 0 ? (
-        tasks.map((task, idx) =>
+        tasks.map((task) =>
           isDesktop ? (
-            <WorkflowDesktopRow key={idx} task={task} />
+            <WorkflowDesktopRow key={task.name} task={task} />
           ) : (
-            <WorkflowMobileRow key={idx} task={task} />
+            <WorkflowMobileRow key={task.name} task={task} />
           )
         )
       ) : (

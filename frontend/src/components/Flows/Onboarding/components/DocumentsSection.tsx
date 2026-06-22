@@ -36,11 +36,11 @@ const DocumentsSection = ({
       columnWidths={["2fr", "1fr", "1fr", "1fr", "1fr"]}
     >
       {documents.length > 0 ? (
-        documents.map((doc, idx) =>
+        documents.map((doc) =>
           isDesktop ? (
-            <DocumentDesktopRow key={idx} doc={doc} />
+            <DocumentDesktopRow key={doc.name} doc={doc} />
           ) : (
-            <DocumentMobileRow key={idx} doc={doc} />
+            <DocumentMobileRow key={doc.name} doc={doc} />
           )
         )
       ) : (
