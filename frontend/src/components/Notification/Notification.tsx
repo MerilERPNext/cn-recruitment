@@ -247,7 +247,7 @@ const NotificationList = () => {
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Sticky Header */}
       <div className="flex-shrink-0">
-        <HeaderBar title="Notification Log" onBack={() => navigate(-1)} />
+        <HeaderBar title="Notification Log" />
       </div>
 
       {/* ✅ Sticky Tabs + Mark All as Read */}

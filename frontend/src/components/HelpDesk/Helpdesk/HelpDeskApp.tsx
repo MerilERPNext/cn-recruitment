@@ -98,7 +98,7 @@ const HelpDeskApp: React.FC = () => {
   const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
       <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <HeaderBar title="Help Desk" onBack={() => navigate(-1)} />
+        <HeaderBar title="Help Desk" />
       </header>
 
       <div className="px-4 py-3 border-b border-gray-200">

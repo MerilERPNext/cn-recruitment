@@ -428,8 +428,6 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
   const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
     useState(false);
 
-
-  const navigate = useNavigate();
   // Automatically hide the toast after a few seconds
   useEffect(() => {
     if (toast) {
@@ -489,20 +487,12 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
     }
   };
 
-  const handleBackClick = () => {
-    if (window.isApp) {
-      navigate("/webapp/dashboard");
-    } else {
-      navigate(-1)
-    }
-  }
-
   return (
     <DesktopLayoutWrapper title="Employee ID Card">
       <div className="h-full overflow-y-auto bg-gray-50">
         <div className="min-h-full p-4 sm:p-6 lg:p-8">
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <HeaderBar title="Employee ID Card" onBack={handleBackClick} />
+            <HeaderBar title="Employee ID Card" />
             {/* Header */}
             <div className="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

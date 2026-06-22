@@ -39,10 +39,10 @@ const tabRoutes: Record<TabName, string> = {
   "Team Loan Requests": "/webapp/salary-slip-app/team-loan-requests",
   "My Advances": "/webapp/salary-slip-app/advances-list",
   "Team Advances": "/webapp/salary-slip-app/team-advances-list",
-  "Perquisite": "/webapp/salary-slip-app/perquisite-list", 
+  "Perquisite": "/webapp/salary-slip-app/perquisite-list",
   "Extra Payments": "/webapp/salary-slip-app/extra-payment",
   "Payroll Documents": "/webapp/salary-slip-app/hr-payroll",
-  
+
 };
 
 interface ViewModeContextType {
@@ -114,7 +114,7 @@ const SalarySlipApp: React.FC = () => {
         `}</style>
 
         <header className="sticky top-0 z-50 bg-white shadow-sm">
-          <HeaderBar title={activeTab} onBack={() => navigate("/webapp")} />
+          <HeaderBar title={activeTab} />
 
           <NavigationTabs
             tabs={tabs}

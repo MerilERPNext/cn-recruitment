@@ -8,11 +8,11 @@ import HeaderBar from "../HeaderBar";
 import Button from "../shared/atoms/Button";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 
-type TabName = "Flow Requests" |"Onboarding" | "Confirmation" | "Separation";
+type TabName = "Flow Requests" | "Onboarding" | "Confirmation" | "Separation";
 
 const tabRoutes: Record<TabName, string> = {
   "Flow Requests": "/webapp/flow-app/flow-requests",
-  Onboarding:"/webapp/flow-app/onboarding",
+  Onboarding: "/webapp/flow-app/onboarding",
   Confirmation: "/webapp/flow-app/confirmation",
   Separation: "/webapp/flow-app/separation",
 };
@@ -141,7 +141,6 @@ const FlowApp: React.FC = () => {
           <>
             <HeaderBar
               title={"HR Process"}
-              onBack={() => navigate(-1)}
             />
             <NavigationTabs
               tabs={tabs}

@@ -20,7 +20,7 @@ import {
   useGetEmployeeSubordinateHierarchy,
 } from "../../hooks/useEmployee";
 import HeaderBar from "../HeaderBar";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation } from "react-router";
 import dagre from "dagre";
 import { Position } from "@xyflow/react";
 import OrgChartSkeleton from "../shared/molecules/Skeletons/OrgChartSkeleton";
@@ -167,7 +167,7 @@ export default function OrganizationChart() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [collapsedNodes, setCollapsedNodes] = useState<CollapsedState>({});
-  const navigate = useNavigate();
+
   const [layoutReady, setLayoutReady] = useState(false);
 
   const { search } = useLocation();
@@ -352,7 +352,7 @@ export default function OrganizationChart() {
   if (!layoutReady) {
     return (
       <div className="w-full h-screen bg-white">
-        <HeaderBar title="organizational chart" onBack={() => navigate(-1)} />
+        <HeaderBar title="organizational chart" />
         {/* ---------------- Skeleton Loader ---------------- */}
         <OrgChartSkeleton />
         {/* ---------------- Skeleton Loader ---------------- */}
@@ -363,7 +363,7 @@ export default function OrganizationChart() {
 
   return (
     <div className="w-full h-screen  bg-white">
-      <HeaderBar title="organizational chart" onBack={() => navigate(-1)} />
+      <HeaderBar title="organizational chart" />
       <ReactFlow
         nodes={nodesWithToggle}
         edges={visibleEdges}

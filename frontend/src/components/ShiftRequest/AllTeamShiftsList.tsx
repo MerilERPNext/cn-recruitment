@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
 import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
@@ -124,7 +124,6 @@ const TeamShiftItemComponent: React.FC<{ item: ApiShiftAssignment }> = ({
 const AllTeamShiftsList: React.FC = () => {
   const { isDesktop } = useScreenSize();
 
-  const navigate = useNavigate();
   const { data, isLoading } = useShiftAssignments();
 
   // ✅ Only take team shifts (is_self = 0)
@@ -139,7 +138,6 @@ const AllTeamShiftsList: React.FC = () => {
               <div className="px-4 py-1 md:py-4">
                 <HeaderBar
                   title="Team Shift Assignments"
-                  onBack={() => navigate(-1)}
                   className="shadow"
                 />
               </div>
@@ -147,32 +145,32 @@ const AllTeamShiftsList: React.FC = () => {
           )}
           <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
             <CardTable
-                titles={[
-                  "Employee",
-                  "Shift Type",
-                  "Start Date",
-                  "End Date",
-                  "Status",
-                ]}
-                columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
-              >
-                {isLoading ? (
-                  <CardSkeleton />
-                ) : teamShifts.length > 0 ? (
-                  teamShifts.map((shift, index) => (
-                    <TeamShiftRowItem
-                      key={shift.name}
-                      item={shift}
-                      index={index}
-                    />
-                  ))
-                ) : (
-                  <NoDataFound
-                    title="No Team Shift Assignments"
-                    subtitle="No team shifts found."
+              titles={[
+                "Employee",
+                "Shift Type",
+                "Start Date",
+                "End Date",
+                "Status",
+              ]}
+              columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
+            >
+              {isLoading ? (
+                <CardSkeleton />
+              ) : teamShifts.length > 0 ? (
+                teamShifts.map((shift, index) => (
+                  <TeamShiftRowItem
+                    key={shift.name}
+                    item={shift}
+                    index={index}
                   />
-                )}
-              </CardTable>
+                ))
+              ) : (
+                <NoDataFound
+                  title="No Team Shift Assignments"
+                  subtitle="No team shifts found."
+                />
+              )}
+            </CardTable>
           </div>
         </div>
       ) : (

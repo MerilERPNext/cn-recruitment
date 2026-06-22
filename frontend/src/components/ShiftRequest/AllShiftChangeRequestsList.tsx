@@ -135,7 +135,6 @@ const AllShiftChangeRequestsList: React.FC = () => {
           <div className="px-4 py-1 md:py-4">
             <HeaderBar
               title="Team Shift Requests"
-              onBack={() => navigate(-1)}
               className="shadow"
             />
           </div>

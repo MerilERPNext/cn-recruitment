@@ -176,7 +176,6 @@ const AttendanceLayoutContent: React.FC = () => {
       {/* Fixed Header */}
       <HeaderBar
         title={activeTab?.label || "Attendance"}
-        onBack={() => navigate(-1)}
       />
       {tabs.some((tab) => tab.key === activeTab?.key) && (
         <div className="sticky top-[58px] z-40 border-t border-gray-200">

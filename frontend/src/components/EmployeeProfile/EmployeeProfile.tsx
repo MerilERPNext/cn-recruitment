@@ -341,11 +341,11 @@ const EmployeeProfile: React.FC = () => {
       {/* Sticky Header - always on top */}
       <HeaderBar
         title="Profile"
-        onBack={() => {
+        onBack={(navigateBack) => {
           if (isViewingOtherUser) {
             clearTargetEmployee();
           }
-          navigate(-1);
+          navigateBack();
         }}
       />
       <div className="bg-white shadow">

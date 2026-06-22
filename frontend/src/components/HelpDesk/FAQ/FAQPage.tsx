@@ -240,7 +240,6 @@ const FAQPage: React.FC = () => {
           <header className="sticky top-0 z-50 bg-white shadow-sm">
             <HeaderBar
               title="FAQs"
-              onBack={() => navigate("/webapp/helpdesk")}
             />
           </header>
           <main className="flex-1 overflow-y-auto bg-app">

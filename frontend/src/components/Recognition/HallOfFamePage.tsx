@@ -119,7 +119,7 @@ const HallOfFamePage: React.FC = () => {
   if (!isDesktop) {
     return (
       <div className="flex flex-col min-h-screen bg-white">
-        <HeaderBar title="Hall of Fame" onBack={() => navigate("/webapp/recognition")} />
+        <HeaderBar title="Hall of Fame" />
         <main className="p-4 flex-grow overflow-y-auto">{content}</main>
       </div>
     );

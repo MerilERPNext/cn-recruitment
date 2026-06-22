@@ -266,8 +266,7 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
             >
               <div
                 className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110
-                ${
-                  action.bg
+                ${action.bg
                     ? `${action.bg} text-gray-700`
                     : action.color === "primary"
                       ? "bg-primary-100 text-primary-600"
@@ -278,7 +277,7 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
                           : action.color === "success"
                             ? "bg-success-100 text-success-600"
                             : "bg-gray-100 text-gray-600"
-                }`}
+                  }`}
               >
                 <action.icon className="w-5 h-5 shadow-sm" />
               </div>
@@ -352,7 +351,7 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const mobileLayout = (
     <div className="flex flex-col min-h-fit bg-white">
       {isRequestPage && !showInitiateFlowModal && (
-        <HeaderBar title={"Requests"} onBack={() => navigate(-1)} />
+        <HeaderBar title={"Requests"} />
       )}
 
       <div className="md:p-4 flex-grow">
