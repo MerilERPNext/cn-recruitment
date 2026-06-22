@@ -45,6 +45,11 @@ const FlowApp: React.FC = () => {
         permissionKey: "Flow Requests",
       },
       {
+        key: "Onboarding",
+        label: "Onboarding",
+        permissionKey: "Flow Requests",
+      },
+      {
         key: "Confirmation",
         label: "Confirmation",
         permissionKey: "Confirmation",
@@ -146,7 +151,7 @@ const FlowApp: React.FC = () => {
           </>
         )}
       </header>
-      <main className="z-100 flex-grow p-2">
+      <main className="z-100 flex-grow overflow-x-hidden p-2">
         <Outlet />
       </main>
 
