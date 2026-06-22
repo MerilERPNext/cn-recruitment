@@ -418,6 +418,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Flow Requests",
         },
         {
+          name: "Onboarding",
+          icon: ArrowDownUp,
+          href: "/webapp/flow-app/onboarding",
+          permissionKey: "Flow Requests",
+        },
+        {
           name: "Separation",
           icon: SeparatorHorizontal,
           href: "/webapp/flow-app/separation",
