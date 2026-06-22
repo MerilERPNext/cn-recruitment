@@ -33,7 +33,13 @@ function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         textClass: "text-yellow-800",
         icon: <Clock className="w-3 h-3 md:w-4 md:h-4" />,
       };
-
+    case "in progress":
+      return {
+        label: "In Progress",
+        bgClass: "bg-yellow-100",
+        textClass: "text-yellow-800",
+        icon: <Clock className="w-3 h-3 md:w-4 md:h-4" />,
+      };
     case "open":
     case "pending":
       return {

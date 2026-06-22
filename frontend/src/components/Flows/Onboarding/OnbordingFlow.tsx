@@ -14,6 +14,8 @@ import ProfileCard from "./components/ProfileCard";
 import { OnboardingTab } from "./components/types";
 import VerificationReportsSection from "./components/VerificationReportsSection";
 import WorkflowTasksSection from "./components/WorkflowTasksSection";
+import ActivityLog from "../ActivityLog";
+import AllReports from "../AllReports";
 
 const SectionFallback = memo(() => null);
 
@@ -58,10 +60,16 @@ const OnbordingFlow = memo(() => {
     []
   );
 
+  const [showActivityLog, setShowActivityLog] = useState(false);
+  const [showAllReport, setShowAllReport] = useState(false);
+
   return (
     <Suspense fallback={<SectionFallback />}>
       <div className="w-full min-w-0 min-h-screen overflow-x-hidden bg-slate-50/50 p-2 sm:p-4 md:p-6 space-y-4 md:space-y-6">
-        <PageHeader />
+        <PageHeader setShowActivityLog={setShowActivityLog} />
+
+        <ActivityLog show={showActivityLog} setShowActivityLog={setShowActivityLog} />\
+        <AllReports show={showAllReport} setShowAllReport={setShowAllReport} />
 
         <div className="grid min-w-0 grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           <div className="min-w-0 lg:col-span-2 space-y-4 md:space-y-6">
@@ -93,7 +101,7 @@ const OnbordingFlow = memo(() => {
               )}
 
               {activeTab === "Verification Reports" && (
-                <VerificationReportsSection />
+                <VerificationReportsSection setShowAllReport={setShowAllReport} />
               )}
             </div>
           </div>

@@ -2,7 +2,10 @@ import { memo } from "react";
 import Badge from "../../../shared/Badge";
 import { Typography } from "../../../shared/atoms/Typography";
 
-const VerificationReportsSection = () => (
+interface VerificationReportsSectionProps {
+  setShowAllReport: (show: boolean) => void;
+}
+const VerificationReportsSection = ({ setShowAllReport }: VerificationReportsSectionProps) => (
   <div className="space-y-5">
     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
       <div className="flex flex-wrap items-center gap-3">
@@ -20,8 +23,8 @@ const VerificationReportsSection = () => (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <ReportField label="Verification Type" value="Onboarding BGV" />
         <ReportField label="Partner Name" value="OnGrid" />
-        <ReportField label="Assigned On" value="30 - 07 - 2025" />
-        <ReportField label="Last Updated on" value="05 - 08 - 2025" />
+        <ReportField label="Assigned On" value="30-07-2025" />
+        <ReportField label="Last Updated on" value="05-08-2025" />
         <ReportField label="Report Status" value="Verification Initiated" />
         <ReportField label="Report" value="-" />
       </div>
@@ -31,9 +34,11 @@ const VerificationReportsSection = () => (
       </div>
     </div>
 
-    <a href="#" className="inline-block text-blue-500 hover:text-blue-700 font-semibold text-sm transition-colors">
+    <button
+      onClick={() => setShowAllReport(true)}
+      className="inline-block text-blue-500 hover:text-blue-700 font-semibold text-sm transition-colors">
       View all Reports (2)
-    </a>
+    </button>
   </div>
 );
 

@@ -11,7 +11,7 @@ const ProfileCard = () => (
       src="https://api.dicebear.com/7.x/adventurer/svg?seed=Yogesh"
       size="h-24 w-24"
       indicatorNode={
-        <div className="bg-blue-500 h-8 w-8 text-white p-1.5 rounded-full border-2 border-white cursor-pointer hover:bg-blue-600 transition-colors shadow">
+        <div className="bg-blue-500  h-10 w-10 text-white flex items-center justify-center rounded-full border-2 border-white cursor-pointer hover:bg-blue-600 transition-colors shadow -translate-x-3 -translate-y-3">
           <Pencil size={12} className="stroke-[2.5] size-4" />
         </div>
       }

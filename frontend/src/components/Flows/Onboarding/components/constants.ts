@@ -11,13 +11,13 @@ export const DOCUMENT_DATA: DocumentRow[] = [
     name: "Onboarding form - old",
     status: "Completed",
     timeSinceTrigger: "-",
-    completionDate: "01 / 08 / 2025",
+    completionDate: "01-08-2025",
   },
   {
     name: "Testing of new product",
     status: "Completed",
     timeSinceTrigger: "-",
-    completionDate: "01 / 08 / 2025",
+    completionDate: "01-08-2025",
   },
 ];
 
