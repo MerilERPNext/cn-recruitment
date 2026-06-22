@@ -15,16 +15,19 @@ import {
   ChevronDown,
   Dock,
   FileText,
+  GitBranch,
+  HeadphonesIcon,
   IndianRupee,
   LogOut,
   ReceiptIndianRupeeIcon,
   RotateCcwKey,
   Timer,
   User,
+  UserMinus,
   Wallet,
   XCircle,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import defaultProfile from "../assets/face-rec.png";
@@ -40,16 +43,21 @@ import useCurrentUser from "../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails } from "../hooks/useEmployee";
 import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
 import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
+import {
+  getDefinitionByFilter,
+  useChatTrigger,
+  useDifinitaionNameForSeparation,
+} from "../hooks/useFlows";
 import useLogout from "../hooks/useLogout";
 import { useGetUserNotices } from "../hooks/useNotices";
 import { useGetUiPermission } from "../hooks/userUiPermission";
 import { useShiftRequestConfig } from "../hooks/useShift";
 import { CustomError } from "../types/attendance";
 import { formatTimeSafe, formatTo24HourTime } from "../utils/helperUtils";
-import ChangePassword from "./ChangePassword/ChangePassword";
 import { isActionEnabled } from "../utils/uiPermission";
 import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
+import ChangePassword from "./ChangePassword/ChangePassword";
 import AdvanceForm from "./Compansation/Advances/AdvanceForm";
 import Modal from "./Compansation/Advances/commonModal";
 import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
@@ -57,6 +65,8 @@ import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import EmployeeFallback from "./EmployeeFallback";
 import Events from "./Events/Events";
+import InitiateFlow from "./Flows/Initiate/InitiateFlow";
+import RequestIssueModal from "./HelpDesk/RequestIssueModal";
 import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
 import NotificationBell from "./Notification/NotificationBell";
 import Button from "./shared/atoms/Button";
@@ -87,6 +97,8 @@ export default function DesktopDashboard() {
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
   const handleCloseAdvanceModal = () => setShowAdvanceForm(false);
+  const [isRequestIssueModalOpen, setIsRequestIssueModalOpen] = useState(false);
+  const [showInitiateFlowModal, setShowInitiateFlowModal] = useState(false);
 
   const handleCloseShiftModal = () => {
     setShowShiftRequestModal(false);
@@ -137,29 +149,29 @@ export default function DesktopDashboard() {
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T")),
+        ),
+      )[0]
     : undefined;
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
-    : undefined;
-
-  const lastLog =
-    homeSummary && homeSummary.length > 0
-      ? [...homeSummary].sort((a, b) =>
         compareDesc(
           parseISO(a.time.replace(" ", "T")),
           parseISO(b.time.replace(" ", "T")),
         ),
       )[0]
+    : undefined;
+
+  const lastLog =
+    homeSummary && homeSummary.length > 0
+      ? [...homeSummary].sort((a, b) =>
+          compareDesc(
+            parseISO(a.time.replace(" ", "T")),
+            parseISO(b.time.replace(" ", "T")),
+          ),
+        )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -344,6 +356,8 @@ export default function DesktopDashboard() {
     (role) => "Administrator" === role.role,
   );
   const { data: userUiPermission } = useGetUiPermission();
+  const { data: hrProcessPermission } = useGetUiPermission("HR Process");
+  const { data: helpDeskPermission } = useGetUiPermission("Help Desk");
   const user = currentEmployee;
   const effectiveEmployeeId = targetEmployeeId || user?.employee;
 
@@ -404,6 +418,42 @@ export default function DesktopDashboard() {
     "requests",
   );
 
+  const canInitiateFlow = isActionEnabled(
+    hrProcessPermission,
+    "initiate",
+    "Flow Requests",
+  );
+
+  const canInitiateSeparation = isActionEnabled(
+    hrProcessPermission,
+    "initiate_separation",
+    "Separation",
+  );
+
+  const canRequestIssue = isActionEnabled(
+    helpDeskPermission,
+    "request_issue",
+    "Help Desk",
+  );
+
+  // Separation chat trigger
+  const { data: definitionName } = useDifinitaionNameForSeparation();
+  const { triggerChat } = useChatTrigger("Loading separation form...");
+  const separationDefinition = useMemo(
+    () =>
+      getDefinitionByFilter(definitionName, { triggerCategory: "Separation" }),
+    [definitionName],
+  );
+  const handleInitiateSeparation = useCallback(() => {
+    if (!effectiveEmployeeId || !separationDefinition?.name) return;
+    triggerChat({
+      doctype_name: "Employee",
+      document_name: effectiveEmployeeId,
+      definition_name: separationDefinition.name,
+      l: "true",
+    });
+  }, [triggerChat, effectiveEmployeeId, separationDefinition?.name]);
+
   const actions = [
     {
       label: "Apply Leave",
@@ -460,6 +510,27 @@ export default function DesktopDashboard() {
       bg: "bg-amber-100",
       onClick: () => navigate("/webapp/expenses-app/new-expense-advance"),
       permission: canExpenseAdvanceRequest && ExpenseAdvanceAllowed,
+    },
+    {
+      label: "Initiate Flow",
+      icon: GitBranch,
+      bg: "bg-indigo-100",
+      onClick: () => setShowInitiateFlowModal(true),
+      permission: canInitiateFlow,
+    },
+    {
+      label: "Initiate Separation",
+      icon: UserMinus,
+      bg: "bg-rose-100",
+      onClick: handleInitiateSeparation,
+      permission: canInitiateSeparation && !!separationDefinition?.name,
+    },
+    {
+      label: "Helpdesk Request",
+      icon: HeadphonesIcon,
+      bg: "bg-teal-100",
+      onClick: () => setIsRequestIssueModalOpen(true),
+      permission: canRequestIssue,
     },
   ];
 
@@ -546,8 +617,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee ? (
@@ -584,8 +656,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               )}
@@ -943,10 +1016,11 @@ export default function DesktopDashboard() {
                 </div>
 
                 <div
-                  className={`flex  h-full ${homeSummary && !homeSummary?.length
-                    ? "flex-col-reverse gap-3"
-                    : "flex-row gap-3 mt-2"
-                    }`}
+                  className={`flex  h-full ${
+                    homeSummary && !homeSummary?.length
+                      ? "flex-col-reverse gap-3"
+                      : "flex-row gap-3 mt-2"
+                  }`}
                 >
                   {canShowClockIn?.can_show && (
                     <div className="flex-1">
@@ -1024,12 +1098,13 @@ export default function DesktopDashboard() {
                         onClick={action.onClick}
                       >
                         <div
-                          className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${action.color === "primary"
-                            ? "bg-primary-100 text-primary-600"
-                            : action.color === "purple"
-                              ? "bg-purple-100 text-purple-600"
-                              : "bg-success-100 text-success"
-                            }`}
+                          className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                            action.color === "primary"
+                              ? "bg-primary-100 text-primary-600"
+                              : action.color === "purple"
+                                ? "bg-purple-100 text-purple-600"
+                                : "bg-success-100 text-success"
+                          }`}
                         >
                           <action.icon className="w-5 h-5 shadow-sm" />
                         </div>
@@ -1081,6 +1156,17 @@ export default function DesktopDashboard() {
         <Modal onClose={handleCloseAdvanceModal}>
           <AdvanceForm user={user} onClose={handleCloseAdvanceModal} />
         </Modal>
+      )}
+
+      <RequestIssueModal
+        isOpen={isRequestIssueModalOpen}
+        onClose={() => setIsRequestIssueModalOpen(false)}
+      />
+
+      {showInitiateFlowModal && (
+        <InitiateFlow
+          handleCloseModel={() => setShowInitiateFlowModal(false)}
+        />
       )}
 
       {/* Change Password modal — self-service (current / new / confirm) */}

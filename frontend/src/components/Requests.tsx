@@ -2,31 +2,41 @@ import {
   ArrowUpDown,
   Calendar,
   FileText,
+  GitBranch,
+  HeadphonesIcon,
   IndianRupee,
   ReceiptIndianRupeeIcon,
   Timer,
+  UserMinus,
   Wallet,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useTargetUser } from "../context/ViewedUserContext";
+import { usePlannedOvertimeAllowed } from "../hooks/useAttendance";
 import { useCurrentEmployeeDetails } from "../hooks/useEmployee";
+import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
+import {
+  getDefinitionByFilter,
+  useChatTrigger,
+  useDifinitaionNameForSeparation,
+} from "../hooks/useFlows";
+import { useGetUiPermission } from "../hooks/userUiPermission";
 import { useScreenSize } from "../hooks/useScreenSize";
+import { useShiftRequestConfig } from "../hooks/useShift";
+import { isActionEnabled } from "../utils/uiPermission";
 import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
 import AdvanceForm from "./Compansation/Advances/AdvanceForm";
 import Modal from "./Compansation/Advances/commonModal";
 import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
 import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
+import InitiateFlow from "./Flows/Initiate/InitiateFlow";
 import HeaderBar from "./HeaderBar";
+import RequestIssueModal from "./HelpDesk/RequestIssueModal";
 import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
-import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
-import { usePlannedOvertimeAllowed } from "../hooks/useAttendance";
-import { isActionEnabled } from "../utils/uiPermission";
-import { useGetUiPermission } from "../hooks/userUiPermission";
-import { useTargetUser } from "../context/ViewedUserContext";
 import { Typography } from "./shared/atoms/Typography";
-import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
-import { useShiftRequestConfig } from "../hooks/useShift";
+import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 
 interface RequestsProps {
   limitCards?: number;
@@ -35,8 +45,12 @@ interface RequestsProps {
 const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const { targetEmployeeId } = useTargetUser();
 
-  const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: user } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
   const { data: userUiPermission } = useGetUiPermission();
+  const { data: hrProcessPermission } = useGetUiPermission("HR Process");
+  const { data: helpDeskPermission } = useGetUiPermission("Help Desk");
 
   const effectiveEmployeeId = targetEmployeeId || user?.employee;
 
@@ -45,7 +59,7 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   );
 
   const { data: ExpenseAdvanceAllowed } = useCheckAdvancePolicy(
-    effectiveEmployeeId || ""
+    effectiveEmployeeId || "",
   );
 
   const canRequestOvertime = isActionEnabled(
@@ -91,6 +105,24 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
     "requests",
   );
 
+  const canInitiateFlow = isActionEnabled(
+    hrProcessPermission,
+    "initiate",
+    "Flow Requests",
+  );
+
+  const canInitiateSeparation = isActionEnabled(
+    hrProcessPermission,
+    "initiate_separation",
+    "Separation",
+  );
+
+  const canRequestIssue = isActionEnabled(
+    helpDeskPermission,
+    "request_issue",
+    "Help Desk",
+  );
+
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const { openModal } = useRequestLeaveModal();
@@ -100,12 +132,35 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
+  const [isRequestIssueModalOpen, setIsRequestIssueModalOpen] = useState(false);
+  const [showInitiateFlowModal, setShowInitiateFlowModal] = useState(false);
+
+  // Separation chat trigger
+  const { data: definitionName } = useDifinitaionNameForSeparation();
+  const { triggerChat, isTriggeringChat } = useChatTrigger(
+    "Loading separation form...",
+  );
+  const separationDefinition = useMemo(
+    () =>
+      getDefinitionByFilter(definitionName, { triggerCategory: "Separation" }),
+    [definitionName],
+  );
+  const handleInitiateSeparation = useCallback(() => {
+    if (!effectiveEmployeeId || !separationDefinition?.name) return;
+    triggerChat({
+      doctype_name: "Employee",
+      document_name: effectiveEmployeeId,
+      definition_name: separationDefinition.name,
+      l: "true",
+    });
+  }, [triggerChat, effectiveEmployeeId, separationDefinition]);
 
   const handleShiftForm = () => setShowShiftRequestModal(true);
   const handleCloseShiftModal = () => setShowShiftRequestModal(false);
   const handleCloseAdvanceModal = () => setShowAdvanceForm(false);
   const { data: shiftRequestConfig } = useShiftRequestConfig(
-    effectiveEmployeeId || "");
+    effectiveEmployeeId || "",
+  );
 
   const isShiftConfigEnabled =
     shiftRequestConfig?.shift_change_requests ||
@@ -140,7 +195,8 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
       icon: ArrowUpDown,
       color: "success",
       onClick: handleShiftForm,
-      permission: canShiftChangeRequest, isShiftConfigEnabled,
+      permission: canShiftChangeRequest,
+      isShiftConfigEnabled,
     },
     {
       label: "Create Loan Request",
@@ -170,6 +226,28 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
       onClick: () => navigate("/webapp/expenses-app/new-expense-advance"),
       permission: canExpenseAdvanceRequest && ExpenseAdvanceAllowed,
     },
+    {
+      label: "Initiate Flow",
+      icon: GitBranch,
+      bg: "bg-indigo-100",
+      onClick: () => setShowInitiateFlowModal(true),
+      permission: canInitiateFlow,
+    },
+    {
+      label: "Initiate Separation",
+      icon: UserMinus,
+      bg: "bg-rose-100",
+      onClick: handleInitiateSeparation,
+      permission: canInitiateSeparation && !!separationDefinition?.name,
+      loading: isTriggeringChat,
+    },
+    {
+      label: "Helpdesk Request",
+      icon: HeadphonesIcon,
+      bg: "bg-teal-100",
+      onClick: () => setIsRequestIssueModalOpen(true),
+      permission: canRequestIssue,
+    },
   ];
 
   /* ---------- Requests Cards UI ---------- */
@@ -188,7 +266,8 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
             >
               <div
                 className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110
-                ${action.bg
+                ${
+                  action.bg
                     ? `${action.bg} text-gray-700`
                     : action.color === "primary"
                       ? "bg-primary-100 text-primary-600"
@@ -199,7 +278,7 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
                           : action.color === "success"
                             ? "bg-success-100 text-success-600"
                             : "bg-gray-100 text-gray-600"
-                  }`}
+                }`}
               >
                 <action.icon className="w-5 h-5 shadow-sm" />
               </div>
@@ -254,6 +333,17 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
           <AdvanceForm user={user} onClose={handleCloseAdvanceModal} />
         </Modal>
       )}
+
+      <RequestIssueModal
+        isOpen={isRequestIssueModalOpen}
+        onClose={() => setIsRequestIssueModalOpen(false)}
+      />
+
+      {showInitiateFlowModal && (
+        <InitiateFlow
+          handleCloseModel={() => setShowInitiateFlowModal(false)}
+        />
+      )}
     </div>
   );
 
@@ -261,7 +351,7 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
 
   const mobileLayout = (
     <div className="flex flex-col min-h-fit bg-white">
-      {isRequestPage && (
+      {isRequestPage && !showInitiateFlowModal && (
         <HeaderBar title={"Requests"} onBack={() => navigate(-1)} />
       )}
 
