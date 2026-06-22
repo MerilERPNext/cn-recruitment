@@ -105,7 +105,8 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
     id: string;
     location: string;
     onEdit?: () => void;
-    itemName: string
+    itemName: string;
+    canDelete?: boolean;
   }
 
   const HierarchyCard: React.FC<HierarchyCardProps> = ({
@@ -116,7 +117,8 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
     id,
     location,
     onEdit,
-    itemName
+    itemName,
+    canDelete,
   }) => {
     const isCurrent = !endDate;
 
@@ -145,7 +147,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
                     size="xs"
                   />
                 )}
-                {id && endDate && (
+                {id && canDelete && (
                   <IconButton
                     onClick={() => setPendingDeleteId(itemName)}
                     icon={<TrashIcon className="h-4 w-4" />}
@@ -284,6 +286,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
                         id={item.records}
                         location={item.branch_name}
                         itemName={item?.name}
+                        canDelete={!!item.can_delete}
                         onEdit={() => openEditModal(category)}
                       />
                     </div>
