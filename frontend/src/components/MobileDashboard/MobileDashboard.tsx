@@ -50,6 +50,7 @@ import SideDrawer from "../../components/shared/SideDrawer";
 import ViewingAsBanner from "../../components/ViewingAsBanner";
 import MicroAppInDashboard from "../../components/DashboardComponent/MicroAppInDashboard";
 import GeoLocationModal from "./GeoLocationModal";
+import RequestIssueModal from "../../components/HelpDesk/RequestIssueModal";
 
 const MobileDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -57,6 +58,7 @@ const MobileDashboard: React.FC = () => {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [geoLocationModal, setGeoLocationModal] = useState(false);
+  const [isRequestIssueModalOpen, setIsRequestIssueModalOpen] = useState(false);
   const navigate = useNavigate();
   const fetchLocation = async () => {
     setIsLocationLoading(true);
@@ -814,6 +816,10 @@ const MobileDashboard: React.FC = () => {
           )
         }
         }
+      />
+      <RequestIssueModal
+        isOpen={isRequestIssueModalOpen}
+        onClose={() => setIsRequestIssueModalOpen(false)}
       />
     </div>
   );

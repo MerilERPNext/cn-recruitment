@@ -15,16 +15,19 @@ import {
   ChevronDown,
   Dock,
   FileText,
+  GitBranch,
+  HeadphonesIcon,
   IndianRupee,
   LogOut,
   ReceiptIndianRupeeIcon,
   RotateCcwKey,
   Timer,
   User,
+  UserMinus,
   Wallet,
   XCircle,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import defaultProfile from "../assets/face-rec.png";
@@ -70,6 +73,13 @@ import { NoticeSlide } from "./shared/molecules/NoticeSlide";
 import SearchMembers from "./shared/SearchMembers";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import ViewingAsBanner from "./ViewingAsBanner";
+import RequestIssueModal from "./HelpDesk/RequestIssueModal";
+import InitiateFlow from "./Flows/Initiate/InitiateFlow";
+import {
+  useChatTrigger,
+  useDifinitaionNameForSeparation,
+  getDefinitionByFilter,
+} from "../hooks/useFlows";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -87,6 +97,8 @@ export default function DesktopDashboard() {
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
   const handleCloseAdvanceModal = () => setShowAdvanceForm(false);
+  const [isRequestIssueModalOpen, setIsRequestIssueModalOpen] = useState(false);
+  const [showInitiateFlowModal, setShowInitiateFlowModal] = useState(false);
 
   const handleCloseShiftModal = () => {
     setShowShiftRequestModal(false);
@@ -344,6 +356,8 @@ export default function DesktopDashboard() {
     (role) => "Administrator" === role.role,
   );
   const { data: userUiPermission } = useGetUiPermission();
+  const { data: hrProcessPermission } = useGetUiPermission("HR Process");
+  const { data: helpDeskPermission } = useGetUiPermission("Help Desk");
   const user = currentEmployee;
   const effectiveEmployeeId = targetEmployeeId || user?.employee;
 
@@ -404,6 +418,41 @@ export default function DesktopDashboard() {
     "requests",
   );
 
+  const canInitiateFlow = isActionEnabled(
+    hrProcessPermission,
+    "initiate",
+    "Flow Requests",
+  );
+
+  const canInitiateSeparation = isActionEnabled(
+    hrProcessPermission,
+    "initiate_separation",
+    "Separation",
+  );
+
+  const canRequestIssue = isActionEnabled(
+    helpDeskPermission,
+    "request_issue",
+    "Help Desk",
+  );
+
+  // Separation chat trigger
+  const { data: definitionName } = useDifinitaionNameForSeparation();
+  const { triggerChat } = useChatTrigger("Loading separation form...");
+  const separationDefinition = useMemo(
+    () => getDefinitionByFilter(definitionName, { triggerCategory: "Separation" }),
+    [definitionName],
+  );
+  const handleInitiateSeparation = useCallback(() => {
+    if (!effectiveEmployeeId || !separationDefinition?.name) return;
+    triggerChat({
+      doctype_name: "Employee",
+      document_name: effectiveEmployeeId,
+      definition_name: separationDefinition.name,
+      l: "true",
+    });
+  }, [triggerChat, effectiveEmployeeId, separationDefinition?.name]);
+
   const actions = [
     {
       label: "Apply Leave",
@@ -460,6 +509,27 @@ export default function DesktopDashboard() {
       bg: "bg-amber-100",
       onClick: () => navigate("/webapp/expenses-app/new-expense-advance"),
       permission: canExpenseAdvanceRequest && ExpenseAdvanceAllowed,
+    },
+    {
+      label: "Initiate Flow",
+      icon: GitBranch,
+      bg: "bg-indigo-100",
+      onClick: () => setShowInitiateFlowModal(true),
+      permission: canInitiateFlow,
+    },
+    {
+      label: "Initiate Separation",
+      icon: UserMinus,
+      bg: "bg-rose-100",
+      onClick: handleInitiateSeparation,
+      permission: canInitiateSeparation && !!separationDefinition?.name,
+    },
+    {
+      label: "Helpdesk Request",
+      icon: HeadphonesIcon,
+      bg: "bg-teal-100",
+      onClick: () => setIsRequestIssueModalOpen(true),
+      permission: canRequestIssue,
     },
   ];
 
@@ -1081,6 +1151,15 @@ export default function DesktopDashboard() {
         <Modal onClose={handleCloseAdvanceModal}>
           <AdvanceForm user={user} onClose={handleCloseAdvanceModal} />
         </Modal>
+      )}
+
+      <RequestIssueModal
+        isOpen={isRequestIssueModalOpen}
+        onClose={() => setIsRequestIssueModalOpen(false)}
+      />
+
+      {showInitiateFlowModal && (
+        <InitiateFlow handleCloseModel={() => setShowInitiateFlowModal(false)} />
       )}
 
       {/* Change Password modal — self-service (current / new / confirm) */}
