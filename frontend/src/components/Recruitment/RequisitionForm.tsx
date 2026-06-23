@@ -96,7 +96,14 @@ function validateStep(
   }
   for (const rule of rules) {
     const val = (formData as any)[rule.key];
-    if (val === undefined || val === null || val === "") {
+    // Multi-select fields hold an empty array when nothing is selected, so an
+    // empty array must also fail the required check.
+    if (
+      val === undefined ||
+      val === null ||
+      val === "" ||
+      (Array.isArray(val) && val.length === 0)
+    ) {
       errors.push(`${rule.label} is required.`);
     }
   }
