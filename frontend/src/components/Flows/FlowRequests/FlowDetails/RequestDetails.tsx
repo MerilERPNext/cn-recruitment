@@ -67,10 +67,7 @@ const RequestDetails: React.FC = () => {
   const haveInitiatorForm =
     data?.initiator_forms && data.initiator_forms.length > 0;
 
-  const retriggerDefinitionName = data?.retrigger_definition_name || "";
-  const retriggerFunnel = data?.funnel || data?.category || "";
-  const retriggerEmployee = data?.initiated_for_employee_id || "";
-  const showRetriggerButton = canRetrigger && !!retriggerDefinitionName && !!retriggerFunnel && !!retriggerEmployee;
+  const showRetriggerButton = canRetrigger && !!id && !!data?.can_reinitiate_flow;
 
   const handleShowSelfForm = () => {
     let displayData: JsonToFormData;
@@ -308,9 +305,7 @@ const RequestDetails: React.FC = () => {
                 </Button>
                 {isDesktop && showRetriggerButton && (
                   <RetriggerButton
-                    retriggerDefinitionName={retriggerDefinitionName}
-                    retriggerFunnel={retriggerFunnel}
-                    retriggerEmployee={retriggerEmployee}
+                    funnelActivityId={id || ""}
                     employeeName={data?.initiated_for}
                   />
                 )}
@@ -322,9 +317,7 @@ const RequestDetails: React.FC = () => {
         {!isDesktop && showRetriggerButton && (
           <div className="px-4 mt-1 mb-2">
             <RetriggerButton
-              retriggerDefinitionName={retriggerDefinitionName}
-              retriggerFunnel={retriggerFunnel}
-              retriggerEmployee={retriggerEmployee}
+              funnelActivityId={id || ""}
               employeeName={data?.initiated_for}
               fullWidth
             />

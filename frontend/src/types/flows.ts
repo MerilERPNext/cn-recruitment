@@ -190,6 +190,7 @@ export type FlowRequestItem = {
 export type FlowRequestDetailItem = {
   request_id: string;
   funnel?: string;
+  can_reinitiate_flow: boolean;
   retrigger_definition_name?: string;
   flow_name: string;
   category: string;
