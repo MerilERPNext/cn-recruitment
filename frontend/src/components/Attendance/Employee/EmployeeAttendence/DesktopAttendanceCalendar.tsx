@@ -219,7 +219,15 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                 <CircleX className="w-4 h-4 text-gray-600 flex-shrink-0" />
             </div>;
         }
-        if (attendance.events?.some((e) => e.status === "Approved")) {
+        const approvedLeave = attendance.events?.find((e) => e.status === "Approved" && e.doctype === "Leave Request");
+        if (approvedLeave) {
+            return <div className="p-1 bg-yellow-50 rounded-lg">
+                <Calendar className="w-4 h-4 text-yellow-600 flex-shrink-0" />
+            </div>;
+        }
+
+        const approvedOther = attendance.events?.find((e) => e.status === "Approved" && e.doctype !== "Leave Request");
+        if (approvedOther) {
             return <div className="p-1 bg-green-50 rounded-lg">
                 <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
             </div>;
