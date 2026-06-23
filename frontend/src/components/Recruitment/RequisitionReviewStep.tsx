@@ -398,10 +398,15 @@ export default function RequisitionReviewStep({
       const stepKey = TAB_TO_STEP_KEY[tab.tab];
 
       // Scalar fields configured for this tab (dedicated-block fields skipped).
+      // Child tables (qualifications, pre-screened candidates, the position
+      // table) arrive as `fieldtype: "Table"` fields inside the tab sections on
+      // newer backends — they're rendered by their dedicated blocks below, so
+      // skip them here (else `renderValue` stringifies the array to garbage).
       const scalarFields: BackendField[] = [];
       (tab.sections || []).forEach((section) => {
         (section.fields || []).forEach((field) => {
           if (REVIEW_SKIP_SCALAR.has(field.fieldname)) return;
+          if (field.fieldtype === "Table") return;
           scalarFields.push(field);
         });
       });
