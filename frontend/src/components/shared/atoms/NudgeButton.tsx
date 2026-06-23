@@ -25,7 +25,7 @@ const NudgeButton = ({ todoId, app, page, isPending }: NudgeButtonProps) => {
   const { data: userUiPermission } = useGetUiPermission(app);
   const canNudge = isActionEnabled(userUiPermission, "nudge", page);
 
-  if (!canNudge || !todoId || !isPending) return <div className="w-[96px] h-[36px]" />;
+  if (!canNudge || !todoId || !isPending) return null;
 
   return (
     <Button

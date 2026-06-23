@@ -16,7 +16,7 @@ import { Attachment, FlowRequestStage } from "../../../../types/flows";
 import { extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
 import FormPreview from "../../../shared/molecules/FormPreview";
 import NudgeButton from "../../../shared/atoms/NudgeButton";
-
+import StageRetriggerButton from "../../StageRetriggerButton";
 
 interface CardStagesProps {
   stage: FlowRequestStage;
@@ -169,7 +169,7 @@ const CardStages = ({
           <div className="grid grid-cols-[1fr_auto] max-sm:grid-cols-1 gap-3 items-start px-4 pt-1 pb-3">
             <div className="flex flex-col items-start gap-3 max-sm:order-2">
               <div className="flex gap-3 items-center">
-                {stage?.approval_response_data && stage?.status != "Pending" ? (
+                {stage?.approval_response_data && stage?.status != "Pending" && (
                   <ViewFormButton
                     onClick={() =>
                       handleShowFormWithResponse(
@@ -178,14 +178,16 @@ const CardStages = ({
                       )
                     }
                   />
-                ) : (
-                  <div className="w-[126px] h-[36px]" />
                 )}
                 <NudgeButton
                   todoId={stage?.todo?.name}
                   app="HR Process"
                   page="Separation"
                   isPending={isActive}
+                />
+                <StageRetriggerButton
+                  todoId={stage?.todo?.name}
+                  page="Separation"
                 />
                 {canPerformActions && filteredActions.length > 0 &&
                   filteredActions.map((action: string) => (

@@ -232,13 +232,12 @@ const Separation = () => {
         >
           Activity Log
         </Button>
-        {isDesktop && !!item && canRetrigger && flowRequestData?.retrigger_definition_name && flowRequestData?.initiated_for_employee_id && (
+        {isDesktop && !!item && canRetrigger && item?.request_id && flowRequestData?.can_reinitiate_flow && (
           <RetriggerButton
-            retriggerDefinitionName={flowRequestData.retrigger_definition_name}
-            retriggerFunnel={flowRequestData.funnel || flowRequestData.category || ""}
-            retriggerEmployee={flowRequestData.initiated_for_employee_id}
-            employeeName={flowRequestData.initiated_for}
+            funnelActivityId={item.request_id}
+            employeeName={flowRequestData?.initiated_for}
             showRetriggerForText={true}
+            flowName="Separation"
             className="mr-2"
           />
         )}
@@ -253,13 +252,11 @@ const Separation = () => {
           </Button>
         )}
       </div>
-      {!isDesktop && !!item && canRetrigger && flowRequestData?.retrigger_definition_name && flowRequestData?.initiated_for_employee_id && (
+      {!isDesktop && !!item && canRetrigger && item?.request_id && flowRequestData?.can_reinitiate_flow && (
         <div className="px-4 mb-3">
           <RetriggerButton
-            retriggerDefinitionName={flowRequestData.retrigger_definition_name}
-            retriggerFunnel={flowRequestData.funnel || flowRequestData.category || ""}
-            retriggerEmployee={flowRequestData.initiated_for_employee_id}
-            employeeName={flowRequestData.initiated_for}
+            funnelActivityId={item.request_id}
+            employeeName={flowRequestData?.initiated_for}
             showRetriggerForText={true}
             fullWidth
           />

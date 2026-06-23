@@ -18,6 +18,7 @@ import ActModal from "./ActModal";
 import { handleActionType } from "../../../../hooks/userApprovalList";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
+import StageRetriggerButton from "../../StageRetriggerButton";
 
 const getIcon = (status: string) => {
     const iconProps = { size: 20, strokeWidth: 3, className: "text-white" };
@@ -320,6 +321,12 @@ const FlowTableRow = ({
                         todoId={stage?.todo?.name}
                         isPendingStatus={isPendingStatus}
                     />
+                    <div className="ml-2">
+                        <StageRetriggerButton
+                            todoId={stage?.todo?.name}
+                            page="Flow Requests"
+                        />
+                    </div>
                 </div>
                 {(stage?.approval_response_data_display || stage?.approval_response_data) && (
                     <Button
