@@ -1401,7 +1401,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "onboarding",
         element: <OnbordingFlow />,
-        permissionKey: "Flow Requests",
+        permissionKey: "Onboarding",
       },
       {
         path: "separation",
@@ -1685,7 +1685,7 @@ export const routesConfig: AppRoute[] = [
         element: <Navigate to="dashboard" replace />,
         permissionKey: "Recognition",
       },
-      
+
       {
         path: "dashboard",
         element: <VibeDashboard />,
