@@ -521,13 +521,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/performance-app/skills",
           permissionKey: "Skills And Proficiency",
         },
-
-        {
-          name: "New Goal Plan",
-          icon: Goal,
-          href: "/webapp/performance-app/new-goal-plan",
-          permissionKey: "New Goal Plan",
-        },
         {
           name: "Performance Review",
           icon: ChartNoAxesCombined,
@@ -544,7 +537,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Calibrator",
           icon: SlidersHorizontal,
           href: "/webapp/performance-app/calibrator",
-          permissionKey: "Appraisal Cycle Wizard",
+          permissionKey: "Calibrator",
           subItems: [
             {
               name: "Session",
@@ -580,7 +573,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Requisitions",
         },
         {
-          name: "Refer",
+          name: "Referrals",
           icon: UserPlus,
           href: "/webapp/recruitment/refer",
           permissionKey: "Referrals",
