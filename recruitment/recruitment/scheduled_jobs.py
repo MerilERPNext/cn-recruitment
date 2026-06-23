@@ -674,22 +674,16 @@ def should_show_separation_button():
     except Exception:
         target_employee_header = None
 
-    print("[SEP] === should_show_separation_button START ===")
-    print("[SEP] session_user:", user, "| user_employee:", user_employee)
-    print("[SEP] X-Target-Employee-Id header:", target_employee_header)
 
     if target_employee_header:
         if not frappe.db.exists("Employee", target_employee_header):
-            print("[SEP] STOP: target employee in header does not exist")
             return {"show_button": False, "error": "Target employee not found"}
         scope_employee = target_employee_header
     else:
         scope_employee = user_employee
 
-    print("[SEP] scope_employee (employee we are deciding for):", scope_employee)
 
     if not scope_employee:
-        print("[SEP] STOP: no scope_employee (caller has no Employee and no header)")
         return {"show_button": False}
 
     policies = frappe.get_all(
@@ -698,11 +692,10 @@ def should_show_separation_button():
     )
 
     current_date = getdate(today())
-    print("[SEP] today:", current_date, "| policies found:", len(policies))
 
     for policy in policies:
-        print("[SEP] --- checking policy:", policy.name, "---")
         policy_doc = frappe.get_doc("Confirmation Policy", policy.name)
+
         applicable_employees = get_applicable_employees(policy_doc)
         if not applicable_employees:
             print("[SEP]   skip: policy has no applicable employees")
@@ -711,6 +704,9 @@ def should_show_separation_button():
         if scope_employee not in applicable_employees:
             print("[SEP]   skip:", scope_employee, "not in this policy's applicable employees")
             continue
+
+        if not policy_doc.enable_separation_initiation:
+            return {"show_button": False}
 
         initiator_cfg = {}
         try:
