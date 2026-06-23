@@ -28,11 +28,20 @@ def list_openings(search_term=None):
 	`search_term` optionally filters by job code / title. Authentication is enforced
 	via the `candidate_portal_session` cookie
 	(see `recruitment.api.candidate_auth.candidate_required`).
+
+	Returns ``{"columns": [...], "openings": [...]}`` where ``columns`` is the
+	ordered set of configured list columns (``{"fieldname", "label"}``) so the
+	frontend can render the card dynamically without a separate ``list_columns``
+	call. ``openings`` is the filtered card list.
 	"""
-	extra_fields = [c["fieldname"] for c in _common.get_configured_columns(CHANNEL)]
+	columns = _common.get_configured_columns(CHANNEL)
+	extra_fields = [c["fieldname"] for c in columns]
 	names = _common.get_openings_active_on_channel(CHANNEL)
 	cards = (_common.get_opening_card(n, extra_fields=extra_fields) for n in names)
-	return [c for c in cards if c and _common.card_matches_search(c, search_term)]
+	return {
+		"columns": columns,
+		"openings": [c for c in cards if c and _common.card_matches_search(c, search_term)],
+	}
 
 
 @candidate_required
