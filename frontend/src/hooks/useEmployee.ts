@@ -126,6 +126,7 @@ export const DEFAULT_EMPLOYEE_FIELDS = [
   "custom_employment_status",
   "final_confirmation_date",
   "custom_dotted_line_manager",
+  "dotted_manager_member_id",
 ] as const;
 
 export interface EmployeeDetilsType {
@@ -166,6 +167,7 @@ export interface EmployeeDetilsType {
   final_confirmation_date: string;
 
   custom_dotted_line_manager: string | null;
+  dotted_manager_member_id: string | null;
 
   employee: string;
 

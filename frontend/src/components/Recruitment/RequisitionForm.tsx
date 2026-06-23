@@ -9,12 +9,14 @@ import {
 import {
   applyDynamicConfig,
   flattenConfig,
-  gateRuleApplies,
   childGateApplies,
+  childFieldMandatory,
+  nestedFieldMandatory,
   buildSteps,
   buildDynamicTabComponents,
   isDynamicStepKey,
   requiredRulesForDynamicTab,
+  requiredRulesForKnownTab,
   collectDynamicTabValues,
   dynamicChildGroupFieldnames,
   mergeDynamicValues,
@@ -76,21 +78,32 @@ function validateStep(
 ): string[] {
   const errors: string[] = [];
 
-  // Known-step hardcoded gate rules, plus generic required rules for a brand-new
-  // (dynamic) backend tab derived from its config.
-  const rules =
-    stepValidationRules[stepKey] ??
-    (isDynamicStepKey(stepKey)
-      ? requiredRulesForDynamicTab(stepKey, formConfig)
-      : []);
+  // Required-field rules for this step are driven ENTIRELY by the API response:
+  // a field is validated only when the backend returns it AND marks it mandatory.
+  // A field that isn't in the API config is never validated.
+  //   • dynamic (brand-new) backend tab → every field it marks mandatory.
+  //   • known tab → the fields the backend returns for that tab and marks
+  //     mandatory (mapped back to their form-data keys).
+  // Only when the config failed to load do we fall back to the static hardcoded
+  // gate list, so the form still validates offline.
+  let rules: { key: string; label: string }[];
+  if (isDynamicStepKey(stepKey)) {
+    rules = requiredRulesForDynamicTab(stepKey, formConfig);
+  } else if (formConfig) {
+    rules = requiredRulesForKnownTab(stepKey, formConfig);
+  } else {
+    rules = stepValidationRules[stepKey] ?? [];
+  }
   for (const rule of rules) {
-    // Skip the gate check for fields the backend hides or marks optional, so a
-    // backend-driven field never blocks the step. (Dynamic-tab rules are already
-    // config-derived, so they pass through.)
-    if (!isDynamicStepKey(stepKey) && !gateRuleApplies(rule.key, formConfig))
-      continue;
     const val = (formData as any)[rule.key];
-    if (val === undefined || val === null || val === "") {
+    // Multi-select fields hold an empty array when nothing is selected, so an
+    // empty array must also fail the required check.
+    if (
+      val === undefined ||
+      val === null ||
+      val === "" ||
+      (Array.isArray(val) && val.length === 0)
+    ) {
       errors.push(`${rule.label} is required.`);
     }
   }
@@ -109,16 +122,30 @@ function validateStep(
       errors.push("New Positions + Replacement Positions must equal Total Positions.");
     }
     positions.forEach((pos, i) => {
+      // Per-column required checks follow the backend child-group config: a
+      // column the backend marks optional (or omits) no longer blocks the step.
+      // vacancy_type is a structural New/Replacement control, always required.
+      // staticDefault is `!formConfig`: when the API config is loaded, a column
+      // absent from it is never required; only when config failed to load do the
+      // static defaults apply.
+      const colRequired = (fieldname: string) =>
+        childFieldMandatory(
+          "custom_position_details",
+          fieldname,
+          formConfig,
+          !formConfig
+        );
+
       if (!pos.vacancy_type) {
         errors.push(`Position ${i + 1}: Vacancy Type is required.`);
       }
-      if (!pos.location) {
+      if (colRequired("location") && !pos.location) {
         errors.push(`Position ${i + 1}: Location is required.`);
       }
-      if (!pos.functional_area) {
+      if (colRequired("functional_area") && !pos.functional_area) {
         errors.push(`Position ${i + 1}: Functional Area is required.`);
       }
-      if (!pos.reporting_manager) {
+      if (colRequired("reporting_manager") && !pos.reporting_manager) {
         errors.push(`Position ${i + 1}: Reporting Manager is required.`);
       }
       if (pos.vacancy_type === "Replacement" && !pos.replacement_for) {
@@ -135,28 +162,54 @@ function validateStep(
           formConfig
         )
       ) {
-      // Cost Center Allocation: each position must have at least one allocation
-      // with a cost center, and any partially-filled allocation row must be
-      // completed (both Cost Center and Percentage).
+      // Cost Center Allocation: required-ness follows the backend nested_fields
+      // config (custom_position_details → cost_center_allocations → cost_center /
+      // percentage). The allocation table itself is required only when the
+      // backend marks the cost_center_allocations column mandatory; each nested
+      // column is enforced only when its own is_mandatory flag is set.
       const allocations: any[] = Array.isArray(pos.cost_center_allocations)
         ? pos.cost_center_allocations
         : [];
       const isFilled = (v: any) =>
         v !== undefined && v !== null && v !== "";
+
+      const allocationRequired = childFieldMandatory(
+        "custom_position_details",
+        "cost_center_allocations",
+        formConfig,
+        !formConfig
+      );
+      const ccRequired = nestedFieldMandatory(
+        "custom_position_details",
+        "cost_center_allocations",
+        "cost_center",
+        formConfig,
+        !formConfig
+      );
+      const pctRequired = nestedFieldMandatory(
+        "custom_position_details",
+        "cost_center_allocations",
+        "percentage",
+        formConfig,
+        !formConfig
+      );
+
       const hasAllocation = allocations.some((a) => a && isFilled(a.cost_center));
-      if (!hasAllocation) {
+      if (allocationRequired && !hasAllocation) {
         errors.push(`Position ${i + 1}: Cost Center Allocation is required.`);
       }
       allocations.forEach((a, j) => {
         if (!a) return;
         const hasCC = isFilled(a.cost_center);
         const hasPct = isFilled(a.percentage);
-        if (hasCC && !hasPct) {
+        // A partially-filled allocation row must complete the columns the
+        // backend marks mandatory.
+        if (pctRequired && hasCC && !hasPct) {
           errors.push(
             `Position ${i + 1} (Allocation ${j + 1}): Percentage is required.`
           );
         }
-        if (!hasCC && hasPct) {
+        if (ccRequired && !hasCC && hasPct) {
           errors.push(
             `Position ${i + 1} (Allocation ${j + 1}): Cost Center is required.`
           );
@@ -197,8 +250,11 @@ function validateStep(
     });
   }
 
-  // Other Details: validate qualifications
-  if (stepKey === "otherDetails") {
+  // Other Details: validate qualifications — only when the API config includes
+  // the qualifications table (or the config failed to load).
+  const qualConfigured =
+    !formConfig || Boolean(formConfig.childGroups?.custom_qualifications);
+  if (stepKey === "otherDetails" && qualConfigured) {
     const qualifications = (formData as any).custom_qualifications ?? [];
     qualifications.forEach((q: any, i: number) => {
       if (!q.qualification || !q.qualification.trim()) {
@@ -1445,13 +1501,25 @@ const RequisitionForm = () => {
           functional_area: pos.functional_area,
           replacement_for:
             pos.vacancy_type === "Replacement" ? pos.replacement_for : undefined,
-          cost_center_allocations: (pos.cost_center_allocations || []).map(
+        };
+        // Only send the Cost Center Allocations child table when the backend
+        // config actually includes that column. When it's hidden (omitted under
+        // `restrict`), the backend field isn't a table and rejects a list with
+        // "Value for Cost Center Allocations cannot be a list".
+        if (
+          childGateApplies(
+            "custom_position_details",
+            "cost_center_allocations",
+            formConfig
+          )
+        ) {
+          row.cost_center_allocations = (pos.cost_center_allocations || []).map(
             (a: any) => ({
               cost_center: a.cost_center,
               percentage: a.percentage,
             })
-          ),
-        };
+          );
+        }
         // Merge any backend-declared Position column we don't map by hand.
         extraPositionKeys.forEach((k) => {
           if (pos[k] !== undefined) row[k] = pos[k];

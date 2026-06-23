@@ -37,6 +37,11 @@ export interface BackendField {
   is_nested_table?: number;
   nested_label?: string;
   nested_fields?: BackendField[];
+  // Table field declared inside a tab (e.g. the Position Details table). Newer
+  // backends return such tables here instead of under `child_groups`; their
+  // columns live in `child_fields`.
+  child_doctype?: string;
+  child_fields?: BackendField[];
 }
 
 export interface BackendSection {
@@ -175,18 +180,39 @@ export function flattenConfig(config: JobRequisitionFormConfig): FlattenedConfig
     });
   });
 
+  // Table fields declared inside tabs (e.g. custom_position_details) expose their
+  // columns via `child_fields`. Newer backends return the Position table this way
+  // instead of under `child_groups`, so normalize it into the same childGroups
+  // shape ({ group, child_doctype, fields }) the grid-column logic consumes.
+  const childGroups: Record<string, any> = { ...(config.child_groups || {}) };
+  (config.tabs || []).forEach((tab) =>
+    (tab.sections || []).forEach((section) =>
+      (section.fields || []).forEach((field) => {
+        if (
+          field.fieldtype === "Table" &&
+          Array.isArray(field.child_fields) &&
+          !childGroups[field.fieldname]
+        ) {
+          childGroups[field.fieldname] = {
+            group: field.label,
+            child_doctype: field.child_doctype,
+            fields: field.child_fields,
+          };
+        }
+      })
+    )
+  );
+
   // child_group fieldnames are also "present" (so mapped keys like custom_skills
   // that live in a child group are not hidden).
-  Object.keys(config.child_groups || {}).forEach((k) =>
-    presentFieldnames.add(k)
-  );
+  Object.keys(childGroups).forEach((k) => presentFieldnames.add(k));
 
   return {
     byFieldname,
     tabOfField,
     presentFieldnames,
     tabs: config.tabs || [],
-    childGroups: config.child_groups || {},
+    childGroups,
     restrict: Boolean(config.restrict_to_configured),
   };
 }
@@ -272,6 +298,9 @@ function filterGridColumns(
   if (!Array.isArray(components)) return components;
 
   const out: any[] = [];
+  // Static columns we've already emitted, so config-only columns (no static
+  // counterpart) can be appended afterwards.
+  const renderedKeys = new Set<string>();
   for (const comp of components) {
     const c: any = { ...comp };
     const key: string | undefined = c.key;
@@ -280,6 +309,8 @@ function filterGridColumns(
       out.push(c);
       continue;
     }
+
+    renderedKeys.add(key);
 
     const field = fieldMap.get(key);
     if (field) {
@@ -303,6 +334,21 @@ function filterGridColumns(
     if (flat.restrict) continue; // hide
     out.push(c);
   }
+
+  // Append generated columns for configured child fields that have no static
+  // counterpart (e.g. a brand-new Position column the backend added). Skip
+  // structural keys and any nested-table fields (those need a static layout).
+  fieldMap.forEach((field, fieldname) => {
+    if (renderedKeys.has(fieldname)) return;
+    if (STRUCTURAL_GRID_KEYS.has(fieldname)) return;
+    if (Array.isArray(field.nested_fields)) return;
+    const gen = generateComponent(field);
+    // Inside a grid the required asterisk is drawn in the column header, so drop
+    // the top-level `required-field` marker class (it would leak a `*` per row).
+    delete gen.customClass;
+    out.push(gen);
+  });
+
   return out;
 }
 
@@ -346,6 +392,59 @@ export function childGateApplies(
   const present = cg.fields.some((f: BackendField) => f.fieldname === fieldname);
   if (present) return true;
   return flat.restrict ? false : true;
+}
+
+// ---------------------------------------------------------------------------
+// Whether a CHILD-GROUP column (e.g. a Position table column) should be
+// validated as required, following the backend config:
+//   • config not loaded / child group untouched → static default.
+//   • column absent from the child group         → hidden ⇒ not required.
+//   • column present                             → follow its is_mandatory flag.
+// ---------------------------------------------------------------------------
+export function childFieldMandatory(
+  childGroupKey: string,
+  fieldname: string,
+  flat: FlattenedConfig | null,
+  staticDefault: boolean
+): boolean {
+  if (!flat) return staticDefault;
+  const cg = flat.childGroups?.[childGroupKey];
+  if (!cg || !Array.isArray(cg.fields)) return staticDefault;
+  const field = cg.fields.find((f: BackendField) => f.fieldname === fieldname);
+  if (!field) return false; // not configured ⇒ hidden ⇒ not required
+  return Boolean(field.is_mandatory);
+}
+
+// ---------------------------------------------------------------------------
+// Whether a NESTED-TABLE column (e.g. the Cost Center / Percentage columns
+// inside a Position row's Cost Center Allocations table) should be validated as
+// required, following the backend `nested_fields` config — the same logic as
+// childFieldMandatory, one level deeper:
+//   • config not loaded / child group untouched → static default.
+//   • nested table or column absent from the config → not required.
+//   • column present                              → follow its is_mandatory flag.
+// ---------------------------------------------------------------------------
+export function nestedFieldMandatory(
+  childGroupKey: string,
+  nestedTableFieldname: string,
+  fieldname: string,
+  flat: FlattenedConfig | null,
+  staticDefault: boolean
+): boolean {
+  if (!flat) return staticDefault;
+  const cg = flat.childGroups?.[childGroupKey];
+  if (!cg || !Array.isArray(cg.fields)) return staticDefault;
+  const nestedTable = cg.fields.find(
+    (f: BackendField) => f.fieldname === nestedTableFieldname
+  );
+  if (!nestedTable || !Array.isArray(nestedTable.nested_fields)) {
+    return staticDefault;
+  }
+  const field = nestedTable.nested_fields.find(
+    (f: BackendField) => f.fieldname === fieldname
+  );
+  if (!field) return false; // not configured ⇒ hidden ⇒ not required
+  return Boolean(field.is_mandatory);
 }
 
 // ---------------------------------------------------------------------------
@@ -763,6 +862,35 @@ export function requiredRulesForDynamicTab(
   (tab.sections || []).forEach((section) =>
     (section.fields || []).forEach((f) => {
       if (f.is_mandatory) rules.push({ key: f.fieldname, label: f.label });
+    })
+  );
+  return rules;
+}
+
+// Required-field gate rules for a KNOWN tab (basicDetails / jobDetails /
+// positionSelection / otherDetails), derived from the backend config so the Next
+// button blocks on EVERY field the backend marks mandatory — not just the
+// hardcoded gate list in RequisitionForm. Keys are mapped to the form-data key
+// (so the value reads back correctly), and child-group / count fields are
+// skipped (the Position table, qualifications, etc. carry their own validation).
+// Returns [] when the config isn't loaded, preserving the static behavior.
+export function requiredRulesForKnownTab(
+  stepKey: string,
+  flat: FlattenedConfig | null
+): { key: string; label: string }[] {
+  if (!flat) return [];
+  const tabName = Object.keys(TAB_TO_STEP_KEY).find(
+    (t) => TAB_TO_STEP_KEY[t] === stepKey
+  );
+  if (!tabName) return [];
+  const tab = flat.tabs.find((t) => t.tab === tabName);
+  if (!tab) return [];
+  const rules: { key: string; label: string }[] = [];
+  (tab.sections || []).forEach((section) =>
+    (section.fields || []).forEach((f) => {
+      if (!f.is_mandatory) return;
+      if (KNOWN_CHILD_GROUP_FIELDS.has(f.fieldname)) return;
+      rules.push({ key: formKeyForFieldname(f.fieldname), label: f.label });
     })
   );
   return rules;
