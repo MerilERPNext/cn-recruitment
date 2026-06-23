@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import type React from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   fetchApprovalFields,
   updateFieldApprovalStatus,
@@ -135,6 +136,14 @@ export function useApprovalActions(
   showToast: (msg: string, type?: ToastType) => void
 ): UseApprovalActionsReturn {
 
+  const queryClient = useQueryClient();
+
+  // Any field-status change affects the onboarding list view's progress, so
+  // invalidate that list query to trigger a refetch.
+  const refetchOnboardingList = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["onboarding"] });
+  }, [queryClient]);
+
   // ── Single field approve / reject ──────────────────────────────────────────
 
   const singleAction = useCallback(
@@ -144,6 +153,7 @@ export function useApprovalActions(
       try {
         await updateFieldApprovalStatus(onboardingName, fieldname, status, comment);
         patchFieldState(fieldname, { status, loading: false });
+        refetchOnboardingList();
         showToast(`"${fieldname}" ${status.toLowerCase()}`, "success");
       } catch (err: unknown) {
         patchFieldState(fieldname, { loading: false });
@@ -151,7 +161,7 @@ export function useApprovalActions(
         showToast(`Error: ${msg}`, "error");
       }
     },
-    [onboardingName, patchFieldState, showToast]
+    [onboardingName, patchFieldState, showToast, refetchOnboardingList]
   );
 
   // ── Bulk selected fields approve / reject — uses new dedicated endpoint ────
@@ -171,6 +181,7 @@ export function useApprovalActions(
           patchFieldState(fn, { status, loading: false })
         );
 
+        refetchOnboardingList();
         showToast(
           `${fieldnames.length} field${fieldnames.length > 1 ? "s" : ""} ${status.toLowerCase()}`,
           "success"
@@ -181,7 +192,7 @@ export function useApprovalActions(
         showToast(`Error: ${msg}`, "error");
       }
     },
-    [onboardingName, patchFieldState, showToast]
+    [onboardingName, patchFieldState, showToast, refetchOnboardingList]
   );
 
   // ── Section approve / reject ───────────────────────────────────────────────
@@ -194,13 +205,14 @@ export function useApprovalActions(
         const sectionFields = sections[sectionName]?.fields ?? [];
         sectionFields.forEach((f) => patchFieldState(f.fieldname, { status }));
 
+        refetchOnboardingList();
         showToast(`Section "${sectionName}" ${status.toLowerCase()}`, "success");
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Request failed";
         showToast(`Error: ${msg}`, "error");
       }
     },
-    [onboardingName, sections, patchFieldState, showToast]
+    [onboardingName, sections, patchFieldState, showToast, refetchOnboardingList]
   );
 
   // ── Bulk approve ALL pending fields across entire document ─────────────────
@@ -219,12 +231,13 @@ export function useApprovalActions(
         return next;
       });
 
+      refetchOnboardingList();
       showToast("All pending fields approved", "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Request failed";
       showToast(`Error: ${msg}`, "error");
     }
-  }, [onboardingName, setFieldStates, showToast]);
+  }, [onboardingName, setFieldStates, showToast, refetchOnboardingList]);
 
   return {
     singleAction,
