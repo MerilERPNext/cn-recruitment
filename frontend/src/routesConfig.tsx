@@ -1389,7 +1389,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "onboarding",
         element: <OnbordingFlow />,
-        permissionKey: "Flow Requests",
+        permissionKey: "Onboarding",
       },
       {
         path: "separation",

@@ -787,15 +787,21 @@ def _child_columns(child_doctype, ov=None):
         return []
 
     selected, mandatory = None, set()
+    # `configured` = the child-columns picker has been used for this table. When
+    # so, the picker's Mandatory selection is AUTHORITATIVE (an unticked column
+    # is is_mandatory:0, even if it's `reqd` on the child doctype). When the
+    # picker was never used, we fall back to the child meta's own `reqd`.
+    configured = False
     if ov is not None:
         sel = ov.get("selected_child_fields")
+        man = ov.get("mandatory_child_fields")
+        configured = bool(sel) or bool(man)
         if sel:
             try:
                 parsed = set(json.loads(sel))
                 selected = parsed or None
             except Exception:
                 selected = None
-        man = ov.get("mandatory_child_fields")
         if man:
             try:
                 parsed = json.loads(man)
@@ -809,12 +815,16 @@ def _child_columns(child_doctype, ov=None):
             continue
         if selected is not None and df.fieldname not in selected:
             continue
+        if configured:
+            is_mandatory = 1 if df.fieldname in mandatory else 0
+        else:
+            is_mandatory = 1 if df.reqd else 0
         col = {
             "fieldname": df.fieldname,
             "label": (df.label or df.fieldname).strip(),
             "fieldtype": df.fieldtype,
             "options": df.options or "",
-            "is_mandatory": 1 if (df.fieldname in mandatory or df.reqd) else 0,
+            "is_mandatory": is_mandatory,
             "read_only": int(df.read_only or 0),
             "depends_on": df.get("depends_on") or "",
             "mandatory_depends_on": df.get("mandatory_depends_on") or "",
