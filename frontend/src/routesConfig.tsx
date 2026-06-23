@@ -1643,12 +1643,12 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/recognition/hall-of-fame",
     element: <HallOfFamePage />,
-    permissionKey: "Recognition",
+    permissionKey: "Hall Of Fame",
   },
   {
     path: "/webapp/recognition/leaderboard",
     element: <LeaderboardPage />,
-    permissionKey: "Recognition",
+    permissionKey: "Leader Board",
   },
 
   {
@@ -1666,47 +1666,47 @@ export const routesConfig: AppRoute[] = [
       {
         path: "dashboard",
         element: <VibeDashboard />,
-        permissionKey: "Recognition",
+        permissionKey: "Dashboard",
       },
       {
         path: "my-appreciations-history",
         element: <MyAppreciationsHistory />,
-        permissionKey: "Recognition",
+        permissionKey: "My Appreciations History",
       },
       {
         path: "feed",
         element: <VibeFeed />,
-        permissionKey: "Recognition",
+        permissionKey: "Feed",
       },
       {
         path: "appreciations-leaderboard",
         element: <AppreciationsLeaderboard />,
-        permissionKey: "Recognition",
+        permissionKey: "Appreciations Leaderboard",
       },
       {
         path: "awards-live",
         element: <AwardsLivePrograms />,
-        permissionKey: "Recognition",
+        permissionKey: "Awards Live",
       },
       {
         path: "awards-history",
         element: <AwardsHistory />,
-        permissionKey: "Recognition",
+        permissionKey: "Awards History",
       },
       {
         path: "nomination-workflows",
         element: <AwardsNominationWorkflows />,
-        permissionKey: "Recognition",
+        permissionKey: "Nomination Workflows",
       },
       {
         path: "earned-points",
         element: <EarnedPointsSummary />,
-        permissionKey: "Recognition",
+        permissionKey: "Earned Points",
       },
       {
         path: "admin-dashboard",
         element: <RecognitionAdminDashboard />,
-        permissionKey: "Recognition",
+        permissionKey: "Admin Dashboard",
       },
     ],
   },
