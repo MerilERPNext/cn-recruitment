@@ -190,6 +190,7 @@ export type FlowRequestItem = {
 export type FlowRequestDetailItem = {
   request_id: string;
   funnel?: string;
+  can_reinitiate_flow: boolean;
   retrigger_definition_name?: string;
   flow_name: string;
   category: string;
@@ -231,6 +232,11 @@ export type WorkflowStage = {
   trigger_title: string;
   can_act: boolean;
   role?: string | null;
+  can_retrigger?: boolean;
+  has_dependents?: boolean;
+  dependent_stage_names?: string[];
+  funnel_task?: string;
+  reinitiated_on?: string | null;
   todo: {
     name: string;
     owner: string;

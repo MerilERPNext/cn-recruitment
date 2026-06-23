@@ -18,6 +18,7 @@ export type NodeData = {
   image?: string | null;
   isDottedLine?: boolean;
   onCollapse?: () => void;
+  onExpandChildren?: (id: string) => void;
 };
 
 export type DottedLineChipData = {

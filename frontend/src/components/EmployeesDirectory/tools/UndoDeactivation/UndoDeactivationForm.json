@@ -5,7 +5,7 @@
     "display": "form",
     "components": [
         {
-            "label": "Comment",
+            "label": "Comment (Optional)",
             "key": "comment",
             "type": "textfield",
             "placeholder": "Re-hired on new contract",

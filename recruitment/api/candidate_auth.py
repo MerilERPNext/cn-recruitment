@@ -376,6 +376,42 @@ def set_password(password):
     return {"status": "success", "user": _public_candidate(candidate.name)}
 
 
+@candidate_required
+def change_password(current_password, new_password, confirm_password=None):
+    """Change password for the authenticated candidate from the profile page."""
+    candidate = frappe.get_doc("Candidate Portal User", get_current_candidate())
+
+    current_password = (current_password or "").strip()
+    new_password = new_password or ""
+    confirm_password = new_password if confirm_password is None else confirm_password
+
+    if not current_password:
+        frappe.throw(_("Current password is required."))
+    if not new_password:
+        frappe.throw(_("New password is required."))
+    if new_password != confirm_password:
+        frappe.throw(_("New password and confirm password do not match."))
+    if not _candidate_has_password(candidate):
+        frappe.throw(
+            _("This account has not finished password setup yet. Please use the set password flow first."),
+            frappe.PermissionError,
+        )
+
+    _verify_candidate_password(candidate, current_password)
+    if _check_password(new_password, candidate.get_password("password_hash") or candidate.password_hash):
+        frappe.throw(_("New password must be different from the current password."))
+
+    candidate.password_hash = _hash_password(new_password)
+    candidate.password_updated_at = now_datetime()
+    candidate.require_password_reset = 0
+    if candidate.status == "Pending Verification":
+        candidate.status = "Active"
+    candidate.email_verified = 1
+    candidate.save(ignore_permissions=True)
+    frappe.db.commit()
+    return {"status": "success", "message": _("Password updated successfully."), "user": _public_candidate(candidate.name)}
+
+
 @frappe.whitelist(allow_guest=True)
 def me():
     token = _get_session_cookie()
@@ -390,6 +426,33 @@ def me():
     session.last_seen_at = now_datetime()
     session.save(ignore_permissions=True)
     return {"user": _public_candidate(session.candidate), "session_id": session.name}
+
+
+@candidate_required
+def update_me(data=None):
+    """Patch the authenticated candidate's editable profile fields."""
+    candidate_name = get_current_candidate()
+    doc = frappe.get_doc("Candidate Portal User", candidate_name)
+
+    if isinstance(data, str):
+        try:
+            data = frappe.parse_json(data)
+        except Exception:
+            frappe.throw(_("Invalid data format. Expected JSON object."))
+
+    if not isinstance(data, dict) or not data:
+        frappe.throw(_("Profile update payload is required."))
+
+    updates = _sanitize_candidate_profile_update(data, doc)
+    if not updates:
+        frappe.throw(_("No editable profile fields were provided."))
+
+    for fieldname, value in updates.items():
+        doc.set(fieldname, value)
+
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+    return {"status": "success", "user": _public_candidate(doc.name)}
 
 
 @frappe.whitelist()
@@ -670,16 +733,52 @@ def _verify_candidate_password(candidate, password):
         frappe.throw(_("Invalid email or password."), frappe.AuthenticationError)
 
 
+def _resolve_candidate_full_name(values):
+    """Prefer the candidate's real name from their Job Applicant record
+    (applicant_name + custom_applicant_last_name) so the dashboard shows the full
+    name instead of the signup email prefix.
+
+    In this flow the Job Applicant (and offer) exist before the candidate logs in,
+    so the name is available. Resolution order: the Candidate Portal User's linked
+    `job_applicant`, then the most recent Job Applicant matching the candidate's
+    email. Returns None when nothing usable is found (callers fall back to the CPU
+    full_name / email). Best-effort — never raises, so `me`/login can't break."""
+    try:
+        job_applicant = values.get("job_applicant")
+        if not job_applicant and values.get("email"):
+            job_applicant = frappe.db.get_value(
+                "Job Applicant", {"email_id": values.get("email")}, "name", order_by="creation desc"
+            )
+        if not job_applicant:
+            return None
+        row = frappe.db.get_value(
+            "Job Applicant", job_applicant,
+            ["applicant_name", "custom_applicant_last_name"],
+            as_dict=True,
+        )
+        if not row:
+            return None
+        full = " ".join(
+            part for part in [
+                (row.applicant_name or "").strip(),
+                (row.custom_applicant_last_name or "").strip(),
+            ] if part
+        ).strip()
+        return full or None
+    except Exception:
+        return None
+
+
 def _public_candidate(candidate):
     values = frappe.db.get_value(
         "Candidate Portal User",
         candidate,
-        ["name", "email", "full_name", "mobile_no", "status", "email_verified", "require_password_reset"],
+        ["name", "email", "full_name", "mobile_no", "avatar_url", "status", "email_verified", "require_password_reset", "job_applicant"],
         as_dict=True,
     )
     if not values:
         return None
-    full_name = values.full_name or values.email
+    full_name = _resolve_candidate_full_name(values) or values.full_name or values.email
     doc = frappe.get_doc("Candidate Portal User", values.name)
     password_setup_required = not _candidate_has_password(doc) or bool(cint(values.require_password_reset))
     return {
@@ -689,13 +788,49 @@ def _public_candidate(candidate):
         "full_name": full_name,
         "first_name": _split_name(full_name)[0],
         "last_name": _split_name(full_name)[1],
+        "mobile_no": values.mobile_no,
+        "avatar_url": values.avatar_url,
         "enabled": values.status == "Active",
         "status": values.status,
         "password_setup_required": password_setup_required,
         "user_type": "Candidate Portal User",
         "roles": ["Candidate"],
-        "user_metadata": {"full_name": full_name, "email": values.email, "avatar_url": None},
+        "user_metadata": {"full_name": full_name, "email": values.email, "avatar_url": values.avatar_url},
     }
+
+
+def _sanitize_candidate_profile_update(data, doc):
+    updates = {}
+
+    raw_full_name = data.get("full_name")
+    raw_first_name = data.get("first_name")
+    raw_last_name = data.get("last_name")
+    if raw_full_name is not None or raw_first_name is not None or raw_last_name is not None:
+        if raw_full_name is not None:
+            full_name = " ".join((str(raw_full_name) or "").split()).strip()
+        else:
+            first = " ".join((str(raw_first_name) or "").split()).strip()
+            last = " ".join((str(raw_last_name) or "").split()).strip()
+            full_name = " ".join(part for part in (first, last) if part).strip()
+        if not full_name:
+            frappe.throw(_("Full name cannot be empty."))
+        updates["full_name"] = full_name
+
+    if "mobile_no" in data:
+        mobile_no = (str(data.get("mobile_no") or "")).strip()
+        if mobile_no and not re.fullmatch(r"[0-9]{10,15}", mobile_no):
+            frappe.throw(_("Mobile number must contain 10 to 15 digits."))
+        updates["mobile_no"] = mobile_no
+
+    if "avatar_url" in data:
+        avatar_url = (str(data.get("avatar_url") or "")).strip()
+        updates["avatar_url"] = avatar_url
+
+    # Block accidental email changes through this endpoint.
+    if "email" in data and (str(data.get("email") or "").strip().lower() != (doc.email or "").strip().lower()):
+        frappe.throw(_("Email cannot be changed from the profile page."))
+
+    return updates
 
 
 def _set_session_cookie(token, settings):

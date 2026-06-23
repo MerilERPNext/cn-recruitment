@@ -8,7 +8,15 @@ from frappe.model.document import Document
 
 
 class TAInterviewStrategyTemplate(Document):
-	pass
+	def validate(self):
+		# Keep a single default — checking this one clears the flag on the rest.
+		if self.is_default:
+			for name in frappe.get_all(
+				"TA Interview Strategy Template",
+				filters={"is_default": 1, "name": ["!=", self.name]},
+				pluck="name",
+			):
+				frappe.db.set_value("TA Interview Strategy Template", name, "is_default", 0)
 
 
 @frappe.whitelist()
@@ -188,7 +196,8 @@ def get_hiring_stages_for_job_opening(job_opening=None, doc=None):
 	applies when one of those assignments' `assignment_conditions` (department,
 	designation, location, company, etc.) is satisfied by the Job Opening's own
 	field values. When more than one template matches, the most recently
-	created one wins.
+	created one wins. If no template's conditions match, the template flagged
+	`is_default` is used as a fallback (if one is set).
 
 	`doc` (JSON of the live form) is preferred so unsaved openings match too;
 	otherwise the saved Job Opening named by `job_opening` is loaded.
@@ -204,11 +213,15 @@ def get_hiring_stages_for_job_opening(job_opening=None, doc=None):
 
 	templates = frappe.get_all(
 		"TA Interview Strategy Template",
-		fields=["name"],
+		fields=["name", "is_default"],
 		order_by="creation desc",
 	)
 
+	# The default template is reserved purely as a fallback — it never competes
+	# in condition matching, so a specific template always wins when it applies.
 	for tpl in templates:
+		if tpl.is_default:
+			continue
 		template_doc = frappe.get_doc("TA Interview Strategy Template", tpl.name)
 		if _template_matches(template_doc, opening):
 			return {
@@ -216,5 +229,22 @@ def get_hiring_stages_for_job_opening(job_opening=None, doc=None):
 				"template_name": template_doc.template_name,
 				"stages": _map_rounds_to_stages(template_doc),
 			}
+
+	# No conditional match — fall back to the default template, if one is set.
+	default = frappe.get_all(
+		"TA Interview Strategy Template",
+		filters={"is_default": 1},
+		fields=["name"],
+		order_by="creation desc",
+		limit=1,
+	)
+	if default:
+		default_doc = frappe.get_doc("TA Interview Strategy Template", default[0].name)
+		return {
+			"template": default_doc.name,
+			"template_name": default_doc.template_name,
+			"stages": _map_rounds_to_stages(default_doc),
+			"is_default": True,
+		}
 
 	return {"template": None, "stages": []}

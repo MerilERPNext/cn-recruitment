@@ -11,6 +11,7 @@
   "email",
   "full_name",
   "mobile_no",
+  "avatar_url",
   "column_break_identity",
   "status",
   "email_verified",
@@ -45,6 +46,7 @@
   {"fieldname": "email", "fieldtype": "Data", "in_global_search": 1, "in_list_view": 1, "in_standard_filter": 1, "label": "Email", "reqd": 1, "unique": 1},
   {"fieldname": "full_name", "fieldtype": "Data", "in_global_search": 1, "in_list_view": 1, "label": "Full Name"},
   {"fieldname": "mobile_no", "fieldtype": "Data", "in_standard_filter": 1, "label": "Mobile No"},
+  {"fieldname": "avatar_url", "fieldtype": "Attach Image", "label": "Avatar"},
   {"fieldname": "column_break_identity", "fieldtype": "Column Break"},
   {"default": "Pending Verification", "fieldname": "status", "fieldtype": "Select", "in_list_view": 1, "in_standard_filter": 1, "label": "Status", "options": "Pending Verification\nActive\nDisabled\nLocked", "reqd": 1},
   {"default": "0", "fieldname": "email_verified", "fieldtype": "Check", "in_standard_filter": 1, "label": "Email Verified"},
@@ -73,6 +75,7 @@
   {"fieldname": "last_login_ip_address", "fieldtype": "Data", "label": "Last Login IP Address", "read_only": 1},
   {"fieldname": "last_login_user_agent", "fieldtype": "Small Text", "label": "Last Login User Agent", "read_only": 1}
  ],
+ "image_field": "avatar_url",
  "index_web_pages_for_search": 0,
  "links": [],
  "modified": "2026-05-16 00:00:00.000000",

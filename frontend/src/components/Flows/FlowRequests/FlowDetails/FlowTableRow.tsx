@@ -26,6 +26,7 @@ import ReviewForm from "../../Separation/components/ReviewForm";
 import ActModal from "./ActModal";
 import AttachmentPreview from "./AttachmentPreview";
 import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
+import StageRetriggerButton from "../../StageRetriggerButton";
 
 const FlowTableRow = ({
   stage,
@@ -77,6 +78,7 @@ const FlowTableRow = ({
   const { data: currentUser } = useCurrentUser();
 
   const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
+  const isPendingStatus = ["pending", "open"].includes(stage.status?.toLowerCase());
   const allocatedToUserArray = extractAllocatedToUserArray(allocatedTo.users);
   const canPerformActions = useMemo(() => {
     if (!isActive || !stage.can_act) return false;
@@ -222,9 +224,13 @@ const FlowTableRow = ({
               }
             }}
 
-            isPendingStatus={stage.status === "Pending"}
+            isPendingStatus={isPendingStatus}
             todoId={stage?.todo?.name}
 
+          />
+          <StageRetriggerButton
+            todoId={stage?.todo?.name}
+            page="Flow Requests"
           />
           {(stage?.approval_response_data_display ||
             stage?.approval_response_data) && (

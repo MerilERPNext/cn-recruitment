@@ -14,6 +14,7 @@ import { FormIOForm } from "../../../utils/flowUtils";
 import AttachmentPreview from "../FlowRequests/FlowDetails/AttachmentPreview";
 import FormPreview from "../../shared/molecules/FormPreview";
 import NudgeButton from "../../shared/atoms/NudgeButton";
+import StageRetriggerButton from "../StageRetriggerButton";
 
 type handleActPropsType = {
   name: string;
@@ -163,7 +164,7 @@ const StageCard: React.FC<StageCardProps> = ({
         <div className="grid grid-cols-[1fr_auto] max-sm:grid-cols-1 gap-3 items-start px-4 pt-1 pb-3">
           <div className="flex flex-col items-start gap-3 max-sm:order-2">
             <div className="flex gap-3 items-center">
-              {stage?.approval_response_data && stage?.status != "pending" ? (
+              {stage?.approval_response_data && stage?.status != "pending" && (
                 <ViewFormButton
                   onClick={() =>
                     handleShowFormWithResponse(
@@ -172,8 +173,6 @@ const StageCard: React.FC<StageCardProps> = ({
                     )
                   }
                 />
-              ) : (
-                <div className="w-[126px] h-[36px]" />
               )}
 
               <NudgeButton
@@ -181,6 +180,10 @@ const StageCard: React.FC<StageCardProps> = ({
                 app="HR Process"
                 page="Confirmation"
                 isPending={status === "action_required"}
+              />
+              <StageRetriggerButton
+                todoId={stage?.todo?.name}
+                page="Confirmation"
               />
               {canPerformAction && status === "action_required" && filteredActions.length > 0 && (
                 filteredActions.map((action: string) => (

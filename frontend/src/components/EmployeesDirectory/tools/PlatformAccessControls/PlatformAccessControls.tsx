@@ -38,7 +38,7 @@ const PlatformAccessControls: React.FC<PlatformAccessControlsProps> = ({ isOpen,
                             },
                             {
                                 onSuccess: () => {
-                                    toast.success("Self service status updated successfully.");
+                                    toast.success("Platform Access Controls updated successfully.");
                                     onClose();
                                     resolve();
                                 },
@@ -57,7 +57,7 @@ const PlatformAccessControls: React.FC<PlatformAccessControlsProps> = ({ isOpen,
                 toast.error("Please correct the errors in the form.");
                 throw error;
             }
-        }, "Updating self service status...");
+        }, "Updating Platform Access Controls...");
     };
 
     if (!isOpen) return null;

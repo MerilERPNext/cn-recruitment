@@ -48,7 +48,16 @@ export interface YearOption {
 }
 
 export interface FlexiLockingPeriodVisibility {
-  visibility: boolean;
+  // The backend returns { message: { ... } }; callMethod unwraps one level, so
+  // the consumable shape is the nested object below.
+  message: {
+    status: "success" | "failed";
+    /** Human-readable window text incl. the dates to submit FlexiBenefit by. */
+    message: string;
+    flexibenefit_enabled?: number;
+    declaration_enabled?: number;
+    income_tax_enabled?: number;
+  };
 }
 
 export interface FlexiLockingPeriod extends Record<string, unknown> {

@@ -19,6 +19,7 @@ interface MultiSelectProps<T extends Option> {
     onSearchChange?: (value: string) => void;
     isLoading?: boolean;
     renderOption?: (option: T) => React.ReactNode;
+    searchKeys?: (keyof T)[];
 }
 
 const MultiSelect = <T extends Option>({
@@ -35,6 +36,7 @@ const MultiSelect = <T extends Option>({
     onSearchChange,
     isLoading,
     renderOption,
+    searchKeys,
 }: MultiSelectProps<T>) => {
     const [query, setQuery] = useState("");
     const [open, setOpen] = useState(false);
@@ -44,13 +46,19 @@ const MultiSelect = <T extends Option>({
 
     /* ---------- calculate filtered options ---------- */
     const filteredOptions = useMemo(
-        () =>
-            options.filter(
-                (opt) =>
-                    String(opt[labelKey]).toLowerCase().includes(query.toLowerCase()) &&
-                    !selected.some((s) => s[valueKey] === opt[valueKey])
-            ),
-        [options, labelKey, query, selected, valueKey]
+        () => {
+            const keysToSearch = searchKeys || [labelKey];
+            return options.filter(
+                (opt) => {
+                    const searchStr = query.toLowerCase();
+                    const matchesSearch = keysToSearch.some((key) =>
+                        String(opt[key]).toLowerCase().includes(searchStr)
+                    );
+                    return matchesSearch && !selected.some((s) => s[valueKey] === opt[valueKey]);
+                }
+            );
+        },
+        [options, labelKey, query, selected, valueKey, searchKeys]
     );
 
     /* ---------- click outside ---------- */

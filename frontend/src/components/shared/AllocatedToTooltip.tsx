@@ -17,6 +17,7 @@ interface AllocatedToTooltipProps {
     position?: "top" | "bottom" | "left" | "right";
     showUserRoleLables?: boolean;
     RoleAssignedUsers?: RoleAssignedUsersType[];
+    overrideDesignation?: string;
 }
 
 type NormalizedUser = {
@@ -37,6 +38,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
     position = "top",
     showUserRoleLables = false,
     RoleAssignedUsers,
+    overrideDesignation,
 }) => {
     const [selectedRoleData, setSelectedRoleData] = useState<RoleAssignedUsersType | null>(null);
     const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
@@ -55,7 +57,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
                         if (typeof v === "string") {
                             const name = v.trim();
-                            return name ? { name } : null;
+                            return name ? { name, designation: overrideDesignation } : null;
                         }
 
                         if (typeof v === "object") {
@@ -64,7 +66,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
                             return {
                                 name,
-                                designation: v.designation_name?.trim() || undefined,
+                                designation: overrideDesignation || v.designation_name?.trim() || undefined,
                                 employee: v.employee?.trim() || undefined,
                             };
                         }
@@ -75,7 +77,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
             }
 
             const str = String(value).trim();
-            return str ? [{ name: str }] : [];
+            return str ? [{ name: str, designation: overrideDesignation }] : [];
         };
 
         const merged = [
@@ -97,7 +99,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
         }
 
         return deduped;
-    }, [users, allocated_to_user, username, allocated_to]);
+    }, [users, allocated_to_user, username, allocated_to, overrideDesignation]);
 
     /** Merge roles + role + RoleAssignedUsers.role → deduped array */
     const rolesArray: string[] = React.useMemo(() => {

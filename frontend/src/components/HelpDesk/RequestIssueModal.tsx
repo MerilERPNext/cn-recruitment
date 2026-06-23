@@ -21,6 +21,7 @@ import { getRequiredKeys } from "../../utils/formioUtils";
 import { useFileUploader } from "../../hooks/useFileUploader";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { FormioPreviewItem, FormioPreviewPortal } from "../shared/molecules/FormioPreview";
+import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
 
 interface RequestIssueModalProps {
   isOpen: boolean;
@@ -52,7 +53,8 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [formioFiles, setFormioFiles] = useState<File[]>([]);
 
-
+  const { data: currentUser } = useCurrentUser();
+  const currentUserIsAdmin = isAdminUser(currentUser ?? null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: creationFormJson, isLoading: creationFormJsonLoading } = useGetCreationFormJson({ category, sub_category: subcategory });
@@ -311,23 +313,47 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     }
   };
 
-  // Build description with attachments embedded as HTML
-  const buildDescriptionWithAttachments = (desc: string, files: UploadedFile[]): string => {
-    if (files.length === 0) return desc;
+  // Escape HTML special characters to prevent XSS
+  const escapeHtml = (text: string): string => {
+    return (text || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
 
-    // Append attachments as HTML links at the end of description
-    let attachmentHtml = '<br/><br/><div class="attachments"><strong>Attachments:</strong><ul>';
-    files.forEach((file) => {
-      const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.file_name);
-      if (isImage) {
-        attachmentHtml += `<li><a href="${file.file_url}" target="_blank"><img src="${file.file_url}" alt="${file.file_name}" style="max-width: 300px; max-height: 200px;" /><br/>${file.file_name}</a></li>`;
-      } else {
-        attachmentHtml += `<li><a href="${file.file_url}" target="_blank">${file.file_name}</a></li>`;
-      }
-    });
-    attachmentHtml += '</ul></div>';
+  // Build structured description with separate heading/value sections
+  const buildStructuredDescription = (
+    titleText: string,
+    desc: string,
+    files: UploadedFile[]
+  ): string => {
+    let html = '';
 
-    return desc + attachmentHtml;
+    // Title section
+    html += '<div><strong>Title:</strong></div><div>' + escapeHtml(titleText) + '</div>';
+
+    // Description section
+    html += '<br/><div><strong>Description:</strong></div><div>' + escapeHtml(desc) + '</div>';
+
+    // Attachments section
+    if (files.length > 0) {
+      html += '<br/><div><strong>Attachments:</strong></div><ul>';
+      files.forEach((file) => {
+        const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.file_name);
+        const escapedUrl = escapeHtml(file.file_url);
+        const escapedName = escapeHtml(file.file_name);
+        if (isImage) {
+          html += '<li><a href="' + escapedUrl + '" target="_blank"><img src="' + escapedUrl + '" alt="' + escapedName + '" style="max-width: 300px; max-height: 200px;" /><br/>' + escapedName + '</a></li>';
+        } else {
+          html += '<li><a href="' + escapedUrl + '" target="_blank">' + escapedName + '</a></li>';
+        }
+      });
+      html += '</ul>';
+    }
+
+    return html;
   };
 
   // Handle submit
@@ -408,15 +434,16 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
       loadingContext.hide();
     }
 
-    // Embed attachments in description as HTML
-    const descriptionWithAttachments = buildDescriptionWithAttachments(
+    // Build structured description with title, description, and attachments separated
+    const structuredDescription = buildStructuredDescription(
+      title.trim(),
       description.trim(),
       finalAttachments
     );
     const payload = {
       doc: {
         subject: title.trim(),
-        description: descriptionWithAttachments,
+        description: structuredDescription,
         custom_category: category || undefined,
         custom_sub_category: subcategory || undefined,
         custom_rasied_for: raisedFor,
@@ -430,6 +457,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     };
 
     try {
+      loadingContext.show("Creating Ticket");
       const res = await createTicketMutation.mutateAsync(payload) as { doctype?: string, name?: string };
 
       if (!res?.doctype || !res?.name) {
@@ -525,7 +553,50 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
 
         {/* Body */}
         <div className="px-6 py-4 overflow-y-auto flex-1">
-          {/* Row 1: Title and Category */}
+
+          {/* Row 1: Raised For and Employee (Admin only) */}
+          {currentUserIsAdmin && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              {/* Raised For */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Raised For
+                </label>
+                <div className="relative">
+                  <select
+                    value={raisedFor}
+                    onChange={(e) => {
+                      setRaisedFor(e.target.value as "Myself" | "Others");
+                      if (e.target.value === "Myself") {
+                        setSelectedEmployee("");
+                      }
+                    }}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 appearance-none bg-white"
+                  >
+                    <option value="Myself">Myself</option>
+                    <option value="Others">Others</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Employee Dropdown (conditional) */}
+              {raisedFor === "Others" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Select Employee<span className="text-red-500">*</span>
+                  </label>
+                  <EmployeeSelect
+                    value={selectedEmployee}
+                    onChange={(val) => setSelectedEmployee(val)}
+                    placeholder="Select Employee"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Row 2: Title and Category */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             {/* Title */}
             <div>
@@ -565,7 +636,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             </div>
           </div>
 
-          {/* Row 2: Subcategory (always show when category is selected) */}
+          {/* Row 3: Subcategory (always show when category is selected) */}
           {category && subcategories.length > 0 && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -591,46 +662,6 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
               </div>
             </div>
           )}
-
-          {/* Row 3: Raised For and Employee */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            {/* Raised For */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Raised For
-              </label>
-              <div className="relative">
-                <select
-                  value={raisedFor}
-                  onChange={(e) => {
-                    setRaisedFor(e.target.value as "Myself" | "Others");
-                    if (e.target.value === "Myself") {
-                      setSelectedEmployee("");
-                    }
-                  }}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 appearance-none bg-white"
-                >
-                  <option value="Myself">Myself</option>
-                  <option value="Others">Others</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Employee Dropdown (conditional) */}
-            {raisedFor === "Others" && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Select Employee<span className="text-red-500">*</span>
-                </label>
-                <EmployeeSelect
-                  value={selectedEmployee}
-                  onChange={(val) => setSelectedEmployee(val)}
-                  placeholder="Select Employee"
-                />
-              </div>
-            )}
-          </div>
 
           {/* Description */}
           <div className="mb-4">
@@ -661,22 +692,19 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isDragging
+              className={`border-2 border-dashed rounded-lg px-4 py-3 transition-colors cursor-pointer ${isDragging
                 ? "border-primary-500 bg-primary-50"
                 : "border-gray-300 hover:border-gray-400"
                 }`}
+              onClick={() => fileInputRef.current?.click()}
             >
-              <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-              <p className="text-sm text-gray-600">
-                Drag and Drop here or{" "}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-primary-600 hover:text-primary-700 font-medium"
-                >
-                  Choose file
-                </button>
-              </p>
+              <div className="flex items-center justify-center gap-2">
+                <Upload className="w-5 h-5 text-gray-400 shrink-0" />
+                <p className="text-sm text-gray-500">
+                  Drag & drop or{" "}
+                  <span className="text-primary-600 font-medium">browse</span>
+                </p>
+              </div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -692,9 +720,9 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                 {attachments.map((file, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg min-w-0"
                   >
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <AttachmentCard
                         fileUrl={file.file_url}
                         fileName={file.file_name}
@@ -703,7 +731,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                     </div>
                     <button
                       onClick={() => removeAttachment(index)}
-                      className="p-1 text-gray-400 hover:text-red-600 ml-2"
+                      className="p-1 text-gray-400 hover:text-red-600 ml-2 shrink-0"
                       title="Remove attachment"
                     >
                       <Trash2 className="w-4 h-4" />

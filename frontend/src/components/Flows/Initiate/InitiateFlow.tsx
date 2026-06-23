@@ -2,7 +2,7 @@ import { Search, X } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 import RequestTypeCard from "./RequestTypeCard";
 import HeaderBar from "../../HeaderBar";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useFlowConfigSelfTriggerList, useFlowConfigOthersTriggerList } from "../../../hooks/useFlows";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
@@ -45,12 +45,11 @@ const CardsSkeletonGrid = () => (
 const InitiateFlow: React.FC<InitiateFlowProps> = ({
   handleCloseModel = () => void 0,
 }) => {
-  const navigate = useNavigate();
   const location = useLocation();
 
-  const handlGoBack = () => {
+  const handlGoBack = (navigateBack: () => void) => {
     if (location.pathname === "/webapp/flow-app/initiate-flow") {
-      navigate(-1);
+      navigateBack();
     } else {
       handleCloseModel();
     }
@@ -200,11 +199,11 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
           {isViewingOtherUser && impersonatedEmployee && (
             <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                <span className="text-sm text-blue-900">
-                  Showing actions for{" "}
-                  <span className="font-semibold">
-                   {impersonatedEmployee.employee_name || impersonatedEmployee.name}
-                 </span>
+              <span className="text-sm text-blue-900">
+                Showing actions for{" "}
+                <span className="font-semibold">
+                  {impersonatedEmployee.employee_name || impersonatedEmployee.name}
+                </span>
                 {impersonatedEmployee.employee_name && (
                   <span className="text-blue-600 ml-1">({impersonatedEmployee.name})</span>
                 )}

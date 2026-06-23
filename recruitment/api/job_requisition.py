@@ -178,6 +178,9 @@ def _validate(payload):
     if missing:
         frappe.throw(_("Missing required fields: {0}").format(", ".join(missing)))
 
+    # Enforce any parent fields the default form config marks Required.
+    _enforce_config_mandatory(frappe.new_doc(JOB_REQUISITION), payload)
+
     positions = _list_field(payload, "custom_position_details")
     if not positions:
         frappe.throw(_("At least one position is required in `custom_position_details`."))
@@ -340,7 +343,7 @@ def _drop_invalid_link_values(doc, payload):
     the requisition still saves.
     """
     meta = doc.meta
-    for field in PARENT_WRITABLE_FIELDS:
+    for field in _get_writable_parent_fields(doc):
         value = payload.get(field)
         if value in (None, ""):
             continue
@@ -352,6 +355,69 @@ def _drop_invalid_link_values(doc, payload):
                 )
             )
             payload.pop(field, None)
+
+
+def _get_writable_parent_fields(doc):
+    """Effective parent write allowlist = the curated PARENT_WRITABLE_FIELDS
+    baseline, adjusted by the settings doc's config overrides:
+
+      - `expose = Hide` or `read_only_override = Read Only`  → drop the field.
+      - `expose = Show` (and not read-only)                  → add the field,
+        provided it is a real, non-managed, non-readonly data field on the meta.
+
+    The curated tuple stays the safe default — config can only *narrow* it or
+    *deliberately* widen it to a vetted field. Falls back to the plain tuple
+    when no form is configured or meta lookups fail (zero-risk migration)."""
+    overrides = _load_form_overrides()
+    if not overrides:
+        return list(PARENT_WRITABLE_FIELDS)
+
+    writable = list(PARENT_WRITABLE_FIELDS)
+    writable_set = set(writable)
+
+    # Narrow: hide / force-read-only removes from the allowlist.
+    for (applies_to, fieldname), row in overrides.items():
+        if applies_to != "Parent" or fieldname not in writable_set:
+            continue
+        if (row.get("expose") == "Hide") or (row.get("read_only_override") == "Read Only"):
+            writable.remove(fieldname)
+            writable_set.discard(fieldname)
+
+    # Widen: an explicitly-shown, editable, real data field becomes writable.
+    meta = doc.meta
+    for (applies_to, fieldname), row in overrides.items():
+        if applies_to != "Parent" or fieldname in writable_set:
+            continue
+        if row.get("expose") != "Show" or row.get("read_only_override") == "Read Only":
+            continue
+        if fieldname in FRAPPE_MANAGED_FIELDS or fieldname in PARENT_READONLY_FIELDS:
+            continue
+        df = meta.get_field(fieldname)
+        if df and df.fieldtype not in _LAYOUT_TYPES and not df.get("read_only"):
+            writable.append(fieldname)
+            writable_set.add(fieldname)
+
+    return writable
+
+
+def _enforce_config_mandatory(doc, payload):
+    """Server-side check of fields the settings doc marks `mandatory_override =
+    Required` (parent group). Meta-mandatory fields are NOT enforced here —
+    several are auto-filled on save (e.g. `description`) — so only the config's
+    explicit Required set is checked, keeping the rule predictable and in one
+    place that the frontend reads too."""
+    overrides = _load_form_overrides()
+    if not overrides:
+        return
+    missing = []
+    for (applies_to, fieldname), row in overrides.items():
+        if applies_to != "Parent" or row.get("mandatory_override") != "Required":
+            continue
+        if payload.get(fieldname) in (None, "", []):
+            df = doc.meta.get_field(fieldname)
+            missing.append(df.label if df and df.label else fieldname)
+    if missing:
+        frappe.throw(_("Missing required fields: {0}").format(", ".join(missing)))
 
 
 def _apply_parent_fields(doc, payload):
@@ -375,7 +441,7 @@ def _apply_parent_fields(doc, payload):
 
     _drop_invalid_link_values(doc, payload)
 
-    for field in PARENT_WRITABLE_FIELDS:
+    for field in _get_writable_parent_fields(doc):
         if field in FRAPPE_MANAGED_FIELDS:
             continue  # safety guard — should never be in PARENT_WRITABLE_FIELDS
         value = payload.get(field)
@@ -613,6 +679,548 @@ def _build_requisition_doc(payload, positions_for_location):
         )
 
     return doc
+
+
+# ---------------------------------------------------------------------------
+# META-FIRST FORM CONFIG
+# ---------------------------------------------------------------------------
+#
+# The external "Raise a Requisition" form renders from the Job Requisition
+# DocType meta (tabs, sections, fields, mandatory, options) — NOT from a
+# re-declared field list. A `Job Requisition Form` config record only stores
+# *overrides* (hide / force-mandatory / relabel / regroup / restrict child
+# columns); a field with no override row follows the meta exactly. This keeps
+# the form in lock-step with the doctype: add a field in Customize Form and it
+# appears automatically, no second table to maintain.
+#
+# `get_job_requisition_form_config` is the read/render surface.
+# `_get_writable_parent_fields` makes the write allowlist config-aware.
+
+JOB_REQUISITION_FORM_SETTINGS = "Job Requisition Form Settings"
+
+# Layout-only fieldtypes never rendered as inputs (mirrors candidate_portal).
+_LAYOUT_TYPES = frozenset({
+    "Column Break", "Tab Break", "Section Break", "HTML", "HTML Editor",
+    "Button", "Fold", "Heading", "Break", "Image", "Signature", "Color",
+    "Barcode", "Geolocation",
+})
+
+# Bookkeeping / framework fields never exposed on the external form.
+_SKIP_FIELDNAMES = frozenset({
+    "naming_series", "amended_from", "amendment_date",
+    "status", "workflow_state",
+})
+
+# `applies_to` value (config) → parent Table fieldname on Job Requisition.
+# The child DocType is resolved from meta at runtime (never hardcoded) so this
+# keeps working if a table's child doctype is renamed.
+_CHILD_TABLE_BY_GROUP = {
+    "Position Details": "custom_position_details",
+    "Position Summary": "custom_position_summary",
+    "Qualifications": "custom_qualifications",
+    "Skills": "custom_skills",
+    "Pre-screened Candidates": "custom_pre_screened_candidates",
+}
+
+# Virtual "table inside a table" columns. These are stored as a JSON string in a
+# Long Text field on a child row (NOT a real Frappe child table), so meta alone
+# can't tell the frontend they're a sub-table. We declare the inner schema here
+# so the form config can describe the nested editor, while the existing
+# serialise/deserialise helpers keep handling the JSON <-> list conversion on
+# read/write. `cost_center_allocations` lives on Position Details rows and holds
+# a list of {cost_center, percentage}.
+_VIRTUAL_NESTED_TABLES = {
+    "cost_center_allocations": {
+        "label": "Cost Center Allocation",
+        "fields": [
+            {"fieldname": "cost_center", "label": "Cost Center",
+             "fieldtype": "Link", "options": "Cost Center", "is_mandatory": 1},
+            {"fieldname": "percentage", "label": "Percentage (%)",
+             "fieldtype": "Float", "is_mandatory": 1},
+        ],
+    },
+}
+
+
+def _get_form_settings():
+    """The single Job Requisition Form Settings doc, or None when it can't be
+    read (e.g. before the doctype is migrated). Cached per request."""
+    try:
+        return frappe.get_cached_doc(JOB_REQUISITION_FORM_SETTINGS)
+    except Exception:
+        return None
+
+
+def _load_form_overrides(settings=None):
+    """Overrides keyed by (applies_to, fieldname) → row dict, read from the
+    single settings doc. Empty dict when nothing is configured — callers then
+    fall back to pure meta. Never raises."""
+    settings = settings or _get_form_settings()
+    if not settings:
+        return {}
+    overrides = {}
+    for row in settings.get("field_overrides") or []:
+        key = (row.get("applies_to") or "Parent", row.get("fieldname"))
+        if key[1]:
+            overrides[key] = row
+    return overrides
+
+
+def _three_state(override_value, meta_value, on, off):
+    """Resolve a 3-state Select override against a 0/1 meta default.
+    `Default` → meta_value; `on` → 1; `off` → 0."""
+    if override_value == on:
+        return 1
+    if override_value == off:
+        return 0
+    return int(meta_value or 0)
+
+
+def _child_columns(child_doctype, ov=None):
+    """Render-ready column list for a child doctype, meta-first, with optional
+    per-column overrides (hide / force-mandatory / relabel / restrict set)."""
+    if not child_doctype:
+        return []
+    try:
+        meta = frappe.get_meta(child_doctype)
+    except Exception:
+        return []
+
+    selected, mandatory = None, set()
+    # `configured` = the child-columns picker has been used for this table. When
+    # so, the picker's Mandatory selection is AUTHORITATIVE (an unticked column
+    # is is_mandatory:0, even if it's `reqd` on the child doctype). When the
+    # picker was never used, we fall back to the child meta's own `reqd`.
+    configured = False
+    if ov is not None:
+        sel = ov.get("selected_child_fields")
+        man = ov.get("mandatory_child_fields")
+        configured = bool(sel) or bool(man)
+        if sel:
+            try:
+                parsed = set(json.loads(sel))
+                selected = parsed or None
+            except Exception:
+                selected = None
+        if man:
+            try:
+                parsed = json.loads(man)
+                mandatory = set(parsed) if isinstance(parsed, list) else set()
+            except Exception:
+                mandatory = set()
+
+    columns = []
+    for df in meta.fields:
+        if df.fieldtype in _LAYOUT_TYPES or not df.fieldname or df.get("hidden"):
+            continue
+        if selected is not None and df.fieldname not in selected:
+            continue
+        if configured:
+            is_mandatory = 1 if df.fieldname in mandatory else 0
+        else:
+            is_mandatory = 1 if df.reqd else 0
+        col = {
+            "fieldname": df.fieldname,
+            "label": (df.label or df.fieldname).strip(),
+            "fieldtype": df.fieldtype,
+            "options": df.options or "",
+            "is_mandatory": is_mandatory,
+            "read_only": int(df.read_only or 0),
+            "depends_on": df.get("depends_on") or "",
+            "mandatory_depends_on": df.get("mandatory_depends_on") or "",
+        }
+        # A JSON-backed sub-table (e.g. cost_center_allocations): expose its inner
+        # schema so the frontend renders a nested row editor. Stored value is a
+        # list of dicts matching `nested_fields` (handled by the
+        # serialise/deserialise helpers on read/write).
+        _apply_nested_table(col, df.fieldname)
+        columns.append(col)
+    return columns
+
+
+def _apply_nested_table(col, fieldname):
+    """Augment a column dict with virtual sub-table schema when applicable."""
+    nested = _VIRTUAL_NESTED_TABLES.get(fieldname)
+    if nested:
+        col["is_nested_table"] = 1
+        col["nested_label"] = nested["label"]
+        col["nested_fields"] = nested["fields"]
+
+
+def _child_group_fields(child_doctype, group, overrides, restrict):
+    """Columns for a child-table group, config-driven.
+
+    When the settings doc has override rows for this group (applies_to == group),
+    ONLY those columns are returned — in their configured order, honouring
+    Hide / mandatory / read-only / label / options overrides. This is what makes
+    removing a child column in the builder actually drop it from the API.
+
+    When the group has no override rows: empty in restrict mode (nothing
+    configured), else meta-first (all columns) so an unconfigured table still
+    renders fully."""
+    try:
+        cmeta = frappe.get_meta(child_doctype)
+    except Exception:
+        return []
+
+    group_rows = sorted(
+        [(fn, row) for (grp, fn), row in overrides.items() if grp == group],
+        key=lambda x: int(x[1].get("order") or 0),
+    )
+    if not group_rows:
+        return [] if restrict else _child_columns(child_doctype)
+
+    cols = []
+    for fn, row in group_rows:
+        if (row.get("expose") or "Default") == "Hide":
+            continue
+        df = cmeta.get_field(fn)
+        if not df:
+            continue
+        col = {
+            "fieldname": fn,
+            "label": (row.get("label_override") or df.label or fn).strip(),
+            "fieldtype": df.fieldtype,
+            "options": row.get("options_override") or df.options or "",
+            "is_mandatory": _three_state(row.get("mandatory_override"), df.reqd, "Required", "Optional"),
+            "read_only": _three_state(row.get("read_only_override"), df.read_only, "Read Only", "Editable"),
+            "depends_on": df.get("depends_on") or "",
+            "mandatory_depends_on": df.get("mandatory_depends_on") or "",
+        }
+        _apply_nested_table(col, fn)
+        cols.append(col)
+    return cols
+
+
+def _build_form_config(doc=None):
+    """Meta-first tabs → sections → fields tree for the Job Requisition form,
+    with the single settings doc's overrides applied. Parent fields come from
+    the doctype layout; child tables are emitted both inline (as a Table field)
+    and collected under `child_groups` for convenience.
+
+    When `Show Only Configured Fields` is on, a parent field is rendered only
+    when it has a config row (strict allowlist); otherwise the whole doctype is
+    rendered minus any field marked Hide.
+
+    When `doc` (a Job Requisition) is passed, each field carries its current
+    `value`, so one call powers the edit screen (config + data)."""
+    settings = _get_form_settings()
+    overrides = _load_form_overrides(settings)
+    restrict = bool(settings and settings.get("restrict_to_configured"))
+    meta = frappe.get_meta(JOB_REQUISITION)
+
+    tab_order, tab_map = [], {}
+    current_tab, current_section = "", ""
+
+    for df in meta.fields:
+        if df.fieldtype == "Tab Break":
+            current_tab = (df.label or "").strip()
+            current_section = ""
+            continue
+        if df.fieldtype == "Section Break":
+            current_section = (df.label or "").strip()
+            continue
+        if df.fieldtype in _LAYOUT_TYPES or not df.fieldname:
+            continue
+        if df.fieldname in _SKIP_FIELDNAMES:
+            continue
+
+        ov = overrides.get(("Parent", df.fieldname))
+        # Strict allowlist: only configured fields are rendered.
+        if restrict and ov is None:
+            continue
+        expose = (ov.get("expose") if ov else None) or "Default"
+        if expose == "Hide":
+            continue
+        if not restrict and expose != "Show" and df.get("hidden"):
+            continue
+
+        tab_lbl = (ov.get("tab_override") if ov else "") or current_tab
+        sec_lbl = (ov.get("section_override") if ov else "") or current_section
+
+        entry = {
+            "fieldname": df.fieldname,
+            "label": (ov.get("label_override") if ov else "") or (df.label or df.fieldname).strip(),
+            "fieldtype": df.fieldtype,
+            "options": (ov.get("options_override") if ov else "") or df.options or "",
+            "is_mandatory": _three_state(ov.get("mandatory_override") if ov else None, df.reqd, "Required", "Optional"),
+            "read_only": _three_state(ov.get("read_only_override") if ov else None, df.read_only, "Read Only", "Editable"),
+            "depends_on": df.get("depends_on") or "",
+            "mandatory_depends_on": df.get("mandatory_depends_on") or "",
+            "length": df.get("length") or 0,
+            "order": int(ov.get("order") or 0) if ov else 0,
+        }
+        if doc is not None:
+            entry["value"] = doc.get(df.fieldname)
+
+        if df.fieldtype in ("Table", "Table MultiSelect") and df.options:
+            entry["child_doctype"] = df.options
+            entry["child_fields"] = _child_columns(df.options, ov)
+
+        tab = tab_map.setdefault(tab_lbl, {"order": [], "map": {}})
+        if tab_lbl not in tab_order:
+            tab_order.append(tab_lbl)
+        if sec_lbl not in tab["map"]:
+            tab["map"][sec_lbl] = []
+            tab["order"].append(sec_lbl)
+        tab["map"][sec_lbl].append(entry)
+
+    tabs = []
+    for tab_lbl in tab_order:
+        tab = tab_map[tab_lbl]
+        sections = []
+        for sec_lbl in tab["order"]:
+            fields = tab["map"][sec_lbl]
+            # Stable sort: explicit `order` first (non-zero), meta order otherwise.
+            fields.sort(key=lambda f: (f["order"] == 0, f["order"]))
+            sections.append({"section": sec_lbl, "fields": fields})
+        tabs.append({"tab": tab_lbl, "sections": sections})
+
+    # Child-table groups, config-driven: only the columns placed in the builder
+    # for each group are returned (so removing one drops it from the response).
+    child_groups = {}
+    for group, table_field in _CHILD_TABLE_BY_GROUP.items():
+        tdf = meta.get_field(table_field)
+        if not tdf or tdf.fieldtype not in ("Table", "Table MultiSelect") or not tdf.options:
+            continue
+        fields = _child_group_fields(tdf.options, group, overrides, restrict)
+        # Drop a group entirely when restrict is on and nothing is configured for it.
+        if restrict and not fields:
+            continue
+        child_groups[table_field] = {
+            "group": group,
+            "child_doctype": tdf.options,
+            "fields": fields,
+        }
+
+    return {
+        "settings": JOB_REQUISITION_FORM_SETTINGS,
+        "restrict_to_configured": restrict,
+        "tabs": tabs,
+        "child_groups": child_groups,
+    }
+
+
+@frappe.whitelist()
+def get_job_requisition_form_config(name=None):
+    """Render config for the external Job Requisition form, driven by the single
+    `Job Requisition Form Settings` doc.
+
+    - `name` optional — a Job Requisition id; when passed, fields carry their
+      current `value` so the same call powers the edit screen.
+
+    Returns the project response envelope with
+    `{settings, restrict_to_configured, tabs:[{tab, sections:[{section,
+    fields:[...]}]}], child_groups}`.
+    """
+    try:
+        doc = None
+        if name:
+            if not frappe.db.exists(JOB_REQUISITION, name):
+                return _err(_("Job Requisition not found: {0}").format(name), http=404)
+            doc = frappe.get_doc(JOB_REQUISITION, name)
+            doc.check_permission("read")
+
+        config = _build_form_config(doc=doc)
+        return _ok(message=_("Form configuration fetched."), data=config, http=200)
+    except frappe.PermissionError as exc:
+        return _err(str(exc) or _("Not permitted."), http=403)
+    except Exception as exc:
+        frappe.log_error(frappe.get_traceback(), "get_job_requisition_form_config failed")
+        return _err(_("Failed to build form configuration: {0}").format(str(exc)), http=500)
+
+
+@frappe.whitelist()
+def get_available_job_requisition_fields():
+    """Flat meta dump of Job Requisition (parent + the four child tables), so a
+    config UI / the frontend can discover the full field inventory. Mirrors
+    candidate_portal.get_available_job_applicant_fields."""
+    frappe.has_permission(JOB_REQUISITION_FORM_SETTINGS, "read", throw=True)
+    try:
+        meta = frappe.get_meta(JOB_REQUISITION)
+    except Exception:
+        return {"status": "error", "message": _("Could not read Job Requisition meta.")}
+
+    parent_fields, current_tab, current_section = [], "", ""
+    for df in meta.fields:
+        if df.fieldtype == "Tab Break":
+            current_tab = (df.label or "").strip()
+            current_section = ""
+            continue
+        if df.fieldtype == "Section Break":
+            current_section = (df.label or "").strip()
+            continue
+        if df.fieldtype in _LAYOUT_TYPES or not df.fieldname or df.fieldname in _SKIP_FIELDNAMES:
+            continue
+        parent_fields.append({
+            "fieldname": df.fieldname,
+            "label": (df.label or df.fieldname).strip(),
+            "fieldtype": df.fieldtype,
+            "tab_label": current_tab,
+            "section_label": current_section,
+            "options": df.options or "",
+            "reqd": df.reqd or 0,
+            "hidden": int(df.get("hidden") or 0),
+        })
+
+    child_fields = {}
+    for group, table_field in _CHILD_TABLE_BY_GROUP.items():
+        tdf = meta.get_field(table_field)
+        if tdf and tdf.fieldtype in ("Table", "Table MultiSelect") and tdf.options:
+            child_fields[group] = {
+                "table_field": table_field,
+                "child_doctype": tdf.options,
+                "fields": _child_columns(tdf.options),
+            }
+
+    return {
+        "status": "success",
+        "parent_fields": parent_fields,
+        "child_fields": child_fields,
+        "total": len(parent_fields),
+    }
+
+
+# Explicit map of the live React "Raise a Requisition" form (the 5-step wizard:
+# Basic Details → Job Details → Position Selection → Other Details → Review).
+# Each section is (tab, section, [(applies_to, fieldname, label, mandatory), ...]).
+# This is the source of truth for the seed so the Settings doctype mirrors what
+# the frontend renders today — exact labels, grouping and required marks. Fields
+# are emitted only when they actually exist on the doctype, so a label tweak can
+# never break the seed.
+_SEED_LAYOUT = [
+    ("Basic Details", "", [
+        ("Parent", "requested_by", "Hiring Manager", True),
+        ("Parent", "company", "Company", True),
+        ("Parent", "department", "Department", True),
+        ("Parent", "designation", "Designation", True),
+        ("Parent", "custom_functional_area", "Functional Area", True),
+    ]),
+    ("Job Details", "", [
+        ("Parent", "custom_experience_range_from", "Experience Range - From", False),
+        ("Parent", "custom_experience_range_to", "To", False),
+        ("Parent", "custom_experience_unit", "Unit", False),
+        ("Parent", "custom_salary_range_currency", "Salary Range (Currency)", True),
+        ("Parent", "custom_salary_range_min", "Salary Range (Min)", True),
+        ("Parent", "custom_salary_range_max", "Salary Range (Max)", True),
+        ("Parent", "custom_salary_timeframe", "Salary Timeframe", True),
+        ("Parent", "posting_date", "Recruitment Start Date", False),
+        ("Parent", "custom_hiring_lead", "Hiring Lead", False),
+    ]),
+    ("Job Details", "Recruiter Instructions", [
+        ("Parent", "expected_by", "Expected By Date", True),
+        ("Parent", "custom_employment_type_link", "Employment Type (Link)", True),
+        ("Parent", "custom_location", "Work Location", True),
+        ("Parent", "custom_preferred_notice_period", "Preferred Notice Period", False),
+        ("Parent", "custom_preferred_company", "Preferred Target Company", False),
+        ("Parent", "custom_other_preferred_companies", "Other Preferred Companies", False),
+        ("Parent", "custom_additional_skills", "Required Skills", False),
+        ("Parent", "custom_additional_roles__responsibilities", "Position Specific Requirements", False),
+    ]),
+    ("Position Selection", "", [
+        ("Parent", "no_of_positions", "Total Position", True),
+    ]),
+    ("Position Selection", "Position Details", [
+        ("Position Details", "position_no", "Position Number", False),
+        ("Position Details", "vacancy_type", "Vacancy Type", True),
+        ("Position Details", "location", "Location", True),
+        ("Position Details", "functional_area", "Functional Area", True),
+        ("Position Details", "reporting_manager", "Reporting Manager", True),
+        ("Position Details", "replacement_for", "Replacement For", False),
+        ("Position Details", "employee_type", "Employee Type", False),
+        ("Position Details", "cost_center_allocations", "Cost Center Allocations", False),
+    ]),
+    ("Other Details", "", [
+        ("Parent", "custom_comments__instructions", "Comments / Instruction", False),
+    ]),
+    ("Other Details", "Qualifications", [
+        ("Qualifications", "qualification", "Qualification", False),
+        ("Qualifications", "mandatory", "Mandatory?", False),
+    ]),
+    ("Other Details", "Pre-Screened Candidates", [
+        ("Pre-screened Candidates", "candidate_name", "Candidate Name", False),
+        ("Pre-screened Candidates", "email", "Email", False),
+        ("Pre-screened Candidates", "phone", "Phone", False),
+        ("Pre-screened Candidates", "cv", "Attachment", False),
+        ("Pre-screened Candidates", "offer_directly", "Offer Directly?", False),
+    ]),
+]
+
+
+def _field_exists(meta, applies_to, fieldname):
+    """True when `fieldname` is a real field on the parent (applies_to=='Parent')
+    or on the child doctype behind the named group."""
+    if applies_to == "Parent":
+        return bool(meta.get_field(fieldname))
+    table_field = _CHILD_TABLE_BY_GROUP.get(applies_to)
+    tdf = meta.get_field(table_field) if table_field else None
+    if not tdf or not tdf.options:
+        return False
+    try:
+        return bool(frappe.get_meta(tdf.options).get_field(fieldname))
+    except Exception:
+        return False
+
+
+def _build_seed_rows():
+    """Materialise the live form (`_SEED_LAYOUT`) as override rows for the
+    settings doctype, skipping any field that doesn't exist on the doctype."""
+    meta = frappe.get_meta(JOB_REQUISITION)
+    rows = []
+    order = 0
+    for tab, section, fields in _SEED_LAYOUT:
+        for applies_to, fieldname, label, mandatory in fields:
+            if not _field_exists(meta, applies_to, fieldname):
+                continue
+            order += 10
+            rows.append({
+                "applies_to": applies_to,
+                "fieldname": fieldname,
+                "label_override": label,
+                "tab_override": tab,
+                "section_override": section,
+                "order": order,
+                "expose": "Show",
+                "mandatory_override": "Required" if mandatory else "Default",
+                "read_only_override": "Default",
+            })
+    return rows
+
+
+def seed_form_settings(overwrite=False):
+    """Populate the single settings doc from `_build_seed_rows`. Returns the
+    number of rows written, or -1 when it already had rows and overwrite is off
+    (so the caller can avoid clobbering manual edits)."""
+    settings = frappe.get_single(JOB_REQUISITION_FORM_SETTINGS)
+    if settings.get("field_overrides") and not overwrite:
+        return -1
+    rows = _build_seed_rows()
+    settings.set("field_overrides", [])
+    for row in rows:
+        settings.append("field_overrides", row)
+    settings.restrict_to_configured = 1
+    settings.save(ignore_permissions=True)
+    return len(rows)
+
+
+@frappe.whitelist()
+def load_current_form_into_settings(overwrite=0):
+    """Desk action (builder button): fill the Settings doc with the current
+    Job Requisition form so it can be shared / edited. `overwrite=1` replaces
+    existing rows."""
+    frappe.has_permission(JOB_REQUISITION_FORM_SETTINGS, "write", throw=True)
+    try:
+        written = seed_form_settings(overwrite=frappe.utils.cint(overwrite))
+        if written == -1:
+            return _err(
+                _("Settings already has fields. Pass overwrite=1 to replace them."),
+                http=409,
+            )
+        frappe.db.commit()
+        return _ok(_("Loaded {0} fields from the current form.").format(written), {"count": written}, http=200)
+    except Exception as exc:
+        frappe.log_error(frappe.get_traceback(), "load_current_form_into_settings failed")
+        return _err(_("Failed to load current form: {0}").format(str(exc)), http=500)
 
 
 # ---------------------------------------------------------------------------
@@ -1881,3 +2489,28 @@ def _enforce_replacement_restriction(doc, rows, settings):
                     _("Replacement employee {0} (position {1}) must belong to the same group "
                       "company as the requisition.").format(emp, idx)
                 )
+def get_replacement_employee_options(
+    search_text=None, query=None, txt=None, limit=20, include=None,
+    department=None, designation=None, location=None, company=None, functional_area=None,
+):
+    """Employee options for the 'Replacement For' field, limited to the allowed
+    replacement statuses and the role's department, designation, location,
+    company and functional area when supplied. Same shape as
+    get_link_field_options."""
+    filters = {"status": ["in", get_allowed_replacement_employee_statuses()]}
+
+    dimensions = {
+        "department": department,
+        "designation": designation,
+        "branch": location,
+        "company": company,
+        "custom_functional_area": functional_area,
+    }
+    for fieldname, value in dimensions.items():
+        if value:
+            filters[fieldname] = value
+
+    return get_link_field_options(
+        "Employee", search_text=search_text, query=query, txt=txt,
+        limit=limit, include=include, filters=filters,
+    )

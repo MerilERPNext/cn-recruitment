@@ -25,21 +25,20 @@ import {
   ListTodo,
   ReceiptIndianRupee,
   SeparatorHorizontal,
-
+  Share2,
   Sheet,
+  Shield,
   SlidersHorizontal,
+  SquarePlus,
+  Telescope,
   Timer,
+  Upload,
   User,
+  UserPlus,
   Users,
+  UserSearch,
   Wallet,
   Workflow,
-  Telescope,
-  Shield,
-  Share2,
-  SquarePlus,
-  UserSearch,
-  UserPlus,
-  Upload,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -95,12 +94,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     logged_in_employee_details: true,
   });
 
-
   const currentEmployeeCompany = currentEmployee?.company;
   const { data: singleCompanyLogo } = useSingleCompanyLogo(
-
     currentEmployeeCompany || "",
-
   );
 
   const logoToShow = singleCompanyLogo?.company_logo || "logo not found";
@@ -133,6 +129,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Dashboard",
       path: "/webapp/",
       permissionKey: "Dashboard",
+    },
+    {
+      icon: ListTodo,
+      label: "Todo",
+      path: ROUTES.TODO,
+      permissionKey: "Todo",
     },
     {
       icon: Calendar,
@@ -285,6 +287,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Salary Slip",
         },
         {
+          name: "Salary Structure Assignment",
+          icon: BadgeIndianRupee,
+          href: "/webapp/salary-slip-app/salary-structure-assignment",
+          permissionKey: "Salary Structure Assignment",
+        },
+        {
           name: "Extra Payment",
           icon: HandCoins,
           href: "/webapp/salary-slip-app/extra-payment",
@@ -368,6 +376,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Expenses",
       subItems: [
         {
+          name: "Expense Summary",
+          icon: FileSpreadsheet,
+          href: "/webapp/expenses-app/expense-summary",
+          permissionKey: "ExpenseSummary",
+        },
+        {
           name: "Expense Claims",
           icon: IndianRupee,
           href: "/webapp/expenses-app/expenses-list",
@@ -391,12 +405,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/expenses-app/team-advance-expense",
           permissionKey: "Team Advances",
         },
-        {
-          name: "Expense Summary",
-          icon: FileSpreadsheet,
-          href: "/webapp/expenses-app/expense-summary",
-          permissionKey: "ExpenseSummary",
-        },
       ],
     },
     {
@@ -410,6 +418,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: ArrowDownUp,
           href: "/webapp/flow-app/flow-requests",
           permissionKey: "Flow Requests",
+        },
+        {
+          name: "Onboarding",
+          icon: ArrowDownUp,
+          href: "/webapp/flow-app/onboarding",
+          permissionKey: "Onboarding",
         },
         {
           name: "Separation",
@@ -474,7 +488,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
               icon: Clock,
               href: "/webapp/performance-app/team-check-ins",
             },
-
           ],
         },
         {
@@ -508,13 +521,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/performance-app/skills",
           permissionKey: "Skills And Proficiency",
         },
-
-        {
-          name: "New Goal Plan",
-          icon: Goal,
-          href: "/webapp/performance-app/new-goal-plan",
-          permissionKey: "New Goal Plan",
-        },
         {
           name: "Performance Review",
           icon: ChartNoAxesCombined,
@@ -526,28 +532,25 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: ChartNoAxesCombined,
           href: "/webapp/performance-app/appraisal-cycle-wizard",
           permissionKey: "Appraisal Cycle Wizard",
-
         },
         {
           name: "Calibrator",
           icon: SlidersHorizontal,
           href: "/webapp/performance-app/calibrator",
-          permissionKey: "Appraisal Cycle Wizard",
+          permissionKey: "Calibrator",
           subItems: [
             {
               name: "Session",
               icon: Users,
-              href: "/webapp/performance-app/calibrator/session"
+              href: "/webapp/performance-app/calibrator/session",
             },
             {
               name: "9-Box Grid",
               icon: Grid3X3,
-              href: "/webapp/performance-app/calibrator/box-grid"
-            }
-          ]
+              href: "/webapp/performance-app/calibrator/box-grid",
+            },
+          ],
         },
-
-
       ],
     },
 
@@ -570,7 +573,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Requisitions",
         },
         {
-          name: "Refer",
+          name: "Referrals",
           icon: UserPlus,
           href: "/webapp/recruitment/refer",
           permissionKey: "Referrals",
@@ -606,6 +609,62 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Recognition",
       path: "/webapp/recognition",
       permissionKey: "Recognition",
+      subItems: [
+        {
+          name: "Dashboard",
+          icon: Home,
+          href: "/webapp/recognition/vibe/dashboard",
+          permissionKey: "Dashboard",
+        },
+        {
+          name: "My Appreciations History",
+          icon: FileText,
+          href: "/webapp/recognition/vibe/my-appreciations-history",
+          permissionKey: "My Appreciations History",
+        },
+        {
+          name: "Feed",
+          icon: Telescope,
+          href: "/webapp/recognition/vibe/feed",
+          permissionKey: "Feed",
+        },
+        {
+          name: "Appreciations-Leaderboard",
+          icon: ChartNoAxesCombined,
+          href: "/webapp/recognition/vibe/appreciations-leaderboard",
+          permissionKey: "Appreciations Leaderboard",
+        },
+        {
+          name: "Awards-Live Programs & Winners",
+          icon: Award,
+          href: "/webapp/recognition/vibe/awards-live",
+          permissionKey: "Awards Live",
+        },
+        {
+          name: "Awards-History",
+          icon: FileText,
+          href: "/webapp/recognition/vibe/awards-history",
+          permissionKey: "Awards History",
+        },
+        {
+          name: "Awards-Nomination Workflows",
+          icon: Workflow,
+          href: "/webapp/recognition/vibe/nomination-workflows",
+          permissionKey: "Nomination Workflows",
+        },
+        {
+          name: "Earned Points Summary",
+          icon: Coins,
+          href: "/webapp/recognition/vibe/earned-points",
+          permissionKey: "Earned Points",
+        },
+        {
+          name: "Admin Dashboard",
+          icon: Grid3X3,
+          href: "/webapp/recognition/vibe/admin-dashboard",
+          permissionKey: "Admin Dashboard",
+        },
+      ],
     },
     {
       icon: SquarePlus,
@@ -618,12 +677,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "My Documents",
       path: "/webapp/employee-documents",
       permissionKey: "Employee Documents",
-    },
-    {
-      icon: ListTodo,
-      label: "Todo",
-      path: ROUTES.TODO,
-      permissionKey: "Todo",
     },
     {
       icon: Upload,
@@ -661,6 +714,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         }
 
         if (!item.subItems || item.subItems.length === 0) {
+          return item;
+        }
+
+        // Recognition's sub-sections are all gated by the single "Recognition"
+        // app permission (no per-page entries in the backend), so once the app
+        // is enabled we keep all of its sub-items as-is.
+        if (item.permissionKey === "Recognition") {
           return item;
         }
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
 import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
@@ -122,7 +122,6 @@ const ShiftAssignmentItem: React.FC<{ item: ApiShiftAssignment }> = ({
 };
 
 const AllMyShiftsList: React.FC = () => {
-  const navigate = useNavigate();
   const { data, isLoading } = useShiftAssignments();
   const { isDesktop } = useScreenSize();
 
@@ -138,7 +137,6 @@ const AllMyShiftsList: React.FC = () => {
               <div className="px-4 py-1 md:py-4">
                 <HeaderBar
                   title="My Shift Assignments"
-                  onBack={() => navigate(-1)}
                   className="shadow"
                 />
               </div>

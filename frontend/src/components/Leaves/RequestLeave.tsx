@@ -45,6 +45,7 @@ import RequestLeaveAttachmentPreview from "./RequestLeaveAttachmentPreview";
 import { buildRequestLeaveSchema } from "./requestLeaveSchema";
 import {
   findRecentLeaveApplicationTarget,
+  getFirstAttachmentUrl,
   getExistingAttachmentUrls,
   normalizeAttachments,
   resolvePendingAttachmentUploads,
@@ -91,6 +92,12 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     name: string;
   } | null>(null);
 
+  const { data: attachmentMandatoryData } = useCheckAttachmentMandatory(
+    formData.leaveType,
+  );
+
+  const isAttachmentMandatory = attachmentMandatoryData?.is_mandatory === 1;
+
   const removeFormioFile = useCallback((index: number) => {
     try {
       const container = document.querySelector(".formio-component-custom_attachment");
@@ -130,12 +137,34 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         currentAttachments,
         submission.data?.custom_attachment,
       );
+      let uploadPendingAttachments = pendingUploads;
 
       const payload = buildLeavePayload({
         employee: currentEmployee.name,
         submission: submission.data,
         dailyConfig: dailyConfig,
       });
+      let firstAttachmentUrl = getFirstAttachmentUrl(
+        currentAttachments,
+        submission.data?.custom_attachment,
+      );
+
+      if (isAttachmentMandatory && !firstAttachmentUrl && pendingUploads[0]) {
+        const [uploadedAttachment] = await uploadFiles(
+          [pendingUploads[0]],
+          "Leave Application",
+          defaults?.leave_application || "",
+        );
+
+        firstAttachmentUrl = uploadedAttachment?.file_url || "";
+        uploadPendingAttachments = pendingUploads.filter(
+          (attachment) => attachment !== pendingUploads[0],
+        );
+      }
+
+      if (isAttachmentMandatory) {
+        payload.custom_attachment = firstAttachmentUrl;
+      }
 
       const syncRemovedAttachments = async () => {
         const leaveApplicationName = defaults?.leave_application;
@@ -172,7 +201,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             defaults.leave_application || "",
             {
               ...payload,
-              custom_attachment: null,
+              custom_attachment:
+                isAttachmentMandatory && firstAttachmentUrl
+                  ? firstAttachmentUrl
+                  : null,
             },
           );
           await syncRemovedAttachments();
@@ -180,9 +212,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             "Leave Application",
             defaults?.leave_application || "",
           );
-          if (pendingUploads.length > 0) {
+          if (uploadPendingAttachments.length > 0) {
             await uploadFiles(
-              pendingUploads,
+              uploadPendingAttachments,
               "Leave Application",
               defaults.leave_application || "",
             );
@@ -201,14 +233,17 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               : 0,
             description: submission.data.description,
             custom_reason: submission.data.custom_reason,
-            custom_attachment: null,
+            custom_attachment:
+              isAttachmentMandatory && firstAttachmentUrl
+                ? firstAttachmentUrl
+                : null,
             daily_half_day_config: dailyConfig,
           },
         });
         await syncRemovedAttachments();
-        if (pendingUploads.length > 0) {
+        if (uploadPendingAttachments.length > 0) {
           await uploadFiles(
-            pendingUploads,
+            uploadPendingAttachments,
             "Leave Application",
             defaults?.leave_application || "",
           );
@@ -240,6 +275,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     loading,
     currentAttachments,
     uploadFiles,
+    isAttachmentMandatory,
   ]);
 
   const createLeaveMutation = useCreateLeaveApplication();
@@ -349,12 +385,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     isLoading: isReasonLoading,
     isError: isReasonError,
   } = useGetLeaveReason();
-
-  const { data: attachmentMandatoryData } = useCheckAttachmentMandatory(
-    formData.leaveType,
-  );
-
-  const isAttachmentMandatory = attachmentMandatoryData?.is_mandatory === 1;
 
   useEffect(() => {
     if (defaults) {
@@ -469,6 +499,20 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         submission: submission.data,
         dailyConfig: dailyConfig,
       });
+      let firstAttachmentUrl = getFirstAttachmentUrl(
+        currentAttachments,
+        submission.data?.custom_attachment,
+        filesFromForm,
+      );
+
+      if (isAttachmentMandatory && !firstAttachmentUrl && pendingUploads[0]) {
+        const [uploadedAttachment] = await uploadFiles([pendingUploads[0]]);
+        firstAttachmentUrl = uploadedAttachment?.file_url || "";
+      }
+
+      if (isAttachmentMandatory) {
+        payload.custom_attachment = firstAttachmentUrl;
+      }
 
       await loading?.wrap(async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -507,11 +551,28 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           return att;
         }),
       );
-      const formatted = errorResponseFormater(
+
+      // Use showToast so partial-success responses (some days created, some
+      // failed) render separate success + error toasts automatically.
+      errorResponseFormater(
         err,
         err?.[0]?.message?.toString() ?? "Failed to Submit Leave Request",
+        { showToast: true },
       );
-      toast.error(formatted);
+
+      // When some leave applications were created despite the overall error,
+      // refresh queries so the UI reflects the newly-created entries.
+      const messageData = err?.response?.data?.message;
+      if (messageData?.success_message || messageData?.leave_applications?.length) {
+        triggerRefetch();
+        queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+        queryClient.invalidateQueries({ queryKey: ["custom-api"] });
+        queryClient.invalidateQueries({ queryKey: ["custom-api-infinite"] });
+        queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
+        queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+        queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+        queryClient.invalidateQueries({ queryKey: ["attendance-calendar-details"] });
+      }
     }
   }, [
     currentEmployee,
@@ -523,6 +584,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     loading,
     currentAttachments,
     uploadFiles,
+    isAttachmentMandatory,
   ]);
 
   const leaveForm = useMemo(

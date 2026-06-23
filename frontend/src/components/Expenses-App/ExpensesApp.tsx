@@ -179,7 +179,7 @@ const ExpensesApp: React.FC = () => {
     <div className="flex flex-col min-h-screen">
       {!isSharedExpenses && (
         <div className="sticky top-0 z-50 bg-white border-b">
-          <HeaderBar title={activeTab} onBack={() => navigate(-1)} />
+          <HeaderBar title={activeTab} />
           <NavigationTabs
             tabs={tabs}
             activeTab={activeTab}

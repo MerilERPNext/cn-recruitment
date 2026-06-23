@@ -126,6 +126,7 @@ export const DEFAULT_EMPLOYEE_FIELDS = [
   "custom_employment_status",
   "final_confirmation_date",
   "custom_dotted_line_manager",
+  "dotted_manager_member_id",
 ] as const;
 
 export interface EmployeeDetilsType {
@@ -166,6 +167,7 @@ export interface EmployeeDetilsType {
   final_confirmation_date: string;
 
   custom_dotted_line_manager: string | null;
+  dotted_manager_member_id: string | null;
 
   employee: string;
 
@@ -448,14 +450,16 @@ export const useGetEmployeesForDirectory = (
   filters?: FilterCondition[],
   employee_self_service?: 1 | 0,
   fields?: string[],
+  search_term?: string,
 ): UseQueryResult<Employee[], Error> => {
   return useQuery<Employee[], Error>({
-    queryKey: ["directory-employees", filters, employee_self_service, fields],
+    queryKey: ["directory-employees", filters, employee_self_service, fields, search_term],
     queryFn: () =>
       EmployeeService.getEmployeesForDirectory(
         filters,
         employee_self_service,
         fields,
+        search_term,
       ),
     staleTime: 1000 * 60 * 5,
   });
@@ -876,7 +880,7 @@ export const useUpdateEmployeeSelfServiceMutation = () => {
     mutationFn: ({ employee, status, mobile_status }: { employee: string; status: string; mobile_status: string }) =>
       EmployeeService.updateEmployeeSelfService(employee, status, mobile_status),
     onError: (error) => {
-      console.error("Error updating employee self service:", error);
+      console.error("Error updating Platform Access Controls:", error);
     },
   });
 };

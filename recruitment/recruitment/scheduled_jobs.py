@@ -327,53 +327,57 @@ def mark_relieved_employees_as_left():
         frappe.db.commit()
 
 
-def reassign_reports_to_for_relieved_managers():
+def reassign_employee_relationships_on_relieving():
     current_date = getdate(today())
 
-    employees = frappe.get_all(
-        "Employee",
-        filters=[
-            ["relieving_date", "is", "set"],
-            ["relieving_date", "<=", current_date],
-        ],
-        fields=["name"],
+    separations = frappe.get_all(
+        "Employee Separation",
+        filters={
+            "custom_status": "Approved",
+            "custom_reassign_relationships": 1,
+            "custom_relationships_reassigned": 0,
+        },
+        fields=["name", "employee"],
     )
 
     reassigned_any = False
 
-    for emp in employees:
-        separation = frappe.get_all(
-            "Employee Separation",
-            filters={"employee": emp.name, "docstatus": 1},
-            fields=["name", "custom_new_manager"],
-            order_by="creation desc",
-            limit=1,
+    for sep in separations:
+        if not sep.employee:
+            continue
+
+        relieving = frappe.db.get_value("Employee", sep.employee, "relieving_date")
+        if not relieving or getdate(relieving) > current_date:
+            continue
+
+        sep_doc = frappe.get_doc("Employee Separation", sep.name)
+
+        changes_by_employee = {}
+        for row in (sep_doc.custom_relationship_reassignments or []):
+            if not row.employee or not row.relationship_field or not row.new_assignee:
+                continue
+            if row.new_assignee == row.employee:
+                continue
+            changes_by_employee.setdefault(row.employee, {})[row.relationship_field] = row.new_assignee
+
+        for emp_name, field_map in changes_by_employee.items():
+            try:
+                emp_doc = frappe.get_doc("Employee", emp_name)
+                for fieldname, new_value in field_map.items():
+                    emp_doc.set(fieldname, new_value)
+                emp_doc.save(ignore_permissions=True)
+            except Exception:
+                frappe.log_error(
+                    message=frappe.get_traceback(),
+                    title=f"Relationship Reassignment Error ({emp_name})",
+                )
+
+        frappe.db.set_value(
+            "Employee Separation", sep.name,
+            "custom_relationships_reassigned", 1,
+            update_modified=False,
         )
-        if not separation:
-            continue
-
-        new_manager = separation[0].custom_new_manager
-        if not new_manager or new_manager == emp.name:
-            continue
-
-        reportees = frappe.get_all(
-            "Employee",
-            filters={"reports_to": emp.name},
-            pluck="name",
-        )
-        if not reportees:
-            continue
-
-        for reportee in reportees:
-            reportee_doc = frappe.get_doc("Employee", reportee)
-            reportee_doc.reports_to = new_manager
-            reportee_doc.save(ignore_permissions=True)
-
         reassigned_any = True
-        frappe.log_error(
-            message=f"Reassigned {len(reportees)} reportee(s) of relieved manager {emp.name} to new manager {new_manager}: {', '.join(reportees)}",
-            title="Reports To Reassigned on Relieving",
-        )
 
     if reassigned_any:
         frappe.db.commit()
@@ -385,30 +389,24 @@ def process_separation_leave_attendance_requests():
     separations = frappe.get_all(
         "Employee Separation",
         filters={
-            "custom_leave_attendance_action": ["in", ["Approve", "Reject"]],
-            "docstatus": 1,
+            "custom_final_last_working_day": ["<=", current_date],
+            "docstatus": ["!=", 2],
         },
-        fields=[
-            "name",
-            "employee",
-            "custom_leave_attendance_action",
-            "custom_action_days_before_relieving",
-        ],
+        fields=["name", "employee", "custom_separation__termination_flow"],
     )
 
     for sep in separations:
-        if not sep.employee:
+        if not sep.employee or not sep.custom_separation__termination_flow:
             continue
 
-        relieving_date = frappe.db.get_value("Employee", sep.employee, "relieving_date")
-        if not relieving_date:
+        action = frappe.db.get_value(
+            "Flow Config",
+            sep.custom_separation__termination_flow,
+            "auto_approvereject_leave_and_attendance_requests_on_lwd",
+        )
+        if action not in ("Approve", "Reject"):
             continue
 
-        days_before = cint(sep.custom_action_days_before_relieving)
-        if current_date != add_days(getdate(relieving_date), -days_before):
-            continue
-
-        action = sep.custom_leave_attendance_action
         _process_separation_leave_applications(sep.employee, action)
         _process_separation_attendance_requests(sep.employee, action)
 
@@ -676,22 +674,16 @@ def should_show_separation_button():
     except Exception:
         target_employee_header = None
 
-    print("[SEP] === should_show_separation_button START ===")
-    print("[SEP] session_user:", user, "| user_employee:", user_employee)
-    print("[SEP] X-Target-Employee-Id header:", target_employee_header)
 
     if target_employee_header:
         if not frappe.db.exists("Employee", target_employee_header):
-            print("[SEP] STOP: target employee in header does not exist")
             return {"show_button": False, "error": "Target employee not found"}
         scope_employee = target_employee_header
     else:
         scope_employee = user_employee
 
-    print("[SEP] scope_employee (employee we are deciding for):", scope_employee)
 
     if not scope_employee:
-        print("[SEP] STOP: no scope_employee (caller has no Employee and no header)")
         return {"show_button": False}
 
     policies = frappe.get_all(
@@ -700,11 +692,10 @@ def should_show_separation_button():
     )
 
     current_date = getdate(today())
-    print("[SEP] today:", current_date, "| policies found:", len(policies))
 
     for policy in policies:
-        print("[SEP] --- checking policy:", policy.name, "---")
         policy_doc = frappe.get_doc("Confirmation Policy", policy.name)
+
         applicable_employees = get_applicable_employees(policy_doc)
         if not applicable_employees:
             print("[SEP]   skip: policy has no applicable employees")
@@ -713,6 +704,9 @@ def should_show_separation_button():
         if scope_employee not in applicable_employees:
             print("[SEP]   skip:", scope_employee, "not in this policy's applicable employees")
             continue
+
+        if not policy_doc.enable_separation_initiation:
+            return {"show_button": False}
 
         initiator_cfg = {}
         try:

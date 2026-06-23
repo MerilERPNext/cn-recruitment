@@ -165,7 +165,6 @@ const LeaveAppInner: React.FC = () => {
       <header className="sticky top-0 z-50 bg-white shadow-sm">
         <HeaderBar
           title={"Leaves & Holidays"}
-          onBack={() => navigate(-1)}
         />
         <NavigationTabs
           tabs={tabs}

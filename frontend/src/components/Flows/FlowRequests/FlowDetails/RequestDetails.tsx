@@ -39,6 +39,7 @@ const RequestDetails: React.FC = () => {
   const { data: flowResponse, isLoading } = useGetFlowRequestById(id || "");
   const data = flowResponse?.data;
 
+  const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
   const [approvalExpanded, setApprovalExpanded] = useState(false);
   const [workflowExpanded, setWorkflowExpanded] = useState(false);
@@ -66,10 +67,7 @@ const RequestDetails: React.FC = () => {
   const haveInitiatorForm =
     data?.initiator_forms && data.initiator_forms.length > 0;
 
-  const retriggerDefinitionName = data?.retrigger_definition_name || "";
-  const retriggerFunnel = data?.funnel || data?.category || "";
-  const retriggerEmployee = data?.initiated_for_employee_id || "";
-  const showRetriggerButton = canRetrigger && !!retriggerDefinitionName && !!retriggerFunnel && !!retriggerEmployee;
+  const showRetriggerButton = canRetrigger && !!id && !!data?.can_reinitiate_flow;
 
   const handleShowSelfForm = () => {
     let displayData: JsonToFormData;
@@ -203,15 +201,6 @@ const RequestDetails: React.FC = () => {
     }
   }, [isEditingForm, data, haveInitiatorForm]);
 
-  const navigate = useNavigate();
-  const handleNavigateBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/webapp/flow-app/flow-requests");
-    }
-  };
-
   const hasWorkflowStages = !!data?.workflow_stages;
 
   const approvalCounts = useMemo(() => {
@@ -281,7 +270,7 @@ const RequestDetails: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4">
         <NoDataFound subtitle="Flow Request Record not Found" />
-        <Button variant="outline" onClick={handleNavigateBack}>
+        <Button variant="outline" onClick={() => navigate(-1)}>
           Go Back
         </Button>
       </div>
@@ -294,7 +283,6 @@ const RequestDetails: React.FC = () => {
         <div className="sm:px-4">
           <HeaderBar
             title={data?.flow_name}
-            onBack={handleNavigateBack}
             rightSlot={
               <div className="flex items-center gap-2">
                 {haveInitiatorForm && (
@@ -317,9 +305,7 @@ const RequestDetails: React.FC = () => {
                 </Button>
                 {isDesktop && showRetriggerButton && (
                   <RetriggerButton
-                    retriggerDefinitionName={retriggerDefinitionName}
-                    retriggerFunnel={retriggerFunnel}
-                    retriggerEmployee={retriggerEmployee}
+                    funnelActivityId={id || ""}
                     employeeName={data?.initiated_for}
                   />
                 )}
@@ -331,9 +317,7 @@ const RequestDetails: React.FC = () => {
         {!isDesktop && showRetriggerButton && (
           <div className="px-4 mt-1 mb-2">
             <RetriggerButton
-              retriggerDefinitionName={retriggerDefinitionName}
-              retriggerFunnel={retriggerFunnel}
-              retriggerEmployee={retriggerEmployee}
+              funnelActivityId={id || ""}
               employeeName={data?.initiated_for}
               fullWidth
             />

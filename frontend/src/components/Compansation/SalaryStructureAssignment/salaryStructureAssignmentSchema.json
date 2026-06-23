@@ -1,0 +1,820 @@
+{
+  "title": "Salary Structure Assignment",
+  "name": "salaryStructureAssignment",
+  "path": "salary-structure-assignment",
+  "display": "form",
+  "components": [
+    {
+      "type": "panel",
+      "key": "detailsPanel",
+      "title": "Details",
+      "customClass": "py-3 px-5 mb-3 border rounded-lg",
+      "components": [
+        {
+          "type": "columns",
+          "key": "detailsRow1",
+          "customClass": "mb-2",
+          "columns": [
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "select",
+                  "key": "employee",
+                  "label": "Employee <span style='color:red;margin-left:3px;'>*</span>",
+                  "errorLabel": "Employee",
+                  "placeholder": "Select Employee",
+                  "input": true,
+                  "dataSrc": "url",
+                  "data": {
+                    "url": "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee",
+                    "headers": [{ "key": "Accept", "value": "application/json" }]
+                  },
+                  "selectValues": "message.results",
+                  "valueProperty": "id",
+                  "template": "<span>{{ item.label }} <span style='color:#7f8c8d'>({{ item.id }})</span></span>",
+                  "lazyLoad": true,
+                  "limit": 20,
+                  "validate": { "required": true },
+                  "customClass": "w-full"
+                }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "select",
+                  "key": "salary_structure",
+                  "label": "Salary Structure <span style='color:red;margin-left:3px;'>*</span>",
+                  "errorLabel": "Salary Structure",
+                  "placeholder": "Select Salary Structure",
+                  "input": true,
+                  "dataSrc": "url",
+                  "data": {
+                    "url": "/api/resource/Salary Structure?fields=[\"name\",\"currency\"]&filters=[[\"is_active\",\"=\",\"Yes\"],[\"docstatus\",\"=\",1]]&limit_page_length=0",
+                    "headers": [{ "key": "Accept", "value": "application/json" }]
+                  },
+                  "selectValues": "data",
+                  "valueProperty": "name",
+                  "template": "<span>{{ item.name }}</span>",
+                  "lazyLoad": true,
+                  "validate": { "required": true },
+                  "customClass": "w-full"
+                }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "textfield",
+                  "key": "company",
+                  "label": "Company",
+                  "input": true,
+                  "disabled": true,
+                  "description": "Auto-filled from selected employee",
+                  "customClass": "w-full"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "columns",
+          "key": "detailsRow2",
+          "customClass": "mb-2",
+          "columns": [
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "textfield",
+                  "key": "employee_name",
+                  "label": "Employee Name",
+                  "input": true,
+                  "disabled": true,
+                  "customClass": "w-full"
+                }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "datetime",
+                  "key": "from_date",
+                  "label": "From Date <span style='color:red;margin-left:3px;'>*</span>",
+                  "format": "yyyy-MM-dd",
+                  "enableTime": false,
+                  "enableDate": true,
+                  "validate": { "required": true },
+                  "customClass": "w-full"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "columns",
+          "key": "detailsRow3",
+          "customClass": "mb-2",
+          "columns": [
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "textfield",
+                  "key": "designation",
+                  "label": "Designation",
+                  "input": true,
+                  "disabled": true,
+                  "description": "Auto-filled from selected employee",
+                  "customClass": "w-full"
+                }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "select",
+                  "key": "income_tax_slab",
+                  "label": "Income Tax Slab",
+                  "placeholder": "Select Income Tax Slab",
+                  "input": true,
+                  "dataSrc": "url",
+                  "data": {
+                    "url": "/api/resource/Income Tax Slab?fields=[\"name\"]&filters=[[\"disabled\",\"=\",0]]&limit_page_length=0",
+                    "headers": [{ "key": "Accept", "value": "application/json" }]
+                  },
+                  "selectValues": "data",
+                  "valueProperty": "name",
+                  "template": "<span>{{ item.name }}</span>",
+                  "customClass": "w-full"
+                }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "textfield",
+                  "key": "currency",
+                  "label": "Currency",
+                  "input": true,
+                  "disabled": true,
+                  "description": "Auto-filled from selected salary structure",
+                  "customClass": "w-full"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "columns",
+          "key": "detailsRow4",
+          "customClass": "mb-2",
+          "columns": [
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "textfield",
+                  "key": "grade",
+                  "label": "Grade",
+                  "input": true,
+                  "disabled": true,
+                  "description": "Auto-filled from selected employee",
+                  "customClass": "w-full"
+                }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "select",
+                  "key": "custom_payroll_period",
+                  "label": "Payroll Period <span style='color:red;margin-left:3px;'>*</span>",
+                  "errorLabel": "Payroll Period",
+                  "placeholder": "Select Payroll Period",
+                  "input": true,
+                  "dataSrc": "url",
+                  "data": {
+                    "url": "/api/resource/Payroll Period?fields=[\"name\"]&limit_page_length=0",
+                    "headers": [{ "key": "Accept", "value": "application/json" }]
+                  },
+                  "selectValues": "data",
+                  "valueProperty": "name",
+                  "template": "<span>{{ item.name }}</span>",
+                  "validate": { "required": true },
+                  "customClass": "w-full"
+                }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "datetime",
+                  "key": "custom_date_of_joining",
+                  "label": "Date Of Joining",
+                  "format": "yyyy-MM-dd",
+                  "enableTime": false,
+                  "disabled": true,
+                  "customClass": "w-full"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "textfield",
+          "key": "custom_employment_type",
+          "label": "Employee Type",
+          "input": true,
+          "disabled": true,
+          "description": "Auto-filled from selected employee",
+          "customClass": "w-full md:w-1/3"
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "key": "baseVariablePanel",
+      "title": "Base, Variable & Leave Encashment",
+      "customClass": "py-3 px-5 mb-3 border rounded-lg",
+      "components": [
+        {
+          "type": "columns",
+          "key": "baseRow2",
+          "customClass": "mb-2",
+          "columns": [
+            {
+              "width": 6,
+              "components": [
+                {
+                  "type": "number",
+                  "key": "custom_fixed_ctc_annual",
+                  "label": "Fixed CTC (Annual)",
+                  "input": true,
+                  "customClass": "w-full"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "datagrid",
+          "key": "custom_variable_pay_components",
+          "label": "Variable Pay Components",
+          "addAnother": "Add Row",
+          "initEmpty": true,
+          "reorder": false,
+          "components": [
+            {
+              "type": "textfield",
+              "key": "variable_name",
+              "label": "Variable Name",
+              "input": true
+            },
+            {
+              "type": "number",
+              "key": "amount",
+              "label": "Amount",
+              "input": true
+            },
+            {
+              "type": "checkbox",
+              "key": "part_of_ctc",
+              "label": "Part Of CTC",
+              "input": true
+            },
+            {
+              "type": "textfield",
+              "key": "note",
+              "label": "Note",
+              "input": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "key": "gstPanel",
+      "title": "GST Applicable (Consultants)",
+      "customClass": "py-3 px-5 mb-3 border rounded-lg",
+      "components": [
+        {
+          "type": "checkbox",
+          "key": "custom_gst_eligible",
+          "label": "GST Eligible",
+          "input": true
+        },
+        {
+          "type": "number",
+          "key": "custom_gst_percentage",
+          "label": "GST Percentage",
+          "input": true,
+          "customConditional": "show = data.custom_gst_eligible === true",
+          "customClass": "w-full md:w-1/3"
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "key": "minWagesPanel",
+      "title": "Minimum Wages",
+      "customClass": "py-3 px-5 mb-3 border rounded-lg",
+      "components": [
+        {
+          "type": "checkbox",
+          "key": "custom_minimum_wages_applicable",
+          "label": "Minimum Wages Applicable",
+          "input": true
+        },
+        {
+          "type": "columns",
+          "key": "minWagesRow",
+          "customConditional": "show = data.custom_minimum_wages_applicable === true",
+          "columns": [
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "select",
+                  "key": "custom_minimum_wages_state",
+                  "label": "Minimum Wages State",
+                  "placeholder": "Select State",
+                  "dataSrc": "url",
+                  "data": {
+                    "url": "/api/resource/State Master?fields=[\"name\"]&limit_page_length=0",
+                    "headers": [{ "key": "Accept", "value": "application/json" }]
+                  },
+                  "selectValues": "data",
+                  "valueProperty": "name",
+                  "template": "<span>{{ item.name }}</span>",
+                  "customClass": "w-full"
+                }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "select",
+                  "key": "custom_zone",
+                  "label": "Zone",
+                  "placeholder": "Select Zone",
+                  "dataSrc": "url",
+                  "data": {
+                    "url": "/api/resource/Zone?fields=[\"name\"]&limit_page_length=0",
+                    "headers": [{ "key": "Accept", "value": "application/json" }]
+                  },
+                  "selectValues": "data",
+                  "valueProperty": "name",
+                  "template": "<span>{{ item.name }}</span>",
+                  "customClass": "w-full"
+                }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "select",
+                  "key": "custom_skill_level",
+                  "label": "Skill Level",
+                  "placeholder": "Select Skill Level",
+                  "dataSrc": "url",
+                  "data": {
+                    "url": "/api/resource/Skill Level?fields=[\"name\"]&limit_page_length=0",
+                    "headers": [{ "key": "Accept", "value": "application/json" }]
+                  },
+                  "selectValues": "data",
+                  "valueProperty": "name",
+                  "template": "<span>{{ item.name }}</span>",
+                  "customClass": "w-full"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "key": "manualInputPanel",
+      "title": "Manual Input values",
+      "customClass": "py-3 px-5 mb-3 border rounded-lg",
+      "components": [
+        {
+          "type": "columns",
+          "key": "manualRow1",
+          "customClass": "mb-2",
+          "columns": [
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_basic", "label": "Basic", "input": true },
+                { "type": "number", "key": "custom_basic_annual", "label": "Basic (Annual)", "input": true, "customConditional": "show = data.custom_basic === true" }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_hra", "label": "HRA", "input": true },
+                { "type": "number", "key": "custom_hra_annual", "label": "HRA (Annual)", "input": true, "customConditional": "show = data.custom_hra === true" }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_lta", "label": "LTA", "input": true },
+                { "type": "number", "key": "custom_lta_annual", "label": "LTA (Annual)", "input": true, "customConditional": "show = data.custom_lta === true" }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "columns",
+          "key": "manualRow2",
+          "customClass": "mb-2",
+          "columns": [
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_special_allowance", "label": "Special Allowance", "input": true },
+                { "type": "number", "key": "custom_special_allowance_annual", "label": "Special Allowance (Annual)", "input": true, "customConditional": "show = data.custom_special_allowance === true" }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_epf_employee", "label": "EPF Employee", "input": true },
+                { "type": "number", "key": "custom_epf_employee_annual", "label": "EPF Employee (Annual)", "input": true, "customConditional": "show = data.custom_epf_employee === true" }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_epf_employer", "label": "EPF Employer", "input": true },
+                { "type": "number", "key": "custom_epf_employer_annual", "label": "EPF Employer (Annual)", "input": true, "customConditional": "show = data.custom_epf_employer === true" }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "columns",
+          "key": "manualRow3",
+          "columns": [
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_esic_employee", "label": "ESIC Employee", "input": true },
+                { "type": "number", "key": "custom_esic_employee_annual", "label": "ESIC Employee (Annual)", "input": true, "customConditional": "show = data.custom_esic_employee === true" }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_esic_employer", "label": "ESIC Employer", "input": true },
+                { "type": "number", "key": "custom_esic_employer_annual", "label": "ESIC Employer (Annual)", "input": true, "customConditional": "show = data.custom_esic_employer === true" }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_nps_value", "label": "NPS", "input": true },
+                { "type": "number", "key": "custom_nps_annual", "label": "NPS (Annual)", "input": true, "customConditional": "show = data.custom_nps_value === true" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "key": "allowancePanel",
+      "title": "Allowance",
+      "customClass": "py-3 px-5 mb-3 border rounded-lg",
+      "components": [
+        {
+          "type": "columns",
+          "key": "allowanceRow1",
+          "customClass": "mb-2",
+          "columns": [
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_meal_card", "label": "Meal Card", "input": true },
+                { "type": "number", "key": "custom_meal_card_value", "label": "Meal Card Value", "input": true, "customConditional": "show = data.custom_meal_card === true" }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_telecom_wallet", "label": "Telecom wallet", "input": true },
+                { "type": "number", "key": "custom_telecom_wallet_value", "label": "Telecom Wallet Value", "input": true, "customConditional": "show = data.custom_telecom_wallet === true" }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_attire_wallet", "label": "Attire wallet", "input": true },
+                { "type": "number", "key": "custom_attire_wallet_value", "label": "Attire Wallet Value", "input": true, "customConditional": "show = data.custom_attire_wallet === true" }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "columns",
+          "key": "allowanceRow2",
+          "columns": [
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_fuel_wallet", "label": "Fuel Wallet", "input": true },
+                { "type": "number", "key": "custom_fuel_wallet_value", "label": "Fuel Wallet Value", "input": true, "customConditional": "show = data.custom_fuel_wallet === true" }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_gift_wallet", "label": "Gift wallet", "input": true },
+                { "type": "number", "key": "custom_gift_wallet_value", "label": "Gift Wallet Value", "input": true, "customConditional": "show = data.custom_gift_wallet === true" }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                { "type": "checkbox", "key": "custom_is_food_coupon", "label": "Food Coupon", "input": true },
+                { "type": "number", "key": "custom_food_coupon_value", "label": "Food Coupon Value (Annual)", "input": true, "customConditional": "show = data.custom_is_food_coupon === true" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "key": "epfPanel",
+      "title": "Employees' Provident Fund (EPF)",
+      "customClass": "py-3 px-5 mb-3 border rounded-lg",
+      "components": [
+        {
+          "type": "checkbox",
+          "key": "custom_is_epf",
+          "label": "EPF",
+          "input": true
+        },
+        {
+          "type": "columns",
+          "key": "epfRow",
+          "customConditional": "show = data.custom_is_epf === true",
+          "columns": [
+            {
+              "width": 6,
+              "components": [
+                {
+                  "type": "select",
+                  "key": "custom_epf_type",
+                  "label": "EPF Type",
+                  "data": {
+                    "values": [
+                      { "label": "PF Actual", "value": "PF Actual" },
+                      { "label": "PF Restricted", "value": "PF Restricted" }
+                    ]
+                  },
+                  "customClass": "w-full"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "key": "npsPanel",
+      "title": "National Pension System (NPS)",
+      "customClass": "py-3 px-5 mb-3 border rounded-lg",
+      "components": [
+        {
+          "type": "checkbox",
+          "key": "custom_is_nps",
+          "label": "NPS",
+          "input": true
+        },
+        {
+          "type": "columns",
+          "key": "npsRow",
+          "customConditional": "show = data.custom_is_nps === true",
+          "columns": [
+            {
+              "width": 6,
+              "components": [
+                {
+                  "type": "number",
+                  "key": "custom_nps_percentage",
+                  "label": "NPS Percentage",
+                  "input": true,
+                  "customClass": "w-full"
+                }
+              ]
+            },
+            {
+              "width": 6,
+              "components": [
+                {
+                  "type": "number",
+                  "key": "custom_nps_amount",
+                  "label": "NPS Amount",
+                  "input": true,
+                  "customClass": "w-full"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "key": "lwfPanel",
+      "title": "Labour Welfare Fund (LWF)",
+      "customClass": "py-3 px-5 mb-3 border rounded-lg",
+      "components": [
+        {
+          "type": "checkbox",
+          "key": "custom_lwf",
+          "label": "LWF",
+          "input": true
+        },
+        {
+          "type": "columns",
+          "key": "lwfRow",
+          "customConditional": "show = data.custom_lwf === true",
+          "columns": [
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "select",
+                  "key": "custom_lwf_state",
+                  "label": "LWF State",
+                  "placeholder": "Select State",
+                  "dataSrc": "url",
+                  "data": {
+                    "url": "/api/resource/State Master?fields=[\"name\"]&limit_page_length=0",
+                    "headers": [{ "key": "Accept", "value": "application/json" }]
+                  },
+                  "selectValues": "data",
+                  "valueProperty": "name",
+                  "template": "<span>{{ item.name }}</span>",
+                  "customClass": "w-full"
+                }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "select",
+                  "key": "custom_frequency",
+                  "label": "Frequency",
+                  "placeholder": "Select Frequency",
+                  "dataSrc": "url",
+                  "data": {
+                    "url": "/api/resource/Frequency?fields=[\"name\"]&limit_page_length=0",
+                    "headers": [{ "key": "Accept", "value": "application/json" }]
+                  },
+                  "selectValues": "data",
+                  "valueProperty": "name",
+                  "template": "<span>{{ item.name }}</span>",
+                  "customClass": "w-full"
+                }
+              ]
+            },
+            {
+              "width": 4,
+              "components": [
+                {
+                  "type": "textfield",
+                  "key": "custom_lwf_designation",
+                  "label": "LWF Designation",
+                  "input": true,
+                  "customClass": "w-full"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "key": "ptPanel",
+      "title": "Professional Tax (PT)",
+      "customClass": "py-3 px-5 mb-3 border rounded-lg",
+      "components": [
+        {
+          "type": "select",
+          "key": "custom_state",
+          "label": "State",
+          "placeholder": "Select State",
+          "data": {
+            "values": [
+              { "label": "Andhra Pradesh", "value": "Andhra Pradesh" },
+              { "label": "Arunachal Pradesh", "value": "Arunachal Pradesh" },
+              { "label": "Assam", "value": "Assam" },
+              { "label": "Bihar", "value": "Bihar" },
+              { "label": "Chhattisgarh", "value": "Chhattisgarh" },
+              { "label": "Delhi", "value": "Delhi" },
+              { "label": "Goa", "value": "Goa" },
+              { "label": "Gujarat", "value": "Gujarat" },
+              { "label": "Haryana", "value": "Haryana" },
+              { "label": "Himachal Pradesh", "value": "Himachal Pradesh" },
+              { "label": "Jharkhand", "value": "Jharkhand" },
+              { "label": "Karnataka", "value": "Karnataka" },
+              { "label": "Kerala", "value": "Kerala" },
+              { "label": "Madhya Pradesh", "value": "Madhya Pradesh" },
+              { "label": "Maharashtra", "value": "Maharashtra" },
+              { "label": "Manipur", "value": "Manipur" },
+              { "label": "Meghalaya", "value": "Meghalaya" },
+              { "label": "Mizoram", "value": "Mizoram" },
+              { "label": "Nagaland", "value": "Nagaland" },
+              { "label": "Odisha", "value": "Odisha" },
+              { "label": "Punjab", "value": "Punjab" },
+              { "label": "Rajasthan", "value": "Rajasthan" },
+              { "label": "Sikkim", "value": "Sikkim" },
+              { "label": "Tamil Nadu", "value": "Tamil Nadu" },
+              { "label": "Telangana", "value": "Telangana" },
+              { "label": "Tripura", "value": "Tripura" },
+              { "label": "Uttar Pradesh", "value": "Uttar Pradesh" },
+              { "label": "Uttarakhand", "value": "Uttarakhand" },
+              { "label": "West Bengal", "value": "West Bengal" },
+              { "label": "Jammu and Kashmir", "value": "Jammu and Kashmir" }
+            ]
+          },
+          "customClass": "w-full md:w-1/3"
+        }
+      ]
+    },
+    {
+      "type": "panel",
+      "key": "reimbursementsPanel",
+      "title": "Reimbursements",
+      "customClass": "py-3 px-5 mb-3 border rounded-lg",
+      "components": [
+        {
+          "type": "datagrid",
+          "key": "custom_employee_reimbursements",
+          "label": "Employee Reimbursements",
+          "addAnother": "Add Row",
+          "initEmpty": true,
+          "reorder": false,
+          "components": [
+            {
+              "type": "select",
+              "key": "reimbursements",
+              "label": "Reimbursements",
+              "placeholder": "Select Component",
+              "widget": "html5",
+              "dataSrc": "url",
+              "data": {
+                "url": "/api/resource/Salary Component?fields=[\"name\"]&limit_page_length=0",
+                "headers": [{ "key": "Accept", "value": "application/json" }]
+              },
+              "selectValues": "data",
+              "valueProperty": "name",
+              "template": "<span>{{ item.name }}</span>"
+            },
+            {
+              "type": "number",
+              "key": "monthly_total_amount",
+              "label": "Monthly Total Amount",
+              "input": true
+            },
+            {
+              "type": "number",
+              "key": "annual_total_amount",
+              "label": "Annual Total Amount",
+              "input": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "textarea",
+      "key": "custom_note",
+      "label": "Note",
+      "input": true,
+      "rows": 3,
+      "customClass": "px-5 mb-3"
+    }
+  ]
+}

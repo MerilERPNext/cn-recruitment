@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import HeaderBar from "../HeaderBar";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 
 const ViewSalarySlipModal = () => {
-  const navigate = useNavigate();
   const { salaryId } = useParams<{ salaryId: string }>();
 
   const [isMasked, setIsMasked] = useState(true);
@@ -50,9 +49,6 @@ const ViewSalarySlipModal = () => {
     }
   }, [salaryId]);
 
-  const handleBack = () => {
-    navigate(-1);
-  };
 
   if (!salaryId) {
     return <p className="text-red-500">Salary Slip ID missing in URL.</p>;
@@ -62,7 +58,6 @@ const ViewSalarySlipModal = () => {
     <div>
       <HeaderBar
         title="Salary Slip"
-        onBack={handleBack}
         rightSlot={
           <button
             onClick={() => setIsMasked(!isMasked)}

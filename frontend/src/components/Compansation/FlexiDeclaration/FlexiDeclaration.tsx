@@ -5,11 +5,13 @@ import { useGetYearFilterOptions } from "../../../hooks/useBenefit";
 import {
   useFlexiComponents,
   useUpdateFlexiComponents,
-  useIndividualEmployeeFlexiLockingPeriod
+  useIndividualEmployeeFlexiLockingPeriod,
+  useFlexiLockingPeriodVisibility
 } from "../../../hooks/payroll/useFlexiDeclaration";
+import { format } from "date-fns";
 import { FlexiComponent, ComponentPartOfCTC } from "../../../types/flexiDeclaration";
 import { IoIosArrowDown } from "react-icons/io";
-import { EditFlexiLockingPeriod } from "../flexiDeclarations/Component/EditFlexiLockingPeriod";
+import { EditFlexiLockingPeriod } from "./Component/EditFlexiLockingPeriod";
 import { SquarePen } from "lucide-react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import toast from "react-hot-toast";
@@ -76,7 +78,33 @@ export default function FlexiDeclaration() {
     currentEmployee?.name || ""
   );
 
-  const isLoading = isEmployeeLoading || isYearOptionsLoading || isFlexiLoading || isLockingLoading;
+  // Submission-window visibility: drives whether the FlexiBenefit window is
+  // open and the fields are editable. The window is open only when the API
+  // reports status "success" AND flexibenefit_enabled === 1.
+  const { data: visibilityData, isLoading: isVisibilityLoading } =
+    useFlexiLockingPeriodVisibility({
+      employee: currentEmployee?.name || "",
+      payroll_period: selectedPeriod || "",
+      posting_date: format(new Date(), "yyyy-MM-dd"),
+      doctype: "Salary Structure Assignment",
+    });
+
+  // Frappe double-wraps the response; callMethod strips one layer, leaving
+  // { message: {...} }. Tolerate a flattened shape too.
+  const windowInfo: any =
+    visibilityData?.message && typeof visibilityData.message === "object"
+      ? visibilityData.message
+      : visibilityData;
+  const windowMessage: string = windowInfo?.message || "";
+  const flexiEnabled = Number(windowInfo?.flexibenefit_enabled) === 1;
+  const isWindowOpen = windowInfo?.status === "success" && flexiEnabled;
+
+  const isLoading =
+    isEmployeeLoading ||
+    isYearOptionsLoading ||
+    isFlexiLoading ||
+    isLockingLoading ||
+    isVisibilityLoading;
 
   const updateMutation = useUpdateFlexiComponents();
 
@@ -102,7 +130,12 @@ export default function FlexiDeclaration() {
 
   const flexiComponents = flexiData?.flexi_components || [];
 
-  const isClosed = lockingPeriodData?.status === "Closed";
+  // Open/closed (and therefore field editability + Save) is driven by the
+  // visibility API: closed whenever the submission window isn't open. Until that
+  // data arrives, fall back to the individual locking-period status.
+  const isClosed = windowInfo
+    ? !isWindowOpen
+    : lockingPeriodData?.status === "Closed";
 
   const handleInputChange = (componentName: string, value: string, maxAmount: number) => {
     setFlexi(f => ({ ...f, [componentName]: value }));
@@ -290,7 +323,7 @@ export default function FlexiDeclaration() {
                 Flexi Declaration For FY {selectedPeriod} (₹)
               </span>
               <span className={`${isClosed ? "bg-error-50 text-error" : "bg-success-50 text-success"} text-[10px] font-bold px-2 py-0.5 rounded tracking-widest uppercase`}>
-                {lockingPeriodData?.status || "OPEN"}
+                {isClosed ? "Closed" : "Open"}
               </span>
               {actionsEnabled?.edit_flexi_locking_period && (
                 <span
@@ -301,6 +334,28 @@ export default function FlexiDeclaration() {
                 </span>
               )}
             </div>
+
+            {windowMessage && (
+              <div
+                className={`mb-5 flex items-start gap-2 rounded-lg border px-3.5 py-2.5 text-[12px] leading-snug ${isWindowOpen
+                  ? "border-success-50 bg-success-50 text-success"
+                  : "border-error-50 bg-error-50 text-error"
+                  }`}
+                role="status"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  className="mt-0.5 shrink-0"
+                >
+                  <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.3" />
+                  <path d="M8 5v3.5M8 11h.01" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+                <span className="font-medium">{windowMessage}</span>
+              </div>
+            )}
 
             <div className="flex flex-col gap-4">
               {flexiComponents.map((comp: FlexiComponent) => {

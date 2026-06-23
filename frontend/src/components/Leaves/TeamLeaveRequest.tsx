@@ -3,10 +3,8 @@ import { useNavigate, useSearchParams } from "react-router";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetLeaveBalance } from "../../hooks/useLeaves";
-import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST } from "../../utils/tableSortConfig";
-import { isActionEnabled } from "../../utils/uiPermission";
 import { FilterField } from "../DataListView";
 import ApprovalList from "../shared/ApprovalList";
 import { Typography } from "../shared/atoms/Typography";
@@ -15,6 +13,8 @@ import CardTable from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import LeaveApprovalCard from "./LeaveApprovalCard";
 import { LeaveDetailView } from "./LeaveDetails";
+import { isActionEnabled } from "../../utils/uiPermission";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
 
 const TeamLeaveRequest = () => {
   const { data: currentUser } = useCurrentUser();
@@ -32,16 +32,13 @@ const TeamLeaveRequest = () => {
   );
 
   const uiPermission = {
-    app: "Leaves and Holidays",
+    app: "Leave and Holidays",
     page: "Team Requests",
-    actionKey: "team_leave_request_actions",
+    action: "team_leave_request_actions",
   };
-  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
-  const actionsEnabled = isActionEnabled(
-    uiPermissionData,
-    uiPermission?.actionKey ?? "",
-    uiPermission?.page,
-  );
+  const { data: permissions } = useGetUiPermission(uiPermission.app);
+  const actionsEnabled = isActionEnabled(permissions, uiPermission.action, uiPermission.page);
+
 
   // Build filter fields dynamically to include leave type options from balance API
   const dynamicFilterFields: FilterField[] = useMemo(() => {
@@ -138,114 +135,122 @@ const TeamLeaveRequest = () => {
   const tableTitles = isBulkSelectEnabled
     ? isRejectedFilter
       ? [
-          "Select",
-          "Request Id",
-          "Employee",
-          "Leave Type",
-          "From Date",
-          "To Date",
-          "Due Date",
-          "Leave Days",
-          "Status",
-          "Reject Reason",
-          "Sendback Comment",
-          "Actions",
-        ]
+        "Select",
+        "Request Id",
+        "Employee",
+        "Leave Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Initiation Date",
+        "Leave Days",
+        "Status",
+        "Reject Reason",
+        "Sendback Comment",
+        "Actions",
+      ]
       : [
-          "Select",
-          "Request Id",
-          "Employee",
-          "Leave Type",
-          "From Date",
-          "To Date",
-          "Due Date",
-          "Leave Days",
-          "Status",
-          "Sendback Comment",
-          "Actions",
-        ]
+        "Select",
+        "Request Id",
+        "Employee",
+        "Leave Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Initiation Date",
+        "Leave Days",
+        "Status",
+        "Sendback Comment",
+        "Actions",
+      ]
     : isRejectedFilter
       ? [
-          "Request Id",
-          "Employee",
-          "Leave Type",
-          "From Date",
-          "To Date",
-          "Due Date",
-          "Leave Days",
-          "Status",
-          "Reject Reason",
-          "Sendback Comment",
-          "Actions",
-        ]
+        "Request Id",
+        "Employee",
+        "Leave Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Initiation Date",
+        "Leave Days",
+        "Status",
+        "Reject Reason",
+        "Sendback Comment",
+        "Actions",
+      ]
       : [
-          "Request Id",
-          "Employee",
-          "Leave Type",
-          "From Date",
-          "To Date",
-          "Due Date",
-          "Leave Days",
-          "Status",
-          "Sendback Comment",
-          "Actions",
-        ];
+        "Request Id",
+        "Employee",
+        "Leave Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Initiation Date",
+        "Leave Days",
+        "Status",
+        "Sendback Comment",
+        "Actions",
+      ];
 
   const finalColumnWidths = isBulkSelectEnabled
     ? isRejectedFilter
       ? [
-          "0.5fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1.5fr",
-          "1.5fr",
-          "1fr",
-        ]
+        "0.5fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1.5fr",
+        "1.5fr",
+        "1fr",
+      ]
       : [
-          "0.5fr",
-          "1fr",
-          "1.5fr",
-          "1.5fr",
-          "1.5fr",
-          "1.5fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1.5fr",
-          "1fr",
-        ]
+        "0.5fr",
+        "1fr",
+        "1.5fr",
+        "1.5fr",
+        "1.5fr",
+        "1.5fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1.5fr",
+        "1fr",
+      ]
     : isRejectedFilter
       ? [
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1.5fr",
-          "1.5fr",
-          "1fr",
-        ]
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1.5fr",
+        "1.5fr",
+        "1fr",
+      ]
       : [
-          "1fr",
-          "1.5fr",
-          "1.5fr",
-          "1.5fr",
-          "1.5fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1.5fr",
-          "1fr",
-        ];
+        "1fr",
+        "1.5fr",
+        "1.5fr",
+        "1.5fr",
+        "1.5fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1.5fr",
+        "1fr",
+      ];
 
   return (
     <div className="flex flex-col h-full">
@@ -285,7 +290,7 @@ const TeamLeaveRequest = () => {
                 columnWidths={finalColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                 filterFields={dynamicFilterFields}
-                defaultFilters={{ status: "Open" }}
+                defaultFilters={{ status: "Open", todo_status: ["!=", "Cancelled"] }}
                 SkeletonComponent={CardSkeleton}
                 renderCardContent={(item) => {
                   if (

@@ -1,5 +1,5 @@
 // src/hooks/useChatAssistant.ts
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback } from "react";
 import type { ChatNextAssistantTrigger } from "../types/chatnextApiResponses";
 import { useLoadingOverlay } from "../context/OverlayContext";
@@ -18,6 +18,9 @@ import {
   getFlowRequestById,
   updateInitiatorFormSubmission,
   getFunnelActivityLog,
+  reinitiateStage,
+  reinitiateFlow,
+  retriggerApprovalFlowEvent,
 } from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
@@ -246,6 +249,40 @@ export const useUpdateInitiatorFormSubmission = () => {
   });
 };
 
+export const useReinitiateStage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      funnel_task,
+      with_dependents,
+    }: {
+      funnel_task: string;
+      with_dependents: 0 | 1;
+    }) => reinitiateStage(funnel_task, with_dependents),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-request-details"] });
+      queryClient.invalidateQueries({ queryKey: ["separation-employee"] });
+    },
+  });
+};
+
+export const useReinitiateFlow = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ funnel_activity }: { funnel_activity: string }) =>
+      reinitiateFlow(funnel_activity),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-request-details"] });
+      queryClient.invalidateQueries({ queryKey: ["separation-employee"] });
+      queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
+    },
+  });
+};
+
 /**
  * Filters the full trigger list by trigger_category_name and optionally button_label.
  * Use this to find the correct definition_name for a given flow trigger.
@@ -342,4 +379,22 @@ export const useChatTrigger = (overlayMessage = "Loading form...") => {
   );
 
   return { triggerChat, isTriggeringChat };
+};
+
+export const useRetriggerApprovalFlowEvent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ todo }: { todo: string }) =>
+      retriggerApprovalFlowEvent(todo),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-request-details"] });
+      queryClient.invalidateQueries({ queryKey: ["separation-employee"] });
+      queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
+      queryClient.invalidateQueries({ queryKey: ["get-separation-workflow"] });
+      queryClient.invalidateQueries({ queryKey: ["get-separation-funnel"] });
+      queryClient.invalidateQueries({ queryKey: ["should-show-confirmation"] });
+    },
+  });
 };

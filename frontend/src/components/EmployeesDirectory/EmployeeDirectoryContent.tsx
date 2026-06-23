@@ -14,6 +14,7 @@ import ChangeDottedLineManager from "./tools/ChangeDottedLineManager/ChangeDotte
 import ChangeProbationPeriod from "./tools/ChangeProbationPeriod/ChangeProbationPeriod";
 import DeactivateEmployee from "./tools/DeactivateEmployee/DeactivateEmployee";
 import BulkChangeWeekOff from "./tools/BulkChangeWeekOff/BulkChangeWeekOff";
+import SalaryStructureAssignmentForm from "../Compansation/SalaryStructureAssignment/SalaryStructureAssignmentForm";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 
@@ -21,7 +22,7 @@ type Props = {
     activeTab: 'directory' | 'my_reportees';
 };
 
-type ToolType = 'hrbp' | 'dotted_line_manager' | 'attendance_assignments' | 'probation_period' | 'deactivate_employee' | 'bulk_week_off' | null;
+type ToolType = 'hrbp' | 'dotted_line_manager' | 'attendance_assignments' | 'probation_period' | 'deactivate_employee' | 'bulk_week_off' | 'salary_structure_assignment' | null;
 
 const EmployeeDirectoryContent = ({ activeTab }: Props) => {
     // STATE LIVES HERE
@@ -78,7 +79,7 @@ const EmployeeDirectoryContent = ({ activeTab }: Props) => {
     );
     const canBulkChangeWeekOff = isActionEnabled(
         userUiPermission,
-        "change_week_off",
+        "change_bulk_week_off",
         "Employee Directory"
     );
     const [activeTool, setActiveTool] = useState<ToolType>(null);
@@ -138,7 +139,7 @@ const EmployeeDirectoryContent = ({ activeTab }: Props) => {
                                     setIsPopupOpen(false);
                                 }}
                             >
-                                Update Current Weekly Off
+                                Update Current Weekly Offs
                             </Button>}
                         </>
                     ) : (
@@ -195,6 +196,19 @@ const EmployeeDirectoryContent = ({ activeTab }: Props) => {
                             >
                                 Deactivate Employee
                             </Button>}
+                            <Button
+                                variant="subtle"
+                                contentAlign="start"
+                                size="sm"
+                                fullWidth
+                                className="text-sm px-4 py-2"
+                                onClick={() => {
+                                    setActiveTool('salary_structure_assignment');
+                                    setIsPopupOpen(false);
+                                }}
+                            >
+                                Salary Structure Assignment
+                            </Button>
                         </>
                     )}
                 </div>
@@ -230,6 +244,14 @@ const EmployeeDirectoryContent = ({ activeTab }: Props) => {
                 isOpen={activeTool === 'bulk_week_off'}
                 onClose={() => setActiveTool(null)}
                 employees={selectedEmployees.map((employee) => employee.employee)}
+            />
+            <SalaryStructureAssignmentForm
+                isOpen={activeTool === 'salary_structure_assignment'}
+                onClose={() => setActiveTool(null)}
+                employees={selectedEmployees.map((employee) => ({
+                    id: employee.employee,
+                    name: employee.employee_name,
+                }))}
             />
             <Outlet />
         </>

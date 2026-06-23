@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useGetRecognitionPrograms } from "../../services/recognitionService";
 import { useGetRecognitionLeaderboard } from "../../services/recognitionService";
 import { useGetRecognitionMetrics } from "../../services/recognitionService";
@@ -24,7 +23,6 @@ import { Plus } from "lucide-react";
 
 const RecognitionPage: React.FC = () => {
   const { isDesktop } = useScreenSize();
-  const navigate = useNavigate();
   const [showAppreciateModal, setShowAppreciateModal] = useState(false);
 
   // Fetch all data
@@ -150,7 +148,7 @@ const RecognitionPage: React.FC = () => {
 
   const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
-      <HeaderBar title="Recognition" onBack={() => navigate(-1)} />
+      <HeaderBar title="Recognition" />
       <main className="p-4 z-100 flex-grow overflow-y-auto">
         {dashboardContent}
       </main>

@@ -709,6 +709,7 @@ export class EmployeeService {
     filters?: FilterCondition[],
     employee_self_service?: 1 | 0,
     fields?: string[],
+    search_term?: string,
   ): Promise<Employee[]> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const params: Record<string, any> = {};
@@ -720,6 +721,9 @@ export class EmployeeService {
     }
     if (fields && fields.length > 0) {
       params.fields = JSON.stringify(fields);
+    }
+    if (search_term) {
+      params.search_term = search_term;
     }
     const response = await FrappeAPI.getMethod(
       "cn_hrms_core.cn_hrms_core.apis.employee.get_employees",

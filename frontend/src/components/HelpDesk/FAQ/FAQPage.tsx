@@ -14,10 +14,19 @@ import { Typography } from "../../shared/atoms/Typography";
 import FAQAccordion from "../FAQ/FAQAccordion";
 import RequestIssueModal from "../RequestIssueModal";
 import emptyStateImage from "../../../assets/helpdesk-empty-state.png";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 const FAQPage: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
+
+  const { data: userUiPermission } = useGetUiPermission("Help Desk");
+  const canRequestIssue = isActionEnabled(
+    userUiPermission,
+    "request_issue",
+    "Help Desk",
+  );
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -197,16 +206,18 @@ const FAQPage: React.FC = () => {
         >
           View Requests
         </Button>
-        <Button
-          variant="contain"
-          bgColor="primary"
-          size="lg"
-          onClick={handleRequestIssue}
-          className="max-sm:w-full"
-        >
-          <Plus className="w-4 h-4" />
-          Request Issue
-        </Button>
+        {canRequestIssue &&
+          <Button
+            variant="contain"
+            bgColor="primary"
+            size="lg"
+            onClick={handleRequestIssue}
+            className="max-sm:w-full"
+          >
+            <Plus className="w-4 h-4" />
+            Request Issue
+          </Button>
+        }
       </div>
     </div>
   );
@@ -222,7 +233,6 @@ const FAQPage: React.FC = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
   if (!isDesktop) {
     return (
       <>
@@ -230,7 +240,6 @@ const FAQPage: React.FC = () => {
           <header className="sticky top-0 z-50 bg-white shadow-sm">
             <HeaderBar
               title="FAQs"
-              onBack={() => navigate("/webapp/helpdesk")}
             />
           </header>
           <main className="flex-1 overflow-y-auto bg-app">
