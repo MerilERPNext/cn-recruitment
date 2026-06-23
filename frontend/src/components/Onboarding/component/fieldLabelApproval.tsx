@@ -14,6 +14,7 @@ import {
   sendBackToCandidate,
   approveOnboardingForm,
 } from "../../../services/employeeOnboardingService";
+import { useNavigate } from "react-router-dom";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -447,6 +448,7 @@ function PendingRejectBanner({
 export default function OnboardingFieldApproval() {
   // ── Onboarding name from URL ──
   const onboardingName = getOnboardingNameFromUrl();
+ 
 
   // ── Selected fields state (multi-checkbox) ──
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
@@ -619,12 +621,12 @@ export default function OnboardingFieldApproval() {
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
-
+  const navigate = useNavigate();
   return (
-    <div className="flex w-full min-h-screen bg-gray-50 font-sans text-sm">
+    <div className="flex w-full h-[calc(100vh-73px)] overflow-hidden bg-gray-50 font-sans text-sm">
 
       {/* ── Sidebar ── */}
-      <aside className="w-64 bg-white border-r border-gray-100 flex flex-col sticky top-0 h-screen overflow-hidden flex-shrink-0">
+      <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-full overflow-hidden flex-shrink-0">
         <div className="px-4 py-4 border-b border-gray-100">
           <h1 className="text-sm font-semibold text-gray-900">Onboarding Approval</h1>
           <p className="text-xs text-gray-400 mt-0.5 truncate">{onboardingName}</p>
@@ -662,11 +664,11 @@ export default function OnboardingFieldApproval() {
       </aside>
 
       {/* ── Main ── */}
-      <main className="flex-1 p-5 overflow-y-auto min-w-0">
+      <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
 
         {/* Loading */}
         {pageLoading && (
-          <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
+          <div className="flex items-center justify-center h-64 text-gray-400 text-sm p-5">
             <div className="text-center space-y-3">
               <BeatLoader color="#6172f3" size={10} className="mx-auto" />
               <p>Fetching onboarding data...</p>
@@ -676,7 +678,7 @@ export default function OnboardingFieldApproval() {
 
         {/* Error */}
         {!pageLoading && pageError && (
-          <div className="bg-error-50 border border-error-200 rounded-xl p-4 text-error-800 text-sm max-w-xl">
+          <div className="bg-error-50 border border-error-200 rounded-xl p-4 text-error-800 text-sm max-w-xl m-5">
             <p className="font-medium mb-1">Failed to load data</p>
             <p className="text-xs text-error-600">{pageError}</p>
           </div>
@@ -684,11 +686,19 @@ export default function OnboardingFieldApproval() {
 
         {/* Content */}
         {!pageLoading && !pageError && activeSection && (
-          <div className="w-full space-y-4">
+          <div className="flex flex-col h-full min-h-0 w-full">
+
+            {/* ── Sticky top dashboard ── */}
+            <div className="shrink-0 px-5 pt-5 pb-3 space-y-4 bg-gray-50 border-b border-gray-100">
 
             {/* Breadcrumb */}
             <div className="text-xs text-gray-400">
-              Onboarding{" "}
+            <span
+  onClick={() => navigate(-1)}
+  className="cursor-pointer hover:underline text-gray-500 transition-colors hover:text-blue-700"
+>
+  Onboarding
+</span>
               <span className="text-gray-300">/</span>{" "}
               <span className="text-primary-600 font-medium">{activeSection}</span>
             </div>
@@ -770,6 +780,12 @@ export default function OnboardingFieldApproval() {
                 style={{ width: `${pct}%` }}
               />
             </div>
+
+            </div>
+            {/* ── end sticky top dashboard ── */}
+
+            {/* ── Scrollable fields region (only this scrolls) ── */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 py-3 space-y-4">
 
             {/* ── Section reject comment banner ── */}
             {sectionRejectPending && (
@@ -877,51 +893,11 @@ export default function OnboardingFieldApproval() {
               })}
             </div>
 
-            {/* ── Bottom action bar (mirrors top section actions to avoid scrolling) ── */}
-            <div className="flex items-center justify-end gap-2 flex-wrap pt-1">
-              {/* Section approve — immediate, no comment */}
-              <button
-                onClick={() => handleSectionApprove(activeSection)}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-50 text-success-800 border border-emerald-200 hover:bg-success-100 transition-colors"
-              >
-                Approve section
-              </button>
-              {/* Section reject — opens comment banner */}
-              <button
-                onClick={() => handleSectionRejectClick(activeSection)}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-error-50 text-error-600 border border-error-200 hover:bg-error-100 transition-colors"
-              >
-                Reject section
-              </button>
-              {/* Bulk approve all pending — no comment required */}
-              <button
-                onClick={bulkApproveAllPending}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-500 text-white border border-parimary-600 hover:bg-primary-700 transition-colors"
-                title="Approve all pending fields across entire document"
-              >
-                Approve all pending
-              </button>
-
-              {/* Send Back (Reject) — email trigger notifying candidate of rejected fields */}
-              <button
-                onClick={handleSendBack}
-                disabled={sendBackLoading}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-error-600 text-white border border-error-700 hover:bg-error-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                title="Send back to candidate — notify of rejected fields"
-              >
-                {sendBackLoading ? "Sending..." : "Send Back (Reject)"}
-              </button>
-
-              {/* Approve — email trigger marking the whole form approved */}
-              <button
-                onClick={handleApproveForm}
-                disabled={approveFormLoading}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-600 text-white border border-success-700 hover:bg-success-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                title="Approve the whole onboarding form"
-              >
-                {approveFormLoading ? "Approving..." : "Approve"}
-              </button>
             </div>
+            {/* ── end scrollable fields region ── */}
+
+            {/* ── Sticky bottom footer ── */}
+            <div className="shrink-0 px-5 pt-3 pb-5 bg-white border-t border-gray-100 space-y-2">
 
             {/* Prev / Next navigation */}
             <div className="flex justify-between pt-1">
@@ -932,14 +908,25 @@ export default function OnboardingFieldApproval() {
               >
                 ← Previous
               </button>
-              <button
-                onClick={goNext}
-                disabled={activeIdx >= secKeys.length - 1}
-                className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                Next →
-              </button>
+              {activeIdx >= secKeys.length - 1 ? (
+                <button
+                  onClick={() => navigate("/webapp/employee-onboarding")}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium text-white transition-colors"
+                >
+                  ← Go Back
+                </button>
+              ) : (
+                <button
+                  onClick={goNext}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next →
+                </button>
+              )}
             </div>
+
+            </div>
+            {/* ── end sticky bottom footer ── */}
           </div>
         )}
       </main>
