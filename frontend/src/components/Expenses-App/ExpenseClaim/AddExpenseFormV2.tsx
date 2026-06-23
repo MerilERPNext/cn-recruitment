@@ -450,7 +450,6 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
     <div className="flex flex-col h-full bg-white">
       <HeaderBar
         title={isEditingExistingExpense ? "Edit Expense" : "Add Expense"}
-        onBack={() => navigate(-1)}
       />
       <div className="flex-1 overflow-y-auto p-4 pb-10">
         <Form

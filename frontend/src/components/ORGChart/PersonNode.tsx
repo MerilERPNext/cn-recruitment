@@ -53,6 +53,18 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
         }}
       />
 
+      <Handle
+        id="left"
+        type="target"
+        position={Position.Left}
+        style={{
+          background: "transparent",
+          border: "none",
+          width: "1px",
+          height: "1px",
+        }}
+      />
+
       <div
         className={`relative min-w-[320px] px-5 py-4 bg-white border-t-4 border-x-1 border-b-1 shadow-sm shadow-md hover:shadow-lg transition-all duration-300 rounded-xl cursor-pointer ${isDottedLine
           ? "border-t-primary-500 border-x-primary-200 border-b-primary-200"
@@ -144,6 +156,18 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
       <Handle
         type="source"
         position={Position.Bottom}
+        style={{
+          background: "transparent",
+          border: "none",
+          width: "1px",
+          height: "1px",
+        }}
+      />
+
+      <Handle
+        id="right"
+        type="source"
+        position={Position.Right}
         style={{
           background: "transparent",
           border: "none",

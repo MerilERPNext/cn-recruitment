@@ -304,16 +304,6 @@ export default function ThreeLevelOrgChart() {
 
   const handleShowDottedManager = useCallback(() => setShowDottedManager((prev) => !prev), []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const calculateLayout = useCallback((nodes: Node<any>[], edges: Edge[]) => {
-    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-      nodes,
-      edges
-    );
-    setNodes([...layoutedNodes]);
-    setEdges([...layoutedEdges]);
-  }, [setNodes, setEdges]);
-
   useEffect(() => {
     if (!employeeHierarchy || !employeeId) return;
 
@@ -341,10 +331,15 @@ export default function ThreeLevelOrgChart() {
         grandParent
       );
 
+      // Build the dotted manager node separately — excluded from dagre so we can
+      // manually position it to the right of the employee node.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let dottedNode: Node<any> | null = null;
+      let dottedEdge: Edge | null = null;
+
       if (dottedManagerId && !initialNodes.find((n) => n.id === dottedManagerId)) {
         if (showDottedManager) {
-          // Full person card — badge acts as the collapse toggle
-          initialNodes.push({
+          dottedNode = {
             id: dottedManagerId,
             type: "person",
             position: { x: 0, y: 0 },
@@ -362,30 +357,56 @@ export default function ThreeLevelOrgChart() {
               isDottedLine: true,
               onCollapse: handleShowDottedManager,
             },
-          });
+          };
         } else {
-          // Chip node
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (initialNodes as Node<any>[]).push({
+          dottedNode = {
             id: dottedManagerId,
             type: "dottedLineChip",
             position: { x: 0, y: 0 },
             data: { onToggle: handleShowDottedManager },
-          });
+          };
         }
 
-        initialEdges.push({
-          id: `e-dotted-${dottedManagerId}-${employeeId}`,
-          source: dottedManagerId,
-          target: employeeId,
+        dottedEdge = {
+          id: `e-dotted-${employeeId}-${dottedManagerId}`,
+          source: employeeId,
+          sourceHandle: "right",
+          target: dottedManagerId,
+          // PersonNode has multiple target handles; explicitly pick the left one
+          ...(showDottedManager ? { targetHandle: "left" } : {}),
           type: "smoothstep",
           style: { stroke: "#6172F3", strokeWidth: 2, strokeDasharray: "6 3" },
-        });
+        };
       }
 
-      calculateLayout(initialNodes, initialEdges);
+      // Layout only the main hierarchy nodes (no dotted manager)
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+        initialNodes,
+        initialEdges
+      );
+
+      if (dottedNode && dottedEdge) {
+        const empNode = layoutedNodes.find((n) => n.id === employeeId);
+        if (empNode) {
+          const nodeH = dottedNode.type === "dottedLineChip" ? CHIP_H : PERSON_H;
+          const nodeW = dottedNode.type === "dottedLineChip" ? CHIP_W : PERSON_W;
+          dottedNode.position = {
+            x: empNode.position.x + PERSON_W + 60,
+            y: empNode.position.y + (PERSON_H - nodeH) / 2,
+          };
+          dottedNode.sourcePosition = Position.Right;
+          dottedNode.targetPosition = Position.Left;
+          // Shrink to fit so dagre's bounding box isn't thrown off in re-renders
+          dottedNode.style = { opacity: 1, width: nodeW };
+        }
+        setNodes([...layoutedNodes, dottedNode]);
+        setEdges([...layoutedEdges, dottedEdge]);
+      } else {
+        setNodes([...layoutedNodes]);
+        setEdges([...layoutedEdges]);
+      }
     }
-  }, [employeeHierarchy, employeeId, currentUser, dottedManagerId, dottedManagerName, showDottedManager, handleShowDottedManager, calculateLayout]);
+  }, [employeeHierarchy, employeeId, currentUser, dottedManagerId, dottedManagerName, showDottedManager, handleShowDottedManager]);
 
   return (
     <div className="w-full rounded-md bg-white h-[60vh]">

@@ -67,21 +67,19 @@ const LeaderboardPage: React.FC = () => {
           <div className="flex gap-2 mb-4 border-b border-gray-200">
             <button
               onClick={() => setActiveTab("received")}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                activeTab === "received"
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === "received"
                   ? "border-primary text-primary"
                   : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+                }`}
             >
               Received
             </button>
             <button
               onClick={() => setActiveTab("given")}
-              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
-                activeTab === "given"
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === "given"
                   ? "border-primary text-primary"
                   : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+                }`}
             >
               Given
             </button>
@@ -93,11 +91,10 @@ const LeaderboardPage: React.FC = () => {
               <button
                 key={p.label}
                 onClick={() => setPeriod(p.value)}
-                className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
-                  period === p.value
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${period === p.value
                     ? "bg-primary-50 text-header-active"
                     : "text-header-inactive hover:text-header-active"
-                }`}
+                  }`}
               >
                 {p.label}
               </button>
@@ -203,7 +200,7 @@ const LeaderboardPage: React.FC = () => {
   if (!isDesktop) {
     return (
       <div className="flex flex-col min-h-screen bg-white">
-        <HeaderBar title="Leaderboard" onBack={() => navigate("/webapp/recognition")} />
+        <HeaderBar title="Leaderboard" />
         <main className="p-4 flex-grow overflow-y-auto">{content}</main>
       </div>
     );

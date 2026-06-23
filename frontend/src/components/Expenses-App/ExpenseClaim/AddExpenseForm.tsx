@@ -1618,7 +1618,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const FormContent = (
     <div className="flex flex-col h-full bg-white">
-      <HeaderBar title="Add Expense" onBack={() => navigate(-1)} />
+      <HeaderBar title="Add Expense" />
 
       <div className="flex-1 overflow-y-auto px-4 pb-4">
         {isEditActive && isFetchingFields && !dynamicFields.length && (

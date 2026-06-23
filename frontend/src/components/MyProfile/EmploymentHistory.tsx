@@ -256,7 +256,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         functionalArea={item?.functional_area?.name || ""}
                         is_promotion={item.is_promotion}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item) : undefined}
-                        onDelete={canEditEmploymentHistory ? () => setPendingDelete({ type: "history", names: collectRowNames(item as unknown as Record<string, unknown>) }) : undefined}
+                        onDelete={canEditEmploymentHistory && item.can_delete ? () => setPendingDelete({ type: "history", names: collectRowNames(item as unknown as Record<string, unknown>) }) : undefined}
                       />
                     </div>
                   ))}
@@ -294,7 +294,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         state={item.state}
                         city={item.city}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "work_location") : undefined}
-                        onDelete={canEditEmploymentHistory ? () => {
+                        onDelete={canEditEmploymentHistory && item.can_delete ? () => {
                           const names = [item.work_location?.row_name].filter(Boolean) as string[];
                           setPendingDelete({ type: "history", names });
                         } : undefined}
@@ -333,7 +333,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         employment_type={item.employment_type}
                         employee_subtype={item.employee_subtype}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employment_type") : undefined}
-                        onDelete={canEditEmploymentHistory ? () => {
+                        onDelete={canEditEmploymentHistory && item.can_delete ? () => {
                           const names = [item.employment_type?.row_name, item.employee_subtype?.row_name].filter(Boolean) as string[];
                           setPendingDelete({ type: "history", names });
                         } : undefined}
@@ -371,7 +371,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         is_promotion={item.is_promotion}
                         employee_role={item.employee_role}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employee_role") : undefined}
-                        onDelete={canEditEmploymentHistory ? () => {
+                        onDelete={canEditEmploymentHistory && item.can_delete ? () => {
                           const names = [item.employee_role?.row_name].filter(Boolean) as string[];
                           setPendingDelete({ type: "history", names });
                         } : undefined}
@@ -408,7 +408,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         to_date={item.to_date}
                         is_current={item.is_current}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "cost_center") : undefined}
-                        onDelete={canEditEmploymentHistory ? () => {
+                        onDelete={canEditEmploymentHistory && item.can_delete ? () => {
                           const names = item.allocations.map((a) => a.row_name).filter(Boolean) as string[];
                           setPendingDelete({ type: "cost_center", names });
                         } : undefined}
@@ -483,7 +483,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             <div className="flex flex-col gap-2 mt-6">
               <div className="flex items-center justify-between">
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                  Previous Joining History
+                  Employee Joining History
                 </Typography>
               </div>
               {previousJoiningHistory.length > 0 ? (
@@ -508,7 +508,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                   ))}
                 </div>
               ) : (
-                <NoDataFound title="No Previous Joining History" subtitle="No previous joining history records found." />
+                <NoDataFound title="No Employee Joining History" subtitle="No employee joining history records found." />
               )}
             </div>
           </>

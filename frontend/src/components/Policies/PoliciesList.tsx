@@ -78,7 +78,6 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
 
 const PoliciesList: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const employeeId = user?.employee ?? "";
@@ -126,7 +125,6 @@ const PoliciesList: React.FC = () => {
         {isDesktop ? (
           <HeaderBar
             title="Policies List"
-            onBack={() => navigate(-1)}
             rightSlot={<FilterDropdown />}
             className="md:mb-4"
             bgColor="primary/10"

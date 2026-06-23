@@ -445,6 +445,11 @@ const FlowRequests2 = lazyWithRetry(
   "FlowRequests2",
 );
 
+const OnbordingFlow = lazyWithRetry(
+  () => import("./components/Flows/Onboarding/OnbordingFlow"),
+  "OnbordingFlow",
+);
+
 const Separation = lazyWithRetry(
   () => import("./components/Flows/Separation/Separation"),
   "Separation",
@@ -1391,6 +1396,11 @@ export const routesConfig: AppRoute[] = [
       {
         path: "flow-requests",
         element: <FlowRequests2 />,
+        permissionKey: "Flow Requests",
+      },
+      {
+        path: "onboarding",
+        element: <OnbordingFlow />,
         permissionKey: "Flow Requests",
       },
       {

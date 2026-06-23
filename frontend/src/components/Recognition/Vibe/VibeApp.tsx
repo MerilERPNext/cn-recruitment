@@ -35,7 +35,7 @@ const VibeApp: React.FC = () => {
     return (
       <div className="flex min-h-screen flex-col bg-white">
         <header className="sticky top-0 z-50 bg-white shadow-sm">
-          <HeaderBar title="Vibe" onBack={() => navigate("/webapp")} />
+          <HeaderBar title="Vibe" />
           <NavigationTabs
             tabs={VIBE_TABS}
             activeTab={activeTab}

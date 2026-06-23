@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
-import { useNavigate } from "react-router-dom";
 import assignmentDetailsFormSchema from "./assignmentDetailsFormSchema.json";
 import {
   useCurrentEmployeeDetails,
@@ -16,7 +15,6 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 
 const AssignmentDetailsPage = () => {
-  const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
   const { targetEmployeeId } = useTargetUser();
   const { data: currentUser } = useCurrentEmployeeDetails({
@@ -254,7 +252,7 @@ const AssignmentDetailsPage = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <HeaderBar title="Assignment Details" onBack={() => navigate(-1)} />
+      <HeaderBar title="Assignment Details" />
       <div className="p-4">{content}</div>
     </div>
   );

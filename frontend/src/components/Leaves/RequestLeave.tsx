@@ -551,11 +551,28 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           return att;
         }),
       );
-      const formatted = errorResponseFormater(
+
+      // Use showToast so partial-success responses (some days created, some
+      // failed) render separate success + error toasts automatically.
+      errorResponseFormater(
         err,
         err?.[0]?.message?.toString() ?? "Failed to Submit Leave Request",
+        { showToast: true },
       );
-      toast.error(formatted);
+
+      // When some leave applications were created despite the overall error,
+      // refresh queries so the UI reflects the newly-created entries.
+      const messageData = err?.response?.data?.message;
+      if (messageData?.success_message || messageData?.leave_applications?.length) {
+        triggerRefetch();
+        queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
+        queryClient.invalidateQueries({ queryKey: ["custom-api"] });
+        queryClient.invalidateQueries({ queryKey: ["custom-api-infinite"] });
+        queryClient.invalidateQueries({ queryKey: ["leave-buttons-status"] });
+        queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+        queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+        queryClient.invalidateQueries({ queryKey: ["attendance-calendar-details"] });
+      }
     }
   }, [
     currentEmployee,

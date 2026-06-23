@@ -1,6 +1,6 @@
 import { DownloadIcon } from "lucide-react";
 import React from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useFrappeDocument } from "../../hooks/useFrappeQuery";
 import HeaderBar from "../HeaderBar";
 import SecurePdfViewer from "../SecurePdfViewer_CookieAuth";
@@ -8,7 +8,6 @@ import { FilePreview } from "../shared/molecules/FilePreview";
 import { getFileTypeInfo } from "../../utils/fileUtils";
 
 const ViewPolicy: React.FC = () => {
-  const navigate = useNavigate();
   const { policyName } = useParams<{ policyName: string }>();
 
   const { data, isLoading, error } = useFrappeDocument(
@@ -33,7 +32,7 @@ const ViewPolicy: React.FC = () => {
   if (isLoading)
     return (
       <div className="min-h-screen bg-surface flex flex-col">
-        <HeaderBar title="View Policy" onBack={() => navigate(-1)} />
+        <HeaderBar title="View Policy" />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary-100 border-t-primary mx-auto"></div>
@@ -48,7 +47,7 @@ const ViewPolicy: React.FC = () => {
   if (error || !documentUrl)
     return (
       <div className="min-h-screen bg-surface flex flex-col">
-        <HeaderBar title="View Policy" onBack={() => navigate(-1)} />
+        <HeaderBar title="View Policy" />
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="bg-error-50 border border-error-200 rounded-2xl p-8 text-center max-w-md w-full">
             <div className="w-12 h-12 bg-error-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -78,7 +77,6 @@ const ViewPolicy: React.FC = () => {
     <div className="h-full bg-surface flex flex-col overflow-hidden">
       <HeaderBar
         title="View Policy"
-        onBack={() => navigate(-1)}
         rightSlot={<DownloadDocument />}
       />
       <main className="flex-1 min-h-0 flex flex-col px-1 md:px-2 pb-2 overflow-hidden">

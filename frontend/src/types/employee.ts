@@ -274,11 +274,13 @@ export interface WorkRole {
   band: WorkRoleField | null;
   grade: WorkRoleField | null;
   is_promotion: boolean;
+  can_delete?: boolean;
 }
 export interface WorkLocation {
   from_date: string;
   to_date: string | null;
   is_current: boolean;
+  can_delete?: boolean;
   work_location: {
     id: string;
     name: string;
@@ -306,6 +308,7 @@ export interface EmploymentTypes {
   to_date: string | null;
   is_current: boolean;
   is_promotion: boolean;
+  can_delete?: boolean;
   employment_type: {
     name: string | null;
     id: string | null;
@@ -323,6 +326,7 @@ export interface EmployeeRole {
   to_date: string | null;
   is_current: boolean;
   is_promotion: boolean;
+  can_delete?: boolean;
   employee_role: {
     id: string;
     name: string;
@@ -347,6 +351,7 @@ export interface EmployeeCostCenter {
   to_date: string | null;
   is_current: boolean;
   total_percentage: number;
+  can_delete?: boolean;
   allocations: CostCenterAllocation[];
   segment_totals: Record<string, number>;
 }

@@ -178,11 +178,6 @@ export default function EmployeeProfileSections() {
                                     const allVisibleFields = section.columns.flatMap((col: SimpleColumn) => col.fields.filter(f => !f.hidden));
                                     if (!allVisibleFields.length) return null;
 
-                                    const colCount = Math.min(section.columns.length, 4);
-                                    const gridClass = colCount > 1
-                                        ? `grid grid-cols-1 sm:grid-cols-2 ${colCount === 3 ? "lg:grid-cols-3" : colCount >= 4 ? "lg:grid-cols-4" : ""} gap-x-6 gap-y-4`
-                                        : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 md:gap-y-8 gap-x-6";
-
                                     return (
                                         <div key={section.key}>
                                             {section.label && (
@@ -190,47 +185,21 @@ export default function EmployeeProfileSections() {
                                                     {section.label}
                                                 </Typography>
                                             )}
-                                            <div className={gridClass}>
-                                                {colCount > 1 ? (
-                                                    section.columns.map((column: SimpleColumn) => {
-                                                        const visibleFields = column.fields.filter(f => !f.hidden);
-                                                        if (!visibleFields.length) return null;
-
-                                                        return (
-                                                            <div key={column.key} className="space-y-4">
-                                                                {visibleFields.map(field => {
-                                                                    const isTable = Array.isArray(field.value);
-                                                                    return (
-                                                                        <FieldCell
-                                                                            key={field.key}
-                                                                            field={field}
-                                                                            tabKey={tab.key}
-                                                                            tabLabel={tab.label}
-                                                                            canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" })}
-                                                                            isTable={isTable}
-                                                                            onEdit={setEdit}
-                                                                        />
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        );
-                                                    })
-                                                ) : (
-                                                    allVisibleFields.map(field => {
-                                                        const isTable = Array.isArray(field.value);
-                                                        return (
-                                                            <FieldCell
-                                                                key={field.key}
-                                                                field={field}
-                                                                tabKey={tab.key}
-                                                                tabLabel={tab.label}
-                                                                canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" })}
-                                                                isTable={isTable}
-                                                                onEdit={setEdit}
-                                                            />
-                                                        );
-                                                    })
-                                                )}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 md:gap-y-8 gap-x-6">
+                                                {allVisibleFields.map(field => {
+                                                    const isTable = Array.isArray(field.value);
+                                                    return (
+                                                        <FieldCell
+                                                            key={field.key}
+                                                            field={field}
+                                                            tabKey={tab.key}
+                                                            tabLabel={tab.label}
+                                                            canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" })}
+                                                            isTable={isTable}
+                                                            onEdit={setEdit}
+                                                        />
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     );

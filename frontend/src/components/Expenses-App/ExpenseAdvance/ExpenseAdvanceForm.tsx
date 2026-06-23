@@ -581,7 +581,6 @@ const ExpenseAdvanceForm: React.FC<{
     <div className="flex flex-col h-full bg-white">
       <HeaderBar
         title={isEditMode ? "Edit Expense Advance" : "New Expense Advance"}
-        onBack={() => navigate(-1)}
       />
 
       <div className="flex-1 overflow-y-auto p-4">

@@ -1,12 +1,11 @@
 import React, { useMemo } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router";
+import { Outlet, useLocation } from "react-router";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
 
 const PoliciesApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
-  const navigate = useNavigate();
   const location = useLocation();
 
   const isViewPolicy = location.pathname.startsWith(
@@ -26,7 +25,7 @@ const PoliciesApp: React.FC = () => {
 
   const mobileLayout = (
     <div className={`flex flex-col ${isViewPolicy ? "h-screen overflow-hidden" : "min-h-screen"}`}>
-      {!isViewPolicy && <HeaderBar title={title} onBack={() => navigate(-1)} />}
+      {!isViewPolicy && <HeaderBar title={title} />}
       <main className={`flex-grow z-100 ${isViewPolicy ? "overflow-hidden" : "overflow-y-auto md:p-4"}`}>
         <Outlet />
       </main>
