@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import Button from "../shared/atoms/Button";
@@ -15,18 +15,17 @@ const StageRetriggerButton = ({
   page,
 }: {
   todoId?: string;
-  page: string;
+  page: "Flow Requests" | "Separation" | "Confirmation";
 }) => {
   const { data: userUiPermission } = useGetUiPermission("HR Process");
 
-  let actionKey = "";
-  if (page === "Flow Requests") {
-    actionKey = "flow_stage_retrigger";
-  } else if (page === "Separation") {
-    actionKey = "separation_stage_retrigger";
-  } else if (page === "Confirmation") {
-    actionKey = "confirmation_stage_retrigger";
-  }
+  const actionKeyMap: Record<string, string> = {
+    "Flow Requests": "flow_stage_retrigger",
+    "Separation": "separation_stage_retrigger",
+    "Confirmation": "confirmation_stage_retrigger",
+  };
+
+  const actionKey = actionKeyMap[page] || "";
 
   const canRetrigger = actionKey ? isActionEnabled(userUiPermission, actionKey, page) : false;
 
@@ -34,7 +33,6 @@ const StageRetriggerButton = ({
 
   const [showModal, setShowModal] = useState(false);
 
-  console.log({ canRetrigger, todoId })
   if (!todoId || !canRetrigger) return null;
 
   return (
@@ -67,7 +65,7 @@ const StageRetriggerButton = ({
                 <X className="h-4 w-4 text-gray-500" />
               </button>
             </div>
-            
+
             <Typography variant="bodySmall" className="text-gray-600 leading-relaxed">
               Are you sure you want to retrigger this stage? The task will be retriggered to the respective assignees.
             </Typography>
@@ -91,7 +89,8 @@ const StageRetriggerButton = ({
                       setShowModal(false);
                     },
                     onError: (error) => {
-                      errorResponseFormater(error, "Failed to retrigger stage.", { showToast: true });
+                      const formattedError = errorResponseFormater(error, "Failed to retrigger stage.");
+                      toast.error(formattedError);
                       setShowModal(false);
                     }
                   });
