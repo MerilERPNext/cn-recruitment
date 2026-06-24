@@ -639,6 +639,85 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         !!(attendanceRequestAttachmentsMandatory as any)?.to_date_read_only;
     }
 
+    // Push the Attendance Adjustment specific config flags into the hidden
+    // fields so customConditional/validate expressions (which read off `data`)
+    // can react to them.
+    const enableTimeTypeSelectionComp = instance.getComponent(
+      "enable_time_type_selection",
+    );
+    if (enableTimeTypeSelectionComp) {
+      enableTimeTypeSelectionComp.setValue(
+        !!(attendanceRequestAttachmentsMandatory as any)
+          ?.enable_time_type_selection,
+        { noUpdateEvent: true },
+      );
+    }
+    const showOnlySingleDateFieldComp = instance.getComponent(
+      "show_only_single_date_field",
+    );
+    if (showOnlySingleDateFieldComp) {
+      showOnlySingleDateFieldComp.setValue(
+        !!(attendanceRequestAttachmentsMandatory as any)
+          ?.show_only_single_date_field,
+        { noUpdateEvent: true },
+      );
+    }
+    const freezeInOutTimeComp = instance.getComponent(
+      "freeze_in_out_time_to_shift_timings",
+    );
+    if (freezeInOutTimeComp) {
+      freezeInOutTimeComp.setValue(
+        !!(attendanceRequestAttachmentsMandatory as any)
+          ?.freeze_in_out_time_to_shift_timings,
+        { noUpdateEvent: true },
+      );
+    }
+    const shiftStartTimeComp = instance.getComponent("shift_start_time");
+    const shiftStartTimeRaw = (attendanceRequestAttachmentsMandatory as any)
+      ?.shift_start_time;
+    if (shiftStartTimeComp && shiftStartTimeRaw) {
+      shiftStartTimeComp.setValue(shiftStartTimeRaw, { noUpdateEvent: true });
+    }
+    const shiftEndTimeComp = instance.getComponent("shift_end_time");
+    const shiftEndTimeRaw = (attendanceRequestAttachmentsMandatory as any)
+      ?.shift_end_time;
+    if (shiftEndTimeComp && shiftEndTimeRaw) {
+      shiftEndTimeComp.setValue(shiftEndTimeRaw, { noUpdateEvent: true });
+    }
+
+    // Freeze check-in/out times to shift timings, but only for Attendance
+    // Adjustment requests.
+    const freezeActive =
+      requestTypeChanged === "Attendance Adjustment" &&
+      !!(attendanceRequestAttachmentsMandatory as any)
+        ?.freeze_in_out_time_to_shift_timings;
+    const checkinTimeComp = instance.getComponent("checkin_time") as any;
+    const checkoutTimeComp = instance.getComponent("checkout_time") as any;
+    if (checkinTimeComp?.component) {
+      checkinTimeComp.component.disabled = freezeActive;
+    }
+    if (checkoutTimeComp?.component) {
+      checkoutTimeComp.component.disabled = freezeActive;
+    }
+    if (freezeActive) {
+      if (checkinTimeComp && shiftStartTimeRaw) {
+        const normalized = normalizeTime(shiftStartTimeRaw);
+        if (normalized) {
+          checkinTimeComp.setValue(new Date(`1970-01-01T${normalized}`), {
+            noUpdateEvent: true,
+          });
+        }
+      }
+      if (checkoutTimeComp && shiftEndTimeRaw) {
+        const normalized = normalizeTime(shiftEndTimeRaw);
+        if (normalized) {
+          checkoutTimeComp.setValue(new Date(`1970-01-01T${normalized}`), {
+            noUpdateEvent: true,
+          });
+        }
+      }
+    }
+
     const parseDate = (d: string | undefined) => {
       if (!d) return undefined;
       const parsed = new Date(d);
@@ -694,7 +773,12 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
     applyFP(fromDateComp);
     applyFP(toDateComp);
-  }, [attendanceRequestAttachmentsMandatory, isFormReady, forActionType]);
+  }, [
+    attendanceRequestAttachmentsMandatory,
+    isFormReady,
+    forActionType,
+    requestTypeChanged,
+  ]);
 
   // const formatTime = (date: Date | string | undefined): string | undefined => {
   //   if (!date) return undefined;
@@ -818,14 +902,27 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               };
               break;
 
-            case "Attendance Adjustment":
+            case "Attendance Adjustment": {
+              const isSingleDateMode = !!(
+                attendanceRequestAttachmentsMandatory as any
+              )?.show_only_single_date_field;
+              const singleDateValue = (submission.data as any).date;
+              const adjustmentFromDate =
+                isSingleDateMode && singleDateValue
+                  ? singleDateValue
+                  : submission.data.from_date;
+              const adjustmentToDate =
+                isSingleDateMode && singleDateValue
+                  ? singleDateValue
+                  : submission.data.to_date;
+
               requestBody = {
                 ...baseBody,
                 from_date: formatDateToYYYYMMDD(
-                  new Date(submission.data.from_date || new Date()),
+                  new Date(adjustmentFromDate || new Date()),
                 ),
                 to_date: formatDateToYYYYMMDD(
-                  new Date(submission.data.to_date || new Date()),
+                  new Date(adjustmentToDate || new Date()),
                 ),
                 custom_from_time: formatForPayload(submission.data.checkin_time),
                 custom_to_time: formatForPayload(submission.data.checkout_time),
@@ -833,6 +930,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                 custom_location: submission?.data?.custom_location,
               };
               break;
+            }
 
             case "Shift Change":
               requestBody = {
@@ -925,6 +1023,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       uploadFiles,
       updateAttendanceRequest,
       mutation,
+      attendanceRequestAttachmentsMandatory,
     ],
   );
 
@@ -962,6 +1061,13 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       if (submission?.data?.to_date) {
         const newTo = submission.data.to_date.toString();
         if (newTo !== toDateChanged) setToDateChanged(newTo);
+      }
+      // Single-date mode (Attendance Adjustment) drives both from/to date.
+      const singleDateValue = (submission?.data as any)?.date;
+      if (singleDateValue) {
+        const newDate = singleDateValue.toString();
+        if (newDate !== fromDateChanged) setFromDateChanged(newDate);
+        if (newDate !== toDateChanged) setToDateChanged(newDate);
       }
       if (submission?.changed?.component?.key === "employee") {
         setCurrentlySelectedEmployee(submission.changed.value as any);
@@ -1033,6 +1139,16 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     // In edit mode, we want to keep the values from the existing record initialized in onFormReady
     if (forActionType === "edit" && defaultAttendanceData) return;
 
+    // Frozen check-in/out times (Attendance Adjustment) are managed by the
+    // mandatory-config sync effect above — don't fight it for control here.
+    if (
+      requestTypeChanged === "Attendance Adjustment" &&
+      (attendanceRequestAttachmentsMandatory as any)
+        ?.freeze_in_out_time_to_shift_timings
+    ) {
+      return;
+    }
+
     const checkinComp = instance.getComponent("checkin_time");
     const checkoutComp = instance.getComponent("checkout_time");
 
@@ -1081,6 +1197,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     forActionType,
     defaultAttendanceData,
     latestInAndOutTime,
+    requestTypeChanged,
+    attendanceRequestAttachmentsMandatory,
   ]);
 
   const onFormReady = useCallback(

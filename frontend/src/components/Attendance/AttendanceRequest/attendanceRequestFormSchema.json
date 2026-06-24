@@ -46,6 +46,36 @@
           "defaultValue": ""
         },
         {
+          "type": "hidden",
+          "key": "enable_time_type_selection",
+          "input": true,
+          "defaultValue": false
+        },
+        {
+          "type": "hidden",
+          "key": "show_only_single_date_field",
+          "input": true,
+          "defaultValue": false
+        },
+        {
+          "type": "hidden",
+          "key": "freeze_in_out_time_to_shift_timings",
+          "input": true,
+          "defaultValue": false
+        },
+        {
+          "type": "hidden",
+          "key": "shift_start_time",
+          "input": true,
+          "defaultValue": ""
+        },
+        {
+          "type": "hidden",
+          "key": "shift_end_time",
+          "input": true,
+          "defaultValue": ""
+        },
+        {
           "label": "Employee",
           "errorLabel": "Employee",
           "key": "employee",
@@ -130,6 +160,37 @@
           }
         },
         {
+          "label": "Time Type",
+          "errorLabel": "Time Type",
+          "key": "time_type_selection",
+          "type": "select",
+          "input": true,
+          "placeholder": "Select a Time Type",
+          "customClass": "mb-4",
+          "validateWhenHidden": false,
+          "validate": {
+            "custom": "valid = !(data.request_type === 'Attendance Adjustment' && data.enable_time_type_selection === true) || !!input;",
+            "customMessage": "Time Type is required"
+          },
+          "customConditional": "show = data.request_type === 'Attendance Adjustment' && data.enable_time_type_selection === true;",
+          "data": {
+            "values": [
+              {
+                "label": "In Time",
+                "value": "In Time"
+              },
+              {
+                "label": "Out Time",
+                "value": "Out Time"
+              },
+              {
+                "label": "Both",
+                "value": "Both"
+              }
+            ]
+          }
+        },
+        {
           "label": "From Date",
           "errorLabel": "From Date",
           "key": "from_date",
@@ -138,6 +199,7 @@
           "enableMinDateInput": false,
           "enableMaxDateInput": false,
           "validateWhenHidden": false,
+          "customConditional": "show = !(data.request_type === 'Attendance Adjustment' && data.show_only_single_date_field === true);",
           "widget": {
             "type": "calendar",
             "minDate": "allowed_from_date",
@@ -178,10 +240,40 @@
             "custom": "valid = !data.from_date || !input || new Date(input) >= new Date(data.from_date);",
             "customMessage": "To Date cannot be earlier than From Date"
           },
-          "customConditional": "show = !['Clockin'].includes(data.request_type || '');",
+          "customConditional": "show = !['Clockin'].includes(data.request_type || '') && !(data.request_type === 'Attendance Adjustment' && data.show_only_single_date_field === true);",
           "calculateValue": "value = (data.request_type === 'Short Attendance Request' && !value) ? data.from_date : value",
           "disabled": false,
           "redrawOn": "from_date"
+        },
+        {
+          "label": "Date",
+          "errorLabel": "Date",
+          "key": "date",
+          "type": "datetime",
+          "input": true,
+          "enableMinDateInput": false,
+          "enableMaxDateInput": false,
+          "validateWhenHidden": false,
+          "widget": {
+            "type": "calendar",
+            "minDate": "allowed_from_date",
+            "maxDate": "allowed_to_date"
+          },
+          "datePicker": {
+            "minDate": "allowed_from_date",
+            "maxDate": "allowed_to_date"
+          },
+          "format": "dd-MM-yyyy",
+          "placeholder": "dd-mm-yyyy",
+          "customClass": "mb-4",
+          "enableTime": false,
+          "validate": {
+            "custom": "valid = !(data.request_type === 'Attendance Adjustment' && data.show_only_single_date_field === true) || !!input;",
+            "customMessage": "Date is required"
+          },
+          "customConditional": "show = data.request_type === 'Attendance Adjustment' && data.show_only_single_date_field === true;",
+          "disabled": false,
+          "redrawOn": "allowed_from_date"
         },
         {
           "label": "Check-In Time <span class='show-req-astrik field-required'></span>",
@@ -189,11 +281,12 @@
           "type": "time",
           "input": true,
           "allowCalculateOverride": true,
+          "validateWhenHidden": false,
           "validate": {
             "customMessage": "Check-In Time is required",
-            "custom": "valid = (function() { var reqType = data.request_type || ''; var required = ['Clockin', 'Short Attendance Request', 'Attendance Adjustment'].includes(reqType); if (required && !input) return false; return true; })();"
+            "custom": "valid = (function() { var reqType = data.request_type || ''; if (reqType === 'Attendance Adjustment' && data.enable_time_type_selection === true) { var required = ['In Time', 'Both'].includes(data.time_type_selection); if (required && !input) return false; return true; } var required = ['Clockin', 'Short Attendance Request', 'Attendance Adjustment'].includes(reqType); if (required && !input) return false; return true; })();"
           },
-          "customConditional": "show = ['Attendance Adjustment', 'Short Attendance Request', 'Clockin'].includes(data.request_type || '');",
+          "customConditional": "show = (function() { var reqType = data.request_type || ''; if (reqType === 'Attendance Adjustment' && data.enable_time_type_selection === true) { return ['In Time', 'Both'].includes(data.time_type_selection); } return ['Attendance Adjustment', 'Short Attendance Request', 'Clockin'].includes(reqType); })();",
           "enableDate": false,
           "enableTime": true,
           "format": "HH:mm",
@@ -215,11 +308,12 @@
           "format": "HH:mm",
           "placeholder": "HH:mm",
           "customClass": "mb-4",
+          "validateWhenHidden": false,
           "validate": {
             "customMessage": "Check-Out Time is required",
-            "custom": "valid = (function() { var reqType = data.request_type || ''; var required = ['Short Attendance Request', 'On Duty', 'Attendance Adjustment'].includes(reqType); if (required && !input) return false; return true; })();"
+            "custom": "valid = (function() { var reqType = data.request_type || ''; if (reqType === 'Attendance Adjustment' && data.enable_time_type_selection === true) { var required = ['Out Time', 'Both'].includes(data.time_type_selection); if (required && !input) return false; return true; } var required = ['Short Attendance Request', 'On Duty', 'Attendance Adjustment'].includes(reqType); if (required && !input) return false; return true; })();"
           },
-          "customConditional": "show = ['Attendance Adjustment', 'Short Attendance Request'].includes(data.request_type || '');",
+          "customConditional": "show = (function() { var reqType = data.request_type || ''; if (reqType === 'Attendance Adjustment' && data.enable_time_type_selection === true) { return ['Out Time', 'Both'].includes(data.time_type_selection); } return ['Attendance Adjustment', 'Short Attendance Request'].includes(reqType); })();",
           "widget": {
             "type": "input"
           }
