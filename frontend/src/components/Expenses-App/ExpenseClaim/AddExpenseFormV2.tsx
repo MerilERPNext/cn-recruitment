@@ -673,7 +673,7 @@ const AddExpenseFormV2: React.FC<AddExpenseFormV2Props> = ({
           <ExpenseActionBar
             isEditingExistingExpense={isEditingExistingExpense}
             isDraftExpenseEdit={isDraftExpenseEdit}
-            onSave={() => handleActionFlow(false)}
+            onSave={() => handleActionFlow(false, "Draft")}
             onUpdate={() => handleActionFlow(false)}
             onSaveAndSubmit={() => {
               const categoryType = (mainFormData?.category_type || "General") as "General" | "Relocation";
