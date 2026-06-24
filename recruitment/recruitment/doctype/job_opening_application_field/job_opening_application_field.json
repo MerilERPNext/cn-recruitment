@@ -9,6 +9,8 @@
   "section",
   "reference_name",
   "display_name",
+  "fieldtype",
+  "child_field_config",
   "view_careers",
   "mandatory_careers",
   "view_ijp",
@@ -46,6 +48,18 @@
    "in_list_view": 1,
    "label": "Display Name",
    "reqd": 1
+  },
+  {
+   "fieldname": "fieldtype",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Field Type"
+  },
+  {
+   "fieldname": "child_field_config",
+   "fieldtype": "Small Text",
+   "hidden": 1,
+   "label": "Child Field Config"
   },
   {
    "columns": 1,

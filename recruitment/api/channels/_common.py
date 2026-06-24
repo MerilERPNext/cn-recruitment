@@ -430,10 +430,27 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 				else ([] if is_table else None)
 			),
 		}
-		# For child-table fields, ship the child doctype's columns so the
-		# frontend can render the grid (options alone is just the doctype name).
+		# For child-table fields, ship the child doctype's columns filtered by
+		# child_field_config (if present). When no config is set, all columns
+		# are returned for backward compatibility.
 		if is_table:
-			entry["table_fields"] = _child_table_fields(df.options)
+			all_table_fields = _child_table_fields(df.options)
+			child_config_raw = r.get("child_field_config") or ""
+			if child_config_raw:
+				import json as _json
+				try:
+					child_config = _json.loads(child_config_raw)
+					view_key      = f"view_{channel}"
+					mandatory_key = f"mandatory_{channel}"
+					entry["table_fields"] = [
+						{**f, "reqd_channel": cint(child_config.get(f["fieldname"], {}).get(mandatory_key, 0))}
+						for f in all_table_fields
+						if child_config.get(f["fieldname"], {}).get(view_key, 1)
+					]
+				except Exception:
+					entry["table_fields"] = all_table_fields
+			else:
+				entry["table_fields"] = all_table_fields
 		result.append(entry)
 	return result
 

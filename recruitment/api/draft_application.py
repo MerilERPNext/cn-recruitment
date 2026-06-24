@@ -57,15 +57,9 @@ def _opening_context(opening_name):
     }
 
 
-def _portal_fieldnames(opening_name):
-    form_name = frappe.db.get_value("Job Opening", opening_name, "custom_job_applicant_portal_form") if opening_name else None
-    if not form_name:
-        return []
-    try:
-        rows = frappe.get_doc("Job Applicant Portal Forms", form_name).portal_fields or []
-    except Exception:
-        return []
-    return [r.fieldname for r in rows if r.fieldname and not r.get("hidden")]
+def _portal_fieldnames(*_args, **_kwargs):
+    """Legacy stub — Job Applicant Portal Forms has been removed."""
+    return []
 
 
 def _compute_progress(opening, applicant_doc):
