@@ -18,6 +18,7 @@
   "date_of_joining",
   "confirmation_policy",
   "probation_end_date",
+  "recommended_for_separation",
   "self_review_tab",
   "date",
   "scale_yourself_for_productivity",
@@ -418,13 +419,20 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Extension Workflow"
+  },
+  {
+   "default": "0",
+   "fieldname": "recommended_for_separation",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Recommended For Separation"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-15 18:14:58.063378",
+ "modified": "2026-06-24 10:26:03.557038",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Employee Confirmation",
