@@ -397,8 +397,10 @@ def change_password(current_password, new_password, confirm_password=None):
             frappe.PermissionError,
         )
 
-    _verify_candidate_password(candidate, current_password)
-    if _check_password(new_password, candidate.get_password("password_hash") or candidate.password_hash):
+    stored_hash = candidate.get_password("password_hash") or candidate.password_hash
+    if not _check_password(current_password, stored_hash):
+        frappe.throw(_("Current password is incorrect."), frappe.AuthenticationError)
+    if _check_password(new_password, stored_hash):
         frappe.throw(_("New password must be different from the current password."))
 
     candidate.password_hash = _hash_password(new_password)
@@ -425,7 +427,10 @@ def me():
 
     session.last_seen_at = now_datetime()
     session.save(ignore_permissions=True)
-    return {"user": _public_candidate(session.candidate), "session_id": session.name}
+    user = _public_candidate(session.candidate)
+    if user:
+        user["last_login_at"] = frappe.db.get_value("Candidate Portal User", session.candidate, "last_login_at")
+    return {"user": user, "session_id": session.name}
 
 
 @candidate_required
@@ -778,7 +783,7 @@ def _public_candidate(candidate):
     )
     if not values:
         return None
-    full_name = _resolve_candidate_full_name(values) or values.full_name or values.email
+    full_name = values.full_name or values.email
     doc = frappe.get_doc("Candidate Portal User", values.name)
     password_setup_required = not _candidate_has_password(doc) or bool(cint(values.require_password_reset))
     return {
