@@ -6,11 +6,13 @@ import { FaRegEye } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import {
   useBenefitClaimPDF,
   useDownloadSalarySlipPDF,
   useOffCyclePaySlipPDF,
   usePrintFormatMenuOptions,
+  useReleaseSalarySlip,
   useTDSPRintViewPDF,
 } from "../../hooks/useSalaryDetails";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -89,6 +91,21 @@ const SalarySlipsList = () => {
   const { isDesktop } = useScreenSize();
   const { targetEmployeeId } = useTargetUser();
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: currentUser } = useCurrentUser();
+
+  // Payroll admins (who can also release draft salary slips). Plain employees
+  // only ever see submitted slips.
+  const PAYROLL_ADMIN_ROLES = [
+    "System Manager",
+    "Administrator",
+    "Payroll Manager",
+    "Payroll Admin",
+    "HR Manager",
+    "HR User",
+  ];
+  const isPayrollAdmin =
+    currentUser?.roles?.some((r) => PAYROLL_ADMIN_ROLES.includes(r.role)) ??
+    false;
 
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [filtersKey, setFiltersKey] = useState(0);
@@ -173,6 +190,26 @@ const SalarySlipsList = () => {
     });
 
   const isDownloading = isDownloading2 || isDownloading3 || isDownloading4;
+
+  // ---------------- RELEASE (submit draft) ----------------
+  const { mutate: releaseSlip, isPending: isReleasing } = useReleaseSalarySlip({
+    onSuccess: () => {
+      // Refresh the list so the released slip moves from Draft to Paid
+      setFiltersKey((prev) => prev + 1);
+    },
+    onError: (error: any) => {
+      alert(
+        error?.message || "Failed to release salary slip. Please try again.",
+      );
+    },
+  });
+
+  const handleReleaseSalarySlip = (e: React.MouseEvent, salary_slip_id: string) => {
+    e.stopPropagation();
+    if (window.confirm("Release this salary slip?")) {
+      releaseSlip(salary_slip_id);
+    }
+  };
 
   const handleGoToSalarySlip = (salaryId: string, startDate?: string) => {
     if (isDesktop) {
@@ -315,16 +352,24 @@ const SalarySlipsList = () => {
               status: "Submitted",
             }}
 
-            ItemComponent={({ item }) => (
-              <SalarySlipItem
-                item={item}
-                maskSalary={maskSalary}
-                onDownloadType1={handleDownloadType1}
-                onDownloadType2={handleDownloadType2}
-                onViewPDF={handleGoToSalarySlip}
-                isDownloading={isDownloading}
-              />
-            )}
+            ItemComponent={({ item }) => {
+              // Employees only see submitted (Paid) slips; payroll admins see
+              // both Draft and Paid.
+              if (!isPayrollAdmin && item.status !== "Paid") return null;
+              return (
+                <SalarySlipItem
+                  item={item}
+                  maskSalary={maskSalary}
+                  onDownloadType1={handleDownloadType1}
+                  onDownloadType2={handleDownloadType2}
+                  onViewPDF={handleGoToSalarySlip}
+                  isDownloading={isDownloading}
+                  isPayrollAdmin={isPayrollAdmin}
+                  onRelease={handleReleaseSalarySlip}
+                  isReleasing={isReleasing}
+                />
+              );
+            }}
             isSearch={true}
             pageSize={10}
             searchFields={SALARY_SLIP_SEARCH_FIELDS}
@@ -436,6 +481,9 @@ const SalarySlipItemDesktop = ({
   onDownloadType3,
   onDownloadType4,
   isDownloading,
+  isPayrollAdmin,
+  onRelease,
+  isReleasing,
 }: any) => {
   const formatCurrency2 = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
@@ -500,7 +548,16 @@ const SalarySlipItemDesktop = ({
         )}
       </Typography>
 
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center gap-2">
+        {isPayrollAdmin && item.status === "Draft" && (
+          <Button
+            onClick={(e: React.MouseEvent) => onRelease(e, item.salary_slip_id)}
+            disabled={isReleasing}
+            className="px-3 py-1 text-xs rounded disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isReleasing ? "Releasing..." : "Release"}
+          </Button>
+        )}
         <DownloadMenu
           itemName={item.salary_slip_id}
           isDownloading={isDownloading}
@@ -523,6 +580,9 @@ const SalarySlipItemMobile = ({
   onDownloadType3,
   onDownloadType4,
   isDownloading,
+  isPayrollAdmin,
+  onRelease,
+  isReleasing,
 }: any) => {
   const formatCurrency2 = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
@@ -538,7 +598,7 @@ const SalarySlipItemMobile = ({
   };
 
   const printFormatMenuRef = usePrintFormatMenuOptions(
-    item.name,
+    item.salary_slip_id,
     item.employee,
   );
 
@@ -557,15 +617,28 @@ const SalarySlipItemMobile = ({
               {item.employee_name}
             </Typography>
           </div>
-          <DownloadMenu
-            itemName={item.salary_slip_id}
-            isDownloading={isDownloading}
-            onType1={onDownloadType1}
-            onType2={onDownloadType2}
-            onType3={onDownloadType3}
-            onType4={onDownloadType4}
-            onShowPrintFormatMenu={printFormatMenuRef}
-          />
+          <div className="flex items-center gap-2">
+            {isPayrollAdmin && item.status === "Draft" && (
+              <Button
+                onClick={(e: React.MouseEvent) =>
+                  onRelease(e, item.salary_slip_id)
+                }
+                disabled={isReleasing}
+                className="px-3 py-1 text-xs rounded disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isReleasing ? "Releasing..." : "Release"}
+              </Button>
+            )}
+            <DownloadMenu
+              itemName={item.salary_slip_id}
+              isDownloading={isDownloading}
+              onType1={onDownloadType1}
+              onType2={onDownloadType2}
+              onType3={onDownloadType3}
+              onType4={onDownloadType4}
+              onShowPrintFormatMenu={printFormatMenuRef}
+            />
+          </div>
         </div>
 
         {/* Duration Row */}
