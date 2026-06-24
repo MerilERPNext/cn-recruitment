@@ -10,7 +10,8 @@ import {
         getSalarySlipHTML,
         PrintFormatMenuOptionsService,
         getSalarySlipName,
-        updateSalarySlip
+        updateSalarySlip,
+        releaseSalarySlip
      } from "../services/salaryDetailsService"
 
 const isPermissionError = (error: unknown): error is PermissionError => {
@@ -71,6 +72,7 @@ export const usePrintFormatMenuOptions = (employee_name: string, name: string) =
   return useQuery({
     queryKey: ["print-format-menu-options", name, employee_name],
     queryFn: () => PrintFormatMenuOptionsService(employee_name, name),
+    enabled: !!employee_name && !!name, // skip call when slip id / employee missing
     placeholderData: [], // prevents undefined
   });
 };
@@ -95,5 +97,15 @@ export const useUpdateSalarySlip = () => {
       salarySlipName: string;
       fileUrl: string;
     }) => updateSalarySlip(salarySlipName, fileUrl),
+  });
+};
+
+// Release (submit) a single draft salary slip — used by Payroll admins
+export const useReleaseSalarySlip = (
+  options: { onSuccess?: (data: any) => void; onError?: (error: any) => void } = {}
+) => {
+  return useMutation({
+    mutationFn: (salarySlipName: string) => releaseSalarySlip(salarySlipName),
+    ...options,
   });
 };
