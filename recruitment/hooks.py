@@ -30,7 +30,9 @@ add_to_apps_screen = [
 # ]
 # website user home page (by Role)
 role_home_page = {
-	"System User": "/webapp"
+	"System User": "/webapp",
+	# External recruiters land on their (scoped) Job Opening list in Desk.
+	"External Recruiter": "/app/job-opening",
 }
 # include js, css files in header of web template
 # web_include_css = "/assets/recruitment/css/recruitment.css"
@@ -139,7 +141,9 @@ website_context = {"job_offer": "recruitment.www.get_context"}
 permission_query_conditions = {
     "Interview": "recruitment.permissions.doc_type_permissions.interview_query",
     "Job Applicant": "recruitment.permissions.doc_type_permissions.ja_query",
+    "Job Opening": "recruitment.permissions.doc_type_permissions.job_opening_query",
 }
+
 # Jinja
 # ----------
 
@@ -244,6 +248,11 @@ doc_events = {
             # Hiring Lead Permission Settings (external recruiter / application fields).
             "recruitment.customizations.hiring_lead_permissions.validate_job_opening_hiring_lead_edits",
         ],
+    },
+    "Job Opening": {
+        # Compute each External Recruiter row's read-only posting status from its
+        # Display From/To window so the grid reflects live availability.
+        "validate": "recruitment.permissions.doc_type_permissions.set_external_recruiter_posting_status",
     },
     "Employee": {
         "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",
