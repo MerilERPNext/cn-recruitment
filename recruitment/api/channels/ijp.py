@@ -202,16 +202,26 @@ def list_openings(employee=None, search_term=None):
 	`search_term` optionally filters by job code / title.
 	"""
 	emp = _employee_doc(employee)
+	extra_fields = [c["fieldname"] for c in _common.get_configured_columns(CHANNEL)]
 	candidate_names = _common.get_openings_active_on_channel(CHANNEL)
 	result = []
 	for name in candidate_names:
 		eligible, _reason = _is_eligible(name, emp)
 		if not eligible:
 			continue
-		card = _common.get_opening_card(name)
+		card = _common.get_opening_card(name, extra_fields=extra_fields)
 		if card and _common.card_matches_search(card, search_term):
 			result.append(card)
 	return result
+
+
+@frappe.whitelist()
+def list_columns():
+	"""Ordered, enabled columns for the IJP openings list, from Recruitment
+	Settings -> IJP Page Column Settings (falls back to the default set when
+	nothing is configured). Each item: {"fieldname", "label"}. The list-row
+	values for these fieldnames are present on every card from list_openings."""
+	return _common.get_configured_columns(CHANNEL)
 
 
 @frappe.whitelist()

@@ -22,7 +22,42 @@
 "interview_settings_section",
 "authorized_feedback_roles",
 "requisition_settings_section",
-"allowed_replacement_employee_statuses"
+"max_positions_per_requisition",
+"allowed_replacement_employee_statuses",
+"allow_replacement_employee_tagging_to_multiple_requisitions",
+"allow_editing_requisition_after_approval",
+"allow_position_creation_at_jobs_directly",
+"disable_editing_requisition_initiation_form",
+"replacement_settings_column_break",
+"restriction_for_replacement_employee_selection",
+"allow_only_new_or_replacement_type",
+"enable_moving_requisition_back_to_draft",
+"allow_future_dated_positions",
+"allow_hiring_manager_override",
+"job_posting_settings_section",
+"make_job_description_mandatory",
+"restrict_job_posting_without_open_positions",
+"job_posting_columns_section",
+"ijp_page_columns",
+"job_posting_columns_column_break",
+"refer_page_columns",
+"career_page_filter_section",
+"career_page_filter_columns",
+"hiring_lead_permission_section",
+"allow_hiring_lead_edit_external_recruiter",
+"allow_hiring_lead_edit_application_fields",
+"allow_hiring_lead_edit_pre_offer_fields",
+"allow_hiring_lead_update_candidate_source",
+"allow_hiring_lead_activate_archive_requisition",
+"allow_hiring_lead_add_employee_from_offer",
+"hiring_lead_permission_column_break",
+"disable_hiring_lead_edit_job_step_1",
+"disable_hiring_lead_edit_job_step_2",
+"disable_hiring_lead_edit_job_step_3",
+"disable_hiring_lead_edit_job_step_4",
+"disable_hiring_lead_edit_job_step_5",
+"restrict_act_as_admin_offer_approval",
+"allow_hiring_lead_change_designation_at_offer"
 ],
 "fields": [
 {
@@ -124,16 +159,232 @@
 "options": "Roles"
 },
 {
+"description": "Controls for Job Requisition creation, position types and replacement employee selection.",
 "fieldname": "requisition_settings_section",
 "fieldtype": "Section Break",
 "label": "Job Requisition Settings"
 },
 {
-"description": "Employee statuses allowed when selecting the \"Replacement For\" employee on a Job Requisition position. When a position's posting detail is a Replacement, only employees with one of these statuses are shown. Falls back to \"Active\" only when left empty.",
+"default": "100",
+"description": "Maximum number of position rows allowed on a single Job Requisition.",
+"fieldname": "max_positions_per_requisition",
+"fieldtype": "Int",
+"label": "Max number of positions per requisition",
+"non_negative": 1
+},
+{
+"description": "Employee statuses allowed when picking the \"Replacement For\" employee. Falls back to \"Active\" when left empty.",
 "fieldname": "allowed_replacement_employee_statuses",
 "fieldtype": "Table",
 "label": "Allowed Replacement Employee Statuses",
 "options": "Allowed Replacement Employee Status"
+},
+{
+"default": "0",
+"description": "Allow the same employee to be tagged as \"Replacement For\" on more than one requisition.",
+"fieldname": "allow_replacement_employee_tagging_to_multiple_requisitions",
+"fieldtype": "Check",
+"label": "Allow Replacement Employee tagging to multiple requisitions"
+},
+{
+"default": "0",
+"description": "Permit edits to the requisition and its positions after it is approved.",
+"fieldname": "allow_editing_requisition_after_approval",
+"fieldtype": "Check",
+"label": "Allow Editing of Requisition & Job Positions after Approval"
+},
+{
+"default": "0",
+"description": "Allow positions to be created directly on a Job Opening, not only via a requisition.",
+"fieldname": "allow_position_creation_at_jobs_directly",
+"fieldtype": "Check",
+"label": "Allow creation of Position(s) at jobs directly"
+},
+{
+"default": "0",
+"description": "Lock the requisition initiation form fields once it is raised.",
+"fieldname": "disable_editing_requisition_initiation_form",
+"fieldtype": "Check",
+"label": "Disable Editing of Requisition Initiation Form"
+},
+{
+"fieldname": "replacement_settings_column_break",
+"fieldtype": "Column Break"
+},
+{
+"default": "None",
+"description": "Restrict the \"Replacement For\" employee relative to the requisition's own Designation / Company. \"None\" = no extra restriction beyond the allowed statuses.",
+"fieldname": "restriction_for_replacement_employee_selection",
+"fieldtype": "Select",
+"label": "Restriction for Replacement Employee Selection",
+"options": "None\nSame Designation\nSame Group Company"
+},
+{
+"default": "0",
+"description": "Restrict a requisition's positions to only New or Replacement vacancy types.",
+"fieldname": "allow_only_new_or_replacement_type",
+"fieldtype": "Check",
+"label": "Allow only New or Replacement type while creating a requisition"
+},
+{
+"default": "0",
+"description": "Allow an activated requisition to be moved back to the Draft stage.",
+"fieldname": "enable_moving_requisition_back_to_draft",
+"fieldtype": "Check",
+"label": "Enable moving requisitions back to draft stage after activation"
+},
+{
+"default": "0",
+"description": "Allow requisitions whose required-by date is in the future.",
+"fieldname": "allow_future_dated_positions",
+"fieldtype": "Check",
+"label": "Allow requisitions for Future dated positions"
+},
+{
+"default": "0",
+"description": "Allow the Hiring Manager to override requisition values and approvals.",
+"fieldname": "allow_hiring_manager_override",
+"fieldtype": "Check",
+"label": "Allow Hiring Manager Override in Requisition"
+},
+{
+"fieldname": "job_posting_settings_section",
+"fieldtype": "Section Break",
+"label": "Job Posting Settings"
+},
+{
+"default": "0",
+"description": "Make the Job Description field mandatory while creating or editing Job Openings.",
+"fieldname": "make_job_description_mandatory",
+"fieldtype": "Check",
+"label": "Make Job Description field mandatory while creating or editing Jobs"
+},
+{
+"default": "0",
+"description": "Prevent posting a Job Opening that has no linked open positions.",
+"fieldname": "restrict_job_posting_without_open_positions",
+"fieldtype": "Check",
+"label": "Restrict Job posting without linked open positions"
+},
+{
+"fieldname": "job_posting_columns_section",
+"fieldtype": "Section Break"
+},
+{
+"description": "Columns shown on the Internal Job Posting (IJP) page. Add any Job Opening field, toggle Enable, and drag to reorder.",
+"fieldname": "ijp_page_columns",
+"fieldtype": "Table",
+"label": "IJP Page Column Settings",
+"options": "Job Opening Column Setting"
+},
+{
+"fieldname": "job_posting_columns_column_break",
+"fieldtype": "Column Break"
+},
+{
+"description": "Columns shown on the Refer page. Add any Job Opening field, toggle Enable, and drag to reorder.",
+"fieldname": "refer_page_columns",
+"fieldtype": "Table",
+"label": "Refer Page Column Settings",
+"options": "Job Opening Column Setting"
+},
+{
+"fieldname": "career_page_filter_section",
+"fieldtype": "Section Break"
+},
+{
+"description": "Filters shown on the (old) Career page. Add any Job Opening field, toggle Enable, and drag to reorder.",
+"fieldname": "career_page_filter_columns",
+"fieldtype": "Table",
+"label": "Career Page Filter Settings (Old)",
+"options": "Job Opening Column Setting"
+},
+{
+"fieldname": "hiring_lead_permission_section",
+"fieldtype": "Section Break",
+"label": "Hiring Lead Permission Settings"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_edit_external_recruiter",
+"fieldtype": "Check",
+"label": "Allow Hiring lead to edit External Recruiter assignment at job opening level"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_edit_application_fields",
+"fieldtype": "Check",
+"label": "Allow Hiring lead to edit application fields at job opening level"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_edit_pre_offer_fields",
+"fieldtype": "Check",
+"label": "Allow Hiring lead to edit Pre-Offer fields at job opening level"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_update_candidate_source",
+"fieldtype": "Check",
+"label": "Allow Hiring lead to update Candidate Source"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_activate_archive_requisition",
+"fieldtype": "Check",
+"label": "Access to Activate/Archive a requisition to Hiring lead"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_add_employee_from_offer",
+"fieldtype": "Check",
+"label": "Allow Hiring lead to Add Employee From Offer"
+},
+{
+"fieldname": "hiring_lead_permission_column_break",
+"fieldtype": "Column Break"
+},
+{
+"default": "0",
+"fieldname": "disable_hiring_lead_edit_job_step_1",
+"fieldtype": "Check",
+"label": "Disable Hiring lead to Edit Job - Step 1"
+},
+{
+"default": "0",
+"fieldname": "disable_hiring_lead_edit_job_step_2",
+"fieldtype": "Check",
+"label": "Disable Hiring lead to Edit Job - Step 2"
+},
+{
+"default": "0",
+"fieldname": "disable_hiring_lead_edit_job_step_3",
+"fieldtype": "Check",
+"label": "Disable Hiring lead to Edit Job - Step 3"
+},
+{
+"default": "0",
+"fieldname": "disable_hiring_lead_edit_job_step_4",
+"fieldtype": "Check",
+"label": "Disable Hiring lead to Edit Job - Step 4"
+},
+{
+"default": "0",
+"fieldname": "disable_hiring_lead_edit_job_step_5",
+"fieldtype": "Check",
+"label": "Disable Hiring lead to Edit Job - Step 5"
+},
+{
+"default": "0",
+"fieldname": "restrict_act_as_admin_offer_approval",
+"fieldtype": "Check",
+"label": "Restrict Act As Admin Offer/Offer Proposal Approval"
+},
+{
+"default": "0",
+"fieldname": "allow_hiring_lead_change_designation_at_offer",
+"fieldtype": "Check",
+"label": "Allow Hiring lead to change Designation at Offer Stage"
 }
 ],
 "index_web_pages_for_search": 1,

@@ -47,6 +47,14 @@ export function useIJPApplicationFields(opening: string) {
   });
 }
 
+export function useIJPOpeningColumns() {
+  return useQuery({
+    queryKey: ["ijp-opening-columns"],
+    queryFn: () => recruitmentService.getIJPOpeningColumns(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useSubmitIJPApplication(): UseMutationResult<
   IJPApplicationSubmitResponse,
   Error,

@@ -3,7 +3,15 @@ import {
   CreateJobRequisitionPayload,
   CreateJobRequisitionResponse,
 } from "../types/recruitment";
-import { IJPField, IJPApplicationSubmitPayload, IJPApplicationSubmitResponse, MyApplicationsResponse, IJPApplicationWithdrawPayload, IJPApplicationWithdrawResponse } from "../components/Recruitment/IJPTypes";
+import {
+  IJPField,
+  IJPApplicationSubmitPayload,
+  IJPApplicationSubmitResponse,
+  MyApplicationsResponse,
+  IJPApplicationWithdrawPayload,
+  IJPApplicationWithdrawResponse,
+  IJPOpeningColumn,
+} from "../components/Recruitment/IJPTypes";
 
 // Fields that Frappe manages via workflow — never send these from the client
 const FRAPPE_MANAGED_FIELDS = ["status", "workflow_state"];
@@ -52,6 +60,13 @@ export const recruitmentService = {
       { opening }
     );
     return (res as IJPField[]) || [];
+  },
+
+  getIJPOpeningColumns: async (): Promise<IJPOpeningColumn[]> => {
+    const res = await FrappeAPI.callMethod(
+      "recruitment.api.channels.ijp.list_columns"
+    );
+    return Array.isArray(res) ? (res as IJPOpeningColumn[]) : [];
   },
 
   submitIJPApplication: async (

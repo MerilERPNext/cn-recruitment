@@ -138,8 +138,13 @@ def card_matches_search(card, search):
 	return needle in haystack
 
 
-def get_opening_card(opening_name):
-	"""Compact serialisation used in listing endpoints."""
+def get_opening_card(opening_name, extra_fields=None):
+	"""Compact serialisation used in listing endpoints.
+
+	`extra_fields` (list of Job Opening fieldnames) augments the card with any
+	configured list-view columns that aren't already on it, keyed by their raw
+	fieldname so a column config can reference them directly. Purely additive —
+	callers that pass nothing get the original card unchanged."""
 	row = frappe.db.get_value(
 		"Job Opening",
 		opening_name,
@@ -171,7 +176,123 @@ def get_opening_card(opening_name):
 		else:
 			card[field] = link_id
 		card[f"{field}_id"] = link_id
+
+	if extra_fields:
+		_augment_card_with_fields(card, row.name, extra_fields, jo_meta)
 	return card
+
+
+def _augment_card_with_fields(card, opening_name, fieldnames, jo_meta):
+	"""Add configured Job Opening fields that aren't already on the card, keyed by
+	their raw fieldname. Link fields get a label value plus a `<field>_id`
+	sibling, mirroring the card's existing link handling. Unknown / layout fields
+	and `name` (always present) are skipped."""
+	need = [
+		fn for fn in fieldnames
+		if fn and fn != "name" and fn not in card and jo_meta.has_field(fn)
+	]
+	if not need:
+		return
+	values = frappe.db.get_value("Job Opening", opening_name, need, as_dict=True) or {}
+	for fn in need:
+		df = jo_meta.get_field(fn)
+		val = values.get(fn)
+		if df and df.fieldtype == "Link" and df.options and val:
+			card[fn] = _link_label(df.options, val)
+			card[f"{fn}_id"] = val
+		else:
+			card[fn] = val
+
+
+# ---------------------------------------------------------------------------
+# List-view column configuration (Recruitment Settings → *_page_columns)
+# ---------------------------------------------------------------------------
+
+# Channel → the Recruitment Settings child table that configures its list columns.
+CHANNEL_COLUMN_FIELD = {
+	"ijp": "ijp_page_columns",
+	"refer": "refer_page_columns",
+	"careers": "career_page_filter_columns",
+}
+
+# Used when a channel has no columns configured, so the list view keeps its
+# current behaviour out of the box. Job Opening fieldnames; every one already
+# resolves to a key on the opening card.
+_DEFAULT_LIST_COLUMNS = [
+	"name", "job_title", "designation", "department",
+	"company", "location", "posted_on", "status",
+]
+
+# Card key already carries a friendlier label than the raw field for these.
+_COLUMN_LABEL_OVERRIDES = {"name": "Opening ID"}
+
+
+def _parse_column_fieldname(stored):
+	"""Extract the fieldname from a stored 'Label (fieldname)' column value
+	(the Autocomplete format used by the settings table). Falls back to the
+	trimmed string when it isn't in that format."""
+	if not stored:
+		return None
+	stored = stored.strip()
+	if stored.endswith(")") and "(" in stored:
+		return stored[stored.rfind("(") + 1:-1].strip()
+	return stored
+
+
+def _column_label(jo_meta, fieldname):
+	if fieldname in _COLUMN_LABEL_OVERRIDES:
+		return _COLUMN_LABEL_OVERRIDES[fieldname]
+	df = jo_meta.get_field(fieldname)
+	if df and df.label:
+		return df.label
+	return fieldname.replace("_", " ").title()
+
+
+def _column_def(jo_meta, fieldname):
+	"""Column descriptor the list UI needs to map a card to a cell:
+
+	  fieldname  – the configured Job Opening field
+	  label      – column header
+	  value_key  – card key holding the display value (== fieldname; Link fields
+	               carry the resolved label here)
+	"""
+	return {
+		"fieldname": fieldname,
+		"label": _column_label(jo_meta, fieldname),
+		"value_key": fieldname,
+	}
+
+
+def get_configured_columns(channel):
+	"""Ordered, enabled list columns for `channel`, from Recruitment Settings
+	(ijp_page_columns / refer_page_columns). Returns a list of
+	{"fieldname", "label"}. Falls back to the channel's default column set when
+	nothing is configured, so the list view keeps working out of the box.
+	Disabled rows, blanks, duplicates and fields that don't exist on Job Opening
+	(except "name") are dropped."""
+	tablefield = CHANNEL_COLUMN_FIELD.get(channel)
+	jo_meta = frappe.get_meta("Job Opening")
+
+	fieldnames = []
+	if tablefield:
+		settings = frappe.get_cached_doc("Recruitment Settings")
+		for row in settings.get(tablefield) or []:
+			if not row.get("enable"):
+				continue
+			fn = _parse_column_fieldname(row.get("column"))
+			if fn:
+				fieldnames.append(fn)
+
+	if not fieldnames:
+		fieldnames = list(_DEFAULT_LIST_COLUMNS)
+
+	columns, seen = [], set()
+	for fn in fieldnames:
+		if fn in seen or (fn != "name" and not jo_meta.has_field(fn)):
+			continue
+		seen.add(fn)
+		columns.append(_column_def(jo_meta, fn))
+	return columns
 
 
 # ---------------------------------------------------------------------------

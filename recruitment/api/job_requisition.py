@@ -2263,6 +2263,232 @@ def get_allowed_replacement_employee_statuses():
 
 
 @frappe.whitelist()
+def get_replacement_employee_options(search_text=None, query=None, txt=None, limit=20,
+                                     include=None, designation=None, company=None):
+    """Employee options for the Job Requisition 'Replacement For' field, limited
+    to the statuses configured in Recruitment Settings -> Allowed Replacement
+    Employee Statuses (defaults to 'Active' only when none are configured).
+
+    When Recruitment Settings -> 'Restriction for Replacement Employee Selection'
+    is set, the list is further narrowed using the requisition's own designation
+    or company (passed by the caller as `designation` / `company`):
+      - "Same Designation"   → only employees with that designation.
+      - "Same Group Company" → only employees in the same Company group.
+    The restriction is also enforced on save (see validate_requisition_settings),
+    so it holds even for callers that don't pass this context.
+    Same response shape as get_link_field_options."""
+    filters = {"status": ["in", get_allowed_replacement_employee_statuses()]}
+
+    restriction = frappe.db.get_single_value(
+        "Recruitment Settings", "restriction_for_replacement_employee_selection"
+    ) or "None"
+    if restriction == "Same Designation" and designation:
+        filters["designation"] = designation
+    elif restriction == "Same Group Company" and company:
+        filters["company"] = ["in", list(_company_group_members(company))]
+
+    return get_link_field_options(
+        "Employee", search_text=search_text, query=query, txt=txt,
+        limit=limit, include=include, filters=filters,
+    )
+
+
+@frappe.whitelist()
+def get_hiring_lead_options(company=None, search_text=None, query=None, txt=None, limit=20, include=None):
+    """Employee options for the Job Requisition 'Hiring lead' field.
+
+    When a **Company Wise** Hiring Lead Configuration matches `company`, the list
+    is limited to Employees whose linked User is a configured hiring lead. Falls
+    back to ALL Employees when no configuration matches, so requisition creation
+    is never blocked. Same response shape as get_link_field_options."""
+    from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
+        get_config_users_for_company,
+    )
+
+    leads, _ = get_config_users_for_company(company)
+    filters = {"user_id": ["in", list(leads)]} if leads else None
+    return get_link_field_options(
+        "Employee", search_text=search_text, query=query, txt=txt,
+        limit=limit, include=include, filters=filters,
+    )
+
+
+@frappe.whitelist()
+def get_recruiter_options(company=None, search_text=None, query=None, txt=None, limit=20, include=None):
+    """User options for the Job Requisition 'Assign to Recruiter' field.
+
+    When a **Company Wise** Hiring Lead Configuration matches `company`, the list
+    is limited to the configured recruiters. Falls back to ALL users when no
+    configuration matches. Same response shape as get_link_field_options."""
+    from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
+        get_config_users_for_company,
+    )
+
+    _, recruiters = get_config_users_for_company(company)
+    filters = {"name": ["in", list(recruiters)]} if recruiters else None
+    return get_link_field_options(
+        "User", search_text=search_text, query=query, txt=txt,
+        limit=limit, include=include, filters=filters,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Recruitment Settings → Job Requisition Settings enforcement
+#
+# Runs on the `validate` doc_event (registered in hooks.py) so it covers every
+# save path uniformly — Desk UI, the React create/update API, scripted writes
+# and imports. The singleton is read once per save via the cached single doc,
+# so there is no extra load on save.
+# ---------------------------------------------------------------------------
+
+
+def _company_group_members(company):
+    """All companies in the same group as `company` — i.e. every company under
+    the top-most parent of its Company tree (uses the nested-set lft/rgt bounds
+    of that root). Returns a set that always includes `company` itself. For a
+    standalone company (no parent/children) the group is just that company."""
+    if not company:
+        return set()
+
+    # Walk up to the root of the Company tree (parent_company is empty at top).
+    root, visited = company, set()
+    while True:
+        parent = frappe.db.get_value("Company", root, "parent_company")
+        if not parent or parent in visited:
+            break
+        visited.add(parent)
+        root = parent
+
+    bounds = frappe.db.get_value("Company", root, ["lft", "rgt"])
+    if not bounds or bounds[0] is None:
+        return {company}
+    members = set(
+        frappe.get_all(
+            "Company", filters={"lft": [">=", bounds[0]], "rgt": ["<=", bounds[1]]}, pluck="name"
+        )
+    )
+    members.add(company)
+    return members
+
+
+def validate_requisition_settings(doc, method=None):
+    """Enforce Recruitment Settings -> Job Requisition Settings on every save.
+
+    Only acts on requisitions that use our `custom_position_details` flow (rows
+    present); legacy / HRMS-standard requisitions (which use the `vacancies`
+    table) are left untouched, matching sync_no_of_positions' guard."""
+    rows = doc.get("custom_position_details") or []
+    if not rows:
+        return
+
+    settings = frappe.get_cached_doc("Recruitment Settings")
+    _enforce_max_positions(doc, rows, settings)
+    _enforce_unique_replacement(doc, rows, settings)
+    _enforce_replacement_restriction(doc, rows, settings)
+
+
+def _enforce_max_positions(doc, rows, settings):
+    """Block saving more position rows than 'Max number of positions per
+    requisition'. A value of 0 (or empty) means no limit."""
+    max_positions = int(settings.get("max_positions_per_requisition") or 0)
+    if max_positions > 0 and len(rows) > max_positions:
+        frappe.throw(
+            _("This Job Requisition has {0} positions, which exceeds the configured "
+              "maximum of {1}. Reduce the positions or raise the limit in "
+              "Recruitment Settings.").format(len(rows), max_positions)
+        )
+
+
+def _enforce_unique_replacement(doc, rows, settings):
+    """When 'Allow Replacement Employee tagging to multiple requisitions' is OFF,
+    a given employee may be the 'Replacement For' on only one position — neither
+    twice within this requisition nor on any other live requisition (Cancelled /
+    Rejected requisitions are ignored, being dead)."""
+    if settings.get("allow_replacement_employee_tagging_to_multiple_requisitions"):
+        return
+
+    # 1) No duplicate within this requisition.
+    seen = {}
+    for idx, r in enumerate(rows, start=1):
+        emp = r.get("replacement_for")
+        if not emp:
+            continue
+        if emp in seen:
+            frappe.throw(
+                _("Employee {0} is selected as the replacement on more than one position "
+                  "in this requisition. Each replacement employee can be tagged only once.").format(emp)
+            )
+        seen[emp] = idx
+
+    if not seen:
+        return
+
+    # 2) Not already used on another live requisition.
+    DEAD_STATES = ("Cancelled", "Rejected")
+    existing = frappe.get_all(
+        "Position Details",
+        filters={
+            "replacement_for": ["in", list(seen.keys())],
+            "parenttype": "Job Requisition",
+            "parent": ["!=", doc.name or ""],
+        },
+        fields=["replacement_for", "parent"],
+    )
+    if not existing:
+        return
+
+    live_parents = set(
+        frappe.get_all(
+            "Job Requisition",
+            filters={"name": ["in", list({e.parent for e in existing})],
+                     "status": ["not in", DEAD_STATES]},
+            pluck="name",
+        )
+    )
+    for e in existing:
+        if e.parent in live_parents:
+            frappe.throw(
+                _("Employee {0} is already tagged as a replacement on requisition {1}. "
+                  "Enable 'Allow Replacement Employee tagging to multiple requisitions' "
+                  "in Recruitment Settings to allow this.").format(e.replacement_for, e.parent)
+            )
+
+
+def _enforce_replacement_restriction(doc, rows, settings):
+    """Enforce 'Restriction for Replacement Employee Selection' relative to the
+    requisition's own designation / company. 'None' applies no restriction."""
+    restriction = settings.get("restriction_for_replacement_employee_selection") or "None"
+    if restriction == "None":
+        return
+
+    req_designation = doc.get("designation")
+    req_company = doc.get("company")
+    group_companies = (
+        _company_group_members(req_company)
+        if restriction == "Same Group Company" and req_company
+        else None
+    )
+
+    for idx, r in enumerate(rows, start=1):
+        emp = r.get("replacement_for")
+        if not emp:
+            continue
+        emp_designation, emp_company = (
+            frappe.db.get_value("Employee", emp, ["designation", "company"]) or (None, None)
+        )
+        if restriction == "Same Designation":
+            if req_designation and emp_designation != req_designation:
+                frappe.throw(
+                    _("Replacement employee {0} (position {1}) must have the same designation "
+                      "as the requisition ({2}), but has {3}.").format(
+                          emp, idx, req_designation, emp_designation or _("no designation"))
+                )
+        elif restriction == "Same Group Company":
+            if group_companies and emp_company not in group_companies:
+                frappe.throw(
+                    _("Replacement employee {0} (position {1}) must belong to the same group "
+                      "company as the requisition.").format(emp, idx)
+                )
 def get_replacement_employee_options(
     search_text=None, query=None, txt=None, limit=20, include=None,
     department=None, designation=None, location=None, company=None, functional_area=None,
