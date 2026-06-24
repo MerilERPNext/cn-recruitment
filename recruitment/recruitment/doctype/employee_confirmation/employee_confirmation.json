@@ -424,6 +424,7 @@
    "default": "0",
    "fieldname": "recommended_for_separation",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Recommended For Separation"
   }
  ],
