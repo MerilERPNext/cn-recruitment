@@ -110,28 +110,50 @@ export async function updateSelectedFieldsApprovalStatus(
 
 /**
  * Send back to candidate (email trigger) — notify candidate of rejected fields.
- * Returns: { status, rejected_count, comments }
+ * Returns: { status, rejected_count, comments, enable_onboarding_review_actions }
  */
 export async function sendBackToCandidate(
   onboardingName: string
-): Promise<{ status: string; rejected_count?: number; comments?: string[] }> {
+): Promise<{
+  status: string;
+  rejected_count?: number;
+  comments?: string[];
+  enable_onboarding_review_actions?: number;
+}> {
   const res = await FrappeAPI.callMethod(
     "homefirst_customs.api.onboarding_automation.send_back_to_candidate",
     { onboarding_name: onboardingName }
   );
-  return res as { status: string; rejected_count?: number; comments?: string[] };
+  return res as {
+    status: string;
+    rejected_count?: number;
+    comments?: string[];
+    enable_onboarding_review_actions?: number;
+  };
 }
 
 /**
  * Approve the whole onboarding form (email trigger).
- * Returns: { status }
+ * Returns: { status, enable_onboarding_review_actions }
  */
 export async function approveOnboardingForm(
   onboardingName: string
-): Promise<{ status: string }> {
+): Promise<{ status: string; enable_onboarding_review_actions?: number }> {
   const res = await FrappeAPI.callMethod(
     "homefirst_customs.api.onboarding_automation.approve_onboarding_form",
     { onboarding_name: onboardingName }
   );
-  return res as { status: string };
+  return res as { status: string; enable_onboarding_review_actions?: number };
+}
+
+/**
+ * Whether the onboarding review actions (Send Back / Approve form) are enabled.
+ * Driven by the global "Onboarding Settings" → enable_onboarding_review_actions flag.
+ */
+export async function getOnboardingReviewActionsEnabled(): Promise<boolean> {
+  const res = await FrappeAPI.callMethod("frappe.client.get_single_value", {
+    doctype: "Onboarding Settings",
+    field: "enable_onboarding_review_actions",
+  });
+  return Number(res) === 1;
 }
