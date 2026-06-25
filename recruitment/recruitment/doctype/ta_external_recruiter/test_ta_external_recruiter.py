@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestJobApplicantPortalForms(FrappeTestCase):
+class TestTAExternalRecruiter(FrappeTestCase):
 	pass

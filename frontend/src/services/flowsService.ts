@@ -206,3 +206,29 @@ export const reinitiateStage = async (
 
   return response as any;
 };
+
+export const reinitiateFlow = async (
+  funnel_activity: string
+) => {
+  const response = await FrappeAPI.callMethod(
+    'nextai.funnel.doctype.funnel_task.reinitiate.reinitiate_flow',
+    {
+      funnel_activity,
+    },
+  );
+
+  return response as any;
+};
+
+export const retriggerApprovalFlowEvent = async (
+  todo: string
+) => {
+  const response = await FrappeAPI.callMethod(
+    'nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.retrigger_event',
+    {
+      todo,
+    },
+  );
+
+  return response as any;
+};

@@ -1,13 +1,14 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 0,
- "autoname": "naming_series:",
+ "autoname": "field:external_recruiter_group_name",
+ "naming_rule": "By fieldname",
  "creation": "2026-05-19 00:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "basic_info_section",
-  "naming_series",
   "external_recruiter_group_name",
   "recruiter_assignment_section",
   "assign_external_recruiters"
@@ -17,13 +18,6 @@
    "fieldname": "basic_info_section",
    "fieldtype": "Section Break",
    "label": "Basic Information"
-  },
-  {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Series",
-   "options": "TERG-.#####",
-   "reqd": 1
   },
   {
    "fieldname": "external_recruiter_group_name",

@@ -80,6 +80,7 @@ import { NoticeSlide } from "./shared/molecules/NoticeSlide";
 import SearchMembers from "./shared/SearchMembers";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import ViewingAsBanner from "./ViewingAsBanner";
+import formatToIndianDate from "../utils/formatToIndianDate";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -692,7 +693,7 @@ export default function DesktopDashboard() {
                           color="body2"
                           className="truncate block"
                         >
-                          {currentEmployee?.custom_designation_title || "N/A"}
+                          {currentEmployee?.designation_name || "N/A"}
                         </Typography>
                         <div className="flex items-center gap-2">
                           <Typography
@@ -731,7 +732,7 @@ export default function DesktopDashboard() {
                             Department:
                           </Typography>
                           <Typography variant="bodySmall" color="body2">
-                            {currentEmployee?.department || "N/A"}
+                            {currentEmployee?.department_name || "N/A"}
                           </Typography>
                         </div>
                         <div className="flex justify-between">
@@ -739,7 +740,7 @@ export default function DesktopDashboard() {
                             Company:
                           </Typography>
                           <Typography variant="bodySmall" color="body2">
-                            {currentEmployee?.company || "N/A"}
+                            {currentEmployee?.company_name || "N/A"}
                           </Typography>
                         </div>
                         <div className="flex justify-between">
@@ -747,7 +748,7 @@ export default function DesktopDashboard() {
                             Join Date:
                           </Typography>
                           <Typography variant="bodySmall" color="body2">
-                            {currentEmployee?.date_of_joining || "N/A"}
+                            {currentEmployee?.date_of_joining ? formatToIndianDate(currentEmployee.date_of_joining) : "N/A"}
                           </Typography>
                         </div>
                         <div className="flex justify-between">

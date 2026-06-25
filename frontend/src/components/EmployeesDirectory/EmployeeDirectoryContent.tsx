@@ -79,7 +79,7 @@ const EmployeeDirectoryContent = ({ activeTab }: Props) => {
     );
     const canBulkChangeWeekOff = isActionEnabled(
         userUiPermission,
-        "change_week_off",
+        "change_bulk_week_off",
         "Employee Directory"
     );
     const [activeTool, setActiveTool] = useState<ToolType>(null);
@@ -139,7 +139,7 @@ const EmployeeDirectoryContent = ({ activeTab }: Props) => {
                                     setIsPopupOpen(false);
                                 }}
                             >
-                                Update Current Weekly Off
+                                Update Current Weekly Offs
                             </Button>}
                         </>
                     ) : (

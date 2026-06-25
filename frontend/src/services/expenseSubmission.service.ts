@@ -343,7 +343,11 @@ export const submitExpenseFlow = async ({
             expense_claim_name: documentName,
             expenses: [expenseRecord],
             isResubmit: false,
-            ...(forSubmit ? { approval_status: "Pending" } : {}),
+            ...(forSubmit
+              ? { approval_status: "Pending" }
+              : approvalStatus
+                ? { approval_status: approvalStatus }
+                : {}),
             participants: participantsData,
           }
         : {

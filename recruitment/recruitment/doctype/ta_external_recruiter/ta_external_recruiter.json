@@ -1,17 +1,18 @@
 {
  "actions": [],
- "allow_rename": 0,
- "autoname": "naming_series:",
- "creation": "2026-05-19 00:00:00.000000",
+ "allow_import": 1,
+ "autoname": "field:external_recruiter_email",
+ "creation": "2026-05-19 00:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "credentials_section",
-  "naming_series",
   "external_recruiter_name",
   "external_recruiter_email",
   "column_break_credentials",
   "external_recruiter_password",
+  "status",
+  "user",
   "standard_fields_section",
   "contact_number",
   "company_name",
@@ -37,19 +38,13 @@
    "label": "External Recruiter Login"
   },
   {
-   "fieldname": "naming_series",
-   "fieldtype": "Select",
-   "label": "Series",
-   "options": "TER-.#####",
-   "reqd": 1
-  },
-  {
    "fieldname": "external_recruiter_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "External Recruiter Name",
-   "reqd": 1
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fieldname": "external_recruiter_email",
@@ -66,10 +61,28 @@
    "fieldtype": "Column Break"
   },
   {
+   "description": "Optional. Leave blank to email the recruiter a secure 'set your password' link. Or type one to set/reset the Desk password directly.",
    "fieldname": "external_recruiter_password",
    "fieldtype": "Password",
-   "label": "External Recruiter Password",
-   "reqd": 1
+   "label": "External Recruiter Password"
+  },
+  {
+   "default": "Active",
+   "description": "Inactive disables the linked Desk login.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Active\nInactive"
+  },
+  {
+   "description": "Frappe user account auto-created for this external recruiter.",
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "label": "Login User",
+   "options": "User",
+   "read_only": 1
   },
   {
    "fieldname": "standard_fields_section",
@@ -166,10 +179,11 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-05-19 00:00:00.000000",
+ "modified": "2026-06-19 18:43:38.626614",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "TA External Recruiter",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {

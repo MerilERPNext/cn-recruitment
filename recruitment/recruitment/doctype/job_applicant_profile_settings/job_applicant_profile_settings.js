@@ -38,6 +38,27 @@
 		]},
 	];
 
+	const TOTAL_COLS = 4 + COLUMN_GROUPS.reduce((s, g) => s + g.cols.length, 0);
+	const CHILD_CHANNEL_GROUPS = [
+		{ label: "CAREERS",   cols: [
+			{ col: "view_careers",      label: "VIEW" },
+			{ col: "mandatory_careers", label: "MANDATORY" },
+		]},
+		{ label: "IJP",       cols: [
+			{ col: "view_ijp",          label: "VIEW" },
+			{ col: "mandatory_ijp",     label: "MANDATORY" },
+		]},
+		{ label: "REFER",     cols: [
+			{ col: "view_refer",        label: "VIEW" },
+			{ col: "mandatory_refer",   label: "MANDATORY" },
+		]},
+		{ label: "PRE-OFFER", cols: [
+			{ col: "view_preoffer",      label: "VIEW" },
+			{ col: "mandatory_preoffer", label: "MANDATORY" },
+		]},
+	];
+	const CHILD_TOTAL_COLS = 1 + CHILD_CHANNEL_GROUPS.reduce((s, g) => s + g.cols.length, 0);
+
 	function escapeHtml(s) {
 		if (s === null || s === undefined) return "";
 		return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -142,6 +163,51 @@
 			}
 			.apf-delete:hover { color: #EF4444; background: #FEF2F2; }
 			.apf-empty { padding: 60px 20px; text-align: center; color: #6B7280; font-size: 13px; }
+
+			/* Child table expand button */
+			.apf-expand {
+				border: none; background: transparent; color: #6B7280; cursor: pointer;
+				font-size: 10px; padding: 1px 4px; border-radius: 3px; margin-top: 2px;
+				display: inline-flex; align-items: center; gap: 3px;
+			}
+			.apf-expand:hover { background: #EFF6FF; color: #1D4ED8; }
+			.apf-table-badge {
+				display: inline-block; font-size: 9px; font-weight: 600;
+				background: #EDE9FE; color: #7C3AED; border-radius: 3px;
+				padding: 1px 4px; margin-left: 4px; vertical-align: middle; letter-spacing: 0.03em;
+			}
+
+			/* Child config expansion row */
+			.apf-child-row td { background: #F8F8FF; border-bottom: 2px solid #E5E7EB !important; padding: 0 !important; }
+			.apf-child-container {
+				margin: 8px 16px; border: 1px solid #DDD6FE; border-radius: 8px; overflow: hidden;
+			}
+			.apf-child-header {
+				background: #EDE9FE; color: #5B21B6; font-size: 11px; font-weight: 600;
+				padding: 6px 12px; letter-spacing: 0.04em; text-transform: uppercase;
+			}
+			.apf-child-table {
+				width: 100%; border-collapse: collapse; font-size: 11.5px;
+			}
+			.apf-child-table thead th {
+				padding: 5px 8px; background: #F5F3FF; color: #6D28D9; font-size: 10px;
+				font-weight: 600; text-align: center; border-bottom: 1px solid #DDD6FE;
+				letter-spacing: 0.04em;
+			}
+			.apf-child-table thead th.apf-child-col-field { text-align: left; }
+			.apf-child-group-header {
+				background: #EDE9FE; color: #5B21B6; font-size: 10px; font-weight: 700;
+				border-bottom: 1px solid #C4B5FD; letter-spacing: 0.05em;
+			}
+			.apf-child-table tbody td {
+				padding: 6px 8px; border-bottom: 1px solid #EDE9FE;
+				text-align: center; vertical-align: middle;
+			}
+			.apf-child-table tbody tr:last-child td { border-bottom: none; }
+			.apf-child-table tbody td.apf-child-col-field { text-align: left; }
+			.apf-child-field-label { color: #111827; font-weight: 500; font-size: 11.5px; }
+			.apf-child-field-ref   { color: #9CA3AF; font-size: 10px; }
+			.apf-child-empty { padding: 14px; text-align: center; color: #9CA3AF; font-size: 12px; }
 		`;
 		document.head.appendChild(style);
 	}
@@ -160,25 +226,90 @@
 		return `<select class="apf-select" data-ref="${escapeHtml(ref)}" data-col="${col}">${opts}</select>`;
 	}
 
+	function renderChildToggle(parentRef, childRef, col, checked) {
+		return `<label class="apf-toggle">
+			<input type="checkbox" class="apf-child-toggle"
+				data-parent-ref="${escapeHtml(parentRef)}"
+				data-child-ref="${escapeHtml(childRef)}"
+				data-col="${col}" ${checked ? "checked" : ""}/>
+			<span class="apf-toggle-slider"></span>
+		</label>`;
+	}
+
+	function renderChildConfigRow(row) {
+		const ref = row.reference_name || "";
+		let config = {};
+		try { config = JSON.parse(row.child_field_config || "{}"); } catch (e) { /* ignore */ }
+
+		const entries = Object.entries(config);
+		const bodyHtml = entries.length
+			? entries.map(([cfn, cfc]) => `
+				<tr>
+					<td class="apf-child-col-field">
+						<div class="apf-child-field-label">${escapeHtml(cfc.label || cfn)}</div>
+						<div class="apf-child-field-ref">${escapeHtml(cfn)}</div>
+					</td>
+					${CHILD_CHANNEL_GROUPS.map((g) => g.cols.map((c) =>
+						`<td>${renderChildToggle(ref, cfn, c.col, cfc[c.col])}</td>`
+					).join("")).join("")}
+				</tr>`
+			).join("")
+			: `<tr><td colspan="${CHILD_TOTAL_COLS}" class="apf-child-empty">No configurable child fields.</td></tr>`;
+
+		const groupHeaderRow = `<tr>
+			<th class="apf-child-col-field"></th>
+			${CHILD_CHANNEL_GROUPS.map((g) =>
+				`<th colspan="${g.cols.length}" class="apf-child-group-header">${g.label}</th>`
+			).join("")}
+		</tr>`;
+		const colHeaderRow = `<tr>
+			<th class="apf-child-col-field">FIELD</th>
+			${CHILD_CHANNEL_GROUPS.map((g) => g.cols.map((c) =>
+				`<th>${c.label}</th>`
+			).join("")).join("")}
+		</tr>`;
+
+		return `<tr class="apf-child-row" data-parent-ref="${escapeHtml(ref)}" style="display:none">
+			<td colspan="${TOTAL_COLS}">
+				<div class="apf-child-container">
+					<div class="apf-child-header">Child Fields — ${escapeHtml(row.display_name || ref)}</div>
+					<table class="apf-child-table">
+						<thead>${groupHeaderRow}${colHeaderRow}</thead>
+						<tbody>${bodyHtml}</tbody>
+					</table>
+				</div>
+			</td>
+		</tr>`;
+	}
+
 	function renderRow(row, idx) {
 		const ref = row.reference_name || "";
+		const isTable = row.fieldtype === "Table" || row.fieldtype === "Table MultiSelect";
 		const groupCells = COLUMN_GROUPS.map((g) => g.cols.map((c) => {
 			const colCls = c.type === "toggle" ? "apf-col-toggle" : "apf-col-select";
 			if (c.type === "toggle") return `<td class="${colCls}">${renderToggle(ref, c.col, row[c.col])}</td>`;
 			return `<td class="${colCls}">${renderSelect(ref, c.col, row[c.col] || c.options[0], c.options)}</td>`;
 		}).join("")).join("");
 
-		return `
+		const tableBadge = isTable ? `<span class="apf-table-badge">TABLE</span>` : "";
+		const expandBtn = isTable
+			? `<button class="apf-expand" data-ref="${escapeHtml(ref)}" title="Configure child table fields">▶ Child Fields</button>`
+			: "";
+
+		const mainRow = `
 			<tr data-ref="${escapeHtml(ref)}">
 				<td class="apf-col-check"><input type="checkbox" class="apf-row-check" data-ref="${escapeHtml(ref)}"/></td>
 				<td class="apf-col-no apf-no">${idx + 1}</td>
 				<td class="apf-col-field apf-text">
-					<div class="apf-display">${escapeHtml(row.display_name || ref)}</div>
+					<div class="apf-display">${escapeHtml(row.display_name || ref)}${tableBadge}</div>
 					<div class="apf-ref">${escapeHtml(ref)}</div>
+					${expandBtn}
 				</td>
 				${groupCells}
 				<td class="apf-col-actions"><button class="apf-delete" data-ref="${escapeHtml(ref)}" title="Remove">×</button></td>
 			</tr>`;
+
+		return mainRow + (isTable ? renderChildConfigRow(row) : "");
 	}
 
 	function renderUI(host, frm, state) {
@@ -233,7 +364,7 @@
 		const sectionRows = rows.filter((r) => (r.section || "General") === active);
 		const bodyHtml = sectionRows.length
 			? sectionRows.map((r, i) => renderRow(r, i)).join("")
-			: `<tr><td colspan="${4 + COLUMN_GROUPS.reduce((s, g) => s + g.cols.length, 0)}" class="apf-empty">No fields in this section.</td></tr>`;
+			: `<tr><td colspan="${TOTAL_COLS}" class="apf-empty">No fields in this section.</td></tr>`;
 
 		host.innerHTML = `
 			<div class="apf-container">
@@ -266,6 +397,7 @@
 		});
 
 		host.querySelectorAll("input[type=checkbox][data-ref][data-col]").forEach((cb) => {
+			if (cb.classList.contains("apf-child-toggle")) return;
 			cb.addEventListener("change", () => {
 				const ref = cb.getAttribute("data-ref");
 				const col = cb.getAttribute("data-col");
@@ -286,6 +418,35 @@
 				row[col] = sel.value;
 				frm.refresh_field("default_application_fields");
 				frm.dirty();
+			});
+		});
+
+		// Child table field visibility toggles
+		host.querySelectorAll("input.apf-child-toggle").forEach((cb) => {
+			cb.addEventListener("change", () => {
+				const parentRef = cb.getAttribute("data-parent-ref");
+				const childRef  = cb.getAttribute("data-child-ref");
+				const col       = cb.getAttribute("data-col");
+				const row = (frm.doc.default_application_fields || []).find((r) => r.reference_name === parentRef);
+				if (!row) return;
+				let config = {};
+				try { config = JSON.parse(row.child_field_config || "{}"); } catch (e) { /* ignore */ }
+				if (config[childRef]) config[childRef][col] = cb.checked ? 1 : 0;
+				row.child_field_config = JSON.stringify(config);
+				frm.refresh_field("default_application_fields");
+				frm.dirty();
+			});
+		});
+
+		// Expand / collapse child field config panels
+		host.querySelectorAll(".apf-expand").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				const ref = btn.getAttribute("data-ref");
+				const childRow = host.querySelector(`.apf-child-row[data-parent-ref="${ref}"]`);
+				if (!childRow) return;
+				const open = childRow.style.display !== "none";
+				childRow.style.display = open ? "none" : "";
+				btn.textContent = open ? "▶ Child Fields" : "▼ Child Fields";
 			});
 		});
 

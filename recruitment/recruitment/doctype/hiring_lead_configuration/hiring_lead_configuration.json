@@ -1,0 +1,104 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "HLC-.#####",
+ "creation": "2026-06-19 10:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "hiring_lead_configuration_name",
+  "hiring_leads",
+  "recruiters",
+  "assignment_type",
+  "applicable_companies",
+  "applicable_assignments"
+ ],
+ "fields": [
+  {
+   "fieldname": "hiring_lead_configuration_name",
+   "fieldtype": "Data",
+   "label": "Hiring Lead Configuration Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "Users who act as the Hiring Lead for this configuration.",
+   "fieldname": "hiring_leads",
+   "fieldtype": "Table MultiSelect",
+   "label": "Select Hiring Lead",
+   "options": "Hiring Lead Configuration User"
+  },
+  {
+   "description": "Users who act as the Recruiter for this configuration.",
+   "fieldname": "recruiters",
+   "fieldtype": "Table MultiSelect",
+   "label": "Select Recruiter",
+   "options": "Hiring Lead Configuration User"
+  },
+  {
+   "default": "Company Wise",
+   "description": "Company Wise: applies to the selected companies. Assignment Framework: applies via the configured assignment grouping.",
+   "fieldname": "assignment_type",
+   "fieldtype": "Select",
+   "label": "Assignment Type",
+   "options": "Company Wise\nAssignment Framework",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.assignment_type=='Company Wise'",
+   "description": "Companies this configuration applies to.",
+   "fieldname": "applicable_companies",
+   "fieldtype": "Table MultiSelect",
+   "label": "Applicable To",
+   "mandatory_depends_on": "eval:doc.assignment_type=='Company Wise'",
+   "options": "Hiring Lead Configuration Company"
+  },
+  {
+   "depends_on": "eval:doc.assignment_type=='Assignment Framework'",
+   "description": "User Assignments (Dynamic User Assignment) this configuration applies to.",
+   "fieldname": "applicable_assignments",
+   "fieldtype": "Table MultiSelect",
+   "label": "Applicable To",
+   "mandatory_depends_on": "eval:doc.assignment_type=='Assignment Framework'",
+   "options": "Hiring Lead Configuration Assignment"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-19 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Hiring Lead Configuration",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "HR User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "hiring_lead_configuration_name"
+}

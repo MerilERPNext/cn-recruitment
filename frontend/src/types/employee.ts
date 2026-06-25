@@ -55,6 +55,7 @@ export interface EmployeeFromAPI {
   custom_hod?: string;
   custom_hrbp?: string;
   custom_dotted_line_manager?: string;
+  dotted_manager_member_id?: string;
   custom_cxo?: string;
 
   // Employment Lifecycle

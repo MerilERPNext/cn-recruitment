@@ -16,6 +16,13 @@ export interface JobType {
   location_id: string | null;
   company: string | null;
   company_id: string | null;
+  [key: string]: unknown;
+}
+
+export interface IJPOpeningColumn {
+  fieldname: string;
+  label: string;
+  value_key: string;
 }
 
 export interface propsListViewComponents {
@@ -152,6 +159,5 @@ export interface IJPApplicationWithdrawResponse {
   sub_status: string;
   [key: string]: unknown;
 }
-
 
 

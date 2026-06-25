@@ -24,6 +24,8 @@ import toast from "react-hot-toast";
 import ReferralReviewStep from "./Recruitment/ReferralReviewStep";
 import CardTable from "./shared/CardTable";
 import { Typography } from "./shared/atoms/Typography";
+import { useReferralListColumns } from "../hooks/useReferralDetails";
+import type { ReferralListColumn } from "../types/referral";
 
 // ─── Status Modal ────────────────────────────────────────────────────────────
 
@@ -32,6 +34,57 @@ type ModalProps = {
   title: string;
   message: string;
   onClose: () => void;
+};
+
+const DEFAULT_REFER_OPENING_COLUMNS: ReferralListColumn[] = [
+  { fieldname: "job_title", label: "Job Title", value_key: "job_title" },
+  { fieldname: "remote_job", label: "Remote Job", value_key: "remote_job" },
+  { fieldname: "company", label: "Company Name", value_key: "company" },
+  { fieldname: "location", label: "Location", value_key: "location" },
+  { fieldname: "department", label: "Department", value_key: "department" },
+];
+
+const REFER_OPENING_DATE_KEYS = new Set([
+  "posted_on",
+  "closes_on",
+  "creation",
+  "modified",
+]);
+const MAX_REFER_COLUMNS_BEFORE_SCROLL = 6;
+
+const getReferColumnValue = (job: JobOpening, column: ReferralListColumn) => {
+  const key = column.value_key || column.fieldname;
+
+  if (key === "remote_job") {
+    return job.location?.toLowerCase().includes("remote") ? "Yes" : "No";
+  }
+
+  return (job as Record<string, unknown>)[key] ?? (job as Record<string, unknown>)[column.fieldname];
+};
+
+const getReferDisplayValue = (value: unknown) => {
+  if (value === null || value === undefined || value === "") return "--";
+  if (Array.isArray(value)) return value.filter(Boolean).join(", ") || "--";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+};
+
+const getReferColumnWidth = (
+  column: ReferralListColumn,
+  totalColumns: number,
+) => {
+  if (totalColumns <= MAX_REFER_COLUMNS_BEFORE_SCROLL) {
+    return "minmax(0, 1fr)";
+  }
+
+  const key = (column.value_key || column.fieldname).toLowerCase();
+  if (key.includes("job_title") || key.includes("opening")) return "14rem";
+  if (key.includes("company")) return "12rem";
+  if (key.includes("location")) return "11rem";
+  if (key.includes("department")) return "12rem";
+  if (key.includes("remote")) return "8rem";
+  if (REFER_OPENING_DATE_KEYS.has(key) || key.includes("date")) return "9rem";
+  return "12rem";
 };
 
 const StatusModal: React.FC<ModalProps> = ({ show, title, message, onClose }) => {
@@ -109,6 +162,7 @@ const ValidationBanner: React.FC<ValidationBannerProps> = ({ fields, onDismiss }
 
 const AddNewReferral: React.FC = () => {
   const navigate = useNavigate();
+  const { data: referralColumns } = useReferralListColumns();
 
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const referrerEmployee = user?.employee || "";
@@ -149,6 +203,26 @@ const AddNewReferral: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
+
+  const referOpeningColumns = useMemo(() => {
+    const apiColumns = referralColumns?.filter(
+      (column) => column.label && (column.value_key || column.fieldname),
+    );
+    return apiColumns?.length ? apiColumns : DEFAULT_REFER_OPENING_COLUMNS;
+  }, [referralColumns]);
+
+  const referOpeningTitles = useMemo(
+    () => referOpeningColumns.map((column) => column.label),
+    [referOpeningColumns],
+  );
+
+  const referOpeningColumnWidths = useMemo(
+    () =>
+      referOpeningColumns.map((column) =>
+        getReferColumnWidth(column, referOpeningColumns.length),
+      ),
+    [referOpeningColumns],
+  );
 
   // ── Fetch dynamic fields ──────────────────────────────────────────────────
 
@@ -614,9 +688,6 @@ const AddNewReferral: React.FC = () => {
   };
 
   // ── VIEW 1: Job listing ───────────────────────────────────────────────────
-  const titles = ["Job Title", "Remote Job", "Company Name", "Location", "Department"];
-  const columnWidths = ["0.5fr", "1.2fr", "1.2fr", "1fr", "1fr"];
-
   const renderListView = () => (
     <div className="md:p-2 animate-fadeIn">
       <div className="mb-6">
@@ -629,8 +700,8 @@ const AddNewReferral: React.FC = () => {
       <div className="overflow-x-auto rounded-2xl border border-gray-100 mt-4">
         <div className="w-full">
           <CardTable
-          titles={titles}
-          columnWidths={columnWidths}
+          titles={referOpeningTitles}
+          columnWidths={referOpeningColumnWidths}
 
         >
           <DataListView<JobOpening>
@@ -653,25 +724,33 @@ const AddNewReferral: React.FC = () => {
               <div
                 key={job.name}
                 className="grid gap-4 px-6 py-4 border-b border-gray-100 items-center hover:bg-gray-50/50 transition-colors group cursor-pointer"
-                style={{ gridTemplateColumns: ".5fr 1.2fr 1.2fr 1fr 1fr" }}
+                style={{ gridTemplateColumns: referOpeningColumnWidths.join(" ") }}
               >
-                <div className="flex flex-col">
-             <Typography variant="bodySmall" className="font-medium text-center">                 
-                    {job.job_title}
-              </Typography>
-                </div>
-                <Typography variant="bodySmall" className="font-medium text-center">   
-                  {job.location?.toLowerCase().includes("remote") ? "Yes" : "No"}
-                  </Typography>
-                  <Typography variant="bodySmall" className="font-medium text-center">  {job.company}</Typography>
-                  <Typography variant="bodySmall" className="font-medium text-center">  
-                <span className=" truncate text-center" title={job.location || "N/A"}>
-                  {job.location || "Corporate Office"}
-                </span>
-                  </Typography>
-                  <Typography variant="bodySmall" className="font-medium text-center">  
-                  {job.department || "Test Department"}
-                  </Typography>
+                {referOpeningColumns.map((column) => {
+                  const key = column.value_key || column.fieldname;
+                  const normalizedKey = key.toLowerCase();
+                  const value = getReferColumnValue(job, column);
+                  const displayValue =
+                    (REFER_OPENING_DATE_KEYS.has(normalizedKey) ||
+                      normalizedKey.includes("date")) && value
+                      ? String(value).split(" ")[0]
+                      : getReferDisplayValue(value);
+
+                  return (
+                    <Typography
+                      key={`${column.fieldname}-${column.value_key}`}
+                      variant="bodySmall"
+                      className={`font-medium text-center truncate min-w-0 ${
+                        normalizedKey.includes("job_title")
+                          ? "text-blue-600"
+                          : ""
+                      }`}
+                      title={displayValue}
+                    >
+                      {displayValue}
+                    </Typography>
+                  );
+                })}
               </div>
             )}
           />

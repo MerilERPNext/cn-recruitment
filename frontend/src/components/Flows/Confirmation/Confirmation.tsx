@@ -341,24 +341,20 @@ const ConfirmationWorkflow = () => {
           >
             Activity Log
           </Button>
-          {isDesktop && !!item && enabledActions.retrigger && flowRequestData?.retrigger_definition_name && flowRequestData?.initiated_for_employee_id && (
+          {isDesktop && !!item && enabledActions.retrigger && funnelActivityId && flowRequestData?.can_reinitiate_flow && (
             <RetriggerButton
-              retriggerDefinitionName={flowRequestData.retrigger_definition_name}
-              retriggerFunnel={flowRequestData.funnel || flowRequestData.category || ""}
-              retriggerEmployee={flowRequestData.initiated_for_employee_id}
-              employeeName={flowRequestData.initiated_for}
+              funnelActivityId={funnelActivityId}
+              employeeName={flowRequestData?.initiated_for}
               showRetriggerForText={true}
             />
           )}
         </div>
       </div>
-      {!isDesktop && !!item && enabledActions.retrigger && flowRequestData?.retrigger_definition_name && flowRequestData?.initiated_for_employee_id && (
+      {!isDesktop && !!item && enabledActions.retrigger && funnelActivityId && flowRequestData?.can_reinitiate_flow && (
         <div className="px-2 mb-3">
           <RetriggerButton
-            retriggerDefinitionName={flowRequestData.retrigger_definition_name}
-            retriggerFunnel={flowRequestData.funnel || flowRequestData.category || ""}
-            retriggerEmployee={flowRequestData.initiated_for_employee_id}
-            employeeName={flowRequestData.initiated_for}
+            funnelActivityId={funnelActivityId}
+            employeeName={flowRequestData?.initiated_for}
             showRetriggerForText={true}
             fullWidth
           />
@@ -414,7 +410,7 @@ const ConfirmationWorkflow = () => {
                   {td?.show_view_form_btn && (
                     <ViewFormButton onClick={() => handleShowForm()} />
                   )}
-                  {td.show_confirmation_button ? (
+                  {td.show_confirmation_button && (
                     <Button
                       variant="contain"
                       size="md"
@@ -424,8 +420,6 @@ const ConfirmationWorkflow = () => {
                     >
                       {(td as any)?.self_confirmation_btn_name}
                     </Button>
-                  ) : (
-                    <div></div>
                   )}
                   <div>{td.time}</div>
                 </div>

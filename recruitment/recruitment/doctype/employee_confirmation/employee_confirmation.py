@@ -29,25 +29,19 @@ class EmployeeConfirmation(Document):
 			employee.custom_employment_status = "Pending Separation"
 			employee.save()
 
-			self.create_employee_separation_from_map(employee)
+			self.create_employee_separation(employee)
 
-	def create_employee_separation_from_map(self, employee=None):
+	def create_employee_separation(self, employee=None):
 		if employee is None:
 			employee = frappe.get_doc("Employee", self.employee)
 
 		separation = frappe.new_doc("Employee Separation")
 		separation.employee = self.employee
+		separation.custom_resignation_type = "Separation"
 		separation.custom_created_from_confirmation = 1
 		if employee.company:
 			separation.company = employee.company
 		separation.boarding_begins_on = frappe.utils.today()
-
-		mapping = frappe.get_single("Confirmation To Separation Map")
-		for row in mapping.mapping or []:
-			if not row.confirmation_fieldname or not row.separation_fieldname:
-				continue
-			value = self.get(row.confirmation_fieldname)
-			separation.set(row.separation_fieldname, value)
 
 		separation.flags.ignore_mandatory = True
 		separation.insert(ignore_permissions=True)

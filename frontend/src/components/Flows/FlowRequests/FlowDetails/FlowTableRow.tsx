@@ -26,6 +26,7 @@ import ReviewForm from "../../Separation/components/ReviewForm";
 import ActModal from "./ActModal";
 import AttachmentPreview from "./AttachmentPreview";
 import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
+import StageRetriggerButton from "../../StageRetriggerButton";
 
 const FlowTableRow = ({
   stage,
@@ -226,6 +227,10 @@ const FlowTableRow = ({
             isPendingStatus={isPendingStatus}
             todoId={stage?.todo?.name}
 
+          />
+          <StageRetriggerButton
+            todoId={stage?.todo?.name}
+            page="Flow Requests"
           />
           {(stage?.approval_response_data_display ||
             stage?.approval_response_data) && (

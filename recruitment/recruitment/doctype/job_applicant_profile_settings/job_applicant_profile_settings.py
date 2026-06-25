@@ -1,6 +1,8 @@
 """Job Applicant Profile Settings — holds the default application-field
 configuration that every new Job Opening inherits."""
 
+import json
+
 import frappe
 from frappe.model.document import Document
 
@@ -25,6 +27,36 @@ NON_DATA_FIELDTYPES = {
 EXCLUDED_TABS = {
 	"Feedback",  # PIP, induction/onboarding feedback, goal-setting, performance
 }
+
+TABLE_FIELDTYPES = {"Table", "Table MultiSelect"}
+
+
+def _init_child_field_config(child_doctype):
+	"""Build the default child_field_config JSON for a Table/Table MultiSelect field.
+	All child fields start with every channel VIEW enabled (mirrors current show-all behaviour)."""
+	if not child_doctype:
+		return ""
+	try:
+		cmeta = frappe.get_meta(child_doctype)
+		config = {}
+		for cf in cmeta.fields:
+			if (
+				not cf.fieldname
+				or cf.fieldtype in NON_DATA_FIELDTYPES
+				or cf.hidden
+				or cf.read_only
+			):
+				continue
+			config[cf.fieldname] = {
+				"label": cf.label or cf.fieldname,
+				"view_careers": 1,      "mandatory_careers": 0,
+				"view_ijp": 1,          "mandatory_ijp": 0,
+				"view_refer": 1,        "mandatory_refer": 0,
+				"view_preoffer": 1,     "mandatory_preoffer": 0,
+			}
+		return json.dumps(config) if config else ""
+	except Exception:
+		return ""
 
 
 class JobApplicantProfileSettings(Document):
@@ -121,6 +153,10 @@ class JobApplicantProfileSettings(Document):
 				"section": current_section or current_tab or "General",
 				"reference_name": f.fieldname,
 				"display_name": f.label or f.fieldname,
+				"fieldtype": f.fieldtype,
+				"child_field_config": (
+					_init_child_field_config(f.options) if f.fieldtype in TABLE_FIELDTYPES else ""
+				),
 				"view_careers": 0, "mandatory_careers": 0,
 				"view_ijp": 0, "mandatory_ijp": 0,
 				"view_refer": 0, "mandatory_refer": 0,
@@ -132,6 +168,33 @@ class JobApplicantProfileSettings(Document):
 				"preoffer_edit_approve": "Editable",
 			})
 			added_refs.append(f.fieldname)
+
+		# Backfill fieldtype / child_field_config on existing rows that predate this feature.
+		# Use frappe.db.set_value with update_modified=False so this NEVER touches the
+		# document's `modified` timestamp. Calling self.save() here (even once) bumps
+		# `modified` in the DB while the client holds the old value, causing a version
+		# conflict the next time the user tries to save their own changes.
+		meta_lookup = {f.fieldname: f for f in meta.fields if f.fieldname}
+		for row in self.default_application_fields:
+			ref = row.reference_name
+			if not ref or ref not in meta_lookup:
+				continue
+			mf = meta_lookup[ref]
+			db_patch = {}
+			if not row.fieldtype:
+				row.fieldtype = mf.fieldtype
+				db_patch["fieldtype"] = mf.fieldtype
+			if not row.child_field_config and mf.fieldtype in TABLE_FIELDTYPES:
+				cfg = _init_child_field_config(mf.options)
+				row.child_field_config = cfg
+				db_patch["child_field_config"] = cfg
+			if db_patch and row.name:
+				try:
+					frappe.db.set_value(
+						"Job Opening Application Field", row.name, db_patch, update_modified=False
+					)
+				except Exception:
+					pass  # Column may not exist yet if bench migrate hasn't run
 
 		if added_refs or recorded_refs:
 			# Persist imports AND deliberate skips so the next load is a no-op and
@@ -150,11 +213,10 @@ def get_job_applicant_profile_template(opening=None):
 	  - otherwise the matching row from Job Applicant Profile Settings
 	"""
 	settings = frappe.get_single("Job Applicant Profile Settings")
-	# onload only fires for the desk form view. Reconcile here too so the Job
-	# Opening form and the Settings form can never drift apart. _auto_sync is
-	# idempotent and only writes when something actually changed, so after the
-	# first reconcile this is a cheap no-op.
-	settings._auto_sync()
+	# _auto_sync() is intentionally NOT called here. It saves the document,
+	# which updates `modified` in the DB while the Settings form client still
+	# holds the old timestamp — causing a version conflict on the user's next
+	# Save. Sync runs in onload() when the admin opens the Settings form.
 	defaults = {row.reference_name: row for row in settings.default_application_fields if row.reference_name}
 
 	overrides = {}
@@ -172,10 +234,17 @@ def get_job_applicant_profile_template(opening=None):
 		section = def_row.section or "General"
 		if section not in sections_order:
 			sections_order.append(section)
+		override_row = overrides.get(ref)
 		rows.append({
 			"section": section,
 			"reference_name": ref,
 			"display_name": def_row.display_name or ref,
+			"fieldtype": def_row.get("fieldtype") or "",
+			"child_field_config": (
+				(override_row.get("child_field_config") if override_row and override_row.get("child_field_config") else None)
+				or def_row.get("child_field_config")
+				or ""
+			),
 			"view_careers": pick(ref, "view_careers"),
 			"mandatory_careers": pick(ref, "mandatory_careers"),
 			"view_ijp": pick(ref, "view_ijp"),

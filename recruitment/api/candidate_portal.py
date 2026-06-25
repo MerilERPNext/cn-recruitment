@@ -912,15 +912,9 @@ def get_all_onboarding_fields_for_onboarding():
     return {"status": "success", "total": len(fields), "fields": fields}
 
 
-# NOTE: `get_all_job_applicant_fields` was removed in favour of
-# `recruitment.api.channels.careers.get_application_fields(opening)`
-# which reads field config from Job Opening → custom_application_fields
-# instead of the legacy Job Applicant Portal Forms doctype.
-
-
 @frappe.whitelist()
 def get_available_job_applicant_fields():
-    frappe.has_permission("Job Applicant Portal Forms", "read", throw=True)
+    frappe.has_permission("Job Applicant Profile Settings", "read", throw=True)
     fields = _read_job_applicant_meta(include_hidden=True, include_skipped=True)
     return {"status": "success", "total": len(fields), "fields": fields}
 
@@ -973,14 +967,9 @@ def _get_pre_offer_form_rows(applicant_name):
     )
 
 
-def _portal_form_rows(form_name):
-    """Returns the portal field config rows for a given Job Applicant Portal Forms doc."""
-    if not form_name or not frappe.db.exists("Job Applicant Portal Forms", form_name):
-        return []
-    try:
-        return frappe.get_doc("Job Applicant Portal Forms", form_name).portal_fields or []
-    except Exception:
-        return []
+def _portal_form_rows(__form_name=None):
+    """Legacy stub — Job Applicant Portal Forms has been removed."""
+    return []
 
 
 def _resolve_pre_offer_target(applicant_name, requested_form):

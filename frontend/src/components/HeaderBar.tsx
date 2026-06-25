@@ -29,7 +29,14 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   const navigateBack = () => {
     if (window?.isApp && !canGoback && window?.nativeInterface?.execute) {
       // mobile handle back navigation if can not go back from web history
-      window.nativeInterface.execute("goBack", {});
+      window.nativeInterface.execute("goBack", {})
+        .then(() => {
+          console.log("goBack");
+        })
+        .catch(() => {
+          console.log("goBack failed");
+          navigate("/webapp");
+        });
     } else {
       navigate(-1);
     }

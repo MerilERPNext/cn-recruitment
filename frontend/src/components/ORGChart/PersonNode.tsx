@@ -27,6 +27,7 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
     showExpand = true,
     isDottedLine = false,
     onCollapse,
+    onExpandChildren,
   } = data;
 
   const handleClick = () => {
@@ -102,9 +103,20 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
             {totalChildren > 0 && (
               <div className="flex gap-1.5 items-center">
                 <Tooltip
-                  content={`Direct: ${data.directChildren || 0}, Indirect: ${data.indirectChildren || 0}`}
+                  content={
+                    onExpandChildren
+                      ? `${isExpanded ? "Collapse" : "Expand"} · Direct: ${data.directChildren || 0}, Indirect: ${data.indirectChildren || 0}`
+                      : `Direct: ${data.directChildren || 0}, Indirect: ${data.indirectChildren || 0}`
+                  }
                 >
-                  <div className="flex items-center bg-blue-50 border border-blue-100 rounded-md overflow-hidden">
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onExpandChildren?.(String(id));
+                    }}
+                    className={`flex items-center bg-blue-50 border border-blue-100 rounded-md overflow-hidden ${onExpandChildren ? "cursor-pointer hover:bg-blue-100" : ""
+                      }`}
+                  >
                     <Typography
                       variant="bodySmall"
                       color="primary"

@@ -61,9 +61,19 @@ def list_openings(employee=None, search_term=None):
 	doesn't gate the list (referrers can refer for any open Refer-active opening)."""
 	# Resolve the referrer so an unauthenticated call still 401s consistently.
 	_resolve_referrer(employee)
+	extra_fields = [c["fieldname"] for c in _common.get_configured_columns(CHANNEL)]
 	names = _common.get_openings_active_on_channel(CHANNEL)
-	cards = (_common.get_opening_card(n) for n in names)
+	cards = (_common.get_opening_card(n, extra_fields=extra_fields) for n in names)
 	return [c for c in cards if c and _common.card_matches_search(c, search_term)]
+
+
+@frappe.whitelist()
+def list_columns():
+	"""Ordered, enabled columns for the Refer openings list, from Recruitment
+	Settings -> Refer Page Column Settings (falls back to the default set when
+	nothing is configured). Each item: {"fieldname", "label"}. The list-row
+	values for these fieldnames are present on every card from list_openings."""
+	return _common.get_configured_columns(CHANNEL)
 
 
 @frappe.whitelist()

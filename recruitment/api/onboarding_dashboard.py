@@ -91,8 +91,11 @@ def get_dashboard(email):
                 SUM(CASE WHEN current_value IS NOT NULL AND current_value != '' THEN 1 ELSE 0 END) AS filled
             FROM `tabEmployee Onboarding Portal Field`
             WHERE parent = %s AND parenttype = %s
+              AND parentfield = %s
+              AND COALESCE(hidden, 0) = 0
+              AND COALESCE(read_only, 0) = 0
             """,
-            (row.name, DOCTYPENAME),
+            (row.name, DOCTYPENAME, "custom_candidate_portal_fields"),
         )[0]
         total_fields = int(total_fields or 0)
         filled_fields = int(filled_fields or 0)

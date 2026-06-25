@@ -27,24 +27,24 @@ import {
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
 import Onboarding from "./components/Onboarding/Onboarding";
+import AppraisalCycleWizard from "./components/Performance/AppraisalCycleWizard/AppraisalCycleWizard.tsx";
+import Competencies from "./components/Performance/AppraisalCycleWizard/Competencies.tsx";
+import Eligibility from "./components/Performance/AppraisalCycleWizard/Eligibility.tsx";
+import FormBuilder from "./components/Performance/AppraisalCycleWizard/FormBuilder.tsx";
+import GoalPullIn from "./components/Performance/AppraisalCycleWizard/GoalPullIn.tsx";
+import LettersRelease from "./components/Performance/AppraisalCycleWizard/LettersRelease.tsx";
+import Normalisation from "./components/Performance/AppraisalCycleWizard/Normalisation.tsx";
+import Notifications from "./components/Performance/AppraisalCycleWizard/Notifications.tsx";
+import ReviewLaunch from "./components/Performance/AppraisalCycleWizard/ReviewLaunch.tsx";
+import Stages from "./components/Performance/AppraisalCycleWizard/Stages.tsx";
+import Workflow from "./components/Performance/AppraisalCycleWizard/Workflow.tsx";
 import Requests from "./components/Requests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import SearchMembers from "./components/SearchMembers";
-import AppraisalCycleWizard from "./components/Performance/AppraisalCycleWizard/AppraisalCycleWizard.tsx";
-import Eligibility from "./components/Performance/AppraisalCycleWizard/Eligibility.tsx";
-import Stages from "./components/Performance/AppraisalCycleWizard/Stages.tsx";
-import FormBuilder from "./components/Performance/AppraisalCycleWizard/FormBuilder.tsx";
-import GoalPullIn from "./components/Performance/AppraisalCycleWizard/GoalPullIn.tsx";
-import Competencies from "./components/Performance/AppraisalCycleWizard/Competencies.tsx";
-import Workflow from "./components/Performance/AppraisalCycleWizard/Workflow.tsx";
-import Normalisation from "./components/Performance/AppraisalCycleWizard/Normalisation.tsx";
-import Notifications from "./components/Performance/AppraisalCycleWizard/Notifications.tsx";
-import LettersRelease from "./components/Performance/AppraisalCycleWizard/LettersRelease.tsx";
-import ReviewLaunch from "./components/Performance/AppraisalCycleWizard/ReviewLaunch.tsx";
 
-import CalibratorSession from "./components/Performance/Calibrator/Calibrator.tsx";
-import BoxGrid from "./components/Performance/Calibrator/BoxGrid.tsx";
 import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval.tsx";
+import BoxGrid from "./components/Performance/Calibrator/BoxGrid.tsx";
+import CalibratorSession from "./components/Performance/Calibrator/Calibrator.tsx";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -137,11 +137,6 @@ const TeamCalibration = lazyWithRetry(
 const TeamCheckIns = lazyWithRetry(
   () => import("./components/Performance/MyTeam/TeamCheckIns.tsx"),
   "TeamCheckIns",
-);
-
-const TeamNotes = lazyWithRetry(
-  () => import("./components/Performance/MyTeam/TeamNotes"),
-  "TeamNotes",
 );
 
 const GoalDetails = lazyWithRetry(
@@ -290,9 +285,7 @@ const SalarySlipsList = lazyWithRetry(
 );
 const SalaryStructureAssignmentList = lazyWithRetry(
   () =>
-    import(
-      "./components/Compansation/SalaryStructureAssignment/SalaryStructureAssignmentList"
-    ),
+    import("./components/Compansation/SalaryStructureAssignment/SalaryStructureAssignmentList"),
   "SalaryStructureAssignmentList",
 );
 
@@ -483,11 +476,6 @@ const PerformanceApp = lazyWithRetry(
 const Overview = lazyWithRetry(
   () => import("./components/Performance/Overview/Overview"),
   "Overview",
-);
-
-const NewGoalPlan = lazyWithRetry(
-  () => import("./components/Performance/NewGoalPlan/NewGoalPlan"),
-  "NewGoalPlan",
 );
 
 const PerformanceReviewApp = lazyWithRetry(
@@ -1401,7 +1389,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "onboarding",
         element: <OnbordingFlow />,
-        permissionKey: "Flow Requests",
+        permissionKey: "Onboarding",
       },
       {
         path: "separation",
@@ -1477,11 +1465,6 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Team Check-Ins",
       },
       {
-        path: "team-notes",
-        element: <TeamNotes />,
-        permissionKey: "Team Notes",
-      },
-      {
         path: "my-goals/:id",
         element: <GoalDetails />,
         permissionKey: "My Goals",
@@ -1501,12 +1484,6 @@ export const routesConfig: AppRoute[] = [
         element: <Feedback />,
         permissionKey: "Feedback",
       },
-
-      {
-        path: "new-goal-plan",
-        element: <NewGoalPlan />,
-        permissionKey: "New Goal",
-      },
       {
         path: "my-goals/new-goal",
         element: <NewGoal />,
@@ -1525,67 +1502,67 @@ export const routesConfig: AppRoute[] = [
       {
         path: "appraisal-cycle-wizard",
         element: <AppraisalCycleWizard />,
-        permissionKey: "Performance Admin",
+        permissionKey: "Appraisal Cycle Wizard",
       },
       {
         path: "appraisal-cycle-wizard/eligibility",
         element: <Eligibility />,
-        permissionKey: "Performance Admin",
+        permissionKey: "Appraisal Cycle Wizard",
       },
       {
         path: "appraisal-cycle-wizard/stages",
         element: <Stages />,
-        permissionKey: "Performance Admin",
+        permissionKey: "Appraisal Cycle Wizard",
       },
       {
         path: "appraisal-cycle-wizard/form-builder",
         element: <FormBuilder />,
-        permissionKey: "Performance Admin",
+        permissionKey: "Appraisal Cycle Wizard",
       },
       {
         path: "appraisal-cycle-wizard/goal-pull-in",
         element: <GoalPullIn />,
-        permissionKey: "Performance Admin",
+        permissionKey: "Appraisal Cycle Wizard",
       },
       {
         path: "appraisal-cycle-wizard/competencies",
         element: <Competencies />,
-        permissionKey: "Performance Admin",
+        permissionKey: "Appraisal Cycle Wizard",
       },
       {
         path: "appraisal-cycle-wizard/workflow",
         element: <Workflow />,
-        permissionKey: "Performance Admin",
+        permissionKey: "Appraisal Cycle Wizard",
       },
       {
         path: "appraisal-cycle-wizard/notifications",
         element: <Notifications />,
-        permissionKey: "Performance Admin",
+        permissionKey: "Appraisal Cycle Wizard",
       },
       {
         path: "appraisal-cycle-wizard/normalisation-calibration",
         element: <Normalisation />,
-        permissionKey: "Performance Admin",
+        permissionKey: "Appraisal Cycle Wizard",
       },
       {
         path: "appraisal-cycle-wizard/letters-release",
         element: <LettersRelease />,
-        permissionKey: "Performance Admin",
+        permissionKey: "Appraisal Cycle Wizard",
       },
       {
         path: "appraisal-cycle-wizard/review-launch",
         element: <ReviewLaunch />,
-        permissionKey: "Performance Admin",
+        permissionKey: "Appraisal Cycle Wizard",
       },
       {
         path: "calibrator/session",
         element: <CalibratorSession />,
-        permissionKey: "Performance Admin",
+        permissionKey: "Calibrator",
       },
       {
         path: "calibrator/box-grid",
         element: <BoxGrid />,
-        permissionKey: "Performance Admin",
+        permissionKey: "Calibrator",
       },
     ],
   },
@@ -1666,12 +1643,12 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/recognition/hall-of-fame",
     element: <HallOfFamePage />,
-    permissionKey: "Recognition",
+    permissionKey: "Hall Of Fame",
   },
   {
     path: "/webapp/recognition/leaderboard",
     element: <LeaderboardPage />,
-    permissionKey: "Recognition",
+    permissionKey: "Leader Board",
   },
 
   {
@@ -1685,51 +1662,51 @@ export const routesConfig: AppRoute[] = [
         element: <Navigate to="dashboard" replace />,
         permissionKey: "Recognition",
       },
-      
+
       {
         path: "dashboard",
         element: <VibeDashboard />,
-        permissionKey: "Recognition",
+        permissionKey: "Dashboard",
       },
       {
         path: "my-appreciations-history",
         element: <MyAppreciationsHistory />,
-        permissionKey: "Recognition",
+        permissionKey: "My Appreciations History",
       },
       {
         path: "feed",
         element: <VibeFeed />,
-        permissionKey: "Recognition",
+        permissionKey: "Feed",
       },
       {
         path: "appreciations-leaderboard",
         element: <AppreciationsLeaderboard />,
-        permissionKey: "Recognition",
+        permissionKey: "Appreciations Leaderboard",
       },
       {
         path: "awards-live",
         element: <AwardsLivePrograms />,
-        permissionKey: "Recognition",
+        permissionKey: "Awards Live",
       },
       {
         path: "awards-history",
         element: <AwardsHistory />,
-        permissionKey: "Recognition",
+        permissionKey: "Awards History",
       },
       {
         path: "nomination-workflows",
         element: <AwardsNominationWorkflows />,
-        permissionKey: "Recognition",
+        permissionKey: "Nomination Workflows",
       },
       {
         path: "earned-points",
         element: <EarnedPointsSummary />,
-        permissionKey: "Recognition",
+        permissionKey: "Earned Points",
       },
       {
         path: "admin-dashboard",
         element: <RecognitionAdminDashboard />,
-        permissionKey: "Recognition",
+        permissionKey: "Admin Dashboard",
       },
     ],
   },

@@ -140,142 +140,90 @@ const countTotalDescendants = (node: EmployeeHierarchy): number => {
   return count;
 };
 
-// ✅ Show grandparent → parent → current user → children (only current branch)
+// ✅ Show grandparent → parent → current user → children (only current branch).
+// Any node whose id is in `expandedIds` additionally reveals its own direct
+// children (and so on, recursively), so clicking a card's badge drills down.
 const buildHierarchyWithGrandparent = (
   user: EmployeeHierarchy,
   parent: EmployeeHierarchy | null,
-  grandParent: EmployeeHierarchy | null
+  grandParent: EmployeeHierarchy | null,
+  expandedIds: Set<string>
 ): { nodes: Node<NodeData>[]; edges: Edge[] } => {
-  const nodes: Node<NodeData>[] = [];
-  const edges: Edge[] = [];
+  const nodeMap = new Map<string, Node<NodeData>>();
+  const edgeMap = new Map<string, Edge>();
 
-  // 🧓 Grandparent (top)
-  if (grandParent) {
-    const direct = grandParent.children?.length || 0;
-    const total = countTotalDescendants(grandParent);
-    nodes.push({
-      id: grandParent.id,
+  const addNode = (n: EmployeeHierarchy) => {
+    if (nodeMap.has(n.id)) return;
+    const direct = n.children?.length || 0;
+    const total = countTotalDescendants(n);
+    nodeMap.set(n.id, {
+      id: n.id,
       type: "person",
       position: { x: 0, y: 0 },
       data: {
-        id: grandParent.id,
-        name: grandParent.name,
-        title: grandParent.title || "",
-        image: grandParent.image,
-        hasChildren: true,
-        isExpanded: true,
-        onToggleExpand: () => { },
-        showExpand: false,
+        id: n.id,
+        name: n.name,
+        image: n.image,
+        title: n.title || "",
+        hasChildren: total > 0,
         totalChildren: total,
         directChildren: direct,
         indirectChildren: total - direct,
+        showExpand: false,
+        isExpanded: expandedIds.has(n.id),
+        onToggleExpand: () => { },
       },
     });
+  };
 
-    if (parent) {
-      edges.push({
-        id: `e${grandParent.id}-${parent.id}`,
-        source: grandParent.id,
-        target: parent.id,
-        type: "smoothstep",
-        style: { stroke: "#d1d5db", strokeWidth: 2 },
-      });
+  const addEdge = (sourceId: string, targetId: string) => {
+    const id = `e${sourceId}-${targetId}`;
+    if (edgeMap.has(id)) return;
+    edgeMap.set(id, {
+      id,
+      source: sourceId,
+      target: targetId,
+      type: "smoothstep",
+      style: { stroke: "#d1d5db", strokeWidth: 2 },
+    });
+  };
+
+  // Reveal a node's children (optionally capped), and recurse into any
+  // child that has itself been expanded by the user.
+  const revealChildren = (n: EmployeeHierarchy, limit?: number) => {
+    const children = limit !== undefined ? (n.children || []).slice(0, limit) : n.children || [];
+    children.forEach((child) => {
+      addNode(child);
+      addEdge(n.id, child.id);
+      if (expandedIds.has(child.id)) {
+        revealChildren(child);
+      }
+    });
+  };
+
+  // 🧓 Grandparent (top)
+  if (grandParent) {
+    addNode(grandParent);
+    if (parent) addEdge(grandParent.id, parent.id);
+    if (expandedIds.has(grandParent.id)) {
+      revealChildren(grandParent);
     }
   }
 
   // 👨 Parent (middle)
   if (parent) {
-    const direct = parent.children?.length || 0;
-    const total = countTotalDescendants(parent);
-    nodes.push({
-      id: parent.id,
-      type: "person",
-      position: { x: 0, y: 0 },
-      data: {
-        id: parent.id,
-        name: parent.name,
-        image: parent.image,
-        title: parent.title || "",
-        hasChildren: true,
-        isExpanded: true,
-        onToggleExpand: () => { },
-        showExpand: false,
-        totalChildren: total,
-        directChildren: direct,
-        indirectChildren: total - direct,
-      },
-    });
-
-    edges.push({
-      id: `e${parent.id}-${user.id}`,
-      source: parent.id,
-      target: user.id,
-      type: "smoothstep",
-      style: { stroke: "#d1d5db", strokeWidth: 2 },
-    });
+    addNode(parent);
+    addEdge(parent.id, user.id);
+    if (expandedIds.has(parent.id)) {
+      revealChildren(parent);
+    }
   }
 
-  // 👤 Current user
-  const visibleChildren = (user.children || []).slice(0, 5);
-  const direct = user.children?.length || 0;
-  const total = countTotalDescendants(user);
+  // 👤 Current user — children shown by default, capped at 5
+  addNode(user);
+  revealChildren(user, 5);
 
-  nodes.push({
-    id: user.id,
-    type: "person",
-    position: { x: 0, y: 0 },
-    data: {
-      id: user.id,
-      name: user.name,
-      image: user.image,
-      title: user.title || "",
-      hasChildren: total > 0,
-      childrens: visibleChildren,
-      totalChildren: total,
-      directChildren: direct,
-      indirectChildren: total - direct,
-      showExpand: false,
-      isExpanded: true,
-      onToggleExpand: () => { },
-    },
-  });
-
-  // 👶 Children (limit 5)
-  if (visibleChildren.length > 0) {
-    visibleChildren.forEach((child) => {
-      const childDirect = child.children?.length || 0;
-      const childTotal = countTotalDescendants(child);
-      nodes.push({
-        id: child.id,
-        type: "person",
-        position: { x: 0, y: 0 },
-        data: {
-          id: child.id,
-          name: child.name,
-          image: child.image,
-          title: child.title || "",
-          hasChildren: childTotal > 0,
-          childrens: child.children || [],
-          totalChildren: childTotal,
-          directChildren: childDirect,
-          indirectChildren: childTotal - childDirect,
-          showExpand: false,
-          isExpanded: false,
-          onToggleExpand: () => { },
-        },
-      });
-
-      edges.push({
-        id: `e${user.id}-${child.id}`,
-        source: user.id,
-        target: child.id,
-        type: "smoothstep",
-        style: { stroke: "#d1d5db", strokeWidth: 2 },
-      });
-    });
-  }
-
-  return { nodes, edges };
+  return { nodes: Array.from(nodeMap.values()), edges: Array.from(edgeMap.values()) };
 };
 
 export default function ThreeLevelOrgChart() {
@@ -283,26 +231,40 @@ export default function ThreeLevelOrgChart() {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<any>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [showDottedManager, setShowDottedManager] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const { targetEmployeeId } = useTargetUser();
   const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
-  const { data: targetEmployeeDetails } = useGetEmployeeDetailsByEmpId(targetEmployeeId || "", ["employee", "custom_dotted_line_manager"]);
-  const dottedManagerId = targetEmployeeId ? targetEmployeeDetails?.custom_dotted_line_manager : currentUser?.custom_dotted_line_manager;
+  const { data: targetEmployeeDetails } = useGetEmployeeDetailsByEmpId(targetEmployeeId || "", ["employee", "custom_dotted_line_manager", "dotted_manager_member_id"]);
+  const dottedManagerSource = targetEmployeeId ? targetEmployeeDetails : currentUser;
+  const dottedManagerId = dottedManagerSource?.custom_dotted_line_manager || dottedManagerSource?.dotted_manager_member_id;
   const { data: dottedLineManagerDetails } = useGetEmployeeDetailsByEmpId(dottedManagerId || "", ["employee", "employee_name"]);
   const dottedManagerName = dottedLineManagerDetails?.employee_name;
   // Use targetEmployeeId if viewing another user, otherwise use current user's employee ID
   const employeeId = targetEmployeeId || (isCurrentUserLoading ? null : currentUser?.employee) || "";
-
   const { data: employeeHierarchy } = useGetEmployeeSubordinateHierarchy(
     employeeId
   );
 
-  // Reset dotted manager visibility when the viewed employee changes
+  // Reset dotted manager visibility and any drilled-down nodes when the viewed employee changes
   useEffect(() => {
     setShowDottedManager(false);
+    setExpandedIds(new Set());
   }, [employeeId, dottedManagerId]);
 
   const handleShowDottedManager = useCallback(() => setShowDottedManager((prev) => !prev), []);
+
+  const handleExpandChildren = useCallback((nodeId: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(nodeId)) {
+        next.delete(nodeId);
+      } else {
+        next.add(nodeId);
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (!employeeHierarchy || !employeeId) return;
@@ -325,11 +287,20 @@ export default function ThreeLevelOrgChart() {
     }
 
     if (currentUserNode) {
-      const { nodes: initialNodes, edges: initialEdges } = buildHierarchyWithGrandparent(
+      const { nodes: builtNodes, edges: initialEdges } = buildHierarchyWithGrandparent(
         currentUserNode,
         parent,
-        grandParent
+        grandParent,
+        expandedIds
       );
+
+      const initialNodes = builtNodes.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          onExpandChildren: n.data.hasChildren ? handleExpandChildren : undefined,
+        },
+      }));
 
       // Build the dotted manager node separately — excluded from dagre so we can
       // manually position it to the right of the employee node.
@@ -390,8 +361,20 @@ export default function ThreeLevelOrgChart() {
         if (empNode) {
           const nodeH = dottedNode.type === "dottedLineChip" ? CHIP_H : PERSON_H;
           const nodeW = dottedNode.type === "dottedLineChip" ? CHIP_W : PERSON_W;
+          // Expanding a parent/grandparent can reveal siblings on the same
+          // rank as the employee node, to its right. Since this node is
+          // positioned manually (outside dagre), find the rightmost edge of
+          // anything sharing that rank so we never land on top of it.
+          const sameRankRightEdge = layoutedNodes.reduce((maxX, n) => {
+            if (n.id === employeeId) return maxX;
+            const sameRank = Math.abs(n.position.y - empNode.position.y) < PERSON_H / 2;
+            if (!sameRank) return maxX;
+            const { w } = getNodeDims(n);
+            return Math.max(maxX, n.position.x + w);
+          }, empNode.position.x + PERSON_W);
+
           dottedNode.position = {
-            x: empNode.position.x + PERSON_W + 60,
+            x: sameRankRightEdge + 60,
             y: empNode.position.y + (PERSON_H - nodeH) / 2,
           };
           dottedNode.sourcePosition = Position.Right;
@@ -406,7 +389,7 @@ export default function ThreeLevelOrgChart() {
         setEdges([...layoutedEdges]);
       }
     }
-  }, [employeeHierarchy, employeeId, currentUser, dottedManagerId, dottedManagerName, showDottedManager, handleShowDottedManager]);
+  }, [employeeHierarchy, employeeId, currentUser, dottedManagerId, dottedManagerName, showDottedManager, handleShowDottedManager, expandedIds, handleExpandChildren]);
 
   return (
     <div className="w-full rounded-md bg-white h-[60vh]">

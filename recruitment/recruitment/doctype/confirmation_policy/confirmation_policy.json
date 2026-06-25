@@ -40,6 +40,7 @@
   "extension_workflow_section",
   "extension_workflow_configurations",
   "separation_workflow_configurations_section",
+  "enable_separation_initiation",
   "configure_separation_initiators",
   "separation_initiators",
   "separation_form",
@@ -267,11 +268,19 @@
    "label": "Separation Workflow Configurations"
   },
   {
+   "default": "0",
+   "fieldname": "enable_separation_initiation",
+   "fieldtype": "Check",
+   "label": "Enable Separation Initiation"
+  },
+  {
+   "depends_on": "eval:doc.enable_separation_initiation",
    "fieldname": "configure_separation_initiators",
    "fieldtype": "Button",
    "label": "Configure Separation Initiators"
   },
   {
+   "depends_on": "eval:doc.enable_separation_initiation",
    "fieldname": "separation_initiators",
    "fieldtype": "Small Text",
    "label": "Separation Initiators",
@@ -280,12 +289,14 @@
   {
    "fieldname": "separation_form",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Separation Form",
    "options": "Microapp Form Widget"
   },
   {
    "fieldname": "separation_workflow",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Separation Workflow",
    "options": "Approval Policy Matrix"
   }

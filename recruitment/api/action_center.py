@@ -257,11 +257,6 @@ def send_pre_offer_form(job_applicant_id, form_name):
         frappe.local.response["http_status_code"] = 404
         return {"status": "error", "message": _(f"Job Applicant '{job_applicant_id}' not found.")}
 
-    missing_forms = [fn for fn in form_names if not frappe.db.exists("Job Applicant Portal Forms", fn)]
-    if missing_forms:
-        frappe.local.response["http_status_code"] = 404
-        return {"status": "error", "message": _("Portal Form(s) not found: {0}").format(", ".join(missing_forms))}
-
     candidate_email = frappe.db.get_value("Job Applicant", job_applicant_id, "email_id")
     if not candidate_email:
         frappe.local.response["http_status_code"] = 400

@@ -180,6 +180,7 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
   existingResolution,
 }) => {
   const [resolution, setResolution] = useState(existingResolution || "");
+  const [confirmClose, setConfirmClose] = useState<"yes" | "no">("no");
 
   /* Formio Exit and Feedback Form Logic */
   const { data: exitFormJsonData, isLoading: exitFormJsonLoading } = useGetExitFormJson({ category: ticket?.custom_category, sub_category: ticket?.custom_sub_category });
@@ -276,21 +277,21 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
   if (!isOpen) return null;
 
   const handleSubmit = () => {
-    if (!resolution.trim()) {
-      toast.error("Please enter resolution details");
-      return;
-    }
+    const payloadResolution = "resolved";
+    
     if (isClosingTicket) {
       const exitData = exitFormJson ? { schema: exitFormJson, answer: exitFormSubmission ?? {} } : (exitFormSubmission ?? null);
       const feedbackData = feedbackFormJson ? { schema: feedbackFormJson, answer: feedbackFormSubmission ?? {} } : (feedbackFormSubmission ?? null);
-      onSubmit(resolution, exitData, feedbackData, exitFormAttachment, feedbackFormAttachment);
+      onSubmit(payloadResolution, exitData, feedbackData, exitFormAttachment, feedbackFormAttachment);
     }
     else {
-      onSubmit(resolution);
+      onSubmit(payloadResolution);
     }
   };
 
-  const disableSubmit = isLoading || !resolution.trim() || (isClosingTicket && (!isExitFormValid || !isFeedbackFormValid));
+  const disableSubmit = isLoading || 
+    (isClosingTicket ? confirmClose === "no" : !resolution.trim()) || 
+    (isClosingTicket && (!isExitFormValid || !isFeedbackFormValid));
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -309,23 +310,57 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
         </div>
         {/** Body */}
         <div className="px-6 overflow-y-auto flex-1 py-4">
-          <label className="block  text-sm font-medium text-gray-700 mb-2">
-            Resolution Details <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            value={resolution}
-            onChange={(e) => setResolution(e.target.value)}
-            placeholder="Describe how this issue was resolved..."
-            rows={5}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-          />
-          <p className="text-xs text-gray-500 mt-2">
-            {isResolving
-              ? "This will save the resolution and set the ticket status to Resolved."
-              : isEditing
-                ? "This will save the resolution and set status to Resolved."
-                : "This will close the ticket and save the resolution details."}
-          </p>
+          {isClosingTicket ? (
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-800 mb-4">
+                Do you want to close the ticket?
+              </p>
+              <div className="flex gap-6">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="confirmClose"
+                    value="yes"
+                    checked={confirmClose === "yes"}
+                    onChange={() => setConfirmClose("yes")}
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">Yes</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="confirmClose"
+                    value="no"
+                    checked={confirmClose === "no"}
+                    onChange={() => setConfirmClose("no")}
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">No</span>
+                </label>
+              </div>
+            </div>
+          ) : (
+            <>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Resolution Details <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={resolution}
+                onChange={(e) => setResolution(e.target.value)}
+                placeholder="Describe how this issue was resolved..."
+                rows={5}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                {isResolving
+                  ? "This will save the resolution and set the ticket status to Resolved."
+                  : isEditing
+                    ? "This will save the resolution and set status to Resolved."
+                    : "This will close the ticket and save the resolution details."}
+              </p>
+            </>
+          )}
 
           {
             feedbackFormJsonLoading &&
