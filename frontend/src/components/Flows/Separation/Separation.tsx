@@ -24,11 +24,14 @@ import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { SeparationSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { getActionsEnabled } from "../../../utils/uiPermission";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetEmployeeSeparationType, useGetSeparationFunnelDetails, useGetNoticePeriodAndSeparationPolicy } from "../../../hooks/useSeparation";
+import { useGetEmployeeSeparationType, useGetSeparationFunnelDetails, useGetNoticePeriodAndSeparationPolicy, useRevokeEmployeeSeparation } from "../../../hooks/useSeparation";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { FlowRequestItem } from "../../../types/flows";
 import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
 import Tooltip from "../../shared/Tooltip";
+import RejectionReasonModal from "../../shared/RejectionReasonModal";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import toast from "react-hot-toast";
 
 type cardDataType = {
   icon: React.ReactNode;
@@ -68,6 +71,7 @@ const Separation = () => {
       "terminate",
       "retrigger_separation",
       "retrigger_termination",
+      "revoke_separation",
     ],
     "Separation",
   );
@@ -88,6 +92,8 @@ const Separation = () => {
   const separationPending = item?.approval_status === "Pending";
 
   const reference_name = item?.workflow_stages?.[0]?.todo?.reference_name ?? null;
+  const separation_name = item?.approval_stages?.[0]?.todo?.reference_name ?? null;
+
   const { data: separationType, isLoading: isLoadingSeparationType } = useGetEmployeeSeparationType(reference_name);
   const { data: policyData, isLoading: isLoadingPolicy } = useGetNoticePeriodAndSeparationPolicy(document_name);
 
@@ -96,7 +102,44 @@ const Separation = () => {
     ? enabledActions.retrigger_termination
     : enabledActions.retrigger_separation;
 
+
+  const hasNoItem = !item;
+  const isRevoked = item?.approval_status === "Revoked" || item?.approval_stages?.some((stage => stage?.todo?.refrence_document?.custom_status === "Revoked"));
+  const isRejected = item?.approval_status === "Rejected";
+  const isCompleted = item?.approval_status === "Completed";
+
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
+  const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
+
+  const showRevokeButton =
+    !!separation_name &&
+    !!enabledActions.revoke_separation &&
+    !isRevoked &&
+    item?.approval_status &&
+    !["Approved", "Completed", "Rejected", "Cancelled"].includes(item.approval_status);
+
+  // console.log("show Revoke Condition: ", { separation_name, enabledActions: enabledActions.revoke_separation, isRevoked, status: item?.approval_status })
+
+  const { mutate: revokeSeparation, isPending: isRevoking } = useRevokeEmployeeSeparation();
+
+  const handleRevokeSubmit = (reason: string) => {
+    if (!separation_name) return;
+    revokeSeparation(
+      { separation_name: separation_name, reason },
+      {
+        onSuccess: () => {
+          toast.success("Separation request revoked successfully");
+          setIsRevokeModalOpen(false);
+          refetchSeparationFunnelDetails();
+          queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
+          queryClient.invalidateQueries({ queryKey: ["employee", activeEmployee?.name] });
+        },
+        onError: (error: any) => {
+          toast.error(errorResponseFormater(error, "Failed to revoke separation request."));
+        },
+      }
+    );
+  };
 
   const isLoading = isLoadingSeparationFunnelDetails || isLoadingSeparationType || isLoadingPolicy || isLoadingCurrentEmployee || (!!item?.request_id && isLoadingFlowRequest);
 
@@ -139,19 +182,15 @@ const Separation = () => {
     !separationPending &&
     !isLoadingSeparationType &&
     (!separationType?.custom_resignaion_type ||
-      separationType.custom_resignaion_type !== "Termination" ||
-      (item?.approval_status && item?.approval_status === "Rejected"))
+      separationType.custom_resignaion_type !== "Termination" || isRejected || !isRevoked
+    )
     ;
 
-  const isRejected = item?.approval_status === "Rejected";
-  const isCompleted = item?.approval_status === "Completed";
-
-  const hasNoItem = !item;
 
   const showSeparationButton =
     Boolean(separationDefinition?.name) &&
     enabledActions?.initiate_separation &&
-    (hasNoItem || isRejected);
+    (hasNoItem || isRejected || isRevoked);
 
   const cardData: cardDataType[] = [
     {
@@ -193,12 +232,12 @@ const Separation = () => {
   const [showRequestPage, setShowRequestPage] = useState(false);
 
   useEffect(() => {
-    if (item && item.approval_status !== "Rejected") {
+    if (item && item.approval_status !== "Rejected" && !isRevoked) {
       setShowRequestPage(true);
     } else {
       setShowRequestPage(false);
     }
-  }, [item]);
+  }, [item, isRevoked]);
 
   const canViewWorkflow = useMemo(() => {
     if (!showRequestPage) return false;
@@ -224,10 +263,21 @@ const Separation = () => {
             View Your Separation Process
           </Typography>
         </div>
+        {showRevokeButton && (
+          <Button
+            variant="outline"
+            bgColor="error"
+            onClick={() => setIsRevokeModalOpen(true)}
+            className="flex items-center gap-2 py-1.5 transition-all rounded-md shadow-sm ml-auto mr-2"
+            disabled={isRevoking}
+          >
+            Revoke Separation
+          </Button>
+        )}
         <Button
           variant="outline"
           onClick={() => setIsActivityLogOpen(true)}
-          className="flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm ml-auto mr-2"
+          className={`flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm mr-2 ${!showRevokeButton ? "ml-auto" : ""}`}
           disabled={!item?.request_id}
         >
           Activity Log
@@ -410,6 +460,17 @@ const Separation = () => {
           </Button>
         )}
       </div>
+      <RejectionReasonModal
+        isOpen={isRevokeModalOpen}
+        isPending={isRevoking}
+        required={false}
+        title="Revoke Separation Request"
+        description="Are you sure you want to revoke this separation request? Please provide a reason."
+        label="Reason for Revocation"
+        placeholder="Enter reason for revoking..."
+        onCancel={() => setIsRevokeModalOpen(false)}
+        onSave={handleRevokeSubmit}
+      />
     </div>
   );
 };
