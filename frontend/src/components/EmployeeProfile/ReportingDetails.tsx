@@ -59,18 +59,21 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedCategoryField, setSelectedCategoryField] = useState<string>("");
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const openAddModal = (category: string) => {
     setSelectedCategory(category);
     setSelectedCategoryField(CATEGORY_FIELD_MAP[category] || "reports_to");
+    setSelectedItem(null);
     setIsEditing(false);
     setIsModalOpen(true);
   };
 
-  const openEditModal = (category: string) => {
+  const openEditModal = (category: string, item: any) => {
     setSelectedCategory(category);
     setSelectedCategoryField(CATEGORY_FIELD_MAP[category] || "reports_to");
+    setSelectedItem(item);
     setIsEditing(true);
     setIsModalOpen(true);
   };
@@ -80,6 +83,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
     setIsEditing(false);
     setSelectedCategory("");
     setSelectedCategoryField("");
+    setSelectedItem(null);
   };
 
   const handleDeleteConfirm = async () => {
@@ -287,7 +291,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
                         location={item.branch_name}
                         itemName={item?.name}
                         canDelete={!!item.can_delete}
-                        onEdit={() => openEditModal(category)}
+                        onEdit={() => openEditModal(category, item)}
                       />
                     </div>
                   ))}
@@ -310,6 +314,14 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
           isEdit={isEditing}
           category={selectedCategory}
           categoryField={selectedCategoryField}
+          initialEditData={selectedItem ? {
+            reports_to: selectedItem.records,
+            reports_to_name: selectedItem.reporting_employee_name,
+            department_name: selectedItem.department_name,
+            branch_name: selectedItem.branch_name,
+            start_date: selectedItem.start_date,
+            end_date: selectedItem.end_date,
+          } : undefined}
         />
       )}
 

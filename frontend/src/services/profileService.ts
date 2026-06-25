@@ -407,7 +407,8 @@ export const profileService = {
     employee: string,
     field: string,
     value: string,
-    start_date: string
+    start_date: string,
+    end_date?: string
   ): Promise<boolean> => {
     try {
       const response = await FrappeAPI.callMethod(
@@ -416,7 +417,8 @@ export const profileService = {
           employee: employee,
           field: field,
           value: value,
-          start_date: start_date
+          start_date: start_date,
+          ...(end_date ? { end_date } : {}),
         },
       );
       return response as boolean;

@@ -1,11 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useRef } from "react";
 import {
   ReactFlow,
   Node,
   Edge,
+  ReactFlowInstance,
   useNodesState,
   useEdgesState,
   Position,
@@ -235,7 +236,7 @@ export default function ThreeLevelOrgChart() {
   const navigate = useNavigate();
   const { targetEmployeeId } = useTargetUser();
   const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
-  const { data: targetEmployeeDetails } = useGetEmployeeDetailsByEmpId(targetEmployeeId || "", ["employee", "custom_dotted_line_manager", "dotted_manager_member_id"]);
+  const { data: targetEmployeeDetails, isLoading: isTargetEmployeeDetailsLoading } = useGetEmployeeDetailsByEmpId(targetEmployeeId || "", ["employee", "custom_dotted_line_manager", "dotted_manager_member_id"]);
   const dottedManagerSource = targetEmployeeId ? targetEmployeeDetails : currentUser;
   const dottedManagerId = dottedManagerSource?.custom_dotted_line_manager || dottedManagerSource?.dotted_manager_member_id;
   const { data: dottedLineManagerDetails } = useGetEmployeeDetailsByEmpId(dottedManagerId || "", ["employee", "employee_name"]);
@@ -245,12 +246,21 @@ export default function ThreeLevelOrgChart() {
   const { data: employeeHierarchy } = useGetEmployeeSubordinateHierarchy(
     employeeId
   );
+  // Whether we yet know for certain if this employee has a dotted line manager —
+  // until this settles, fitView must not lock in, or the dotted node can end up
+  // added outside the already-fitted viewport (timing-dependent, varies by network speed).
+  const isDottedManagerSourceLoading = targetEmployeeId
+    ? isTargetEmployeeDetailsLoading
+    : isCurrentUserLoading;
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
+  const hasFitRef = useRef(false);
 
   // Reset dotted manager visibility and any drilled-down nodes when the viewed employee changes
   useEffect(() => {
     setShowDottedManager(false);
     setExpandedIds(new Set());
-  }, [employeeId, dottedManagerId]);
+    hasFitRef.current = false;
+  }, [employeeId]);
 
   const handleShowDottedManager = useCallback(() => setShowDottedManager((prev) => !prev), []);
 
@@ -388,8 +398,17 @@ export default function ThreeLevelOrgChart() {
         setNodes([...layoutedNodes]);
         setEdges([...layoutedEdges]);
       }
+
+      // Fit the viewport once we know for sure whether a dotted line manager
+      // exists, so a slow-to-resolve dotted manager isn't left outside the
+      // already-fitted view (this is what made it invisible on dev but not
+      // locally — the API responses there resolved in a different order).
+      if (!hasFitRef.current && !isDottedManagerSourceLoading) {
+        hasFitRef.current = true;
+        requestAnimationFrame(() => rfInstance?.fitView({ padding: 0.1 }));
+      }
     }
-  }, [employeeHierarchy, employeeId, currentUser, dottedManagerId, dottedManagerName, showDottedManager, handleShowDottedManager, expandedIds, handleExpandChildren]);
+  }, [employeeHierarchy, employeeId, currentUser, dottedManagerId, dottedManagerName, showDottedManager, handleShowDottedManager, expandedIds, handleExpandChildren, isDottedManagerSourceLoading, rfInstance]);
 
   return (
     <div className="w-full rounded-md bg-white h-[60vh]">
@@ -418,7 +437,7 @@ export default function ThreeLevelOrgChart() {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           nodeTypes={{ person: PersonNode, dottedLineChip: DottedLineChipNode }}
-          fitView
+          onInit={setRfInstance}
           attributionPosition="top-right"
           proOptions={{ hideAttribution: true }}
           minZoom={0.2}

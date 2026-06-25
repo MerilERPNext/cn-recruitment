@@ -30,8 +30,7 @@
                     "refreshOn": "isForOthers",
                     "clearOnRefresh": false,
                     "lazyLoad": false,
-                    "searchField": "q",
-                    "customDefaultValue": "value = data.defaultEmployee ? data.defaultEmployee : null;"
+                    "searchField": "q"
                 },
                 {
                     "type": "datetime",
@@ -41,6 +40,16 @@
                     "format": "dd-MM-yyyy",
                     "enableTime": false,
                     "input": true
+                },
+                {
+                    "type": "datetime",
+                    "key": "end_date",
+                    "label": "End Date",
+                    "errorLabel": "End Date",
+                    "format": "dd-MM-yyyy",
+                    "enableTime": false,
+                    "input": true,
+                    "customConditional": "show = !!data.end_date;"
                 }
             ]
         }
