@@ -3,6 +3,8 @@ from frappe.utils import getdate, add_days, add_months, today, cint
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
+from recruitment.customizations.employee_separation.override_class import submit_effects_allowed
+
 
 PROBATION_STATUSES = ("On Probation", "Probation Extended")
 CONFIRMED_STATUS = "Confirmed"
@@ -10,6 +12,9 @@ ATTENDANCE_REGULARIZE_TODO_TYPE = "Regularize Separation Attendance"
 
 
 def create_attendance_regularize_todo(doc, method=None):
+    if not submit_effects_allowed(doc):
+        return
+
     if doc.custom_is_the_attendance_completely_marked_of_the_member_ != "No":
         return
 
@@ -186,6 +191,9 @@ def _get_attendance_cycle_window(anchor):
 
 
 def update_employee_relieving_date(doc, method=None):
+    if not submit_effects_allowed(doc):
+        return
+
     if not doc.custom_final_last_working_day or not doc.employee_name:
         return
 

@@ -293,6 +293,9 @@ doc_events = {
             "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date",
             "recruitment.customizations.employee_separation.employee_separation.create_attendance_regularize_todo",
         ],
+        "on_trash": [
+            "recruitment.customizations.employee_separation.funnel_cleanup.cleanup_separation_funnel_artifacts",
+        ],
     },
 }
 
@@ -342,6 +345,7 @@ override_doctype_class = {
     # our flow raises one requisition per location, so those siblings are valid.
     # See recruitment.customizations.job_requisition.CustomJobRequisition.
     "Job Requisition": "recruitment.customizations.job_requisition.CustomJobRequisition",
+    "Employee Separation": "recruitment.customizations.employee_separation.override_class.CustomEmployeeSeparation",
 }
 #
 # each overriding function accepts a `data` argument;
