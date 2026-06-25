@@ -76,7 +76,7 @@ const Separation = () => {
     "Separation",
   );
 
-
+  const queryClient = useQueryClient();
   const {
     data: separationFunnelDetails,
     refetch: refetchSeparationFunnelDetails,
@@ -182,7 +182,7 @@ const Separation = () => {
     !separationPending &&
     !isLoadingSeparationType &&
     (!separationType?.custom_resignaion_type ||
-      separationType.custom_resignaion_type !== "Termination" || isRejected || !isRevoked
+      separationType.custom_resignaion_type !== "Termination" || isRejected || isRevoked
     )
     ;
 
@@ -202,7 +202,7 @@ const Separation = () => {
 
   const separationPolicyLabel = policyData?.separation_policy ? "Separation Policy" : "Final Settlement";
   const separationPolicyValue = policyData?.separation_policy || `We'll process your full & final settlement soon`;
-  const queryClient = useQueryClient();
+
   useEffect(() => {
     const handleChatClose = () => {
       refetchSeparationFunnelDetails()
