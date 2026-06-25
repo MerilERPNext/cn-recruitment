@@ -6,7 +6,7 @@ import {
     IdCard,
     Warehouse,
     MapPin,
-    Award,
+    User,
 } from "lucide-react";
 
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -22,6 +22,7 @@ interface EmployeePreviousJoiningCardProps {
     location_name: string | null;
     date_of_joining: string | null;
     relieving_date: string | null;
+    image?: string | null;
     current_employee_joining_date: string | null;
 }
 
@@ -29,6 +30,7 @@ const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = 
     employee,
     employee_name,
     designation,
+    image,
     company_name,
     department_name,
     location_name,
@@ -41,7 +43,14 @@ const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = 
             {/* Header */}
             <div className="flex items-start gap-3 mb-4">
                 <div className="p-2 bg-blue-50 rounded-lg">
-                    <Building2 className="w-5 h-5 text-blue-600" />
+                    {image ? (
+                        <img src={image} alt={employee_name} className="w-5 h-5" />
+                    ) : (
+                        // show first character avatar
+                        <div className="flex items-center justify-center">
+                            {employee_name.charAt(0).toUpperCase()}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex flex-col gap-1 flex-1 min-w-0">
@@ -58,7 +67,7 @@ const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = 
                             </div>
                         </Link>
                     </WrapperHoverCard>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-600 min-w-0">
+                    {/* <div className="flex items-center gap-1.5 text-xs text-gray-600 min-w-0">
                         <Award size={14} className="text-primary-500 flex-shrink-0" />
                         <p className="text-sm text-gray-600 min-w-0 flex-1">
                             <Tooltip
@@ -68,7 +77,7 @@ const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = 
                                 {designation || "-"}
                             </Tooltip>
                         </p>
-                    </div>
+                    </div> */}
 
                     <div className="flex flex-wrap gap-4 mt-1">
                         {employee && (

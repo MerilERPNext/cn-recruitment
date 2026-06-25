@@ -70,6 +70,7 @@ const CostCenterForm = ({
         percentage: a.percentage,
       }));
       newData.start_date = initialEditData.start_date;
+      newData.end_date = initialEditData.end_date;
       shouldUpdate = true;
     } else if (!isEdit) {
       newData.allocations = [{ cost_center: "", percentage: "" }];
@@ -136,6 +137,7 @@ const CostCenterForm = ({
       const data = submission?.data || {};
       const allocations: any[] = data.allocations || [];
       const startDate: string = data.start_date || "";
+      const endDate: string = data.end_date || "";
 
       if (!validateForm(allocations, startDate)) return;
 
@@ -146,6 +148,7 @@ const CostCenterForm = ({
             cost_center: a.cost_center,
             percentage: Number(a.percentage),
             start_date: startDate,
+            to_date: endDate,
           })),
           mode: isEdit ? "update" : "new",
         }),

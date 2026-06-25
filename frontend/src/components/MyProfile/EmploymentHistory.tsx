@@ -503,6 +503,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         date_of_joining={item.date_of_joining}
                         relieving_date={item.relieving_date}
                         current_employee_joining_date={data?.date_of_joining || null}
+                        image={item?.image}
                       />
                     </div>
                   ))}
@@ -525,6 +526,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           initialEditData={editItem ? {
             work_location: (editItem as WorkLocation).work_location?.id || "",
             start_date: editItem.from_date,
+            end_date: editItem.to_date,
           } : undefined}
         />
       )}
@@ -543,6 +545,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 designation: (editItem as WorkRole).designation?.id || "",
                 functional_area: (editItem as WorkRole).functional_area?.id || "",
                 start_date: editItem.from_date,
+                end_date: editItem.to_date,
                 is_promotion: (editItem as WorkRole).is_promotion,
               } : undefined}
             />
@@ -560,6 +563,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             employment_type: (editItem as unknown as EmploymentTypes).employment_type?.id || "",
             employee_subtype: (editItem as unknown as EmploymentTypes).employee_subtype?.id || "",
             start_date: editItem.from_date,
+            end_date: editItem.to_date,
           } : undefined}
         />
       )}
