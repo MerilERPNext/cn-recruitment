@@ -110,6 +110,17 @@ export const getOffCyclePayslipHTML = async (salarySlipName: string) => {
   };
 
 
+/** Roles allowed to release salary slips (configured in Payroll Settings). */
+export const getPayrollAdminRoles = async (
+  employee?: string,
+): Promise<string[]> => {
+  const response = await FrappeAPI.callMethod(
+    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.salary_slip_list.check_admin_permission",
+    { employee },
+  );
+  return Array.isArray(response) ? (response as string[]) : [];
+};
+
 /** Release (submit) a single draft Salary Slip */
 export const releaseSalarySlip = async (salarySlipName: string) => {
   const response = await FrappeAPI.callMethod(

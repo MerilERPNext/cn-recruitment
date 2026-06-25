@@ -12,6 +12,7 @@ import {
   useDownloadSalarySlipPDF,
   useOffCyclePaySlipPDF,
   usePrintFormatMenuOptions,
+  usePayrollAdminRoles,
   useReleaseSalarySlip,
   useTDSPRintViewPDF,
 } from "../../hooks/useSalaryDetails";
@@ -21,6 +22,7 @@ import { formatCurrency } from "../../utils/currency";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import DataListView from "../DataListView"; // ← replaced FrappeListView
 import Button from "../shared/atoms/Button";
+import StatusBadge from "../shared/atoms/statusBadge";
 import { Typography } from "../shared/atoms/Typography";
 import CardTable, { ColumnSortConfig } from "../shared/CardTable";
 import CustomDropdown from "../shared/CustomDropdown";
@@ -48,6 +50,16 @@ type SalarySlipRecord = {
   status: string;
   posting_date: string;
   [key: string]: any;
+};
+
+// Map the raw slip status to the badge shown in the list:
+// draft/pending → "Pending" (yellow), submitted/released → "Approved" (green).
+const getDisplayStatus = (status?: string): string => {
+  const s = status?.toLowerCase().trim();
+  if (s === "draft" || s === "pending") return "pending";
+  if (s === "submitted" || s === "released" || s === "paid" || s === "approved")
+    return "approved";
+  return status || "";
 };
 
 const SALARY_SLIP_SEARCH_FIELDS = ["employee", "status", "posting_date"];
@@ -83,6 +95,9 @@ const SALARY_SORT_CONFIG: ColumnSortConfig[] = [
   {
     sortable: false,
   },
+  {
+    sortable: false,
+  },
 ];
 
 // ---- Main Component ----
@@ -93,18 +108,12 @@ const SalarySlipsList = () => {
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: currentUser } = useCurrentUser();
 
-  // Payroll admins (who can also release draft salary slips). Plain employees
+  // Payroll admins (who can also release draft salary slips). The allowed roles
+  // are configured in Payroll Settings and fetched via API. Plain employees
   // only ever see submitted slips.
-  const PAYROLL_ADMIN_ROLES = [
-    "System Manager",
-    "Administrator",
-    "Payroll Manager",
-    "Payroll Admin",
-    "HR Manager",
-    "HR User",
-  ];
+  const { data: payrollAdminRoles = [] } = usePayrollAdminRoles(user?.employee);
   const isPayrollAdmin =
-    currentUser?.roles?.some((r) => PAYROLL_ADMIN_ROLES.includes(r.role)) ??
+    currentUser?.roles?.some((r) => payrollAdminRoles.includes(r.role)) ??
     false;
 
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
@@ -140,10 +149,6 @@ const SalarySlipsList = () => {
     setSelectedPeriod(matchedPeriod?.name || payrollPeriods[0].name);
   }, [payrollPeriods, selectedPeriod]);
 
-  // ✅ Refresh list on filter change
-  useEffect(() => {
-    setFiltersKey((prev) => prev + 1);
-  }, [selectedPeriod, targetEmployeeId]);
 
   // ---------------- PDF HOOKS ----------------
   const { mutate: downloadType1 } = useDownloadSalarySlipPDF({
@@ -330,17 +335,28 @@ const SalarySlipsList = () => {
             "End Date",
             "Gross Pay",
             "Net Pay",
+            "Status",
             "Actions",
           ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
           columnSortConfig={SALARY_SORT_CONFIG}
         >
 
+          {!selectedPeriod ? (
+            <div className="flex items-center justify-center py-10 text-sm text-text-body2">
+              Select a payroll period to view salary slips.
+            </div>
+          ) : (
           <DataListView<SalarySlipRecord>
             key={filtersKey}
-            queryKey={["salary-slips", String(filtersKey)]}
+            queryKey={[
+              "salary-slips",
+              selectedPeriod,
+              targetEmployeeId || user?.employee || "",
+              String(filtersKey),
+            ]}
             customAPI={{
-              method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.salary_slip_list.salary_slip_list_view",
+              method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.salary_slip_list.salary_slip_list_admin_view",
               params: {
                 doctype: "Salary Slip",
                 employee: targetEmployeeId || user?.employee,
@@ -353,9 +369,9 @@ const SalarySlipsList = () => {
             }}
 
             ItemComponent={({ item }) => {
-              // Employees only see submitted (Paid) slips; payroll admins see
-              // both Draft and Paid.
-              if (!isPayrollAdmin && item.status !== "Paid") return null;
+              // Employees only see released slips; payroll admins see both
+              // Pending (draft) and Released slips.
+              if (!isPayrollAdmin && item.status !== "Released") return null;
               return (
                 <SalarySlipItem
                   item={item}
@@ -378,6 +394,7 @@ const SalarySlipsList = () => {
             SkeletonComponent={CardSkeleton}
             isFilter={false}
           />
+          )}
         </CardTable>
       </div>
 
@@ -506,7 +523,7 @@ const SalarySlipItemDesktop = ({
   return (
     <div
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
     >
       <Link
         to={`/webapp/employee-profile?target_user=${item.employee}`}
@@ -548,8 +565,12 @@ const SalarySlipItemDesktop = ({
         )}
       </Typography>
 
-      <div className="flex items-center justify-center gap-2">
-        {isPayrollAdmin && item.status === "Draft" && (
+      <div className="flex items-center justify-center">
+        <StatusBadge status={getDisplayStatus(item.status)} />
+      </div>
+
+      <div className="flex items-center justify-end gap-2">
+        {isPayrollAdmin && item.status === "Pending" && (
           <Button
             onClick={(e: React.MouseEvent) => onRelease(e, item.salary_slip_id)}
             disabled={isReleasing}
@@ -611,14 +632,15 @@ const SalarySlipItemMobile = ({
       <div className="p-4 flex flex-col gap-3 w-full">
         {/* Header: Employee Name + Actions */}
         <div className="flex items-start justify-between">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             <Typography variant="mobileCardLabel">Employee</Typography>
             <Typography variant="mobileCardValue">
               {item.employee_name}
             </Typography>
+            <StatusBadge status={getDisplayStatus(item.status)} />
           </div>
           <div className="flex items-center gap-2">
-            {isPayrollAdmin && item.status === "Draft" && (
+            {isPayrollAdmin && item.status === "Pending" && (
               <Button
                 onClick={(e: React.MouseEvent) =>
                   onRelease(e, item.salary_slip_id)
