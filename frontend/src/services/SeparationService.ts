@@ -58,19 +58,3 @@ export const getEmployeeSeparationDetails = async (docname: string) => {
   const response = await FrappeAPI.getDocument("Employee Separation", docname, fields);
   return response as EmployeeSeparationDetails;
 };
-
-export const revokeEmployeeSeparation = async (
-  separation_name: string,
-  reason: string
-) => {
-  if (!separation_name) {
-    throw new Error("separation_name is required");
-  }
-  return FrappeAPI.callMethod(
-    "nextai.funnel.doctype.flow_config.revoke_separation.revoke_employee_separation",
-    {
-      separation_name,
-      reason,
-    }
-  );
-};

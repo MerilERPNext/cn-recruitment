@@ -9,7 +9,6 @@ type RejectionReasonModalProps = {
   description?: string;
   label?: string;
   placeholder?: string;
-  required?: boolean;
   onCancel: () => void;
   onSave: (reason: string) => void;
 };
@@ -21,7 +20,6 @@ const RejectionReasonModal = ({
   description = "Please add a comment before rejecting this request.",
   label = "REJECTION REASON *",
   placeholder = "Enter rejection reason...",
-  required = true,
   onCancel,
   onSave,
 }: RejectionReasonModalProps) => {
@@ -34,7 +32,7 @@ const RejectionReasonModal = ({
   if (!isOpen) return null;
 
   const handleSave = () => {
-    if (required && !reason.trim()) {
+    if (!reason.trim()) {
       toast.error("Please enter a comment");
       return;
     }
@@ -76,7 +74,7 @@ const RejectionReasonModal = ({
             onClick={handleSave}
             size="sm"
             bgColor="primary"
-            disabled={(required && !reason.trim()) || isPending}
+            disabled={!reason.trim() || isPending}
           >
             {isPending ? (
               <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />

@@ -78,7 +78,7 @@ const CardStages = ({
     : [];
 
   const filteredActions = Array.isArray(actions)
-    ? actions.filter((action: string) => !["reject", "send back"].includes(action.toLowerCase()))
+    ? actions.filter((action: string) => action.toLowerCase() !== "reject")
     : [];
 
   const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
