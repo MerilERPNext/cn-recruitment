@@ -260,6 +260,7 @@ doc_events = {
         "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
     },
     "Job Applicant": {
+        "before_insert": "recruitment.customizations.ta_duplicity_check.check_duplicity",
         "before_save": "recruitment.customizations.job_applicant.validate_blacklist",
         # Hiring Lead Permission Settings (update candidate source).
         "validate": "recruitment.customizations.hiring_lead_permissions.validate_job_applicant_hiring_lead_edits",
