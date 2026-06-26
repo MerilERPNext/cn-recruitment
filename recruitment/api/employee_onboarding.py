@@ -217,7 +217,7 @@ def update_onboarding_details(email, data, action="submit"):
                 submitted_keys = set(data.keys()) & set(allowed_map.keys())
                 missing = [
                     allowed_map[fn].label or fn for fn in submitted_keys
-                    if allowed_map[fn].get("is_mandatory") and data[fn] in (None, "", [])
+                    if is_submit and allowed_map[fn].get("is_mandatory") and data[fn] in (None, "", [])
                 ]
                 if missing:
                     frappe.local.response["http_status_code"] = 422
@@ -442,14 +442,35 @@ def get_employee_onboarding_list(
         # without N+1 round trips. One grouped query over the EO's portal child
         # table, then folded back into each row.
         if data:
+            # Bulk-resolve department and designation display titles (2 queries, no N+1)
+            dept_names = list({r["department"] for r in data if r.get("department")})
+            desig_names = list({r["designation"] for r in data if r.get("designation")})
+
+            dept_map = (
+                {d.name: d.department_name or d.name for d in frappe.db.get_all(
+                    "Department", filters=[["name", "in", dept_names]], fields=["name", "department_name"]
+                )} if dept_names else {}
+            )
+            desig_map = (
+                {d.name: d.designation_name or d.name for d in frappe.db.get_all(
+                    "Designation", filters=[["name", "in", desig_names]], fields=["name", "designation_name"]
+                )} if desig_names else {}
+            )
+
+            for row in data:
+                row["department_title"] = dept_map.get(row.get("department"), row.get("department") or "")
+                row["designation_title"] = desig_map.get(row.get("designation"), row.get("designation") or "")
+
             eo_names = [row["name"] for row in data]
             agg_rows = frappe.db.sql(
                 """
                 SELECT
                     parent,
                     COUNT(*) AS total,
-                    SUM(CASE WHEN COALESCE(approval_status,'Pending')='Pending'  THEN 1 ELSE 0 END) AS pending,
-                    SUM(CASE WHEN approval_status='Filled'   THEN 1 ELSE 0 END) AS filled,
+                    SUM(CASE WHEN COALESCE(approval_status,'Pending') NOT IN ('Approved','Rejected')
+                              AND TRIM(COALESCE(current_value,''))=''  THEN 1 ELSE 0 END) AS pending,
+                    SUM(CASE WHEN TRIM(COALESCE(current_value,''))!=''
+                              AND COALESCE(approval_status,'Pending') NOT IN ('Approved','Rejected') THEN 1 ELSE 0 END) AS filled,
                     SUM(CASE WHEN approval_status='Approved' THEN 1 ELSE 0 END) AS approved,
                     SUM(CASE WHEN approval_status='Rejected' THEN 1 ELSE 0 END) AS rejected
                 FROM `tabEmployee Onboarding Portal Field`
