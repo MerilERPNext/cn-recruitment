@@ -2331,35 +2331,6 @@ def get_recruiter_options(company=None, search_text=None, query=None, txt=None, 
 # ---------------------------------------------------------------------------
 
 
-def _company_group_members(company):
-    """All companies in the same group as `company` — i.e. every company under
-    the top-most parent of its Company tree (uses the nested-set lft/rgt bounds
-    of that root). Returns a set that always includes `company` itself. For a
-    standalone company (no parent/children) the group is just that company."""
-    if not company:
-        return set()
-
-    # Walk up to the root of the Company tree (parent_company is empty at top).
-    root, visited = company, set()
-    while True:
-        parent = frappe.db.get_value("Company", root, "parent_company")
-        if not parent or parent in visited:
-            break
-        visited.add(parent)
-        root = parent
-
-    bounds = frappe.db.get_value("Company", root, ["lft", "rgt"])
-    if not bounds or bounds[0] is None:
-        return {company}
-    members = set(
-        frappe.get_all(
-            "Company", filters={"lft": [">=", bounds[0]], "rgt": ["<=", bounds[1]]}, pluck="name"
-        )
-    )
-    members.add(company)
-    return members
-
-
 def validate_requisition_settings(doc, method=None):
     """Enforce Recruitment Settings -> Job Requisition Settings on every save.
 
@@ -2373,7 +2344,6 @@ def validate_requisition_settings(doc, method=None):
     settings = frappe.get_cached_doc("Recruitment Settings")
     _enforce_max_positions(doc, rows, settings)
     _enforce_unique_replacement(doc, rows, settings)
-    _enforce_replacement_restriction(doc, rows, settings)
     _enforce_future_dated(doc, settings)
     _enforce_edit_after_approval(doc, settings)
 
@@ -2443,43 +2413,6 @@ def _enforce_unique_replacement(doc, rows, settings):
                   "Enable 'Allow Replacement Employee tagging to multiple requisitions' "
                   "in Recruitment Settings to allow this.").format(e.replacement_for, e.parent)
             )
-
-
-def _enforce_replacement_restriction(doc, rows, settings):
-    """Enforce 'Restriction for Replacement Employee Selection' relative to the
-    requisition's own designation / company. 'None' applies no restriction."""
-    restriction = settings.get("restriction_for_replacement_employee_selection") or "None"
-    if restriction == "None":
-        return
-
-    req_designation = doc.get("designation")
-    req_company = doc.get("company")
-    group_companies = (
-        _company_group_members(req_company)
-        if restriction == "Same Group Company" and req_company
-        else None
-    )
-
-    for idx, r in enumerate(rows, start=1):
-        emp = r.get("replacement_for")
-        if not emp:
-            continue
-        emp_designation, emp_company = (
-            frappe.db.get_value("Employee", emp, ["designation", "company"]) or (None, None)
-        )
-        if restriction == "Same Designation":
-            if req_designation and emp_designation != req_designation:
-                frappe.throw(
-                    _("Replacement employee {0} (position {1}) must have the same designation "
-                      "as the requisition ({2}), but has {3}.").format(
-                          emp, idx, req_designation, emp_designation or _("no designation"))
-                )
-        elif restriction == "Same Group Company":
-            if group_companies and emp_company not in group_companies:
-                frappe.throw(
-                    _("Replacement employee {0} (position {1}) must belong to the same group "
-                      "company as the requisition.").format(emp, idx)
-                )
 
 
 def _enforce_future_dated(doc, settings):

@@ -1,5 +1,10 @@
 import frappe
 from recruitment.api.candidate_auth import candidate_required, enforce_candidate_identity
+from recruitment.api.candidate_portal import (
+    _compute_candidate_field_counts,
+    _get_active_pre_release,
+    _get_onboarding_portal_rows,
+)
 
 DOCTYPENAME = "Employee Onboarding"
 
@@ -82,28 +87,30 @@ def get_dashboard(email):
         # false : Neither condition is met
         onboarding_status = True  # we already have a record at this point
 
-        # ── Form Completion (from custom_candidate_portal_fields) ──────────────
-        # A field is "filled" when the candidate has submitted data (current_value is non-empty).
-        total_fields, filled_fields = frappe.db.sql(
-            """
-            SELECT
-                COUNT(*) AS total,
-                SUM(CASE WHEN current_value IS NOT NULL AND current_value != '' THEN 1 ELSE 0 END) AS filled
-            FROM `tabEmployee Onboarding Portal Field`
-            WHERE parent = %s AND parenttype = %s
-              AND parentfield = %s
-              AND COALESCE(hidden, 0) = 0
-              AND COALESCE(read_only, 0) = 0
-            """,
-            (row.name, DOCTYPENAME, "custom_candidate_portal_fields"),
-        )[0]
-        total_fields = int(total_fields or 0)
-        filled_fields = int(filled_fields or 0)
+        # ── Form Completion (live, value-aware) ───────────────────────────────
+        # Use the SAME source of truth as the candidate form page instead of the
+        # `current_value` snapshot column: resolve each visible portal field's
+        # live value (Employee Onboarding -> Job Applicant fallback). This makes
+        # the percentage update the instant a save commits and keeps it in sync
+        # with the form's own tab counts (prefilled/auto-mapped values count too).
+        onboarding_doc = frappe.get_doc(DOCTYPENAME, row.name)
+        applicant_doc = frappe.get_doc("Job Applicant", email)
+        pre_release = _get_active_pre_release(email)
+        portal_rows, _ = _get_onboarding_portal_rows(onboarding_doc, pre_release)
+        counts = _compute_candidate_field_counts(portal_rows, onboarding_doc, applicant_doc)
+
+        # "filled" = field holds a value (saved, prefilled, approved or rejected).
+        # "pending" = empty field still awaiting the candidate. So filled = total - pending.
+        total_fields = int(counts.get("total", 0))
+        filled_fields = total_fields - int(counts.get("pending", 0))
         percentage = round((filled_fields / total_fields) * 100, 2) if total_fields else 0.0
         form_completion = {
             "total_fields": total_fields,
             "filled_fields": filled_fields,
             "percentage": percentage,
+            # Per-status breakdown so the UI can render filled vs. approved vs.
+            # rejected vs. pending if needed (mutually exclusive, sums to total).
+            "status_counts": counts,
         }
 
         # ── Onboarding Stage ──────────────────────────────────────────────────
