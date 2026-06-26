@@ -160,37 +160,6 @@
           }
         },
         {
-          "label": "Time Type",
-          "errorLabel": "Time Type",
-          "key": "time_type_selection",
-          "type": "select",
-          "input": true,
-          "placeholder": "Select a Time Type",
-          "customClass": "mb-4",
-          "validateWhenHidden": false,
-          "validate": {
-            "custom": "valid = !(data.request_type === 'Attendance Adjustment' && data.enable_time_type_selection === true) || !!input;",
-            "customMessage": "Time Type is required"
-          },
-          "customConditional": "show = data.request_type === 'Attendance Adjustment' && data.enable_time_type_selection === true;",
-          "data": {
-            "values": [
-              {
-                "label": "In Time",
-                "value": "In Time"
-              },
-              {
-                "label": "Out Time",
-                "value": "Out Time"
-              },
-              {
-                "label": "Both",
-                "value": "Both"
-              }
-            ]
-          }
-        },
-        {
           "label": "From Date",
           "errorLabel": "From Date",
           "key": "from_date",
@@ -274,6 +243,37 @@
           "customConditional": "show = data.request_type === 'Attendance Adjustment' && data.show_only_single_date_field === true;",
           "disabled": false,
           "redrawOn": "allowed_from_date"
+        },
+        {
+          "label": "Time Type",
+          "errorLabel": "Time Type",
+          "key": "time_type_selection",
+          "type": "select",
+          "input": true,
+          "placeholder": "Select a Time Type",
+          "customClass": "mb-4",
+          "validateWhenHidden": false,
+          "validate": {
+            "custom": "valid = !(data.request_type === 'Attendance Adjustment' && data.enable_time_type_selection === true) || !!input;",
+            "customMessage": "Time Type is required"
+          },
+          "customConditional": "show = data.request_type === 'Attendance Adjustment' && data.enable_time_type_selection === true;",
+          "data": {
+            "values": [
+              {
+                "label": "In Time",
+                "value": "In Time"
+              },
+              {
+                "label": "Out Time",
+                "value": "Out Time"
+              },
+              {
+                "label": "Both",
+                "value": "Both"
+              }
+            ]
+          }
         },
         {
           "label": "Check-In Time <span class='show-req-astrik field-required'></span>",
