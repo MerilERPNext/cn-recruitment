@@ -13,7 +13,6 @@ const EmploymentSegmentsCard: React.FC<EmploymentSegmentsCardProps> = ({
     from_date,
     to_date,
     is_current,
-    total_percentage,
     segment_totals,
 }) => {
     const segments = Object.entries(segment_totals || {});

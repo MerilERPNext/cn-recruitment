@@ -6,7 +6,6 @@ import {
     IdCard,
     Warehouse,
     MapPin,
-    User,
 } from "lucide-react";
 
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -29,7 +28,6 @@ interface EmployeePreviousJoiningCardProps {
 const EmployeePreviousJoiningCard: React.FC<EmployeePreviousJoiningCardProps> = ({
     employee,
     employee_name,
-    designation,
     image,
     company_name,
     department_name,
