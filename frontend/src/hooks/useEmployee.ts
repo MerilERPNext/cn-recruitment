@@ -791,17 +791,20 @@ export const useUpdateEmpReportingDetailsRecordMutation = () => {
       field,
       value,
       start_date,
+      end_date,
     }: {
       employee: string;
       field: string;
       value: string;
       start_date: string;
+      end_date?: string;
     }) =>
       profileService.updateEmpReportingDetailsRecord(
         employee,
         field,
         value,
         start_date,
+        end_date,
       ),
     onError: (error) => {
       toast.error(errorResponseFormater(error));

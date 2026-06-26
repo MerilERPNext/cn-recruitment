@@ -55,6 +55,15 @@
                     "format": "dd-MM-yyyy",
                     "enableTime": false,
                     "input": true
+                },
+                {
+                    "type": "datetime",
+                    "key": "end_date",
+                    "label": "End Date",
+                    "errorLabel": "End Date",
+                    "format": "dd-MM-yyyy",
+                    "enableTime": false,
+                    "input": true
                 }
             ]
         }

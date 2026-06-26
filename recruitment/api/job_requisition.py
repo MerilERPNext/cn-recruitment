@@ -2263,37 +2263,6 @@ def get_allowed_replacement_employee_statuses():
 
 
 @frappe.whitelist()
-def get_replacement_employee_options(search_text=None, query=None, txt=None, limit=20,
-                                     include=None, designation=None, company=None):
-    """Employee options for the Job Requisition 'Replacement For' field, limited
-    to the statuses configured in Recruitment Settings -> Allowed Replacement
-    Employee Statuses (defaults to 'Active' only when none are configured).
-
-    When Recruitment Settings -> 'Restriction for Replacement Employee Selection'
-    is set, the list is further narrowed using the requisition's own designation
-    or company (passed by the caller as `designation` / `company`):
-      - "Same Designation"   → only employees with that designation.
-      - "Same Group Company" → only employees in the same Company group.
-    The restriction is also enforced on save (see validate_requisition_settings),
-    so it holds even for callers that don't pass this context.
-    Same response shape as get_link_field_options."""
-    filters = {"status": ["in", get_allowed_replacement_employee_statuses()]}
-
-    restriction = frappe.db.get_single_value(
-        "Recruitment Settings", "restriction_for_replacement_employee_selection"
-    ) or "None"
-    if restriction == "Same Designation" and designation:
-        filters["designation"] = designation
-    elif restriction == "Same Group Company" and company:
-        filters["company"] = ["in", list(_company_group_members(company))]
-
-    return get_link_field_options(
-        "Employee", search_text=search_text, query=query, txt=txt,
-        limit=limit, include=include, filters=filters,
-    )
-
-
-@frappe.whitelist()
 def get_hiring_lead_options(company=None, search_text=None, query=None, txt=None, limit=20, include=None):
     """Employee options for the Job Requisition 'Hiring lead' field.
 
@@ -2385,6 +2354,8 @@ def validate_requisition_settings(doc, method=None):
     _enforce_max_positions(doc, rows, settings)
     _enforce_unique_replacement(doc, rows, settings)
     _enforce_replacement_restriction(doc, rows, settings)
+    _enforce_future_dated(doc, settings)
+    _enforce_edit_after_approval(doc, settings)
 
 
 def _enforce_max_positions(doc, rows, settings):
@@ -2489,6 +2460,88 @@ def _enforce_replacement_restriction(doc, rows, settings):
                     _("Replacement employee {0} (position {1}) must belong to the same group "
                       "company as the requisition.").format(emp, idx)
                 )
+
+
+def _enforce_future_dated(doc, settings):
+    """When 'Allow requisitions for Future dated positions' is OFF, neither the
+    Posting Date nor the Expected By date may be in the future."""
+    if settings.get("allow_future_dated_positions"):
+        return
+    today = frappe.utils.getdate(frappe.utils.nowdate())
+    for fieldname, label in (("posting_date", _("Posting Date")), ("expected_by", _("Expected By"))):
+        value = doc.get(fieldname)
+        if value and frappe.utils.getdate(value) > today:
+            frappe.throw(
+                _("{0} ({1}) is in the future. Future-dated requisitions are not allowed — "
+                  "enable 'Allow requisitions for Future dated positions' in Recruitment Settings.")
+                .format(label, frappe.utils.formatdate(value))
+            )
+
+
+# Status at which a requisition counts as "approved" for the edit-after-approval gate.
+_REQUISITION_APPROVED_STATUS = "Open & Approved"
+
+# Fields ignored when checking "did the user edit an approved requisition" — these
+# are workflow/derived/framework fields, not user business edits.
+_EDIT_AFTER_APPROVAL_IGNORE = {
+    "status", "workflow_state", "modified", "modified_by",
+    "no_of_positions", "custom_type_of_position", "time_to_fill",
+    "_user_tags", "_comments", "_assign", "_liked_by",
+}
+_LAYOUT_FIELDTYPES = {
+    "Section Break", "Column Break", "Tab Break", "HTML", "Button", "Heading", "Fold",
+}
+_ROW_META_KEYS = {
+    "name", "idx", "creation", "modified", "owner", "modified_by",
+    "parent", "parentfield", "parenttype", "docstatus", "doctype",
+}
+
+
+def _row_snapshot(d, fieldname):
+    out = []
+    for r in d.get(fieldname) or []:
+        rd = r.as_dict() if hasattr(r, "as_dict") else dict(r)
+        out.append({k: str(v) for k, v in rd.items() if k not in _ROW_META_KEYS})
+    return out
+
+
+def _has_business_changes(doc, before):
+    """True when any business field/child table changed between `before` and `doc`,
+    ignoring workflow/derived/framework fields. Used so a pure status transition on
+    an approved requisition is allowed while real edits are blocked."""
+    for df in doc.meta.fields:
+        if df.fieldtype in _LAYOUT_FIELDTYPES:
+            continue
+        fn = df.fieldname
+        if fn in _EDIT_AFTER_APPROVAL_IGNORE:
+            continue
+        if df.fieldtype in ("Table", "Table MultiSelect"):
+            if _row_snapshot(before, fn) != _row_snapshot(doc, fn):
+                return True
+        elif str(before.get(fn) or "") != str(doc.get(fn) or ""):
+            return True
+    return False
+
+
+def _enforce_edit_after_approval(doc, settings):
+    """When 'Allow Editing of Requisition & Job Positions after Approval' is OFF,
+    a requisition already at 'Open & Approved' may not have its business fields or
+    positions edited. Pure status / workflow_state moves stay allowed, so the
+    approval flow and back-to-draft transitions are never blocked."""
+    if settings.get("allow_editing_requisition_after_approval"):
+        return
+    before = doc.get_doc_before_save()
+    if not before or before.get("status") != _REQUISITION_APPROVED_STATUS:
+        return
+    if _has_business_changes(doc, before):
+        frappe.throw(
+            _("This requisition is approved ({0}) and editing it is disabled. Enable "
+              "'Allow Editing of Requisition & Job Positions after Approval' in Recruitment Settings.")
+            .format(_REQUISITION_APPROVED_STATUS)
+        )
+
+
+@frappe.whitelist()
 def get_replacement_employee_options(
     search_text=None, query=None, txt=None, limit=20, include=None,
     department=None, designation=None, location=None, company=None, functional_area=None,

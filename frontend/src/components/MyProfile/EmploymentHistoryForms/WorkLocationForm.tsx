@@ -14,6 +14,7 @@ import { useLoadingOverlay } from "../../../context/OverlayContext";
 interface InitialWorkLocationData {
   work_location: string;
   start_date: string;
+  end_date?: string | null;
 }
 
 interface WorkLocationFormProps {
@@ -51,6 +52,7 @@ const WorkLocationForm = ({
     if (isEdit && initialEditData) {
       newData.work_location = initialEditData.work_location;
       newData.startDate = initialEditData.start_date;
+      newData.endDate = initialEditData.end_date;
       shouldUpdate = true;
     } else if (!isEdit) {
       newData.work_location = "";
@@ -120,6 +122,7 @@ const WorkLocationForm = ({
           employee: currentEmployee?.employee,
           fields: [{ field: "work_location", value: data.work_location }],
           start_date: data.startDate,
+          to_date: data.endDate,
           mode: isEdit ? "update" : "new",
         }),
         isEdit ? "Updating Work Location..." : "Adding Work Location...",

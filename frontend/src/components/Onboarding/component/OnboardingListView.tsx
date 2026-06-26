@@ -50,6 +50,7 @@ interface UiOnboarding {
   approved: number;
   rejected: number;
   pending: number;
+  filled: number;
   totalFields: number;
   details: {
     referenceNo: string;
@@ -69,12 +70,13 @@ const mapOnboardingData = (rawData: ApiOnboardingItem[]): UiOnboarding[] => {
   if (!Array.isArray(rawData)) return [];
   return rawData.map((item) => {
     const counts = item.field_status_counts;
+    // Use the real per-status buckets from the API — they already sum to total
+    // (pending + filled + approved + rejected === total).
     const totalFields = counts?.total ?? 0;
     const approved = counts?.approved ?? 0;
     const rejected = counts?.rejected ?? 0;
-    // Yellow bucket = everything not yet approved/rejected (pending + filled),
-    // so the three segments always sum to the total.
-    const pending = Math.max(totalFields - approved - rejected, 0);
+    const filled = counts?.filled ?? 0;
+    const pending = counts?.pending ?? 0;
 
     return {
     id: item.name,
@@ -89,6 +91,7 @@ const mapOnboardingData = (rawData: ApiOnboardingItem[]): UiOnboarding[] => {
     approved,
     rejected,
     pending,
+    filled,
     totalFields,
     details: {
       referenceNo: item.name,
@@ -115,79 +118,115 @@ const ONBOARDING_SORT_CONFIG: ColumnSortConfig[] = [
   { sortable: false },
 ];
 
-// ─── Approval progress bar ────────────────────────────────────────────────────
-// Renders a single bar split into Approved (green) / Pending (yellow) /
-// Rejected (red) segments sized by their share of the total fields. Each segment
-// has a native tooltip, and hovering the bar shows a labelled colour legend.
+// ─── Field progress bar ───────────────────────────────────────────────────────
+// A single completion bar whose width = share of fields filled in
+// (approved + filled) / total. Per the client requirement the bar colour is
+// driven by that percentage:
+//   0–30%   → red
+//   31–70%  → amber
+//   71–100% → green
+// Hovering shows the full status breakdown.
 function ApprovalProgressBar({
   approved,
+  filled,
   rejected,
   pending,
   total,
+  mobile = false,
 }: {
   approved: number;
+  filled: number;
   rejected: number;
   pending: number;
   total: number;
+  // Mobile renders full-width with an inline breakdown (touch has no hover);
+  // desktop keeps the compact bar + hover tooltip.
+  mobile?: boolean;
 }) {
   if (!total) {
     return <span className="text-xs text-gray-400">No fields</span>;
   }
 
-  const pct = (n: number) => `${(n / total) * 100}%`;
+  // Completion = fields that have been filled in (filled + approved) over total.
+  const completed = approved + filled;
+  const percent = Math.min(100, Math.round((completed / total) * 100));
+
+  // Client-defined colour thresholds.
+  const colour =
+    percent <= 30
+      ? { bar: "bg-red-500", text: "text-red-600" }
+      : percent <= 70
+        ? { bar: "bg-amber-500", text: "text-amber-600" }
+        : { bar: "bg-emerald-500", text: "text-emerald-600" };
 
   return (
-    <div className="group relative w-full max-w-[220px]">
+    <div className={`group relative w-full ${mobile ? "" : "max-w-[220px]"}`}>
+      {/* Percentage */}
+      <div
+        className={`mb-1 ${mobile ? "flex items-center justify-between text-[11px]" : "text-center text-[10px]"} font-semibold leading-none ${colour.text}`}
+      >
+        <span>{percent}% Filled</span>
+        {mobile && <span className="text-gray-500">{completed}/{total} fields</span>}
+      </div>
+
       {/* Bar */}
-      <div className="flex h-1.5 w-full overflow-hidden rounded-lg bg-gray-100">
-        {approved > 0 && (
-          <div
-            className="h-full bg-emerald-500"
-            style={{ width: pct(approved) }}
-            title={`Approved: ${approved}`}
-          />
-        )}
-        {pending > 0 && (
-          <div
-            className="h-full bg-yellow-400"
-            style={{ width: pct(pending) }}
-            title={`Pending: ${pending}`}
-          />
-        )}
-        {rejected > 0 && (
-          <div
-            className="h-full bg-red-500"
-            style={{ width: pct(rejected) }}
-            title={`Rejected: ${rejected}`}
-          />
-        )}
+      <div className={`${mobile ? "h-2.5" : "h-2"} w-full overflow-hidden rounded-lg bg-gray-100`}>
+        <div
+          className={`h-full rounded-lg transition-all ${colour.bar}`}
+          style={{ width: `${percent}%` }}
+          title={`${percent}% filled (${completed}/${total})`}
+        />
       </div>
 
-      {/* Inline counts */}
-      <div className="mt-1 flex items-center justify-center gap-2 text-[10px] leading-none">
-        <span className="text-emerald-600">{approved} Approved</span>
-        <span className="text-yellow-600">{pending} Pending</span>
-        <span className="text-red-600">{rejected} Rejected</span>
-      </div>
+      {/* Mobile: inline breakdown (no hover on touch) */}
+      {mobile && (
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] leading-none">
+          <span className="flex items-center gap-1 text-emerald-600">
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+            Approved {approved}
+          </span>
+          <span className="flex items-center gap-1 text-blue-600">
+            <span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
+            Filled {filled}
+          </span>
+          <span className="flex items-center gap-1 text-yellow-600">
+            <span className="inline-block h-2 w-2 rounded-full bg-yellow-400" />
+            Pending {pending}
+          </span>
+          <span className="flex items-center gap-1 text-red-600">
+            <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+            Rejected {rejected}
+          </span>
+        </div>
+      )}
 
-      {/* Hover tooltip */}
-      <div className="pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] text-white shadow-lg group-hover:block">
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-          Approved: {approved}
+      {/* Desktop: hover tooltip — full status breakdown */}
+      {!mobile && (
+        <div className="pointer-events-none absolute left-1/2 top-full z-30 mt-1 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1.5 text-[11px] text-white shadow-lg group-hover:block">
+          <div className="font-semibold">
+            {percent}% filled ({completed}/{total})
+          </div>
+          <div className="mt-0.5 flex items-center gap-1.5">
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+            Approved: {approved}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
+            Filled: {filled}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block h-2 w-2 rounded-full bg-yellow-400" />
+            Pending: {pending}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+            Rejected: {rejected}
+          </div>
+          <div className="mt-0.5 border-t border-white/20 pt-0.5 text-gray-300">
+            Total: {total}
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-2 rounded-full bg-yellow-400" />
-          Pending: {pending}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
-          Rejected: {rejected}
-        </div>
-        <div className="mt-0.5 border-t border-white/20 pt-0.5 text-gray-300">
-          Total: {total}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -201,7 +240,7 @@ export default function EmployeeOnboardingList() {
   const employeeId = user?.employee ?? "";
   const company = user?.company ?? "";
 
-  const titles = ["Employee Name", "Department", "Designation", "Date of Joining", "Boarding Begins On", "Status", "Approval Progress"];
+  const titles = ["Employee Name", "Department", "Designation", "Date of Joining", "Boarding Begins On", "Status", "Field Progress"];
   const columnWidths = ["1.2fr", "1fr", "1fr", "1fr", "1fr", "0.8fr", "1.6fr"];
 
   const customAPI =
@@ -284,6 +323,7 @@ export default function EmployeeOnboardingList() {
                   <div className="font-medium items-center flex justify-center">
                     <ApprovalProgressBar
                       approved={item.approved}
+                      filled={item.filled}
                       rejected={item.rejected}
                       pending={item.pending}
                       total={item.totalFields}
@@ -320,6 +360,7 @@ export default function EmployeeOnboardingList() {
               renderItem={(item: UiOnboarding) => (
                 <div
                   key={item.id}
+                  onClick={() => navigate(`/webapp/employee-onboarding/onboarding-field-approval/${item.id}`)}
                   className="cursor-pointer border-t-4 border-x border-b mt-2
                     border-x-primary/20 border-b-primary/20
                     shadow-sm border-primary bg-white rounded-xl"
@@ -364,13 +405,15 @@ export default function EmployeeOnboardingList() {
 
                     <div className="w-full flex flex-col gap-1">
                       <Typography variant="mobileCardLabel">
-                        Approval Progress
+                        Field Progress
                       </Typography>
                       <ApprovalProgressBar
                         approved={item.approved}
+                        filled={item.filled}
                         rejected={item.rejected}
                         pending={item.pending}
                         total={item.totalFields}
+                        mobile
                       />
                     </div>
                   </div>

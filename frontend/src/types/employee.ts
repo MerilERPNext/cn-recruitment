@@ -30,10 +30,10 @@ export interface EmployeeFromAPI {
   // Status
   status: "Active" | "Inactive" | "Suspended" | "Left" | "Pending";
   custom_employment_status?:
-    | "On Probation"
-    | "Confirmation"
-    | "Probation Extended"
-    | "On Notice Period";
+  | "On Probation"
+  | "Confirmation"
+  | "Probation Extended"
+  | "On Notice Period";
 
   // Organization
   company: string;
@@ -370,6 +370,7 @@ export interface EmployeePreviousDetailNode {
   date_of_joining: string | null;
   relieving_date: string | null;
   previous: EmployeePreviousDetailNode | null;
+  image?: string;
 }
 
 export interface EmployeePreviousDetailsResponse {
@@ -402,7 +403,7 @@ export interface EmployeeSupplementary {
   cost_centers?: EmployeeCostCenter[];
 }
 
-export interface Employee extends EmployeeFromAPI, EmployeeSupplementary {}
+export interface Employee extends EmployeeFromAPI, EmployeeSupplementary { }
 
 export type CurrentEmployeeAllDetails = Employee;
 

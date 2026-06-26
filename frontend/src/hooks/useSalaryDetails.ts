@@ -11,7 +11,8 @@ import {
         PrintFormatMenuOptionsService,
         getSalarySlipName,
         updateSalarySlip,
-        releaseSalarySlip
+        releaseSalarySlip,
+        getPayrollAdminRoles
      } from "../services/salaryDetailsService"
 
 const isPermissionError = (error: unknown): error is PermissionError => {
@@ -74,6 +75,15 @@ export const usePrintFormatMenuOptions = (employee_name: string, name: string) =
     queryFn: () => PrintFormatMenuOptionsService(employee_name, name),
     enabled: !!employee_name && !!name, // skip call when slip id / employee missing
     placeholderData: [], // prevents undefined
+  });
+};
+
+// Roles allowed to release salary slips — fetched from Payroll Settings via API
+export const usePayrollAdminRoles = (employee?: string) => {
+  return useQuery({
+    queryKey: ["payroll-admin-roles", employee],
+    queryFn: () => getPayrollAdminRoles(employee),
+    placeholderData: [], // prevents undefined while loading
   });
 };
 

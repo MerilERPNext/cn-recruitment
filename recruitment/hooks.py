@@ -260,6 +260,7 @@ doc_events = {
         "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
     },
     "Job Applicant": {
+        "before_insert": "recruitment.customizations.ta_duplicity_check.check_duplicity",
         "before_save": "recruitment.customizations.job_applicant.validate_blacklist",
         # Hiring Lead Permission Settings (update candidate source).
         "validate": "recruitment.customizations.hiring_lead_permissions.validate_job_applicant_hiring_lead_edits",
@@ -292,6 +293,9 @@ doc_events = {
         "on_submit": [
             "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date",
             "recruitment.customizations.employee_separation.employee_separation.create_attendance_regularize_todo",
+        ],
+        "on_trash": [
+            "recruitment.customizations.employee_separation.funnel_cleanup.cleanup_separation_funnel_artifacts",
         ],
     },
 }
@@ -342,6 +346,7 @@ override_doctype_class = {
     # our flow raises one requisition per location, so those siblings are valid.
     # See recruitment.customizations.job_requisition.CustomJobRequisition.
     "Job Requisition": "recruitment.customizations.job_requisition.CustomJobRequisition",
+    "Employee Separation": "recruitment.customizations.employee_separation.override_class.CustomEmployeeSeparation",
 }
 #
 # each overriding function accepts a `data` argument;

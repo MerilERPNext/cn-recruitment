@@ -15,6 +15,7 @@ interface InitialEmploymentTypeData {
   employment_type: string;
   employee_subtype: string;
   start_date: string;
+  end_date?: string | null;
 }
 
 interface EmploymentTypeFormProps {
@@ -53,6 +54,7 @@ const EmploymentTypeForm = ({
       newData.employment_type = initialEditData.employment_type;
       newData.employee_subtype = initialEditData.employee_subtype;
       newData.startDate = initialEditData.start_date;
+      newData.endDate = initialEditData.end_date;
       shouldUpdate = true;
     } else if (!isEdit) {
       newData.employment_type = "";
@@ -130,6 +132,7 @@ const EmploymentTypeForm = ({
           employee: currentEmployee?.employee,
           fields,
           start_date: data.startDate,
+          to_date: data.endDate,
           mode: isEdit ? "update" : "new",
         }),
         isEdit ? "Updating Employment Type..." : "Adding Employment Type...",

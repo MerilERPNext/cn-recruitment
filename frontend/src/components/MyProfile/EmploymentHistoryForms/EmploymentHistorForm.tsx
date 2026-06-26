@@ -20,6 +20,7 @@ interface InitialEditData {
   designation: string;
   functional_area: string;
   start_date: string;
+  end_date?: string | null;
   is_promotion: boolean;
 }
 
@@ -107,6 +108,7 @@ const EmploymentHistoryForm = ({
       newData.designation = initialEditData.designation;
       newData.functional_area = initialEditData.functional_area;
       newData.startDate = initialEditData.start_date;
+      newData.endDate = initialEditData.end_date;
       newData.is_promotion = initialEditData.is_promotion;
 
       initialDataApplied.current = true;
@@ -217,6 +219,7 @@ const EmploymentHistoryForm = ({
           department: data.department,
           designation: data.designation,
           start_date: data.startDate,
+          to_date: data.endDate,
           functional_area: data.functional_area,
           is_promotion: data.is_promotion,
           mode: isEdit ? "update" : "new",

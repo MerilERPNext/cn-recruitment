@@ -13,6 +13,7 @@ import { BeatLoader } from "react-spinners";
 import {
   sendBackToCandidate,
   approveOnboardingForm,
+  getOnboardingReviewActionsEnabled,
 } from "../../../services/employeeOnboardingService";
 import { useNavigate } from "react-router-dom";
 
@@ -471,6 +472,9 @@ export default function OnboardingFieldApproval() {
   // ── Email-trigger actions (Send Back / Approve form) ──
   const [sendBackLoading, setSendBackLoading] = useState(false);
   const [approveFormLoading, setApproveFormLoading] = useState(false);
+  // Whether the review-action buttons (Send Back / Approve) are enabled —
+  // driven by the Onboarding Settings flag and kept in sync with the action APIs.
+  const [reviewActionsEnabled, setReviewActionsEnabled] = useState(false);
 
   // ── Hooks ──
   const { toast, showToast } = useToast();
@@ -499,6 +503,13 @@ export default function OnboardingFieldApproval() {
   useEffect(() => {
     loadData();
   }, []); // eslint-disable-line
+
+  // ── Fetch whether review actions (Send Back / Approve) are enabled ──
+  useEffect(() => {
+    getOnboardingReviewActionsEnabled()
+      .then(setReviewActionsEnabled)
+      .catch(() => setReviewActionsEnabled(false));
+  }, []);
 
   // ── Derived values ──
   const totalAll = allFields.length;
@@ -593,6 +604,9 @@ export default function OnboardingFieldApproval() {
     try {
       const res = await sendBackToCandidate(onboardingName);
       const count = res?.rejected_count ?? 0;
+      if (res?.enable_onboarding_review_actions !== undefined) {
+        setReviewActionsEnabled(Number(res.enable_onboarding_review_actions) === 1);
+      }
       showToast(
         `Sent back to candidate — ${count} rejected field${count === 1 ? "" : "s"}`,
         "success"
@@ -610,7 +624,10 @@ export default function OnboardingFieldApproval() {
     if (!onboardingName || approveFormLoading) return;
     setApproveFormLoading(true);
     try {
-      await approveOnboardingForm(onboardingName);
+      const res = await approveOnboardingForm(onboardingName);
+      if (res?.enable_onboarding_review_actions !== undefined) {
+        setReviewActionsEnabled(Number(res.enable_onboarding_review_actions) === 1);
+      }
       showToast("Onboarding form approved", "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Request failed";
@@ -625,8 +642,8 @@ export default function OnboardingFieldApproval() {
   return (
     <div className="flex w-full h-[calc(100vh-73px)] overflow-hidden bg-gray-50 font-sans text-sm">
 
-      {/* ── Sidebar ── */}
-      <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-full overflow-hidden flex-shrink-0">
+      {/* ── Sidebar (desktop only; mobile uses the section dropdown below) ── */}
+      <aside className="hidden lg:flex w-64 bg-white border-r border-gray-100 flex-col h-full overflow-hidden flex-shrink-0">
         <div className="px-4 py-4 border-b border-gray-100">
           <h1 className="text-sm font-semibold text-gray-900">Onboarding Approval</h1>
           <p className="text-xs text-gray-400 mt-0.5 truncate">{onboardingName}</p>
@@ -664,7 +681,7 @@ export default function OnboardingFieldApproval() {
       </aside>
 
       {/* ── Main ── */}
-      <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
+      <main className="flex-1 min-w-0 flex flex-col h-full overflow-y-auto lg:overflow-hidden">
 
         {/* Loading */}
         {pageLoading && (
@@ -686,10 +703,53 @@ export default function OnboardingFieldApproval() {
 
         {/* Content */}
         {!pageLoading && !pageError && activeSection && (
-          <div className="flex flex-col h-full min-h-0 w-full">
+          <div className="flex flex-col w-full min-h-full lg:h-full lg:min-h-0">
 
             {/* ── Sticky top dashboard ── */}
-            <div className="shrink-0 px-5 pt-5 pb-3 space-y-4 bg-gray-50 border-b border-gray-100">
+            <div className="shrink-0 px-4 sm:px-5 pt-5 pb-3 space-y-4 bg-gray-50 border-b border-gray-100">
+
+            {/* Mobile top section nav — horizontal scroll (sidebar is hidden on mobile) */}
+            <div className="lg:hidden">
+              <p className="text-xs font-semibold text-gray-700">Onboarding Approval</p>
+              <p className="text-xs text-gray-400 truncate mb-2">{onboardingName}</p>
+              <div className="-mx-4 sm:-mx-5 px-4 sm:px-5 flex gap-2 overflow-x-auto scrollbar-hide">
+                {secKeys.map((sec, i) => {
+                  const fields = sections[sec].fields;
+                  const approved = fields.filter(
+                    (f) => fieldStates[f.fieldname]?.status === "Approved"
+                  ).length;
+                  const isDone = approved === fields.length && fields.length > 0;
+                  const active = activeSection === sec;
+                  return (
+                    <button
+                      key={sec}
+                      onClick={() => goToSection(sec)}
+                      className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-medium whitespace-nowrap border transition-colors ${
+                        active
+                          ? "bg-primary-500 text-white border-primary-500"
+                          : "bg-white text-gray-600 border-gray-200"
+                      }`}
+                    >
+                      <span
+                        className={`flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-semibold ${
+                          active
+                            ? "bg-white/20 text-white"
+                            : isDone
+                            ? "bg-success-100 text-success-800"
+                            : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
+                        {isDone && !active ? "✓" : i + 1}
+                      </span>
+                      {sec}
+                      <span className={active ? "text-white/80" : "text-gray-400"}>
+                        ({approved}/{fields.length})
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* Breadcrumb */}
             <div className="text-xs text-gray-400">
@@ -712,7 +772,7 @@ export default function OnboardingFieldApproval() {
                   {curFields.length - curApproved} remaining
                 </p>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 w-full lg:w-auto flex-nowrap lg:flex-wrap overflow-x-auto lg:overflow-visible scrollbar-hide -mx-4 sm:-mx-5 px-4 sm:px-5 lg:mx-0 lg:px-0 [&>button]:flex-shrink-0">
                 {/* Section approve — immediate, no comment */}
                 <button
                   onClick={() => handleSectionApprove(activeSection)}
@@ -736,30 +796,36 @@ export default function OnboardingFieldApproval() {
                   Approve all pending
                 </button>
 
-                {/* Send Back (Reject) — email trigger notifying candidate of rejected fields */}
-                <button
-                  onClick={handleSendBack}
-                  disabled={sendBackLoading}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-error-600 text-white border border-error-700 hover:bg-error-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  title="Send back to candidate — notify of rejected fields"
-                >
-                  {sendBackLoading ? "Sending..." : "Send Back (Reject)"}
-                </button>
+                {/* Review actions (Send Back / Approve) — shown only when enabled
+                    via the Onboarding Settings review-actions flag */}
+                {reviewActionsEnabled && (
+                  <>
+                    {/* Send Back (Reject) — email trigger notifying candidate of rejected fields */}
+                    <button
+                      onClick={handleSendBack}
+                      disabled={sendBackLoading}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-error-600 text-white border border-error-700 hover:bg-error-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      title="Send back to candidate — notify of rejected fields"
+                    >
+                      {sendBackLoading ? "Sending..." : "Send Back (Reject)"}
+                    </button>
 
-                {/* Approve — email trigger marking the whole form approved */}
-                <button
-                  onClick={handleApproveForm}
-                  disabled={approveFormLoading}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-600 text-white border border-success-700 hover:bg-success-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                  title="Approve the whole onboarding form"
-                >
-                  {approveFormLoading ? "Approving..." : "Approve"}
-                </button>
+                    {/* Approve — email trigger marking the whole form approved */}
+                    <button
+                      onClick={handleApproveForm}
+                      disabled={approveFormLoading}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-600 text-white border border-success-700 hover:bg-success-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      title="Approve the whole onboarding form"
+                    >
+                      {approveFormLoading ? "Approving..." : "Approve"}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { label: "Approved", value: approvedAll, color: "text-emerald-600" },
                 { label: "Rejected", value: rejectedAll, color: "text-error-600" },
@@ -785,7 +851,7 @@ export default function OnboardingFieldApproval() {
             {/* ── end sticky top dashboard ── */}
 
             {/* ── Scrollable fields region (only this scrolls) ── */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-5 py-3 space-y-4">
+            <div className="flex-1 overflow-visible lg:min-h-0 lg:overflow-y-auto px-4 sm:px-5 py-3 space-y-4">
 
             {/* ── Section reject comment banner ── */}
             {sectionRejectPending && (
@@ -847,7 +913,7 @@ export default function OnboardingFieldApproval() {
             )}
 
             {/* Fields card */}
-            <div className="bg-white border border-gray-100 rounded-xl px-5 py-4">
+            <div className="bg-white border border-gray-100 rounded-xl px-4 sm:px-5 py-4">
 
               {/* Card header */}
               <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
@@ -897,7 +963,7 @@ export default function OnboardingFieldApproval() {
             {/* ── end scrollable fields region ── */}
 
             {/* ── Sticky bottom footer ── */}
-            <div className="shrink-0 px-5 pt-3 pb-5 bg-white border-t border-gray-100 space-y-2">
+            <div className="shrink-0 px-4 sm:px-5 pt-3 pb-5 bg-white border-t border-gray-100 space-y-2">
 
             {/* Prev / Next navigation */}
             <div className="flex justify-between pt-1">

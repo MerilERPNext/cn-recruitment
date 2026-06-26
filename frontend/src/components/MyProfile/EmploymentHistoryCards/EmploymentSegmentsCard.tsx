@@ -31,16 +31,6 @@ const EmploymentSegmentsCard: React.FC<EmploymentSegmentsCardProps> = ({
 
             <div className="space-y-4 pr-20">
                 <div>
-                    <p className="text-xs text-gray-500">
-                        Total Allocation
-                    </p>
-
-                    <p className="font-semibold text-lg text-gray-900">
-                        {total_percentage}%
-                    </p>
-                </div>
-
-                <div>
                     <p className="text-xs text-gray-500 mb-2">
                         Segments
                     </p>

@@ -48,10 +48,11 @@ const titles = [
   "Status",
   "Actual Trigger Date",
   "Due Date",
+  "Last Retriggered On",
   "Actions",
 ];
 
-const columnWidths = ["1fr", "1fr", "1fr", "0.8fr", "1fr", "0.8fr", "1.5fr"];
+const columnWidths = ["1fr", "1fr", "1fr", "0.8fr", "1fr", "0.8fr", "1.2fr", "1.5fr"];
 const gridTemplate = columnWidths.join(" ");
 
 const WorkflowTable: React.FC<WorkflowTableProps> = ({ data, noPadding = false }) => {
@@ -378,6 +379,13 @@ const WorkflowCard = ({
           <div className="flex justify-center items-center">
             <Typography variant="bodySmall" className="font-medium text-center">
               {formatToIndianDate(stage.todo?.date) || "-"}
+            </Typography>
+          </div>
+
+          {/* Last Retriggered On */}
+          <div className="flex justify-center items-center">
+            <Typography variant="bodySmall" className="font-medium text-center">
+              {stage.reinitiated_on ? formatToIndianDate(stage.reinitiated_on) : "-"}
             </Typography>
           </div>
 

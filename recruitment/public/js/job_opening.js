@@ -557,3 +557,20 @@
 		refresh(frm) { mountUI(frm); },
 	});
 })();
+
+// Recruitment Settings → "Allow creation of Position(s) at jobs directly".
+// When OFF (default), the Position Details table on the Job Opening is read-only,
+// so positions can't be added directly here — they come from a Job Requisition.
+// The requisition → opening server flow populates positions programmatically and
+// is unaffected by this form-level control.
+frappe.ui.form.on("Job Opening", {
+	refresh(frm) {
+		if (!frm.fields_dict.custom_position_details) return;
+		frappe.db
+			.get_single_value("Recruitment Settings", "allow_position_creation_at_jobs_directly")
+			.then((allowed) => {
+				frm.set_df_property("custom_position_details", "read_only", allowed ? 0 : 1);
+				frm.refresh_field("custom_position_details");
+			});
+	},
+});

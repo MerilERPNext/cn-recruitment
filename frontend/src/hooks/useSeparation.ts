@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { getEmployeeSeparationType, getSeparationFunnelDetails, SeparationEmployeeService, getNoticePeriodAndSeparationPolicy, getEmployeeSeparationDetails } from "../services/SeparationService";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getEmployeeSeparationType, getSeparationFunnelDetails, SeparationEmployeeService, getNoticePeriodAndSeparationPolicy, getEmployeeSeparationDetails, revokeEmployeeSeparation } from "../services/SeparationService";
 import { SeparationFunnelDetails, NoticePeriodAndSeparationPolicyResponse, EmployeeSeparationDetails } from "../types/flows";
 
 export const useSeparationEmployee = () => {
@@ -38,5 +38,16 @@ export const useEmployeeSeparationDetails = (docname: string) => {
     queryKey: ["employee-separation-details", docname],
     queryFn: () => getEmployeeSeparationDetails(docname),
     enabled: Boolean(docname),
+  });
+};
+
+export const useRevokeEmployeeSeparation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ separation_name, reason }: { separation_name: string; reason: string }) =>
+      revokeEmployeeSeparation(separation_name, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
+    },
   });
 };
