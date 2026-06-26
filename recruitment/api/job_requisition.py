@@ -2321,6 +2321,77 @@ def get_recruiter_options(company=None, search_text=None, query=None, txt=None, 
     )
 
 
+@frappe.whitelist()
+def get_hiring_lead_employees(company=None, search_text=None, limit=20, skip=0):
+    """UI-facing list of Employees selectable as the Job Requisition 'Hiring lead'.
+
+    Mirrors the Desk form behaviour so the external/React UI shows the SAME list:
+      * When a **Company Wise** Hiring Lead Configuration matches `company`, the
+        result is limited to the configured hiring leads (Employees whose linked
+        User is configured for that company).
+      * When no configuration matches, ALL Employees are returned, so the flow is
+        never blocked — identical to the Desk `get_hiring_lead_options` fallback.
+
+    Unlike `get_hiring_lead_options` (which returns the Desk link-widget
+    ``{id, label}`` shape), this returns the richer employee fields a form needs
+    to render and store the selection. Read-only; touches no other API.
+
+    Response::
+
+        {
+          "status": "success",
+          "configured": true,            # whether a Company Wise config applied
+          "total": 3,
+          "results": [
+            {"employee": "HR-EMP-0001", "employee_name": "...",
+             "designation": "...", "department": "...", "company": "...",
+             "user_id": "...", "image": "..."},
+            ...
+          ]
+        }
+    """
+    from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
+        get_config_users_for_company,
+    )
+
+    leads, _ = get_config_users_for_company(company)
+    # `leads` is the set of configured hiring-lead Users for this company. An empty
+    # set means "no Company Wise config matched" -> no restriction (show everyone).
+    filters = {"user_id": ["in", list(leads)]} if leads else {}
+
+    search = (search_text or "").strip()
+    or_filters = None
+    if search:
+        like = f"%{search}%"
+        or_filters = [["employee_name", "like", like], ["name", "like", like]]
+
+    fields = [
+        "name as employee", "employee_name", "designation",
+        "department", "company", "user_id", "image",
+    ]
+
+    try:
+        records = frappe.get_all(
+            "Employee",
+            fields=fields,
+            filters=filters or None,
+            or_filters=or_filters,
+            limit=int(limit or 20),
+            start=int(skip or 0),
+            order_by="employee_name asc",
+        )
+    except Exception as e:
+        frappe.local.response["http_status_code"] = 500
+        return {"status": "error", "message": str(e)}
+
+    return {
+        "status": "success",
+        "configured": bool(leads),
+        "total": len(records),
+        "results": records,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Recruitment Settings → Job Requisition Settings enforcement
 #
@@ -2346,6 +2417,8 @@ def validate_requisition_settings(doc, method=None):
     _enforce_unique_replacement(doc, rows, settings)
     _enforce_future_dated(doc, settings)
     _enforce_edit_after_approval(doc, settings)
+    _enforce_initiation_lock(doc, settings)
+    _enforce_requested_by_lock(doc, settings)
 
 
 def _enforce_max_positions(doc, rows, settings):
@@ -2491,6 +2564,42 @@ def _enforce_edit_after_approval(doc, settings):
             _("This requisition is approved ({0}) and editing it is disabled. Enable "
               "'Allow Editing of Requisition & Job Positions after Approval' in Recruitment Settings.")
             .format(_REQUISITION_APPROVED_STATUS)
+        )
+
+
+def _enforce_initiation_lock(doc, settings):
+    """When 'Disable Editing of Requisition Initiation Form' is ON, a requisition's
+    business fields and positions become read-only once it has been created — only
+    the very first save (creation) may set them. Pure status / workflow_state moves
+    stay allowed so the requisition can still progress through its workflow.
+
+    Default OFF -> fully editable, so existing behaviour is unchanged."""
+    if not settings.get("disable_editing_requisition_initiation_form"):
+        return
+    before = doc.get_doc_before_save()
+    if not before:
+        return  # first creation is always allowed
+    if _has_business_changes(doc, before):
+        frappe.throw(
+            _("Editing is disabled for this requisition once it has been created "
+              "('Disable Editing of Requisition Initiation Form' is enabled in "
+              "Recruitment Settings).")
+        )
+
+
+def _enforce_requested_by_lock(doc, settings):
+    """The 'Requested By' employee is fixed after creation unless 'Allow Hiring
+    Manager Override' is ON. Default OFF -> requested_by is read-only post-creation;
+    ON -> it stays editable. The first save (creation) may always set it."""
+    if settings.get("allow_hiring_manager_override"):
+        return
+    before = doc.get_doc_before_save()
+    if not before:
+        return  # first creation is always allowed
+    if str(before.get("requested_by") or "") != str(doc.get("requested_by") or ""):
+        frappe.throw(
+            _("'Requested By' cannot be changed after the requisition is created. "
+              "Enable 'Allow Hiring Manager Override' in Recruitment Settings to allow this.")
         )
 
 

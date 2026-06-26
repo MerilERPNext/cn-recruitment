@@ -332,12 +332,14 @@
 "default": "0",
 "fieldname": "allow_hiring_lead_activate_archive_requisition",
 "fieldtype": "Check",
+"hidden": 1,
 "label": "Access to Activate/Archive a requisition to Hiring lead"
 },
 {
 "default": "0",
 "fieldname": "allow_hiring_lead_add_employee_from_offer",
 "fieldtype": "Check",
+"hidden": 1,
 "label": "Allow Hiring lead to Add Employee From Offer"
 },
 {
@@ -348,36 +350,42 @@
 "default": "0",
 "fieldname": "disable_hiring_lead_edit_job_step_1",
 "fieldtype": "Check",
+"hidden": 1,
 "label": "Disable Hiring lead to Edit Job - Step 1"
 },
 {
 "default": "0",
 "fieldname": "disable_hiring_lead_edit_job_step_2",
 "fieldtype": "Check",
+"hidden": 1,
 "label": "Disable Hiring lead to Edit Job - Step 2"
 },
 {
 "default": "0",
 "fieldname": "disable_hiring_lead_edit_job_step_3",
 "fieldtype": "Check",
+"hidden": 1,
 "label": "Disable Hiring lead to Edit Job - Step 3"
 },
 {
 "default": "0",
 "fieldname": "disable_hiring_lead_edit_job_step_4",
 "fieldtype": "Check",
+"hidden": 1,
 "label": "Disable Hiring lead to Edit Job - Step 4"
 },
 {
 "default": "0",
 "fieldname": "disable_hiring_lead_edit_job_step_5",
 "fieldtype": "Check",
+"hidden": 1,
 "label": "Disable Hiring lead to Edit Job - Step 5"
 },
 {
 "default": "0",
 "fieldname": "restrict_act_as_admin_offer_approval",
 "fieldtype": "Check",
+"hidden": 1,
 "label": "Restrict Act As Admin Offer/Offer Proposal Approval"
 },
 {

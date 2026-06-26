@@ -15,7 +15,11 @@ Settings are "Allow …" flags — when a flag is OFF, the matching edit is bloc
 Implemented gates:
   #1  allow_hiring_lead_edit_external_recruiter   → Job Opening.custom_external_recruiters
   #2  allow_hiring_lead_edit_application_fields    → Job Opening.custom_application_fields
+  #3  allow_hiring_lead_edit_pre_offer_fields      → Job Opening.custom_application_fields
+                                                     (Pre-Offer columns only)
   #4  allow_hiring_lead_update_candidate_source    → Job Applicant.source
+  #6  allow_hiring_lead_add_employee_from_offer    → Job Offer "Create Employee"
+                                                     (see customizations/job_offer.make_employee)
   #13 allow_hiring_lead_change_designation_at_offer→ Job Offer.designation
 """
 
@@ -69,6 +73,39 @@ def _table_changed(doc, fieldname):
 	return snapshot(before) != snapshot(doc)
 
 
+def _table_subfields_changed(doc, fieldname, subfields):
+	"""True only on an UPDATE where any of `subfields` changed within the rows of
+	child table `fieldname` (rows matched by their row name). Row add/remove and
+	changes to OTHER columns are ignored — those belong to the full-table gate.
+	Used so the Pre-Offer columns can be gated independently of the rest of the
+	Application Fields table. New docs return False."""
+	before = doc.get_doc_before_save()
+	if not before:
+		return False
+
+	def index(d):
+		out = {}
+		for r in d.get(fieldname) or []:
+			rd = r.as_dict() if hasattr(r, "as_dict") else dict(r)
+			rid = rd.get("name")
+			if rid:
+				out[rid] = {k: str(rd.get(k) or "") for k in subfields}
+		return out
+
+	before_idx, after_idx = index(before), index(doc)
+	for rid, after_vals in after_idx.items():
+		if rid in before_idx and before_idx[rid] != after_vals:
+			return True
+	return False
+
+
+# Per-row columns on Job Opening.custom_application_fields that configure the
+# Pre-Offer form. Gated separately from the rest of the Application Fields table.
+_PREOFFER_SUBFIELDS = (
+	"view_preoffer", "mandatory_preoffer", "preoffer_visibility", "preoffer_edit_approve",
+)
+
+
 def _company_from_job_title(job_title):
 	return frappe.db.get_value("Job Opening", job_title, "company") if job_title else None
 
@@ -86,6 +123,8 @@ def validate_job_opening_hiring_lead_edits(doc, method=None):
 		frappe.throw(_("Hiring leads are not allowed to edit the External Recruiter assignment on a Job Opening. Enable it in Recruitment Settings → Hiring Lead Permission Settings."))
 	if not s.get("allow_hiring_lead_edit_application_fields") and _table_changed(doc, "custom_application_fields"):
 		frappe.throw(_("Hiring leads are not allowed to edit Application Fields on a Job Opening. Enable it in Recruitment Settings → Hiring Lead Permission Settings."))
+	if not s.get("allow_hiring_lead_edit_pre_offer_fields") and _table_subfields_changed(doc, "custom_application_fields", _PREOFFER_SUBFIELDS):
+		frappe.throw(_("Hiring leads are not allowed to edit the Pre-Offer field settings on a Job Opening. Enable it in Recruitment Settings → Hiring Lead Permission Settings."))
 
 
 def validate_job_applicant_hiring_lead_edits(doc, method=None):
@@ -96,6 +135,20 @@ def validate_job_applicant_hiring_lead_edits(doc, method=None):
 	s = _settings()
 	if not s.get("allow_hiring_lead_update_candidate_source") and _scalar_changed(doc, "source"):
 		frappe.throw(_("Hiring leads are not allowed to update the Candidate Source. Enable it in Recruitment Settings → Hiring Lead Permission Settings."))
+
+
+@frappe.whitelist()
+def can_hiring_lead_add_employee_from_offer(company=None):
+	"""Desk UI helper for the Job Offer "Create Employee" button.
+
+	Returns False only when the current user IS a configured hiring lead for
+	`company` AND 'Allow Hiring lead to Add Employee From Offer' is OFF — i.e. the
+	button should be hidden. True for everyone else, so the button shows as normal.
+	(The server-side gate in recruitment.customizations.job_offer.make_employee is
+	the real enforcement; this only drives button visibility.)"""
+	if _exempt() or not is_hiring_lead_for_company(company):
+		return True
+	return bool(_settings().get("allow_hiring_lead_add_employee_from_offer"))
 
 
 def validate_job_offer_hiring_lead_edits(doc, method=None):

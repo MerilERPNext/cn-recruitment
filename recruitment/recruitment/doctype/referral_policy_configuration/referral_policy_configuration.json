@@ -1,0 +1,255 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:policy_name",
+ "creation": "2026-06-25 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "basic_details_section",
+  "policy_name",
+  "column_break_basic",
+  "assign_referral_policy_by",
+  "column_break_basic_right",
+  "date_of_reference",
+  "policy_context_section",
+  "description",
+  "column_break_context",
+  "applicable_to_user_assignments",
+  "applicable_to_job_openings",
+  "column_break_context_right",
+  "additional_restrictions_link",
+  "effective_dates_section",
+  "effective_from",
+  "column_break_dates",
+  "effective_to",
+  "role_specific_limits_section",
+  "role_limit_help",
+  "role_specific_limits",
+  "restrictions_data_section",
+  "allow_reward_payout_if_referrer_is_on_notice",
+  "allow_reward_payout_if_referee_is_on_notice",
+  "allow_reward_payout_if_referee_is_alumni",
+  "allow_reward_payout_if_referrer_is_l1_manager",
+  "allow_reward_payout_if_referrer_is_l2_l3_or_above_manager",
+  "allow_reward_payout_if_referrer_is_interviewer"
+ ],
+ "fields": [
+  {
+   "fieldname": "basic_details_section",
+   "fieldtype": "Section Break",
+   "label": "Basic Details"
+  },
+  {
+   "fieldname": "policy_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Referral Policy Configuration Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "column_break_basic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "User Assignment",
+   "fieldname": "assign_referral_policy_by",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Assign Referral Policy By",
+   "options": "User Assignment\nJob Opening",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_basic_right",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Referral Policy Description"
+  },
+  {
+   "depends_on": "eval:doc.assign_referral_policy_by == 'User Assignment'",
+   "description": "Select the user assignments this referral policy should apply to.",
+   "fieldname": "applicable_to_user_assignments",
+   "fieldtype": "Table MultiSelect",
+   "label": "Applicable To",
+   "mandatory_depends_on": "eval:doc.assign_referral_policy_by == 'User Assignment'",
+   "options": "Referral Policy User Assignment"
+  },
+  {
+   "depends_on": "eval:doc.assign_referral_policy_by == 'Job Opening'",
+   "description": "Select the job openings this referral policy should apply to.",
+   "fieldname": "applicable_to_job_openings",
+   "fieldtype": "Table MultiSelect",
+   "label": "Applicable To",
+   "mandatory_depends_on": "eval:doc.assign_referral_policy_by == 'Job Opening'",
+   "options": "Referral Policy Job Opening"
+  },
+  {
+   "fieldname": "additional_restrictions_link",
+   "fieldtype": "HTML",
+   "label": "Additional Restrictions"
+  },
+  {
+   "default": "Date of Application",
+   "fieldname": "date_of_reference",
+   "fieldtype": "Select",
+   "label": "Date Of Reference",
+   "options": "Date of Referral\nDate of Application\nDate of Joining",
+   "reqd": 1
+  },
+  {
+   "fieldname": "policy_context_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_context",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_context_right",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "effective_dates_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "effective_from",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Effective From",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_dates",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "effective_to",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Effective To"
+  },
+  {
+   "fieldname": "role_specific_limits_section",
+   "fieldtype": "Section Break",
+   "label": "Configure Role Specific Limits"
+  },
+  {
+   "fieldname": "role_limit_help",
+   "fieldtype": "HTML",
+   "options": "<div class='text-muted small'>Add one row per referrer/referee assignment combination. This keeps the setup flexible and avoids unsupported nested multi-select behavior inside child tables.</div>"
+  },
+  {
+   "fieldname": "role_specific_limits",
+   "fieldtype": "Table",
+   "label": "Role Specific Limits",
+   "options": "Referral Policy Role Limit",
+   "reqd": 1
+  },
+  {
+   "fieldname": "restrictions_data_section",
+   "fieldtype": "Section Break",
+   "hidden": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_reward_payout_if_referrer_is_on_notice",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Allow Reward Payout if Referrer is On-Notice"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_reward_payout_if_referee_is_on_notice",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Allow Reward Payout if Referee is On-Notice"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_reward_payout_if_referee_is_alumni",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Allow Reward Payout if Referee is alumni"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_reward_payout_if_referrer_is_l1_manager",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Allow Reward Payout if Referrer is L1 manager"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_reward_payout_if_referrer_is_l2_l3_or_above_manager",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Allow Reward Payout if Referrer is L2, L3 or any manager above in the hierarchy"
+  },
+  {
+   "default": "0",
+   "fieldname": "allow_reward_payout_if_referrer_is_interviewer",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Allow Reward Payout if Referrer is Interviewer"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-25 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Referral Policy Configuration",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "import": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR User"
+  }
+ ],
+ "quick_entry": 0,
+ "row_format": "Dynamic",
+ "search_fields": "policy_name",
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "policy_name",
+ "track_changes": 1
+}

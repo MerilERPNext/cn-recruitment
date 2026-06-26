@@ -51,6 +51,47 @@ frappe.ui.form.on("Job Requisition", {
     },
 });
 
+// Recruitment Settings — post-creation edit locks (Desk UX; the server enforces
+// the same rules in validate_requisition_settings so the API/UI path is covered too):
+//  * "Disable Editing of Requisition Initiation Form": once the requisition is
+//    saved, lock the whole form (workflow actions still work).
+//  * "Allow Hiring Manager Override": when OFF, "Requested By" is read-only after
+//    creation; when ON it stays editable.
+// Both default to the editable behaviour, so nothing changes unless enabled.
+frappe.ui.form.on("Job Requisition", {
+    refresh(frm) {
+        apply_requisition_edit_locks(frm);
+    },
+});
+
+function apply_requisition_edit_locks(frm) {
+    if (frm.is_new()) {
+        return; // a brand-new requisition is always fully editable
+    }
+    frappe.db
+        .get_value("Recruitment Settings", "Recruitment Settings", [
+            "disable_editing_requisition_initiation_form",
+            "allow_hiring_manager_override",
+        ])
+        .then((r) => {
+            const s = (r && r.message) || {};
+
+            // 1) Whole-form lock once the requisition exists.
+            if (cint(s.disable_editing_requisition_initiation_form)) {
+                frm.set_read_only();
+                frm.disable_save();
+                return; // everything is read-only; nothing else to toggle
+            }
+
+            // 2) "Requested By" is locked unless hiring-manager override is allowed.
+            frm.set_df_property(
+                "requested_by",
+                "read_only",
+                cint(s.allow_hiring_manager_override) ? 0 : 1
+            );
+        });
+}
+
 function apply_hiring_lead_config_filters(frm) {
     frappe.call({
         method: "recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration.get_hiring_lead_config_users",

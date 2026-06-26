@@ -1,3 +1,25 @@
+// Hide the HRMS "Create Employee" button for a configured hiring lead when
+// 'Allow Hiring lead to Add Employee From Offer' is OFF. The server-side override
+// (recruitment.customizations.job_offer.make_employee) enforces this regardless;
+// this just keeps the button out of the way. No matching config / not a hiring
+// lead / setting ON → button stays as normal.
+frappe.ui.form.on("Job Offer", {
+    refresh(frm) {
+        if (frm.is_new() || frm.doc.status !== "Accepted" || frm.doc.docstatus !== 1) {
+            return;
+        }
+        frappe.call({
+            method: "recruitment.customizations.hiring_lead_permissions.can_hiring_lead_add_employee_from_offer",
+            args: { company: frm.doc.company },
+            callback: (r) => {
+                if (r && r.message === false) {
+                    frm.remove_custom_button(__("Create Employee"));
+                }
+            },
+        });
+    },
+});
+
 frappe.ui.form.on("Job Offer", {
     // refresh: function(frm){
 	// 	if(frm.doc.status=="Awaiting Response"){
