@@ -276,8 +276,7 @@ def auto_separate_employees_on_lwd():
 
 def create_pending_confirmation_separations():
 
-    # current_date = getdate(today())
-    current_date = "2026-06-30"
+    current_date = getdate(today())
 
     confirmations = frappe.get_all(
         "Employee Confirmation",
