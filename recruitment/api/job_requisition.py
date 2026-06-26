@@ -2499,22 +2499,32 @@ def get_replacement_employee_options(
     search_text=None, query=None, txt=None, limit=20, include=None,
     department=None, designation=None, location=None, company=None, functional_area=None,
 ):
-    """Employee options for the 'Replacement For' field, limited to the allowed
-    replacement statuses and the role's department, designation, location,
-    company and functional area when supplied. Same shape as
-    get_link_field_options."""
+    """Employee options for the 'Replacement For' field.
+
+    Always limited to the allowed replacement statuses. The
+    'Restriction for Replacement Employee Selection' setting in Recruitment
+    Settings then narrows the list relative to the requisition's own
+    designation / company — passed in via `designation` / `company` — so the
+    dropdown only offers employees that would pass save-time enforcement
+    (see _enforce_replacement_restriction):
+      - "None"               -> no extra restriction
+      - "Same Designation"   -> only employees sharing the requisition designation
+      - "Same Group Company" -> only employees in the requisition's company group
+    Same response shape as get_link_field_options."""
     filters = {"status": ["in", get_allowed_replacement_employee_statuses()]}
 
-    dimensions = {
-        "department": department,
-        "designation": designation,
-        "branch": location,
-        "company": company,
-        "custom_functional_area": functional_area,
-    }
-    for fieldname, value in dimensions.items():
-        if value:
-            filters[fieldname] = value
+    restriction = (
+        frappe.get_cached_doc("Recruitment Settings").get(
+            "restriction_for_replacement_employee_selection"
+        )
+        or "None"
+    )
+    if restriction == "Same Designation" and designation:
+        filters["designation"] = designation
+    elif restriction == "Same Group Company" and company:
+        group_companies = _company_group_members(company)
+        if group_companies:
+            filters["company"] = ["in", list(group_companies)]
 
     return get_link_field_options(
         "Employee", search_text=search_text, query=query, txt=txt,
