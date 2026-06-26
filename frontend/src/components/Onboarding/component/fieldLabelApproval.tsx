@@ -6,6 +6,7 @@ import {
   useApprovalActions,
   useSectionNav,
 } from "../../../hooks/useOnboarding";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import type { ApprovalField, FieldLocalState, ChildField } from "../../../types/onboarding";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Check, X } from "lucide-react";
@@ -477,6 +478,7 @@ export default function OnboardingFieldApproval() {
   const [reviewActionsEnabled, setReviewActionsEnabled] = useState(false);
 
   // ── Hooks ──
+  const { isDesktop } = useScreenSize();
   const { toast, showToast } = useToast();
 
   const {
@@ -490,7 +492,7 @@ export default function OnboardingFieldApproval() {
     setFieldStates,
   } = useApprovalData(onboardingName);
 
-  const { singleAction, bulkSelectedAction, sectionAction, bulkApproveAllPending } =
+  const { singleAction, bulkSelectedAction, sectionAction } =
     useApprovalActions(onboardingName, sections, patchFieldState, setFieldStates, showToast);
 
   const secKeys = Object.keys(sections);
@@ -597,7 +599,7 @@ export default function OnboardingFieldApproval() {
 
   // ── Email-trigger handlers ───────────────────────────────────────────────────
 
-  // Send Back (Reject) — notify candidate of rejected fields
+  // Return to Candidate — notify candidate of rejected fields
   const handleSendBack = async () => {
     if (!onboardingName || sendBackLoading) return;
     setSendBackLoading(true);
@@ -642,8 +644,12 @@ export default function OnboardingFieldApproval() {
   return (
     <div className="flex w-full h-[calc(100vh-73px)] overflow-hidden bg-gray-50 font-sans text-sm">
 
-      {/* ── Sidebar (desktop only; mobile uses the section dropdown below) ── */}
-      <aside className="hidden lg:flex w-64 bg-white border-r border-gray-100 flex-col h-full overflow-hidden flex-shrink-0">
+      {/* ── Sidebar (desktop only; mobile uses the section nav below) ── */}
+      <aside
+        className={`${
+          isDesktop ? "flex" : "hidden"
+        } w-64 bg-white border-r border-gray-100 flex-col h-full overflow-hidden flex-shrink-0`}
+      >
         <div className="px-4 py-4 border-b border-gray-100">
           <h1 className="text-sm font-semibold text-gray-900">Onboarding Approval</h1>
           <p className="text-xs text-gray-400 mt-0.5 truncate">{onboardingName}</p>
@@ -681,7 +687,7 @@ export default function OnboardingFieldApproval() {
       </aside>
 
       {/* ── Main ── */}
-      <main className="flex-1 min-w-0 flex flex-col h-full overflow-y-auto lg:overflow-hidden">
+      <main className={`flex-1 min-w-0 flex flex-col h-full ${isDesktop ? "overflow-hidden" : "overflow-y-auto"}`}>
 
         {/* Loading */}
         {pageLoading && (
@@ -703,13 +709,13 @@ export default function OnboardingFieldApproval() {
 
         {/* Content */}
         {!pageLoading && !pageError && activeSection && (
-          <div className="flex flex-col w-full min-h-full lg:h-full lg:min-h-0">
+          <div className={`flex flex-col w-full ${isDesktop ? "h-full min-h-0" : "min-h-full"}`}>
 
             {/* ── Sticky top dashboard ── */}
             <div className="shrink-0 px-4 sm:px-5 pt-5 pb-3 space-y-4 bg-gray-50 border-b border-gray-100">
 
             {/* Mobile top section nav — horizontal scroll (sidebar is hidden on mobile) */}
-            <div className="lg:hidden">
+            <div className={isDesktop ? "hidden" : ""}>
               <p className="text-xs font-semibold text-gray-700">Onboarding Approval</p>
               <p className="text-xs text-gray-400 truncate mb-2">{onboardingName}</p>
               <div className="-mx-4 sm:-mx-5 px-4 sm:px-5 flex gap-2 overflow-x-auto scrollbar-hide">
@@ -772,52 +778,44 @@ export default function OnboardingFieldApproval() {
                   {curFields.length - curApproved} remaining
                 </p>
               </div>
-              <div className="flex items-center gap-2 w-full lg:w-auto flex-nowrap lg:flex-wrap overflow-x-auto lg:overflow-visible scrollbar-hide -mx-4 sm:-mx-5 px-4 sm:px-5 lg:mx-0 lg:px-0 [&>button]:flex-shrink-0">
+              <div className={`flex items-center gap-2 [&>button]:flex-shrink-0 ${isDesktop ? "w-auto flex-wrap" : "w-full flex-nowrap overflow-x-auto scrollbar-hide -mx-4 sm:-mx-5 px-4 sm:px-5"}`}>
                 {/* Section approve — immediate, no comment */}
                 <button
                   onClick={() => handleSectionApprove(activeSection)}
                   className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-50 text-success-800 border border-emerald-200 hover:bg-success-100 transition-colors"
                 >
-                  Approve section
+                  Approve Section
                 </button>
                 {/* Section reject — opens comment banner */}
                 <button
                   onClick={() => handleSectionRejectClick(activeSection)}
                   className="px-3 py-1.5 text-xs font-medium rounded-lg bg-error-50 text-error-600 border border-error-200 hover:bg-error-100 transition-colors"
                 >
-                  Reject section
-                </button>
-                {/* Bulk approve all pending — no comment required */}
-                <button
-                  onClick={bulkApproveAllPending}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-500 text-white border border-parimary-600 hover:bg-primary-700 transition-colors"
-                  title="Approve all pending fields across entire document"
-                >
-                  Approve all pending
+                  Return Section
                 </button>
 
-                {/* Review actions (Send Back / Approve) — shown only when enabled
+                {/* Review actions (Return to Candidate / Approve Form) — shown only when enabled
                     via the Onboarding Settings review-actions flag */}
                 {reviewActionsEnabled && (
                   <>
-                    {/* Send Back (Reject) — email trigger notifying candidate of rejected fields */}
+                    {/* Return to Candidate — email trigger notifying candidate of rejected fields */}
                     <button
                       onClick={handleSendBack}
                       disabled={sendBackLoading}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg bg-error-600 text-white border border-error-700 hover:bg-error-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                      title="Send back to candidate — notify of rejected fields"
+                      title="Return to candidate — notify of rejected fields"
                     >
-                      {sendBackLoading ? "Sending..." : "Send Back (Reject)"}
+                      {sendBackLoading ? "Returning..." : "Return to Candidate"}
                     </button>
 
-                    {/* Approve — email trigger marking the whole form approved */}
+                    {/* Approve Form — approves all remaining, validates no rejections, sets status Approved */}
                     <button
                       onClick={handleApproveForm}
                       disabled={approveFormLoading}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-600 text-white border border-success-700 hover:bg-success-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       title="Approve the whole onboarding form"
                     >
-                      {approveFormLoading ? "Approving..." : "Approve"}
+                      {approveFormLoading ? "Approving..." : "Approve Form"}
                     </button>
                   </>
                 )}
@@ -851,7 +849,7 @@ export default function OnboardingFieldApproval() {
             {/* ── end sticky top dashboard ── */}
 
             {/* ── Scrollable fields region (only this scrolls) ── */}
-            <div className="flex-1 overflow-visible lg:min-h-0 lg:overflow-y-auto px-4 sm:px-5 py-3 space-y-4">
+            <div className={`flex-1 px-4 sm:px-5 py-3 space-y-4 ${isDesktop ? "min-h-0 overflow-y-auto" : "overflow-visible"}`}>
 
             {/* ── Section reject comment banner ── */}
             {sectionRejectPending && (
