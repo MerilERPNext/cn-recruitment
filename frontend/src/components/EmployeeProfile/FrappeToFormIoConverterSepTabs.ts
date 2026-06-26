@@ -1434,6 +1434,10 @@ export async function convertFieldsToSimpleTabbedData(
   let currentSection: SimpleSection | null = null;
   let currentColumn: SimpleColumn | null = null;
 
+  // Table (array) fields are buffered per-section so they can be appended
+  // at the end of the section instead of wherever they fall in column order.
+  let sectionTableFields: SimpleField[] = [];
+
   let lastFieldType = "";
 
   const flushColumn = () => {
@@ -1445,6 +1449,13 @@ export async function convertFieldsToSimpleTabbedData(
 
   const flushSection = () => {
     flushColumn();
+    if (sectionTableFields.length > 0 && currentSection) {
+      currentSection.columns.push({
+        key: `${currentSection.key}_col_tables`,
+        fields: sectionTableFields,
+      });
+    }
+    sectionTableFields = [];
     if (currentSection && currentSection.columns.some(c => c.fields.length > 0) && currentTab) {
       currentTab.sections.push(currentSection);
     }
@@ -1656,7 +1667,11 @@ export async function convertFieldsToSimpleTabbedData(
         simpleField.options = field.options.split('\n');
       }
 
-      currentColumn!.fields.push(simpleField);
+      if (Array.isArray(simpleField.value)) {
+        sectionTableFields.push(simpleField);
+      } else {
+        currentColumn!.fields.push(simpleField);
+      }
     }
   }
 

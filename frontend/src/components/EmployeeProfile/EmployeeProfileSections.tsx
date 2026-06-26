@@ -154,7 +154,7 @@ export default function EmployeeProfileSections() {
                             className="scroll-mt-[160px]"
                         >
                             {/* Tab Header */}
-                            <div className="flex items-center rounded-xl justify-between mb-3 md:mb-6 py-2 max-sm:px-4 px-6 bg-gray-50/50 mx-0 md:mx-6 border border-gray-100/50">
+                            <div className="flex items-center rounded-xl justify-between mb-3 md:mb-6 py-2 max-sm:px-4 px-4 bg-gray-50/50 mx-0 md:mx-6 border border-gray-100/50">
                                 <Typography variant="h4" className="font-bold text-gray-800 max-sm:text-md">
                                     {tab.label}
                                 </Typography>
@@ -232,8 +232,8 @@ interface FieldCellProps {
 }
 
 const FieldCell = ({ field, tabKey, tabLabel, canEdit, isTable, onEdit }: FieldCellProps) => (
-    <div className={isTable ? "col-span-full mt-4" : "px-4 py-2 hover:border-primary-200 transition-colors"}>
-        <div className="flex items-center justify-between mb-3">
+    <div className={isTable ? "col-span-full mt-4 px-4" : "px-4 py-2 hover:border-primary-200 transition-colors"}>
+        <div className={`flex items-center justify-between mb-3 ${isTable ? "border-b pb-2" : ""}`}>
             <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest block">
                 {field.label || "-"}
             </Typography>
@@ -372,23 +372,23 @@ const GenericCard = ({ data, onEdit, canEdit }: { data: Record<string, any>, onE
                     return (
                         <div
                             key={key}
-                            className="flex items-center justify-between gap-6 border-b border-gray-100/50 pb-2 last:border-0 last:pb-0"
+                            className="grid grid-cols-2 items-center gap-6 border-b border-gray-100/50 pb-2 last:border-0 last:pb-0"
                         >
                             {/* Label */}
-                            <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest trim line-clamp-1 border-b">
+                            <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest truncate">
                                 {label}
                             </Typography>
 
                             {/* Value */}
-                            <div className="max-w-[70%] text-right overflow-hidden">
+                            <div className="text-right overflow-hidden justify-self-end w-full">
                                 {type === 'file' && value ? (
                                     <Link
                                         to={value}
                                         target="_blank"
-                                        className="flex items-center gap-1.5 text-primary-600 hover:text-primary-700 transition-colors font-medium text-sm"
+                                        className="flex items-center justify-end gap-1.5 text-primary-600 hover:text-primary-700 transition-colors font-medium text-sm"
                                     >
                                         <FileText size={12} />
-                                        <span className="truncate block max-w-[150px]">{value}</span>
+                                        <span className="truncate block">{value}</span>
                                     </Link>
                                 ) : (
                                     <Typography variant="bodySmall" className="font-bold text-gray-800 break-words">
