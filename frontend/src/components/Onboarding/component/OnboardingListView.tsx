@@ -147,8 +147,8 @@ function ApprovalProgressBar({
     return <span className="text-xs text-gray-400">No fields</span>;
   }
 
-  // Completion = fields that have been filled in (filled + approved) over total.
-  const completed = approved + filled;
+  // Completion = filled fields over total.
+  const completed = filled;
   const percent = Math.min(100, Math.round((completed / total) * 100));
 
   // Client-defined colour thresholds.
