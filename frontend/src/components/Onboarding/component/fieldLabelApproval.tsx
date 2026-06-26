@@ -473,6 +473,8 @@ export default function OnboardingFieldApproval() {
   // ── Email-trigger actions (Send Back / Approve form) ──
   const [sendBackLoading, setSendBackLoading] = useState(false);
   const [approveFormLoading, setApproveFormLoading] = useState(false);
+  // Approve All Remaining (one-click approval of every section)
+  const [approveAllRemainingLoading, setApproveAllRemainingLoading] = useState(false);
   // Whether the review-action buttons (Send Back / Approve) are enabled —
   // driven by the Onboarding Settings flag and kept in sync with the action APIs.
   const [reviewActionsEnabled, setReviewActionsEnabled] = useState(false);
@@ -547,6 +549,23 @@ export default function OnboardingFieldApproval() {
   // Section approve — fires immediately, no comment needed
   const handleSectionApprove = async (sectionName: string) => {
     await sectionAction(sectionName, "Approved");
+  };
+
+  // Approve All Remaining — approve every section (all remaining pending fields)
+  const handleApproveAllRemaining = async () => {
+    if (approveAllRemainingLoading || secKeys.length === 0) return;
+    setApproveAllRemainingLoading(true);
+    try {
+      for (const sec of secKeys) {
+        await sectionAction(sec, "Approved");
+      }
+      showToast("All remaining fields approved", "success");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Request failed";
+      showToast(`Error: ${msg}`, "error");
+    } finally {
+      setApproveAllRemainingLoading(false);
+    }
   };
 
   // Section reject — open comment banner
@@ -792,6 +811,15 @@ export default function OnboardingFieldApproval() {
                   className="px-3 py-1.5 text-xs font-medium rounded-lg bg-error-50 text-error-600 border border-error-200 hover:bg-error-100 transition-colors"
                 >
                   Return Section
+                </button>
+                {/* Approve All Remaining — approve every section in one click */}
+                <button
+                  onClick={handleApproveAllRemaining}
+                  disabled={approveAllRemainingLoading}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-500 text-white border border-primary-600 hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Approve all remaining pending fields"
+                >
+                  {approveAllRemainingLoading ? "Approving..." : "Approve All Remaining"}
                 </button>
 
                 {/* Review actions (Return to Candidate / Approve Form) — shown only when enabled
