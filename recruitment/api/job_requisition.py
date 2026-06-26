@@ -106,6 +106,15 @@ PARENT_READONLY_FIELDS = (
 # Keeping this explicit set makes the exclusion auditable.
 FRAPPE_MANAGED_FIELDS = {"status", "workflow_state"}
 
+# Child-table fieldtypes. These are NEVER written through the generic parent
+# path (_apply_parent_fields) — each child table has its own dedicated handler
+# (_apply_qualifications / _apply_skills / _apply_pre_screened, and the position
+# rows appended in _build_requisition_doc). A Form Settings override may legitimately
+# *expose* a table field for rendering, but exposing it must not make it writable as
+# a scalar parent field — otherwise the table gets populated here AND again by its
+# dedicated handler, duplicating every row.
+CHILD_TABLE_FIELDTYPES = frozenset({"Table", "Table MultiSelect"})
+
 
 # Link-field title resolution.
 # ----------------------------
@@ -393,7 +402,12 @@ def _get_writable_parent_fields(doc):
         if fieldname in FRAPPE_MANAGED_FIELDS or fieldname in PARENT_READONLY_FIELDS:
             continue
         df = meta.get_field(fieldname)
-        if df and df.fieldtype not in _LAYOUT_TYPES and not df.get("read_only"):
+        if (
+            df
+            and df.fieldtype not in _LAYOUT_TYPES
+            and df.fieldtype not in CHILD_TABLE_FIELDTYPES
+            and not df.get("read_only")
+        ):
             writable.append(fieldname)
             writable_set.add(fieldname)
 
@@ -444,6 +458,12 @@ def _apply_parent_fields(doc, payload):
     for field in _get_writable_parent_fields(doc):
         if field in FRAPPE_MANAGED_FIELDS:
             continue  # safety guard — should never be in PARENT_WRITABLE_FIELDS
+        # Child tables are populated by their dedicated _apply_* handlers (and the
+        # position-append loop). Never set them here, or each row would be added
+        # twice. A table field can still be config-exposed for rendering.
+        df = doc.meta.get_field(field)
+        if df and df.fieldtype in CHILD_TABLE_FIELDTYPES:
+            continue
         value = payload.get(field)
         if value in (None, ""):
             continue
