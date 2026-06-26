@@ -19,6 +19,8 @@
   "confirmation_policy",
   "probation_end_date",
   "recommended_for_separation",
+  "separation_applicable_date",
+  "separation_created",
   "self_review_tab",
   "date",
   "scale_yourself_for_productivity",
@@ -426,6 +428,23 @@
    "fieldtype": "Check",
    "hidden": 1,
    "label": "Recommended For Separation"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "separation_applicable_date",
+   "fieldtype": "Date",
+   "hidden": 1,
+   "label": "Separation Applicable Date",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "separation_created",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Separation Created",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
