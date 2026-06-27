@@ -21,6 +21,7 @@
   "recommended_for_separation",
   "separation_applicable_date",
   "separation_created",
+  "set_separation_date",
   "self_review_tab",
   "date",
   "scale_yourself_for_productivity",
@@ -445,13 +446,21 @@
    "hidden": 1,
    "label": "Separation Created",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "set_separation_date",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Set Separation Date",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-24 10:26:03.557038",
+ "modified": "2026-06-27 10:07:38.640976",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Employee Confirmation",
