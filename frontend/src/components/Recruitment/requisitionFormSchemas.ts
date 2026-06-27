@@ -351,14 +351,14 @@ export const requisitionFormSchemas = {
                 input: true,
                 dataSrc: "url",
                 data: {
-                  url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employee',
+                  url: '/api/method/recruitment.api.job_requisition.get_hiring_lead_employees?company={{ data.company }}',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 limit: 20,
                 selectValues: "message.results",
-                valueProperty: "id",
+                valueProperty: "employee",
                 template:
-                  "<span>{{ item.label }} <span style='color:#7f8c8d'>({{item.id}})</span></span>",
+                  "<span>{{ item.employee_name }} <span style='color:#7f8c8d'>({{item.employee}})</span></span>",
               },
               
             ],
