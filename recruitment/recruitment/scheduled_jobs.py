@@ -274,6 +274,37 @@ def auto_separate_employees_on_lwd():
     frappe.db.commit()
 
 
+def create_pending_confirmation_separations():
+
+    current_date = getdate(today())
+
+    confirmations = frappe.get_all(
+        "Employee Confirmation",
+        filters={
+            "separation_created": 0,
+            "separation_applicable_date": ["<=", current_date],
+        },
+        or_filters={
+            "recommended_for_separation": 1,
+            "status": "Initiate Separation",
+        },
+        fields=["name"]
+    )
+
+    for row in confirmations:
+        try:
+            conf_doc = frappe.get_doc("Employee Confirmation", row.name)
+            conf_doc.create_employee_separation()
+            conf_doc.db_set("separation_created", 1)
+            frappe.db.commit()
+        except Exception:
+            frappe.db.rollback()
+            frappe.log_error(
+                message=f"Failed to create deferred separation for Employee Confirmation {row.name}",
+                title="Deferred Separation Creation Failed"
+            )
+
+
 def get_applicable_separation_policy(employee_id):
     policies = frappe.get_all("Separation Policy", fields=["name"])
 

@@ -679,7 +679,10 @@ export const requisitionFormSchemas = {
                 validateOn: "blur",
                 dataSrc: "url",
                 data: {
-                  url: '/api/method/recruitment.api.job_requisition.get_replacement_employee_options',
+                  // Pass the requisition's own designation/company so the backend
+                  // can apply the 'Restriction for Replacement Employee Selection'
+                  // setting (Same Designation / Same Group Company / None).
+                  url: '/api/method/recruitment.api.job_requisition.get_replacement_employee_options?designation={{ data.designation }}&company={{ data.company }}',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message.results",
@@ -687,6 +690,8 @@ export const requisitionFormSchemas = {
                 template:
                   "<span>{{ item.label }} <span style='color:#7f8c8d'>({{item.id}})</span></span>",
                 validate: { required: true },
+                refreshOn: "company",
+                clearOnRefresh: true,
                 customConditional: "show = row.vacancy_type === 'Replacement'",
               },
               {

@@ -21,6 +21,8 @@ interface FieldStatusCounts {
 }
 
 interface ApiOnboardingItem {
+  department_title: string;
+  designation_title: string;
   name: string;
   employee_name: string;
   job_applicant: string;
@@ -84,7 +86,7 @@ const mapOnboardingData = (rawData: ApiOnboardingItem[]): UiOnboarding[] => {
     jobApplicant: item.job_applicant ?? "—",
     employee: item.employee ?? "—",
     department: item.department ?? "—",
-    designation: item.designation ?? "—",
+    designation: item.designation_title ?? "—",
     dateOfJoining: item.date_of_joining ?? "—",
     boardingBeginsOn: item.boarding_begins_on ?? "—",
     boardingStatus: item.boarding_status ?? "—",
@@ -98,7 +100,7 @@ const mapOnboardingData = (rawData: ApiOnboardingItem[]): UiOnboarding[] => {
       employeeName: item.employee_name ?? "—",
       jobApplicant: item.job_applicant ?? "—",
       employee: item.employee ?? "—",
-      department: item.department ?? "—",
+      department: item.department_title ?? "—",
       designation: item.designation ?? "—",
       dateOfJoining: item.date_of_joining ?? "—",
       boardingBeginsOn: item.boarding_begins_on ?? "—",
@@ -147,8 +149,8 @@ function ApprovalProgressBar({
     return <span className="text-xs text-gray-400">No fields</span>;
   }
 
-  // Completion = fields that have been filled in (filled + approved) over total.
-  const completed = approved + filled;
+  // Completion = filled fields over total.
+  const completed = filled;
   const percent = Math.min(100, Math.round((completed / total) * 100));
 
   // Client-defined colour thresholds.

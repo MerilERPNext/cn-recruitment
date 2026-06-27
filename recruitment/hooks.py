@@ -91,6 +91,7 @@ doctype_js = {
         "public/js/emp_OB_field_level_approval.js",
         "public/js/employee_onboarding_statutory.js",
     ],
+    "Employee Referral": ["public/js/employee_referral_referral_reward.js"],
     "Employee Separation": ["public/js/employee_separation.js"],
     "Employee Promotion": ["public/js/employee_promotion.js"],
     "Employee": ["public/js/employee.js"],
@@ -247,16 +248,18 @@ doc_events = {
             "recruitment.customizations.job_opening_settings.validate_job_posting_settings",
             # Hiring Lead Permission Settings (external recruiter / application fields).
             "recruitment.customizations.hiring_lead_permissions.validate_job_opening_hiring_lead_edits",
+            # Compute each External Recruiter row's read-only posting status from its
+            # Display From/To window so the grid reflects live availability.
+            "recruitment.permissions.doc_type_permissions.set_external_recruiter_posting_status",
         ],
-    },
-    "Job Opening": {
-        # Compute each External Recruiter row's read-only posting status from its
-        # Display From/To window so the grid reflects live availability.
-        "validate": "recruitment.permissions.doc_type_permissions.set_external_recruiter_posting_status",
     },
     "Employee": {
         "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",
-        "after_insert": "recruitment.auto_fetch_fields.link_employee_to_onboarding",
+        "after_insert": [
+            "recruitment.auto_fetch_fields.link_employee_to_onboarding",
+            # On hire of a referred candidate, generate the Referral Reward + payout schedule.
+            "recruitment.recruitment.referral_reward_engine.generate_referral_reward_on_employee",
+        ],
         "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
     },
     "Job Applicant": {
@@ -316,6 +319,7 @@ scheduler_events = {
         ],
         "0 7 * * *": [
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
+            "recruitment.recruitment.scheduled_jobs.create_pending_confirmation_separations",
             "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
             "recruitment.recruitment.scheduled_jobs.reassign_employee_relationships_on_relieving",
             "recruitment.recruitment.scheduled_jobs.process_separation_leave_attendance_requests",
@@ -323,6 +327,10 @@ scheduler_events = {
         ],
         "0 1 * * *": [
             "recruitment.recruitment.onboarding_extras.refresh_onboarding_task_days_to_join",
+        ],
+        "30 1 * * *": [
+            # Pay every referral reward installment that is due and still eligible.
+            "recruitment.recruitment.referral_reward_engine.process_due_referral_payouts",
         ],
     }
 }
@@ -338,6 +346,9 @@ scheduler_events = {
 #
 override_whitelisted_methods = {
     "hrms.hr.doctype.employee_onboarding.employee_onboarding.make_employee": "recruitment.customizations.employee_onboarding.employee_onboarding.make_employee",
+    # Gate "Create Employee" from a Job Offer behind the Hiring Lead Permission
+    # Setting 'Allow Hiring lead to Add Employee From Offer'.
+    "hrms.hr.doctype.job_offer.job_offer.make_employee": "recruitment.customizations.job_offer.make_employee",
 }
 override_doctype_class = {
     "Employee Onboarding": "recruitment.customizations.employee_onboarding.overide_class.CustomEmployeeOnboarding",

@@ -4,5 +4,5 @@
 from frappe.model.document import Document
 
 
-class HiringLeadConfigurationUser(Document):
+class HiringLeadConfigurationEmployee(Document):
 	pass

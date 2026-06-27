@@ -22,18 +22,18 @@
    "unique": 1
   },
   {
-   "description": "Users who act as the Hiring Lead for this configuration.",
+   "description": "Employees who act as the Hiring Lead for this configuration.",
    "fieldname": "hiring_leads",
    "fieldtype": "Table MultiSelect",
    "label": "Select Hiring Lead",
-   "options": "Hiring Lead Configuration User"
+   "options": "Hiring Lead Configuration Employee"
   },
   {
-   "description": "Users who act as the Recruiter for this configuration.",
+   "description": "Employees who act as the Recruiter for this configuration.",
    "fieldname": "recruiters",
    "fieldtype": "Table MultiSelect",
    "label": "Select Recruiter",
-   "options": "Hiring Lead Configuration User"
+   "options": "Hiring Lead Configuration Employee"
   },
   {
    "default": "Company Wise",

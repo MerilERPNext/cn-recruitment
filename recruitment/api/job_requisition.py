@@ -106,6 +106,15 @@ PARENT_READONLY_FIELDS = (
 # Keeping this explicit set makes the exclusion auditable.
 FRAPPE_MANAGED_FIELDS = {"status", "workflow_state"}
 
+# Child-table fieldtypes. These are NEVER written through the generic parent
+# path (_apply_parent_fields) — each child table has its own dedicated handler
+# (_apply_qualifications / _apply_skills / _apply_pre_screened, and the position
+# rows appended in _build_requisition_doc). A Form Settings override may legitimately
+# *expose* a table field for rendering, but exposing it must not make it writable as
+# a scalar parent field — otherwise the table gets populated here AND again by its
+# dedicated handler, duplicating every row.
+CHILD_TABLE_FIELDTYPES = frozenset({"Table", "Table MultiSelect"})
+
 
 # Link-field title resolution.
 # ----------------------------
@@ -393,7 +402,12 @@ def _get_writable_parent_fields(doc):
         if fieldname in FRAPPE_MANAGED_FIELDS or fieldname in PARENT_READONLY_FIELDS:
             continue
         df = meta.get_field(fieldname)
-        if df and df.fieldtype not in _LAYOUT_TYPES and not df.get("read_only"):
+        if (
+            df
+            and df.fieldtype not in _LAYOUT_TYPES
+            and df.fieldtype not in CHILD_TABLE_FIELDTYPES
+            and not df.get("read_only")
+        ):
             writable.append(fieldname)
             writable_set.add(fieldname)
 
@@ -444,6 +458,12 @@ def _apply_parent_fields(doc, payload):
     for field in _get_writable_parent_fields(doc):
         if field in FRAPPE_MANAGED_FIELDS:
             continue  # safety guard — should never be in PARENT_WRITABLE_FIELDS
+        # Child tables are populated by their dedicated _apply_* handlers (and the
+        # position-append loop). Never set them here, or each row would be added
+        # twice. A table field can still be config-exposed for rendering.
+        df = doc.meta.get_field(field)
+        if df and df.fieldtype in CHILD_TABLE_FIELDTYPES:
+            continue
         value = payload.get(field)
         if value in (None, ""):
             continue
@@ -2301,6 +2321,77 @@ def get_recruiter_options(company=None, search_text=None, query=None, txt=None, 
     )
 
 
+@frappe.whitelist()
+def get_hiring_lead_employees(company=None, search_text=None, limit=20, skip=0):
+    """UI-facing list of Employees selectable as the Job Requisition 'Hiring lead'.
+
+    Mirrors the Desk form behaviour so the external/React UI shows the SAME list:
+      * When a **Company Wise** Hiring Lead Configuration matches `company`, the
+        result is limited to the configured hiring leads (Employees whose linked
+        User is configured for that company).
+      * When no configuration matches, ALL Employees are returned, so the flow is
+        never blocked — identical to the Desk `get_hiring_lead_options` fallback.
+
+    Unlike `get_hiring_lead_options` (which returns the Desk link-widget
+    ``{id, label}`` shape), this returns the richer employee fields a form needs
+    to render and store the selection. Read-only; touches no other API.
+
+    Response::
+
+        {
+          "status": "success",
+          "configured": true,            # whether a Company Wise config applied
+          "total": 3,
+          "results": [
+            {"employee": "HR-EMP-0001", "employee_name": "...",
+             "designation": "...", "department": "...", "company": "...",
+             "user_id": "...", "image": "..."},
+            ...
+          ]
+        }
+    """
+    from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
+        get_config_users_for_company,
+    )
+
+    leads, _ = get_config_users_for_company(company)
+    # `leads` is the set of configured hiring-lead Users for this company. An empty
+    # set means "no Company Wise config matched" -> no restriction (show everyone).
+    filters = {"user_id": ["in", list(leads)]} if leads else {}
+
+    search = (search_text or "").strip()
+    or_filters = None
+    if search:
+        like = f"%{search}%"
+        or_filters = [["employee_name", "like", like], ["name", "like", like]]
+
+    fields = [
+        "name as employee", "employee_name", "designation",
+        "department", "company", "user_id", "image",
+    ]
+
+    try:
+        records = frappe.get_all(
+            "Employee",
+            fields=fields,
+            filters=filters or None,
+            or_filters=or_filters,
+            limit=int(limit or 20),
+            start=int(skip or 0),
+            order_by="employee_name asc",
+        )
+    except Exception as e:
+        frappe.local.response["http_status_code"] = 500
+        return {"status": "error", "message": str(e)}
+
+    return {
+        "status": "success",
+        "configured": bool(leads),
+        "total": len(records),
+        "results": records,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Recruitment Settings → Job Requisition Settings enforcement
 #
@@ -2309,35 +2400,6 @@ def get_recruiter_options(company=None, search_text=None, query=None, txt=None, 
 # and imports. The singleton is read once per save via the cached single doc,
 # so there is no extra load on save.
 # ---------------------------------------------------------------------------
-
-
-def _company_group_members(company):
-    """All companies in the same group as `company` — i.e. every company under
-    the top-most parent of its Company tree (uses the nested-set lft/rgt bounds
-    of that root). Returns a set that always includes `company` itself. For a
-    standalone company (no parent/children) the group is just that company."""
-    if not company:
-        return set()
-
-    # Walk up to the root of the Company tree (parent_company is empty at top).
-    root, visited = company, set()
-    while True:
-        parent = frappe.db.get_value("Company", root, "parent_company")
-        if not parent or parent in visited:
-            break
-        visited.add(parent)
-        root = parent
-
-    bounds = frappe.db.get_value("Company", root, ["lft", "rgt"])
-    if not bounds or bounds[0] is None:
-        return {company}
-    members = set(
-        frappe.get_all(
-            "Company", filters={"lft": [">=", bounds[0]], "rgt": ["<=", bounds[1]]}, pluck="name"
-        )
-    )
-    members.add(company)
-    return members
 
 
 def validate_requisition_settings(doc, method=None):
@@ -2353,9 +2415,10 @@ def validate_requisition_settings(doc, method=None):
     settings = frappe.get_cached_doc("Recruitment Settings")
     _enforce_max_positions(doc, rows, settings)
     _enforce_unique_replacement(doc, rows, settings)
-    _enforce_replacement_restriction(doc, rows, settings)
     _enforce_future_dated(doc, settings)
     _enforce_edit_after_approval(doc, settings)
+    _enforce_initiation_lock(doc, settings)
+    _enforce_requested_by_lock(doc, settings)
 
 
 def _enforce_max_positions(doc, rows, settings):
@@ -2423,43 +2486,6 @@ def _enforce_unique_replacement(doc, rows, settings):
                   "Enable 'Allow Replacement Employee tagging to multiple requisitions' "
                   "in Recruitment Settings to allow this.").format(e.replacement_for, e.parent)
             )
-
-
-def _enforce_replacement_restriction(doc, rows, settings):
-    """Enforce 'Restriction for Replacement Employee Selection' relative to the
-    requisition's own designation / company. 'None' applies no restriction."""
-    restriction = settings.get("restriction_for_replacement_employee_selection") or "None"
-    if restriction == "None":
-        return
-
-    req_designation = doc.get("designation")
-    req_company = doc.get("company")
-    group_companies = (
-        _company_group_members(req_company)
-        if restriction == "Same Group Company" and req_company
-        else None
-    )
-
-    for idx, r in enumerate(rows, start=1):
-        emp = r.get("replacement_for")
-        if not emp:
-            continue
-        emp_designation, emp_company = (
-            frappe.db.get_value("Employee", emp, ["designation", "company"]) or (None, None)
-        )
-        if restriction == "Same Designation":
-            if req_designation and emp_designation != req_designation:
-                frappe.throw(
-                    _("Replacement employee {0} (position {1}) must have the same designation "
-                      "as the requisition ({2}), but has {3}.").format(
-                          emp, idx, req_designation, emp_designation or _("no designation"))
-                )
-        elif restriction == "Same Group Company":
-            if group_companies and emp_company not in group_companies:
-                frappe.throw(
-                    _("Replacement employee {0} (position {1}) must belong to the same group "
-                      "company as the requisition.").format(emp, idx)
-                )
 
 
 def _enforce_future_dated(doc, settings):
@@ -2541,27 +2567,73 @@ def _enforce_edit_after_approval(doc, settings):
         )
 
 
+def _enforce_initiation_lock(doc, settings):
+    """When 'Disable Editing of Requisition Initiation Form' is ON, a requisition's
+    business fields and positions become read-only once it has been created — only
+    the very first save (creation) may set them. Pure status / workflow_state moves
+    stay allowed so the requisition can still progress through its workflow.
+
+    Default OFF -> fully editable, so existing behaviour is unchanged."""
+    if not settings.get("disable_editing_requisition_initiation_form"):
+        return
+    before = doc.get_doc_before_save()
+    if not before:
+        return  # first creation is always allowed
+    if _has_business_changes(doc, before):
+        frappe.throw(
+            _("Editing is disabled for this requisition once it has been created "
+              "('Disable Editing of Requisition Initiation Form' is enabled in "
+              "Recruitment Settings).")
+        )
+
+
+def _enforce_requested_by_lock(doc, settings):
+    """The 'Requested By' employee is fixed after creation unless 'Allow Hiring
+    Manager Override' is ON. Default OFF -> requested_by is read-only post-creation;
+    ON -> it stays editable. The first save (creation) may always set it."""
+    if settings.get("allow_hiring_manager_override"):
+        return
+    before = doc.get_doc_before_save()
+    if not before:
+        return  # first creation is always allowed
+    if str(before.get("requested_by") or "") != str(doc.get("requested_by") or ""):
+        frappe.throw(
+            _("'Requested By' cannot be changed after the requisition is created. "
+              "Enable 'Allow Hiring Manager Override' in Recruitment Settings to allow this.")
+        )
+
+
 @frappe.whitelist()
 def get_replacement_employee_options(
     search_text=None, query=None, txt=None, limit=20, include=None,
     department=None, designation=None, location=None, company=None, functional_area=None,
 ):
-    """Employee options for the 'Replacement For' field, limited to the allowed
-    replacement statuses and the role's department, designation, location,
-    company and functional area when supplied. Same shape as
-    get_link_field_options."""
+    """Employee options for the 'Replacement For' field.
+
+    Always limited to the allowed replacement statuses. The
+    'Restriction for Replacement Employee Selection' setting in Recruitment
+    Settings then narrows the list relative to the requisition's own
+    designation / company — passed in via `designation` / `company` — so the
+    dropdown only offers employees that would pass save-time enforcement
+    (see _enforce_replacement_restriction):
+      - "None"               -> no extra restriction
+      - "Same Designation"   -> only employees sharing the requisition designation
+      - "Same Group Company" -> only employees in the requisition's company group
+    Same response shape as get_link_field_options."""
     filters = {"status": ["in", get_allowed_replacement_employee_statuses()]}
 
-    dimensions = {
-        "department": department,
-        "designation": designation,
-        "branch": location,
-        "company": company,
-        "custom_functional_area": functional_area,
-    }
-    for fieldname, value in dimensions.items():
-        if value:
-            filters[fieldname] = value
+    restriction = (
+        frappe.get_cached_doc("Recruitment Settings").get(
+            "restriction_for_replacement_employee_selection"
+        )
+        or "None"
+    )
+    if restriction == "Same Designation" and designation:
+        filters["designation"] = designation
+    elif restriction == "Same Group Company" and company:
+        group_companies = _company_group_members(company)
+        if group_companies:
+            filters["company"] = ["in", list(group_companies)]
 
     return get_link_field_options(
         "Employee", search_text=search_text, query=query, txt=txt,

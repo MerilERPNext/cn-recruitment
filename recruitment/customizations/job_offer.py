@@ -1,9 +1,41 @@
 import frappe
 import json
+from frappe import _
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
 
 from hrms.hr.doctype.job_offer.job_offer import JobOffer
+
+
+@frappe.whitelist()
+def make_employee(source_name, target_doc=None):
+    """Gated override of HRMS's Job Offer → "Create Employee".
+
+    Blocks a configured Hiring Lead (for the offer's company) from creating an
+    Employee out of a Job Offer when 'Allow Hiring lead to Add Employee From
+    Offer' is OFF in Recruitment Settings. System Managers / Administrator, and
+    every company without a Hiring Lead Configuration, are unaffected. Once the
+    gate passes it delegates to the original HRMS implementation, so the mapping
+    behaviour is unchanged. Registered via override_whitelisted_methods in hooks."""
+    from hrms.hr.doctype.job_offer.job_offer import make_employee as hrms_make_employee
+    from recruitment.customizations.hiring_lead_permissions import _exempt, _settings
+    from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
+        is_hiring_lead_for_company,
+    )
+
+    company = frappe.db.get_value("Job Offer", source_name, "company")
+    if (
+        not _exempt()
+        and is_hiring_lead_for_company(company)
+        and not _settings().get("allow_hiring_lead_add_employee_from_offer")
+    ):
+        frappe.throw(
+            _("Hiring leads are not allowed to add an Employee from a Job Offer. "
+              "Enable 'Allow Hiring lead to Add Employee From Offer' in Recruitment "
+              "Settings → Hiring Lead Permission Settings.")
+        )
+
+    return hrms_make_employee(source_name, target_doc)
 
 
 @frappe.whitelist()

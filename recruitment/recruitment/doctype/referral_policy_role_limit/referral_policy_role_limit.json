@@ -1,0 +1,159 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-06-25 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "referrer_user_assignment",
+  "referee_user_assignment",
+  "referee_gender",
+  "multiple_payout_dates",
+  "payout_currency",
+  "section_break_schedule_1",
+  "payout_schedule_1_days_from_doj",
+  "column_break_schedule_1",
+  "payout_schedule_1_amount",
+  "section_break_schedule_2",
+  "payout_schedule_2_days_from_doj",
+  "column_break_schedule_2",
+  "payout_schedule_2_amount",
+  "section_break_schedule_3",
+  "payout_schedule_3_days_from_doj",
+  "column_break_schedule_3",
+  "payout_schedule_3_amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "referrer_user_assignment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Referrer User Assignment",
+   "options": "Dynamic User Assignment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "referee_user_assignment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Referee User Assignment",
+   "options": "Dynamic User Assignment",
+   "reqd": 1
+  },
+  {
+   "fieldname": "referee_gender",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Referee Gender",
+   "options": "Gender",
+   "reqd": 1
+  },
+  {
+   "default": "No",
+   "fieldname": "multiple_payout_dates",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Multiple Payout Dates",
+   "options": "No\nYes",
+   "reqd": 1
+  },
+  {
+   "fieldname": "payout_currency",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Payout Currency",
+   "options": "Currency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_schedule_1",
+   "fieldtype": "Section Break",
+   "label": "Payout Schedule 1"
+  },
+  {
+   "fieldname": "payout_schedule_1_days_from_doj",
+   "fieldtype": "Int",
+   "label": "Payout Date - Days from DOJ",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_schedule_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payout_schedule_1_amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "options": "payout_currency",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.multiple_payout_dates == 'Yes'",
+   "fieldname": "section_break_schedule_2",
+   "fieldtype": "Section Break",
+   "label": "Payout Schedule 2"
+  },
+  {
+   "depends_on": "eval:doc.multiple_payout_dates == 'Yes'",
+   "fieldname": "payout_schedule_2_days_from_doj",
+   "fieldtype": "Int",
+   "label": "Payout Date - Days from DOJ",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "eval:doc.multiple_payout_dates == 'Yes'",
+   "fieldname": "column_break_schedule_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.multiple_payout_dates == 'Yes'",
+   "fieldname": "payout_schedule_2_amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "options": "payout_currency"
+  },
+  {
+   "depends_on": "eval:doc.multiple_payout_dates == 'Yes'",
+   "fieldname": "section_break_schedule_3",
+   "fieldtype": "Section Break",
+   "label": "Payout Schedule 3"
+  },
+  {
+   "depends_on": "eval:doc.multiple_payout_dates == 'Yes'",
+   "fieldname": "payout_schedule_3_days_from_doj",
+   "fieldtype": "Int",
+   "label": "Payout Date - Days from DOJ",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "eval:doc.multiple_payout_dates == 'Yes'",
+   "fieldname": "column_break_schedule_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.multiple_payout_dates == 'Yes'",
+   "fieldname": "payout_schedule_3_amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "options": "payout_currency"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-06-25 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Referral Policy Role Limit",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 0,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
