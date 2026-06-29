@@ -31,6 +31,7 @@
 "replacement_settings_column_break",
 "restriction_for_replacement_employee_selection",
 "allow_only_new_or_replacement_type",
+"allowed_position_vacancy_type",
 "enable_moving_requisition_back_to_draft",
 "allow_future_dated_positions",
 "allow_hiring_manager_override",
@@ -43,6 +44,8 @@
 "refer_page_columns",
 "career_page_filter_section",
 "career_page_filter_columns",
+"career_page_filter_column_break",
+"career_page_search_filters",
 "hiring_lead_permission_section",
 "allow_hiring_lead_edit_external_recruiter",
 "allow_hiring_lead_edit_application_fields",
@@ -227,10 +230,20 @@
 "label": "Allow only New or Replacement type while creating a requisition"
 },
 {
+"default": "Both",
+"depends_on": "eval:doc.allow_only_new_or_replacement_type",
+"description": "Select which vacancy types are permitted when the restriction above is enabled. 'Both' allows New and Replacement positions in the same requisition.",
+"fieldname": "allowed_position_vacancy_type",
+"fieldtype": "Select",
+"label": "Allowed Position Vacancy Type",
+"options": "Both\nNew\nReplacement"
+},
+{
 "default": "0",
 "description": "Allow an activated requisition to be moved back to the Draft stage.",
 "fieldname": "enable_moving_requisition_back_to_draft",
 "fieldtype": "Check",
+"hidden": 1,
 "label": "Enable moving requisitions back to draft stage after activation"
 },
 {
@@ -293,10 +306,21 @@
 "fieldtype": "Section Break"
 },
 {
-"description": "Filters shown on the (old) Career page. Add any Job Opening field, toggle Enable, and drag to reorder.",
+"description": "Columns shown on the Career page job cards. Add any Job Opening field, toggle Enable, and drag to reorder.",
 "fieldname": "career_page_filter_columns",
 "fieldtype": "Table",
-"label": "Career Page Filter Settings (Old)",
+"label": "Career Page Card Columns",
+"options": "Job Opening Column Setting"
+},
+{
+"fieldname": "career_page_filter_column_break",
+"fieldtype": "Column Break"
+},
+{
+"description": "Fields shown as search filters on the Career page. Add any Job Opening field, toggle Enable, and drag to reorder. The UI reads this via the get_search_filters API.",
+"fieldname": "career_page_search_filters",
+"fieldtype": "Table",
+"label": "Career Page Search Filters",
 "options": "Job Opening Column Setting"
 },
 {

@@ -70,10 +70,12 @@ def _build_context(employee_referral, employee=None):
 		employee = frappe.db.get_value("Employee", {"job_applicant": job_applicant}, "name")
 
 	referee_gender = None
+	referee_department = None
+	referee_designation = None
 	date_of_joining = None
 	if employee:
-		referee_gender, date_of_joining = frappe.db.get_value(
-			"Employee", employee, ["gender", "date_of_joining"]
+		referee_gender, referee_department, referee_designation, date_of_joining = frappe.db.get_value(
+			"Employee", employee, ["gender", "department", "designation", "date_of_joining"]
 		)
 
 	return frappe._dict(
@@ -85,6 +87,8 @@ def _build_context(employee_referral, employee=None):
 		application_date=application_date,
 		referee_employee=employee,
 		referee_gender=referee_gender,
+		referee_department=referee_department,
+		referee_designation=referee_designation,
 		date_of_joining=getdate(date_of_joining) if date_of_joining else None,
 	)
 
@@ -122,21 +126,27 @@ def _policy_in_scope(policy, ctx):
 
 
 def _match_role_row(policy, ctx):
-	"""Return the first Role Limit row matching referrer/referee/gender, else None.
+	"""Return the first Role Limit row matching referrer/referee dept+desig+gender, else None.
 
 	Referee-side matching is only enforced once the referee is an Employee; before
 	hire we match on referrer + gender so a preview can still be shown.
+	Department and designation restrictions are empty-means-any: if the row has no
+	entries in the Table MultiSelect, that dimension is unrestricted.
 	"""
 	for row in policy.role_specific_limits:
 		if not _match_dua(row.referrer_user_assignment, ctx.referrer):
 			continue
 
 		if ctx.referee_employee:
-			if not _match_dua(row.referee_user_assignment, ctx.referee_employee):
+			# Department restriction: empty = any, filled = must match.
+			if row.referee_department and row.referee_department != ctx.referee_department:
+				continue
+			# Designation restriction: empty = any, filled = must match.
+			if row.referee_designation and row.referee_designation != ctx.referee_designation:
 				continue
 			if row.referee_gender and ctx.referee_gender and row.referee_gender != ctx.referee_gender:
 				continue
-		# Pre-hire preview: skip referee DUA, but still respect gender if known.
+		# Pre-hire preview: skip dept/desig check, but still respect gender if known.
 		elif row.referee_gender and ctx.referee_gender and row.referee_gender != ctx.referee_gender:
 			continue
 

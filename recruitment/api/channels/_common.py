@@ -295,6 +295,37 @@ def get_configured_columns(channel):
 	return columns
 
 
+def get_configured_search_filters():
+	"""Ordered, enabled search filter fields for the Careers page, from
+	Recruitment Settings → career_page_search_filters.
+
+	Returns a list of filter descriptors the UI can use to render filter controls:
+	  {"fieldname", "label", "fieldtype", "options"}
+	Fields that no longer exist on Job Opening are silently dropped.
+	Returns [] when nothing is configured (no filters = UI shows no filter bar)."""
+	settings = frappe.get_cached_doc("Recruitment Settings")
+	jo_meta = frappe.get_meta("Job Opening")
+
+	filters, seen = [], set()
+	for row in settings.get("career_page_search_filters") or []:
+		if not row.get("enable"):
+			continue
+		fn = _parse_column_fieldname(row.get("column"))
+		if not fn or fn in seen:
+			continue
+		seen.add(fn)
+		df = jo_meta.get_field(fn)
+		if not df:
+			continue
+		filters.append({
+			"fieldname": fn,
+			"label": df.label or fn.replace("_", " ").title(),
+			"fieldtype": df.fieldtype,
+			"options": df.options or "",
+		})
+	return filters
+
+
 # ---------------------------------------------------------------------------
 # Application-fields lookup
 # ---------------------------------------------------------------------------
