@@ -238,7 +238,7 @@ def get_job_applicant_profile_template(opening=None):
 		rows.append({
 			"section": section,
 			"reference_name": ref,
-			"display_name": def_row.display_name or ref,
+			"display_name": pick(ref, "display_name") or ref,
 			"fieldtype": def_row.get("fieldtype") or "",
 			"child_field_config": (
 				(override_row.get("child_field_config") if override_row and override_row.get("child_field_config") else None)
