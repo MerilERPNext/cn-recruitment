@@ -127,7 +127,7 @@ function set_job_opening_column_options(frm) {
                     .map(d => `${d.label} (${d.fieldname})`)
             ).join('\n');
 
-            ['ijp_page_columns', 'refer_page_columns', 'career_page_filter_columns'].forEach(function(tablefield) {
+            ['ijp_page_columns', 'refer_page_columns', 'career_page_filter_columns', 'career_page_search_filters'].forEach(function(tablefield) {
                 if (frm.fields_dict[tablefield]) {
                     frm.fields_dict[tablefield].grid.update_docfield_property('column', 'options', options);
                     frm.refresh_field(tablefield);

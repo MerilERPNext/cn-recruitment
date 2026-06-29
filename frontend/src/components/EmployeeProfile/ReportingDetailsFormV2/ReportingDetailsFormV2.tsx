@@ -85,6 +85,7 @@ const ReportingDetailsFormV2 = ({
                     value: String(data?.reports_to ?? ""),
                     start_date: data?.start_date ? formatToIndianDate(data.start_date) : "",
                     end_date: data?.end_date ? formatToIndianDate(data.end_date) : undefined,
+                    mode: isEdit ? "update" : "new",
                 }),
                 isEdit ? `Updating ${category}...` : `Adding ${category}...`,
             );

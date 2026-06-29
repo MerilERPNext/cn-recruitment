@@ -577,12 +577,11 @@ def sync_no_of_positions(doc, method=None):
     custom_position_details rows on every save (our API, Desk UI, scripted).
 
     1. `no_of_positions`         = number of position rows.
-    2. `custom_type_of_position` = "New" / "Replacement" / "Mixed", derived from
+    2. `custom_type_of_position` = "New" / "Replacement" / "Both", derived from
        the rows (a row is a Replacement when it has a `replacement_for` — see
        _row_vacancy_type). Stored so PRINT and any field reader show the correct
-       type, including "Mixed" when the requisition holds both. The value is
-       assigned only when it is a valid Select option, so a save can never fail
-       (e.g. before the "Mixed" option has been migrated into the field).
+       type, including "Both" when the requisition holds a mix. The value is
+       assigned only when it is a valid Select option, so a save can never fail.
 
     Only acts when the table has rows — leaves fields untouched for legacy /
     HRMS-standard flows where `custom_position_details` is empty (those use the
@@ -597,7 +596,7 @@ def sync_no_of_positions(doc, method=None):
     new = sum(1 for r in position_rows if _row_vacancy_type(r) == "New")
     replacement = len(position_rows) - new
     if new and replacement:
-        vtype = "Mixed"
+        vtype = "Both"
     elif replacement:
         vtype = "Replacement"
     else:
@@ -1425,7 +1424,7 @@ def _vacancy_breakdown(doc):
     one value, we expose explicit counts plus a clear 3-state `type`:
         - all positions New          -> "New"
         - all positions Replacement  -> "Replacement"
-        - a mix of both              -> "Mixed"
+        - a mix of both              -> "Both"
         - no positions (edge case)   -> the stored parent value
 
     Per-row `vacancy_type` is itself derived from `replacement_for`
@@ -1436,7 +1435,7 @@ def _vacancy_breakdown(doc):
     new = sum(1 for r in rows if _row_vacancy_type(r) == "New")
     replacement = sum(1 for r in rows if _row_vacancy_type(r) == "Replacement")
     if new and replacement:
-        vtype = "Mixed"
+        vtype = "Both"
     elif replacement:
         vtype = "Replacement"
     elif new:
@@ -1475,7 +1474,7 @@ def _serialise_requisition(doc):
 
     # Vacancy mix. A requisition may contain BOTH New and Replacement positions,
     # so a single type is ambiguous — expose explicit counts plus a 3-state type
-    # ("New" / "Replacement" / "Mixed"). `custom_type_of_position` mirrors the
+    # ("New" / "Replacement" / "Both"). `custom_type_of_position` mirrors the
     # type so existing bindings keep working; new UI should prefer the breakdown.
     _breakdown = _vacancy_breakdown(doc)
     out["custom_type_of_position"] = _breakdown["type"]
@@ -2416,6 +2415,7 @@ def validate_requisition_settings(doc, method=None):
     _enforce_max_positions(doc, rows, settings)
     _enforce_unique_replacement(doc, rows, settings)
     _enforce_future_dated(doc, settings)
+    _enforce_position_vacancy_type(doc, settings)
     _enforce_edit_after_approval(doc, settings)
     _enforce_initiation_lock(doc, settings)
     _enforce_requested_by_lock(doc, settings)
@@ -2502,6 +2502,39 @@ def _enforce_future_dated(doc, settings):
                   "enable 'Allow requisitions for Future dated positions' in Recruitment Settings.")
                 .format(label, frappe.utils.formatdate(value))
             )
+
+
+def _enforce_position_vacancy_type(doc, settings):
+    """When 'Allow only New or Replacement type' is ON and a specific type is
+    selected (New or Replacement), reject requisitions whose position mix does
+    not match.  'Both' in the setting means no restriction.
+
+    Relies on sync_no_of_positions (runs first in the validate hook chain)
+    having already written the correct value into custom_type_of_position."""
+    if not settings.get("allow_only_new_or_replacement_type"):
+        return
+    restriction = settings.get("allowed_position_vacancy_type") or "Both"
+    if restriction == "Both":
+        return
+
+    current = doc.get("custom_type_of_position")
+    if not current or current == restriction:
+        return
+
+    type_labels = {
+        "New": _("New"),
+        "Replacement": _("Replacement"),
+        "Both": _("New and Replacement (mixed)"),
+    }
+    current_label = type_labels.get(current, current)
+    frappe.throw(
+        _("Recruitment Settings only allows <b>{0}</b> vacancy type positions. "
+          "This requisition contains <b>{1}</b> positions. "
+          "Please update the positions or change the setting in Recruitment Settings.").format(
+            restriction, current_label
+        ),
+        title=_("Position Type Restriction"),
+    )
 
 
 # Status at which a requisition counts as "approved" for the edit-after-approval gate.

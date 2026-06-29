@@ -158,7 +158,8 @@ permission_query_conditions = {
 # ------------
 
 # before_install = "recruitment.install.before_install"
-# after_install = "recruitment.install.after_install"
+after_install = "recruitment.recruitment.install.after_install"
+after_migrate = "recruitment.recruitment.install.after_migrate"
 
 # Uninstallation
 # ------------

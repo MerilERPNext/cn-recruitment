@@ -6137,7 +6137,7 @@
   "name": "Job Requisition-custom_type_of_position",
   "no_copy": 0,
   "non_negative": 0,
-  "options": "New\nReplacement\nMixed",
+  "options": "Both\nNew\nReplacement",
   "permlevel": 0,
   "placeholder": null,
   "precision": "",

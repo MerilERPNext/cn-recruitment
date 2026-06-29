@@ -24,6 +24,7 @@ class TADuplicityCheckSettings(Document):
 	def before_insert(self):
 		if not self.created_on:
 			self.created_on = today()
+		sync_job_applicant_fields()
 
 
 def sync_job_applicant_fields():

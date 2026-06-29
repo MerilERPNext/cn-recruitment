@@ -408,7 +408,8 @@ export const profileService = {
     field: string,
     value: string,
     start_date: string,
-    end_date?: string
+    end_date?: string,
+    mode: string = "update"
   ): Promise<boolean> => {
     try {
       const response = await FrappeAPI.callMethod(
@@ -419,6 +420,7 @@ export const profileService = {
           value: value,
           start_date: start_date,
           ...(end_date ? { end_date } : {}),
+          mode: mode,
         },
       );
       return response as boolean;

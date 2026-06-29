@@ -54,6 +54,14 @@ def list_columns():
 
 
 @candidate_required
+def get_search_filters():
+	"""Return the ordered, enabled search filter fields configured in Recruitment
+	Settings → Career Page Search Filters.  Each item: {"fieldname", "label",
+	"fieldtype", "options"}.  Empty list means no filters are configured."""
+	return _common.get_configured_search_filters()
+
+
+@candidate_required
 def get_application_fields(opening):
 	"""Return the field list the authenticated candidate sees when filling
 	out the careers application for `opening`."""

@@ -25,12 +25,21 @@ def generate_salary_slip(employee):
     annual_ctc=0
     total_deduction=0
 
+    monthly_ctc_eligible=0
+
     try:
         target_employee = frappe.request.headers.get("X-Target-Employee-Id")
         if target_employee:
             employee = target_employee
         if not employee:
             return {"error": "Employee not provided"}
+
+        payroll_settings = frappe.get_single("Payroll Settings")
+
+        if payroll_settings.show_monthly_ctc:
+            monthly_ctc_eligible=1
+        
+            
 
         salary_structure = frappe.get_list(
             "Salary Structure Assignment",
@@ -64,21 +73,16 @@ def generate_salary_slip(employee):
         if component_names:
             ctc_components = frappe.get_all(
                 "Salary Component",
-                filters={"name": ["in", component_names], "custom_is_part_of_ctc": 1},
+                filters={"name": ["in", component_names], "custom_is_part_of_ctc": 1,"custom_component_sub_type":"Fixed"},
                 fields=["name"],
             )
             ctc_component_names = {comp.name for comp in ctc_components}
 
-        # Process earnings
         earnings_ctc, earnings_total = process_components(slip.earnings, ctc_component_names, "Earning")
         component_part_of_ctc.extend(earnings_ctc)
         monthly_ctc += earnings_total
         annual_ctc+=earnings_total*12
 
-        # Process deductions
-        # deductions_ctc, _ = process_components(slip.deductions, ctc_component_names, "Deduction")
-        # component_part_of_ctc.extend(deductions_ctc)
-        # monthly_ctc+=
 
         deductions_ctc, deductions_total = process_components(slip.deductions, ctc_component_names, "Deduction")
         component_part_of_ctc.extend(deductions_ctc)
@@ -86,9 +90,7 @@ def generate_salary_slip(employee):
         annual_ctc+=deductions_total*12
         total_deduction+=deductions_total*12
         
-        # Note: Not adding deductions to monthly CTC
 
-        # Process reimbursements
         assignment_doc = frappe.get_doc("Salary Structure Assignment", assignment.name)
         if hasattr(assignment_doc, "custom_employee_reimbursements"):
             for reimbursement in assignment_doc.custom_employee_reimbursements:
@@ -109,8 +111,6 @@ def generate_salary_slip(employee):
 
             for v in assignment_doc.custom_variable_pay_components:
 
-                
-
                 amount = round(v.amount or 0)
 
                 variable_data = {
@@ -129,9 +129,9 @@ def generate_salary_slip(employee):
         return {
             "component_part_of_ctc": component_part_of_ctc,
             "total_reimbursement_amount": assignment_doc.custom_total_reimbursement_amount,
-            "fixed_gross":round(gross_pay*12),
-            "monthly_ctc": monthly_ctc,
-            "annual_ctc": annual_ctc,
+            "fixed_gross":round(gross_pay) if  monthly_ctc_eligible else round(gross_pay*12),
+            "monthly_ctc": round(assignment_doc.base) if monthly_ctc_eligible else monthly_ctc,
+            "annual_ctc":  round(assignment_doc.base*12) if monthly_ctc_eligible else annual_ctc,
             "net_pay": net_pay,
             "gross_pay": gross_pay,
             "total_deduction": total_deduction
