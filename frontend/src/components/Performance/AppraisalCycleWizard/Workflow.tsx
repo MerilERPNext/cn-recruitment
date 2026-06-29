@@ -4,8 +4,6 @@ import { useState } from "react";
 import { Select } from "../../shared/atoms/Select";
 import { Switch } from "../../shared/atoms/Switch";
 import { Typography } from "../../shared/atoms/Typography";
-import { mockWizardData } from "./AppraisalCycleWizard";
-import WizardShell from "./WizardShell";
 
 const approvalPatterns = [
   { id: "none", title: "None", description: "Submissions go live" },
@@ -102,26 +100,12 @@ const Workflow = () => {
     allowRollback: false,
   });
 
-  const workflowData = {
-    ...mockWizardData,
-    activeStepId: "workflow",
-    header: {
-      title: "Workflow",
-      description: "Approvals, escalations, and lockdown rules between stages.",
-    },
-    validationStatus: "Validation passed",
-    nextStepLabel: "Next: Notifications",
-  };
-
   const handleRuleToggle = (key: keyof typeof lockdownRules) => {
     setLockdownRules((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   return (
-    <WizardShell
-      data={workflowData}
-      contentClassName="flex flex-col gap-6 pb-8"
-    >
+    <>
       {/* Approval Pattern */}
       <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm">
         <Typography variant="h4" className="font-bold text-gray-900 mb-1">
@@ -306,7 +290,7 @@ const Workflow = () => {
           </div>
         </div>
       </section>
-    </WizardShell>
+    </>
   );
 };
 

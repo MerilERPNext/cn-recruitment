@@ -1,6 +1,6 @@
 import { ArrowRight, Check, Info } from "lucide-react";
 import type { ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 
 export type WizardStep = {
@@ -63,7 +63,7 @@ export type AppraisalCycleWizardData = {
 };
 
 type WizardShellProps = {
-  children: ReactNode;
+  children?: ReactNode;
   contentClassName?: string;
   data: AppraisalCycleWizardData;
   title?: string;
@@ -235,7 +235,7 @@ const WizardShell = ({
 
           <div className="relative flex-1 overflow-y-auto p-3 sm:p-6 md:min-h-0 md:overscroll-contain">
             <div className={`mx-auto w-full max-w-5xl ${contentClassName}`}>
-              {children}
+              {children ?? <Outlet />}
             </div>
           </div>
 

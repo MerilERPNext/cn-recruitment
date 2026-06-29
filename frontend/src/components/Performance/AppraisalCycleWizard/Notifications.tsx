@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { Switch } from "../../shared/atoms/Switch";
 import { Typography } from "../../shared/atoms/Typography";
-import { mockWizardData } from "./AppraisalCycleWizard";
-import WizardShell from "./WizardShell";
 
 type NotificationEvent = {
   id: string;
@@ -121,18 +119,6 @@ const initialEvents: NotificationEvent[] = [
 const Notifications = () => {
   const [events, setEvents] = useState<NotificationEvent[]>(initialEvents);
 
-  const notificationsData = {
-    ...mockWizardData,
-    activeStepId: "notifications",
-    header: {
-      title: "Notifications",
-      description:
-        "Channel × event matrix. Quiet hours and locale defaults are inherited from org settings.",
-    },
-    validationStatus: "Validation passed",
-    nextStepLabel: "Next: Normalisation & Calibration",
-  };
-
   const handleToggle = (
     eventId: string,
     channel: "email" | "inApp" | "slack" | "teams" | "whatsapp",
@@ -145,10 +131,7 @@ const Notifications = () => {
   };
 
   return (
-    <WizardShell
-      data={notificationsData}
-      contentClassName="flex flex-col gap-6 lg:flex-row relative pb-8"
-    >
+    <>
       {/* Left Panel: Events Matrix */}
       <section className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col">
         <div className="overflow-x-auto w-full">
@@ -320,7 +303,7 @@ const Notifications = () => {
           </Typography>
         </section>
       </aside>
-    </WizardShell>
+    </>
   );
 };
 

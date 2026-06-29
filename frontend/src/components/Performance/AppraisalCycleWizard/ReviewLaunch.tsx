@@ -14,8 +14,6 @@ import {
   Zap,
 } from "lucide-react";
 import { Typography } from "../../shared/atoms/Typography";
-import { mockWizardData } from "./AppraisalCycleWizard";
-import WizardShell from "./WizardShell";
 
 const summaryItems = [
   {
@@ -126,22 +124,8 @@ const checklistItems = [
 ];
 
 const ReviewLaunch = () => {
-  const reviewLaunchData = {
-    ...mockWizardData,
-    activeStepId: "review-launch",
-    header: {
-      title: "Review & Launch",
-      description: "Run a final dry-run, fix any warnings, and launch.",
-    },
-    validationStatus: "Validation passed",
-    nextStepLabel: "Launch Cycle",
-  };
-
   return (
-    <WizardShell
-      data={reviewLaunchData}
-      contentClassName="flex flex-col gap-6 relative pb-32"
-    >
+    <>
       {/* 3x3 Summary Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {summaryItems.map((item) => (
@@ -273,7 +257,7 @@ const ReviewLaunch = () => {
           </div>
         </div>
       </section>
-    </WizardShell>
+    </>
   );
 };
 

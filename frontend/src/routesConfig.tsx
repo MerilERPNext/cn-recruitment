@@ -27,7 +27,9 @@ import {
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
 import Onboarding from "./components/Onboarding/Onboarding";
-import AppraisalCycleWizard from "./components/Performance/AppraisalCycleWizard/AppraisalCycleWizard.tsx";
+import AppraisalCycleWizard, {
+  CycleDetails,
+} from "./components/Performance/AppraisalCycleWizard/AppraisalCycleWizard.tsx";
 import Competencies from "./components/Performance/AppraisalCycleWizard/Competencies.tsx";
 import Eligibility from "./components/Performance/AppraisalCycleWizard/Eligibility.tsx";
 import FormBuilder from "./components/Performance/AppraisalCycleWizard/FormBuilder.tsx";
@@ -744,7 +746,7 @@ const withLazyLoading = (
 
 export interface AppRoute {
   index?: boolean;
-  path: string;
+  path?: string;
   element: ReactElement;
   children?: AppRoute[];
   permissionKey: string;
@@ -1503,56 +1505,63 @@ export const routesConfig: AppRoute[] = [
         path: "appraisal-cycle-wizard",
         element: <AppraisalCycleWizard />,
         permissionKey: "Appraisal Cycle Wizard",
-      },
-      {
-        path: "appraisal-cycle-wizard/eligibility",
-        element: <Eligibility />,
-        permissionKey: "Appraisal Cycle Wizard",
-      },
-      {
-        path: "appraisal-cycle-wizard/stages",
-        element: <Stages />,
-        permissionKey: "Appraisal Cycle Wizard",
-      },
-      {
-        path: "appraisal-cycle-wizard/form-builder",
-        element: <FormBuilder />,
-        permissionKey: "Appraisal Cycle Wizard",
-      },
-      {
-        path: "appraisal-cycle-wizard/goal-pull-in",
-        element: <GoalPullIn />,
-        permissionKey: "Appraisal Cycle Wizard",
-      },
-      {
-        path: "appraisal-cycle-wizard/competencies",
-        element: <Competencies />,
-        permissionKey: "Appraisal Cycle Wizard",
-      },
-      {
-        path: "appraisal-cycle-wizard/workflow",
-        element: <Workflow />,
-        permissionKey: "Appraisal Cycle Wizard",
-      },
-      {
-        path: "appraisal-cycle-wizard/notifications",
-        element: <Notifications />,
-        permissionKey: "Appraisal Cycle Wizard",
-      },
-      {
-        path: "appraisal-cycle-wizard/normalisation-calibration",
-        element: <Normalisation />,
-        permissionKey: "Appraisal Cycle Wizard",
-      },
-      {
-        path: "appraisal-cycle-wizard/letters-release",
-        element: <LettersRelease />,
-        permissionKey: "Appraisal Cycle Wizard",
-      },
-      {
-        path: "appraisal-cycle-wizard/review-launch",
-        element: <ReviewLaunch />,
-        permissionKey: "Appraisal Cycle Wizard",
+        children: [
+          {
+            index: true,
+            element: <CycleDetails />,
+            permissionKey: "Appraisal Cycle Wizard",
+          },
+          {
+            path: "eligibility",
+            element: <Eligibility />,
+            permissionKey: "Appraisal Cycle Wizard",
+          },
+          {
+            path: "stages",
+            element: <Stages />,
+            permissionKey: "Appraisal Cycle Wizard",
+          },
+          {
+            path: "form-builder",
+            element: <FormBuilder />,
+            permissionKey: "Appraisal Cycle Wizard",
+          },
+          {
+            path: "goal-pull-in",
+            element: <GoalPullIn />,
+            permissionKey: "Appraisal Cycle Wizard",
+          },
+          {
+            path: "competencies",
+            element: <Competencies />,
+            permissionKey: "Appraisal Cycle Wizard",
+          },
+          {
+            path: "workflow",
+            element: <Workflow />,
+            permissionKey: "Appraisal Cycle Wizard",
+          },
+          {
+            path: "notifications",
+            element: <Notifications />,
+            permissionKey: "Appraisal Cycle Wizard",
+          },
+          {
+            path: "normalisation-calibration",
+            element: <Normalisation />,
+            permissionKey: "Appraisal Cycle Wizard",
+          },
+          {
+            path: "letters-release",
+            element: <LettersRelease />,
+            permissionKey: "Appraisal Cycle Wizard",
+          },
+          {
+            path: "review-launch",
+            element: <ReviewLaunch />,
+            permissionKey: "Appraisal Cycle Wizard",
+          },
+        ],
       },
       {
         path: "calibrator/session",

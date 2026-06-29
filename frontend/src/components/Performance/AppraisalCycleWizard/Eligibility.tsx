@@ -1,9 +1,7 @@
 import { lazy, Suspense, useState } from "react";
-import { mockWizardData } from "./AppraisalCycleWizard";
 import type { EligibilityExclusion } from "./components/Eligibility/EligibilityExclusionsCard";
 import type { EligibilityRule } from "./components/Eligibility/EligibilityRulesCard";
 import type { EligibilityBreakdownItem } from "./components/Eligibility/EligibilitySummaryAside";
-import WizardShell from "./WizardShell";
 
 const EligibilityRulesCard = lazy(
   () => import("./components/Eligibility/EligibilityRulesCard"),
@@ -138,18 +136,6 @@ const operatorOptions = [
   value,
 }));
 
-const eligibilityData = {
-  ...mockWizardData,
-  activeStepId: "eligibility",
-  header: {
-    title: "Eligibility",
-    description:
-      "Define who's in this cycle. Rules refresh nightly; you can override individuals later.",
-  },
-  validationStatus: "Validation passed",
-  nextStepLabel: "Stages",
-};
-
 const inputClass =
   "min-h-[38px] w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 
@@ -171,10 +157,7 @@ const Eligibility = () => {
   );
 
   return (
-    <WizardShell
-      data={eligibilityData}
-      contentClassName="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_360px]"
-    >
+    <>
       <div className="min-w-0 space-y-4 sm:space-y-5">
         <Suspense fallback={sectionFallback}>
           <EligibilityRulesCard
@@ -205,7 +188,7 @@ const Eligibility = () => {
       <Suspense fallback={sectionFallback}>
         <EligibilitySummaryAside breakdown={breakdown} />
       </Suspense>
-    </WizardShell>
+    </>
   );
 };
 

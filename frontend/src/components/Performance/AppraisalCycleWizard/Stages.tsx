@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { mockWizardData } from "./AppraisalCycleWizard";
 import StagesLibraryAside from "./components/Stages/StagesLibraryAside";
 import StagesTimelineCard from "./components/Stages/StagesTimelineCard";
 import type { StageOption, StageRow } from "./components/Stages/types";
-import WizardShell from "./WizardShell";
 
 const stageRows: StageRow[] = [
   {
@@ -91,27 +89,12 @@ const templates = [
   "Project-based",
 ];
 
-const stagesData = {
-  ...mockWizardData,
-  activeStepId: "stages",
-  header: {
-    title: "Stages",
-    description:
-      "Drag stages from the library on the right onto the timeline. Reorder by dragging the handle.",
-  },
-  validationStatus: "Validation passed",
-  nextStepLabel: "Form Builder",
-};
-
 const Stages = () => {
   const [stages, setStages] = useState(stageRows);
   const [selectedTemplate, setSelectedTemplate] = useState(templates[0]);
 
   return (
-    <WizardShell
-      data={stagesData}
-      contentClassName="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_320px]"
-    >
+    <>
       <div className="min-w-0">
         <StagesTimelineCard
           formOptions={formOptions}
@@ -128,7 +111,7 @@ const Stages = () => {
         selectedTemplate={selectedTemplate}
         templates={templates}
       />
-    </WizardShell>
+    </>
   );
 };
 

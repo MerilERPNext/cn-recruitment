@@ -1,6 +1,7 @@
 import { Form } from "@tsed/react-formio";
 import { ChevronDown, X } from "lucide-react";
-import { useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { Select } from "../../shared/atoms/Select";
@@ -11,6 +12,12 @@ import WizardShell from "./WizardShell";
 type AppraisalCycleWizardProps = {
   data?: AppraisalCycleWizardData;
 };
+
+const AppraisalCycleWizardContext = createContext<{
+  setCycleTitle: (title: string) => void;
+}>({
+  setCycleTitle: (_title: string) => undefined,
+});
 
 const parseCycleDate = (value: string, pattern = "MM/dd/yyyy") => {
   if (!value) return null;
@@ -215,9 +222,156 @@ export const mockWizardData: AppraisalCycleWizardData = {
   nextStepLabel: "Eligibility",
 };
 
-const AppraisalCycleWizard = ({
+const wizardRouteMeta: Record<
+  string,
+  Pick<
+    AppraisalCycleWizardData,
+    "activeStepId" | "header" | "validationStatus" | "nextStepLabel"
+  > & { contentClassName: string }
+> = {
+  "cycle-details": {
+    activeStepId: "cycle-details",
+    header: mockWizardData.header,
+    validationStatus: "Validation passed",
+    nextStepLabel: "Eligibility",
+    contentClassName:
+      "grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_340px]",
+  },
+  eligibility: {
+    activeStepId: "eligibility",
+    header: {
+      title: "Eligibility",
+      description:
+        "Define who's in this cycle. Rules refresh nightly; you can override individuals later.",
+    },
+    validationStatus: "Validation passed",
+    nextStepLabel: "Stages",
+    contentClassName:
+      "grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_360px]",
+  },
+  stages: {
+    activeStepId: "stages",
+    header: {
+      title: "Stages",
+      description:
+        "Drag stages from the library on the right onto the timeline. Reorder by dragging the handle.",
+    },
+    validationStatus: "Validation passed",
+    nextStepLabel: "Form Builder",
+    contentClassName: "grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_320px]",
+  },
+  "form-builder": {
+    activeStepId: "form-builder",
+    header: {
+      title: "Form Builder",
+      description:
+        "Pick a starting template or open the drag-drop builder for full editing.",
+    },
+    validationStatus: "Validation passed",
+    nextStepLabel: "Goal Pull-in",
+    contentClassName: "flex flex-col gap-4 sm:gap-5",
+  },
+  "goal-pull-in": {
+    activeStepId: "goal-pull-in",
+    header: {
+      title: "Goal Pull-in",
+      description:
+        "Map approved goals into the appraisal form and define how progress translates to ratings.",
+    },
+    validationStatus: "Validation passed",
+    nextStepLabel: "Competencies (Skip to Step 6)",
+    contentClassName: "flex flex-col gap-4 sm:gap-6",
+  },
+  competencies: {
+    activeStepId: "competencies",
+    header: {
+      title: "Competencies",
+      description:
+        "Map competencies to roles & grades. Behavioural anchors visible per Leapsome pattern.",
+    },
+    validationStatus: "Validation passed",
+    nextStepLabel: "Next: Workflow",
+    contentClassName: "flex flex-col lg:flex-row gap-6 pb-8",
+  },
+  workflow: {
+    activeStepId: "workflow",
+    header: {
+      title: "Workflow",
+      description: "Design approvals, reminders, escalations, and re-open rules.",
+    },
+    validationStatus: "Validation passed",
+    nextStepLabel: "Next: Notifications",
+    contentClassName: "flex flex-col gap-6 pb-8",
+  },
+  notifications: {
+    activeStepId: "notifications",
+    header: {
+      title: "Notifications",
+      description:
+        "Channel × event matrix. Quiet hours and locale defaults are inherited from org settings.",
+    },
+    validationStatus: "Validation passed",
+    nextStepLabel: "Next: Normalisation & Calibration",
+    contentClassName: "flex flex-col gap-6 lg:flex-row relative pb-8",
+  },
+  "normalisation-calibration": {
+    activeStepId: "normalisation-calibration",
+    header: {
+      title: "Normalisation & Calibration",
+      description:
+        "Choose how ratings are constrained across the population, and configure the 9-Box.",
+    },
+    validationStatus: "Validation passed",
+    nextStepLabel: "Next: Letters & Release",
+    contentClassName: "flex flex-col gap-6 pb-8",
+  },
+  "letters-release": {
+    activeStepId: "letters-release",
+    header: {
+      title: "Letters & Release",
+      description:
+        "Choose letter templates, e-sign provider, and release schedule.",
+    },
+    validationStatus: "Validation passed",
+    nextStepLabel: "Next: Review & Launch",
+    contentClassName: "flex flex-col gap-6 relative pb-8",
+  },
+  "review-launch": {
+    activeStepId: "review-launch",
+    header: {
+      title: "Review & Launch",
+      description: "Run a final dry-run, fix any warnings, and launch.",
+    },
+    validationStatus: "Validation passed",
+    nextStepLabel: "Launch Cycle",
+    contentClassName: "flex flex-col gap-6 relative pb-32",
+  },
+};
+
+export const AppraisalCycleWizardLayout = ({ data = mockWizardData }: AppraisalCycleWizardProps) => {
+  const [cycleTitle, setCycleTitle] = useState(data.title);
+  const location = useLocation();
+  const currentStepId = location.pathname.split("/").filter(Boolean).pop();
+  const routeMeta =
+    currentStepId && currentStepId !== "appraisal-cycle-wizard"
+      ? wizardRouteMeta[currentStepId] ?? wizardRouteMeta["cycle-details"]
+      : wizardRouteMeta["cycle-details"];
+  const shellData = { ...data, ...routeMeta, title: cycleTitle };
+
+  return (
+    <AppraisalCycleWizardContext.Provider value={{ setCycleTitle }}>
+      <WizardShell
+        data={shellData}
+        contentClassName={routeMeta.contentClassName}
+      />
+    </AppraisalCycleWizardContext.Provider>
+  );
+};
+
+export const CycleDetails = ({
   data = mockWizardData,
 }: AppraisalCycleWizardProps) => {
+  const { setCycleTitle } = useContext(AppraisalCycleWizardContext);
   const [basics, setBasics] = useState(data.basics);
   const [ownership, setOwnership] = useState(data.ownership);
   const [ownerDropdownOpen, setOwnerDropdownOpen] = useState(false);
@@ -272,12 +426,12 @@ const AppraisalCycleWizard = ({
     ) ?? currencyOptions[0];
   const cycleTitle = basics.cycleName || data.title;
 
+  useEffect(() => {
+    setCycleTitle(cycleTitle);
+  }, [cycleTitle, setCycleTitle]);
+
   return (
-    <WizardShell
-      data={{ ...data, title: cycleTitle }}
-      title={cycleTitle}
-      contentClassName="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_340px]"
-    >
+    <>
       <div className="min-w-0 space-y-4 sm:space-y-5">
         <section className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-5">
           <Typography
@@ -643,8 +797,8 @@ const AppraisalCycleWizard = ({
           </Typography>
         </section>
       </aside>
-    </WizardShell>
+    </>
   );
 };
 
-export default AppraisalCycleWizard;
+export default AppraisalCycleWizardLayout;
