@@ -37,7 +37,7 @@ const tabRoutes: Record<TabName, string> = {
     Feedback: "/webapp/performance-app/feedback",
     "New Goal Plan": "/webapp/performance-app/new-goal-plan",
     "Performance Review": "/webapp/performance-app/performance-review",
-    Cycle: "/webapp/performance-app/appraisal-cycle-wizard",
+    Cycle: "/webapp/performance-app/appraisal-cycle-wizard/cycle-details",
     Calibrator: "/webapp/performance-app/calibrator/session",
 };
 

@@ -746,7 +746,7 @@ const withLazyLoading = (
 
 export interface AppRoute {
   index?: boolean;
-  path?: string;
+  path: string;
   element: ReactElement;
   children?: AppRoute[];
   permissionKey: string;
@@ -1507,7 +1507,12 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Appraisal Cycle Wizard",
         children: [
           {
-            index: true,
+            path: "",
+            element: <Navigate to="cycle-details" replace />,
+            permissionKey: "Appraisal Cycle Wizard",
+          },
+          {
+            path: "cycle-details",
             element: <CycleDetails />,
             permissionKey: "Appraisal Cycle Wizard",
           },

@@ -95,11 +95,7 @@ const WizardShell = ({
     : "Complete";
 
   const handleNavigateStep = (stepId: string) => {
-    if (stepId === "cycle-details") {
-      navigate("/webapp/performance-app/appraisal-cycle-wizard");
-    } else {
-      navigate(`/webapp/performance-app/appraisal-cycle-wizard/${stepId}`);
-    }
+    navigate(`/webapp/performance-app/appraisal-cycle-wizard/${stepId}`);
   };
 
   const handleNext = () => {
