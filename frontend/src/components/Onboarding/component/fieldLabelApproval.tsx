@@ -843,7 +843,7 @@ export default function OnboardingFieldApproval() {
                       className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-600 text-white border border-success-700 hover:bg-success-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                       title="Approve the whole onboarding form"
                     >
-                      {approveFormLoading ? "Approving..." : "Approve Form"}
+                      {approveFormLoading ? "Approving..." : "Notify Approval"}
                     </button>
                   </>
                 )}
