@@ -409,7 +409,8 @@ export const profileService = {
     value: string,
     start_date: string,
     end_date?: string,
-    mode: string = "update"
+    mode: string = "update",
+    record_name?: string
   ): Promise<boolean> => {
     try {
       const response = await FrappeAPI.callMethod(
@@ -421,6 +422,10 @@ export const profileService = {
           start_date: start_date,
           ...(end_date ? { end_date } : {}),
           mode: mode,
+          // When editing an existing card, pass its row name so the backend
+          // edits that same line (incl. start_date) instead of appending a new
+          // one and re-flows the adjacent period.
+          ...(record_name ? { record_name } : {}),
         },
       );
       return response as boolean;

@@ -14,6 +14,7 @@ import { useLoadingOverlay } from "../../../context/OverlayContext";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 interface InitialEditData {
+    name?: string;
     reports_to?: string;
     reports_to_name?: string;
     department_name?: string;
@@ -86,6 +87,9 @@ const ReportingDetailsFormV2 = ({
                     start_date: data?.start_date ? formatToIndianDate(data.start_date) : "",
                     end_date: data?.end_date ? formatToIndianDate(data.end_date) : undefined,
                     mode: isEdit ? "update" : "new",
+                    // On edit, pass the row name so the backend updates that same
+                    // line (incl. start_date) instead of appending a new one.
+                    ...(isEdit && initialEditData?.name ? { record_name: initialEditData.name } : {}),
                 }),
                 isEdit ? `Updating ${category}...` : `Adding ${category}...`,
             );

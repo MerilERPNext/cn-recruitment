@@ -315,6 +315,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
           category={selectedCategory}
           categoryField={selectedCategoryField}
           initialEditData={selectedItem ? {
+            name: selectedItem.name,
             reports_to: selectedItem.records,
             reports_to_name: selectedItem.reporting_employee_name,
             department_name: selectedItem.department_name,
