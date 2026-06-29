@@ -134,7 +134,6 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
     location,
     onEdit,
     onDelete,
-    itemName,
     canDelete,
   }) => {
     const isCurrent = !endDate;
