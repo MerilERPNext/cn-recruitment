@@ -252,6 +252,11 @@ doc_events = {
             # Compute each External Recruiter row's read-only posting status from its
             # Display From/To window so the grid reflects live availability.
             "recruitment.permissions.doc_type_permissions.set_external_recruiter_posting_status",
+            # Guarantee a collision-free web route — sibling requisitions (same
+            # company + designation) would otherwise generate an identical route
+            # and fail with "Route must be unique". Runs last so it de-duplicates
+            # whatever route HRMS / earlier hooks settled on.
+            "recruitment.customizations.job_opening_settings.ensure_unique_route",
         ],
     },
     "Employee": {
@@ -350,6 +355,11 @@ override_whitelisted_methods = {
     # Gate "Create Employee" from a Job Offer behind the Hiring Lead Permission
     # Setting 'Allow Hiring lead to Add Employee From Offer'.
     "hrms.hr.doctype.job_offer.job_offer.make_employee": "recruitment.customizations.job_offer.make_employee",
+    # "Create Job Opening" on Job Requisition: redirect HRMS's mapper to ours,
+    # which maps every shared field (incl. recruitment custom fields) and fixes
+    # HRMS's misplaced field_map. No JS/HRMS change — the existing button routes
+    # through frappe.override_whitelisted_method during make_mapped_doc.
+    "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening": "recruitment.customizations.job_requisition.make_job_opening",
 }
 override_doctype_class = {
     "Employee Onboarding": "recruitment.customizations.employee_onboarding.overide_class.CustomEmployeeOnboarding",
