@@ -323,9 +323,9 @@ const CardsRenderer = ({ items, onEdit, canEdit }: { items: Record<string, any>[
     return (
         <div className="space-y-3">
             {hasItems ? (
-                <div className="flex overflow-x-auto gap-4 pb-2 w-full min-h-fit snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                <div className="flex items-stretch overflow-x-auto gap-4 pb-2 w-full min-h-fit snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {sortedItemsWithOriginalIndex.map(({ item, originalIndex }) => (
-                        <div key={item?.id || item?.name || originalIndex} className="min-w-[100%] max-w-[100%] md:min-w-[400px] md:max-w-[400px] h-fit flex-shrink-0 snap-start">
+                        <div key={item?.id || item?.name || originalIndex} className="min-w-[100%] max-w-[100%] md:min-w-[400px] md:max-w-[400px] flex-shrink-0 snap-start">
                             <GenericCard data={item} onEdit={() => onEdit?.(originalIndex)} canEdit={canEdit} />
                         </div>
                     ))}

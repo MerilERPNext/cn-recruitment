@@ -218,14 +218,23 @@ const EmployeeProfile: React.FC = () => {
     }
   }, []);
 
-  const handleActionSuccess = useCallback(() => {
+  const handleActionSuccess = useCallback((subSectionId?: string) => {
     const targetSection = activeTab;
     if (isDesktop && scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-    setTimeout(() => scrollToSection(targetSection), 700);
+    setTimeout(() => {
+      const subSectionEl = subSectionId
+        ? document.querySelector(`[data-subsection="${subSectionId}"]`)
+        : null;
+      if (subSectionEl) {
+        subSectionEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      scrollToSection(targetSection);
+    }, 700);
   }, [activeTab, isDesktop, scrollToSection]);
 
   const tabContent: Record<string, React.ReactNode> = useMemo(
