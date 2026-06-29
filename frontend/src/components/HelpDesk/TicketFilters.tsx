@@ -46,6 +46,7 @@ const getOperatorsForFieldType = (fieldType: string) => {
         { value: "=", label: "Equals" },
         { value: "!=", label: "Not Equals" },
         { value: "in", label: "In" },
+        { value: "not in", label: "Not In" },
       ];
     case "Link":
       return [
@@ -90,8 +91,7 @@ const getSelectOptions = async (
     return [
       { label: "Open", value: "Open" },
       { label: "Closed", value: "Closed" },
-      { label: "Resolved", value: "Resolved" },
-      { label: "Replied", value: "Replied" },
+      { label: "Awaiting User Response ", value: "Replied" },
       { label: "Reopened", value: "Reopened" },
       { label: "Not Assigned", value: "Not Assigned" },
       { label: "Archived", value: "Archived" },
@@ -146,6 +146,96 @@ const getSelectOptions = async (
   return [];
 };
 
+/** Multi-select dropdown with checkboxes for in/not in operators */
+const MultiCheckboxSelect: React.FC<{
+  options: SelectOption[];
+  selectedValues: string[];
+  onChange: (selected: string[]) => void;
+}> = ({ options, selectedValues, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useFloatingPosition(buttonRef, dropdownRef, open, {
+    placement: "bottom",
+    align: "start",
+    offset: 4,
+  });
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const path = e.composedPath();
+      const clickedButton = buttonRef.current && path.includes(buttonRef.current);
+      const clickedDropdown = dropdownRef.current && path.includes(dropdownRef.current);
+
+      if (!clickedButton && !clickedDropdown) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggle = (val: string) => {
+    if (selectedValues.includes(val)) {
+      onChange(selectedValues.filter((v) => v !== val));
+    } else {
+      onChange([...selectedValues, val]);
+    }
+  };
+
+  const label =
+    selectedValues.length === 0
+      ? "Select..."
+      : selectedValues.length <= 2
+        ? selectedValues.join(", ")
+        : `${selectedValues.length} selected`;
+
+  return (
+    <div className="w-full md:flex-1">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setOpen((s) => !s)}
+        className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 bg-white text-left"
+      >
+        <span className="truncate text-gray-700">{label}</span>
+        <svg
+          className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && createPortal(
+        <div
+          ref={dropdownRef}
+          className="multi-checkbox-portal z-[1000] w-full min-w-[200px] max-w-[300px] bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+        >
+          {options.map((opt) => (
+            <label
+              key={opt.value}
+              className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={selectedValues.includes(opt.value)}
+                onChange={() => toggle(opt.value)}
+                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span className="text-gray-700">{opt.label}</span>
+            </label>
+          ))}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
+
 const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
   fields,
   filters,
@@ -183,11 +273,12 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
 
     Object.entries(filters).forEach(([key, value]) => {
       if (Array.isArray(value)) {
+        const filterVal = value[1];
         items.push({
           id: Math.random().toString(36).substr(2, 9),
           field: key,
           operator: value[0] as string,
-          value: value[1] as string,
+          value: Array.isArray(filterVal) ? filterVal.join(", ") : (filterVal as string),
         });
       } else if (value !== undefined) {
         items.push({
@@ -207,12 +298,15 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
+      const path = event.composedPath();
 
-      if (
-        !dropdownRef.current?.contains(target) &&
-        !tooltipRef.current?.contains(target)
-      ) {
+      const clickedDropdown = dropdownRef.current && path.includes(dropdownRef.current);
+      const clickedTooltip = tooltipRef.current && path.includes(tooltipRef.current);
+      const clickedMultiSelect = path.some(
+        (node) => (node as Element).classList?.contains('multi-checkbox-portal')
+      );
+
+      if (!clickedDropdown && !clickedTooltip && !clickedMultiSelect) {
         setIsOpen(false);
       }
     };
@@ -256,6 +350,8 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
 
         if (item.operator === "like") {
           filterValue = `%${item.value}%`;
+        } else if (item.operator === "in" || item.operator === "not in") {
+          filterValue = item.value.split(",").map((v) => v.trim()).filter(Boolean);
         }
 
         const field = fields.find((f) => f.fieldname === item.field);
@@ -384,22 +480,34 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
 
                       {/* Value */}
                       {selectOptions.length > 0 ? (
-                        <select
-                          value={item.value}
-                          onChange={(e) =>
-                            updateFilter(item.id, {
-                              value: e.target.value,
-                            })
-                          }
-                          className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-                        >
-                          <option value="">Select...</option>
-                          {selectOptions.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
+                        (item.operator === "in" || item.operator === "not in") ? (
+                          <MultiCheckboxSelect
+                            options={selectOptions}
+                            selectedValues={item.value ? item.value.split(",").map((v) => v.trim()).filter(Boolean) : []}
+                            onChange={(selected) =>
+                              updateFilter(item.id, {
+                                value: selected.join(", "),
+                              })
+                            }
+                          />
+                        ) : (
+                          <select
+                            value={item.value}
+                            onChange={(e) =>
+                              updateFilter(item.id, {
+                                value: e.target.value,
+                              })
+                            }
+                            className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                          >
+                            <option value="">Select...</option>
+                            {selectOptions.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        )
                       ) : field?.fieldtype === "Date" ||
                         field?.fieldtype === "Datetime" ? (
                         <input
