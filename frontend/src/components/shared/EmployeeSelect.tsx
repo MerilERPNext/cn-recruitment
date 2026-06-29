@@ -2,11 +2,24 @@ import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from
 import { createPortal } from "react-dom";
 import { ChevronDown, Loader2, Search, X } from "lucide-react";
 import { EmployeeService } from "../../services/employeeService";
-import { Employee } from "../../types/employee";
-import { FilterCondition } from "../../types/frappe";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
 
-const PAGE_SIZE = 10;
-const FIELDS = ["name", "employee_name", "department", "designation"];
+const SEARCH_LIMIT = 20;
+
+/** Shape returned by cn_hrms_core search_employees API */
+interface SearchEmployeeResult {
+    employee_id: string;
+    employee_name: string;
+    display_text: string;
+    department: string | null;
+    department_display: string | null;
+    designation: string | null;
+    designation_display: string | null;
+    branch: string | null;
+    branch_display: string | null;
+    image: string | null;
+    company: string | null;
+}
 
 interface EmployeeOption {
     id: string;
@@ -21,6 +34,14 @@ interface EmployeeSelectProps {
     placeholder?: string;
     disabled?: boolean;
 }
+
+const mapEmployees = (data: SearchEmployeeResult[]): EmployeeOption[] =>
+    data.map((e) => ({
+        id: e.employee_id,
+        name: e.employee_name || e.employee_id,
+        department: e.department_display ?? e.department ?? undefined,
+        designation: e.designation_display ?? e.designation ?? undefined,
+    }));
 
 const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
     value,
@@ -37,8 +58,6 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
     const [searchTerm, setSearchTerm] = useState("");
     const [employees, setEmployees] = useState<EmployeeOption[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
     const [selectedLabel, setSelectedLabel] = useState("");
     const [positionReady, setPositionReady] = useState(false);
     const [dropdownPosition, setDropdownPosition] = useState({
@@ -47,78 +66,41 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
         width: 0,
     });
 
-    const offsetRef = useRef(0);
     const debounceRef = useRef<number | null>(null);
     const initialDataRef = useRef<EmployeeOption[] | null>(null);
-    const initialHasMoreRef = useRef(true);
-    const initialOffsetRef = useRef(0);
 
-    const mapEmployees = (data: Employee[]): EmployeeOption[] =>
-        data.map((e) => ({
-            id: e.name,
-            name: e.employee_name || e.name,
-            department: e.department,
-            designation: e.designation,
-        }));
+    // Get current user's employee record to pass to backend for exclusion
+    const { data: currentEmployee } = useCurrentEmployee();
+    const currentEmployeeId = currentEmployee?.name ?? "";
 
-    // Fetch employees with pagination
+    // Fetch employees using cn_hrms_core search_employees API
     const fetchEmployees = useCallback(
-        async (search: string, offset: number, append: boolean) => {
-            if (offset === 0) setIsLoading(true);
-            else setIsLoadingMore(true);
+        async (search: string) => {
+            setIsLoading(true);
 
             try {
-                const orFilters: FilterCondition[] = search.trim()
-                    ? [
-                        ["name", "like", `%${search.trim()}%`],
-                        ["employee_name", "like", `%${search.trim()}%`],
-                    ]
-                    : [];
-
-                const filters: FilterCondition[] = [["status", "=", "Active"]];
-
-                const data = await EmployeeService.getAllEmployees(
-                    FIELDS,
-                    filters,
-                    orFilters.length > 0 ? orFilters : undefined,
-                    PAGE_SIZE,
-                    offset
-                );
+                const data = await EmployeeService.getSearchMembers(
+                    search.trim() || undefined,
+                    SEARCH_LIMIT,
+                    true, // exclude current user's employee
+                    currentEmployeeId || undefined,
+                ) as unknown as SearchEmployeeResult[];
 
                 const mapped = mapEmployees(data);
-                setEmployees((prev) => (append ? [...prev, ...mapped] : mapped));
-                setHasMore(mapped.length === PAGE_SIZE);
-                offsetRef.current = offset + mapped.length;
-                // Keep cached initial data up to date when offset is zero
-                if (!append) {
+                setEmployees(mapped);
+
+                // Cache initial (no-search) data
+                if (!search.trim()) {
                     initialDataRef.current = mapped;
-                    initialHasMoreRef.current = mapped.length === PAGE_SIZE;
-                    initialOffsetRef.current = offsetRef.current;
                 }
             } catch {
-                if (!append) setEmployees([]);
-                setHasMore(false);
+                setEmployees([]);
             } finally {
                 setIsLoading(false);
-                setIsLoadingMore(false);
             }
         },
-        []
+        [currentEmployeeId],
     );
-
-    // Initial load when dropdown opens — use cached data if available
-    useEffect(() => {
-        if (!isOpen) return;
-
-        offsetRef.current = 0;
-        if (initialDataRef.current) {
-            setEmployees(initialDataRef.current);
-            setHasMore(initialHasMoreRef.current);
-            offsetRef.current = initialOffsetRef.current;
-        } else {
-            fetchEmployees("", 0, false);
-        }
-    }, [isOpen, fetchEmployees]);
 
     // Debounced search — only fires when searchTerm actually changes
     useEffect(() => {
@@ -128,12 +110,8 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
         if (!searchTerm.trim()) {
             if (initialDataRef.current) {
                 setEmployees(initialDataRef.current);
-                setHasMore(initialHasMoreRef.current);
-                offsetRef.current = initialOffsetRef.current;
             } else {
-                // fallback to fetching fresh if no cache
-                offsetRef.current = 0;
-                fetchEmployees("", 0, false);
+                fetchEmployees("");
             }
             return;
         }
@@ -141,25 +119,13 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
         if (debounceRef.current) window.clearTimeout(debounceRef.current);
 
         debounceRef.current = window.setTimeout(() => {
-            offsetRef.current = 0;
-            fetchEmployees(searchTerm, 0, false);
+            fetchEmployees(searchTerm);
         }, 300);
 
         return () => {
             if (debounceRef.current) window.clearTimeout(debounceRef.current);
         };
     }, [searchTerm, isOpen, fetchEmployees]);
-
-    // Infinite scroll handler
-    const handleScroll = useCallback(() => {
-        const el = listRef.current;
-        if (!el || isLoadingMore || !hasMore) return;
-
-        const { scrollTop, scrollHeight, clientHeight } = el;
-        if (scrollTop + clientHeight >= scrollHeight - 20) {
-            fetchEmployees(searchTerm, offsetRef.current, true);
-        }
-    }, [isLoadingMore, hasMore, searchTerm, fetchEmployees]);
 
     // Dropdown position — useLayoutEffect to compute position before paint
     useLayoutEffect(() => {
@@ -273,7 +239,6 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                 {/* Employee list with scroll */}
                 <div
                     ref={listRef}
-                    onScroll={handleScroll}
                     className="max-h-52 overflow-y-auto"
                 >
                     {isLoading ? (
@@ -301,11 +266,6 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                                     </div>
                                 </div>
                             ))}
-                            {isLoadingMore && (
-                                <div className="flex items-center justify-center py-2">
-                                    <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
-                                </div>
-                            )}
                         </>
                     ) : (
                         <div className="px-3 py-4 text-center text-sm text-gray-400">

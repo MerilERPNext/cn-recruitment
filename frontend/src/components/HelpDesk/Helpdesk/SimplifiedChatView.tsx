@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Typography } from "../../shared/atoms/Typography";
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { X, Loader2, MessageSquare, CheckCircle, Edit3, Reply, XCircle, Clock, ChevronDown, ChevronUp, FileText } from "lucide-react";
+import { X, Loader2, MessageSquare, CheckCircle, Reply, XCircle, Clock, ChevronDown, ChevronUp, FileText, Trash2, RotateCcw } from "lucide-react";
 import {
   TicketDetail,
   useSendEmailReply,
@@ -13,6 +13,8 @@ import {
   useEmployeeByUserEmail,
   useGetFeedbackFormJson,
   useGetExitFormJson,
+  useRevokeTicket,
+  useReopenTicket,
 } from "../../../hooks/useHelpDeskTickets";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import SimplifiedChatInput from "../SimplifiedChatInput";
@@ -31,6 +33,9 @@ import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { FilePreviewModal } from "../../shared/molecules/FilePreviewModal";
 import { FileTypeIcon, getFileTypeInfo } from "../../../utils/fileUtils";
 import DropdownMenu from "../../shared/DropDownMenu";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 
 interface SimplifiedChatViewProps {
   ticket: TicketDetail;
@@ -162,10 +167,8 @@ interface ResolutionModalProps {
   onSubmit: (resolution: string, exitFormSubmission?: any, feedbackFormSubmission?: any, exitAttachments?: File[], feedbackAttachments?: File[]) => void;
   isLoading: boolean;
   isRaiser: boolean;
-  isEditing?: boolean;
   isClosingTicket: boolean;
   isResolving?: boolean;
-  existingResolution?: string;
 }
 
 export const ResolutionModal: React.FC<ResolutionModalProps> = ({
@@ -175,11 +178,9 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
   onSubmit,
   isClosingTicket,
   isLoading,
-  isEditing,
   isResolving,
-  existingResolution,
 }) => {
-  const [resolution, setResolution] = useState(existingResolution || "");
+  const [resolution, setResolution] = useState("");
   const [confirmClose, setConfirmClose] = useState<"yes" | "no">("no");
 
   /* Formio Exit and Feedback Form Logic */
@@ -270,15 +271,15 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setResolution(existingResolution || "");
+      setResolution("");
     }
-  }, [isOpen, existingResolution]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = () => {
     const payloadResolution = "resolved";
-    
+
     if (isClosingTicket) {
       const exitData = exitFormJson ? { schema: exitFormJson, answer: exitFormSubmission ?? {} } : (exitFormSubmission ?? null);
       const feedbackData = feedbackFormJson ? { schema: feedbackFormJson, answer: feedbackFormSubmission ?? {} } : (feedbackFormSubmission ?? null);
@@ -289,8 +290,8 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
     }
   };
 
-  const disableSubmit = isLoading || 
-    (isClosingTicket ? confirmClose === "no" : !resolution.trim()) || 
+  const disableSubmit = isLoading ||
+    (isClosingTicket ? confirmClose === "no" : !resolution.trim()) ||
     (isClosingTicket && (!isExitFormValid || !isFeedbackFormValid));
 
   return (
@@ -299,7 +300,7 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
         {/** Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
-            {isResolving ? "Resolve Ticket" : isEditing ? "Edit Resolution" : "Close Ticket"}
+            {isResolving ? "Resolve Ticket" : "Close Ticket"}
           </h3>
           <button
             onClick={onClose}
@@ -355,9 +356,7 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
               <p className="text-xs text-gray-500 mt-2">
                 {isResolving
                   ? "This will save the resolution and set the ticket status to Resolved."
-                  : isEditing
-                    ? "This will save the resolution and set status to Resolved."
-                    : "This will close the ticket and save the resolution details."}
+                  : "This will close the ticket and save the resolution details."}
               </p>
             </>
           )}
@@ -366,7 +365,7 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
             feedbackFormJsonLoading &&
             <FormioFormSkeleton />
           }
-          {!isEditing && !feedbackFormJsonLoading && feedbackFormJson && <div className="w-full show-req-astrik mt-4 ">
+          {!feedbackFormJsonLoading && feedbackFormJson && <div className="w-full show-req-astrik mt-4 ">
             <Typography variant="subheading" className="mb-1">Feedback Form Details</Typography>
             <div id={`feedback-form-container-chat-${ticket.name}`} className="w-full border-gray-100 rounded-lg p-4 border-1">
               <Form
@@ -387,7 +386,7 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
             exitFormJsonLoading &&
             <FormioFormSkeleton />
           }
-          {!isEditing && !exitFormJsonLoading && exitFormJson && <div className="w-full show-req-astrik mt-4 ">
+          {!exitFormJsonLoading && exitFormJson && <div className="w-full show-req-astrik mt-4 ">
             <Typography variant="subheading" className="mb-1">Issue Closure Form</Typography>
             <div id={`exit-form-container-chat-${ticket.name}`} className="w-full border-gray-100 rounded-lg p-4 border-1">
               <Form
@@ -428,11 +427,6 @@ export const ResolutionModal: React.FC<ResolutionModalProps> = ({
               <>
                 <CheckCircle className="w-4 h-4" />
                 Resolve Ticket
-              </>
-            ) : isEditing ? (
-              <>
-                <CheckCircle className="w-4 h-4" />
-                Save Resolution
               </>
             ) : (
               <>
@@ -769,7 +763,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<"chat" | "resolution">("chat");
   const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
-  const [isEditingResolution, setIsEditingResolution] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isResolvingTicket, setIsResolvingTicket] = useState(false);
   const [replyingTo, setReplyingTo] = useState<SimpleChatMessage | null>(null);
@@ -780,6 +773,13 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   const closeTicketMutation = useCloseTicket();
   const closeResolvedMutation = useCloseResolvedTicket();
   const rejectResolutionMutation = useRejectResolution();
+  const revokeTicketMutation = useRevokeTicket();
+  const reopenTicketMutation = useReopenTicket();
+
+  // UI Permissions
+  const { data: userUiPermission } = useGetUiPermission("Help Desk");
+  const permRevoke = isActionEnabled(userUiPermission, "revoke", "Help Desk");
+  const permReopen = isActionEnabled(userUiPermission, "reopen", "Help Desk");
 
   // User lookup for displaying names instead of emails
   const { data: userLookup } = useUserLookup();
@@ -1117,7 +1117,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
       toast.success("Ticket closed successfully");
       setIsResolutionModalOpen(false);
-      setIsEditingResolution(false);
     } catch (error) {
       console.error("Failed to close ticket:", error);
       toast.error("Failed to close ticket");
@@ -1129,7 +1128,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   // Handle save resolution (sets status to Resolved, not Closed)
   const handleSaveResolution = async (resolution: string) => {
     try {
-      // When editing resolution, set status to Resolved
       await closeTicketMutation.mutateAsync({
         ticketId: ticket.name,
         resolutionDetails: resolution,
@@ -1137,7 +1135,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       });
       toast.success("Resolution saved successfully");
       setIsResolutionModalOpen(false);
-      setIsEditingResolution(false);
       setIsResolvingTicket(false);
     } catch {
       toast.error("Failed to save resolution");
@@ -1168,6 +1165,30 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     }
   };
 
+  const handleRevoke = async () => {
+    try {
+      loadingContext.show("Revoking ticket...");
+      await revokeTicketMutation.mutateAsync({ ticketId: ticket.name });
+      toast.success("Ticket revoked successfully");
+    } catch (error) {
+      toast.error(errorResponseFormater(error, "Failed to revoke ticket"));
+    } finally {
+      loadingContext.hide();
+    }
+  };
+
+  const handleReopen = async () => {
+    try {
+      loadingContext.show("Reopening ticket...");
+      await reopenTicketMutation.mutateAsync({ ticketId: ticket.name });
+      toast.success("Ticket reopened successfully");
+    } catch (error) {
+      toast.error(errorResponseFormater(error, "Failed to reopen ticket"));
+    } finally {
+      loadingContext.hide();
+    }
+  };
+
   const isSending = sendEmailMutation.isPending;
   const isClosing = closeTicketMutation.isPending || closeResolvedMutation.isPending;
 
@@ -1191,6 +1212,24 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
   const actionItems: { label: string; icon: React.ReactNode; onClick: () => void }[] = [];
 
+  // Revoke action
+  if (permRevoke && ticket.status === "Open" && !ticket?.custom_archived) {
+    actionItems.push({
+      label: "Revoke",
+      icon: <Trash2 className="w-4 h-4 text-red-600" />,
+      onClick: handleRevoke,
+    });
+  }
+
+  // Reopen action
+  if (permReopen && ticket.status === "Closed") {
+    actionItems.push({
+      label: "Reopen",
+      icon: <RotateCcw className="w-4 h-4 text-amber-600" />,
+      onClick: handleReopen,
+    });
+  }
+
   // Resolved ticket actions for raiser
   if (ticket.status === "Resolved" && ticket.raised_by === currentUserEmail) {
     actionItems.push({
@@ -1207,14 +1246,14 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
   // Open/Replied ticket actions
   if (ticket.status !== "Closed" && ticket.status !== "Resolved") {
-    if (!isDrawer || !isDesktop) {
+    if (!isDrawer) {
       actionItems.push({
         label: "Resolve",
         icon: <CheckCircle className="w-4 h-4 text-amber-600" />,
         onClick: handleResolveButtonClick,
       });
     }
-    if (showCloseTicketButton(ticket.status) || !isDesktop) {
+    if (showCloseTicketButton(ticket.status)) {
       actionItems.push({
         label: isClosing ? "Closing..." : "Close Ticket",
         icon: <CheckCircle className="w-4 h-4 text-green-600" />,
@@ -1231,6 +1270,8 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       onClick: () => setShowForms(true),
     });
   }
+
+
 
   const handleContentClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
@@ -1316,18 +1357,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {ticket.status !== "Closed" && (
-                <button
-                  onClick={() => {
-                    setIsEditingResolution(true);
-                    setIsResolutionModalOpen(true);
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                >
-                  <Edit3 className="w-4 h-4" />
-                  Edit
-                </button>
-              )}
               {ticket.status === "Resolved" && ticket.raised_by === currentUserEmail && (
                 <button
                   onClick={() => setIsRejectModalOpen(true)}
@@ -1517,7 +1546,8 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                 </span>
               )}
             </button>
-            {ticket.status !== "Open" && (
+
+            {false && ticket.status !== "Open" && (
               <button
                 onClick={() => setActiveTab("resolution")}
                 className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === "resolution"
@@ -1623,16 +1653,13 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         isOpen={isResolutionModalOpen}
         onClose={() => {
           setIsResolutionModalOpen(false);
-          setIsEditingResolution(false);
           setIsResolvingTicket(false);
         }}
-        onSubmit={(isEditingResolution || isResolvingTicket) ? handleSaveResolution : handleCloseTicket}
+        onSubmit={isResolvingTicket ? handleSaveResolution : handleCloseTicket}
         isLoading={isClosing}
         isRaiser={true}
-        isClosingTicket={!isEditingResolution && !isResolvingTicket}
-        isEditing={isEditingResolution}
+        isClosingTicket={!isResolvingTicket}
         isResolving={isResolvingTicket}
-        existingResolution={isEditingResolution ? ticket.resolution_details : undefined}
       />
 
       {/* Reject Resolution Modal */}
