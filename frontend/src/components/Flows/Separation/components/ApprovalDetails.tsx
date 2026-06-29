@@ -19,7 +19,7 @@ export default function ApprovalDetails({
 }: ApprovalDetailsProps) {
   const referenceName = data.approval_stages?.[0]?.todo?.reference_name ?? "";
 
-  const { data: separationDetails, isPending: isLoading } =
+  const { data: separationDetails, isLoading: isLoading } =
     useEmployeeSeparationDetails(referenceName);
 
   const isDesktop = useScreenSize();
@@ -114,7 +114,35 @@ export default function ApprovalDetails({
     );
   }
 
-  if (!separationDetails) return null;
+  const NoDetailsState = () => {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-blue-50/30 border border-dashed border-blue-200 rounded-lg text-center w-full">
+        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mb-3">
+          <svg
+            className="w-6 h-6 text-blue-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.8}
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+        </div>
+        <Typography variant="bodyMedium" className="font-semibold text-slate-800 mb-1">
+          No Details Available
+        </Typography>
+        <Typography variant="bodySmall" color="body2" className="max-w-xs">
+          There are no separation details linked to this request.
+        </Typography>
+      </div>
+    );
+  };
+
+  if (!separationDetails) return <NoDetailsState />;
 
   return (
     <div className="space-y-4">

@@ -14,6 +14,7 @@ import {
 import Button from "../../shared/atoms/Button";
 import RetriggerButton from "../RetriggerButton";
 import ApprovalTracker from "./components/ApprovalTracker";
+import SeparationRecordLog from "./components/SeparationRecordLog";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useEffect, useMemo, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -322,7 +323,11 @@ const Separation = () => {
       {showRequestPage ? (
         <main className="mb-2">
           <div className="max-w-full">
-            <ApprovalTracker For={separationType?.custom_resignaion_type === "Termination" ? "Employee Termination" : "Employee Separation"} data={item as FlowRequestItem} />
+            <ApprovalTracker
+              For={separationType?.custom_resignaion_type === "Termination" ? "Employee Termination" : "Employee Separation"}
+              data={item as FlowRequestItem}
+              isLoading={isLoading}
+            />
           </div>
         </main>
       ) : (
@@ -471,6 +476,16 @@ const Separation = () => {
         onCancel={() => setIsRevokeModalOpen(false)}
         onSave={handleRevokeSubmit}
       />
+
+      {!showRequestPage &&
+        <SeparationRecordLog
+          separationRecords={
+            showRequestPage
+              ? separationFunnelDetails?.data?.slice(1)
+              : separationFunnelDetails?.data
+          }
+        />
+      }
     </div>
   );
 };
