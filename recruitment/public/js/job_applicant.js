@@ -1159,3 +1159,38 @@ recruitment.open_pre_onboarding_dialog = function (job_applicant_id, prefill_doc
 
     dlg.show();
 };
+
+// --- Auto-screening: manual "Run Screening" trigger -------------------------
+frappe.ui.form.on("Job Applicant", {
+    refresh(frm) {
+        if (frm.is_new()) return;
+
+        frm.add_custom_button(__("Run Screening"), () => {
+            frappe.call({
+                method: "recruitment.recruitment.screening_engine.run_screening",
+                args: { applicant: frm.doc.name },
+                freeze: true,
+                freeze_message: __("Queuing screening…"),
+                callback: (r) => {
+                    const msg = r.message || {};
+                    if (msg.enqueued) {
+                        frappe.show_alert({
+                            message: __("Screening started — the result will update shortly."),
+                            indicator: "blue",
+                        });
+                    } else {
+                        frappe.msgprint(__("This opening has no screening conditions configured."));
+                    }
+                },
+            });
+        }, __("Actions"));
+    },
+});
+
+// Live-refresh the form when the background worker finishes.
+frappe.realtime.on("screening_done", (data) => {
+    const frm = cur_frm;
+    if (frm && frm.doc && frm.doctype === "Job Applicant" && frm.doc.name === data.applicant) {
+        frm.reload_doc();
+    }
+});

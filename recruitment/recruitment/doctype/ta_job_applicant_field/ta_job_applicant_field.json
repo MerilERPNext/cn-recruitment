@@ -65,6 +65,7 @@
  "quick_entry": 1,
  "row_format": "Dynamic",
  "search_fields": "field_label,field_type",
+ "show_title_field_in_link": 1,
  "sort_field": "field_name",
  "sort_order": "ASC",
  "states": [],

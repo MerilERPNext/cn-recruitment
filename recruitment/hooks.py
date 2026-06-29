@@ -159,7 +159,11 @@ permission_query_conditions = {
 
 # before_install = "recruitment.install.before_install"
 after_install = "recruitment.recruitment.install.after_install"
-after_migrate = "recruitment.recruitment.install.after_migrate"
+after_migrate = [
+    "recruitment.recruitment.install.after_migrate",
+    # Keep the screener "Applicant Field" dropdown live from Job Applicant meta.
+    "recruitment.recruitment.screening_engine.sync_applicant_field_registry",
+]
 
 # Uninstallation
 # ------------
@@ -273,6 +277,8 @@ doc_events = {
         "before_save": "recruitment.customizations.job_applicant.validate_blacklist",
         # Hiring Lead Permission Settings (update candidate source).
         "validate": "recruitment.customizations.hiring_lead_permissions.validate_job_applicant_hiring_lead_edits",
+        # Auto-screening: flag in-progress + enqueue background evaluation.
+        "after_insert": "recruitment.recruitment.screening_engine.on_applicant_insert",
     },
     "Appointment Letter": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
