@@ -70,7 +70,7 @@ const SeparationRecord: React.FC = () => {
             <div className="md:p-4 md:gap-4 flex-1 overflow-y-auto  max-md:mt-14">
                 <div className="flex flex-col items-center justify-center md:mb-4 max-md:px-4 mb-4 text-center">
                     <Typography variant="bodySmall" color="body2">
-                        view your separaction record
+                        View your separation record
                     </Typography>
                 </div>
                 <main className="mb-2">

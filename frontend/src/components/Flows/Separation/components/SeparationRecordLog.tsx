@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { FlowRequestItem } from "../../../../types/flows";
 import Avatar from "../../../shared/Avatar";
@@ -64,13 +65,13 @@ export const SeparationRecordLog: React.FC<SeparationRecordLogProps> = ({
 
 const RecordItem = ({ record, handleShowDetails }: { record: FlowRequestItem, handleShowDetails: (requestId: string) => void }) => {
   const stage = record.approval_stages?.find(stage => {
-    const cs = stage.todo.reference_document?.custom_status;
+    const cs = stage.todo?.reference_document?.custom_status;
     if (typeof cs === "string" && cs.toLowerCase() !== "pending") {
       return true;
     }
     return false;
   });
-  const customStatus = (stage?.todo?.refrence_document?.custom_status || record.approval_status || "Pending") as string;
+  const customStatus = (stage?.todo?.reference_document?.custom_status || record.approval_status || "Pending") as string;
 
   return (
     <div

@@ -114,7 +114,7 @@ export default function ApprovalDetails({
     );
   }
 
-  const NoDetailsState = () => {
+  if (!separationDetails) {
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-blue-50/30 border border-dashed border-blue-200 rounded-lg text-center w-full">
         <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mb-3">
@@ -140,9 +140,7 @@ export default function ApprovalDetails({
         </Typography>
       </div>
     );
-  };
-
-  if (!separationDetails) return <NoDetailsState />;
+  }
 
   return (
     <div className="space-y-4">

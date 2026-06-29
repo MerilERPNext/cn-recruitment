@@ -105,7 +105,7 @@ const Separation = () => {
 
 
   const hasNoItem = !item;
-  const isRevoked = item?.approval_status === "Revoked" || item?.approval_stages?.some((stage => stage?.todo?.refrence_document?.custom_status === "Revoked"));
+  const isRevoked = item?.approval_status === "Revoked" || item?.approval_stages?.some((stage => stage?.todo?.reference_document?.custom_status === "Revoked"));
   const isRejected = item?.approval_status === "Rejected";
   const isCompleted = item?.approval_status === "Completed";
 
@@ -477,15 +477,11 @@ const Separation = () => {
         onSave={handleRevokeSubmit}
       />
 
-      {!showRequestPage &&
+      {!showRequestPage && (
         <SeparationRecordLog
-          separationRecords={
-            showRequestPage
-              ? separationFunnelDetails?.data?.slice(1)
-              : separationFunnelDetails?.data
-          }
+          separationRecords={separationFunnelDetails?.data}
         />
-      }
+      )}
     </div>
   );
 };
