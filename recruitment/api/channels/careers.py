@@ -37,16 +37,17 @@ def list_openings(search_term=None, filters=None):
 	"""
 	columns = _common.get_configured_columns(CHANNEL)
 	search_filters = _common.get_configured_search_filters()
-	# Card must carry both the displayed columns and the filter fields so search
-	# and filtering can match against them even when a filter field isn't a column.
-	extra_fields = [c["fieldname"] for c in columns] + [f["fieldname"] for f in search_filters]
+	# The configured search-filter fields widen what the search box matches; they
+	# must also be present on the card so the match can see them.
+	search_keys = [f["fieldname"] for f in search_filters]
+	extra_fields = [c["fieldname"] for c in columns] + search_keys
 	selected = _common.parse_filter_values(filters)
 	names = _common.get_openings_active_on_channel(CHANNEL)
 	cards = (_common.get_opening_card(n, extra_fields=extra_fields) for n in names)
 	openings = [
 		c for c in cards
 		if c
-		and _common.card_matches_search(c, search_term)
+		and _common.card_matches_search(c, search_term, extra_keys=search_keys)
 		and _common.card_matches_filters(c, selected, search_filters)
 	]
 	return {"columns": columns, "search_filters": search_filters, "openings": openings}

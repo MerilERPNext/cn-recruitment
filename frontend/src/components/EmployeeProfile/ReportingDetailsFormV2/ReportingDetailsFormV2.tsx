@@ -137,6 +137,32 @@ const ReportingDetailsFormV2 = ({
                         form={formSchema}
                         onFormReady={(instance: any) => {
                             formInstance.current = instance;
+
+                            const reportsToComponent = instance?.getComponent?.("reports_to");
+                            const searchInputEl = reportsToComponent?.choices?.input?.element;
+                            if (searchInputEl && !searchInputEl.__searchFilterBound) {
+                                searchInputEl.__searchFilterBound = true;
+                                const baseUrl = "/api/resource/Employee";
+                                const baseFields = ["name", "employee_name", "department", "branch"];
+                                const buildUrl = (search: string) => {
+                                    const filters: unknown[] = [["status", "=", "Active"]];
+                                    if (search) {
+                                        filters.push(["employee_name", "like", `%${search}%`]);
+                                    }
+                                    return `${baseUrl}?fields=${encodeURIComponent(JSON.stringify(baseFields))}&filters=${encodeURIComponent(JSON.stringify(filters))}`;
+                                };
+                                let debounceTimer: ReturnType<typeof setTimeout>;
+                                searchInputEl.addEventListener("input", (event: Event) => {
+                                    const value = (event.target as HTMLInputElement).value;
+                                    clearTimeout(debounceTimer);
+                                    debounceTimer = setTimeout(() => {
+                                        const newUrl = buildUrl(value);
+                                        reportsToComponent.component.data.url = newUrl;
+                                        reportsToComponent.loadItems(newUrl, undefined, reportsToComponent.requestHeaders);
+                                    }, 300);
+                                });
+                            }
+
                             if (!initialSubmissionSet.current) {
                                 instance?.setSubmission?.(initialSubmissionData).then(() => {
                                     instance?.checkConditions?.();

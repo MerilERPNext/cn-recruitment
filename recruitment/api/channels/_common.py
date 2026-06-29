@@ -123,18 +123,29 @@ def _link_label(doctype, name):
 	return frappe.get_cached_value(doctype, name, title_field) or name
 
 
-def card_matches_search(card, search):
-	"""Case-insensitive match of an opening card against a search term (job code /
-	title / id / designation / location / department labels)."""
+# Always-searched card keys. The configured Career Page Search Filter fields are
+# added on top of these at call time, so HR can widen the search box (e.g. make
+# Company searchable) just by adding rows to that settings table.
+_DEFAULT_SEARCH_KEYS = ("name", "job_title", "opening_code", "designation", "location", "department")
+
+
+def card_matches_search(card, search, extra_keys=None):
+	"""Case-insensitive match of an opening card against a search term.
+
+	Searches the default keys (job code / title / id / designation / location /
+	department) plus any `extra_keys` (the configured search-filter fieldnames).
+	For each extra key both the display value and its raw `<key>_id` are checked,
+	so a Link field matches whether the user types the label or the id."""
 	if not search:
 		return True
 	needle = str(search).strip().lower()
 	if not needle:
 		return True
-	haystack = " ".join(
-		str(card.get(k) or "")
-		for k in ("name", "job_title", "opening_code", "designation", "location", "department")
-	).lower()
+	keys = list(_DEFAULT_SEARCH_KEYS)
+	for k in extra_keys or []:
+		keys.append(k)
+		keys.append(f"{k}_id")
+	haystack = " ".join(str(card.get(k) or "") for k in keys).lower()
 	return needle in haystack
 
 

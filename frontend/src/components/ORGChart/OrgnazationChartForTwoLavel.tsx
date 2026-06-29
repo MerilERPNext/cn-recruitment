@@ -366,6 +366,8 @@ export default function ThreeLevelOrgChart() {
         initialEdges
       );
 
+      const allNodesForFit = dottedNode ? [...layoutedNodes, dottedNode] : layoutedNodes;
+
       if (dottedNode && dottedEdge) {
         const empNode = layoutedNodes.find((n) => n.id === employeeId);
         if (empNode) {
@@ -405,7 +407,7 @@ export default function ThreeLevelOrgChart() {
       // locally — the API responses there resolved in a different order).
       if (!hasFitRef.current && !isDottedManagerSourceLoading) {
         hasFitRef.current = true;
-        requestAnimationFrame(() => rfInstance?.fitView({ padding: 0.1 }));
+        requestAnimationFrame(() => rfInstance?.fitView({ nodes: allNodesForFit, padding: 0.1 }));
       }
     }
   }, [employeeHierarchy, employeeId, currentUser, dottedManagerId, dottedManagerName, showDottedManager, handleShowDottedManager, expandedIds, handleExpandChildren, isDottedManagerSourceLoading, rfInstance]);
@@ -443,12 +445,12 @@ export default function ThreeLevelOrgChart() {
           minZoom={0.2}
           maxZoom={0.7}
           defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
-          // zoomOnScroll={false}
-          // zoomOnPinch={false}
-          preventScrolling={false}
-        // nodesDraggable={false}
-        // draggable={false} // Allow panning
-        // panOnDrag={false} // Allow panning
+          zoomOnScroll={false}
+          zoomOnPinch={false}
+          panOnScroll={true}
+          panOnDrag={true}
+          nodesDraggable={false}
+          preventScrolling={true}
         >
           {/* <Controls position="top-right" showZoom showFitView /> */}
         </ReactFlow>

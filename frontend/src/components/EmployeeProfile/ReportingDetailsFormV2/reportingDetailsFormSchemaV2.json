@@ -30,7 +30,7 @@
                     "refreshOn": "isForOthers",
                     "clearOnRefresh": false,
                     "lazyLoad": false,
-                    "searchField": "q"
+                    "searchEnabled": true
                 },
                 {
                     "type": "datetime",
@@ -48,8 +48,7 @@
                     "errorLabel": "End Date",
                     "format": "dd-MM-yyyy",
                     "enableTime": false,
-                    "input": true,
-                    "customConditional": "show = !!data.end_date;"
+                    "input": true
                 }
             ]
         }

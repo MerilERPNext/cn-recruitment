@@ -141,7 +141,7 @@ def add_pending_leave_attendance(doc, method=None):
 
     leaves = frappe.get_all(
         "Leave Application",
-        filters={"employee": doc.employee, "status": "Open"},
+        filters={"employee": doc.employee, "status": "Open", "docstatus": 0},
         fields=["name", "from_date", "to_date"],
         order_by="from_date asc",
     )
@@ -155,7 +155,7 @@ def add_pending_leave_attendance(doc, method=None):
 
     attendance_requests = frappe.get_all(
         "Attendance Request",
-        filters={"employee": doc.employee, "custom_status": "Pending"},
+        filters={"employee": doc.employee, "custom_status": "Pending", "docstatus": 0},
         fields=["name", "from_date", "to_date"],
         order_by="from_date asc",
     )
