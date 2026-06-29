@@ -32,6 +32,34 @@ interface ReportingDetailsProps {
     initialEditData?: InitialEditData;
 }
 
+const isUsableLocationValue = (value: unknown): value is string =>
+    typeof value === "string" && value.trim() !== "" && value.trim().toLowerCase() !== "unknown";
+
+const escapeHtml = (value: string) =>
+    value.replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;",
+    }[char] as string));
+
+// formio's select item template is always rendered through Evaluator.interpolate
+// with noeval forced on (see formiojs ListComponent#getOptionTemplate), which only
+// supports plain "{{ a || b }}" path fallbacks - no ternaries, no method calls.
+// Evaluator.interpolate has a separate branch though: if the template is a real
+// function (not a string), it calls it directly, bypassing noeval entirely. So we
+// set component.template to a function below instead of relying on the JSON string.
+const buildReportsToItemTemplate = (data: any) => {
+    const item = data?.item || {};
+    const name = isUsableLocationValue(item.employee_name) ? item.employee_name : "-";
+    const id = isUsableLocationValue(item.name) ? item.name : "-";
+    const department = isUsableLocationValue(item.department) ? item.department : "";
+    const branch = isUsableLocationValue(item.branch) ? item.branch : "";
+    const location = [department, branch].filter(Boolean).join(", ");
+    return `<span><div>${escapeHtml(name)} (${escapeHtml(id)})</div><div style="font-size:0.85em;color:#6b7280;">${escapeHtml(location)}</div></span>`;
+};
+
 const ReportingDetailsFormV2 = ({
     onCancel,
     onSuccess,
@@ -55,6 +83,7 @@ const ReportingDetailsFormV2 = ({
                     ...reportingDetailsFomSchema.components[0].components[0],
                     label: category,
                     errorLabel: category,
+                    template: buildReportsToItemTemplate,
                 },
                 ...reportingDetailsFomSchema.components[0].components.slice(1),
             ],
@@ -139,6 +168,9 @@ const ReportingDetailsFormV2 = ({
                             formInstance.current = instance;
 
                             const reportsToComponent = instance?.getComponent?.("reports_to");
+                            if (reportsToComponent?.component) {
+                                reportsToComponent.component.template = buildReportsToItemTemplate;
+                            }
                             const searchInputEl = reportsToComponent?.choices?.input?.element;
                             if (searchInputEl && !searchInputEl.__searchFilterBound) {
                                 searchInputEl.__searchFilterBound = true;
