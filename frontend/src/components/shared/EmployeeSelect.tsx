@@ -35,6 +35,14 @@ interface EmployeeSelectProps {
     disabled?: boolean;
 }
 
+const mapEmployees = (data: SearchEmployeeResult[]): EmployeeOption[] =>
+    data.map((e) => ({
+        id: e.employee_id,
+        name: e.employee_name || e.employee_id,
+        department: e.department_display ?? e.department ?? undefined,
+        designation: e.designation_display ?? e.designation ?? undefined,
+    }));
+
 const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
     value,
     onChange,
@@ -65,14 +73,6 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
     const { data: currentEmployee } = useCurrentEmployee();
     const currentEmployeeId = currentEmployee?.name ?? "";
 
-    const mapEmployees = (data: SearchEmployeeResult[]): EmployeeOption[] =>
-        data.map((e) => ({
-            id: e.employee_id,
-            name: e.employee_name || e.employee_id,
-            department: e.department_display ?? e.department ?? undefined,
-            designation: e.designation_display ?? e.designation ?? undefined,
-        }));
-
     // Fetch employees using cn_hrms_core search_employees API
     const fetchEmployees = useCallback(
         async (search: string) => {
@@ -101,17 +101,6 @@ const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
         },
         [currentEmployeeId],
     );
-
-    // Initial load when dropdown opens — use cached data if available
-    useEffect(() => {
-        if (!isOpen) return;
-
-        if (initialDataRef.current) {
-            setEmployees(initialDataRef.current);
-        } else {
-            fetchEmployees("");
-        }
-    }, [isOpen, fetchEmployees]);
 
     // Debounced search — only fires when searchTerm actually changes
     useEffect(() => {

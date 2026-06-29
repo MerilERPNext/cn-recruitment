@@ -91,7 +91,7 @@ const getSelectOptions = async (
     return [
       { label: "Open", value: "Open" },
       { label: "Closed", value: "Closed" },
-      { label: "Awaiting User Response ", value: "Replied" },
+      { label: "Awaiting User Response", value: "Replied" },
       { label: "Reopened", value: "Reopened" },
       { label: "Not Assigned", value: "Not Assigned" },
       { label: "Archived", value: "Archived" },

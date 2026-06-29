@@ -1212,8 +1212,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
   const actionItems: { label: string; icon: React.ReactNode; onClick: () => void }[] = [];
 
-
-  console.log("ticekt", ticket)
   // Revoke action
   if (permRevoke && ticket.status === "Open" && !ticket?.custom_archived) {
     actionItems.push({
