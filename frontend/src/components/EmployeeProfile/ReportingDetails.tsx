@@ -53,6 +53,11 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
     "edit_reporting_details",
     "Employee Profile"
   );
+  const canDeleteReportingDetails = isActionEnabled(
+    userUiPermission,
+    "show_delete_reporting_details",
+    "Employee Profile"
+  );
   const canAddReportingDetails = isActionEnabled(
     userUiPermission,
     "add_reporting_details",
@@ -163,7 +168,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
                     size="xs"
                   />
                 )}
-                {id && canDelete && (
+                {id && canDeleteReportingDetails && canDelete && (
                   <IconButton
                     onClick={() => onDelete?.()}
                     icon={<TrashIcon className="h-4 w-4" />}
