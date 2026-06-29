@@ -455,6 +455,11 @@ const SeparationWorkflow = lazyWithRetry(
   "SeparationWorkflow",
 );
 
+const SeparationRecord = lazyWithRetry(
+  () => import("./components/Flows/SparationRecord/SeparationRecord"),
+  "SeparationRecord",
+);
+
 const Confirmation = lazyWithRetry(
   () => import("./components/Flows/Confirmation/Confirmation"),
   "Confirmation",
@@ -1401,6 +1406,11 @@ export const routesConfig: AppRoute[] = [
       {
         path: "separation-workflow",
         element: <SeparationWorkflow />,
+        permissionKey: "Separation",
+      },
+      {
+        path: "separation-record/:id",
+        element: <SeparationRecord />,
         permissionKey: "Separation",
       },
       {
