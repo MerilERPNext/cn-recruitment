@@ -38,10 +38,12 @@ def get_link_fields_for_doctype(from_doctype, linked_field_doctype):
 
 @frappe.whitelist()
 def get_separation_form_and_permission(employee_id, user=None):
- 
+
     try:
-        if not user:
-            user = frappe.session.user
+        # Always evaluate permission for the authenticated caller — never trust a
+        # client-supplied `user` (it decided the permission on an attacker-
+        # controlled identity).
+        user = frappe.session.user
         
         employee_user_id = frappe.db.get_value("Employee", employee_id, "user_id")
         

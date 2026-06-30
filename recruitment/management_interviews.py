@@ -2,8 +2,10 @@ import frappe
 from frappe import _
 from frappe.utils import getdate, formatdate, format_time
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_pending_management_interviews():
+    if not frappe.has_permission("Interview", "read"):
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
     try:
         interviews = frappe.get_all(
             "Interview",
@@ -72,13 +74,16 @@ def get_pending_management_interviews():
         }
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_job_applicant_details(applicant_id):
     """
     Fetch full job applicant details including completed interviews with interviewers and feedback.
     """
     if not applicant_id:
         frappe.throw(_("Applicant ID is required"))
+
+    if not frappe.has_permission("Job Applicant", "read", doc=applicant_id):
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
 
     try:
         # Get full Job Applicant doc

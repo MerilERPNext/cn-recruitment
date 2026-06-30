@@ -149,10 +149,16 @@ permission_query_conditions = {
 # ----------
 
 # add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "recruitment.utils.jinja_methods",
-# 	"filters": "recruitment.utils.jinja_filters"
-# }
+jinja = {
+	"methods": [
+		# Build a signed offer-page link in any email template / notification:
+		#   {{ job_offer_link(doc.job_applicant) }}
+		"recruitment.recruitment.link_token.job_offer_link",
+		# Just the token, if you build the URL yourself:
+		#   ...?appl={{ doc.job_applicant }}&token={{ offer_token(doc.job_applicant) }}
+		"recruitment.recruitment.link_token.offer_token",
+	],
+}
 
 # Installation
 # ------------

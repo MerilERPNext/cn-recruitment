@@ -46,14 +46,21 @@ TERMINAL_STATUSES = ("Accepted", "Rejected")
 
 
 def _employee_doc(employee=None):
-	"""Resolve the current employee (or a passed-in one) and return the Doc."""
+	"""Resolve the current employee and return the Doc.
+
+	A client-supplied ``employee`` is only honoured when it is the caller's own
+	Employee, or the caller may read that Employee — otherwise we fall back to
+	the caller's own. This stops one logged-in employee from reading/acting as
+	another by passing an arbitrary ``employee`` id."""
+	user = frappe.session.user
+	if not user or user == "Guest":
+		frappe.throw(frappe._("Sign in to view IJP openings"), frappe.PermissionError)
+	own = frappe.db.get_value("Employee", {"user_id": user}, "name")
+	if employee and employee != own and not frappe.has_permission("Employee", "read", doc=employee):
+		employee = own
+	employee = employee or own
 	if not employee:
-		user = frappe.session.user
-		if not user or user == "Guest":
-			frappe.throw(frappe._("Sign in to view IJP openings"), frappe.PermissionError)
-		employee = frappe.db.get_value("Employee", {"user_id": user}, "name")
-		if not employee:
-			frappe.throw(frappe._("No Employee record linked to your user"), frappe.PermissionError)
+		frappe.throw(frappe._("No Employee record linked to your user"), frappe.PermissionError)
 	return frappe.get_doc("Employee", employee)
 
 

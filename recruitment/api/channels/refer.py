@@ -38,13 +38,18 @@ STATUS_GROUP = {
 
 
 def _resolve_referrer(referrer_employee=None):
-	"""Resolve the referring employee — defaults to the current user's Employee."""
-	if referrer_employee:
-		return frappe.get_doc("Employee", referrer_employee)
+	"""Resolve the referring employee — defaults to the current user's Employee.
+
+	A client-supplied ``referrer_employee`` is only honoured when it is the
+	caller's own (or the caller may read it); otherwise we fall back to their
+	own. Stops a logged-in employee from crediting/impersonating another."""
 	user = frappe.session.user
 	if not user or user == "Guest":
 		frappe.throw(frappe._("Sign in to refer a candidate"), frappe.PermissionError)
-	name = frappe.db.get_value("Employee", {"user_id": user}, "name")
+	own = frappe.db.get_value("Employee", {"user_id": user}, "name")
+	if referrer_employee and referrer_employee != own and not frappe.has_permission("Employee", "read", doc=referrer_employee):
+		referrer_employee = own
+	name = referrer_employee or own
 	if not name:
 		frappe.throw(frappe._("No Employee record linked to your user"), frappe.PermissionError)
 	return frappe.get_doc("Employee", name)

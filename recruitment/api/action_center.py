@@ -197,7 +197,10 @@ def build_job_offer_redirect(job_applicant_id):
     # (email, email-1, …) while the email stays the same — so the redirect MUST carry the
     # specific Job Applicant ID, not the email, or every offer would resolve to the same
     # (first) application and the others would be unreachable.
-    return "/job_offer?{0}".format(urlencode({"appl": job_applicant_id}))
+    from recruitment.recruitment.link_token import offer_token
+    return "/job_offer?{0}".format(
+        urlencode({"appl": job_applicant_id, "token": offer_token(job_applicant_id)})
+    )
 
 
 def build_pre_offer_redirect(job_applicant_id, form_name=None):

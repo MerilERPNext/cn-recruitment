@@ -23,10 +23,13 @@ def get_employees(text=None):
     if not text:
         return []
 
+    # Was a full Employee-directory enumeration for any logged-in user
+    # (ignore_permissions). Require Employee read.
+    frappe.has_permission("Employee", "read", throw=True)
+
     return frappe.get_all(
         "Employee",
         filters={"employee_name": ["like", f"%{text}%"]},
         fields=["name", "employee_name"],
         limit_page_length=1000,
-        ignore_permissions=True
     )

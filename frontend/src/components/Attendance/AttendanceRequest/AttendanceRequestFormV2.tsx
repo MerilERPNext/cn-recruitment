@@ -647,7 +647,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     );
     if (enableTimeTypeSelectionComp) {
       enableTimeTypeSelectionComp.setValue(
-        !!(attendanceRequestAttachmentsMandatory as any)
+        !(attendanceRequestAttachmentsMandatory as any)
           ?.enable_time_type_selection,
         { noUpdateEvent: true },
       );
@@ -928,6 +928,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                 custom_to_time: formatForPayload(submission.data.checkout_time),
                 custom__request_reason: submission.data.custom__request_reason,
                 custom_location: submission?.data?.custom_location,
+                custom_time_type: (submission.data as any).time_type_selection,
               };
               break;
             }
