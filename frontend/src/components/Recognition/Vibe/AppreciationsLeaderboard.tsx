@@ -1,23 +1,29 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
-import { Search, SlidersHorizontal, Star } from "lucide-react";
+import { Search, Star } from "lucide-react";
 import Avatar from "./Avatar";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import {
-  LEADERBOARD_TOP3,
-  LEADERBOARD_REST,
-  MY_APPRECIATION_BADGES,
-  MY_APPRECIATION_NOTE,
-  LeaderboardPerson,
-} from "./vibeMockData";
+  useAppreciationLeaderboard,
+  useAppreciationPrograms,
+  LeaderboardPersonEntry,
+  AppreciationApiItem,
+} from "../../../services/recognitionService";
 
-// Classic podium staircase: rank 1 (center) sits highest, rank 2 (left) a step
-// lower, rank 3 (right) lowest — matching the uploaded leaderboard layout.
-const PODIUM_ORDER = [
-  { person: LEADERBOARD_TOP3.find((p) => p.rank === 2)!, height: "mt-10", size: 80 },
-  { person: LEADERBOARD_TOP3.find((p) => p.rank === 1)!, height: "mt-0", size: 96 },
-  { person: LEADERBOARD_TOP3.find((p) => p.rank === 3)!, height: "mt-16", size: 80 },
-];
+// Resolve relative Frappe file paths (e.g. "/private/files/..") against the API host.
+const API_HOST =
+  (import.meta as any).env?.VITE_API_BASE_URL ||
+  (import.meta as any).env?.VITE_API_DOMAIN ||
+  (typeof window !== "undefined" ? window.location.origin : "");
+
+const resolveImage = (image?: string | null): string | undefined => {
+  if (!image) return undefined;
+  if (/^https?:\/\//i.test(image)) return image;
+  if (image.startsWith("/")) return `${API_HOST}${image}`;
+  return image;
+};
 
 const StarBadge: React.FC<{ rank: number }> = ({ rank }) => (
   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
@@ -30,44 +36,131 @@ const StarBadge: React.FC<{ rank: number }> = ({ rank }) => (
   </div>
 );
 
-const PodiumColumn: React.FC<{ person: LeaderboardPerson; height: string; size: number }> = ({
-  person,
-  height,
-  size,
-}) => (
+const PodiumColumn: React.FC<{
+  person: LeaderboardPersonEntry;
+  height: string;
+  size: number;
+}> = ({ person, height, size }) => (
   <div className={`flex flex-col items-center ${height}`}>
     <div className="relative mb-3">
       <StarBadge rank={person.rank} />
-      <Avatar name={person.name} size={size} className="ring-4 ring-white shadow-md" />
+      <Avatar
+        name={person.employee_name}
+        photo={resolveImage(person.image)}
+        size={size}
+        className="ring-4 ring-white shadow-md"
+      />
     </div>
     <Card radius="xl" className="border border-gray-100 shadow-sm px-4 py-4 w-full text-center bg-white">
       <Typography variant="bodyMedium" className="font-semibold">
-        {person.name}
+        {person.employee_name}
       </Typography>
       <Typography variant="bodySmall" color="body2" className="block truncate">
         {person.designation}
       </Typography>
       <div className="flex items-center justify-center gap-1.5 mt-2 text-gray-700">
         <Star className="size-4 text-gray-400" />
-        <span className="font-semibold">{person.medals}</span>
+        <span className="font-semibold">{person.count}</span>
       </div>
     </Card>
   </div>
 );
 
+// A single "My Appreciations" note card, powered by get_appreciation_programs.
+const AppreciationNoteCard: React.FC<{ item: AppreciationApiItem }> = ({ item }) => (
+  <Card radius="xl" className="border border-gray-100 p-4 bg-gray-50/60">
+    <div className="flex items-center gap-3 mb-2">
+      <Avatar name={item.person} photo={resolveImage(item.person_image)} size={36} />
+      <div className="min-w-0">
+        <Typography variant="bodyMedium" className="font-semibold truncate">
+          {item.person}
+        </Typography>
+        <Typography variant="caption" color="body2" className="block">
+          {item.direction === "received" ? "From" : "To"} · {item.date}
+        </Typography>
+      </div>
+    </div>
+    {item.message && (
+      <Typography variant="bodySmall" className="mb-3 block">
+        {item.message}
+      </Typography>
+    )}
+    {item.values.length > 0 && (
+      <div className="flex flex-wrap gap-2">
+        {item.values.map((v) => (
+          <span
+            key={v}
+            className="inline-block rounded-lg bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600"
+          >
+            {v}
+          </span>
+        ))}
+      </div>
+    )}
+  </Card>
+);
+
+const SIDEBAR_VISIBLE = 3;
+
 const AppreciationsLeaderboard: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"Receivers" | "Recognizers">("Receivers");
   const [appreciationTab, setAppreciationTab] = useState<"Received" | "Given">("Received");
   const [query, setQuery] = useState("");
 
+  // ── Left: leaderboard (Receivers / Recognizers) ──────────────────────────────
+  const { data: lbResp, isLoading: lbLoading } = useAppreciationLeaderboard({
+    tab: activeTab === "Receivers" ? "receivers" : "recognizers",
+    page_length: 100,
+  });
+  const entries = lbResp?.data ?? [];
+  const top3 = entries.slice(0, 3);
+  const rest = entries.slice(3);
+
+  // Search filters the list below the podium, preserving the true ranks.
   const q = query.trim().toLowerCase();
   const filteredRest = q
-    ? LEADERBOARD_REST.filter(
+    ? rest.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
+          p.employee_name.toLowerCase().includes(q) ||
           p.designation.toLowerCase().includes(q),
       )
-    : LEADERBOARD_REST;
+    : rest;
+
+  // Podium staircase: rank 2 (left), rank 1 (center, tallest), rank 3 (right).
+  const podiumOrder = useMemo(
+    () =>
+      [
+        { person: top3[1], height: "mt-10", size: 80 },
+        { person: top3[0], height: "mt-0", size: 96 },
+        { person: top3[2], height: "mt-16", size: 80 },
+      ].filter((c) => c.person),
+    [top3],
+  );
+
+  // ── Right: My Appreciations (received / given) ───────────────────────────────
+  const { data: currentUser } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
+  const employeeId = currentUser?.employee ?? "";
+  const { data: receivedResp, isLoading: receivedLoading } = useAppreciationPrograms({
+    employee: employeeId,
+    direction: "received",
+    page_length: 20,
+  });
+  const { data: givenResp, isLoading: givenLoading } = useAppreciationPrograms({
+    employee: employeeId,
+    direction: "given",
+    page_length: 20,
+  });
+  const receivedItems = receivedResp?.data ?? [];
+  const givenItems = givenResp?.data ?? [];
+  const receivedCount = receivedResp?.total_count ?? receivedItems.length;
+  const givenCount = givenResp?.total_count ?? givenItems.length;
+  const activeItems = appreciationTab === "Received" ? receivedItems : givenItems;
+  const visibleItems = activeItems.slice(0, SIDEBAR_VISIBLE);
+  const hiddenItems = activeItems.length - visibleItems.length;
+  const sidebarLoading = appreciationTab === "Received" ? receivedLoading : givenLoading;
 
   return (
     <div className="p-4 md:p-6">
@@ -81,7 +174,7 @@ const AppreciationsLeaderboard: React.FC = () => {
         {/* Left – Podium + List */}
         <div className="lg:col-span-2">
           <Card radius="xl" className="border border-gray-100 shadow-sm p-5">
-            {/* Tabs + Filter */}
+            {/* Tabs + Search */}
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
               <div className="flex items-center gap-6 border-b border-gray-100">
                 {(["Receivers", "Recognizers"] as const).map((tab) => (
@@ -109,58 +202,78 @@ const AppreciationsLeaderboard: React.FC = () => {
                     className="w-full rounded-lg border border-gray-200 py-1.5 pl-9 pr-3 text-xs text-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
-                <button className="rounded-lg border border-gray-200 p-2 text-gray-500">
-                  <SlidersHorizontal className="size-4" />
-                </button>
               </div>
             </div>
 
-            {/* Podium */}
-            <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-b from-blue-50/40 to-transparent px-2 pt-12 pb-6">
-              {/* Decorative concentric arc background behind the winners */}
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center">
-                <div className="flex h-[260px] w-[520px] max-w-full items-end justify-center rounded-t-full bg-blue-100/50">
-                  <div className="flex h-[220px] w-[440px] items-end justify-center rounded-t-full bg-blue-100/60">
-                    <div className="h-[180px] w-[360px] rounded-t-full bg-blue-200/40" />
+            {lbLoading ? (
+              <div className="py-16 text-center text-sm text-gray-400">Loading leaderboard…</div>
+            ) : entries.length === 0 ? (
+              <div className="py-16 text-center text-sm text-gray-400">
+                No {activeTab.toLowerCase()} yet.
+              </div>
+            ) : (
+              <>
+                {/* Podium */}
+                {podiumOrder.length > 0 && (
+                  <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-b from-blue-50/40 to-transparent px-2 pt-12 pb-6">
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center">
+                      <div className="flex h-[260px] w-[520px] max-w-full items-end justify-center rounded-t-full bg-blue-100/50">
+                        <div className="flex h-[220px] w-[440px] items-end justify-center rounded-t-full bg-blue-100/60">
+                          <div className="h-[180px] w-[360px] rounded-t-full bg-blue-200/40" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="relative grid grid-cols-3 gap-3 items-start">
+                      {podiumOrder.map((col) => (
+                        <PodiumColumn
+                          key={col.person!.employee}
+                          person={col.person!}
+                          height={col.height}
+                          size={col.size}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </div>
-              <div className="relative grid grid-cols-3 gap-3 items-start">
-                {PODIUM_ORDER.map((col) => (
-                  <PodiumColumn key={col.person.rank} {...col} />
-                ))}
-              </div>
-            </div>
+                )}
 
-            {/* Rest of list */}
-            <div className="space-y-3">
-              {filteredRest.length === 0 && (
-                <p className="py-6 text-center text-sm text-gray-400">No people found.</p>
-              )}
-              {filteredRest.map((person) => (
-                <div
-                  key={person.rank}
-                  className="flex items-center gap-3 rounded-xl border border-gray-100 px-4 py-3 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex size-7 items-center justify-center rounded-full bg-purple-50 text-xs font-semibold text-purple-600 shrink-0">
-                    {person.rank}
-                  </div>
-                  <Avatar name={person.name} size={40} />
-                  <div className="min-w-0 flex-1">
-                    <Typography variant="bodyMedium" className="font-semibold">
-                      {person.name}
-                    </Typography>
-                    <Typography variant="bodySmall" color="body2" className="block truncate">
-                      {person.designation}
-                    </Typography>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-gray-700 shrink-0">
-                    <Star className="size-4 text-gray-400" />
-                    <span className="font-semibold">{person.medals}</span>
-                  </div>
+                {/* Rest of list (rank 4+) */}
+                <div className="space-y-3">
+                  {filteredRest.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-gray-400">
+                      {q ? "No people found." : "No more entries."}
+                    </p>
+                  ) : (
+                    filteredRest.map((person) => (
+                      <div
+                        key={person.employee}
+                        className="flex items-center gap-3 rounded-xl border border-gray-100 px-4 py-3 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex size-7 items-center justify-center rounded-full bg-purple-50 text-xs font-semibold text-purple-600 shrink-0">
+                          {person.rank}
+                        </div>
+                        <Avatar
+                          name={person.employee_name}
+                          photo={resolveImage(person.image)}
+                          size={40}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <Typography variant="bodyMedium" className="font-semibold">
+                            {person.employee_name}
+                          </Typography>
+                          <Typography variant="bodySmall" color="body2" className="block truncate">
+                            {person.designation}
+                          </Typography>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-gray-700 shrink-0">
+                          <Star className="size-4 text-gray-400" />
+                          <span className="font-semibold">{person.count}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </Card>
         </div>
 
@@ -171,7 +284,12 @@ const AppreciationsLeaderboard: React.FC = () => {
               <Typography variant="h4" className="font-bold">
                 My Appreciations
               </Typography>
-              <button className="text-sm font-medium text-primary">View All</button>
+              <button
+                onClick={() => navigate("/webapp/recognition/vibe/my-appreciations-history")}
+                className="text-sm font-medium text-primary"
+              >
+                View All
+              </button>
             </div>
 
             <div className="flex items-center gap-6 border-b border-gray-100 mb-5">
@@ -187,53 +305,43 @@ const AppreciationsLeaderboard: React.FC = () => {
                 >
                   {tab}
                   <span className="flex size-5 items-center justify-center rounded-full bg-purple-100 text-[10px] font-semibold text-purple-600">
-                    4
+                    {tab === "Received" ? receivedCount : givenCount}
                   </span>
                 </button>
               ))}
             </div>
 
-            {/* Badges */}
-            <div className="grid grid-cols-4 gap-3 mb-6">
-              {MY_APPRECIATION_BADGES.map((badge, i) => (
-                <div key={i} className="flex flex-col items-center text-center">
-                  <div className="relative">
-                    <div
-                      className={`flex size-12 items-center justify-center rounded-xl ${badge.color} text-white shadow-sm`}
-                    >
-                      <Star className="size-6 fill-white" />
-                    </div>
-                    <span className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-gray-100 text-[10px] font-semibold text-gray-700 border border-white">
-                      {badge.count}
-                    </span>
-                  </div>
-                  <Typography variant="caption" className="mt-1.5 text-[11px] leading-tight">
-                    {badge.label}
-                  </Typography>
-                </div>
-              ))}
-            </div>
-
-            {/* Note */}
-            <Card radius="xl" className="border border-gray-100 p-4 bg-gray-50/60">
-              <div className="flex items-center gap-3 mb-2">
-                <Avatar name={MY_APPRECIATION_NOTE.name} size={36} />
-                <div>
-                  <Typography variant="bodyMedium" className="font-semibold">
-                    {MY_APPRECIATION_NOTE.name}
-                  </Typography>
-                  <Typography variant="caption" color="body2" className="block">
-                    {MY_APPRECIATION_NOTE.date}
-                  </Typography>
-                </div>
+            {sidebarLoading ? (
+              <div className="space-y-4">
+                {[0, 1].map((i) => (
+                  <Card
+                    key={i}
+                    radius="xl"
+                    className="h-24 animate-pulse border border-gray-100 bg-gray-50/60"
+                  >
+                    <span className="sr-only">Loading…</span>
+                  </Card>
+                ))}
               </div>
-              <Typography variant="bodySmall" className="mb-3">
-                {MY_APPRECIATION_NOTE.message}
-              </Typography>
-              <span className="inline-block rounded-lg bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600">
-                {MY_APPRECIATION_NOTE.tag}
-              </span>
-            </Card>
+            ) : activeItems.length === 0 ? (
+              <p className="py-8 text-center text-sm text-gray-400">
+                No {appreciationTab.toLowerCase()} appreciations yet.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {visibleItems.map((item) => (
+                  <AppreciationNoteCard key={item.name} item={item} />
+                ))}
+                {hiddenItems > 0 && (
+                  <button
+                    onClick={() => navigate("/webapp/recognition/vibe/my-appreciations-history")}
+                    className="w-full rounded-lg border border-gray-200 py-2 text-sm font-medium text-primary hover:bg-gray-50"
+                  >
+                    View all {activeItems.length} {appreciationTab.toLowerCase()}
+                  </button>
+                )}
+              </div>
+            )}
           </Card>
         </div>
       </div>

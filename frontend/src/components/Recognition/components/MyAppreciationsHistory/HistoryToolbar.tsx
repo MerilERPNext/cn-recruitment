@@ -1,4 +1,4 @@
-import { ExternalLink, Filter } from "lucide-react";
+import { Filter } from "lucide-react";
 import EmployeeMultiSelect from "./EmployeeMultiSelect";
 
 type HistoryToolbarProps = {
@@ -29,13 +29,6 @@ const HistoryToolbar = ({
         aria-label="Filter appreciations"
       >
         <Filter className="h-4 w-4" />
-      </button>
-      <button
-        type="button"
-        className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-600 transition hover:bg-gray-50"
-        aria-label="Open export options"
-      >
-        <ExternalLink className="h-4 w-4" />
       </button>
     </div>
   </div>
