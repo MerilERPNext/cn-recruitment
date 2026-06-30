@@ -381,28 +381,7 @@
  ],
  "custom_perms": [],
  "doctype": "Employee Promotion",
- "links": [
-  {
-   "creation": "2024-08-31 16:14:49.757578",
-   "custom": 1,
-   "docstatus": 0,
-   "group": null,
-   "hidden": 0,
-   "idx": 1,
-   "is_child_table": 0,
-   "link_doctype": "Additional Salary",
-   "link_fieldname": "custom_employee_promotion_id",
-   "modified": "2024-08-31 22:33:50.984455",
-   "modified_by": "Administrator",
-   "name": "r2ahe0vc7g",
-   "owner": "Administrator",
-   "parent": "Employee Promotion",
-   "parent_doctype": null,
-   "parentfield": "links",
-   "parenttype": "Customize Form",
-   "table_fieldname": null
-  }
- ],
+ "links": [],
  "property_setters": [
   {
    "_assign": null,
@@ -425,7 +404,7 @@
    "property": "links_order",
    "property_type": "Small Text",
    "row_name": null,
-   "value": "[\"32t1bmre68\", \"r2ahe0vc7g\"]"
+   "value": "[]"
   },
   {
    "_assign": null,
