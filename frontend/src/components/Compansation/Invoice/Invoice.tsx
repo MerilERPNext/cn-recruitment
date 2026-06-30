@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import InvoicePDFview from "./Component/InvoicePDFview";
 import Button from "../../shared/atoms/Button";
 import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
@@ -68,6 +69,9 @@ export default function Invoice() {
   const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
 
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { targetEmployeeId } = useTargetUser();
+  // When an admin/HR is viewing another user, target their employee id.
+  const effectiveEmployee = targetEmployeeId || user?.employee;
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     user?.company || null,
   ) as {
@@ -117,7 +121,7 @@ export default function Invoice() {
             onSuccess() {
               toast.success("File uploaded & attached successfully");
               queryClient.invalidateQueries({
-                queryKey: ["invoice-salary-slips", user?.employee, user?.company],
+                queryKey: ["invoice-salary-slips", effectiveEmployee, user?.company],
               });
             },
             onError(err) {
@@ -135,7 +139,7 @@ export default function Invoice() {
   };
 
   const handleDeleteAttachment = async (invoiceName: string) => {
-    if (!user?.employee || !user?.company) return;
+    if (!effectiveEmployee || !user?.company) return;
     setDeleteLoading((prev) => ({ ...prev, [invoiceName]: true }));
     if (!window.confirm('Are you sure you want to delete the attached file?')) {
       setDeleteLoading((prev) => ({ ...prev, [invoiceName]: false }));
@@ -166,7 +170,7 @@ export default function Invoice() {
           onSuccess() {
             toast.success("Attachment deleted successfully");
             queryClient.invalidateQueries({
-              queryKey: ["invoice-salary-slips", user.employee, user.company],
+              queryKey: ["invoice-salary-slips", effectiveEmployee, user.company],
             });
           },
           onError(err) {
@@ -186,7 +190,7 @@ export default function Invoice() {
   };
 
   // Don't render until we have employee + company info
-  if (!user?.employee || !user?.company) {
+  if (!effectiveEmployee || !user?.company) {
     return (
       <div className="flex flex-col h-full">
         <div className="flex-shrink-0 max-sm:mb-2">
@@ -207,7 +211,7 @@ export default function Invoice() {
     method:
       "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.salary_slip_list.get_salary_slip_list",
     params: {
-      employee: user.employee,
+      employee: effectiveEmployee,
       company: user.company,
       payroll_period: selectedPeriod,
     },
@@ -542,7 +546,7 @@ export default function Invoice() {
         {isDesktop ? (
           <CardTable titles={titles} columnWidths={columnWidths} columnSortConfig={SALARY_SORT_CONFIG}>
             <DataListView
-              queryKey={["invoice-salary-slips", user.employee, user.company]}
+              queryKey={["invoice-salary-slips", effectiveEmployee, user.company]}
               customAPI={customAPI}
               isSearch={true}
               isFilter={true}
@@ -560,7 +564,7 @@ export default function Invoice() {
         ) : (
           <div className="space-y-3 px-1">
             <DataListView
-              queryKey={["invoice-salary-slips", user.employee, user.company]}
+              queryKey={["invoice-salary-slips", effectiveEmployee, user.company]}
               customAPI={customAPI}
               isSearch={true}
               isFilter={true}

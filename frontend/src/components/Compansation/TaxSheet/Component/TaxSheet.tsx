@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, } from "react";
 import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
+import { useTargetUser } from "../../../../context/ViewedUserContext";
 import {
   useTaxSheetData,
   useTaxSheetPayrollPriodsData,
@@ -27,6 +28,9 @@ type PayrollPeriod = {
 
 export default function TaxSheet({ selectedPeriod, setSelectedPeriod }: any) {
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { targetEmployeeId } = useTargetUser();
+  // When an admin/HR is viewing another user, target their employee id.
+  const effectiveEmployee = targetEmployeeId || user?.employee;
 
   const {
     data: payrollPeriods,
@@ -65,7 +69,7 @@ export default function TaxSheet({ selectedPeriod, setSelectedPeriod }: any) {
     data: taxsheetData,
     isLoading: taxLoading,
   } = useTaxSheetData(
-    user?.employee || null,
+    effectiveEmployee || null,
     user?.company || null,
     selectedPeriod || null,
   ) as {

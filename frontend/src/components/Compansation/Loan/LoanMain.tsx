@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -101,7 +102,8 @@ export default function LoansPage() {
   const { data: user, isFetching: userLoading } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
-  const employeeId = user?.employee ?? "";
+  const { targetEmployeeId } = useTargetUser();
+  const employeeId = targetEmployeeId || user?.employee || "";
   const [loanId, setLoanId] = useState<string | null>(null);
   const handleEdit = (docname: string) => {
     setLoanId(docname);

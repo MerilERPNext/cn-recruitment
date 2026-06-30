@@ -1,5 +1,6 @@
 "use client";
 import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
+import { useTargetUser } from "../../../../context/ViewedUserContext";
 import {
   useIncomeTaxComputationData,
 } from "../../../../hooks/useTaxSheet";
@@ -14,9 +15,12 @@ type taxsheetData = {
 
 export default function IncomeComputationSheetContainer({ selectedPeriod }: { selectedPeriod: string }) {
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { targetEmployeeId } = useTargetUser();
+  // When an admin/HR is viewing another user, target their employee id.
+  const effectiveEmployee = targetEmployeeId || user?.employee;
 
   const { data: taxsheetData } = useIncomeTaxComputationData(
-    user?.employee || null,
+    effectiveEmployee || null,
     user?.company || null,
     selectedPeriod || null
   ) as { data: taxsheetData | undefined };

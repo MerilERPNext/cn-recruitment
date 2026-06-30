@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useGetYearFilterOptions } from "../../../hooks/useBenefit";
 import {
   useFlexiComponents,
@@ -56,6 +57,9 @@ export default function FlexiDeclaration() {
     "Flexi Declaration"
   );
   const { data: currentEmployee, isLoading: isEmployeeLoading } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { targetEmployeeId } = useTargetUser();
+  // When an admin/HR is viewing another user, target their employee id.
+  const effectiveEmployee = targetEmployeeId || currentEmployee?.name;
   const { data: yearOptions, isLoading: isYearOptionsLoading } = useGetYearFilterOptions(currentEmployee?.company || "");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -69,13 +73,13 @@ export default function FlexiDeclaration() {
   }, [yearOptions, selectedPeriod]);
 
   const { data: flexiData, isLoading: isFlexiLoading } = useFlexiComponents(
-    currentEmployee?.name || "",
+    effectiveEmployee || "",
     selectedPeriod || "",
     currentEmployee?.company || ""
   );
 
   const { data: lockingPeriodData, isLoading: isLockingLoading, refetch: refetchLockingPeriod } = useIndividualEmployeeFlexiLockingPeriod(
-    currentEmployee?.name || ""
+    effectiveEmployee || ""
   );
 
   // Submission-window visibility: drives whether the FlexiBenefit window is
@@ -83,7 +87,7 @@ export default function FlexiDeclaration() {
   // reports status "success" AND flexibenefit_enabled === 1.
   const { data: visibilityData, isLoading: isVisibilityLoading } =
     useFlexiLockingPeriodVisibility({
-      employee: currentEmployee?.name || "",
+      employee: effectiveEmployee || "",
       payroll_period: selectedPeriod || "",
       posting_date: format(new Date(), "yyyy-MM-dd"),
       doctype: "Salary Structure Assignment",

@@ -13,6 +13,7 @@ import {
 } from "../../../hooks/payroll/useITDeclaration";
 import { normalizeITCategories } from "./Component/DataHandling";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import HRAForm, { type HRAData } from "./Component/HraExemptio";
 import CompareTaxSheetHandler from "./Component/TaxCompare";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
@@ -38,6 +39,9 @@ type PayrollPeriod = {
 
 const ITDeclarationForm = () => {
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { targetEmployeeId } = useTargetUser();
+  // When an admin/HR is viewing another user, target their employee id.
+  const effectiveEmployee = targetEmployeeId || user?.employee;
   const mutation = useSubmitITDeclaration();
   const { isDesktop } = useScreenSize();
   const { data: userUiPermission } = useGetUiPermission("Compensation");
@@ -77,7 +81,7 @@ const ITDeclarationForm = () => {
   }, [activeMainTab]);
   /* ---------------- Regime ---------------- */
   const newRegimeResponse = useNewRegime(
-    user?.employee || null,
+    effectiveEmployee || null,
     user?.company || null,
     selectedPeriod || null
   ).data as any;
@@ -86,7 +90,7 @@ const ITDeclarationForm = () => {
   /* ---------------- IT Declaration API ---------------- */
   const { data: responseData } = useITDeclarationTabData(
     goHeadWithNewRegimeBool,
-    user?.employee || null,
+    effectiveEmployee || null,
     user?.company || null,
     selectedPeriod || null
   ) as { data?: any };
@@ -96,11 +100,11 @@ const ITDeclarationForm = () => {
   const currentDate = new Date().toISOString().split("T")[0];
   const { data: PrrofOfITDeclaration } = useProofDateForITDeclaration(
     currentDate,
-    user?.employee || null,
+    effectiveEmployee || null,
     declarationDoctype || null,
     selectedPeriod || null
   ) as { data?: any };
-  const { data: LTABreakup } = useLTABrakup(user?.employee || "");
+  const { data: LTABreakup } = useLTABrakup(effectiveEmployee || "");
   // Initial payroll period
   useEffect(() => {
     if (!payrollPeriods?.length || selectedPeriod) return;
@@ -226,7 +230,7 @@ const ITDeclarationForm = () => {
       proof_id: proofId,
       payroll_period: selectedPeriod,
       company: user?.company,
-      employee: user?.employee,
+      employee: effectiveEmployee,
       data: {
         monthly_house_rent: goHeadWithNewRegimeBool
           ? 0
@@ -257,7 +261,7 @@ const ITDeclarationForm = () => {
           : hraData?.proof_file || null,
 
         payroll_period: selectedPeriod,
-        employee: user?.employee,
+        employee: effectiveEmployee,
         go_head_with_new_regime: goHeadWithNewRegime,
         declarations,
       },
@@ -446,7 +450,7 @@ const ITDeclarationForm = () => {
             <EditITDeclarationAccess
               isOpen={openModal}
               onClose={() => setOpenModal(false)}
-              empdoc_id={user?.employee || null}
+              empdoc_id={effectiveEmployee || null}
             />
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import FilterPanel, {
@@ -82,8 +82,11 @@ const MyAppreciationsHistory: React.FC = () => {
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterValues, setFilterValues] =
     useState<FilterValues>(INITIAL_FILTER_VALUES);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  // Map the filter drawer values → API params.
+  // Map the filter drawer values → API params (filtering + pagination happen
+  // server-side, so the selected employees and tab are sent in the payload).
   const time = (filterValues.time as string) || "";
   const timeRange = (filterValues.timeRange as DateRange) || { from: "", to: "" };
   const apiParams = {
@@ -96,7 +99,17 @@ const MyAppreciationsHistory: React.FC = () => {
     time: time || undefined,
     from_date: time === "custom" ? timeRange.from || undefined : undefined,
     to_date: time === "custom" ? timeRange.to || undefined : undefined,
+    direction: activeTab,
+    persons: selectedEmployees.join(",") || undefined,
+    search: undefined as string | undefined,
+    start: (page - 1) * pageSize,
+    page_length: pageSize,
   };
+
+  // Reset to the first page whenever the filters, tab or page size change.
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, selectedEmployees, filterValues, pageSize]);
 
   const { data: response, isLoading } = useAppreciationPrograms(apiParams);
 
@@ -115,33 +128,24 @@ const MyAppreciationsHistory: React.FC = () => {
     [programOptions],
   );
 
-  // Employee options for the multi-select — distinct people in the current data.
-  const employeeOptions = useMemo(() => {
-    const names = Array.from(
-      new Set((response?.data ?? []).map((it) => it.person).filter(Boolean)),
-    ).sort();
-    return names.map((n) => ({ label: n, value: n }));
+  // Employee options for the multi-select (distinct people, from the API).
+  const employeeOptions = response?.filter_options?.employees ?? [];
+
+  // API rows (already filtered + paginated server-side) → display items.
+  const filteredAppreciations = useMemo<AppreciationHistoryItem[]>(() => {
+    return (response?.data ?? []).map((it) => ({
+      id: it.name,
+      title: it.title,
+      value: it.value,
+      person: it.person,
+      personImage: it.person_image,
+      imageUrl: it.logo || undefined,
+      date: it.date,
+      tab: it.direction,
+    }));
   }, [response]);
 
-  // API rows → display items, split by the active tab + selected employees.
-  const filteredAppreciations = useMemo<AppreciationHistoryItem[]>(() => {
-    return (response?.data ?? [])
-      .filter((it) => it.direction === activeTab)
-      .filter(
-        (it) =>
-          selectedEmployees.length === 0 ||
-          selectedEmployees.includes(it.person),
-      )
-      .map((it) => ({
-        id: it.name,
-        title: it.title,
-        value: it.value,
-        person: it.person,
-        personImage: it.person_image,
-        date: it.date,
-        tab: it.direction,
-      }));
-  }, [response, activeTab, selectedEmployees]);
+  const totalRecords = response?.total_count ?? 0;
 
   const relationLabel = activeTab === "received" ? "Received From" : "Given To";
 
@@ -165,10 +169,19 @@ const MyAppreciationsHistory: React.FC = () => {
             relationLabel={relationLabel}
           />
         ) : (
-          <HistoryCardList items={filteredAppreciations} />
+          <HistoryCardList
+            items={filteredAppreciations}
+            relationLabel={relationLabel}
+          />
         )}
 
-        <HistoryPagination totalRecords={filteredAppreciations.length} />
+        <HistoryPagination
+          totalRecords={totalRecords}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </section>
     </main>
   );
