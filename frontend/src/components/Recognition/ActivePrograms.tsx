@@ -16,7 +16,9 @@ interface ActiveProgramsProps {
 // Days between today and the program end date (clamped at 0).
 const daysLeftUntil = (end?: string): number => {
   if (!end) return 0;
-  const diff = Math.ceil((new Date(end).getTime() - Date.now()) / 86400000);
+  const parsed = new Date(end).getTime();
+  if (Number.isNaN(parsed)) return 0;
+  const diff = Math.ceil((parsed - Date.now()) / 86400000);
   return Math.max(0, diff);
 };
 

@@ -152,7 +152,7 @@ const AwardsLivePrograms: React.FC = () => {
     ? AWARD_PROGRAMS.filter(
         (p) =>
           p.title.toLowerCase().includes(q) ||
-          p.winners.some((w) => w.name.toLowerCase().includes(q)),
+          (p.winners || []).some((w) => w.name.toLowerCase().includes(q)),
       )
     : AWARD_PROGRAMS;
 

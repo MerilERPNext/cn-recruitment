@@ -78,7 +78,7 @@ const MyAppreciationsHistory: React.FC = () => {
 
   const [activeTab, setActiveTab] =
     useState<AppreciationHistoryTab>("received");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterValues, setFilterValues] =
     useState<FilterValues>(INITIAL_FILTER_VALUES);
@@ -96,7 +96,6 @@ const MyAppreciationsHistory: React.FC = () => {
     time: time || undefined,
     from_date: time === "custom" ? timeRange.from || undefined : undefined,
     to_date: time === "custom" ? timeRange.to || undefined : undefined,
-    search: searchTerm.trim() || undefined,
   };
 
   const { data: response, isLoading } = useAppreciationPrograms(apiParams);
@@ -116,17 +115,22 @@ const MyAppreciationsHistory: React.FC = () => {
     [programOptions],
   );
 
-  // API rows → display items, split by the active tab + client-side search.
+  // Employee options for the multi-select — distinct people in the current data.
+  const employeeOptions = useMemo(() => {
+    const names = Array.from(
+      new Set((response?.data ?? []).map((it) => it.person).filter(Boolean)),
+    ).sort();
+    return names.map((n) => ({ label: n, value: n }));
+  }, [response]);
+
+  // API rows → display items, split by the active tab + selected employees.
   const filteredAppreciations = useMemo<AppreciationHistoryItem[]>(() => {
-    const s = searchTerm.trim().toLowerCase();
     return (response?.data ?? [])
       .filter((it) => it.direction === activeTab)
       .filter(
         (it) =>
-          !s ||
-          [it.title, it.value, it.person, it.date].some((f) =>
-            (f || "").toLowerCase().includes(s),
-          ),
+          selectedEmployees.length === 0 ||
+          selectedEmployees.includes(it.person),
       )
       .map((it) => ({
         id: it.name,
@@ -137,7 +141,7 @@ const MyAppreciationsHistory: React.FC = () => {
         date: it.date,
         tab: it.direction,
       }));
-  }, [response, activeTab, searchTerm]);
+  }, [response, activeTab, selectedEmployees]);
 
   const relationLabel = activeTab === "received" ? "Received From" : "Given To";
 
@@ -145,8 +149,9 @@ const MyAppreciationsHistory: React.FC = () => {
     <main className="min-h-full bg-[#f6f7fb] p-3 font-sans sm:p-5 lg:p-6">
       <section className="mx-auto w-full max-w-screen rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
         <HistoryToolbar
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
+          employeeOptions={employeeOptions}
+          selectedEmployees={selectedEmployees}
+          onSelectedEmployeesChange={setSelectedEmployees}
           onFilterClick={() => setFilterOpen(true)}
         />
 

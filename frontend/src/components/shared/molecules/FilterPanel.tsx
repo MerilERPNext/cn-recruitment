@@ -97,8 +97,11 @@ const FilterSelect = ({
 
   const toggleMulti = (val: string) => {
     const set = new Set(selected);
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    set.has(val) ? set.delete(val) : set.add(val);
+    if (set.has(val)) {
+      set.delete(val);
+    } else {
+      set.add(val);
+    }
     onChange(Array.from(set));
   };
   const toggleAll = () =>
@@ -115,7 +118,16 @@ const FilterSelect = ({
   return (
     <div className="relative" ref={ref}>
       <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen((o) => !o);
+          }
+        }}
         className={`flex min-h-9 w-full cursor-pointer items-center gap-1.5 rounded-md border bg-white px-2 text-sm outline-none transition ${
           open ? "border-primary ring-1 ring-primary/30" : "border-gray-300"
         }`}

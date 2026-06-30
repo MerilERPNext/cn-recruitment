@@ -73,7 +73,7 @@ const SettingsPanel = ({
       setDensity(value.density);
       setVisible(value.visibleColumns);
     }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, value]);
 
   if (!open) return null;
 
