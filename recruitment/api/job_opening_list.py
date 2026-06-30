@@ -64,13 +64,19 @@ def get_job_openings_with_stats(names=None):
 
 	status_options = _status_options()
 
-	# --- Tab counts (All + each status) — via get_list so user permissions apply ---
-	def _count(filters=None):
-		return len(frappe.get_list("Job Opening", filters=filters or {}, fields=["name"], limit_page_length=0))
+	# --- Tab counts (All + each status) — one permission-scoped grouped query
+	# (get_list keeps user permissions) instead of one unbounded pull per status. ---
+	grouped = frappe.get_list(
+		"Job Opening",
+		fields=["status", "count(name) as c"],
+		group_by="status",
+		limit_page_length=0,
+	)
+	by_status = {row.status: row.c for row in grouped}
 
-	tab_counts = {"All": _count()}
+	tab_counts = {"All": sum(by_status.values())}
 	for opt in status_options:
-		tab_counts[opt] = _count({"status": opt})
+		tab_counts[opt] = by_status.get(opt, 0)
 
 	# --- Per-opening stats for the visible rows ---
 	if isinstance(names, str):

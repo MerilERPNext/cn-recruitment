@@ -15,6 +15,105 @@ def after_install():
 def after_migrate():
     sync_all_lookup_fields()
     repair_broken_fetch_from()
+    ensure_performance_indexes()
+    ensure_job_offer_salary_period()
+
+
+def ensure_job_offer_salary_period():
+    """Add the 'Salary Component Period' selector (Monthly/Annual) on Job Offer.
+
+    Drives whether percentage-based salary components compute on a monthly or
+    annual basis (see recruitment.customizations.job_offer). Idempotent —
+    created once, defaults to Monthly so existing offers are unaffected."""
+    if frappe.get_meta("Job Offer").get_field("custom_salary_period"):
+        return
+    try:
+        from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+
+        create_custom_field(
+            "Job Offer",
+            {
+                "fieldname": "custom_salary_period",
+                "label": "Salary Component Period",
+                "fieldtype": "Select",
+                "options": "Monthly\nAnnual",
+                "default": "Monthly",
+                "insert_after": "custom_base_salary",
+                "description": (
+                    "Compute percentage components on a Monthly or Annual basis. "
+                    "Monthly: Basic = Base, CTC = annual CTC ÷ 12. "
+                    "Annual: Basic = Base × 12, CTC = annual CTC."
+                ),
+                "module": "Recruitment",
+            },
+            ignore_validate=True,
+        )
+        frappe.clear_cache(doctype="Job Offer")
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_job_offer_salary_period: skipped")
+
+
+# Hot link/filter columns that the permission-query conditions, list views,
+# reports and dedup lookups filter/join on, but which ship without an index.
+# Adding these is the single biggest list-load latency win (see perf audit).
+# (doctype, column) — only added when the column exists and isn't already indexed.
+_PERF_INDEX_TARGETS = [
+    ("Job Opening", "job_requisition"),
+    ("Job Applicant", "job_title"),
+    ("Job Applicant", "phone_number"),
+    ("Job Applicant", "email_id"),
+    ("Job Requisition", "requested_by"),
+    ("Job Requisition", "custom_assign_to_recruiter"),
+    ("Interview", "job_applicant"),
+    ("Interview", "job_opening"),
+    ("Interview Detail", "interviewer"),
+    ("Job Opening External Recruiter", "external_recruiter"),
+    ("Job Opening External Recruiter", "external_recruiter_group"),
+    ("TA External Recruiter Group Member", "external_recruiter"),
+]
+
+
+def _column_is_indexed(doctype, column):
+    """True if `column` already participates in any index on the table."""
+    table = f"tab{doctype}"
+    try:
+        rows = frappe.db.sql(f"SHOW INDEX FROM `{table}`", as_dict=True)
+    except Exception:
+        # Can't inspect (table missing, etc.) → treat as indexed so we don't
+        # attempt a risky ALTER.
+        return True
+    return any((r.get("Column_name") == column) for r in rows)
+
+
+def ensure_performance_indexes():
+    """Idempotently add single-column indexes on the hot columns above.
+
+    Safe + self-healing: skips columns that don't exist or are already indexed,
+    and never lets an index failure break the migrate. Index DDL only affects
+    query speed, not behaviour. NOTE: on very large existing tables the first
+    `ADD INDEX` briefly locks the table — expected for a migrate.
+    """
+    added = []
+    for doctype, column in _PERF_INDEX_TARGETS:
+        try:
+            if not frappe.db.has_column(doctype, column):
+                continue
+            if _column_is_indexed(doctype, column):
+                continue
+            frappe.db.add_index(doctype, [column])
+            added.append(f"{doctype}.{column}")
+        except Exception:
+            frappe.logger("recruitment").warning(
+                f"ensure_performance_indexes: skipped {doctype}.{column}"
+            )
+            continue
+
+    if added:
+        frappe.logger("recruitment").info(
+            "ensure_performance_indexes added {0} index(es): {1}".format(
+                len(added), ", ".join(added)
+            )
+        )
 
 
 def repair_broken_fetch_from():

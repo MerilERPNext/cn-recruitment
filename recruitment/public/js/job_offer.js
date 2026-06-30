@@ -3,6 +3,34 @@
 // (recruitment.customizations.job_offer.make_employee) enforces this regardless;
 // this just keeps the button out of the way. No matching config / not a hiring
 // lead / setting ON → button stays as normal.
+// --- Percentage-based salary components -------------------------------------
+// Each Earnings/Deduction row can carry a % of Basic (custom_base_salary) or of
+// monthly CTC; the amount is auto-computed live. Mirrors the server-side
+// recruitment.customizations.job_offer.apply_percentage_components.
+function jobOfferBasisAmount(frm, row) {
+    const annual = (frm.doc.custom_salary_period === "Annual");
+    if (row.basis === "CTC") {
+        let a = frm.doc.custom_ctc_per_annum || 0;
+        if (!a && frm.doc.custom_ctc_per_month) a = frm.doc.custom_ctc_per_month * 12;
+        return annual ? a : (a ? a / 12 : 0);
+    }
+    const base = frm.doc.custom_base_salary || 0;
+    return annual ? base * 12 : base;
+}
+function jobOfferComputeRow(frm, cdt, cdn) {
+    const row = locals[cdt][cdn];
+    if (!row || !row.percentage) return; // blank % → keep the manually-typed amount
+    frappe.model.set_value(cdt, cdn, "amount", (jobOfferBasisAmount(frm, row) * row.percentage) / 100);
+}
+function recomputeSalaryComponents(frm) {
+    ["custom_earnings", "custom_deduction"].forEach((tbl) => {
+        (frm.doc[tbl] || []).forEach((row) => {
+            if (row.percentage) row.amount = (jobOfferBasisAmount(frm, row) * row.percentage) / 100;
+        });
+        frm.refresh_field(tbl);
+    });
+}
+
 frappe.ui.form.on("Job Offer", {
     refresh(frm) {
         if (frm.is_new() || frm.doc.status !== "Accepted" || frm.doc.docstatus !== 1) {
@@ -108,13 +136,21 @@ frappe.ui.form.on("Job Offer", {
 			});
 		}
 	},
+	custom_base_salary:function(frm){
+		recomputeSalaryComponents(frm);
+	},
+	custom_salary_period:function(frm){
+		recomputeSalaryComponents(frm);
+	},
 	custom_ctc_per_annum:function(frm){
-		if (!frm.fields_dict.custom_ctc_per_month) return;
-		if(frm.doc.custom_ctc_per_annum){
-			frm.set_value("custom_ctc_per_month", Math.round(frm.doc.custom_ctc_per_annum / 12));
-		}else{
-			frm.set_value("custom_ctc_per_month",null)
+		if (frm.fields_dict.custom_ctc_per_month) {
+			if(frm.doc.custom_ctc_per_annum){
+				frm.set_value("custom_ctc_per_month", Math.round(frm.doc.custom_ctc_per_annum / 12));
+			}else{
+				frm.set_value("custom_ctc_per_month",null)
+			}
 		}
+		recomputeSalaryComponents(frm);
 	},
 	job_applicant: function(frm) {
 		if (frm.doc.job_applicant) {
@@ -162,4 +198,13 @@ frappe.ui.form.on('Job Offer', {
             }, __('Actions'));
         });
     }
+});
+// Recompute a row's amount when its % or basis changes.
+frappe.ui.form.on("Earnings", {
+    percentage: jobOfferComputeRow,
+    basis: jobOfferComputeRow,
+});
+frappe.ui.form.on("Deductions", {
+    percentage: jobOfferComputeRow,
+    basis: jobOfferComputeRow,
 });

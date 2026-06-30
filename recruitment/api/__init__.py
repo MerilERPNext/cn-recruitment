@@ -2,7 +2,13 @@ import frappe
 from frappe import _
 from typing import List, Dict, Any, Optional
 import json
+import re
 from datetime import datetime
+
+# A filter key becomes a SQL column identifier (`key`); only allow plain
+# column-name identifiers so a backtick can't break out of the quoting
+# (identifier injection). Real Frappe column names always match this.
+_SAFE_FIELD_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def _build_sql_where_clause(filters: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
@@ -24,6 +30,8 @@ def _build_sql_where_clause(filters: Dict[str, Any]) -> tuple[str, Dict[str, Any
     }
 
     for key, val in (filters or {}).items():
+        if not _SAFE_FIELD_IDENTIFIER.match(str(key)):
+            raise ValueError(f"Invalid filter field: {key}")
         field = f"`{key}`"
 
         if isinstance(val, list) and len(val) == 2:
@@ -208,7 +216,11 @@ def get_user_roles(user=None):
     try:
         if not user:
             user = frappe.session.user
-        
+        elif user != frappe.session.user and not frappe.has_permission("User", "read"):
+            # Non-privileged callers may only read their own roles (was a roles
+            # recon vector for any user id).
+            user = frappe.session.user
+
         # frappe.get_roles() handles Administrator correctly (returns all roles)
         roles = frappe.get_roles(user)
         

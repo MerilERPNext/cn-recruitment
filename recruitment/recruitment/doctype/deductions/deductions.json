@@ -7,6 +7,8 @@
  "engine": "InnoDB",
  "field_order": [
   "component",
+  "basis",
+  "percentage",
   "amount"
  ],
  "fields": [
@@ -17,6 +19,23 @@
    "label": "Component"
   },
   {
+   "default": "Basic",
+   "description": "Compute the amount as a percentage of this base.",
+   "fieldname": "basis",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "% Of",
+   "options": "Basic\nCTC"
+  },
+  {
+   "description": "Amount = (Basic or CTC) × this %.",
+   "fieldname": "percentage",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Percentage (%)"
+  },
+  {
+   "description": "Auto-computed from % of the chosen basis. Leave % blank to enter a fixed amount directly.",
    "fieldname": "amount",
    "fieldtype": "Currency",
    "in_list_view": 1,

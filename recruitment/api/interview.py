@@ -31,8 +31,10 @@
 import frappe
 from frappe import _
 
-@frappe.whitelist(allow_guest=True)
 def get_interview_data(doc, methed):
+    # NOTE: signature is (doc, method) — this is a document-event helper, not an
+    # HTTP endpoint. The previous @frappe.whitelist(allow_guest=True) exposed
+    # every Interview (all fields) to anonymous callers; decorator removed.
     try:
         # Fetch all interviews (you can filter or paginate as needed)
         interviews = frappe.get_all("Interview", fields=["*"])  # get all fields
@@ -51,8 +53,10 @@ def get_interview_data(doc, methed):
 import frappe
 from frappe import _
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_custom_interviews():
+    if not frappe.has_permission("Interview", "read"):
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
     interviews = frappe.get_all("Interview", fields=["name", "from_time", "to_time", "custom_full_name"])
 
     return {
