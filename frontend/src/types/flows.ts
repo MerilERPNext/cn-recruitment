@@ -164,6 +164,8 @@ export type RoleSelect = {
 };
 
 export type FlowRequestItem = {
+  activity_statement?: string;
+  activity_timestamp?: string;
   request_id: string;
   flow_name: string;
   category: string;

@@ -123,19 +123,84 @@ def _link_label(doctype, name):
 	return frappe.get_cached_value(doctype, name, title_field) or name
 
 
-def card_matches_search(card, search):
-	"""Case-insensitive match of an opening card against a search term (job code /
-	title / id / designation / location / department labels)."""
+# Always-searched card keys. The configured Career Page Search Filter fields are
+# added on top of these at call time, so HR can widen the search box (e.g. make
+# Company searchable) just by adding rows to that settings table.
+_DEFAULT_SEARCH_KEYS = ("name", "job_title", "opening_code", "designation", "location", "department")
+
+
+def card_matches_search(card, search, extra_keys=None):
+	"""Case-insensitive match of an opening card against a search term.
+
+	Searches the default keys (job code / title / id / designation / location /
+	department) plus any `extra_keys` (the configured search-filter fieldnames).
+	For each extra key both the display value and its raw `<key>_id` are checked,
+	so a Link field matches whether the user types the label or the id."""
 	if not search:
 		return True
 	needle = str(search).strip().lower()
 	if not needle:
 		return True
-	haystack = " ".join(
-		str(card.get(k) or "")
-		for k in ("name", "job_title", "opening_code", "designation", "location", "department")
-	).lower()
+	keys = list(_DEFAULT_SEARCH_KEYS)
+	for k in extra_keys or []:
+		keys.append(k)
+		keys.append(f"{k}_id")
+	haystack = " ".join(str(card.get(k) or "") for k in keys).lower()
 	return needle in haystack
+
+
+def parse_filter_values(filters):
+	"""Normalise the `filters` argument from a listing endpoint into a plain dict.
+
+	Accepts a dict or a JSON string ({fieldname: value | [values]}). Empty / blank
+	selections are dropped so they don't constrain the result. Returns {} for
+	anything unusable, which means "no filters applied"."""
+	if not filters:
+		return {}
+	if isinstance(filters, str):
+		try:
+			filters = frappe.parse_json(filters)
+		except Exception:
+			return {}
+	if not isinstance(filters, dict):
+		return {}
+	return {k: v for k, v in filters.items() if v not in (None, "", [])}
+
+
+def _filter_value_matches(actual, wanted):
+	"""True if the card's `actual` value satisfies the `wanted` filter selection.
+
+	`wanted` may be a single value or a list (multi-select → OR). Matching is
+	case-insensitive string equality, which covers Link ids, Select options and
+	plain Data alike."""
+	actual_s = str(actual if actual is not None else "").strip().lower()
+	if isinstance(wanted, (list, tuple)):
+		wanted_list = [str(w).strip().lower() for w in wanted if str(w or "").strip()]
+		return (not wanted_list) or (actual_s in wanted_list)
+	return actual_s == str(wanted or "").strip().lower()
+
+
+def card_matches_filters(card, selected, filter_defs):
+	"""AND-match an opening card against the user's filter `selected` dict.
+
+	`filter_defs` is the configured search-filter descriptor list (from
+	`get_configured_search_filters`); only fieldnames present there are honoured,
+	so callers can't filter on arbitrary fields. Link fields are compared against
+	the card's raw `<field>_id` (the UI sends the link id, not its label)."""
+	if not selected:
+		return True
+	defmap = {f["fieldname"]: f for f in filter_defs}
+	for fn, wanted in selected.items():
+		df = defmap.get(fn)
+		if not df:
+			continue  # ignore selections for fields that aren't configured filters
+		if df.get("fieldtype") == "Link":
+			actual = card.get(f"{fn}_id", card.get(fn))
+		else:
+			actual = card.get(fn)
+		if not _filter_value_matches(actual, wanted):
+			return False
+	return True
 
 
 def get_opening_card(opening_name, extra_fields=None):

@@ -19,11 +19,12 @@ import {
 import Button from "../shared/atoms/Button";
 import EmployeeSidebarForm from "./EmployeeSidebarForm";
 import { PencilIcon, FileText, PlusIcon } from "lucide-react";
-import usePermission from "../../hooks/usePermission";
 import { Link } from "react-router-dom";
 import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import ProfileSkeleton from "../shared/molecules/Skeletons/ProfileSkeleton";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 interface EditableField {
     key: string;
@@ -57,7 +58,12 @@ export default function EmployeeProfileSections() {
 
     const [formioTabs, setformioTabs] = useState<TabWithSchema[]>([]);
     const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
-    const can = usePermission();
+    const { data: userUiPermission } = useGetUiPermission("Profile");
+    const canEditProfile = isActionEnabled(
+        userUiPermission,
+        "Edit",
+        "Employee Profile"
+    );
     useEffect(() => {
         if (!fieldPermissions || !employee?.employee) return;
 
@@ -158,7 +164,7 @@ export default function EmployeeProfileSections() {
                                 <Typography variant="h4" className="font-bold text-gray-800 max-sm:text-md">
                                     {tab.label}
                                 </Typography>
-                                {can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && (
+                                {canEditProfile && (
                                     <Button
                                         variant="subtle"
                                         icon={<PencilIcon className="h-4 w-4" />}
@@ -194,7 +200,7 @@ export default function EmployeeProfileSections() {
                                                             field={field}
                                                             tabKey={tab.key}
                                                             tabLabel={tab.label}
-                                                            canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" })}
+                                                            canEdit={canEditProfile}
                                                             isTable={isTable}
                                                             onEdit={setEdit}
                                                         />
@@ -323,9 +329,9 @@ const CardsRenderer = ({ items, onEdit, canEdit }: { items: Record<string, any>[
     return (
         <div className="space-y-3">
             {hasItems ? (
-                <div className="flex overflow-x-auto gap-4 pb-2 w-full min-h-fit snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                <div className="flex items-stretch overflow-x-auto gap-4 pb-2 w-full min-h-fit snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                     {sortedItemsWithOriginalIndex.map(({ item, originalIndex }) => (
-                        <div key={item?.id || item?.name || originalIndex} className="min-w-[100%] max-w-[100%] md:min-w-[400px] md:max-w-[400px] h-fit flex-shrink-0 snap-start">
+                        <div key={item?.id || item?.name || originalIndex} className="min-w-[100%] max-w-[100%] md:min-w-[400px] md:max-w-[400px] flex-shrink-0 snap-start">
                             <GenericCard data={item} onEdit={() => onEdit?.(originalIndex)} canEdit={canEdit} />
                         </div>
                     ))}

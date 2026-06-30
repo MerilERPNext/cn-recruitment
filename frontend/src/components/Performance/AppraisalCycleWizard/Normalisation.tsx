@@ -4,8 +4,6 @@ import { useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import { Switch } from "../../shared/atoms/Switch";
 import { Typography } from "../../shared/atoms/Typography";
-import { mockWizardData } from "./AppraisalCycleWizard";
-import WizardShell from "./WizardShell";
 
 const modes = [
   {
@@ -59,18 +57,6 @@ const Normalisation = () => {
     exceeds: 15,
     outstanding: 5,
   });
-
-  const normalisationData = {
-    ...mockWizardData,
-    activeStepId: "normalisation-calibration",
-    header: {
-      title: "Normalisation & Calibration",
-      description:
-        "Choose how ratings are constrained across the population, and configure the 9-Box.",
-    },
-    validationStatus: "Validation passed",
-    nextStepLabel: "Next: Letters & Release",
-  };
 
   const handleTargetChange = (key: keyof typeof targets, value: string) => {
     const num = parseInt(value, 10);
@@ -164,10 +150,7 @@ const Normalisation = () => {
   );
 
   return (
-    <WizardShell
-      data={normalisationData}
-      contentClassName="flex flex-col gap-6 pb-8"
-    >
+    <>
       {/* Normalisation Mode */}
       <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm">
         <Typography
@@ -523,7 +506,7 @@ const Normalisation = () => {
           </div>
         </div>
       </section>
-    </WizardShell>
+    </>
   );
 };
 

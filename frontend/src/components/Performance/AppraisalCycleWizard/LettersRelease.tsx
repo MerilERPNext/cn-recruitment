@@ -1,10 +1,7 @@
 import { Check, FileText } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Switch } from "../../shared/atoms/Switch";
 import { Typography } from "../../shared/atoms/Typography";
-import { mockWizardData } from "./AppraisalCycleWizard";
-import WizardShell from "./WizardShell";
 
 const initialLetterTypes = [
   {
@@ -109,7 +106,6 @@ const waves = [
 ];
 
 const LettersRelease = () => {
-  const navigate = useNavigate();
   const [letters, setLetters] = useState(initialLetterTypes);
   const [languages, setLanguages] = useState(initialLanguages);
   const [eSignProvider, setEsignProvider] = useState("docusign");
@@ -128,26 +124,8 @@ const LettersRelease = () => {
     );
   };
 
-  const lettersReleaseData = {
-    ...mockWizardData,
-    activeStepId: "letters-release",
-    header: {
-      title: "Letters & Release",
-      description:
-        "Choose letter templates, e-sign provider, and release schedule.",
-    },
-    validationStatus: "Validation passed",
-    nextStepLabel: "Next: Review & Launch",
-  };
-
   return (
-    <WizardShell
-      data={lettersReleaseData}
-      onNext={() =>
-        navigate("/webapp/performance-app/appraisal-cycle-wizard/review-launch")
-      }
-      contentClassName="flex flex-col gap-6 relative pb-8"
-    >
+    <>
       {/* Letter Types Grid */}
       <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm">
         <Typography
@@ -449,7 +427,7 @@ const LettersRelease = () => {
           </div>
         </div>
       </section>
-    </WizardShell>
+    </>
   );
 };
 

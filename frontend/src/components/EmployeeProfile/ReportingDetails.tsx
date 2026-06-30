@@ -28,10 +28,18 @@ const CATEGORY_FIELD_MAP: Record<string, string> = {
   "HOD": "custom_hod",
   "CXO": "custom_cxo",
   "HRBP": "custom_hrbp",
+  "HRBP Lead": "custom_hrbp_lead",
 };
 
+const CATEGORY_LABEL_MAP: Record<string, string> = {
+  "CXO": "Founder - 1",
+  "HOD": "Founder - 2",
+};
+
+const getCategoryLabel = (category: string) => CATEGORY_LABEL_MAP[category] || category;
+
 interface ReportingDetailsProps {
-  onActionSuccess?: () => void;
+  onActionSuccess?: (subSectionId?: string) => void;
 }
 
 const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
@@ -43,6 +51,11 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
   const canEditReportingDetails = isActionEnabled(
     userUiPermission,
     "edit_reporting_details",
+    "Employee Profile"
+  );
+  const canDeleteReportingDetails = isActionEnabled(
+    userUiPermission,
+    "show_delete_reporting_details",
     "Employee Profile"
   );
   const canAddReportingDetails = isActionEnabled(
@@ -61,6 +74,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
   const [selectedCategoryField, setSelectedCategoryField] = useState<string>("");
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [pendingDeleteCategory, setPendingDeleteCategory] = useState<string | null>(null);
 
   const openAddModal = (category: string) => {
     setSelectedCategory(category);
@@ -93,8 +107,10 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
         () => deleteEmpReportingDetailsRecord(pendingDeleteId),
         "Deleting record...",
       );
+      const category = pendingDeleteCategory;
       setPendingDeleteId(null);
-      onActionSuccess?.();
+      setPendingDeleteCategory(null);
+      onActionSuccess?.(category || undefined);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       toast.error(message);
@@ -109,6 +125,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
     id: string;
     location: string;
     onEdit?: () => void;
+    onDelete?: () => void;
     itemName: string;
     canDelete?: boolean;
   }
@@ -121,13 +138,13 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
     id,
     location,
     onEdit,
-    itemName,
+    onDelete,
     canDelete,
   }) => {
     const isCurrent = !endDate;
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift  max-w-[90vw] min-w-[90vw]  md:min-w-[400px] md:max-w-[400px]">
+      <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift max-w-[90vw] min-w-[90vw] md:min-w-[400px] md:max-w-[400px] min-h-[100%] flex flex-col justify-between">
         <div className="flex items-start gap-3 mb-3 md:mb-6">
           <div className="p-2 bg-blue-50 rounded-lg">
             <Building2 className="w-5 h-5 text-blue-600" />
@@ -151,9 +168,9 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
                     size="xs"
                   />
                 )}
-                {id && canDelete && (
+                {id && canDeleteReportingDetails && canDelete && (
                   <IconButton
-                    onClick={() => setPendingDeleteId(itemName)}
+                    onClick={() => onDelete?.()}
                     icon={<TrashIcon className="h-4 w-4" />}
                     className="cursor-pointer"
                     color="error"
@@ -258,10 +275,10 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
           });
 
           return (
-            <div key={category} className="mb-5 md:mb-10">
+            <div key={category} className="mb-5 md:mb-10" data-subsection={category}>
               <div className="flex items-center justify-between mb-4">
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                  {category}
+                  {getCategoryLabel(category)}
                 </Typography>
                 {canAddReportingDetails && (
                   <Button
@@ -276,11 +293,11 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
               </div>
 
               {sortedItems.length > 0 ? (
-                <div className="flex gap-2 overflow-auto">
+                <div className="flex gap-2 overflow-auto items-stretch">
                   {sortedItems.map((item: any) => (
                     <div
                       key={item.records}
-                      className={`${sortedItems.length === 1 ? "max-w-md w-full" : ""}`}
+                      className={`min-h-[100%] ${sortedItems.length === 1 ? "max-w-md w-full" : ""}`}
                     >
                       <HierarchyCard
                         name={item.reporting_employee_name}
@@ -292,14 +309,18 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
                         itemName={item?.name}
                         canDelete={!!item.can_delete}
                         onEdit={() => openEditModal(category, item)}
+                        onDelete={() => {
+                          setPendingDeleteId(item?.name);
+                          setPendingDeleteCategory(category);
+                        }}
                       />
                     </div>
                   ))}
                 </div>
               ) : (
                 <NoDataFound
-                  title={`No ${category} Records`}
-                  subtitle={`No ${category.toLowerCase()} records have been added yet.`}
+                  title={`No ${getCategoryLabel(category)} Records`}
+                  subtitle={`No ${getCategoryLabel(category).toLowerCase()} records have been added yet.`}
                 />
               )}
             </div>
@@ -310,11 +331,12 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
       {isModalOpen && (
         <ReportingDetailsFormV2
           onCancel={closeModal}
-          onSuccess={() => { closeModal(); onActionSuccess?.(); }}
+          onSuccess={() => { const category = selectedCategory; closeModal(); onActionSuccess?.(category); }}
           isEdit={isEditing}
-          category={selectedCategory}
+          category={getCategoryLabel(selectedCategory)}
           categoryField={selectedCategoryField}
           initialEditData={selectedItem ? {
+            name: selectedItem.name,
             reports_to: selectedItem.records,
             reports_to_name: selectedItem.reporting_employee_name,
             department_name: selectedItem.department_name,
@@ -332,7 +354,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
           cancelLabel="Cancel"
           isLoading={isDeleting}
           onConfirm={handleDeleteConfirm}
-          onCancel={() => setPendingDeleteId(null)}
+          onCancel={() => { setPendingDeleteId(null); setPendingDeleteCategory(null); }}
         />
       )}
     </div>

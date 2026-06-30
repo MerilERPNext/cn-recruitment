@@ -21,7 +21,8 @@ import { getRequiredKeys } from "../../utils/formioUtils";
 import { useFileUploader } from "../../hooks/useFileUploader";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { FormioPreviewItem, FormioPreviewPortal } from "../shared/molecules/FormioPreview";
-import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 interface RequestIssueModalProps {
   isOpen: boolean;
@@ -53,8 +54,13 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [formioFiles, setFormioFiles] = useState<File[]>([]);
 
-  const { data: currentUser } = useCurrentUser();
-  const currentUserIsAdmin = isAdminUser(currentUser ?? null);
+  const uiPermission = {
+    app: "Help Desk",
+    page: "Help Desk",
+    actionKey: "for_other"
+  }
+  const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
+  const forOthersActionEnabled = isActionEnabled(uiPermissionData, uiPermission?.actionKey ?? "", uiPermission?.page);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: creationFormJson, isLoading: creationFormJsonLoading } = useGetCreationFormJson({ category, sub_category: subcategory });
@@ -555,7 +561,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
         <div className="px-6 py-4 overflow-y-auto flex-1">
 
           {/* Row 1: Raised For and Employee (Admin only) */}
-          {currentUserIsAdmin && (
+          {forOthersActionEnabled && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               {/* Raised For */}
               <div>

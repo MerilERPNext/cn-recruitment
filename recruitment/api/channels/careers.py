@@ -22,43 +22,51 @@ CHANNEL = "careers"
 
 
 @candidate_required
-def list_openings(search_term=None):
+def list_openings(search_term=None, filters=None):
 	"""List openings active on the Careers Page for the authenticated candidate.
 
-	`search_term` optionally filters by job code / title. Authentication is enforced
-	via the `candidate_portal_session` cookie
+	`search_term` optionally does a free-text match on job code / title / labels.
+	`filters` is an optional dict (or JSON string) of {fieldname: value | [values]}
+	keyed by the configured Career Page Search Filter fields; only those fields are
+	honoured. Authentication is enforced via the `candidate_portal_session` cookie
 	(see `recruitment.api.candidate_auth.candidate_required`).
 
-	Returns ``{"columns": [...], "openings": [...]}`` where ``columns`` is the
-	ordered set of configured list columns (``{"fieldname", "label"}``) so the
-	frontend can render the card dynamically without a separate ``list_columns``
-	call. ``openings`` is the filtered card list.
+	Returns ``{"columns": [...], "search_filters": [...], "openings": [...]}`` so
+	the frontend can render the card, the search bar and the filter section from a
+	single call. ``openings`` is the card list after search + filters are applied.
 	"""
 	columns = _common.get_configured_columns(CHANNEL)
-	extra_fields = [c["fieldname"] for c in columns]
+	search_filters = _common.get_configured_search_filters()
+	# The configured search-filter fields widen what the search box matches; they
+	# must also be present on the card so the match can see them.
+	search_keys = [f["fieldname"] for f in search_filters]
+	extra_fields = [c["fieldname"] for c in columns] + search_keys
+	selected = _common.parse_filter_values(filters)
 	names = _common.get_openings_active_on_channel(CHANNEL)
 	cards = (_common.get_opening_card(n, extra_fields=extra_fields) for n in names)
-	return {
-		"columns": columns,
-		"openings": [c for c in cards if c and _common.card_matches_search(c, search_term)],
-	}
+	openings = [
+		c for c in cards
+		if c
+		and _common.card_matches_search(c, search_term, extra_keys=search_keys)
+		and _common.card_matches_filters(c, selected, search_filters)
+	]
+	return {"columns": columns, "search_filters": search_filters, "openings": openings}
 
 
 @candidate_required
 def list_columns():
-	"""Ordered, enabled columns for the Careers openings list, from Recruitment
-	Settings -> Career Page Filter Settings (falls back to the default set when
-	nothing is configured). Each item: {"fieldname", "label"}. The list-row
-	values for these fieldnames are present on every card from list_openings."""
-	return _common.get_configured_columns(CHANNEL)
+	"""Careers list UI config in a single call: the ordered card columns plus the
+	search-filter fields, both from Recruitment Settings.
 
-
-@candidate_required
-def get_search_filters():
-	"""Return the ordered, enabled search filter fields configured in Recruitment
-	Settings → Career Page Search Filters.  Each item: {"fieldname", "label",
-	"fieldtype", "options"}.  Empty list means no filters are configured."""
-	return _common.get_configured_search_filters()
+	Returns ``{"columns": [...], "search_filters": [...]}`` where
+	  - ``columns`` (Career Page Card Columns, default set when unconfigured):
+	    {"fieldname", "label", "value_key"} — values present on every list_openings card.
+	  - ``search_filters`` (Career Page Search Filters; [] when unconfigured):
+	    {"fieldname", "label", "fieldtype", "options"} — describes each filter control."""
+	return {
+		"columns": _common.get_configured_columns(CHANNEL),
+		"search_filters": _common.get_configured_search_filters(),
+	}
 
 
 @candidate_required

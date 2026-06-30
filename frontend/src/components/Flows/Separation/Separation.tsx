@@ -14,6 +14,7 @@ import {
 import Button from "../../shared/atoms/Button";
 import RetriggerButton from "../RetriggerButton";
 import ApprovalTracker from "./components/ApprovalTracker";
+import SeparationRecordLog from "./components/SeparationRecordLog";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useEffect, useMemo, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -104,7 +105,7 @@ const Separation = () => {
 
 
   const hasNoItem = !item;
-  const isRevoked = item?.approval_status === "Revoked" || item?.approval_stages?.some((stage => stage?.todo?.refrence_document?.custom_status === "Revoked"));
+  const isRevoked = item?.approval_status === "Revoked" || item?.approval_stages?.some((stage => stage?.todo?.reference_document?.custom_status === "Revoked"));
   const isRejected = item?.approval_status === "Rejected";
   const isCompleted = item?.approval_status === "Completed";
 
@@ -322,7 +323,11 @@ const Separation = () => {
       {showRequestPage ? (
         <main className="mb-2">
           <div className="max-w-full">
-            <ApprovalTracker For={separationType?.custom_resignaion_type === "Termination" ? "Employee Termination" : "Employee Separation"} data={item as FlowRequestItem} />
+            <ApprovalTracker
+              For={separationType?.custom_resignaion_type === "Termination" ? "Employee Termination" : "Employee Separation"}
+              data={item as FlowRequestItem}
+              isLoading={isLoading}
+            />
           </div>
         </main>
       ) : (
@@ -471,6 +476,12 @@ const Separation = () => {
         onCancel={() => setIsRevokeModalOpen(false)}
         onSave={handleRevokeSubmit}
       />
+
+      {!showRequestPage && (
+        <SeparationRecordLog
+          separationRecords={separationFunnelDetails?.data}
+        />
+      )}
     </div>
   );
 };

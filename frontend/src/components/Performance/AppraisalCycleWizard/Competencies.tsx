@@ -2,8 +2,6 @@ import clsx from "clsx";
 import { Check } from "lucide-react";
 import { useState } from "react";
 import { Typography } from "../../shared/atoms/Typography";
-import { mockWizardData } from "./AppraisalCycleWizard";
-import WizardShell from "./WizardShell";
 
 const frameworks = [
   { id: "pw-eng", name: "PW Engineering", count: 12 },
@@ -36,23 +34,8 @@ const Competencies = () => {
   const activeCompetency = "design-craft";
   const activeLevel = "SENIOR";
 
-  const competenciesData = {
-    ...mockWizardData,
-    activeStepId: "competencies",
-    header: {
-      title: "Competencies",
-      description:
-        "Map competencies to roles & grades. Behavioural anchors visible per Leapsome pattern.",
-    },
-    validationStatus: "Validation passed",
-    nextStepLabel: "Next: Workflow",
-  };
-
   return (
-    <WizardShell
-      data={competenciesData}
-      contentClassName="flex flex-col lg:flex-row gap-6 pb-8"
-    >
+    <>
       {/* Left Column: Frameworks */}
       <aside className="w-full lg:w-[240px] shrink-0 flex flex-col gap-4">
         <div className="flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
@@ -289,7 +272,7 @@ const Competencies = () => {
           </div>
         </div>
       </aside>
-    </WizardShell>
+    </>
   );
 };
 

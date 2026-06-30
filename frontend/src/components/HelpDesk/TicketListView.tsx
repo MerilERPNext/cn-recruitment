@@ -49,11 +49,12 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
 
   // State
   const [searchTerm, setSearchTerm] = useState("");
-  const [filters, setFilters] = useState<TicketFilters>({ status: ['=', 'Open'] });
+  const [filters, setFilters] = useState<TicketFilters>({ status: ['not in', ['Closed']] });
   const [sortField, setSortField] = useState("modified");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [pageLength, setPageLength] = useState(20);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
+  const [subTab, setSubTab] = useState<"myself" | "others">("myself");
 
   // Resolution Modal State
   const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
@@ -79,7 +80,8 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
     debouncedSearch,
     currentUserEmail,
     isAdmin,
-    viewMode
+    viewMode,
+    subTab
   );
   const { data: filterableFields = [], isLoading: fieldsLoading } = useFilterableFields();
   const { data: categories = [] } = useCategories();
@@ -337,6 +339,31 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
           Track and manage your support tickets
         </Typography>
       </div>
+
+      {viewMode === "user" && (
+        <div className="flex gap-6 border-b border-gray-200 mt-2">
+          <button
+            onClick={() => setSubTab("myself")}
+            className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+              subTab === "myself"
+                ? "border-primary-500 text-primary-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Raised for Myself
+          </button>
+          <button
+            onClick={() => setSubTab("others")}
+            className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
+              subTab === "others"
+                ? "border-primary-500 text-primary-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Raised for Others
+          </button>
+        </div>
+      )}
 
       {/* Table Section */}
       <div className={`${isDesktop ? "rounded-lg border border-gray-200" : ""} bg-white `}>

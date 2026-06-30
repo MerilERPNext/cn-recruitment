@@ -7,22 +7,33 @@
  "engine": "InnoDB",
  "field_order": [
   "question",
+  "applicant_field",
   "answer_type",
   "kind",
   "operator",
   "expected_value",
+  "on_missing",
   "score",
   "action",
   "required"
  ],
  "fields": [
   {
-   "columns": 3,
+   "columns": 2,
    "fieldname": "question",
    "fieldtype": "Small Text",
    "in_list_view": 1,
    "label": "Question",
    "reqd": 1
+  },
+  {
+   "columns": 2,
+   "description": "Job Applicant field this condition is evaluated against",
+   "fieldname": "applicant_field",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Applicant Field",
+   "options": "TA Job Applicant Field"
   },
   {
    "columns": 1,
@@ -57,6 +68,15 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Value"
+  },
+  {
+   "columns": 1,
+   "default": "Skip",
+   "description": "What to do when the applicant has no value for this field",
+   "fieldname": "on_missing",
+   "fieldtype": "Select",
+   "label": "If Missing",
+   "options": "Skip\nFail"
   },
   {
    "columns": 1,

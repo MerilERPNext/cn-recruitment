@@ -778,12 +778,18 @@ def _public_candidate(candidate):
     values = frappe.db.get_value(
         "Candidate Portal User",
         candidate,
-        ["name", "email", "full_name", "mobile_no", "avatar_url", "status", "email_verified", "require_password_reset", "job_applicant"],
+        ["name", "email", "full_name", "name_is_custom", "mobile_no", "avatar_url", "status", "email_verified", "require_password_reset", "job_applicant"],
         as_dict=True,
     )
     if not values:
         return None
+    # When the candidate hasn't set their own name yet (name_is_custom == 0),
+    # prefer the real name from their Job Applicant over the signup email prefix.
+    # Once they edit it via the profile page, name_is_custom flips to 1 and their
+    # stored full_name always wins.
     full_name = values.full_name or values.email
+    if not cint(values.name_is_custom):
+        full_name = _resolve_candidate_full_name(values) or full_name
     doc = frappe.get_doc("Candidate Portal User", values.name)
     password_setup_required = not _candidate_has_password(doc) or bool(cint(values.require_password_reset))
     return {
@@ -820,6 +826,9 @@ def _sanitize_candidate_profile_update(data, doc):
         if not full_name:
             frappe.throw(_("Full name cannot be empty."))
         updates["full_name"] = full_name
+        # The candidate is setting their own name — stop auto-resolving it from
+        # the Job Applicant so this value sticks on subsequent fetches.
+        updates["name_is_custom"] = 1
 
     if "mobile_no" in data:
         mobile_no = (str(data.get("mobile_no") or "")).strip()

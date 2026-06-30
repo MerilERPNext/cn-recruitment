@@ -734,6 +734,8 @@ export class EmployeeService {
   static async getSearchMembers(
     filters?: string,
     limit?: number,
+    excludeOwnEmployee?: boolean,
+    employee?: string,
   ): Promise<Employee[]> {
     const response = FrappeAPI.getMethod(
       "cn_hrms_core.cn_hrms_core.apis.employee_search.search_employees",
@@ -741,6 +743,8 @@ export class EmployeeService {
         limit: limit,
         status: "Active",
         query: filters,
+        exclude_own_employee: excludeOwnEmployee ? 1 : 0,
+        employee: employee,
       },
     );
     const data = await response;

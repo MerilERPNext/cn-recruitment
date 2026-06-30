@@ -25,7 +25,7 @@ import toast from "react-hot-toast";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
-  onActionSuccess?: () => void;
+  onActionSuccess?: (subSectionId?: string) => void;
 }
 
 export interface CustomWorkHistory {
@@ -87,6 +87,11 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
     "edit_employee_history",
     "Employee Profile",
   );
+  const canDeleteEmploymentHistory = isActionEnabled(
+    userUiPermission,
+    "show_delete_employment_history",
+    "Employee Profile",
+  );
   const canAddEmploymentHistory = isActionEnabled(
     userUiPermission,
     "add_employee_history",
@@ -100,8 +105,8 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   const { wrap } = useLoadingOverlay();
 
   type PendingDelete =
-    | { type: "history"; names: string[] }
-    | { type: "cost_center"; names: string[] };
+    | { type: "history"; names: string[]; subSection: string }
+    | { type: "cost_center"; names: string[]; subSection: string };
 
   const [pendingDelete, setPendingDelete] = React.useState<PendingDelete | null>(null);
   const [pendingDeleteName, setPendingDeleteName] = React.useState<string | null>(null);
@@ -126,8 +131,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
       } else {
         await wrap(() => deleteHistoryRecords(pendingDelete.names), "Deleting record...");
       }
+      const subSection = pendingDelete.subSection;
       setPendingDelete(null);
-      onActionSuccess?.();
+      onActionSuccess?.(subSection);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       toast.error(message);
@@ -166,8 +172,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   };
 
   const handleFormSuccess = () => {
+    const subSection = editType;
     handleCloseModal();
-    onActionSuccess?.();
+    onActionSuccess?.(subSection);
   };
 
   return (
@@ -227,7 +234,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
         )}
         {!isLoading && !error && employeeId && (
           <>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2" data-subsection="work_role">
               <div className="flex items-center justify-between">
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Work History
@@ -256,7 +263,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         functionalArea={item?.functional_area?.name || ""}
                         is_promotion={item.is_promotion}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item) : undefined}
-                        onDelete={canEditEmploymentHistory && item.can_delete ? () => setPendingDelete({ type: "history", names: collectRowNames(item as unknown as Record<string, unknown>) }) : undefined}
+                        onDelete={canDeleteEmploymentHistory && item.can_delete ? () => setPendingDelete({ type: "history", names: collectRowNames(item as unknown as Record<string, unknown>), subSection: "work_role" }) : undefined}
                       />
                     </div>
                   ))}
@@ -266,7 +273,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               )}
             </div>
 
-            <div className="flex flex-col gap-2 mt-6">
+            <div className="flex flex-col gap-2 mt-6" data-subsection="work_location">
               <div className="flex items-center justify-between">
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Work Locations
@@ -294,9 +301,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         state={item.state}
                         city={item.city}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "work_location") : undefined}
-                        onDelete={canEditEmploymentHistory && item.can_delete ? () => {
+                        onDelete={canDeleteEmploymentHistory && item.can_delete ? () => {
                           const names = [item.work_location?.row_name].filter(Boolean) as string[];
-                          setPendingDelete({ type: "history", names });
+                          setPendingDelete({ type: "history", names, subSection: "work_location" });
                         } : undefined}
                       />
                     </div>
@@ -307,7 +314,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               )}
             </div>
 
-            <div className="flex flex-col gap-2 mt-6">
+            <div className="flex flex-col gap-2 mt-6" data-subsection="employment_type">
               <div className="flex items-center justify-between">
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Employment Type
@@ -333,9 +340,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         employment_type={item.employment_type}
                         employee_subtype={item.employee_subtype}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employment_type") : undefined}
-                        onDelete={canEditEmploymentHistory && item.can_delete ? () => {
+                        onDelete={canDeleteEmploymentHistory && item.can_delete ? () => {
                           const names = [item.employment_type?.row_name, item.employee_subtype?.row_name].filter(Boolean) as string[];
-                          setPendingDelete({ type: "history", names });
+                          setPendingDelete({ type: "history", names, subSection: "employment_type" });
                         } : undefined}
                       />
                     </div>
@@ -346,7 +353,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               )}
             </div>
 
-            <div className="flex flex-col gap-2 mt-6">
+            <div className="flex flex-col gap-2 mt-6" data-subsection="employee_role">
               <div className="flex items-center justify-between">
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Employment Roles
@@ -371,9 +378,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         is_promotion={item.is_promotion}
                         employee_role={item.employee_role}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employee_role") : undefined}
-                        onDelete={canEditEmploymentHistory && item.can_delete ? () => {
+                        onDelete={canDeleteEmploymentHistory && item.can_delete ? () => {
                           const names = [item.employee_role?.row_name].filter(Boolean) as string[];
-                          setPendingDelete({ type: "history", names });
+                          setPendingDelete({ type: "history", names, subSection: "employee_role" });
                         } : undefined}
                       />
                     </div>
@@ -384,7 +391,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               )}
             </div>
 
-            <div className="flex flex-col gap-2 mt-6">
+            <div className="flex flex-col gap-2 mt-6" data-subsection="cost_center">
               <div className="flex items-center justify-between">
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
                   Cost Center
@@ -408,9 +415,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         to_date={item.to_date}
                         is_current={item.is_current}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "cost_center") : undefined}
-                        onDelete={canEditEmploymentHistory && item.can_delete ? () => {
+                        onDelete={canDeleteEmploymentHistory && item.can_delete ? () => {
                           const names = item.allocations.map((a) => a.row_name).filter(Boolean) as string[];
-                          setPendingDelete({ type: "cost_center", names });
+                          setPendingDelete({ type: "cost_center", names, subSection: "cost_center" });
                         } : undefined}
                       />
                     </div>

@@ -90,7 +90,8 @@ export const useTicketList = (
   searchTerm: string = "",
   currentUserEmail?: string,
   isAdmin?: boolean,
-  viewMode: "user" | "admin" = "user"
+  viewMode: "user" | "admin" = "user",
+  subTab: "myself" | "others" = "myself"
 ) => {
   // Build filters with search and viewMode-based filtering
   const effectiveFilters = { ...filters };
@@ -101,8 +102,14 @@ export const useTicketList = (
   // Apply viewMode-based filtering
   if (currentUserEmail) {
     if (viewMode === "user") {
-      // User view: show tickets raised by current user
-      effectiveFilters.raised_by = currentUserEmail;
+      if (subTab === "others") {
+        // User view for others: show tickets where raised_by != current user and owner is current user
+        effectiveFilters.raised_by = ["!=", currentUserEmail];
+        effectiveFilters.owner = currentUserEmail;
+      } else {
+        // User view for myself: show tickets raised by current user
+        effectiveFilters.raised_by = currentUserEmail;
+      }
     } else if (viewMode === "admin") {
       // Admin view: show tickets assigned to current user
       effectiveFilters._assign = ["like", `%${currentUserEmail}%`];
@@ -110,7 +117,7 @@ export const useTicketList = (
   }
 
   return useQuery<TicketListResponse>({
-    queryKey: ["hd-tickets", filters, orderBy, pageLength, searchTerm, currentUserEmail, isAdmin, viewMode],
+    queryKey: ["hd-tickets", filters, orderBy, pageLength, searchTerm, currentUserEmail, isAdmin, viewMode, subTab],
     queryFn: async () => {
       // Use custom API that respects Frappe's permission system
       const result = await FrappeAPI.callMethod("recruitment.api.get_ticket_list_data", {
@@ -784,6 +791,7 @@ export interface TicketDetail {
   first_responded_on?: string;
   resolution_date?: string;
   custom_category?: string;
+  custom_archived?: number; // 0 or 1
   custom_sub_category?: string;
   // Category names (API may return these populated)
   category?: { name: string; category_name: string };

@@ -530,7 +530,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         {
           name: "Cycle",
           icon: ChartNoAxesCombined,
-          href: "/webapp/performance-app/appraisal-cycle-wizard",
+          href: "/webapp/performance-app/appraisal-cycle-wizard/cycle-details",
           permissionKey: "Appraisal Cycle Wizard",
         },
         {

@@ -4479,6 +4479,69 @@
    "translatable": 0,
    "unique": 0,
    "width": null
+  },
+  {
+   "collapsible": 1,
+   "dt": "Job Applicant",
+   "fieldname": "custom_screening_section",
+   "fieldtype": "Section Break",
+   "insert_after": "custom_substatus",
+   "label": "Auto-Screening",
+   "module": "Recruitment",
+   "name": "Job Applicant-custom_screening_section"
+  },
+  {
+   "default": "",
+   "dt": "Job Applicant",
+   "fieldname": "custom_screening_result",
+   "fieldtype": "Select",
+   "insert_after": "custom_screening_section",
+   "label": "Screening Result",
+   "module": "Recruitment",
+   "name": "Job Applicant-custom_screening_result",
+   "options": "\nPending\nPassed\nFailed",
+   "read_only": 1
+  },
+  {
+   "dt": "Job Applicant",
+   "fieldname": "custom_screening_score",
+   "fieldtype": "Int",
+   "insert_after": "custom_screening_result",
+   "label": "Screening Score",
+   "module": "Recruitment",
+   "name": "Job Applicant-custom_screening_score",
+   "read_only": 1
+  },
+  {
+   "dt": "Job Applicant",
+   "fieldname": "custom_screening_max_score",
+   "fieldtype": "Int",
+   "insert_after": "custom_screening_score",
+   "label": "Screening Max Score",
+   "module": "Recruitment",
+   "name": "Job Applicant-custom_screening_max_score",
+   "read_only": 1
+  },
+  {
+   "dt": "Job Applicant",
+   "fieldname": "custom_screening_evaluated_on",
+   "fieldtype": "Datetime",
+   "insert_after": "custom_screening_max_score",
+   "label": "Screening Evaluated On",
+   "module": "Recruitment",
+   "name": "Job Applicant-custom_screening_evaluated_on",
+   "read_only": 1
+  },
+  {
+   "dt": "Job Applicant",
+   "fieldname": "custom_screening_log",
+   "fieldtype": "Table",
+   "insert_after": "custom_screening_evaluated_on",
+   "label": "Screening Log",
+   "module": "Recruitment",
+   "name": "Job Applicant-custom_screening_log",
+   "options": "Job Applicant Screening Result",
+   "read_only": 1
   }
  ],
  "custom_perms": [

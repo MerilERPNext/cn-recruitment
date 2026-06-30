@@ -300,27 +300,27 @@ function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
 
 type StatusBadgeProps = {
   status?: string;
+  size?: "sm" | "md";
 };
 
-const StatusBadge = ({ status }: StatusBadgeProps) => {
+const StatusBadge = ({ status, size = "md" }: StatusBadgeProps) => {
   const badge = getStatusBadge(status);
+
+  const sizeClasses = {
+    sm: "px-2 py-[7px] rounded-md gap-1 text-[12px] leading-3 [&_svg]:!w-3 [&_svg]:!h-3",
+    md: "px-3 py-[5px] md:py-[6px] rounded-lg gap-[6px] text-xs md:text-sm leading-4",
+  };
 
   return (
     <div
       className={`
         inline-flex items-center
-        gap-[6px]
-        px-3 py-[5px]
-        md:py-[6px]
-        rounded-lg
-        ${badge.bgClass}
-        ${badge.textClass}
-        text-xs
-        md:text-sm
         font-brand
         font-medium
-        leading-4
         capitalize
+        ${badge.bgClass}
+        ${badge.textClass}
+        ${sizeClasses[size]}
       `}
     >
       {badge.icon}

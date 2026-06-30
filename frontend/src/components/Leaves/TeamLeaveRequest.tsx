@@ -32,7 +32,7 @@ const TeamLeaveRequest = () => {
   );
 
   const uiPermission = {
-    app: "Leave and Holidays",
+    app: "Leaves and Holidays",
     page: "Team Requests",
     action: "team_leave_request_actions",
   };

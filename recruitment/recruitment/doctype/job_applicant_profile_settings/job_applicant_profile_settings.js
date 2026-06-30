@@ -138,6 +138,13 @@
 			.apf-no { color: #9CA3AF; font-size: 11px; }
 			.apf-ref { color: #9CA3AF; font-size: 10.5px; }
 			.apf-display { color: #111827; font-weight: 500; font-size: 12px; }
+			.apf-label-input {
+				border: 1px solid transparent; outline: none; background: transparent;
+				color: #111827; font-weight: 500; font-size: 12px;
+				width: 100%; padding: 1px 3px; margin: 0; border-radius: 3px; box-sizing: border-box;
+			}
+			.apf-label-input:hover { background: #F9FAFB; border-color: #D1D5DB; cursor: text; }
+			.apf-label-input:focus { background: #EFF6FF; border-color: #93C5FD; cursor: text; }
 
 			.apf-toggle { position: relative; display: inline-block; width: 28px; height: 15px; vertical-align: middle; }
 			.apf-toggle input { opacity: 0; width: 0; height: 0; margin: 0; }
@@ -301,7 +308,13 @@
 				<td class="apf-col-check"><input type="checkbox" class="apf-row-check" data-ref="${escapeHtml(ref)}"/></td>
 				<td class="apf-col-no apf-no">${idx + 1}</td>
 				<td class="apf-col-field apf-text">
-					<div class="apf-display">${escapeHtml(row.display_name || ref)}${tableBadge}</div>
+					<div>
+						<input class="apf-label-input" type="text"
+							data-ref="${escapeHtml(ref)}"
+							value="${escapeHtml(row.display_name || ref)}"
+							title="Click to edit label"/>
+						${tableBadge}
+					</div>
 					<div class="apf-ref">${escapeHtml(ref)}</div>
 					${expandBtn}
 				</td>
@@ -393,6 +406,19 @@
 			el.addEventListener("click", () => {
 				state.activeSection = el.getAttribute("data-section");
 				renderUI(host, frm, state);
+			});
+		});
+
+		// Editable label
+		host.querySelectorAll("input.apf-label-input").forEach((inp) => {
+			inp.addEventListener("change", () => {
+				const ref = inp.getAttribute("data-ref");
+				const row = (frm.doc.default_application_fields || []).find((r) => r.reference_name === ref);
+				if (!row) return;
+				row.display_name = inp.value.trim() || ref;
+				inp.value = row.display_name;
+				frm.refresh_field("default_application_fields");
+				frm.dirty();
 			});
 		});
 

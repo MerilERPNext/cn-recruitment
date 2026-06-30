@@ -1,6 +1,4 @@
 import { lazy, Suspense, useState } from "react";
-import { mockWizardData } from "./AppraisalCycleWizard";
-import WizardShell from "./WizardShell";
 
 const TemplateSelector = lazy(
   () => import("./components/FormBuilder/TemplateSelector"),
@@ -11,18 +9,6 @@ const TemplatePreview = lazy(
 const MultiRolePreview = lazy(
   () => import("./components/FormBuilder/MultiRolePreview"),
 );
-
-const formBuilderData = {
-  ...mockWizardData,
-  activeStepId: "form-builder",
-  header: {
-    title: "Form Builder",
-    description:
-      "Pick a starting template or open the drag-drop builder for full editing.",
-  },
-  validationStatus: "Validation passed",
-  nextStepLabel: "Goal Pull-in",
-};
 
 const sectionFallback = (
   <div className="min-h-[180px] rounded-lg border border-gray-200 bg-white p-4 shadow-sm" />
@@ -148,10 +134,7 @@ const FormBuilder = () => {
     mockTemplates.find((t) => t.id === activeTemplateId) || mockTemplates[0];
 
   return (
-    <WizardShell
-      data={formBuilderData}
-      contentClassName="flex flex-col gap-4 sm:gap-5"
-    >
+    <>
       <Suspense fallback={sectionFallback}>
         <TemplateSelector
           templates={mockTemplates}
@@ -177,7 +160,7 @@ const FormBuilder = () => {
           </Suspense>
         </aside>
       </div>
-    </WizardShell>
+    </>
   );
 };
 

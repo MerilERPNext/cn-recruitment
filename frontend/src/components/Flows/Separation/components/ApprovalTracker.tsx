@@ -15,6 +15,8 @@ import { FlowRequestItem } from "../../../../types/flows";
 import { FormIOForm } from "../../../../utils/flowUtils";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import FormPreview from "../../../shared/molecules/FormPreview";
+import NoDataFound from "../../../shared/atoms/NoDataFound";
+
 export interface ApprovalStage {
   approval_time: string;
   approval_response_data: string;
@@ -29,14 +31,34 @@ export interface ApprovalStage {
 }
 
 interface ApprovalTrackerProps {
-  data: FlowRequestItem;
+  data?: FlowRequestItem | null;
   For: "Employee Separation" | "Employee Termination";
+  isLoading?: boolean;
 }
 
-export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
+export default function ApprovalTracker({ data, For, isLoading }: ApprovalTrackerProps) {
   const [showSelfForm, setShowSelfForm] = useState(false);
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [formAnswer, setFormAnswer] = useState<Record<string, any>>({});
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-sm border border-gray-100 min-h-[250px]">
+        <NoDataFound loading={true} />
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow-sm border border-gray-100 min-h-[250px]">
+        <NoDataFound
+          title="No Approval Data Available"
+          subtitle="There are no approval details to track at the moment."
+        />
+      </div>
+    );
+  }
 
   const haveInitiatorForm = data?.initiator_forms && data.initiator_forms.length > 0;
 
@@ -55,17 +77,7 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
     setFormSchema({ display: "form", components: schema });
     setFormAnswer(answer || {});
     setShowSelfForm(true);
-  }
-
-
-  if (!data) {
-    return (
-      <div className="bg-white rounded-2xl shadow p-4 border border-gray-200">
-        <h3 className="font-semibold text-gray-700">Approval Tracker</h3>
-        <p className="text-sm text-gray-500">No approval data available.</p>
-      </div>
-    );
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -110,14 +122,14 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
       <Card>
         <div className="w-full  rounded-lg">
           <Typography className="mb-2" variant="subheading">
-            {For == "Employee Separation" ? "Separation Workflow Timeline" : "Termination Workflow Timeline"}
+            {For === "Employee Separation" ? "Separation Approval Timeline" : "Termination Workflow Timeline"}
           </Typography>
           <div className="flex flex-col pt-1">
             {haveInitiatorForm && (
               <div className="grid w-full lg:hover:bg-primary/20 cursor-pointer text-sm lg:px-6">
                 <StatusTimelineRow
                   timelineData={{
-                    isLast: data?.approval_stages.length == 0 ? true : false,
+                    isLast: data?.approval_stages.length === 0 ? true : false,
                     status: "completed",
                   }}
                 >
@@ -146,10 +158,10 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
             {data?.approval_stages.map((item, idx) => {
               const isActive =
                 item.status === "Pending" &&
-                (idx == 0 ||
+                (idx === 0 ||
                   data?.approval_stages[idx - 1].status === "Approved");
               const isLastStage =
-                idx == data?.approval_stages.length - 1;
+                idx === data?.approval_stages.length - 1;
 
               return (
                 <CardStages

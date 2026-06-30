@@ -1,6 +1,122 @@
 import frappe
+from frappe.model.mapper import get_mapped_doc
 
 from hrms.hr.doctype.job_requisition.job_requisition import JobRequisition
+
+
+# Job Requisition field -> Job Opening field, for pairs whose *meaning* is the
+# same but whose fieldname differs. Same-named fields (company, department,
+# designation, description, custom_functional_area, the shared child tables,
+# etc.) are copied automatically by get_mapped_doc and don't belong here.
+_JR_TO_JO_FIELD_MAP = {
+    "name": "job_requisition",
+    "no_of_positions": "vacancies",
+    "custom_employment_type_link": "employment_type",
+    "custom_location": "location",
+    "reason_for_requesting": "custom_reason_for_requesting",
+}
+
+# Job Opening Select fields whose option set differs from the Job Requisition
+# field of the same name. get_mapped_doc copies same-named fields blindly, which
+# could plant an option the target doesn't offer; we scrub those post-copy.
+_JO_GUARDED_SELECTS = ("custom_work_experience_range", "custom_preferred_notice_period")
+
+# Job Requisition salary-timeframe -> Job Opening salary_per.
+_TIMEFRAME_TO_SALARY_PER = {"Annual": "Year", "Monthly": "Month"}
+
+
+def _to_number(value):
+    """Best-effort numeric parse of a free-text Data field; None when not numeric."""
+    if value in (None, ""):
+        return None
+    try:
+        return float(str(value).replace(",", "").strip())
+    except (ValueError, TypeError):
+        return None
+
+
+@frappe.whitelist()
+def make_job_opening(source_name, target_doc=None):
+    """Create a Job Opening from a Job Requisition, carrying across every field
+    whose meaning is shared between the two doctypes.
+
+    Replaces HRMS's ``make_job_opening`` (wired via ``override_whitelisted_methods``
+    in hooks.py) for two reasons:
+
+      1. HRMS placed its ``field_map`` as a sibling of the doctype entry instead
+         of nesting it, so its non-same-name mappings (job_requisition, vacancies)
+         were silently never applied. We nest it correctly here.
+      2. We extend the map to the recruitment custom fields (employment type,
+         location, salary, experience, notice period, the shared child tables …)
+         so the opening opens fully pre-filled.
+
+    Route uniqueness (the "Route must be unique" error) is handled separately and
+    uniformly at save time by ``job_opening_settings.ensure_unique_route``.
+
+    Derived values are computed defensively — a malformed source value is skipped
+    rather than raised, so the mapping never breaks the "Create Job Opening" action.
+    """
+
+    def set_missing_values(source, target):
+        target.job_title = source.designation
+        # A freshly created opening always starts Open (JR status options such as
+        # "Open & Approved" aren't valid on Job Opening).
+        target.status = "Open"
+        target.description = source.description
+
+        try:
+            company_currency = (
+                frappe.db.get_value("Company", source.company, "default_currency")
+                if source.company
+                else None
+            )
+            target.currency = source.get("custom_salary_range_currency") or company_currency or target.currency
+
+            # Compensation: explicit expected_compensation first, then the
+            # min/max salary range (stored as free-text Data on the requisition).
+            if source.get("expected_compensation"):
+                target.lower_range = source.expected_compensation
+            salary_min = _to_number(source.get("custom_salary_range_min"))
+            salary_max = _to_number(source.get("custom_salary_range_max"))
+            if salary_min is not None:
+                target.lower_range = salary_min
+            if salary_max is not None:
+                target.upper_range = salary_max
+
+            salary_per = _TIMEFRAME_TO_SALARY_PER.get(source.get("custom_salary_timeframe"))
+            if salary_per:
+                target.salary_per = salary_per
+
+            # Minimum experience: the "from" end of the requisition's range.
+            min_experience = _to_number(source.get("custom_experience_range_from"))
+            if min_experience is not None and target.meta.has_field("custom_min_experience_required"):
+                target.custom_min_experience_required = min_experience
+
+            # Drop any Select value the target doctype doesn't actually offer, so
+            # a blindly-copied option can't render as an invalid/blank choice.
+            for fieldname in _JO_GUARDED_SELECTS:
+                df = target.meta.get_field(fieldname)
+                value = target.get(fieldname)
+                if df and value:
+                    allowed = {opt.strip() for opt in (df.options or "").split("\n") if opt.strip()}
+                    if value not in allowed:
+                        target.set(fieldname, None)
+        except Exception:
+            # Enrichment is best-effort; the core mapping must still succeed.
+            frappe.log_error(frappe.get_traceback(), "make_job_opening enrichment failed")
+
+    return get_mapped_doc(
+        "Job Requisition",
+        source_name,
+        {
+            "Job Requisition": {
+                "doctype": "Job Opening",
+                "field_map": _JR_TO_JO_FIELD_MAP,
+            }
+        },
+        target_doc,
+        set_missing_values,
+    )
 
 
 class CustomJobRequisition(JobRequisition):
