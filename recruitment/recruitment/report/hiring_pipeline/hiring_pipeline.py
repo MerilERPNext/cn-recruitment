@@ -15,8 +15,8 @@ def get_report_data():
 	column_array = ["POSTING TITLE:DATA:180","TOTAL CANDIDATES:INT:100"]
 
 	# SQL equivalent Frappe ORM to fetch the job title, status, and count of job applicants
-	job_applicants = frappe.db.get_list('Job Applicant', 
-		fields=['job_title', 'status', 'count(name) as count'],
+	job_applicants = frappe.db.get_list('Job Applicant',
+		fields=['job_title', 'status', {'COUNT': 'name', 'as': 'count'}],
 		filters={},
 		group_by='status, job_title',
 	)

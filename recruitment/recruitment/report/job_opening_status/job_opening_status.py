@@ -23,8 +23,8 @@ def execute(filters=None):
 
 	]
 
-	job_openings = frappe.db.get_list('Job Opening', 
-		fields=['status as Status' , 'count(*) as Count'],
+	job_openings = frappe.db.get_list('Job Opening',
+		fields=['status as Status', {'COUNT': '*', 'as': 'Count'}],
 		group_by='status'
 	)
 
