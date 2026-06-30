@@ -242,6 +242,10 @@ def sync_employee_fields(targets=None, enqueue=True):
     migrate patch, where there may be no worker and the caller needs the result
     inline). Patches should call `_run_sync(targets)` directly.
     """
+    # Creates hundreds of system-generated Custom Fields (schema change).
+    # Restrict to System Manager (was callable by any logged-in user).
+    frappe.only_for("System Manager")
+
     if isinstance(targets, str):
         targets = [t.strip() for t in targets.split(",") if t.strip()]
     targets = targets or list(TARGET_DOCTYPES)

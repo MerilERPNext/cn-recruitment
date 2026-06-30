@@ -6,6 +6,19 @@ allow_guest = True
 
 def get_context(context):
     original_user = frappe.session.user
+
+    # Authorize as the REAL requester BEFORE elevating to Administrator below —
+    # otherwise the set_user would make _authorize_offer always pass as admin and
+    # defeat the token gate. Internal users with Job Offer read pass without a
+    # token; candidates use the signed token in the link. This stops the
+    # sequential applicant id from being enumerated to read others' offers.
+    pre_args = frappe.request.args
+    pre_appl = pre_args.get("appl")
+    if not pre_appl:
+        frappe.throw("Missing or invalid 'appl' parameter")
+    from recruitment.job_offer_utils import _authorize_offer
+    _authorize_offer(pre_appl, pre_args.get("token"), "read")
+
     frappe.set_user("Administrator")
     try:
         query_params = frappe.request.args

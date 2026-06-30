@@ -22,6 +22,14 @@ def update_comment(doctype=None, docname=None, docnames=None, fieldname=None, co
 			results.append({"docname": dn, "success": False, "error": f"{doctype} {dn} not found"})
 			continue
 
+		# Authorization: the caller must actually be allowed to write this exact
+		# document. Without this check any logged-in user could append to any
+		# field of any document of any doctype (the previous ignore_permissions
+		# save made this a site-wide write primitive).
+		if not frappe.has_permission(doctype, "write", doc=dn):
+			results.append({"docname": dn, "success": False, "error": _("Not permitted to edit {0} {1}").format(doctype, dn)})
+			continue
+
 		doc = frappe.get_doc(doctype, dn)
 		meta_field = doc.meta.get_field(fieldname)
 		if not meta_field:
@@ -34,7 +42,7 @@ def update_comment(doctype=None, docname=None, docnames=None, fieldname=None, co
 		else:
 			doc.set(fieldname, comment)
 
-		doc.save(ignore_permissions=True)
+		doc.save()
 		results.append({"docname": dn, "success": True})
 
 	frappe.db.commit()

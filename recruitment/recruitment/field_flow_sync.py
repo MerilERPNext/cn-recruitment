@@ -226,8 +226,19 @@ def ensure_flow_definition(flow_name, items):
 # Whitelisted dialog API — called from the "Add Custom Field" dialog
 # ---------------------------------------------------------------------------
 
+def _require_manage_access():
+    """These endpoints create/inspect Custom Fields (schema changes). Restrict to
+    users who can configure the Job Applicant Profile Settings (System Manager /
+    HR Manager) — the form the dialog lives on — instead of any logged-in user."""
+    if not frappe.has_permission("Job Applicant Profile Settings", "write"):
+        frappe.throw(
+            frappe._("Not permitted to manage field flows."), frappe.PermissionError
+        )
+
+
 @frappe.whitelist()
 def get_field_flow_picker(flow_name=None):
+    _require_manage_access()
     """Everything the dialog needs to render: the flow's ordered doctypes (with
     their connecting link field) and each doctype's mappable fields. Provisions
     the default flow + Employee connector on first open so it always works."""
@@ -263,11 +274,13 @@ def get_field_flow_picker(flow_name=None):
 @frappe.whitelist()
 def get_doctype_mappable_fields(doctype):
     """Field list for a doctype the user just added to the flow."""
+    _require_manage_access()
     return _mappable_fields(doctype)
 
 
 @frappe.whitelist()
 def resolve_flow_link(target_doctype, existing_doctypes):
+    _require_manage_access()
     """Link field(s) on ``target_doctype`` that point at a doctype already in the
     flow. Exactly one → auto-connect; zero → can't add; many → user picks."""
     existing = json.loads(existing_doctypes) if isinstance(existing_doctypes, str) else (existing_doctypes or [])
@@ -286,6 +299,7 @@ def save_field_flows_bulk(payload):
     """Create/update one Data Element + Data Flow Attachment per row, processed
     one by one so a bad row is isolated (savepoint rollback) and the rest still
     apply. Returns per-row results + errors for the dialog to show."""
+    _require_manage_access()
     data = json.loads(payload) if isinstance(payload, str) else (payload or {})
     flow_name = (data.get("flow_name") or DEFAULT_FLOW_NAME).strip() or DEFAULT_FLOW_NAME
     items = data.get("flow") or _default_flow_items()
@@ -349,6 +363,7 @@ def save_field_flows_bulk(payload):
 @frappe.whitelist()
 def delete_field_flow(data_flow_attachment):
     """Remove a configured field flow (engine tears down its fields/wiring)."""
+    _require_manage_access()
     _teardown(data_flow_attachment)
     return {"deleted": data_flow_attachment}
 
@@ -356,6 +371,7 @@ def delete_field_flow(data_flow_attachment):
 @frappe.whitelist()
 def list_field_flows(flow_name=None):
     """The field flows already configured on a flow, for listing/edit/delete."""
+    _require_manage_access()
     flow_name = (flow_name or DEFAULT_FLOW_NAME).strip() or DEFAULT_FLOW_NAME
     if not frappe.db.exists("Document Data Flow", flow_name):
         return []

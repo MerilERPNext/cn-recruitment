@@ -292,7 +292,8 @@ def _step_url(step, applicant_name):
     if step == SURVEY_STEP:
         return SURVEY_URL_TEMPLATE.format(applicant=applicant_name)
     if step == JOB_OFFER_STEP:
-        return JOB_OFFER_URL_TEMPLATE.format(applicant=applicant_name)
+        from recruitment.recruitment.link_token import offer_token
+        return JOB_OFFER_URL_TEMPLATE.format(applicant=applicant_name) + "&token=" + offer_token(applicant_name)
     if step == ONBOARDING_STEP:
         return ONBOARDING_URL_TEMPLATE.format(applicant=applicant_name)
     return ACTION_CENTER_URL

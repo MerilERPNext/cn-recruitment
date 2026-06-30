@@ -5,6 +5,20 @@ from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
 from frappe.utils import formatdate, now_datetime, time_diff_in_hours, flt, fmt_money
 
+from recruitment.recruitment.link_token import OFFER_SCOPE, offer_token, require_token
+
+
+def _authorize_offer(appl, token, ptype="read"):
+    """Gate the offer endpoints for both audiences:
+      - internal desk/HR users (logged in with Job Offer permission) — they call
+        these without a token (e.g. job_offer.js after_save),
+      - candidates on the guest offer page — verified via the signed link token.
+    A guest with neither is rejected (closes the applicant-id enumeration)."""
+    user = frappe.session.user
+    if user and user != "Guest" and frappe.has_permission("Job Offer", ptype):
+        return
+    require_token(OFFER_SCOPE, appl, token)
+
 
 def get_job_offer_print_format(job_offer=None):
     """Resolve which Job Offer Print Format to use.
@@ -82,10 +96,11 @@ def get_job_offer_print_preview_url(job_offer):
 
 
 @frappe.whitelist(allow_guest=True)
-def download_job_offer_pdf(appl):
-    """Download Job Offer PDF for a given applicant — guest-accessible."""
+def download_job_offer_pdf(appl, token=None):
+    """Download Job Offer PDF for a given applicant — guest, token-gated."""
     if not appl:
         frappe.throw("Missing applicant parameter")
+    _authorize_offer(appl, token, "read")
 
     original_user = frappe.session.user
     frappe.set_user("Administrator")
@@ -114,10 +129,11 @@ def download_job_offer_pdf(appl):
         frappe.set_user(original_user)
 
 @frappe.whitelist(allow_guest=True)
-def preview_job_offer_html(appl):
-    """Return rendered print-format HTML for a given applicant — guest-accessible."""
+def preview_job_offer_html(appl, token=None):
+    """Return rendered print-format HTML for a given applicant — guest, token-gated."""
     if not appl:
         frappe.throw("Missing applicant parameter")
+    _authorize_offer(appl, token, "read")
 
     original_user = frappe.session.user
     frappe.set_user("Administrator")
@@ -139,7 +155,8 @@ def preview_job_offer_html(appl):
         frappe.set_user(original_user)
 
 @frappe.whitelist(allow_guest=True)
-def get_job_offer_status(appl):
+def get_job_offer_status(appl, token=None):
+    _authorize_offer(appl, token, "read")
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
     if not jo_id:
         return {"status": None}
@@ -147,7 +164,8 @@ def get_job_offer_status(appl):
     return {"status": status}
 
 @frappe.whitelist(allow_guest=True)
-def job_offer_update(status, appl, reason=None, message=None):
+def job_offer_update(status, appl, token=None, reason=None, message=None):
+    _authorize_offer(appl, token, "write")
     original_ignore = frappe.flags.ignore_permissions
     frappe.flags.ignore_permissions = True
     try:
@@ -186,7 +204,8 @@ def job_offer_update(status, appl, reason=None, message=None):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_job_offer_summary(appl):
+def get_job_offer_summary(appl, token=None):
+    _authorize_offer(appl, token, "read")
     original_ignore = frappe.flags.ignore_permissions
     frappe.flags.ignore_permissions = True
     try:
