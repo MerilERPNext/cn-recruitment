@@ -22,6 +22,10 @@ interface InitialEditData {
   start_date: string;
   end_date?: string | null;
   is_promotion: boolean;
+  // Per-field history row names. Sent as ``record_names`` so the backend edits
+  // each of the card's lines in place (incl. start_date) instead of appending
+  // duplicates when the date changes.
+  record_names?: Record<string, string | undefined>;
 }
 
 interface EmploymentHistoryProps {
@@ -223,6 +227,11 @@ const EmploymentHistoryForm = ({
           functional_area: data.functional_area,
           is_promotion: data.is_promotion,
           mode: isEdit ? "update" : "new",
+          // On edit, identify each field's existing row so the backend moves the
+          // whole card in place (incl. start_date) rather than creating duplicates.
+          ...(isEdit && initialEditData?.record_names
+            ? { record_names: initialEditData.record_names }
+            : {}),
         }),
         isEdit ? "Updating Employment History..." : "Adding Employment History...",
       );

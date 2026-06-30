@@ -534,6 +534,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             work_location: (editItem as WorkLocation).work_location?.id || "",
             start_date: editItem.from_date,
             end_date: editItem.to_date,
+            // Row name lets the backend edit THIS line in place (incl. start_date)
+            // instead of appending a duplicate when the date changes.
+            work_location_row_name: (editItem as WorkLocation).work_location?.row_name,
           } : undefined}
         />
       )}
@@ -554,6 +557,16 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 start_date: editItem.from_date,
                 end_date: editItem.to_date,
                 is_promotion: (editItem as WorkRole).is_promotion,
+                // Per-field row names: each maps to its own history line, so the
+                // whole card is edited in place (incl. start_date) on edit.
+                record_names: {
+                  company: (editItem as WorkRole).company?.row_name,
+                  department: (editItem as WorkRole).department?.row_name,
+                  designation: (editItem as WorkRole).designation?.row_name,
+                  functional_area: (editItem as WorkRole).functional_area?.row_name,
+                  grade: (editItem as WorkRole).grade?.row_name,
+                  band: (editItem as WorkRole).band?.row_name,
+                },
               } : undefined}
             />
           </div>
@@ -571,6 +584,10 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             employee_subtype: (editItem as unknown as EmploymentTypes).employee_subtype?.id || "",
             start_date: editItem.from_date,
             end_date: editItem.to_date,
+            // Per-field row names: each maps to its own history line, so both are
+            // edited in place (incl. start_date) instead of spawning duplicates.
+            employment_type_row_name: (editItem as unknown as EmploymentTypes).employment_type?.row_name,
+            employee_subtype_row_name: (editItem as unknown as EmploymentTypes).employee_subtype?.row_name,
           } : undefined}
         />
       )}
@@ -584,6 +601,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           initialEditData={editItem ? {
             employee_role: (editItem as unknown as EmployeeRole).employee_role?.id || "",
             start_date: editItem.from_date,
+            // Row name lets the backend edit THIS line in place (incl. start_date)
+            // instead of appending a duplicate when the date changes.
+            employee_role_row_name: (editItem as unknown as EmployeeRole).employee_role?.row_name,
           } : undefined}
         />
       )}
