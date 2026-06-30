@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Filter,
   Search,
-  Upload,
 } from "lucide-react";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -155,9 +154,6 @@ const EarnedPointsSummary: React.FC = () => {
               className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50"
             >
               <Filter className="size-4" />
-            </button>
-            <button className="rounded-lg border border-gray-200 p-2 text-gray-500">
-              <Upload className="size-4" />
             </button>
           </div>
         </div>

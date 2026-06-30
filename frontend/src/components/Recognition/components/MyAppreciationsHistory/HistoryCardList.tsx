@@ -46,7 +46,7 @@ const HistoryCardList = ({ items, relationLabel }: HistoryCardListProps) => (
           </Typography>
         </div>
 
-        <HistoryActions className="mt-4" />
+        <HistoryActions item={item} className="mt-4" />
       </article>
     ))}
   </div>

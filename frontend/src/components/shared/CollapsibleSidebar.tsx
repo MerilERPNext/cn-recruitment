@@ -611,7 +611,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Recognition",
       subItems: [
         {
-          name: "Dashboard",
+          name: "Active Programs",
           icon: Home,
           href: "/webapp/recognition/vibe/dashboard",
           permissionKey: "Dashboard",
@@ -621,12 +621,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: FileText,
           href: "/webapp/recognition/vibe/my-appreciations-history",
           permissionKey: "My Appreciations History",
-        },
-        {
-          name: "Feed",
-          icon: Telescope,
-          href: "/webapp/recognition/vibe/feed",
-          permissionKey: "Feed",
         },
         {
           name: "Appreciations-Leaderboard",

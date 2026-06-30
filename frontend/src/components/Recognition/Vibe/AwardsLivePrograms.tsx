@@ -1,9 +1,94 @@
-import React, { useEffect, useRef, useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
 import { Check, ChevronDown, Search, Trophy } from "lucide-react";
 import Avatar from "./Avatar";
-import { AWARD_PROGRAMS, MY_AWARDS, AwardProgram } from "./vibeMockData";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import {
+  useAwardEmployeePoints,
+  useAwardPrograms,
+  AwardPointsAward,
+  AwardProgramItem,
+} from "../../../services/recognitionService";
+
+// Resolve relative Frappe file paths (e.g. "/private/files/..") against the API host.
+const API_HOST =
+  (import.meta as any).env?.VITE_API_BASE_URL ||
+  (import.meta as any).env?.VITE_API_DOMAIN ||
+  (typeof window !== "undefined" ? window.location.origin : "");
+
+const resolvePhoto = (image?: string | null): string | undefined => {
+  if (!image) return undefined;
+  if (/^https?:\/\//i.test(image)) return image;
+  if (image.startsWith("/")) return `${API_HOST}${image}`;
+  return image;
+};
+
+// "YYYY-MM-DD" -> "DD-MM-YYYY"
+const formatDate = (iso?: string | null): string => {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split(" ")[0].split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}-${m}-${y}`;
+};
+
+const initialsOf = (name?: string | null): string =>
+  (name || "")
+    .split(" ")
+    .map((p) => p.charAt(0))
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+// View model derived from the API award row.
+interface ProgramVM {
+  award: string;
+  title: string;
+  totalPoints: number;
+  lastDate: string | null;
+  /** Lower-cased names of every employee in this award, for client-side search. */
+  searchNames: string;
+  winners: {
+    employee: string;
+    name: string;
+    designation: string;
+    photo?: string;
+    initials: string;
+    points: number;
+  }[];
+  moreMembers: number;
+}
+
+const MAX_VISIBLE_WINNERS = 3;
+
+const toProgramVM = (a: AwardPointsAward): ProgramVM => {
+  const employees = a.employees || [];
+  const visible = employees.slice(0, MAX_VISIBLE_WINNERS);
+  const lastDate = employees.reduce<string | null>((acc, e) => {
+    if (!e.last_nomination_date) return acc;
+    return !acc || e.last_nomination_date > acc ? e.last_nomination_date : acc;
+  }, null);
+  return {
+    award: a.award,
+    title: a.award_name || a.award,
+    totalPoints: a.total_points || 0,
+    lastDate,
+    searchNames: employees
+      .map((e) => (e.full_name || e.employee_name || "").toLowerCase())
+      .join(" "),
+    winners: visible.map((e) => ({
+      employee: e.employee,
+      name: e.full_name || e.employee_name || e.employee,
+      designation: e.designation || "",
+      photo: resolvePhoto(e.image),
+      initials: initialsOf(e.full_name || e.employee_name),
+      points: e.total_points || 0,
+    })),
+    moreMembers: Math.max(0, employees.length - visible.length),
+  };
+};
 
 const WinnersRibbon: React.FC = () => (
   <div className="absolute left-0 top-3 z-10">
@@ -20,7 +105,7 @@ const TrophyArt: React.FC = () => (
   </div>
 );
 
-const ProgramCard: React.FC<{ program: AwardProgram }> = ({ program }) => (
+const ProgramCard: React.FC<{ program: ProgramVM }> = ({ program }) => (
   <Card radius="xl" className="relative border border-gray-100 shadow-sm overflow-hidden">
     <WinnersRibbon />
     <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-5 p-5">
@@ -32,20 +117,28 @@ const ProgramCard: React.FC<{ program: AwardProgram }> = ({ program }) => (
           </Typography>
           <button className="text-sm font-medium text-primary shrink-0">View All</button>
         </div>
-        <span className="inline-block rounded-xl bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500">
-          Closed on {program.closedOn}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-block rounded-xl bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500">
+            Last nomination {formatDate(program.lastDate)}
+          </span>
+          <span className="inline-block rounded-xl bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600">
+            {program.totalPoints} pts
+          </span>
+        </div>
 
         {program.winners.length > 0 && (
           <div className="mt-5 flex flex-wrap items-start gap-4 sm:gap-5">
             {program.winners.map((w) => (
-              <div key={w.name} className="flex flex-col items-center text-center w-20 sm:w-24">
-                <Avatar name={w.name} initials={w.initials} size={56} />
+              <div key={w.employee} className="flex flex-col items-center text-center w-20 sm:w-24">
+                <Avatar name={w.name} initials={w.initials} photo={w.photo} size={56} />
                 <Typography variant="bodySmall" className="mt-2 font-semibold leading-tight">
                   {w.name}
                 </Typography>
                 <Typography variant="caption" color="body2" className="leading-tight">
                   {w.designation}
+                </Typography>
+                <Typography variant="caption" className="mt-0.5 font-semibold text-amber-600">
+                  {w.points} pts
                 </Typography>
               </div>
             ))}
@@ -67,11 +160,18 @@ const ProgramCard: React.FC<{ program: AwardProgram }> = ({ program }) => (
 );
 
 // Inline labelled single-select dropdown (Filters / Sort) used in the toolbar.
-const TIME_OPTIONS = [{ label: "All Time", value: "all-time" }];
+// Values map directly to the get_award_employee_points API params.
+const TIME_OPTIONS = [
+  { label: "All Time", value: "all" },
+  { label: "This Month", value: "month" },
+  { label: "This Quarter", value: "quarter" },
+  { label: "This Year", value: "year" },
+];
 const SORT_OPTIONS = [
-  { label: "Relevance", value: "relevance" },
-  { label: "Nomination Date (Newest)", value: "nomination-newest" },
-  { label: "Nomination Date (Oldest)", value: "nomination-oldest" },
+  { label: "Nomination Date (Newest)", value: "nomination_date desc" },
+  { label: "Nomination Date (Oldest)", value: "nomination_date asc" },
+  { label: "Points (High to Low)", value: "points desc" },
+  { label: "Points (Low to High)", value: "points asc" },
 ];
 
 const LabeledSelect: React.FC<{
@@ -135,33 +235,99 @@ const LabeledSelect: React.FC<{
   );
 };
 
-// closedOn is "DD-MM-YYYY".
-const parseClosedOn = (s: string): number => {
-  const [d, m, y] = (s || "").split("-").map(Number);
-  return new Date(y || 0, (m || 1) - 1, d || 1).getTime();
-};
+// A single "My Awards" card (received or given), powered by get_award_programs.
+const MyAwardCard: React.FC<{ award: AwardProgramItem }> = ({ award }) => (
+  <Card radius="xl" className="border border-amber-200 p-4 pt-7 relative">
+    <div className="absolute -top-5 left-1/2 -translate-x-1/2">
+      <div className="flex size-10 items-center justify-center rounded-full border-2 border-amber-300 bg-white">
+        <Trophy className="size-5 text-amber-400" />
+      </div>
+    </div>
+    <Typography variant="bodyMedium" className="font-bold text-center">
+      {award.title}
+    </Typography>
+    <div className="mt-1 flex items-center justify-center gap-2 text-xs text-gray-500">
+      {award.org && <span>{award.org}</span>}
+      <span>{award.date}</span>
+    </div>
+    {award.person && (
+      <div className="mt-1 text-center text-xs text-gray-400">
+        {award.direction === "received" ? "From" : "To"}{" "}
+        <span className="font-medium text-gray-600">{award.person}</span>
+      </div>
+    )}
+    {award.message && (
+      <Typography variant="bodySmall" color="body2" className="mt-3 block">
+        {award.message}
+      </Typography>
+    )}
+    {award.values.length > 0 && (
+      <div className="mt-3 flex flex-wrap gap-2">
+        {award.values.map((v) => (
+          <span
+            key={v}
+            className="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-600"
+          >
+            {v}
+          </span>
+        ))}
+      </div>
+    )}
+  </Card>
+);
+
+const MY_AWARDS_SIDEBAR_LIMIT = 50;
+// Only the first few cards are shown in the panel; the rest live behind "View All".
+const MY_AWARDS_VISIBLE = 3;
 
 const AwardsLivePrograms: React.FC = () => {
+  const navigate = useNavigate();
   const [awardTab, setAwardTab] = useState<"Received" | "Given">("Received");
   const [query, setQuery] = useState("");
-  const [timeFilter, setTimeFilter] = useState("all-time");
-  const [sortBy, setSortBy] = useState("relevance");
+  const [timeFilter, setTimeFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("nomination_date desc");
+
+  // My Awards (right panel) — received + given from get_award_programs.
+  const { data: currentUser } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
+  const employeeId = currentUser?.employee ?? "";
+  // `direction` is sent in the payload so the server returns only that tab's
+  // awards. One query per direction keeps both tab counts accurate.
+  const { data: receivedResp, isLoading: receivedLoading } = useAwardPrograms({
+    employee: employeeId,
+    direction: "received",
+    page_length: MY_AWARDS_SIDEBAR_LIMIT,
+  });
+  const { data: givenResp, isLoading: givenLoading } = useAwardPrograms({
+    employee: employeeId,
+    direction: "given",
+    page_length: MY_AWARDS_SIDEBAR_LIMIT,
+  });
+  const receivedAwards = receivedResp?.data ?? [];
+  const givenAwards = givenResp?.data ?? [];
+  const receivedCount = receivedResp?.total_count ?? receivedAwards.length;
+  const givenCount = givenResp?.total_count ?? givenAwards.length;
+  const activeAwards = awardTab === "Received" ? receivedAwards : givenAwards;
+  const visibleAwards = activeAwards.slice(0, MY_AWARDS_VISIBLE);
+  const hiddenCount = activeAwards.length - visibleAwards.length;
+  const myAwardsLoading = awardTab === "Received" ? receivedLoading : givenLoading;
+
+  // Filters + Sort drive the server-side request; search filters client-side.
+  const { data, isLoading, isError, error, refetch, isFetching } =
+    useAwardEmployeePoints({ time_period: timeFilter, sort: sortBy });
+
+  const programs = useMemo<ProgramVM[]>(
+    () => (data?.awards || []).map(toProgramVM),
+    [data],
+  );
 
   const q = query.trim().toLowerCase();
-  const filteredPrograms = q
-    ? AWARD_PROGRAMS.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          (p.winners || []).some((w) => w.name.toLowerCase().includes(q)),
+  const displayedPrograms = q
+    ? programs.filter(
+        (p) => p.title.toLowerCase().includes(q) || p.searchNames.includes(q),
       )
-    : AWARD_PROGRAMS;
-
-  const displayedPrograms = [...filteredPrograms];
-  if (sortBy === "nomination-newest") {
-    displayedPrograms.sort((a, b) => parseClosedOn(b.closedOn) - parseClosedOn(a.closedOn));
-  } else if (sortBy === "nomination-oldest") {
-    displayedPrograms.sort((a, b) => parseClosedOn(a.closedOn) - parseClosedOn(b.closedOn));
-  }
+    : programs;
 
   return (
     <div className="p-4 md:p-6">
@@ -171,7 +337,6 @@ const AwardsLivePrograms: React.FC = () => {
           <span>/</span>
           <span className="font-semibold text-gray-900">All Awards</span>
         </div>
-        <button className="text-sm font-medium text-blue-600">View Eligibility</button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -203,10 +368,41 @@ const AwardsLivePrograms: React.FC = () => {
               />
             </div>
           </div>
-          {displayedPrograms.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-5">
+              {[0, 1].map((i) => (
+                <Card
+                  key={i}
+                  radius="xl"
+                  className="h-40 animate-pulse border border-gray-100 bg-gray-50 shadow-sm"
+                >
+                  <span className="sr-only">Loading awards…</span>
+                </Card>
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="py-8 text-center">
+              <p className="text-sm text-red-500">
+                {(error as Error)?.message || "Failed to load awards."}
+              </p>
+              <button
+                onClick={() => refetch()}
+                className="mt-3 rounded-lg border border-gray-200 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Retry
+              </button>
+            </div>
+          ) : displayedPrograms.length === 0 ? (
             <p className="py-8 text-center text-sm text-gray-400">No awards found.</p>
           ) : (
-            displayedPrograms.map((p) => <ProgramCard key={p.title} program={p} />)
+            <>
+              {isFetching && (
+                <p className="text-xs text-gray-400">Updating…</p>
+              )}
+              {displayedPrograms.map((p) => (
+                <ProgramCard key={p.award} program={p} />
+              ))}
+            </>
           )}
         </div>
 
@@ -217,11 +413,16 @@ const AwardsLivePrograms: React.FC = () => {
               <Typography variant="h4" className="font-bold">
                 My Awards
               </Typography>
-              <button className="text-sm font-medium text-primary">View All</button>
+              <button
+                onClick={() => navigate("/webapp/recognition/vibe/awards-history")}
+                className="text-sm font-medium text-primary"
+              >
+                View All
+              </button>
             </div>
 
             <div className="mb-6 flex items-center gap-6 border-b border-gray-100">
-              {(["Received", "Given"] as const).map((tab, i) => (
+              {(["Received", "Given"] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setAwardTab(tab)}
@@ -233,47 +434,43 @@ const AwardsLivePrograms: React.FC = () => {
                 >
                   {tab}
                   <span className="flex size-5 items-center justify-center rounded-full bg-purple-100 text-[10px] font-semibold text-purple-600">
-                    {i === 0 ? 9 : 1}
+                    {tab === "Received" ? receivedCount : givenCount}
                   </span>
                 </button>
               ))}
             </div>
 
-            <div className="space-y-5">
-              {MY_AWARDS.map((award) => (
-                <Card
-                  key={award.title}
-                  radius="xl"
-                  className="border border-amber-200 p-4 pt-7 relative"
-                >
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2">
-                    <div className="flex size-10 items-center justify-center rounded-full border-2 border-amber-300 bg-white">
-                      <Trophy className="size-5 text-amber-400" />
-                    </div>
-                  </div>
-                  <Typography variant="bodyMedium" className="font-bold text-center">
-                    {award.title}
-                  </Typography>
-                  <div className="mt-1 flex items-center justify-center gap-2 text-xs text-gray-500">
-                    <span>{award.org}</span>
-                    <span>{award.date}</span>
-                  </div>
-                  <Typography variant="bodySmall" color="body2" className="mt-3 block">
-                    {award.message}
-                  </Typography>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {award.values.map((v) => (
-                      <span
-                        key={v}
-                        className="rounded-lg bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-600"
-                      >
-                        {v}
-                      </span>
-                    ))}
-                  </div>
-                </Card>
-              ))}
-            </div>
+            {myAwardsLoading ? (
+              <div className="space-y-5">
+                {[0, 1].map((i) => (
+                  <Card
+                    key={i}
+                    radius="xl"
+                    className="h-28 animate-pulse border border-amber-100 bg-amber-50/40"
+                  >
+                    <span className="sr-only">Loading awards…</span>
+                  </Card>
+                ))}
+              </div>
+            ) : visibleAwards.length === 0 ? (
+              <p className="py-8 text-center text-sm text-gray-400">
+                No {awardTab.toLowerCase()} awards yet.
+              </p>
+            ) : (
+              <div className="space-y-5">
+                {visibleAwards.map((award) => (
+                  <MyAwardCard key={award.name} award={award} />
+                ))}
+                {hiddenCount > 0 && (
+                  <button
+                    onClick={() => navigate("/webapp/recognition/vibe/awards-history")}
+                    className="w-full rounded-lg border border-gray-200 py-2 text-sm font-medium text-primary hover:bg-gray-50"
+                  >
+                    View all {activeAwards.length} {awardTab.toLowerCase()} awards
+                  </button>
+                )}
+              </div>
+            )}
           </Card>
         </div>
       </div>

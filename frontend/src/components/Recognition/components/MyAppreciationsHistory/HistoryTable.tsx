@@ -60,7 +60,7 @@ const HistoryTable = ({ items, relationLabel }: HistoryTableProps) => (
             >
               {item.date}
             </Typography>
-            <HistoryActions className="mx-auto" />
+            <HistoryActions item={item} className="mx-auto" />
           </div>
         ))}
       </div>

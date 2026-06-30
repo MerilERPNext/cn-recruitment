@@ -1,80 +1,152 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { useAppreciateAnEmployeeMutation, useGetEmployeeAppreciations } from "../../hooks/useEmployee";
-import CustomDropdown from "../shared/CustomDropdown";
+import { ChevronDown, ChevronUp, Trophy } from "lucide-react";
 import Modal from "../shared/Modal";
 import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
-import { CustomError } from "../../types/attendance";
-import { errorResponseFormater } from "../../utils/errorResponseFormater";
-import { useQueryClient } from "@tanstack/react-query";
+import {
+    useEligiblePrograms,
+    useCreateEmployeeAppreciation,
+} from "../../services/recognitionService";
+
+// Local YYYY-MM-DD for the appreciation date sent in the payload.
+const todayISO = () => {
+    const d = new Date();
+    const offset = d.getTimezoneOffset();
+    return new Date(d.getTime() - offset * 60000).toISOString().slice(0, 10);
+};
 
 const Appreciations = () => {
+    const [open, setOpen] = useState(false);
     const [modal, setModal] = useState({
         open: false,
-        reason: "",
-        type: ""
+        programName: "",
+        programTitle: "",
+        note: "",
     });
+    const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-    // Get effective target employee
+    // Effective target (viewed employee) and the giver (logged-in employee).
     const { targetEmployeeId } = useTargetUser();
-    const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
-    const queryClient = useQueryClient();
+    const { data: currentEmployee } = useCurrentEmployeeDetails({
+        logged_in_employee_details: true,
+    });
     const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
-    const { data: employeeAppreciations } = useGetEmployeeAppreciations();
-    const { mutate: appreciateEmployee, isPending: isSubmitting } = useAppreciateAnEmployeeMutation();
+
+    // Award list = recognition programs the giver is eligible to recognize in.
+    const { data: eligiblePrograms, isLoading: programsLoading } =
+        useEligiblePrograms(currentEmployee?.employee);
+    const { mutate: createAppreciation, isPending: isSubmitting } =
+        useCreateEmployeeAppreciation();
+
+    const programs = eligiblePrograms?.eligible_programs ?? [];
+
+    // Close the award panel on outside click.
+    useEffect(() => {
+        const handleOutside = (e: MouseEvent) => {
+            if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener("mousedown", handleOutside);
+        return () => document.removeEventListener("mousedown", handleOutside);
+    }, []);
+
+    const selectAward = (programName: string, programTitle: string) => {
+        setOpen(false);
+        setModal({ open: true, programName, programTitle, note: "" });
+    };
 
     const handleSubmit = () => {
-        if (!modal.reason.trim()) {
-            toast.error("Please enter a reason for appreciation");
-            return;
-        }
-
         if (!effectiveEmployeeId) {
             toast.error("Employee information not found");
             return;
         }
+        if (!modal.programName) {
+            toast.error("Please select an award");
+            return;
+        }
 
-        appreciateEmployee(
+        createAppreciation(
             {
                 employee: effectiveEmployeeId,
-                recognition_type: modal.type,
-                reason: modal.reason
+                program_name: modal.programName,
+                given_by: currentEmployee?.employee,
+                note: modal.note || undefined,
+                date: todayISO(),
             },
             {
-                onSuccess: () => {
-                    toast.success("Appreciation sent successfully!");
-                    setModal({ open: false, reason: "", type: "" });
-                    queryClient.invalidateQueries({ queryKey: ['all-emp-appreciations-badges'] })
+                onSuccess: (res) => {
+                    if (res?.success) {
+                        toast.success(res.message || "Appreciation sent successfully!");
+                        setModal({ open: false, programName: "", programTitle: "", note: "" });
+                    } else {
+                        toast.error(res?.message || "Failed to send appreciation");
+                    }
                 },
-                onError: (error: CustomError) => {
-                    const err = errorResponseFormater(error);
-                    toast.error(err || "Failed to send appreciation");
-                }
+                onError: () => {
+                    toast.error("Failed to send appreciation");
+                },
             }
         );
     };
 
     return (
-        <div>
-            <div className="flex items-center gap-2">
-                <CustomDropdown
-                    label="Appreciate"
-                    value={""}
-                    position="bottom-right"
-                    contentAlign="start"
-                    onChange={(e) => {
-                        setModal({ open: true, reason: "", type: e.target.value })
-                    }}
-                    options={employeeAppreciations?.badges?.map((item) => ({
-                        label: item?.recognition_type_name,
-                        value: item?.recognition_type_code,
-                    })) || []}
-                />
-            </div>
+        <div className="relative" ref={wrapperRef}>
+            <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                className="inline-flex items-center gap-2 rounded-lg border border-primary-200 bg-white px-4 py-2 text-sm font-medium text-primary-700 hover:bg-primary-50 transition-colors"
+            >
+                Appreciate
+                {open ? (
+                    <ChevronUp className="size-4" />
+                ) : (
+                    <ChevronDown className="size-4" />
+                )}
+            </button>
+
+            {/* Horizontally scrollable award cards */}
+            {open && (
+                <div className="absolute left-0 top-full z-50 mt-2 w-[684px] max-w-[90vw] rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
+                    {programsLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <CircularLoader size="sm" />
+                        </div>
+                    ) : programs.length === 0 ? (
+                        <div className="py-8 text-center text-sm text-gray-400">
+                            No awards available
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-4 gap-3 max-h-[340px] overflow-y-auto pb-1">
+                            {programs.map((p) => (
+                                <button
+                                    type="button"
+                                    key={p.program_name}
+                                    onClick={() => selectAward(p.program_name, p.program_title)}
+                                    className="flex flex-col items-center gap-2 rounded-xl border border-gray-100 p-3 text-center transition-all hover:border-primary-200 hover:shadow-md"
+                                >
+                                    {p.program_logo ? (
+                                        <img
+                                            src={p.program_logo}
+                                            alt={p.program_title}
+                                            className="size-16 rounded-lg object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex size-16 items-center justify-center rounded-lg bg-primary-50">
+                                            <Trophy className="size-7 text-primary-500" />
+                                        </div>
+                                    )}
+                                    <span className="line-clamp-2 text-sm font-medium text-gray-800">
+                                        {p.program_title}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             <Modal
                 size="sm"
@@ -82,25 +154,25 @@ const Appreciations = () => {
                 onClose={() => setModal({ ...modal, open: false })}
             >
                 <div className="space-y-4 p-2">
-                    {/* Badge Typ Display */}
+                    {/* Selected award */}
                     <div className="bg-primary-50 p-3 rounded-lg border border-primary-100">
                         <Typography variant="label" color="primary" className="block mb-1 font-semibold">
-                            Appreciation Type
+                            Award
                         </Typography>
                         <Typography variant="bodyMedium" className="font-bold text-primary-900">
-                            {modal.type}
+                            {modal.programTitle || modal.programName}
                         </Typography>
                     </div>
 
-                    {/* Reason Input */}
+                    {/* Note */}
                     <div>
                         <Typography variant="label" className="block mb-2 font-medium">
-                            Reason *
+                            Note
                         </Typography>
                         <textarea
-                            value={modal.reason}
-                            onChange={(e) => setModal({ ...modal, reason: e.target.value })}
-                            placeholder="Why are you appreciating this employee? (e.g., Outstanding performance on Project X)"
+                            value={modal.note}
+                            onChange={(e) => setModal({ ...modal, note: e.target.value })}
+                            placeholder="Add a note for this appreciation (e.g., Outstanding performance on Project X)"
                             className="w-full min-h-[100px] p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm resize-none"
                         />
                     </div>
@@ -126,7 +198,7 @@ const Appreciations = () => {
                 </div>
             </Modal>
         </div>
-    )
-}
+    );
+};
 
-export default Appreciations
+export default Appreciations;

@@ -1,17 +1,19 @@
-import React, { useState } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useEffect, useMemo, useState } from "react";
 import { Card } from "../../shared/atoms/Card";
 import {
+  ArrowDown,
   ArrowUp,
   ChevronLeft,
   ChevronRight,
-  ChevronRight as RowChevron,
-  Eye,
+  CircleCheckBig,
+  FileText,
   Filter,
   Search,
   Settings2,
-  Upload,
 } from "lucide-react";
 import FilterPanel, {
+  type DateRange,
   type FilterField,
   type FilterValues,
 } from "../../shared/molecules/FilterPanel";
@@ -19,41 +21,20 @@ import SettingsPanel, {
   type SettingsColumn,
   type TableSettings,
 } from "../../shared/molecules/SettingsPanel";
-import SavedViewsMenu from "../../shared/molecules/SavedViewsMenu";
-import { NOMINATIONS } from "./vibeMockData";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import {
+  useAwardNominations,
+  useSetNominationPublished,
+  type AwardNominationCategory,
+  type AwardNominationRow,
+} from "../../../services/recognitionService";
+import RecognitionRowActions from "../components/RecognitionRowActions";
 
-const FILTER_PILLS = [
-  { label: "INDIVIDUAL AWARDS RECEIVED", count: 9 },
-  { label: "INDIVIDUAL AWARDS RAISED", count: 2 },
-  { label: "TEAM AWARDS RAISED", count: 0 },
+const PILLS: { label: string; category: AwardNominationCategory }[] = [
+  { label: "INDIVIDUAL AWARDS RECEIVED", category: "individual_received" },
+  { label: "INDIVIDUAL AWARDS RAISED", category: "individual_raised" },
+  { label: "TEAM AWARDS RAISED", category: "team_raised" },
 ];
-
-// Distinct options derived from the data.
-const STATUS_OPTIONS = Array.from(new Set(NOMINATIONS.map((n) => n.status))).map(
-  (s) => ({ label: s, value: s }),
-);
-const PROGRAM_OPTIONS = Array.from(
-  new Set(NOMINATIONS.map((n) => n.program)),
-).map((p) => ({ label: p, value: p }));
-
-const NOMINATION_FILTER_FIELDS: FilterField[] = [
-  { key: "approvalStatus", label: "Approval Status", type: "single", options: STATUS_OPTIONS },
-  { key: "nominationDate", label: "Nomination Date", type: "daterange" },
-  { key: "lastActionDate", label: "Last Action Date", type: "daterange" },
-  {
-    key: "program",
-    label: "Nomination Program Names(ID)",
-    type: "multi",
-    options: PROGRAM_OPTIONS,
-  },
-];
-
-const INITIAL_FILTER_VALUES: FilterValues = {
-  approvalStatus: "",
-  nominationDate: { from: "", to: "" },
-  lastActionDate: { from: "", to: "" },
-  program: [],
-};
 
 // Toggleable columns for the Settings drawer (data-row keys).
 const NOMINATION_COLUMNS: SettingsColumn[] = [
@@ -63,6 +44,7 @@ const NOMINATION_COLUMNS: SettingsColumn[] = [
   { key: "nominationDate", label: "Nomination Date" },
   { key: "lastActionDate", label: "Last Action Date" },
   { key: "status", label: "Approval Status" },
+  { key: "published", label: "Published" },
 ];
 
 const INITIAL_TABLE_SETTINGS: TableSettings = {
@@ -70,17 +52,109 @@ const INITIAL_TABLE_SETTINGS: TableSettings = {
   visibleColumns: NOMINATION_COLUMNS.map((c) => c.key),
 };
 
+const INITIAL_FILTER_VALUES: FilterValues = {
+  approvalStatus: "",
+  nominationDate: { from: "", to: "" },
+  lastActionDate: { from: "", to: "" },
+  program: [],
+};
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50];
+
+// Status badge palette by approval stage.
+const statusStyle = (status: string): { wrap: string; dot: string } => {
+  switch (status) {
+    case "Approved":
+      return { wrap: "bg-green-50 text-green-700", dot: "bg-green-500" };
+    case "Rejected":
+      return { wrap: "bg-red-50 text-red-700", dot: "bg-red-500" };
+    case "Under Review":
+      return { wrap: "bg-amber-50 text-amber-700", dot: "bg-amber-500" };
+    case "Submitted":
+      return { wrap: "bg-blue-50 text-blue-700", dot: "bg-blue-500" };
+    default:
+      return { wrap: "bg-gray-100 text-gray-600", dot: "bg-gray-400" };
+  }
+};
+
 const AwardsNominationWorkflows: React.FC = () => {
+  const { data: currentUser } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
+  const employeeId = currentUser?.employee ?? "";
+
   const [activePill, setActivePill] = useState(0);
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [filterValues, setFilterValues] =
-    useState<FilterValues>(INITIAL_FILTER_VALUES);
+  const [filterValues, setFilterValues] = useState<FilterValues>(INITIAL_FILTER_VALUES);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [savedViewsOpen, setSavedViewsOpen] = useState(false);
-  const [tableSettings, setTableSettings] = useState<TableSettings>(
-    INITIAL_TABLE_SETTINGS,
+  const [tableSettings, setTableSettings] = useState<TableSettings>(INITIAL_TABLE_SETTINGS);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const { mutateAsync: setPublished, isPending: isPublishing } =
+    useSetNominationPublished();
+
+  // Debounce the free-text search before it hits the API.
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedQuery(query.trim()), 350);
+    return () => clearTimeout(id);
+  }, [query]);
+
+  // Reset to the first page whenever the tab / filters / search / size change.
+  useEffect(() => {
+    setPage(1);
+  }, [activePill, filterValues, debouncedQuery, pageSize, sortDir]);
+
+  // Drop the selection whenever the visible page of rows changes.
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [activePill, filterValues, debouncedQuery, pageSize, sortDir, page]);
+
+  const category = PILLS[activePill].category;
+
+  // All filtering, sorting and pagination are sent to the API as a payload.
+  const nomRange = (filterValues.nominationDate as DateRange) || { from: "", to: "" };
+  const actRange = (filterValues.lastActionDate as DateRange) || { from: "", to: "" };
+  const apiParams = {
+    employee: employeeId,
+    category,
+    search: debouncedQuery || undefined,
+    status: (filterValues.approvalStatus as string) || undefined,
+    programs: ((filterValues.program as string[]) || []).join(",") || undefined,
+    nomination_from: nomRange.from || undefined,
+    nomination_to: nomRange.to || undefined,
+    action_from: actRange.from || undefined,
+    action_to: actRange.to || undefined,
+    sort_order: sortDir,
+    start: (page - 1) * pageSize,
+    page_length: pageSize,
+  };
+
+  const { data: response, isLoading } = useAwardNominations(apiParams);
+
+  const counts = response?.counts;
+  const statusOptions = response?.filter_options?.statuses ?? [];
+  const programOptions = response?.filter_options?.programs ?? [];
+
+  const filterFields = useMemo<FilterField[]>(
+    () => [
+      { key: "approvalStatus", label: "Approval Status", type: "single", options: statusOptions },
+      { key: "nominationDate", label: "Nomination Date", type: "daterange" },
+      { key: "lastActionDate", label: "Last Action Date", type: "daterange" },
+      { key: "program", label: "Nomination Program Names(ID)", type: "multi", options: programOptions },
+    ],
+    [statusOptions, programOptions],
   );
+
+  const pageRows: AwardNominationRow[] = response?.data ?? [];
+  const total = response?.total_count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * pageSize;
 
   const showCol = (key: string) => tableSettings.visibleColumns.includes(key);
   const rowPad =
@@ -89,23 +163,46 @@ const AwardsNominationWorkflows: React.FC = () => {
       : tableSettings.density === "expanded"
         ? "py-6"
         : "py-4";
-  const colSpan = 2 + tableSettings.visibleColumns.length; // checkbox + cols + actions
+  const colSpan = 2 + tableSettings.visibleColumns.length;
 
-  const q = query.trim().toLowerCase();
-  const filteredNominations = q
-    ? NOMINATIONS.filter((row) =>
-        [row.id, row.program, row.nominatedBy, row.nominationDate, row.lastActionDate, row.status]
-          .join(" ")
-          .toLowerCase()
-          .includes(q),
-      )
-    : NOMINATIONS;
+  // ─── Row selection + publish/draft actions ─────────────────────────────────
+  const selectedCount = selectedIds.size;
+  const allSelected = pageRows.length > 0 && pageRows.every((r) => selectedIds.has(r.id));
+
+  const toggleRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    setSelectedIds((prev) => {
+      if (pageRows.length > 0 && pageRows.every((r) => prev.has(r.id))) {
+        return new Set();
+      }
+      return new Set(pageRows.map((r) => r.id));
+    });
+  };
+
+  const applyPublished = async (published: boolean) => {
+    if (selectedCount === 0 || isPublishing) return;
+    try {
+      await setPublished({ names: Array.from(selectedIds), published });
+      setSelectedIds(new Set());
+    } catch {
+      // mutation surfaces the Frappe error toast; keep the selection so the
+      // user can retry.
+    }
+  };
 
   return (
     <div className="p-4 md:p-6">
       {/* Filter pills */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        {FILTER_PILLS.map((pill, i) => (
+        {PILLS.map((pill, i) => (
           <button
             key={pill.label}
             onClick={() => setActivePill(i)}
@@ -115,7 +212,7 @@ const AwardsNominationWorkflows: React.FC = () => {
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            {pill.label} {pill.count}
+            {pill.label} {counts ? counts[pill.category] : 0}
           </button>
         ))}
       </div>
@@ -149,51 +246,73 @@ const AwardsNominationWorkflows: React.FC = () => {
             >
               <Settings2 className="size-4" />
             </button>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setSavedViewsOpen((o) => !o)}
-                aria-label="Saved views"
-                className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50"
-              >
-                <Eye className="size-4" />
-              </button>
-              <SavedViewsMenu
-                open={savedViewsOpen}
-                onClose={() => setSavedViewsOpen(false)}
-                count={0}
-                canUpdate={false}
-              />
-            </div>
-            <button className="rounded-lg border border-gray-200 p-2 text-gray-500">
-              <Upload className="size-4" />
-            </button>
+
+
           </div>
         </div>
+
+        {/* Bulk publish / draft action bar — visible once any row is selected. */}
+        {selectedCount > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-y border-primary/20 bg-primary/5 px-4 py-2.5">
+            <span className="text-sm font-medium text-gray-700">
+              {selectedCount} selected
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => applyPublished(true)}
+                disabled={isPublishing}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary/90 disabled:opacity-50"
+              >
+                <CircleCheckBig className="size-3.5" />
+                Publish
+              </button>
+              <button
+                type="button"
+                onClick={() => applyPublished(false)}
+                disabled={isPublishing}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                <FileText className="size-3.5" />
+                Move to Draft
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1050px] text-left">
             <thead>
               <tr className="text-sm text-gray-600 border-y border-gray-100">
                 <th className="px-4 py-3 font-semibold">
-                  <input type="checkbox" className="accent-primary" />
+                  <input
+                    type="checkbox"
+                    className="accent-primary"
+                    aria-label="Select all nominations on this page"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                  />
                 </th>
-                {showCol("id") && (
-                  <th className="px-4 py-3 font-semibold">Nomination ID</th>
-                )}
+                {showCol("id") && <th className="px-4 py-3 font-semibold">Nomination ID</th>}
                 {showCol("program") && (
-                  <th className="px-4 py-3 font-semibold">
-                    Nomination Program Names(ID)
-                  </th>
+                  <th className="px-4 py-3 font-semibold">Nomination Program Names(ID)</th>
                 )}
                 {showCol("nominatedBy") && (
                   <th className="px-4 py-3 font-semibold">Nominated By</th>
                 )}
                 {showCol("nominationDate") && (
                   <th className="px-4 py-3 font-semibold">
-                    <span className="flex items-center gap-1">
-                      Nomination Date <ArrowUp className="size-3.5" />
-                    </span>
+                    <button
+                      onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                      className="flex items-center gap-1 hover:text-gray-800"
+                    >
+                      Nomination Date
+                      {sortDir === "asc" ? (
+                        <ArrowUp className="size-3.5" />
+                      ) : (
+                        <ArrowDown className="size-3.5" />
+                      )}
+                    </button>
                   </th>
                 )}
                 {showCol("lastActionDate") && (
@@ -202,85 +321,153 @@ const AwardsNominationWorkflows: React.FC = () => {
                 {showCol("status") && (
                   <th className="px-4 py-3 font-semibold">Approval Status</th>
                 )}
+                {showCol("published") && (
+                  <th className="px-4 py-3 font-semibold">Published</th>
+                )}
                 <th className="px-4 py-3 font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredNominations.length === 0 && (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={colSpan} className="px-4 py-10 text-center text-sm text-gray-400">
+                    Loading nominations…
+                  </td>
+                </tr>
+              ) : pageRows.length === 0 ? (
                 <tr>
                   <td colSpan={colSpan} className="px-4 py-8 text-center text-sm text-gray-400">
                     No nominations found.
                   </td>
                 </tr>
+              ) : (
+                pageRows.map((row) => {
+                  const s = statusStyle(row.status);
+                  return (
+                    <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50/60">
+                      <td className={`px-4 ${rowPad}`}>
+                        <input
+                          type="checkbox"
+                          className="accent-primary"
+                          aria-label={`Select nomination ${row.id}`}
+                          checked={selectedIds.has(row.id)}
+                          onChange={() => toggleRow(row.id)}
+                        />
+                      </td>
+                      {showCol("id") && (
+                        <td className={`px-4 ${rowPad} text-sm font-medium text-gray-800`}>
+                          {row.id}
+                        </td>
+                      )}
+                      {showCol("program") && (
+                        <td
+                          className={`px-4 ${rowPad} text-sm text-gray-700 max-w-[280px] truncate`}
+                          title={row.program}
+                        >
+                          {row.program}
+                        </td>
+                      )}
+                      {showCol("nominatedBy") && (
+                        <td className={`px-4 ${rowPad} text-sm text-gray-700`}>
+                          {row.nominatedBy}
+                        </td>
+                      )}
+                      {showCol("nominationDate") && (
+                        <td className={`px-4 ${rowPad} text-sm text-gray-700`}>
+                          {row.nominationDate}
+                        </td>
+                      )}
+                      {showCol("lastActionDate") && (
+                        <td className={`px-4 ${rowPad} text-sm text-gray-700`}>
+                          {row.lastActionDate}
+                        </td>
+                      )}
+                      {showCol("status") && (
+                        <td className={`px-4 ${rowPad}`}>
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium ${s.wrap}`}
+                          >
+                            <span className={`size-1.5 rounded-full ${s.dot}`} />
+                            {row.status}
+                          </span>
+                        </td>
+                      )}
+                      {showCol("published") && (
+                        <td className={`px-4 ${rowPad}`}>
+                          {row.published ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+                              <CircleCheckBig className="size-3.5" />
+                              Published
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                              <FileText className="size-3.5" />
+                              Draft
+                            </span>
+                          )}
+                        </td>
+                      )}
+                      <td className={`px-4 ${rowPad}`}>
+                        <RecognitionRowActions
+                          layout="icons"
+                          actions={["view"]}
+                          appreciation={false}
+                          kind="nomination"
+                          item={{
+                            name: row.id,
+                            title: row.program || row.id,
+                            person: row.nominatedBy,
+                            date: row.nominationDate,
+                            status: row.status,
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })
               )}
-              {filteredNominations.map((row) => (
-                <tr key={row.id} className="border-b border-gray-100 hover:bg-gray-50/60">
-                  <td className={`px-4 ${rowPad}`}>
-                    <input type="checkbox" className="accent-primary" />
-                  </td>
-                  {showCol("id") && (
-                    <td className={`px-4 ${rowPad} text-sm font-medium text-gray-800`}>
-                      {row.id}
-                    </td>
-                  )}
-                  {showCol("program") && (
-                    <td className={`px-4 ${rowPad} text-sm text-gray-700 max-w-[280px] truncate`}>
-                      {row.program}
-                    </td>
-                  )}
-                  {showCol("nominatedBy") && (
-                    <td className={`px-4 ${rowPad} text-sm text-gray-700`}>
-                      {row.nominatedBy}
-                    </td>
-                  )}
-                  {showCol("nominationDate") && (
-                    <td className={`px-4 ${rowPad} text-sm text-gray-700`}>
-                      {row.nominationDate}
-                    </td>
-                  )}
-                  {showCol("lastActionDate") && (
-                    <td className={`px-4 ${rowPad} text-sm text-gray-700`}>
-                      {row.lastActionDate}
-                    </td>
-                  )}
-                  {showCol("status") && (
-                    <td className={`px-4 ${rowPad}`}>
-                      <span className="inline-flex items-center gap-1.5 rounded-md bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
-                        <span className="size-1.5 rounded-full bg-green-500" />
-                        {row.status}
-                      </span>
-                    </td>
-                  )}
-                  <td className={`px-4 ${rowPad}`}>
-                    <button className="text-gray-400 hover:text-gray-700">
-                      <RowChevron className="size-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
             </tbody>
           </table>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-3 text-sm text-gray-500">
+        <div className="flex flex-col items-center justify-between gap-3 px-5 py-3 text-sm text-gray-500 sm:flex-row">
           <span>
-            {filteredNominations.length === 0 ? 0 : 1} - {filteredNominations.length} of{" "}
-            {filteredNominations.length} Records
+            {total === 0 ? "0" : `${start + 1} - ${Math.min(start + pageSize, total)}`} of {total}{" "}
+            Records
           </span>
           <div className="flex items-center gap-2">
-            <button className="rounded-md border border-gray-200 p-1.5">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage <= 1}
+              className="rounded-md border border-gray-200 p-1.5 disabled:opacity-40"
+            >
               <ChevronLeft className="size-4" />
             </button>
             <span className="flex size-7 items-center justify-center rounded-md bg-gray-100 font-medium text-gray-700">
-              1
+              {safePage}
             </span>
-            <button className="rounded-md border border-gray-200 p-1.5">
+            <span className="text-xs text-gray-400">of {totalPages}</span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage >= totalPages}
+              className="rounded-md border border-gray-200 p-1.5 disabled:opacity-40"
+            >
               <ChevronRight className="size-4" />
             </button>
           </div>
           <div className="flex items-center gap-2">
-            <span className="rounded-md border border-gray-200 px-3 py-1">10</span>
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+              className="rounded-md border border-gray-200 px-2 py-1 outline-none focus:border-primary"
+            >
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
             <span>per page</span>
           </div>
         </div>
@@ -288,7 +475,7 @@ const AwardsNominationWorkflows: React.FC = () => {
 
       <FilterPanel
         open={filterOpen}
-        fields={NOMINATION_FILTER_FIELDS}
+        fields={filterFields}
         values={filterValues}
         onClose={() => setFilterOpen(false)}
         onApply={setFilterValues}
