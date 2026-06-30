@@ -3,6 +3,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -76,7 +77,8 @@ const AdvancesList: React.FC = () => {
 
   const { isDesktop } = useScreenSize();
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
-  const employeeId = user?.employee ?? "";
+  const { targetEmployeeId } = useTargetUser();
+  const employeeId = targetEmployeeId || user?.employee || "";
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 

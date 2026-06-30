@@ -424,12 +424,17 @@ export type AppreciationHistoryParams = {
   from_date?: string;
   to_date?: string;
   search?: string;
+  persons?: string;
+  direction?: "received" | "given";
+  start?: number;
+  page_length?: number;
 };
 
 export type AppreciationApiItem = {
   name: string;
   title: string;
   value: string;
+  logo?: string;
   person: string;
   person_image: string;
   date: string;
@@ -440,7 +445,11 @@ export type AppreciationApiItem = {
 export type AppreciationProgramsResponse = {
   success: boolean;
   data: AppreciationApiItem[];
-  filter_options: { programs: { value: string; label: string }[] };
+  total_count: number;
+  filter_options: {
+    programs: { value: string; label: string }[];
+    employees: { value: string; label: string }[];
+  };
 };
 
 // ─── Eligible programs (get_eligible_programs) ────────────────────────────────

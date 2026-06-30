@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { useState } from "react";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
@@ -69,9 +70,10 @@ export default function PerquisiteList() {
   const [selectedPerquisite, setSelectedPerquisite] = useState<UiPerquisite | null>(null);
 
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { targetEmployeeId } = useTargetUser();
   const { isDesktop } = useScreenSize();
 
-  const employeeId = user?.employee ?? "";
+  const employeeId = targetEmployeeId || user?.employee || "";
   const company = user?.company ?? "";
 
   const titles = ["Perquisite Name", "Payment Date", "Taxable Value", "Status", "Action"];

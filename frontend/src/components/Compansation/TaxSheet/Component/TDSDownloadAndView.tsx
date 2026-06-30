@@ -7,6 +7,7 @@ import {
   useTDSPRintViewPDF,
 } from "../../../../hooks/useTaxSheet";
 import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
+import { useTargetUser } from "../../../../context/ViewedUserContext";
 import Button from "../../../shared/atoms/Button";
 
 type Props = {
@@ -18,6 +19,9 @@ const TDSSlipHandler = ({ disabled, selectedPeriod }: Props) => {
   const [open, setOpen] = useState(false);
   const [html, setHtml] = useState("");
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { targetEmployeeId } = useTargetUser();
+  // When an admin/HR is viewing another user, target their employee id.
+  const effectiveEmployee = targetEmployeeId || user?.employee;
 
   const { mutate, isPending } = useTDSPRintViewPDF(
     selectedPeriod,
@@ -25,9 +29,9 @@ const TDSSlipHandler = ({ disabled, selectedPeriod }: Props) => {
   );
 
   const handleView = () => {
-    if (!user?.employee || !selectedPeriod || !user?.company) return;
+    if (!effectiveEmployee || !selectedPeriod || !user?.company) return;
 
-    mutate(user.employee, {
+    mutate(effectiveEmployee, {
       onSuccess: (res: any) => {
         setHtml(res?.response?.html || "");
         setOpen(true);
@@ -53,7 +57,7 @@ const TDSSlipHandler = ({ disabled, selectedPeriod }: Props) => {
           setOpen(false);
           setHtml("");
         }}
-        salarySlipName={user?.employee || ""}
+        salarySlipName={effectiveEmployee || ""}
         salarySlipDate=""
         htmlContent={html}
       />

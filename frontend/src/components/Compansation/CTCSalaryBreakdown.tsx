@@ -1,6 +1,7 @@
 import { PieChart, TrendingUp, Wallet } from "lucide-react";
 import { useState } from "react";
 import { useGenerateSalarySlip } from "../../hooks/useCTC";
+import { useTargetUser } from "../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
@@ -9,8 +10,9 @@ import ShowHideButton from "./ui/ShowHideButton";
 
 const CTCSalaryUI = () => {
   const { data: employee, isLoading: isEmpLoading } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { targetEmployeeId } = useTargetUser();
 
-  const employeeId = employee?.name;
+  const employeeId = targetEmployeeId || employee?.name;
   const { isDesktop } = useScreenSize();
 
   const {

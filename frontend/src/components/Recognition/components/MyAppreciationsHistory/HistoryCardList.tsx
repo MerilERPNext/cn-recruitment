@@ -4,7 +4,12 @@ import HistoryActions from "./HistoryActions";
 import PersonAvatar from "./PersonAvatar";
 import type { AppreciationHistoryItem } from "./types";
 
-const HistoryCardList = ({ items }: { items: AppreciationHistoryItem[] }) => (
+type HistoryCardListProps = {
+  items: AppreciationHistoryItem[];
+  relationLabel: string;
+};
+
+const HistoryCardList = ({ items, relationLabel }: HistoryCardListProps) => (
   <div className="grid gap-3">
     {items.map((item) => (
       <article
@@ -17,7 +22,10 @@ const HistoryCardList = ({ items }: { items: AppreciationHistoryItem[] }) => (
             <Typography variant="mobileCardTitle" className="break-words">
               {item.title}
             </Typography>
-            <div className="mt-1 flex items-center gap-2">
+            <Typography variant="mobileCardLabel" className="mt-1 block">
+              {relationLabel}
+            </Typography>
+            <div className="mt-0.5 flex items-center gap-2">
               <PersonAvatar name={item.person} imageUrl={item.personImage} size={22} />
               <Typography variant="mobileCardSubtitle" className="truncate">
                 {item.person} · {item.date}

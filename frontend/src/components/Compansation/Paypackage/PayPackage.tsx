@@ -2,6 +2,7 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
@@ -178,6 +179,9 @@ const MobileRow = ({ item, showAmount, onView, onVersions }: RowProps) => (
 
 export default function SalaryAssignmentList() {
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { targetEmployeeId } = useTargetUser();
+  // When an admin/HR is viewing another user, target their employee id.
+  const effectiveEmployee = targetEmployeeId || user?.employee;
 
   const [selected, setSelected] = useState<SalaryItem | null>(null);
   const [selectedVersionItem, setSelectedVersionItem] =
@@ -220,26 +224,26 @@ export default function SalaryAssignmentList() {
 
   // ✅ Refresh list when period or employee changes
   useEffect(() => {
-    if (selectedPeriod && user?.employee) {
+    if (selectedPeriod && effectiveEmployee) {
       setFiltersKey((prev) => prev + 1);
     }
-  }, [selectedPeriod, user?.employee]);
+  }, [selectedPeriod, effectiveEmployee]);
 
   // ---- customAPI config ----
   // DataListView will call this endpoint; params are merged in at request time.
   const customAPI = useMemo(() => {
-    if (!user?.employee || !selectedPeriod || !user?.company) return null;
+    if (!effectiveEmployee || !selectedPeriod || !user?.company) return null;
 
     return {
       method:
         "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.salary_structure_assignment.generate_salary_slip",
       params: {
-        employee: user.employee,
+        employee: effectiveEmployee,
         payroll_period: selectedPeriod,
         company: user.company,
       },
     };
-  }, [user?.employee, selectedPeriod, user?.company]);
+  }, [effectiveEmployee, selectedPeriod, user?.company]);
 
   // ---- Sort config (identical to original) ----
   const SALARY_SORT_CONFIG: ColumnSortConfig[] = [
@@ -336,7 +340,7 @@ export default function SalaryAssignmentList() {
             {customAPI && (
               <DataListView<SalaryItem>
                 key={filtersKey}
-                queryKey={["pay-package", user?.employee || "", selectedPeriod || ""]}
+                queryKey={["pay-package", effectiveEmployee || "", selectedPeriod || ""]}
                 customAPI={customAPI}
                 ItemComponent={ItemComponent}
                 isSearch={true}
@@ -363,7 +367,7 @@ export default function SalaryAssignmentList() {
             {customAPI ? (
               <DataListView<SalaryItem>
                 key={filtersKey}
-                queryKey={["pay-package", user?.employee || "", selectedPeriod]}
+                queryKey={["pay-package", effectiveEmployee || "", selectedPeriod]}
                 customAPI={customAPI}
                 ItemComponent={ItemComponent}
                 isSearch={true}

@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { Form } from "@tsed/react-formio";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
@@ -44,6 +45,9 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({
 }) => {
   const formAdvanceInstance = useRef<any>(null);
   const { isDesktop } = useScreenSize();
+  const { targetEmployeeId } = useTargetUser();
+  // When an admin/HR is acting on another user, target their employee id.
+  const effectiveEmployee = targetEmployeeId || user?.employee;
   const { setRefetchAttendance } = useGlobalStore();
   const [attachments, setAttachments] = useState<File[]>([]);
   const { uploadFiles } = useFileUploader();
@@ -52,7 +56,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({
     new Date().toISOString().split("T")[0],
   );
   const { data: advanceAmountData } = useEmployeeAdvancesAmount(
-    user?.employee,
+    effectiveEmployee,
     selectedAdvanceType,
     postingDate,
     user?.company,
@@ -214,7 +218,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({
           selectedAdvanceType || formData.custom_advance_type,
         applicant_type: "Employee",
         company: user?.company,
-        employee: user?.employee,
+        employee: effectiveEmployee,
         advance_account: advanceAmountData?.advance_account,
         exchange_rate: 1.0,
         custom_repayment_methods: formData.repayment_method || "",
