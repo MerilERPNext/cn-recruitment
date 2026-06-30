@@ -103,6 +103,13 @@ def link_employee_to_onboarding(doc, method):
         onboarding = frappe.get_doc("Employee Onboarding", employee_onboarding[0].name)
         onboarding.db_set("employee", doc.name)  # Update only after Employee is saved
 
+        # Fallback connector for the Field Flow chain — covers Employees created
+        # outside the Onboarding "Create Employee" mapper.
+        from recruitment.recruitment.field_flow_sync import CONNECTOR_FIELD
+
+        if frappe.get_meta("Employee").get_field(CONNECTOR_FIELD) and not doc.get(CONNECTOR_FIELD):
+            doc.db_set(CONNECTOR_FIELD, onboarding.name)
+
 
 @frappe.whitelist()
 def update_employee_fields(doc, event=None):
