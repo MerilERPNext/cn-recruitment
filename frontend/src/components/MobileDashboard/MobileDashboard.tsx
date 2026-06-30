@@ -416,7 +416,7 @@ const MobileDashboard: React.FC = () => {
               onClick={() => navigate("/webapp/notification-log")}
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
             >
-              <NotificationBell />
+              <NotificationBell className="text-gray-600 hover:text-gray-800" />
             </button>
 
             <div
