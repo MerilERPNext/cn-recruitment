@@ -3,11 +3,13 @@ import { ExternalLink, Filter, Search } from "lucide-react";
 type HistoryToolbarProps = {
   searchTerm: string;
   onSearchChange: (value: string) => void;
+  onFilterClick?: () => void;
 };
 
 const HistoryToolbar = ({
   searchTerm,
   onSearchChange,
+  onFilterClick,
 }: HistoryToolbarProps) => (
   <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
     <div className="relative w-full max-w-md">
@@ -23,6 +25,7 @@ const HistoryToolbar = ({
     <div className="flex items-center justify-end gap-2">
       <button
         type="button"
+        onClick={onFilterClick}
         className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-600 transition hover:bg-gray-50"
         aria-label="Filter appreciations"
       >

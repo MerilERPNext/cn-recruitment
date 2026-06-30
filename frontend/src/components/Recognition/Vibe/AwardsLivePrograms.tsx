@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
-import { ChevronDown, Trophy } from "lucide-react";
+import { Check, ChevronDown, Search, Trophy } from "lucide-react";
 import Avatar from "./Avatar";
 import { AWARD_PROGRAMS, MY_AWARDS, AwardProgram } from "./vibeMockData";
 
@@ -66,18 +66,102 @@ const ProgramCard: React.FC<{ program: AwardProgram }> = ({ program }) => (
   </Card>
 );
 
-const FilterSelect: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <div className="flex items-center gap-2">
-    <span className="text-sm text-gray-500">{label}</span>
-    <button className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700">
-      {value}
-      <ChevronDown className="size-4" />
-    </button>
-  </div>
-);
+// Inline labelled single-select dropdown (Filters / Sort) used in the toolbar.
+const TIME_OPTIONS = [{ label: "All Time", value: "all-time" }];
+const SORT_OPTIONS = [
+  { label: "Relevance", value: "relevance" },
+  { label: "Nomination Date (Newest)", value: "nomination-newest" },
+  { label: "Nomination Date (Oldest)", value: "nomination-oldest" },
+];
+
+const LabeledSelect: React.FC<{
+  label: string;
+  value: string;
+  options: { label: string; value: string }[];
+  onChange: (value: string) => void;
+}> = ({ label, value, options, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? "";
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-gray-500">{label}</span>
+      <div className="relative" ref={ref}>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className={`flex min-w-[120px] items-center justify-between gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium text-gray-700 transition ${
+            open ? "border-primary" : "border-gray-200"
+          }`}
+        >
+          <span className="truncate">{selectedLabel}</span>
+          <ChevronDown
+            className={`size-4 shrink-0 text-gray-500 transition ${open ? "rotate-180" : ""}`}
+          />
+        </button>
+        {open && (
+          <div className="absolute right-0 z-20 mt-1 min-w-[170px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+            {options.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm hover:bg-gray-50 ${
+                  value === o.value ? "font-semibold text-gray-900" : "text-gray-700"
+                }`}
+              >
+                <span className="truncate">{o.label}</span>
+                {value === o.value && <Check className="size-4 shrink-0 text-blue-500" />}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// closedOn is "DD-MM-YYYY".
+const parseClosedOn = (s: string): number => {
+  const [d, m, y] = (s || "").split("-").map(Number);
+  return new Date(y || 0, (m || 1) - 1, d || 1).getTime();
+};
 
 const AwardsLivePrograms: React.FC = () => {
   const [awardTab, setAwardTab] = useState<"Received" | "Given">("Received");
+  const [query, setQuery] = useState("");
+  const [timeFilter, setTimeFilter] = useState("all-time");
+  const [sortBy, setSortBy] = useState("relevance");
+
+  const q = query.trim().toLowerCase();
+  const filteredPrograms = q
+    ? AWARD_PROGRAMS.filter(
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          p.winners.some((w) => w.name.toLowerCase().includes(q)),
+      )
+    : AWARD_PROGRAMS;
+
+  const displayedPrograms = [...filteredPrograms];
+  if (sortBy === "nomination-newest") {
+    displayedPrograms.sort((a, b) => parseClosedOn(b.closedOn) - parseClosedOn(a.closedOn));
+  } else if (sortBy === "nomination-oldest") {
+    displayedPrograms.sort((a, b) => parseClosedOn(a.closedOn) - parseClosedOn(b.closedOn));
+  }
 
   return (
     <div className="p-4 md:p-6">
@@ -93,13 +177,37 @@ const AwardsLivePrograms: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left – Programs */}
         <div className="lg:col-span-2 space-y-5">
-          <div className="flex items-center justify-center gap-6">
-            <FilterSelect label="Filters" value="All Time" />
-            <FilterSelect label="Sort" value="Relevance" />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full max-w-xs">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search awards..."
+                className="w-full rounded-lg border border-gray-200 py-1.5 pl-9 pr-3 text-sm text-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+              />
+            </div>
+            <div className="flex items-center gap-4">
+              <LabeledSelect
+                label="Filters"
+                value={timeFilter}
+                options={TIME_OPTIONS}
+                onChange={setTimeFilter}
+              />
+              <LabeledSelect
+                label="Sort"
+                value={sortBy}
+                options={SORT_OPTIONS}
+                onChange={setSortBy}
+              />
+            </div>
           </div>
-          {AWARD_PROGRAMS.map((p) => (
-            <ProgramCard key={p.title} program={p} />
-          ))}
+          {displayedPrograms.length === 0 ? (
+            <p className="py-8 text-center text-sm text-gray-400">No awards found.</p>
+          ) : (
+            displayedPrograms.map((p) => <ProgramCard key={p.title} program={p} />)
+          )}
         </div>
 
         {/* Right – My Awards */}

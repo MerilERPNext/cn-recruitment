@@ -1,6 +1,7 @@
 import { Typography } from "../../../shared/atoms/Typography";
 import AppreciationImage from "./AppreciationImage";
 import HistoryActions from "./HistoryActions";
+import PersonAvatar from "./PersonAvatar";
 import type { AppreciationHistoryItem } from "./types";
 
 const HistoryCardList = ({ items }: { items: AppreciationHistoryItem[] }) => (
@@ -16,9 +17,12 @@ const HistoryCardList = ({ items }: { items: AppreciationHistoryItem[] }) => (
             <Typography variant="mobileCardTitle" className="break-words">
               {item.title}
             </Typography>
-            <Typography variant="mobileCardSubtitle" className="mt-1 block">
-              {item.person} · {item.date}
-            </Typography>
+            <div className="mt-1 flex items-center gap-2">
+              <PersonAvatar name={item.person} imageUrl={item.personImage} size={22} />
+              <Typography variant="mobileCardSubtitle" className="truncate">
+                {item.person} · {item.date}
+              </Typography>
+            </div>
           </div>
         </div>
 

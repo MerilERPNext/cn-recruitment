@@ -5,11 +5,20 @@ import { RecognitionProgram } from "../../types/recognition";
 import { ArrowRight, Users, Clock, Trophy } from "lucide-react";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { ProgramExpansionPanel } from "./ProgramExpansionPanel";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
+import { useEligiblePrograms } from "../../services/recognitionService";
 
 interface ActiveProgramsProps {
-  programs: RecognitionProgram[];
+  programs?: RecognitionProgram[];
   isLoading?: boolean;
 }
+
+// Days between today and the program end date (clamped at 0).
+const daysLeftUntil = (end?: string): number => {
+  if (!end) return 0;
+  const diff = Math.ceil((new Date(end).getTime() - Date.now()) / 86400000);
+  return Math.max(0, diff);
+};
 
 export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
   programs,
@@ -19,7 +28,37 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
     null
   );
 
-  if (isLoading) {
+  // Eligible programs for the logged-in employee (get_eligible_programs).
+  const { data: user } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
+  const { data: eligibleData, isLoading: eligibleLoading } = useEligiblePrograms(
+    user?.employee,
+  );
+
+  // Map the API response → the RecognitionProgram shape this card renders.
+  const apiPrograms: RecognitionProgram[] = (
+    eligibleData?.eligible_programs ?? []
+  ).map((p) => ({
+    id: p.program_name,
+    name: p.program_title,
+    code: p.program_name,
+    description: p.program_description || "",
+    start_date: p.start_date,
+    end_date: p.end_date,
+    participant_count: 0,
+    status: "Active",
+    days_left: daysLeftUntil(p.end_date),
+    category: p.reward_type,
+  }));
+
+  // Prefer API data; fall back to the prop (e.g. while the query is loading).
+  const list: RecognitionProgram[] = eligibleData
+    ? apiPrograms
+    : programs ?? [];
+  const loading = isLoading || eligibleLoading;
+
+  if (loading) {
     return (
       <Card radius="xl" className="border p-4 md:p-6">
         <div className="animate-pulse space-y-4">
@@ -51,8 +90,8 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
       </Typography>
 
       <div className="space-y-3">
-        {programs.length > 0 ? (
-          programs.map((program) => {
+        {list.length > 0 ? (
+          list.map((program) => {
             const isExpanded = expandedProgramId === program.id;
             return (
               <div key={program.id}>

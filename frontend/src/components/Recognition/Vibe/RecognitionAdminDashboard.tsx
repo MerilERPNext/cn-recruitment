@@ -13,6 +13,31 @@ import {
   Inbox,
 } from "lucide-react";
 import Button from "../../shared/atoms/Button";
+import FilterPanel, {
+  type DateRange,
+  type FilterField,
+  type FilterValues,
+} from "../../shared/molecules/FilterPanel";
+import SettingsPanel, {
+  type SettingsColumn,
+  type TableSettings,
+} from "../../shared/molecules/SettingsPanel";
+import SavedViewsMenu from "../../shared/molecules/SavedViewsMenu";
+
+// Distinct option list helper.
+const distinctOptions = (values: string[]) =>
+  Array.from(new Set(values)).map((v) => ({ label: v, value: v }));
+
+// Is a "DD-MM-YYYY" date within a {from,to} (yyyy-mm-dd) range? Empty bounds pass.
+const inDateRange = (dmy: string, range?: DateRange) => {
+  if (!range || (!range.from && !range.to)) return true;
+  const [d, m, y] = (dmy || "").split("-");
+  if (!d || !m || !y) return true;
+  const iso = `${y}-${m}-${d}`;
+  if (range.from && iso < range.from) return false;
+  if (range.to && iso > range.to) return false;
+  return true;
+};
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Types
@@ -144,10 +169,16 @@ function DataTable<T>({
   rows,
   columns,
   searchableText,
+  filterFields = [],
+  filterPredicate,
 }: {
   rows: T[];
   columns: Column<T>[];
   searchableText: (row: T) => string;
+  /** Optional Filter-drawer fields. When empty the filter button is hidden. */
+  filterFields?: FilterField[];
+  /** Row predicate against the applied filter values. */
+  filterPredicate?: (row: T, values: FilterValues) => boolean;
 }) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -155,11 +186,44 @@ function DataTable<T>({
   const [sortKey, setSortKey] = useState<string | null>(columns[0]?.key ?? null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
+  // Toolbar drawers.
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterValues, setFilterValues] = useState<FilterValues>({});
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [savedViewsOpen, setSavedViewsOpen] = useState(false);
+
+  // Column visibility + density. "actions" is always shown (not toggleable).
+  const toggleableColumns: SettingsColumn[] = useMemo(
+    () =>
+      columns
+        .filter((c) => c.key !== "actions")
+        .map((c) => ({ key: c.key, label: c.header })),
+    [columns],
+  );
+  const [tableSettings, setTableSettings] = useState<TableSettings>({
+    density: "comfort",
+    visibleColumns: toggleableColumns.map((c) => c.key),
+  });
+
+  const renderColumns = columns.filter(
+    (c) => c.key === "actions" || tableSettings.visibleColumns.includes(c.key),
+  );
+  const rowPad =
+    tableSettings.density === "compact"
+      ? "py-1.5"
+      : tableSettings.density === "expanded"
+        ? "py-5"
+        : "py-3";
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     let data = q
       ? rows.filter((r) => searchableText(r).toLowerCase().includes(q))
       : [...rows];
+
+    if (filterPredicate) {
+      data = data.filter((r) => filterPredicate(r, filterValues));
+    }
 
     const col = columns.find((c) => c.key === sortKey);
     if (col?.sortValue) {
@@ -172,7 +236,7 @@ function DataTable<T>({
       });
     }
     return data;
-  }, [rows, search, sortKey, sortDir, columns, searchableText]);
+  }, [rows, search, sortKey, sortDir, columns, searchableText, filterPredicate, filterValues]);
 
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -206,7 +270,7 @@ function DataTable<T>({
     return pages;
   }, [totalPages, safePage]);
 
-  const gridCols = columns.map((c) => c.className || "1fr").join(" ");
+  const gridCols = renderColumns.map((c) => c.className || "1fr").join(" ");
 
   return (
     <div className="flex flex-col">
@@ -225,9 +289,43 @@ function DataTable<T>({
           />
         </div>
         <div className="flex items-center gap-2">
-          <ToolbarIcon icon={<Filter className="h-4 w-4" />} label="Filter" />
-          <ToolbarIcon icon={<Settings2 className="h-4 w-4" />} label="Settings" />
-          <ToolbarIcon icon={<Eye className="h-4 w-4" />} label="Column visibility" />
+          {filterFields.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setFilterOpen(true)}
+              title="Filter"
+              aria-label="Filter"
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+            >
+              <Filter className="h-4 w-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            title="Settings"
+            aria-label="Settings"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+          >
+            <Settings2 className="h-4 w-4" />
+          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setSavedViewsOpen((o) => !o)}
+              title="Saved views"
+              aria-label="Saved views"
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+            >
+              <Eye className="h-4 w-4" />
+            </button>
+            <SavedViewsMenu
+              open={savedViewsOpen}
+              onClose={() => setSavedViewsOpen(false)}
+              count={0}
+              canUpdate={false}
+            />
+          </div>
           <ToolbarIcon icon={<Download className="h-4 w-4" />} label="Export" />
         </div>
       </div>
@@ -240,7 +338,7 @@ function DataTable<T>({
             className="grid gap-4 border-b border-gray-100 bg-gray-50 px-5 py-3"
             style={{ gridTemplateColumns: gridCols }}
           >
-            {columns.map((col) => {
+            {renderColumns.map((col) => {
               const active = sortKey === col.key;
               return (
                 <button
@@ -274,10 +372,10 @@ function DataTable<T>({
             pageRows.map((row, idx) => (
               <div
                 key={idx}
-                className="grid items-center gap-4 border-b border-gray-50 px-5 py-3 text-sm text-gray-700 last:border-b-0 hover:bg-gray-50/60"
+                className={`grid items-center gap-4 border-b border-gray-50 px-5 ${rowPad} text-sm text-gray-700 last:border-b-0 hover:bg-gray-50/60`}
                 style={{ gridTemplateColumns: gridCols }}
               >
-                {columns.map((col) => (
+                {renderColumns.map((col) => (
                   <div key={col.key} className="min-w-0 truncate">
                     {col.render(row)}
                   </div>
@@ -350,6 +448,27 @@ function DataTable<T>({
           <span>per page</span>
         </div>
       </div>
+
+      {filterFields.length > 0 && (
+        <FilterPanel
+          open={filterOpen}
+          fields={filterFields}
+          values={filterValues}
+          onClose={() => setFilterOpen(false)}
+          onApply={(v) => {
+            setFilterValues(v);
+            setPage(1);
+          }}
+        />
+      )}
+
+      <SettingsPanel
+        open={settingsOpen}
+        columns={toggleableColumns}
+        value={tableSettings}
+        onClose={() => setSettingsOpen(false)}
+        onApply={setTableSettings}
+      />
     </div>
   );
 }
@@ -447,6 +566,21 @@ export default function RecognitionAdminDashboard() {
             <DataTable<AppreciationProgram>
               rows={APPRECIATION_PROGRAMS}
               searchableText={(r) => `${r.code} ${r.name} ${r.status}`}
+              filterFields={[
+                { key: "status", label: "Status", type: "single", options: distinctOptions(APPRECIATION_PROGRAMS.map((p) => p.status)) },
+                { key: "name", label: "Program Name", type: "multi", options: distinctOptions(APPRECIATION_PROGRAMS.map((p) => p.name)) },
+                { key: "startDate", label: "Program Start Date", type: "daterange" },
+                { key: "endDate", label: "Program End Date", type: "daterange" },
+              ]}
+              filterPredicate={(r, v) => {
+                const names = (v.name as string[]) || [];
+                return (
+                  (!v.status || r.status === v.status) &&
+                  (names.length === 0 || names.includes(r.name)) &&
+                  inDateRange(r.startDate, v.startDate as DateRange) &&
+                  inDateRange(r.endDate, v.endDate as DateRange)
+                );
+              }}
               columns={[
                 {
                   key: "code",
@@ -510,6 +644,23 @@ export default function RecognitionAdminDashboard() {
             <DataTable<AwardProgram>
               rows={AWARD_PROGRAMS}
               searchableText={(r) => `${r.code} ${r.name} ${r.awardType} ${r.status}`}
+              filterFields={[
+                { key: "status", label: "Status", type: "single", options: distinctOptions(AWARD_PROGRAMS.map((p) => p.status)) },
+                { key: "awardType", label: "Award Type", type: "single", options: distinctOptions(AWARD_PROGRAMS.map((p) => p.awardType)) },
+                { key: "name", label: "Program Name", type: "multi", options: distinctOptions(AWARD_PROGRAMS.map((p) => p.name)) },
+                { key: "startDate", label: "Award Start Date", type: "daterange" },
+                { key: "endDate", label: "Award End Date", type: "daterange" },
+              ]}
+              filterPredicate={(r, v) => {
+                const names = (v.name as string[]) || [];
+                return (
+                  (!v.status || r.status === v.status) &&
+                  (!v.awardType || r.awardType === v.awardType) &&
+                  (names.length === 0 || names.includes(r.name)) &&
+                  inDateRange(r.startDate, v.startDate as DateRange) &&
+                  inDateRange(r.endDate, v.endDate as DateRange)
+                );
+              }}
               columns={[
                 {
                   key: "code",
