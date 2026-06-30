@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
-import { ChevronDown, SlidersHorizontal, Star } from "lucide-react";
+import { Search, SlidersHorizontal, Star } from "lucide-react";
 import Avatar from "./Avatar";
 import {
   LEADERBOARD_TOP3,
@@ -58,6 +58,16 @@ const PodiumColumn: React.FC<{ person: LeaderboardPerson; height: string; size: 
 const AppreciationsLeaderboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"Receivers" | "Recognizers">("Receivers");
   const [appreciationTab, setAppreciationTab] = useState<"Received" | "Given">("Received");
+  const [query, setQuery] = useState("");
+
+  const q = query.trim().toLowerCase();
+  const filteredRest = q
+    ? LEADERBOARD_REST.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.designation.toLowerCase().includes(q),
+      )
+    : LEADERBOARD_REST;
 
   return (
     <div className="p-4 md:p-6">
@@ -89,10 +99,16 @@ const AppreciationsLeaderboard: React.FC = () => {
                 ))}
               </div>
               <div className="flex items-center gap-2">
-                <button className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600">
-                  Last 365 Days
-                  <ChevronDown className="size-4" />
-                </button>
+                <div className="relative w-44 sm:w-56">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search people..."
+                    className="w-full rounded-lg border border-gray-200 py-1.5 pl-9 pr-3 text-xs text-gray-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                  />
+                </div>
                 <button className="rounded-lg border border-gray-200 p-2 text-gray-500">
                   <SlidersHorizontal className="size-4" />
                 </button>
@@ -118,7 +134,10 @@ const AppreciationsLeaderboard: React.FC = () => {
 
             {/* Rest of list */}
             <div className="space-y-3">
-              {LEADERBOARD_REST.map((person) => (
+              {filteredRest.length === 0 && (
+                <p className="py-6 text-center text-sm text-gray-400">No people found.</p>
+              )}
+              {filteredRest.map((person) => (
                 <div
                   key={person.rank}
                   className="flex items-center gap-3 rounded-xl border border-gray-100 px-4 py-3 hover:bg-gray-50 transition-colors"

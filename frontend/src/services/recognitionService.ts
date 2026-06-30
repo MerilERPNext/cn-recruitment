@@ -413,3 +413,119 @@ export const useSubmitVote = () => {
     },
   });
 };
+
+// ─── My Appreciations History (get_appreciation_programs) ─────────────────────
+export type AppreciationHistoryParams = {
+  employee?: string;
+  program?: string;
+  recognizer_type?: string;
+  recognized_with?: string;
+  time?: string;
+  from_date?: string;
+  to_date?: string;
+  search?: string;
+};
+
+export type AppreciationApiItem = {
+  name: string;
+  title: string;
+  value: string;
+  person: string;
+  person_image: string;
+  date: string;
+  direction: "received" | "given";
+  points: number;
+};
+
+export type AppreciationProgramsResponse = {
+  success: boolean;
+  data: AppreciationApiItem[];
+  filter_options: { programs: { value: string; label: string }[] };
+};
+
+// ─── Eligible programs (get_eligible_programs) ────────────────────────────────
+export type EligibleProgram = {
+  program_name: string;
+  program_title: string;
+  program_description: string;
+  start_date: string;
+  end_date: string;
+  program_has_reward: boolean;
+  reward_type: string;
+};
+
+export type EligibleProgramsResponse = {
+  success: boolean;
+  employee: string;
+  eligible_programs: EligibleProgram[];
+};
+
+export const useEligiblePrograms = (employee?: string) => {
+  return useQuery<EligibleProgramsResponse>({
+    queryKey: ["recognition", "eligible-programs", employee],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.recognition_eligibility.get_eligible_programs",
+        { employee },
+      );
+      return response as EligibleProgramsResponse;
+    },
+    enabled: !!employee,
+  });
+};
+
+// ─── Earned Points Summary (get_employee_points) ──────────────────────────────
+export type EmployeePointsParams = {
+  employee?: string;
+  redemption_from_date?: string;
+  redemption_to_date?: string;
+  min_redeemed_points?: string;
+  max_redeemed_points?: string;
+};
+
+export type RedemptionEntry = {
+  name: string;
+  points: number;
+  date: string;
+  program?: string;
+  award?: string;
+  recognition_type?: string;
+  remarks?: string;
+};
+
+export type EmployeePointsResponse = {
+  success: boolean;
+  employee: string;
+  total_earned_points: number;
+  used_points: number;
+  available_points: number;
+  redemptions: RedemptionEntry[];
+};
+
+export const useEmployeePoints = (params: EmployeePointsParams) => {
+  return useQuery<EmployeePointsResponse>({
+    queryKey: ["recognition", "employee-points", params],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_employee_points",
+        params,
+      );
+      return response as EmployeePointsResponse;
+    },
+    enabled: !!params.employee,
+  });
+};
+
+export const useAppreciationPrograms = (params: AppreciationHistoryParams) => {
+  return useQuery<AppreciationProgramsResponse>({
+    queryKey: ["recognition", "appreciation-programs", params],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.recognition_points.get_appreciation_programs",
+        params,
+      );
+      return response as AppreciationProgramsResponse;
+    },
+    enabled: !!params.employee,
+  });
+};
