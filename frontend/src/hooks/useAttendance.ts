@@ -31,6 +31,7 @@ import type {
   IOvertimeLog,
   OvertimeJournalData,
   PolicyQuestion,
+  TeamStatusEmployee,
   UserRoles,
   WeeklyOffDoc,
   WorkingHoursResponse,
@@ -771,6 +772,14 @@ export const useDataOfAttendance = (employee: string) => {
     queryKey: ["employee-attendance-details", employee],
     queryFn: () => attendanceService.getDataOfAttendance(employee),
     enabled: !!employee, // ⛔ jab tak employee na ho tab tak call mat karo
+    staleTime: 5 * 60 * 1000,
+  });
+};
+export const useTeamStatus = (from_date: string, to_date: string): UseQueryResult<TeamStatusEmployee[], Error> => {
+  return useQuery<TeamStatusEmployee[], Error>({
+    queryKey: ["team-status", from_date, to_date],
+    queryFn: () => attendanceService.getDataOfTeamStatus(from_date, to_date),
+    enabled: !!from_date && !!to_date,
     staleTime: 5 * 60 * 1000,
   });
 };

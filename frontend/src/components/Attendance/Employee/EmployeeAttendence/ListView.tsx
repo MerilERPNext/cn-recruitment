@@ -49,9 +49,9 @@ const ListView = () => {
         />}
         <div className="flex gap-2">
 
-          {canRegularize && <RegularizeDrawer />}
+          {canRegularize && isDesktop && <RegularizeDrawer />}
 
-          <DropdownMenu
+          {isDesktop && <DropdownMenu
             placement={'bottom-left'}
             items={[
               { label: "View Policies", icon: <Shield className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "policies", label: "View Policies", sideBarSize: "xl" }) } },
@@ -63,7 +63,7 @@ const ListView = () => {
             <button className="p-1  border-1 rounded-lg hover:bg-gray-200">
               <MoreVertical className="h-5 w-5" />
             </button>
-          </DropdownMenu>
+          </DropdownMenu>}
         </div>
         <SideDrawer
           open={openSidebarFor.isOpen}
