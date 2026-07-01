@@ -38,15 +38,19 @@ frappe.ui.form.on("Job Requisition", {
     },
 });
 
-// Hiring Lead Configuration — when a "Company Wise" config matches the
-// requisition's company, restrict the Hiring lead (Employee) and Assign to
-// Recruiter (User) dropdowns to the configured users. No matching config →
-// no filter (full lists), so the flow is never blocked.
+// Hiring Lead Configuration — restrict the Hiring lead (Employee) and Assign to
+// Recruiter (User) dropdowns to the configured users when a config matches:
+// "Company Wise" by the requisition's company, or "Assignment Framework" by the
+// Hiring Manager (Requested By) via its Dynamic User Assignments. No matching
+// config → no filter (full lists), so the flow is never blocked.
 frappe.ui.form.on("Job Requisition", {
     refresh(frm) {
         apply_hiring_lead_config_filters(frm);
     },
     company(frm) {
+        apply_hiring_lead_config_filters(frm);
+    },
+    requested_by(frm) {
         apply_hiring_lead_config_filters(frm);
     },
 });
@@ -95,7 +99,7 @@ function apply_requisition_edit_locks(frm) {
 function apply_hiring_lead_config_filters(frm) {
     frappe.call({
         method: "recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration.get_hiring_lead_config_users",
-        args: { company: frm.doc.company },
+        args: { company: frm.doc.company, employee: frm.doc.requested_by },
         callback: (r) => {
             const data = (r && r.message) || { hiring_leads: [], recruiters: [] };
             const leads = data.hiring_leads || [];

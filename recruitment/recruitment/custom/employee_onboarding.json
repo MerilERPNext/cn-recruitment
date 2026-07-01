@@ -582,7 +582,7 @@
    "_liked_by": null,
    "_user_tags": null,
    "allow_in_quick_entry": 0,
-   "allow_on_submit": 0,
+   "allow_on_submit": 1,
    "bold": 0,
    "collapsible": 0,
    "collapsible_depends_on": null,
@@ -873,7 +873,7 @@
   },
   {
    "allow_in_quick_entry": 0,
-   "allow_on_submit": 0,
+   "allow_on_submit": 1,
    "bold": 0,
    "collapsible": 0,
    "creation": "2026-05-18 00:00:00.000000",
@@ -912,7 +912,7 @@
   },
   {
    "allow_in_quick_entry": 0,
-   "allow_on_submit": 0,
+   "allow_on_submit": 1,
    "bold": 0,
    "collapsible": 0,
    "creation": "2026-05-18 00:00:00.000000",
@@ -951,7 +951,7 @@
   },
   {
    "allow_in_quick_entry": 0,
-   "allow_on_submit": 0,
+   "allow_on_submit": 1,
    "bold": 0,
    "collapsible": 0,
    "creation": "2026-05-18 00:00:00.000000",
@@ -1067,7 +1067,7 @@
   },
   {
    "allow_in_quick_entry": 0,
-   "allow_on_submit": 0,
+   "allow_on_submit": 1,
    "bold": 0,
    "collapsible": 0,
    "creation": "2026-06-30 00:00:00.000000",
@@ -1107,7 +1107,7 @@
   },
   {
    "allow_in_quick_entry": 0,
-   "allow_on_submit": 0,
+   "allow_on_submit": 1,
    "bold": 0,
    "collapsible": 0,
    "creation": "2026-06-30 00:00:00.000000",
