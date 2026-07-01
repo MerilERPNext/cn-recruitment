@@ -20,6 +20,7 @@ import ModalWrapper from "./components/ModalWrapper";
 import { RequestLeaveModalProvider } from "./components/Leaves/RequestLeaveModalContext";
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
 import { X, CheckCircle2, CircleX } from "lucide-react";
+import { Typography } from "./components/shared/atoms/Typography";
 import { GlobalStoreProvider } from "./context/GlobalStoreContext";
 import {
   preloadCriticalRoutes,
@@ -31,6 +32,7 @@ import { setTargetEmployeeId } from "./utils/frappeAPI";
 import { useGetUiPermission } from "./hooks/userUiPermission";
 import { PermissionProvider } from "./context/PermissionContext";
 import { LoadingOverlayProvider } from "./context/OverlayContext";
+import PermissionDeniedScreen from "./components/shared/PermissionDeniedScreen";
 import GlobalLeaveRequestModal from "./components/Leaves/GlobalLeaveRequestModal";
 
 import { useWebsiteBranding } from "./hooks/useBranding";
@@ -50,10 +52,16 @@ const TargetUserSync: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  const { data: currentUser, isLoading, } = useCurrentUser();
+  const { data: currentUser, isLoading } = useCurrentUser();
   const location = useLocation();
   const { data: brandingData } = useWebsiteBranding();
-  const { data: uiPermissions } = useGetUiPermission();
+  const {
+    data: uiPermissions,
+    isLoading: isPermissionLoading,
+    isError: isPermissionError,
+  } = useGetUiPermission();
+
+  const navigate = useNavigate();
 
   // Set document title and favicon from branding data
   useEffect(() => {
@@ -71,19 +79,6 @@ const App: React.FC = () => {
     }
   }, [brandingData]);
 
-  const renderRoutes = (routes: AppRoute[]) =>
-    routes.map(({ path, element, children, index }, idx) =>
-      index ? (
-        <Route key={`${idx}-index`} index element={element} />
-      ) : (
-        <Route key={`${idx}-${path}`} path={path} element={element}>
-          {children && renderRoutes(children)}
-        </Route>
-      )
-    );
-
-  const navigate = useNavigate();
-
   useEffect(() => {
     if (isLoading) return;
     if (!currentUser) {
@@ -93,23 +88,22 @@ const App: React.FC = () => {
 
   // Preload critical routes after initial load
   useEffect(() => {
-    // Only start preloading after the user is authenticated and app is loaded
+    if (isPermissionLoading || isPermissionError) return;
     if (currentUser && !isLoading) {
-      // Start preloading critical routes after a short delay
       const timeout = setTimeout(() => {
         preloadCriticalRoutes();
       }, 1000);
-
       return () => clearTimeout(timeout);
     }
-  }, [currentUser, isLoading]);
+  }, [currentUser, isLoading, isPermissionLoading, isPermissionError]);
 
   // Preload adjacent routes on navigation
   useEffect(() => {
+    if (isPermissionLoading || isPermissionError) return;
     if (currentUser && !isLoading) {
       preloadAdjacentRoutes(location.pathname);
     }
-  }, [location.pathname, currentUser, isLoading]);
+  }, [location.pathname, currentUser, isLoading, isPermissionLoading, isPermissionError]);
 
   const permittedPages = useMemo(() => {
     return (
@@ -123,6 +117,7 @@ const App: React.FC = () => {
   }, [uiPermissions]);
 
   useEffect(() => {
+    if (isPermissionLoading || isPermissionError) return;
     if (isLoading || !uiPermissions) return;
 
     const currentPath = location.pathname;
@@ -138,7 +133,42 @@ const App: React.FC = () => {
         navigate("/webapp/");
       }
     }
-  }, [location.pathname, permittedPages, isLoading, uiPermissions, navigate]);
+  }, [location.pathname, permittedPages, isLoading, uiPermissions, navigate, isPermissionLoading, isPermissionError]);
+
+  const renderRoutes = (routes: AppRoute[]) =>
+    routes.map(({ path, element, children, index }, idx) =>
+      index ? (
+        <Route key={`${idx}-index`} index element={element} />
+      ) : (
+        <Route key={`${idx}-${path}`} path={path} element={element}>
+          {children && renderRoutes(children)}
+        </Route>
+      )
+    );
+
+  // ── Permission gate: check permission API FIRST ──
+  // While loading, show a full-screen spinner with message
+  if (isPermissionLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-surface gap-4">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
+        <Typography variant="bodySmall" color="body2">
+          Checking user permissions...
+        </Typography>
+      </div>
+    );
+  }
+
+  // If permission API errored, block the entire app
+  if (isPermissionError) {
+    return (
+      <EmployeeErrorBoundary>
+        <PermissionDeniedScreen />
+      </EmployeeErrorBoundary>
+    );
+  }
+
+  // ── Permission resolved successfully — render the app ──
   return (
     <EmployeeErrorBoundary>
 
