@@ -23,9 +23,15 @@ def execute(filters=None):
 
 	]
 
-	job_openings = frappe.db.get_list('Job Opening', 
-		fields=['status as Status' , 'count(*) as Count'],
-		group_by='status'
+	# Raw SQL keeps DB-side aggregation and is v16-safe (Frappe v16 rejects SQL
+	# functions passed as strings in the get_list/get_all `fields` param).
+	job_openings = frappe.db.sql(
+		"""
+		SELECT status AS Status, COUNT(*) AS Count
+		FROM `tabJob Opening`
+		GROUP BY status
+		""",
+		as_dict=True,
 	)
 
 	mydataset = {"values": [d["Count"] for d in job_openings]}

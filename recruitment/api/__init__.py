@@ -524,16 +524,16 @@ def get_ticket_list_data(
 
         comment_counts = {}
         if ticket_names:
+            # Fetch the reference_ticket of each comment and tally in Python.
+            # Avoids the SQL-function-in-fields aggregate that Frappe v16 rejects.
             comment_rows = frappe.get_all(
                 "HD Ticket Comment",
                 filters={"reference_ticket": ["in", ticket_names]},
-                fields=["reference_ticket", "count(name) as comment_count"],
-                group_by="reference_ticket",
+                fields=["reference_ticket"],
+                limit_page_length=0,
             )
-            comment_counts = {
-                row.reference_ticket: int(row.comment_count or 0)
-                for row in comment_rows
-            }
+            for row in comment_rows:
+                comment_counts[row.reference_ticket] = comment_counts.get(row.reference_ticket, 0) + 1
 
         employee_names = {}
         employee_ids = {}
