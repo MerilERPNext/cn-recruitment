@@ -356,7 +356,7 @@ export class EmployeeService {
         "cn_leave_shift_managment.attendance.get_employee_details",
         { employeeId, logged_in_employee_details }
       );
-      
+
       if (!result) return null;
       const payload = result as { data?: EmployeeDetilsType } | EmployeeDetilsType;
       return ("data" in payload && payload.data ? payload.data : payload) as EmployeeDetilsType ?? null;
@@ -644,6 +644,8 @@ export class EmployeeService {
           employee.company_email ||
           employee.personal_email ||
           undefined,
+        blood_group: employee?.blood_group || "N/A",
+        company_name: ("company_name" in employee && employee?.company_name) || employee?.company || "Not Specified",
       };
     } catch (error) {
       console.error("Error transforming employee data:", error, employee);
