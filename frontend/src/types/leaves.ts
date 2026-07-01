@@ -137,6 +137,16 @@ export interface HolidayApiResponse {
   message: { status: string; data: HolidayGroup[] };
 }
 
+export interface LeaveHistoryEmployee {
+  employee: string;
+  employee_name: string;
+  leave_applications: (LeaveApplication & {
+    custom_leave_type_name?: string;
+    custom_manager_leave_message?: string | null;
+    custom_sandwich_applied?: number;
+  })[];
+}
+
 export interface TeamRequest {
   id: string;
   name: string;
