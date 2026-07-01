@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import AttendanceAssignments from "./Attendance/AttendanceAssignments";
 import {
   useCurrentEmployeeIdCard,
   useEmployeeIdCard,
@@ -10,14 +9,54 @@ import {
 import type { EmployeeIdCard } from "../types/employee";
 import {
   generateEmployeeQRCodeURL,
-  formatDate,
   getDefaultAvatarURL,
 } from "../utils/qrCodeUtils";
 import { useScreenSize } from "../hooks/useScreenSize";
 import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
 import HeaderBar from "./HeaderBar";
-import { useNavigate } from "react-router-dom";
+import { useNavigateBack } from "../hooks/useNavigateBack";
 import { useTargetUser } from "../context/ViewedUserContext";
+import { useWebsiteBranding } from "../hooks/useBranding";
+
+const CurrentDateTimeDisplay = () => {
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = now.toLocaleString("en-US", { month: "short" });
+  const year = now.getFullYear();
+
+  let hours = now.getHours();
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  const strTime = `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+
+  return (
+    <div className="text-center text-gray-500 text-sm font-medium mt-3">
+      {`${day}-${month}-${year} | ${strTime}`}
+    </div>
+  );
+};
+
+const formatStartDate = (dateString?: string) => {
+  if (!dateString) return "Not Specified";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "Not Specified";
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = date.toLocaleString("en-US", { month: "short" });
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`;
+};
 
 // Icon Components
 const BackIcon = () => (
@@ -101,7 +140,7 @@ interface HeaderProps {
 
 // Header Component
 const Header = ({ title, onBackClick, onMailClick, showMailButton = false }: HeaderProps) => (
-  <header className="bg-white border shadow-sm">
+  <header className="bg-white border shadow-sm sticky top-0 z-20">
     <div className="mx-auto flex items-center p-4">
       <button
         className="text-gray-800 p-2 -ml-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -180,49 +219,6 @@ const EmployeeAvatar = ({
   );
 };
 
-interface InfoRowProps {
-  label: string;
-  value: string | number;
-  isLast?: boolean;
-}
-
-// Employee Info Row Component
-const InfoRow = ({ label, value, isLast = false }: InfoRowProps) => (
-  <>
-    <div className="contents">
-      <p className="text-gray-600 text-sm py-2">{label}</p>
-      <p className="pl-3 text-gray-800 text-sm font-medium text-right py-2 break-all">
-        {value}
-      </p>
-    </div>
-
-    {!isLast && (
-      <div className="col-span-2 border-b border-gray-300" />
-    )}
-  </>
-);
-// QR Code Component
-const QRCode = ({
-  employee,
-  alt = "QR Code",
-}: {
-  employee: EmployeeIdCard;
-  alt?: string;
-}) => {
-  const qrCodeUrl = generateEmployeeQRCodeURL(employee, 200);
-
-  return (
-    <div className="mt-8 flex justify-center">
-      <img
-        alt={alt}
-        className="rounded-lg shadow w-48 h-48"
-        src={qrCodeUrl || "/placeholder.svg"}
-        loading="lazy"
-      />
-    </div>
-  );
-};
-
 interface ActionButtonProps {
   children: React.ReactNode;
   onClick: () => void;
@@ -259,51 +255,117 @@ const ActionButton = ({
   );
 };
 
-// Employee Card Component
-const EmployeeCard = ({ employee }: { employee: EmployeeIdCard }) => (
-  <div className="bg-gray-100 rounded-xl shadow-lg p-6">
-    <div className="flex flex-col items-center text-center mb-6">
-      <EmployeeAvatar
-        imageUrl={employee.avatar}
-        name={employee.employee_name}
-      />
-      <h2 className="text-gray-800 text-2xl font-bold mt-4">
-        {employee.employee_name}
-      </h2>
-      <p className="text-gray-600 text-md">{employee.department} Department</p>
-      <p className="text-blue-500 text-sm font-medium mt-1">
-        ID: {employee.employee_number || employee.id}
-      </p>
-      {employee.designation && (
-        <p className="text-gray-500 text-sm">{employee.designation}</p>
-      )}
-    </div>
+interface InfoRowProps {
+  label: string;
+  value?: string | number;
+  isLast?: boolean;
+}
 
-    <div className="space-y-2  items-baseline grid grid-cols-[max-content_1fr] ">
-      <InfoRow
-        label="Employee ID"
-        value={employee.employee_number || employee.id}
-      />
-      <InfoRow label="Department" value={employee.department} />
-      <InfoRow label="Location" value={employee.location || "Not Specified"} />
-      <InfoRow label="Start Date" value={formatDate(employee.startDate)} />
-      {employee.designation && (
-        <InfoRow label="Designation" value={employee.designation} />
-      )}
-      {employee.contact && <InfoRow label="Contact" value={employee.contact} />}
-      {employee.email && (
-        <InfoRow label="Email" value={employee.email} isLast={true} />
-      )}
-    </div>
-
-    <QRCode employee={employee} alt={`QR Code for ${employee.employee_name}`} />
+// Employee Info Row Component
+const InfoRow = ({ label, value, isLast = false }: InfoRowProps) => (
+  <div className={isLast ? "mb-0" : "mb-4"}>
+    <h3 className="text-gray-700 font-semibold text-sm">{label}</h3>
+    <p className="text-gray-600 text-sm mt-0.5 break-words whitespace-pre-wrap">{value || "N/A"}</p>
   </div>
 );
+
+// Virtual ID Card Component
+const VirtualIDCard = ({ employee }: { employee: EmployeeIdCard }) => {
+  const { data: brandingData } = useWebsiteBranding();
+
+  return (
+    <div className="space-y-4">
+      {/* Main ID Card */}
+      <div className="bg-[#E6E8FB] rounded-xl shadow-sm border border-gray-100 overflow-hidden relative">
+        {/* White Background Header Banner */}
+        <div className="absolute top-0 left-0 w-full h-[60px] bg-white"></div>
+
+        <div className="p-5 pb-4 relative z-10">
+          <div className="flex justify-between items-start mb-6 border-b border-[#D5D8ED] pb-4">
+            <div className="flex-1 pr-4">
+              {/* Logo */}
+              <div className="-mt-2.5 mb-[26px] flex items-center h-10">
+                {brandingData?.app_logo ? (
+                  <img src={brandingData.app_logo} alt="Company Logo" className="w-10 h-10 object-contain rounded-lg mix-blend-multiply" />
+                ) : (
+                  <div className="w-10 h-10 bg-black text-white rounded-lg flex items-center justify-center font-bold text-lg shadow-sm">
+                    PW
+                  </div>
+                )}
+              </div>
+
+              <h2 className="text-gray-900 text-lg font-semibold leading-tight">
+                {employee.employee_name}
+              </h2>
+              <p className="text-gray-500 text-sm mt-0.5">
+                {employee.employee_number || employee.id}
+              </p>
+
+              <p className="text-gray-700 text-sm font-medium mt-3 leading-tight">
+                {employee.designation} {employee.department ? `(${employee.department})` : ''}
+              </p>
+              <p className="text-gray-500 text-xs mt-2 line-clamp-3 leading-snug pr-4">
+                {employee.location}
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center flex-shrink-0 w-[80px]">
+              <div className="w-[80px] h-[80px] rounded-lg overflow-hidden border border-gray-200 shadow-sm mb-2 bg-white flex-shrink-0">
+                <img
+                  src={employee.avatar || "/placeholder.svg"}
+                  alt={employee.employee_name}
+                  className="w-full h-full object-cover object-center"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = getDefaultAvatarURL(employee.employee_name);
+                  }}
+                />
+              </div>
+
+              <div className="border border-blue-600 text-blue-600 rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wider whitespace-nowrap bg-[#E6E8FB] mt-2">
+                BLOOD GROUP - {employee.blood_group}
+              </div>
+
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center justify-center mb-6">
+            <div className="bg-white p-3 rounded shadow-sm inline-block">
+              <img
+                src={generateEmployeeQRCodeURL(employee, 180) || "/placeholder.svg"}
+                alt="QR"
+                className="w-40 h-40"
+              />
+            </div>
+            <CurrentDateTimeDisplay />
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Details Card */}
+      <div className="bg-[#E6E8FB] rounded-xl shadow-sm border border-gray-100 p-5">
+        <InfoRow label="Employee ID" value={employee?.employee_number || employee.id} />
+        {employee.email && (
+          <InfoRow label="Email" value={employee?.email} />
+        )}
+        <InfoRow label="Company Name" value={employee?.company_name} />
+
+
+        <InfoRow label="Department" value={employee?.department} />
+        <InfoRow label="Location" value={employee?.location || "Not Specified"} />
+        <InfoRow label="Start Date" value={formatStartDate(employee?.startDate)} />
+        {employee.designation && (
+          <InfoRow label="Designation" value={employee?.designation} />
+        )}
+        {employee.contact && <InfoRow label="Contact" value={employee.contact} isLast={true} />}
+      </div>
+    </div>
+  );
+};
 
 interface ActionButtonsProps {
   onWhatsApp: () => void;
   onCall: () => void;
-  onAttendanceAssignments: () => void;
   employeeContact?: number | string;
 }
 // Action Buttons Component
@@ -311,8 +373,7 @@ const ActionButtons = ({
   onWhatsApp,
   onCall,
   employeeContact,
-}: // onAttendanceAssignments,
-  ActionButtonsProps) => (
+}: ActionButtonsProps) => (
   <div className="mt-8 space-y-4">
 
     {employeeContact && (<div className="flex gap-4">
@@ -323,13 +384,6 @@ const ActionButtons = ({
         Call
       </ActionButton>
     </div>)}
-    {/* <ActionButton
-      variant="secondary"
-      onClick={onAttendanceAssignments}
-      className="w-full"
-    >
-      Attendance Assignments
-    </ActionButton> */}
   </div>
 );
 
@@ -425,8 +479,7 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
     message: string;
     type: "error" | "info";
   } | null>(null);
-  const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
-    useState(false);
+
 
   // Automatically hide the toast after a few seconds
   useEffect(() => {
@@ -511,36 +564,32 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
                     </p>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
-                  {isViewingOtherUser &&
+                <div className="flex flex-col items-start sm:items-end gap-3 w-full sm:w-auto mt-4 sm:mt-0">
+                  <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto">
+                    {isViewingOtherUser &&
+                      <button
+                        onClick={handleEmail}
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm sm:text-base"
+                      >
+                        <EmailIcon />
+                        Email
+                      </button>
+                    }
                     <button
-                      onClick={handleEmail}
-                      className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm sm:text-base"
+                      onClick={handleChat}
+                      className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm sm:text-base"
                     >
-                      <EmailIcon />
-                      Email
+                      <ChatIcon />
+                      Chat
                     </button>
-                  }
-                  <button
-                    onClick={handleChat}
-                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm sm:text-base"
-                  >
-                    <ChatIcon />
-                    Chat
-                  </button>
-                  <button
-                    onClick={handleCall}
-                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
-                  >
-                    <CallIcon />
-                    Call
-                  </button>
-                  {/* <button
-                    onClick={() => setIsAttendanceAssignmentsOpen(true)}
-                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
-                  >
-                    Attendance Assignments
-                  </button> */}
+                    <button
+                      onClick={handleCall}
+                      className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
+                    >
+                      <CallIcon />
+                      Call
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -610,7 +659,7 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
                           Start Date
                         </span>
                         <span className="text-gray-900 font-medium text-sm sm:text-base text-right">
-                          {formatDate(employee.startDate)}
+                          {formatStartDate(employee.startDate)}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -628,7 +677,7 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
                 {/* Right Column - QR Code */}
                 <div className="flex flex-col items-center lg:items-start">
                   <div className="bg-pink-50 rounded-lg p-4 sm:p-6 w-full max-w-sm lg:max-w-none">
-                    <div className="flex justify-center mb-4">
+                    <div className="flex justify-center mb-4 flex-col items-center">
                       <img
                         src={
                           generateEmployeeQRCodeURL(employee, 200) ||
@@ -638,6 +687,7 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
                         className="w-40 h-40 sm:w-48 sm:h-48 lg:w-56 lg:h-56 xl:w-64 xl:h-64 rounded-lg"
                         loading="lazy"
                       />
+                      <CurrentDateTimeDisplay />
                     </div>
                     <p className="text-center text-gray-600 text-xs sm:text-sm">
                       Scan to view profile on a mobile device or add to
@@ -659,11 +709,7 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
           />
         )}
 
-        {/* Attendance Assignments Modal */}
-        <AttendanceAssignments
-          open={isAttendanceAssignmentsOpen}
-          onClose={() => setIsAttendanceAssignmentsOpen(false)}
-        />
+
       </div>
     </DesktopLayoutWrapper>
   );
@@ -704,8 +750,7 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
     message: string;
     type: "error" | "info";
   } | null>(null);
-  const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
-    useState(false);
+
 
   // Automatically hide the toast after a few seconds
   useEffect(() => {
@@ -717,16 +762,7 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
     }
   }, [toast]);
 
-  const navigate = useNavigate();
-
-  // Event handlers
-  const handleBackClick = () => {
-    if (window.isApp) {
-      navigate("/webapp/dashboard");
-    } else {
-      navigate(-1)
-    }
-  }
+  const navigateBack = useNavigateBack();
 
   const handleMailClick = () => {
     if (employee?.email) {
@@ -795,8 +831,8 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
       }}
     >
       <Header
-        title="Employee ID"
-        onBackClick={handleBackClick}
+        title="Virtual ID Card"
+        onBackClick={navigateBack}
         onMailClick={handleMailClick}
         showMailButton={isViewingOtherUser}
       />
@@ -817,14 +853,11 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
               {/* Validate essential employee data before rendering */}
               {employee.employee_name && employee.id ? (
                 <>
-                  <EmployeeCard employee={employee} />
+                  <VirtualIDCard employee={employee} />
                   <ActionButtons
                     employeeContact={employee.contact}
                     onWhatsApp={handleWhatsApp}
                     onCall={handleCall}
-                    onAttendanceAssignments={() =>
-                      setIsAttendanceAssignmentsOpen(true)
-                    }
                   />
                 </>
               ) : (
@@ -846,11 +879,6 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
         />
       )}
 
-      {/* Attendance Assignments Modal */}
-      <AttendanceAssignments
-        open={isAttendanceAssignmentsOpen}
-        onClose={() => setIsAttendanceAssignmentsOpen(false)}
-      />
     </div>
   );
 };

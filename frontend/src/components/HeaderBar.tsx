@@ -1,6 +1,6 @@
 import React from "react";
 import { IoChevronBackOutline } from "react-icons/io5";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigateBack } from "../hooks/useNavigateBack";
 
 interface HeaderBarProps {
   title?: string;
@@ -21,26 +21,7 @@ const HeaderBar: React.FC<HeaderBarProps> = ({
   bgColor = "white",
   className = "",
 }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const canGoback = location.key !== "default";
-
-  const navigateBack = () => {
-    if (window?.isApp && !canGoback && window?.nativeInterface?.execute) {
-      // mobile handle back navigation if can not go back from web history
-      window.nativeInterface.execute("goBack", {})
-        .then(() => {
-          console.log("goBack");
-        })
-        .catch(() => {
-          console.log("goBack failed");
-          navigate("/webapp");
-        });
-    } else {
-      navigate(-1);
-    }
-  }
+  const navigateBack = useNavigateBack();
 
   const handleBack = () => {
     if (onBack) {
