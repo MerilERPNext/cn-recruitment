@@ -12,6 +12,7 @@ import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
+import HeaderBar from "../HeaderBar";
 
 
 
@@ -289,6 +290,7 @@ const NoticeDetails = () => {
 
     return (
         <div className=" bg-white">
+            <HeaderBar title="Notice" />
             {detailsBody}
         </div>
     )
