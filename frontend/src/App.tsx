@@ -59,6 +59,7 @@ const App: React.FC = () => {
     data: uiPermissions,
     isLoading: isPermissionLoading,
     isError: isPermissionError,
+    refetch: refetchPermissions,
   } = useGetUiPermission();
 
   const navigate = useNavigate();
@@ -146,6 +147,29 @@ const App: React.FC = () => {
       )
     );
 
+  // First, let the authentication check handle unauthenticated users or loading states
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-surface gap-4">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
+        <Typography variant="bodySmall" color="body2">
+          Verifying your session...
+        </Typography>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-surface gap-4">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
+        <Typography variant="bodySmall" color="body2">
+          Redirecting to login...
+        </Typography>
+      </div>
+    );
+  }
+
   // ── Permission gate: check permission API FIRST ──
   // While loading, show a full-screen spinner with message
   if (isPermissionLoading) {
@@ -163,7 +187,7 @@ const App: React.FC = () => {
   if (isPermissionError) {
     return (
       <EmployeeErrorBoundary>
-        <PermissionDeniedScreen />
+        <PermissionDeniedScreen onRetry={refetchPermissions} />
       </EmployeeErrorBoundary>
     );
   }

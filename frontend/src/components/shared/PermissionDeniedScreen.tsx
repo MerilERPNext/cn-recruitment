@@ -2,7 +2,11 @@ import React from "react";
 import { ShieldX, Mail } from "lucide-react";
 import { Typography } from "./atoms/Typography";
 
-const PermissionDeniedScreen: React.FC = () => {
+interface PermissionDeniedScreenProps {
+  onRetry?: () => void;
+}
+
+const PermissionDeniedScreen: React.FC<PermissionDeniedScreenProps> = ({ onRetry }) => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface p-6">
       <div
@@ -63,7 +67,7 @@ const PermissionDeniedScreen: React.FC = () => {
         {/* Retry button */}
         <button
           className="inline-flex items-center justify-center px-8 py-2.5 text-sm font-semibold text-white bg-primary hover:bg-primary-600 rounded-xl border-none cursor-pointer transition-all duration-200 shadow-md shadow-primary-300/25 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary-300/35 active:translate-y-0"
-          onClick={() => window.location.reload()}
+          onClick={onRetry || (() => window.location.reload())}
         >
           Try Again
         </button>
