@@ -19,7 +19,15 @@ import { useTargetUser } from "../context/ViewedUserContext";
 import { useWebsiteBranding } from "../hooks/useBranding";
 
 const CurrentDateTimeDisplay = () => {
-  const now = new Date();
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const day = String(now.getDate()).padStart(2, '0');
   const month = now.toLocaleString("en-US", { month: "short" });
   const year = now.getFullYear();
@@ -183,7 +191,7 @@ const EmployeeAvatar = ({
       setImageSrc(imageUrl);
       setImageError(false);
     }
-  }, [imageUrl, imageSrc]);
+  }, [imageUrl]);
 
   const handleImageError = () => {
     if (!imageError) {
@@ -308,7 +316,8 @@ const VirtualIDCard = ({ employee }: { employee: EmployeeIdCard }) => {
                   alt={employee.employee_name}
                   className="w-full h-full object-cover object-center"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = getDefaultAvatarURL(employee.employee_name);
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = getDefaultAvatarURL(employee.employee_name);
                   }}
                 />
               </div>
@@ -340,9 +349,7 @@ const VirtualIDCard = ({ employee }: { employee: EmployeeIdCard }) => {
           <InfoRow label="Email" value={employee?.email} />
         )}
         <InfoRow label="Company Name" value={employee?.company_name} />
-        {employee.contact && (
-          <InfoRow label="Emergency Contact Details" value={employee.contact} />
-        )}
+
 
         <InfoRow label="Department" value={employee?.department} />
         <InfoRow label="Location" value={employee?.location || "Not Specified"} />

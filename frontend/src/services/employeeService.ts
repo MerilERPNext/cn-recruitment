@@ -644,8 +644,8 @@ export class EmployeeService {
           employee.company_email ||
           employee.personal_email ||
           undefined,
-        blood_group: employee?.blood_group || "N/A",
-        company_name: ("company_name" in employee && employee?.company_name) || employee?.company || "Not Specified",
+        blood_group: employee.blood_group || "N/A",
+        company_name: employee.company_name || employee.company || "Not Specified",
       };
     } catch (error) {
       console.error("Error transforming employee data:", error, employee);
