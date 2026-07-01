@@ -53,7 +53,7 @@ export const NoticeSlide = ({ data, backgroundColor, fullWidthBackground = false
                     {data.title}
                 </h2>
 
-                <div className={`line-clamp-2 text-sm text-gray-700 ${fullWidthBackground ? "mb-4 font-medium" : "mx-4 mb-3 max-w-[65%]"}`}>
+                <div className={`line-clamp-2   text-sm text-gray-700 ${fullWidthBackground ? "mb-2 font-medium" : "mx-4 mb-3 max-w-[65%]"}`}>
                     {plainText}
                 </div>
 
