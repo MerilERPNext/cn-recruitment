@@ -1,4 +1,4 @@
-import { Calendar, CheckCircle, RotateCcw, Timer, XCircle } from "lucide-react";
+import { Calendar, CheckCircle, RotateCcw, Search, Timer, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   useCanShowClockIn,
@@ -24,7 +24,6 @@ import {
 } from "date-fns";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import defaultProfile from "../../assets/face-rec.png";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useEmployeeWithFallback } from "../../hooks/useEmployeeWithFallback";
 import {
@@ -153,6 +152,7 @@ const MobileDashboard: React.FC = () => {
   const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const [profileDrawer, setProfileDrawer] = useState(false);
+  const [isSearchDrawerOpen, setIsSearchDrawerOpen] = useState(false);
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
       compareAsc(
@@ -419,30 +419,18 @@ const MobileDashboard: React.FC = () => {
               <NotificationBell className="text-gray-600 hover:text-gray-800" />
             </button>
 
-            <div
-              className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer border border-gray-400"
-              onClick={() => {
-                setProfileDrawer(true);
-                // navigate(`/webapp/employee-profile`);
-              }}
+            <button 
+              className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
+              onClick={() => setIsSearchDrawerOpen(true)}
             >
-              <img
-                src={currentEmployee?.image || defaultProfile}
-                alt="User avatar"
-                className="w-full h-full object-cover bg-gray-400"
-              />
-            </div>
+              <Search className="text-gray-600 hover:text-gray-800" />
+            </button>
           </div>
         </div>
       </div>
 
       {/* Viewing As Banner */}
       <ViewingAsBanner />
-
-      {/* Search Bar */}
-      <div className="py-2 bg-white border-b border-gray-100 flex-shrink-0">
-        <SearchMembers />
-      </div>
 
       <div className="flex-1 overflow-y-auto gap-2">
         {/* ------------------------ User Notice Banner ------------------------ */}
@@ -803,6 +791,17 @@ const MobileDashboard: React.FC = () => {
         className="px-0"
       >
         <MobileProfileDrawer />
+      </SideDrawer>
+      <SideDrawer
+        open={isSearchDrawerOpen}
+        onClose={() => setIsSearchDrawerOpen(false)}
+        title="Search Members"
+        showBackButton
+        className="px-0"
+      >
+        <div className="py-4">
+          <SearchMembers />
+        </div>
       </SideDrawer>
       <GeoLocationModal
         label={isCurrentlyCheckedIn ? "Check Out" : "Check In"}

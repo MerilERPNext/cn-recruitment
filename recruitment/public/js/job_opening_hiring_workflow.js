@@ -63,20 +63,29 @@
 
 	frappe.ui.form.on("Job Opening", {
 		refresh(frm) {
-			// Manual re-fetch — replaces the current stages with the template's.
-			frm.add_custom_button(__("Fetch Hiring Workflow"), () => {
-				if ((frm.doc.custom_hiring_stages || []).length) {
-					frappe.confirm(
-						__("This will replace the current hiring stages with the matching template. Continue?"),
-						() => fetchAndFill(frm, { force: true })
-					);
-				} else {
-					fetchAndFill(frm, { force: true });
-				}
-			});
+			// Master switch: when the Hiring Workflow feature is off, add no
+			// button and don't auto-fill — the Job Opening behaves as before.
+			frappe.call({
+				method: "recruitment.api.hiring_stage.is_enabled",
+				callback: (r) => {
+					if (!r.message) return;
 
-			// Auto-prefill once, while the tab is still empty.
-			fetchAndFill(frm);
+					// Manual re-fetch — replaces the current stages with the template's.
+					frm.add_custom_button(__("Fetch Hiring Workflow"), () => {
+						if ((frm.doc.custom_hiring_stages || []).length) {
+							frappe.confirm(
+								__("This will replace the current hiring stages with the matching template. Continue?"),
+								() => fetchAndFill(frm, { force: true })
+							);
+						} else {
+							fetchAndFill(frm, { force: true });
+						}
+					});
+
+					// Auto-prefill once, while the tab is still empty.
+					fetchAndFill(frm);
+				},
+			});
 		},
 	});
 

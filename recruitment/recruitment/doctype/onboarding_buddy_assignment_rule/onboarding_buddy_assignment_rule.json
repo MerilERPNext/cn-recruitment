@@ -12,6 +12,7 @@
   "role_type",
   "assigned_section",
   "assigned_user",
+  "assigned_manager",
   "filters_section",
   "department",
   "designation",
@@ -55,7 +56,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Role Type",
-   "options": "Onboarding Buddy\nJoining Buddy\nManager",
+   "options": "Onboarding Buddy\nTeammates\nManager",
    "reqd": 1
   },
   {
@@ -64,12 +65,22 @@
    "label": "Assignment"
   },
   {
+   "depends_on": "eval:doc.role_type && doc.role_type!='Manager'",
+   "description": "Select one or more users. For Onboarding Buddy and Teammates roles, all of these are assigned to the candidate's Employee Onboarding.",
    "fieldname": "assigned_user",
+   "fieldtype": "Table MultiSelect",
+   "label": "Assigned Users",
+   "mandatory_depends_on": "eval:doc.role_type && doc.role_type!='Manager'",
+   "options": "Onboarding Buddy User"
+  },
+  {
+   "depends_on": "eval:doc.role_type=='Manager'",
+   "description": "The Manager is a single Employee (used only when Role Type is Manager).",
+   "fieldname": "assigned_manager",
    "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Assigned User",
-   "options": "User",
-   "reqd": 1
+   "label": "Manager (Employee)",
+   "mandatory_depends_on": "eval:doc.role_type=='Manager'",
+   "options": "Employee"
   },
   {
    "fieldname": "filters_section",

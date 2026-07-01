@@ -125,7 +125,7 @@ const SearchMembers = () => {
       <main className="flex-grow w-full">
         <div className="relative mx-auto max-w-3xl px-3 sm:px-6 lg:px-8 ">
           <div className="flex items-center gap-2">
-            <div className="flex-1  flex  bg-white focus-within:bg-white items-center gap-2 rounded-xl  px-3 sm:px-4 h-11 sm:h-12 focus-within:ring-2 ring-blue-700 transition">
+            <div className="flex-1 flex bg-white focus-within:bg-white items-center gap-2 rounded-xl  px-3 sm:px-4 h-11 sm:h-12 focus-within:ring-2 ring-blue-700 transition border border-gray-200">
               <Search className="text-gray-600 w-5 h-5" aria-hidden="true" />
               <input
                 id="member-search"

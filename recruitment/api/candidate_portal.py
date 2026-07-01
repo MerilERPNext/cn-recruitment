@@ -119,6 +119,53 @@ def _get_default_onboarding_portal_form_name():
     )
 
 
+def resolve_onboarding_portal_form(department=None, designation=None):
+    """Pick the Onboarding Portal Form for a candidate by Department + Designation.
+
+    This replaces the old 'default flag' selection as the primary mechanism. Match
+    priority (most specific first):
+      1. Department + Designation both match
+      2. Designation matches, Department blank on the form
+      3. Department matches, Designation blank on the form
+      4. Fallback: the form flagged Default (safety net so onboarding never hard-fails)
+
+    Returns the form name or None.
+    """
+    blank = ("in", ["", None])
+
+    if department and designation:
+        f = frappe.db.get_value(
+            "Onboarding Portal Forms",
+            {"department": department, "designation": designation},
+            "name",
+            order_by="modified desc",
+        )
+        if f:
+            return f
+
+    if designation:
+        f = frappe.db.get_value(
+            "Onboarding Portal Forms",
+            {"designation": designation, "department": blank},
+            "name",
+            order_by="modified desc",
+        )
+        if f:
+            return f
+
+    if department:
+        f = frappe.db.get_value(
+            "Onboarding Portal Forms",
+            {"department": department, "designation": blank},
+            "name",
+            order_by="modified desc",
+        )
+        if f:
+            return f
+
+    return _get_default_onboarding_portal_form_name()
+
+
 def _get_portal_settings(form_name=None):
     try:
         settings_name = form_name or _get_default_onboarding_portal_form_name()
@@ -229,6 +276,74 @@ def _append_key_contact_rows(doc, applicant):
         existing.add((employee, role_label))
 
 
+def _seed_buddy_table(doc, fieldname, users):
+    """Seed an Employee Onboarding Table MultiSelect (child: Onboarding Buddy User, link
+    field 'user') with the given users — but ONLY when the table is still empty, so a
+    manual selection (or an earlier run) is never overwritten. Blanks, duplicates and
+    non-existent users are skipped."""
+    if doc.get(fieldname):
+        return
+    seen = set()
+    for u in users:
+        if u and u not in seen and frappe.db.exists("User", u):
+            doc.append(fieldname, {"user": u})
+            seen.add(u)
+
+
+def _apply_onboarding_automation_fields(doc, applicant, job_offer_name=None):
+    """Phase-1 onboarding automation. Stamps the Onboarding Setup tab fields onto the
+    Employee Onboarding draft:
+      - Recruiter      <- Job Applicant.custom_recruiter (flows from Requisition/Opening)
+      - Onboarding SPOC<- Job Offer creator (owner), else the initiating session user
+      - Onboarding Buddy / Teammates (Table MultiSelect) <- the applicant's manual pick
+                          PLUS every user from the matching Onboarding Buddy Assignment
+                          Rule (multi-select).
+      - Manager (single Link) <- applicant's manual pick, else the rule's Manager
+                          (Employee resolved to its linked User).
+
+    Tables are only seeded when empty and single values only when blank, so a manual
+    override — or a second run — never clobbers existing data. Best-effort: never raises
+    and never blocks onboarding creation."""
+    try:
+        if not doc.get("custom_onboarding_recruiter") and applicant.get("custom_recruiter"):
+            doc.custom_onboarding_recruiter = applicant.get("custom_recruiter")
+
+        if not doc.get("custom_onboarding_spoc"):
+            spoc = None
+            if job_offer_name:
+                spoc = frappe.db.get_value("Job Offer", job_offer_name, "owner")
+            spoc = spoc or frappe.session.user
+            if spoc and spoc != "Guest" and frappe.db.exists("User", spoc):
+                doc.custom_onboarding_spoc = spoc
+
+        # Rule-based multi assignments (lists of users) + single Manager.
+        try:
+            from recruitment.recruitment.doctype.onboarding_buddy_assignment_rule.onboarding_buddy_assignment_rule import (
+                resolve_onboarding_assignments,
+            )
+            assigns = resolve_onboarding_assignments(applicant.name) or {}
+        except Exception:
+            assigns = {}
+
+        # Onboarding Buddy (Table MultiSelect) = applicant's manual pick + rule buddies.
+        _seed_buddy_table(
+            doc, "custom_onboarding_buddy",
+            [applicant.get("custom_onboarding_buddy")] + (assigns.get("Onboarding Buddy") or []),
+        )
+        # Teammates (Table MultiSelect, stored on custom_joining_buddy) = manual + rule teammates.
+        _seed_buddy_table(
+            doc, "custom_joining_buddy",
+            [applicant.get("custom_joining_buddy")] + (assigns.get("Teammates") or []),
+        )
+        # Manager is a single Link (User): applicant's manual pick, else the rule's manager.
+        if not doc.get("custom_manager"):
+            manager = applicant.get("custom_manager") or assigns.get("Manager")
+            if manager:
+                doc.custom_manager = manager
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "materialize_onboarding: apply automation fields failed")
+
+
 # Employee Onboarding fields that materialize_onboarding_from_applicant manages
 # explicitly (or that must never be auto-overwritten) — auto-map leaves these alone.
 _ONBOARDING_AUTOMAP_SKIP = frozenset({
@@ -237,6 +352,8 @@ _ONBOARDING_AUTOMAP_SKIP = frozenset({
     "boarding_begins_on", "custom_onboarding_portal_form", "custom_bgv_vendor",
     "custom_onboarding_buddy", "custom_joining_buddy", "custom_manager",
     "custom_key_contacts",
+    # Onboarding Automation tab — populated explicitly by _apply_onboarding_automation_fields.
+    "custom_onboarding_recruiter", "custom_onboarding_spoc", "custom_onboarding_teammates",
 })
 
 # Fieldtypes safe to copy by value. Excludes attachments, JSON, signatures, ratings
@@ -384,6 +501,13 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
                 if applicant.get("custom_bgv_vendor"):
                     eo_doc.custom_bgv_vendor = applicant.get("custom_bgv_vendor")
                 _append_key_contact_rows(eo_doc, applicant)
+                accepted_offer = frappe.db.get_value(
+                    "Job Offer",
+                    {"job_applicant": job_applicant_id, "status": "Accepted", "docstatus": ("<", 2)},
+                    "name",
+                    order_by="creation desc",
+                )
+                _apply_onboarding_automation_fields(eo_doc, applicant, accepted_offer)
                 eo_doc.save(ignore_permissions=True)
         except Exception:
             frappe.log_error(frappe.get_traceback(), "materialize_onboarding_from_applicant: refresh existing EO failed")
@@ -424,6 +548,9 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
     # candidate/HR start from a populated form. Best-effort and non-fatal: missing or
     # invalid data is skipped (field stays blank/editable), never raises.
     _auto_map_offer_applicant_fields(doc, applicant, job_offer)
+
+    # Onboarding Automation tab — Recruiter / SPOC / Buddy-Manager links.
+    _apply_onboarding_automation_fields(doc, applicant, job_offer)
 
     doc.insert(ignore_permissions=True)
 

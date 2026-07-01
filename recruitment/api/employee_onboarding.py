@@ -461,41 +461,49 @@ def get_employee_onboarding_list(
                 row["department_title"] = dept_map.get(row.get("department"), row.get("department") or "")
                 row["designation_title"] = desig_map.get(row.get("designation"), row.get("designation") or "")
 
-            eo_names = [row["name"] for row in data]
-            agg_rows = frappe.db.sql(
-                """
-                SELECT
-                    parent,
-                    COUNT(*) AS total,
-                    SUM(CASE WHEN COALESCE(approval_status,'Pending') NOT IN ('Approved','Rejected')
-                              AND TRIM(COALESCE(current_value,''))=''  THEN 1 ELSE 0 END) AS pending,
-                    SUM(CASE WHEN TRIM(COALESCE(current_value,''))!=''
-                              AND COALESCE(approval_status,'Pending') NOT IN ('Approved','Rejected') THEN 1 ELSE 0 END) AS filled,
-                    SUM(CASE WHEN approval_status='Approved' THEN 1 ELSE 0 END) AS approved,
-                    SUM(CASE WHEN approval_status='Rejected' THEN 1 ELSE 0 END) AS rejected
-                FROM `tabEmployee Onboarding Portal Field`
-                WHERE parenttype=%s
-                  AND parentfield='custom_candidate_portal_fields'
-                  AND COALESCE(hidden,0)=0
-                  AND parent IN %s
-                GROUP BY parent
-                """,
-                (DOCTYPENAME, tuple(eo_names)),
-                as_dict=True,
-            )
-            counts_by_name = {
-                r["parent"]: {
-                    "total":    int(r.get("total")    or 0),
-                    "pending":  int(r.get("pending")  or 0),
-                    "filled":   int(r.get("filled")   or 0),
-                    "approved": int(r.get("approved") or 0),
-                    "rejected": int(r.get("rejected") or 0),
-                }
-                for r in agg_rows
-            }
+            # Per-row field status counts — value-aware, using the SAME source of
+            # truth as the candidate portal form (get_candidate_portal_form) and
+            # the onboarding dashboard (get_dashboard) so the progress shown on
+            # every surface matches exactly.
+            #
+            # Previously this read a single grouped SQL over the
+            # `custom_candidate_portal_fields` child table's stored `current_value`.
+            # That diverged from the candidate-facing endpoints in three ways:
+            #   1. it only ever saw the per-record child table, ignoring the
+            #      pre-release / linked / default form that actually drives the
+            #      portal (wrong/empty totals in those cases);
+            #   2. it counted only the snapshot `current_value` column, so
+            #      prefilled / auto-mapped values (resolved from the Job Applicant)
+            #      showed as pending;
+            #   3. it could drift from the shared bucket definition.
+            #
+            # We now resolve each row's visible portal field set via
+            # `_get_onboarding_portal_rows` (pre-release -> per-record -> linked ->
+            # default) and count live values via `_compute_candidate_field_counts`
+            # (Employee Onboarding value, falling back to the Job Applicant), with
+            # Approved/Rejected HR decisions taking precedence. The output key and
+            # shape are unchanged: {total, pending, filled, approved, rejected}.
             empty_counts = {"total": 0, "pending": 0, "filled": 0, "approved": 0, "rejected": 0}
             for row in data:
-                row["field_status_counts"] = counts_by_name.get(row["name"], dict(empty_counts))
+                counts = dict(empty_counts)
+                try:
+                    onboarding_doc = frappe.get_doc(DOCTYPENAME, row["name"])
+                    job_applicant = row.get("job_applicant")
+                    applicant_doc = (
+                        frappe.get_doc("Job Applicant", job_applicant)
+                        if job_applicant and frappe.db.exists("Job Applicant", job_applicant)
+                        else None
+                    )
+                    pre_release = _get_active_pre_release(job_applicant) if job_applicant else None
+                    portal_rows, _ = _get_onboarding_portal_rows(onboarding_doc, pre_release)
+                    counts = _compute_candidate_field_counts(portal_rows, onboarding_doc, applicant_doc)
+                except Exception:
+                    # Never let one bad row break the whole list; fall back to zeros.
+                    frappe.log_error(
+                        frappe.get_traceback(),
+                        "get_employee_onboarding_list: field_status_counts",
+                    )
+                row["field_status_counts"] = counts
 
         # Count without a SQL-aggregate field. Different Frappe versions accept
         # only the string form ("count(name)") OR only the dict form

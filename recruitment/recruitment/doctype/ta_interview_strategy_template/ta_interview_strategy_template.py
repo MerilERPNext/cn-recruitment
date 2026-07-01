@@ -202,6 +202,13 @@ def get_hiring_stages_for_job_opening(job_opening=None, doc=None):
 	`doc` (JSON of the live form) is preferred so unsaved openings match too;
 	otherwise the saved Job Opening named by `job_opening` is loaded.
 	"""
+	# Respect the master switch — when the Hiring Workflow feature is off, never
+	# auto-fill stages so Job Openings behave exactly as before.
+	from recruitment.api.hiring_stage import is_hiring_workflow_enabled
+
+	if not is_hiring_workflow_enabled():
+		return {"template": None, "stages": [], "enabled": False}
+
 	opening = None
 	if doc:
 		opening = json.loads(doc) if isinstance(doc, str) else doc
