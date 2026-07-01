@@ -12,16 +12,27 @@ const getSaturdayOfWeek = (date: Date) => endOfWeek(date, { weekStartsOn: 0 });
 
 const getStatusBadge = (records: TeamStatusRecord[]) => {
     if (!records.length) return null;
-    const latest = records[records.length - 1];
-    const status = latest.status?.toLowerCase();
 
-    if (latest.holiday_name) return null;
-    if (!status) return null;
+    // Find today's record first if it exists in the current week
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    let targetRecord = records.find((r) => r.date === todayStr);
+
+    // Fallback to the latest record with a valid status if today's is not found or empty
+    if (!targetRecord || !targetRecord.status) {
+        targetRecord = [...records]
+            .reverse()
+            .find((r) => !!r.status && !r.holiday_name);
+    }
+
+    if (!targetRecord) return null;
+    const status = targetRecord.status.toLowerCase();
+
+    if (targetRecord.holiday_name) return null;
 
     if (status === "present") return { label: "In Office", className: "bg-green-100 text-green-700" };
     if (status === "work from home") return { label: "Remotely", className: "bg-blue-100 text-blue-700" };
     if (status === "half day") return { label: "Half Day", className: "bg-orange-100 text-orange-700" };
-    if (status === "on leave" || latest.leave_type) return { label: "On Leave", className: "bg-amber-100 text-amber-700" };
+    if (status === "on leave" || targetRecord.leave_type) return { label: "On Leave", className: "bg-amber-100 text-amber-700" };
     if (status === "absent") return { label: "Absent", className: "bg-red-100 text-red-700" };
     return null;
 };

@@ -22,6 +22,7 @@ import type {
   PolicyQuestion,
   ShiftBlock,
   ShiftLocationT,
+  TeamStatusEmployee,
   UserRoles,
   WeeklyOff,
   WeeklyOffDoc,
@@ -87,8 +88,7 @@ export const attendanceService = {
   getDataOfTeamStatus: async (
     from_date: string,
     to_date: string
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): Promise<any> => {
+  ): Promise<TeamStatusEmployee[]> => {
     try {
       const res = await FrappeAPI.callMethod(
         "cn_leave_shift_managment.api.get_reportees_attendance",
@@ -97,8 +97,7 @@ export const attendanceService = {
           to_date: to_date,
         }
       );
-      console.log("Raw response from getDataOfTeamStatus:", res);
-      return res;
+      return res as TeamStatusEmployee[];
 
     } catch (error) {
       console.error("📡 Error while fetching Team Status:", error);
