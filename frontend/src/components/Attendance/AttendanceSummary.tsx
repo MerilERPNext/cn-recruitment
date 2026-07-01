@@ -435,7 +435,7 @@ const AttendanceSummary = () => {
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-4 items-start">
         <div className="w-full lg:w-[70%] space-y-6">
           {/* Today's Team Summary */}
-          {(!!teamCheckInSummary?.data?.have_team) && (
+          {(!!teamCheckInSummary?.data?.have_team) && isDesktop && (
             <Card radius="xl" className="space-y-4">
               <div className="flex items-center justify-between px-1">
                 <Typography variant="subheading">Today's Team Summary</Typography>
@@ -466,7 +466,7 @@ const AttendanceSummary = () => {
             </Card>
           )}
           {/* Quick Actions */}
-          <Card radius="xl" className="space-y-4">
+          {isDesktop && <Card radius="xl" className="space-y-4">
             <div className="px-1">
               <Typography variant="subheading" className="mb-4">
                 Quick Actions
@@ -478,10 +478,10 @@ const AttendanceSummary = () => {
                 <QuickActionCard key={card.id} {...card} />
               ))}
             </div>
-          </Card>
+          </Card>}
         </div>
         {/* Right Column: Settings - 30% */}
-        <Card radius="xl" className="w-full lg:w-[30%] h-fit">
+        {isDesktop && <Card radius="xl" className="w-full lg:w-[30%] h-fit">
           <Typography variant="subheading" className="mb-4">
             Settings & Policies
           </Typography>
@@ -537,7 +537,7 @@ const AttendanceSummary = () => {
               );
             })}
           </div>
-        </Card>
+        </Card>}
       </div>
       {showAttendanceRequestModal && (createPortal(
         <AttendanceRequestFormV2

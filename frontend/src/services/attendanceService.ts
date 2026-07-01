@@ -22,6 +22,7 @@ import type {
   PolicyQuestion,
   ShiftBlock,
   ShiftLocationT,
+  TeamStatusEmployee,
   UserRoles,
   WeeklyOff,
   WeeklyOffDoc,
@@ -81,6 +82,25 @@ export const attendanceService = {
 
     } catch (error) {
       console.error("📡 Error while fetching attendance:", error);
+      throw error;
+    }
+  },
+  getDataOfTeamStatus: async (
+    from_date: string,
+    to_date: string
+  ): Promise<TeamStatusEmployee[]> => {
+    try {
+      const res = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.api.get_reportees_attendance",
+        {
+          from_date: from_date,
+          to_date: to_date,
+        }
+      );
+      return res as TeamStatusEmployee[];
+
+    } catch (error) {
+      console.error("📡 Error while fetching Team Status:", error);
       throw error;
     }
   },

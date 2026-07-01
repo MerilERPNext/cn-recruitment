@@ -267,6 +267,10 @@ const TeamAttendance = lazyWithRetry(
   () => import("./components/Attendance/Team/TeamAttendance"),
   "TeamAttendance",
 );
+const TeamStatus = lazyWithRetry(
+  () => import("./components/Attendance/Team/TeamStatus"),
+  "TeamStatus",
+);
 const AttendanceRequestFormV2 = lazyWithRetry(
   () =>
     import("./components/Attendance/AttendanceRequest/AttendanceRequestFormV2"),
@@ -1167,6 +1171,11 @@ export const routesConfig: AppRoute[] = [
       {
         path: "emp-attendance/all",
         element: <AllEmpAttendance />,
+        permissionKey: "Team Attendance",
+      },
+      {
+        path: "team-status",
+        element: <TeamStatus />,
         permissionKey: "Team Attendance",
       },
       {
