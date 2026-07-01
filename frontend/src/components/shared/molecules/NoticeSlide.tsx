@@ -44,7 +44,7 @@ export const NoticeSlide = ({ data, backgroundColor, fullWidthBackground = false
 
     return (
         <div
-            className={`relative flex h-[150px] min-h-full w-full overflow-hidden ${fullWidthBackground ? "rounded-2xl px-4 py-5" : "py-4"}`}
+            className={`relative flex h-[150px] min-h-full w-full overflow-hidden ${fullWidthBackground ? "rounded-md px-4 py-5" : "py-4"}`}
             style={backgroundStyle}
         >
             {/* CONTENT (LEFT SIDE) */}
