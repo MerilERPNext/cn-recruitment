@@ -24,14 +24,16 @@
                     "data": {
                         "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.employee_search.search_employees?status=Active"
                     },
-                    "valueProperty": "employee_id",
                     "template": "<span><div>{{ item.employee_name || '-' }} ({{ item.employee_id || '-' }})</div><div style=\"font-size:0.85em;color:#6b7280;\"> {{ item.department_display ||'' }}, {{item.branch_display || ''}}</div></span>",
                     "selectValues": "message",
                     "refreshOn": "isForOthers",
                     "clearOnRefresh": false,
                     "lazyLoad": false,
                     "searchEnabled": true,
-                    "searchField": "query"
+                    "searchField": "query",
+                    "customOptions": {
+                        "noChoicesText": " "
+                    }
                 },
                 {
                     "type": "datetime",

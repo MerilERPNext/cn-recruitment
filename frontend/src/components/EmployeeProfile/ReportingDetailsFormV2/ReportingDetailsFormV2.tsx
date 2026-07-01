@@ -97,26 +97,26 @@ const ReportingDetailsFormV2 = ({
     const initialSubmissionData = useMemo(() => {
         if (isEdit && initialEditData) {
             const reportsToValue = initialEditData.reports_to || "";
+            const reportsToItem = reportsToValue ? {
+                employee_id: reportsToValue,
+                employee_name: initialEditData.reports_to_name || "",
+                department_display: initialEditData.department_name || "",
+                branch_display: initialEditData.branch_name || "",
+            } : undefined;
             return {
                 data: {
-                    reports_to: reportsToValue,
+                    // Store full object so the function template can render the
+                    // rich chip immediately (no valueProperty → Formio keeps the object).
+                    reports_to: reportsToItem,
                     start_date: initialEditData.start_date || "",
                     end_date: initialEditData.end_date || "",
                 },
-                // The select component renders its chosen chip from
-                // submission.metadata.selectData[path] when present, without
-                // needing the value's item to be in the currently loaded list
-                // (search_employees only returns results for an active query,
-                // so the saved manager usually won't be there on open).
-                ...(reportsToValue ? {
+                // Keep selectData as fallback: Formio uses it when the choice
+                // isn't in the loaded list (search-driven API returns nothing on open).
+                ...(reportsToItem ? {
                     metadata: {
                         selectData: {
-                            reports_to: {
-                                employee_id: reportsToValue,
-                                employee_name: initialEditData.reports_to_name || "",
-                                department_display: initialEditData.department_name || "",
-                                branch_display: initialEditData.branch_name || "",
-                            },
+                            reports_to: reportsToItem,
                         },
                     },
                 } : {}),
@@ -134,7 +134,9 @@ const ReportingDetailsFormV2 = ({
                 () => updateEmpReportingDetailsRecord({
                     employee: currentEmployee?.employee || "",
                     field: categoryField,
-                    value: String(data?.reports_to ?? ""),
+                    value: typeof data?.reports_to === 'object' && data.reports_to !== null
+                        ? String((data.reports_to as any)?.employee_id ?? "")
+                        : String(data?.reports_to ?? ""),
                     start_date: data?.start_date ? formatToIndianDate(data.start_date) : "",
                     end_date: data?.end_date ? formatToIndianDate(data.end_date) : undefined,
                     mode: isEdit ? "update" : "new",
