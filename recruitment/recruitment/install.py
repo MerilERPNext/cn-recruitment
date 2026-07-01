@@ -117,8 +117,8 @@ def ensure_performance_indexes():
 
 
 def repair_broken_fetch_from():
-    """Neutralize Custom Field ``fetch_from`` references whose source column is
-    missing from the linked doctype's table.
+    """Neutralize Custom Field ``fetch_from`` references whose source no longer
+    resolves on the linked doctype (missing column and/or missing docfield).
 
     Why this exists
     ---------------
@@ -172,8 +172,15 @@ def repair_broken_fetch_from():
             target_meta = frappe.get_meta(target_doctype)
             if target_meta.issingle or target_meta.is_virtual:
                 continue
-            if frappe.db.has_column(target_doctype, source_fieldname):
-                continue  # column exists → fetch_from is valid, leave it alone
+            # A valid fetch_from needs BOTH a real column (for the SQL fetch in
+            # get_invalid_links) AND a resolvable docfield (for value assignment
+            # in set_fetch_from_value). Missing column -> "Unknown column" (1054);
+            # column present but docfield gone -> "Wrong Fetch From value". Either
+            # way the source no longer resolves, so the reference is broken.
+            column_exists = frappe.db.has_column(target_doctype, source_fieldname)
+            field_exists = bool(target_meta.get_field(source_fieldname))
+            if column_exists and field_exists:
+                continue  # fully valid fetch_from → leave it alone
             # Broken reference — clear it so core link validation can't crash.
             frappe.db.set_value("Custom Field", row.name, "fetch_from", None, update_modified=False)
             cleared.append(f"{row.dt}.{row.fieldname} ({fetch_from})")

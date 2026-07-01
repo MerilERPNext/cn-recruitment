@@ -7,6 +7,8 @@
  "field_order": [
   "help_section",
   "default",
+  "department",
+  "designation",
   "help_html",
   "onboarding_form_name",
   "helper_section",
@@ -54,7 +56,24 @@
    "default": "0",
    "fieldname": "default",
    "fieldtype": "Check",
-   "label": "Default"
+   "label": "Default",
+   "description": "Used only as a fallback when no form matches the candidate's Department + Designation."
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Link",
+   "label": "Department",
+   "options": "Department",
+   "in_list_view": 1,
+   "description": "Match this form to candidates in this Department (combined with Designation)."
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Link",
+   "label": "Designation",
+   "options": "Designation",
+   "in_list_view": 1,
+   "description": "Match this form to candidates with this Designation (combined with Department)."
   },
   {
    "fieldname": "onboarding_form_name",

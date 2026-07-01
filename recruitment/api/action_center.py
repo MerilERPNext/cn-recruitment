@@ -722,27 +722,38 @@ def _sync_onboarding_action_for_applicant(job_applicant_id, candidate_email):
     )
 
 
-def _auto_release_and_materialize_onboarding(job_applicant_id):
+def _auto_release_and_materialize_onboarding(job_applicant_id, raise_on_error=False):
     """Mirror the HR 'Release Pre Onboarding' flow, triggered automatically from
     Job Offer acceptance. Reuses the applicant's already-selected Onboarding
     Portal Form when present; otherwise picks the form flagged `default=1`.
     Returns the materialized Employee Onboarding name, or None if no default form
-    is configured or the flow fails (the failure is logged, never raised — a
-    Job Offer save must not break because of action-item bookkeeping)."""
+    is configured or the flow fails.
+
+    Error handling depends on the caller:
+      - Auto path (Job Offer accept, raise_on_error=False): failures are logged and
+        swallowed (return None) — a Job Offer save must never break on action-item
+        bookkeeping.
+      - Manual path (Initiate Onboarding button, raise_on_error=True): the real
+        error is re-raised so the user sees exactly what's missing (e.g. a mandatory
+        field), instead of a generic message."""
     try:
         applicant = frappe.get_doc("Job Applicant", job_applicant_id)
 
         portal_form = applicant.get("custom_onboarding_portal_form")
         if not portal_form:
-            portal_form = frappe.db.get_value(
-                "Onboarding Portal Forms",
-                {"default": 1},
-                "name",
-                order_by="modified desc",
+            from recruitment.api.candidate_portal import resolve_onboarding_portal_form
+            portal_form = resolve_onboarding_portal_form(
+                applicant.get("custom_department"),
+                applicant.get("designation"),
             )
             if not portal_form:
+                if raise_on_error:
+                    frappe.throw(_(
+                        "No Onboarding Portal Form matches this candidate's Department / Designation, "
+                        "and no Default form is configured. Add a matching Onboarding Portal Form (or mark one as Default) and try again."
+                    ))
                 frappe.log_error(
-                    "No default Onboarding Portal Form configured; cannot auto-release pre-onboarding on Job Offer Accepted.",
+                    "No Onboarding Portal Form matched by Department/Designation and no Default configured; cannot auto-release pre-onboarding on Job Offer Accepted.",
                     "sync_job_offer_action_item: auto-release skipped",
                 )
                 return None
@@ -778,7 +789,56 @@ def _auto_release_and_materialize_onboarding(job_applicant_id):
             frappe.get_traceback(),
             "sync_job_offer_action_item: auto-release + materialize onboarding failed",
         )
+        if raise_on_error:
+            raise
         return None
+
+
+@frappe.whitelist()
+def initiate_onboarding(job_applicant):
+    """Manual 'Initiate Onboarding' button on Job Applicant.
+
+    Runs the exact same flow as automatic Job Offer acceptance — pick the default
+    Onboarding Portal Form, resolve Buddies/Manager via the assignment rules, and
+    materialize a draft Employee Onboarding with Recruiter / SPOC / Buddies auto-filled
+    into the Onboarding Automation tab. Idempotent: if a non-cancelled Employee
+    Onboarding already exists for the applicant, returns it instead of creating another.
+
+    Gated by Recruitment Settings -> enable_initiate_onboarding (re-checked here so the
+    endpoint can't be driven when the feature is off)."""
+    if not frappe.db.get_single_value("Recruitment Settings", "enable_initiate_onboarding"):
+        frappe.throw(_("Initiate Onboarding is disabled in Recruitment Settings."))
+    if not job_applicant:
+        frappe.throw(_("Job Applicant is required."))
+
+    existing = frappe.db.get_value(
+        "Employee Onboarding",
+        {"job_applicant": job_applicant, "docstatus": ["<", 2]},
+        "name",
+        order_by="modified desc",
+    )
+    if existing:
+        return {"employee_onboarding": existing, "already_existed": True}
+
+    # Employee Onboarding requires a Job Offer (mandatory core field). Onboarding only
+    # makes sense once the candidate has accepted, so guard with a clear message rather
+    # than letting the insert fail deep inside with a raw MandatoryError.
+    accepted_offer = frappe.db.get_value(
+        "Job Offer",
+        {"job_applicant": job_applicant, "status": "Accepted", "docstatus": ("<", 2)},
+        "name",
+    )
+    if not accepted_offer:
+        frappe.throw(
+            _("This candidate has no <b>Accepted</b> Job Offer yet. Create a Job Offer and set its status to Accepted before initiating onboarding.")
+        )
+
+    # raise_on_error=True so the user sees the actual reason if anything fails,
+    # instead of a generic message.
+    eo_name = _auto_release_and_materialize_onboarding(job_applicant, raise_on_error=True)
+    if not eo_name or not frappe.db.exists("Employee Onboarding", eo_name):
+        frappe.throw(_("Could not create Employee Onboarding for this candidate."))
+    return {"employee_onboarding": eo_name, "already_existed": False}
 
 
 def sync_onboarding_field_rejection_action(onboarding_doc, approval_list=None):
