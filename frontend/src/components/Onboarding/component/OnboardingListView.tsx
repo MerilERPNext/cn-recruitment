@@ -135,6 +135,7 @@ function ApprovalProgressBar({
   pending,
   total,
   mobile = false,
+  complete = false,
 }: {
   approved: number;
   filled: number;
@@ -144,14 +145,19 @@ function ApprovalProgressBar({
   // Mobile renders full-width with an inline breakdown (touch has no hover);
   // desktop keeps the compact bar + hover tooltip.
   mobile?: boolean;
+  // When the onboarding status is Completed, force a full (100%) bar
+  // regardless of the per-field counts.
+  complete?: boolean;
 }) {
-  if (!total) {
+  if (!total && !complete) {
     return <span className="text-xs text-gray-400">No fields</span>;
   }
 
-  // Completion = filled fields over total.
-  const completed = filled;
-  const percent = Math.min(100, Math.round((completed / total) * 100));
+  // Completion = filled fields over total; a Completed status always shows 100%.
+  const completed = complete ? total : filled;
+  const percent = complete
+    ? 100
+    : Math.min(100, Math.round((completed / total) * 100));
 
   // Client-defined colour thresholds.
   const colour =
@@ -295,7 +301,7 @@ export default function EmployeeOnboardingList() {
                 <div
                   key={item.id}
                   onClick={() => navigate(`/webapp/employee-onboarding/onboarding-field-approval/${item.id}`)}
-                  className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer hover:bg-primary/10"
+                  className="grid w-full items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer hover:bg-primary/10"
                   style={{ gridTemplateColumns: columnWidths.join(" ") }}
                 >
                   <Typography variant="bodySmall" className="font-medium text-center">
@@ -329,6 +335,7 @@ export default function EmployeeOnboardingList() {
                       rejected={item.rejected}
                       pending={item.pending}
                       total={item.totalFields}
+                      complete={item.boardingStatus === "Completed"}
                     />
                   </div>
                 </div>
@@ -416,6 +423,7 @@ export default function EmployeeOnboardingList() {
                         pending={item.pending}
                         total={item.totalFields}
                         mobile
+                        complete={item.boardingStatus === "Completed"}
                       />
                     </div>
                   </div>
