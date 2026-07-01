@@ -22,7 +22,7 @@ const pastelColors = [
 
 export const NoticeSlide = ({ data, backgroundColor, fullWidthBackground = false }: NoticeSlideProps) => {
     const navigate = useNavigate()
-    const {isDesktop} = useScreenSize()
+    const { isDesktop } = useScreenSize()
     const base =
         backgroundColor ??
         pastelColors[Math.floor(Math.random() * pastelColors.length)];
@@ -55,8 +55,8 @@ export const NoticeSlide = ({ data, backgroundColor, fullWidthBackground = false
                 <div className="w-fit flex items-center justify-start gap-1 mb-2">
 
                     <h2 className="text-xl font-bold mx-4 line-clamp-1">{data.title}</h2>
-                    
-                    <div className={`${isDesktop ? "flex" :"hidden"} items-center justify-center bg-white/20 rounded-lg p-2 cursor-pointer hover:bg-white/40`} onClick={() => navigate(`/webapp/notices/${data.name}`)}   >
+
+                    <div className={`${isDesktop ? "flex" : "hidden"} items-center justify-center bg-white/20 rounded-lg p-2 cursor-pointer hover:bg-white/40`} onClick={() => navigate(`/webapp/notices/${data.name}`)}   >
                         <Link className="h-4 w-4" />
                     </div>
                 </div>
@@ -64,14 +64,14 @@ export const NoticeSlide = ({ data, backgroundColor, fullWidthBackground = false
                 <div className="text-sm mb-3 mx-4 line-clamp-2 text-wrap trim max-w-[65%] bg-transparent"
                 >{plainText}</div>
                 <button
-                    className={`${isDesktop ? "hidden" : "block"} ${fullWidthBackground ? "ml-4 mt-auto bg-white/80 px-4 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white" : "bg-white px-3 text-base text-gray-900"} rounded-lg py-2`}
+                    className={`${isDesktop ? "hidden" : "block"} ${fullWidthBackground ? "ml-auto mr-4 mt-auto bg-white/80 px-4 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white" : "bg-white px-3 text-base text-gray-900"} rounded-lg py-2`}
                     onClick={() => navigate(`/webapp/notices/${data.name}`)}
                 >
                     View Details
                 </button>
             </div>
-          
+
         </div>
-        
+
     );
 };
