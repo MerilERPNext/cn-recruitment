@@ -1,15 +1,32 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
 import {
   ArrowUp,
   ChevronLeft,
   ChevronRight,
+  Filter,
   Search,
-  SlidersHorizontal,
-  Upload,
 } from "lucide-react";
-import { REDEMPTION_HISTORY } from "./vibeMockData";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import FilterPanel, {
+  type DateRange,
+  type FilterField,
+  type FilterValues,
+  type NumberRange,
+} from "../../shared/molecules/FilterPanel";
+import { useEmployeePoints } from "../../../services/recognitionService";
+
+const REDEMPTION_FILTER_FIELDS: FilterField[] = [
+  { key: "dateOfRedemption", label: "Date of Redemption", type: "daterange" },
+  { key: "redeemedPoints", label: "Redeemed Points", type: "numberrange" },
+];
+
+const INITIAL_FILTER_VALUES: FilterValues = {
+  dateOfRedemption: { from: "", to: "" },
+  redeemedPoints: { min: "", max: "" },
+};
 
 const Stat: React.FC<{ value: string; label: string }> = ({ value, label }) => (
   <div className="px-2">
@@ -23,6 +40,59 @@ const Stat: React.FC<{ value: string; label: string }> = ({ value, label }) => (
 );
 
 const EarnedPointsSummary: React.FC = () => {
+  const { data: user } = useCurrentEmployeeDetails({
+    logged_in_employee_details: true,
+  });
+  const employeeId = user?.employee ?? "";
+
+  const [query, setQuery] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterValues, setFilterValues] =
+    useState<FilterValues>(INITIAL_FILTER_VALUES);
+
+  const dateRange = (filterValues.dateOfRedemption as DateRange) || {
+    from: "",
+    to: "",
+  };
+  const pointsRange = (filterValues.redeemedPoints as NumberRange) || {
+    min: "",
+    max: "",
+  };
+
+  const { data: pointsData, isLoading } = useEmployeePoints({
+    employee: employeeId,
+    redemption_from_date: dateRange.from || undefined,
+    redemption_to_date: dateRange.to || undefined,
+    min_redeemed_points: pointsRange.min || undefined,
+    max_redeemed_points: pointsRange.max || undefined,
+  });
+
+  const totalEarned = pointsData?.total_earned_points ?? 0;
+  const usedPoints = pointsData?.used_points ?? 0;
+  const availablePoints = pointsData?.available_points ?? 0;
+
+  const q = query.trim().toLowerCase();
+  const filteredHistory = useMemo(() => {
+    const rows = (pointsData?.redemptions ?? []).map((r) => ({
+      id: r.name,
+      date: r.date ? formatToIndianDate(r.date) : "—",
+      orderId: r.name,
+      transactionId: "—",
+      points: r.points,
+      source: r.program || r.award || r.recognition_type || "—",
+      comments: r.remarks || "—",
+    }));
+    if (!q) return rows;
+    return rows.filter((row) =>
+      [row.date, row.orderId, row.transactionId, String(row.points), row.source, row.comments]
+        .join(" ")
+        .toLowerCase()
+        .includes(q),
+    );
+  }, [pointsData, q]);
+
+  const fmt = (n: number) => n.toLocaleString("en-IN");
+
   return (
     <div className="p-4 md:p-6">
       <Typography variant="h2" className="mb-5 text-2xl font-bold">
@@ -33,17 +103,15 @@ const EarnedPointsSummary: React.FC = () => {
       <Card radius="xl" className="border border-gray-100 shadow-sm p-5 mb-6">
         <div className="flex flex-col md:flex-row items-stretch gap-4">
           <div className="flex flex-1 items-center justify-between gap-4">
-            <Stat value="7.5K" label="Total Earned" />
+            <Stat value={fmt(totalEarned)} label="Total Earned" />
             <div className="h-12 w-px bg-gray-100" />
-            <Stat value="40" label="From Appreciation Programs" />
-            <div className="h-12 w-px bg-gray-100" />
-            <Stat value="7.5K" label="From Award Programs" />
+            <Stat value={fmt(totalEarned - usedPoints)} label="Net Points" />
           </div>
 
           <div className="flex flex-1 items-center justify-around rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-5 text-white">
             <div className="text-center">
               <Typography variant="h2" className="text-2xl font-bold text-white">
-                7.5K
+                {fmt(usedPoints)}
               </Typography>
               <Typography variant="bodySmall" className="text-blue-50">
                 Redeemed
@@ -52,7 +120,7 @@ const EarnedPointsSummary: React.FC = () => {
             <div className="h-12 w-px bg-white/30" />
             <div className="text-center">
               <Typography variant="h2" className="text-2xl font-bold text-white">
-                0
+                {fmt(availablePoints)}
               </Typography>
               <Typography variant="bodySmall" className="text-blue-50">
                 Available Points
@@ -72,16 +140,20 @@ const EarnedPointsSummary: React.FC = () => {
           <div className="relative w-full max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
             <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="Search"
               className="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
             />
           </div>
           <div className="flex items-center gap-2">
-            <button className="rounded-lg border border-gray-200 p-2 text-gray-500">
-              <SlidersHorizontal className="size-4" />
-            </button>
-            <button className="rounded-lg border border-gray-200 p-2 text-gray-500">
-              <Upload className="size-4" />
+            <button
+              type="button"
+              onClick={() => setFilterOpen(true)}
+              aria-label="Filter redemptions"
+              className="rounded-lg border border-gray-200 p-2 text-gray-500 hover:bg-gray-50"
+            >
+              <Filter className="size-4" />
             </button>
           </div>
         </div>
@@ -103,8 +175,22 @@ const EarnedPointsSummary: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {REDEMPTION_HISTORY.map((row, i) => (
-                <tr key={i} className="border-t border-gray-100 hover:bg-gray-50/60">
+              {isLoading && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-gray-400">
+                    Loading…
+                  </td>
+                </tr>
+              )}
+              {!isLoading && filteredHistory.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-8 text-center text-sm text-gray-400">
+                    No records found.
+                  </td>
+                </tr>
+              )}
+              {filteredHistory.map((row) => (
+                <tr key={row.id} className="border-t border-gray-100 hover:bg-gray-50/60">
                   <td className="px-5 py-4 text-sm text-gray-700">{row.date}</td>
                   <td className="px-5 py-4 text-sm text-gray-700">{row.orderId}</td>
                   <td className="px-5 py-4 text-sm text-gray-700">{row.transactionId}</td>
@@ -118,7 +204,10 @@ const EarnedPointsSummary: React.FC = () => {
         </div>
 
         <div className="flex items-center justify-between px-5 py-3 text-sm text-gray-500">
-          <span>1 - 10 of 11 Records</span>
+          <span>
+            {filteredHistory.length === 0 ? 0 : 1} - {filteredHistory.length} of{" "}
+            {filteredHistory.length} Records
+          </span>
           <div className="flex items-center gap-2">
             <button className="rounded-md border border-gray-200 p-1.5">
               <ChevronLeft className="size-4" />
@@ -139,6 +228,14 @@ const EarnedPointsSummary: React.FC = () => {
           </div>
         </div>
       </Card>
+
+      <FilterPanel
+        open={filterOpen}
+        fields={REDEMPTION_FILTER_FIELDS}
+        values={filterValues}
+        onClose={() => setFilterOpen(false)}
+        onApply={setFilterValues}
+      />
     </div>
   );
 };

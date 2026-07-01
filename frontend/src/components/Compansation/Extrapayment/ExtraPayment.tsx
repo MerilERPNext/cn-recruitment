@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -64,8 +65,10 @@ const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 export default function ExtraPayment() {
   const { isDesktop } = useScreenSize();
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { targetEmployeeId } = useTargetUser();
+  const effectiveEmployee = targetEmployeeId || user?.employee;
   // Don't render until we have employee + company info
-  if (!user?.employee || !user?.company) {
+  if (!effectiveEmployee || !user?.company) {
     return (
       <div className="flex flex-col h-full">
         <div className="flex-shrink-0">
@@ -83,7 +86,7 @@ export default function ExtraPayment() {
   const customAPI = {
     method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.extra_payment_api.get_extra_payment_list",
     params: {
-      employee: user.employee,
+      employee: effectiveEmployee,
       company: user.company,
     },
     transformResponse: (res: any) => {
@@ -224,7 +227,7 @@ export default function ExtraPayment() {
         <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
           <CardTable titles={titles} columnWidths={columnWidths} columnSortConfig={PERQUISITE_SORT_CONFIG}>
             <DataListView
-              queryKey={["extra-payments", user.employee, user.company]}
+              queryKey={["extra-payments", effectiveEmployee, user.company]}
               customAPI={customAPI}
               isSearch={true}
               isFilter={false}
@@ -242,7 +245,7 @@ export default function ExtraPayment() {
       {!isDesktop && (
         <div className="space-y-4 px-1">
           <DataListView
-            queryKey={["extra-payments", user.employee, user.company]}
+            queryKey={["extra-payments", effectiveEmployee, user.company]}
             customAPI={customAPI}
             isSearch={true}
             isFilter={false}

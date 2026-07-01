@@ -2,7 +2,7 @@ import frappe
 import json
 from frappe import _
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import cint
+from frappe.utils import cint, flt
 
 from hrms.hr.doctype.job_offer.job_offer import JobOffer
 
@@ -38,8 +38,53 @@ def make_employee(source_name, target_doc=None):
     return hrms_make_employee(source_name, target_doc)
 
 
+def _basis_amounts(self):
+    """Resolve the Basic and CTC base values for percentage computation, honoring
+    the offer's 'Salary Component Period' (Monthly / Annual; default Monthly).
+
+      Monthly: Basic = Base,       CTC = annual CTC / 12
+      Annual:  Basic = Base * 12,  CTC = annual CTC
+
+    Returns (basic_basis, ctc_basis)."""
+    base = flt(self.get("custom_base_salary"))
+    ctc_annum = flt(self.get("custom_ctc_per_annum"))
+    if not ctc_annum and self.get("custom_ctc_per_month"):
+        ctc_annum = flt(self.custom_ctc_per_month) * 12.0
+
+    if (self.get("custom_salary_period") or "Monthly") == "Annual":
+        return base * 12.0, ctc_annum
+    return base, (ctc_annum / 12.0 if ctc_annum else 0.0)
+
+
+def apply_percentage_components(self):
+    """Compute each Earnings / Deduction row's amount from its percentage of the
+    chosen basis (Basic or CTC), on the offer's Monthly/Annual period.
+
+    Returns True when at least one row carried a percentage — i.e. the
+    percentage model is in use — so the caller skips the legacy
+    Salary-Structure-driven path. Rows with a blank percentage are left as-is
+    (lets a recruiter still type a fixed amount on a row)."""
+    basic_basis, ctc_basis = _basis_amounts(self)
+
+    used = False
+    for row in list(self.get("custom_earnings") or []) + list(self.get("custom_deduction") or []):
+        pct = flt(row.get("percentage"))
+        if not pct:
+            continue
+        basis_amount = ctc_basis if (row.get("basis") == "CTC") else basic_basis
+        row.amount = flt(basis_amount) * pct / 100.0
+        used = True
+    return used
+
+
 @frappe.whitelist()
 def calculate_salary_structure(self, method=None):
+    # New model: components entered with a % of Basic/CTC directly on the offer.
+    if apply_percentage_components(self):
+        return
+
+    # Fallback (unchanged): legacy Salary-Structure-driven computation, used only
+    # when no percentages were entered.
     if self.custom_employee_salary_structure and self.custom_base_salary:
         rec_setting = frappe.get_doc("Recruitment Settings")
         ssa = frappe.db.get_value(

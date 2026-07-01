@@ -10,7 +10,12 @@ class SeparationPolicy(Document):
 	pass
 
 @frappe.whitelist()
-def get_employee_form_widget(target_employee, session_employee):
+def get_employee_form_widget(target_employee, session_employee=None):
+    # The authorization decision below is made from `session_employee`'s roles —
+    # derive it from the authenticated session, never from the client-supplied
+    # value (was a privilege-decision-on-attacker-controlled-identity bug).
+    session_employee = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
+
     user_assignments = frappe.get_all(
         "User Assignment Table",
         filters={"parenttype": "Separation Policy"},

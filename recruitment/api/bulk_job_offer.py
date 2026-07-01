@@ -23,7 +23,8 @@ def _job_offer_email_context(job_offer, applicant):
     (bulk / single) stays in sync.
     """
     site_url = get_url()
-    offer_url = f"{site_url}/job_offer?appl={applicant.name}"
+    from recruitment.recruitment.link_token import offer_token
+    offer_url = f"{site_url}/job_offer?appl={applicant.name}&token={offer_token(applicant.name)}"
     applicant_name = job_offer.applicant_name or applicant.applicant_name
     first_name = (applicant_name or "Candidate").split(" ")[0]
 
@@ -41,6 +42,9 @@ def _job_offer_email_context(job_offer, applicant):
 
 @frappe.whitelist()
 def create_bulk_job_offer(applicants):
+    # Creates Job Offers (was ignore_permissions with no role gate). Require
+    # Job Offer create — the desk HR caller already has it.
+    frappe.has_permission("Job Offer", "create", throw=True)
 
     # Convert string to list if required
     if isinstance(applicants, str):
@@ -98,6 +102,8 @@ def create_bulk_job_offer(applicants):
 
 @frappe.whitelist()
 def send_bulk_job_offer(job_offers):
+    # Sends offer emails + flips applicant status. Require Job Offer write.
+    frappe.has_permission("Job Offer", "write", throw=True)
 
     if isinstance(job_offers, str):
         job_offers = json.loads(job_offers)

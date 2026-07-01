@@ -15,6 +15,9 @@ interface InitialWorkLocationData {
   work_location: string;
   start_date: string;
   end_date?: string | null;
+  // History row name of the existing line being edited. Sent as record_name so
+  // the backend moves/edits that line in place instead of appending a new one.
+  work_location_row_name?: string;
 }
 
 interface WorkLocationFormProps {
@@ -120,7 +123,15 @@ const WorkLocationForm = ({
       await wrap(
         () => updateEmploymentDetails({
           employee: currentEmployee?.employee,
-          fields: [{ field: "work_location", value: data.work_location }],
+          fields: [{
+            field: "work_location",
+            value: data.work_location,
+            // On edit, identify the existing row so the backend updates it in
+            // place (incl. start_date) rather than creating a duplicate.
+            ...(isEdit && initialEditData?.work_location_row_name
+              ? { record_name: initialEditData.work_location_row_name }
+              : {}),
+          }],
           start_date: data.startDate,
           to_date: data.endDate,
           mode: isEdit ? "update" : "new",

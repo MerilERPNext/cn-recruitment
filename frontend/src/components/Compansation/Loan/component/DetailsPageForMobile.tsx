@@ -3,6 +3,7 @@ import { Download, X } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useTargetUser } from "../../../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import FrappeAPI from "../../../../utils/frappeAPI";
@@ -25,7 +26,8 @@ export default function LoanSummary() {
   const { data: user, isFetching: userLoading } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
-  const employeeId = user?.employee ?? "";
+  const { targetEmployeeId } = useTargetUser();
+  const employeeId = targetEmployeeId || user?.employee || "";
   // Fetch with a large page_length so loans beyond the default first page are
   // also available (the list can have more entries than one page).
   const { data: loanData, isLoading: loanLoading } = useQuery({

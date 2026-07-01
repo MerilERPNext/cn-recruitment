@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
+import { useTargetUser } from "../../../../context/ViewedUserContext";
 import { useCurrentEmployeeDetails } from "../../../../hooks/useEmployee";
 import {
   useCreateNewLoanApplication,
@@ -43,6 +44,9 @@ export default function CreateLoanDialog({
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
+  const { targetEmployeeId } = useTargetUser();
+  // When an admin/HR is acting on another user, target their employee id.
+  const effectiveEmployee = targetEmployeeId || currentEmployee?.employee;
   const { isDesktop } = useScreenSize();
   const mutation = useCreateNewLoanApplication();
   const formRef = useRef<any>(null);
@@ -193,7 +197,7 @@ export default function CreateLoanDialog({
         ...formData,
         company: currentEmployee?.company,
         applicant_type: "Employee",
-        applicant: currentEmployee?.employee,
+        applicant: effectiveEmployee,
       };
 
       if (loan) {

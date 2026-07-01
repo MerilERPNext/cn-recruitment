@@ -649,7 +649,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       enableTimeTypeSelectionComp.setValue(
         !!(attendanceRequestAttachmentsMandatory as any)
           ?.enable_time_type_selection,
-        { noUpdateEvent: true },
       );
     }
     const showOnlySingleDateFieldComp = instance.getComponent(
@@ -773,6 +772,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
     applyFP(fromDateComp);
     applyFP(toDateComp);
+
+    // Re-evaluate all customConditionals (e.g. time_type_selection visibility)
+    // after hidden config fields are synced with noUpdateEvent:true.
+    instance.redraw();
   }, [
     attendanceRequestAttachmentsMandatory,
     isFormReady,
@@ -928,6 +931,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                 custom_to_time: formatForPayload(submission.data.checkout_time),
                 custom__request_reason: submission.data.custom__request_reason,
                 custom_location: submission?.data?.custom_location,
+                custom_time_type: (submission.data as any).time_type_selection,
               };
               break;
             }

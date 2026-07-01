@@ -31,12 +31,17 @@
 <script>
     $(".action-banner").hide();
 
+    // The signed token lives in the page URL; carry it on every API call.
+    function offerToken() {
+        return new URLSearchParams(window.location.search).get('token') || '';
+    }
+
     async function getJobOfferStatus() {
         let queryParams = new URLSearchParams(window.location.search);
         let appl = queryParams.get('appl');
 
         try {
-            let response = await fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.get_job_offer_status?appl=' + appl);
+            let response = await fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.get_job_offer_status?appl=' + encodeURIComponent(appl) + '&token=' + encodeURIComponent(offerToken()));
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -60,7 +65,7 @@
             let queryParams = new URLSearchParams(window.location.search);
             let appl = queryParams.get('appl');
 
-            fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.job_offer_update?status=Rejected&appl=' + appl, {
+            fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.job_offer_update?status=Rejected&appl=' + encodeURIComponent(appl) + '&token=' + encodeURIComponent(offerToken()), {
                 method: 'POST',
             })
             .then(response => {
@@ -92,7 +97,7 @@
         let queryParams = new URLSearchParams(window.location.search);
         let appl = queryParams.get('appl');
 
-        fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.job_offer_update?status=Accepted&appl=' + appl, {
+        fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.job_offer_update?status=Accepted&appl=' + encodeURIComponent(appl) + '&token=' + encodeURIComponent(offerToken()), {
             method: 'POST',
         })
         .then(response => {

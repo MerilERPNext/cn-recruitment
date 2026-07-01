@@ -174,7 +174,7 @@ function FieldRow({
 
   return (
     <div
-      className={`flex items-center gap-3 py-3  border-b border-gray-100 last:border-0 transition-colors ${
+      className={`flex items-center gap-3 py-2  border-b border-gray-100 last:border-0 transition-colors ${
         checked ? "bg-blue-50/40" : ""
       }`}
     >
@@ -669,7 +669,7 @@ export default function OnboardingFieldApproval() {
           isDesktop ? "flex" : "hidden"
         } w-64 bg-white border-r border-gray-100 flex-col h-full overflow-hidden flex-shrink-0`}
       >
-        <div className="px-4 py-4 border-b border-gray-100">
+        <div className="px-4 py-3 border-b border-gray-100">
           <h1 className="text-sm font-semibold text-gray-900">Onboarding Approval</h1>
           <p className="text-xs text-gray-400 mt-0.5 truncate">{onboardingName}</p>
         </div>
@@ -731,7 +731,7 @@ export default function OnboardingFieldApproval() {
           <div className={`flex flex-col w-full ${isDesktop ? "h-full min-h-0" : "min-h-full"}`}>
 
             {/* ── Sticky top dashboard ── */}
-            <div className="shrink-0 px-4 sm:px-5 pt-5 pb-3 space-y-4 bg-gray-50 border-b border-gray-100">
+            <div className="shrink-0 px-4 sm:px-5 pt-3 pb-2.5 space-y-3 bg-gray-50 border-b border-gray-100">
 
             {/* Mobile top section nav — horizontal scroll (sidebar is hidden on mobile) */}
             <div className={isDesktop ? "hidden" : ""}>
@@ -858,7 +858,7 @@ export default function OnboardingFieldApproval() {
                 { label: "Pending", value: pendingAll, color: "text-yellow-600" },
                 { label: "Progress", value: `${pct}%`, color: "text-primary-600" },
               ].map(({ label, value, color }) => (
-                <div key={label} className="bg-white border border-gray-100 rounded-xl p-3">
+                <div key={label} className="bg-white border border-gray-100 rounded-xl p-2.5">
                   <p className={`text-lg font-semibold ${color}`}>{value}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{label}</p>
                 </div>
@@ -877,7 +877,7 @@ export default function OnboardingFieldApproval() {
             {/* ── end sticky top dashboard ── */}
 
             {/* ── Scrollable fields region (only this scrolls) ── */}
-            <div className={`flex-1 px-4 sm:px-5 py-3 space-y-4 ${isDesktop ? "min-h-0 overflow-y-auto" : "overflow-visible"}`}>
+            <div className={`flex-1 px-4 sm:px-5 py-2.5 space-y-3 ${isDesktop ? "min-h-0 overflow-y-auto" : "overflow-visible"}`}>
 
             {/* ── Section reject comment banner ── */}
             {sectionRejectPending && (
@@ -939,10 +939,10 @@ export default function OnboardingFieldApproval() {
             )}
 
             {/* Fields card */}
-            <div className="bg-white border border-gray-100 rounded-xl px-4 sm:px-5 py-4">
+            <div className="bg-white border border-gray-100 rounded-xl px-4 sm:px-5 py-3">
 
               {/* Card header */}
-              <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
+              <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-100">
 <div className="flex flex-col items-start gap-1">
 <h3 className="text-sm font-bold text-gray-800">{activeSection}</h3>
 <label className="flex items-center gap-1.5 cursor-pointer text-xs text-gray-500">
@@ -989,10 +989,10 @@ export default function OnboardingFieldApproval() {
             {/* ── end scrollable fields region ── */}
 
             {/* ── Sticky bottom footer ── */}
-            <div className="shrink-0 px-4 sm:px-5 pt-3 pb-5 bg-white border-t border-gray-100 space-y-2">
+            <div className="shrink-0 px-4 sm:px-5 pt-2 pb-3 bg-white border-t border-gray-100 space-y-2">
 
             {/* Prev / Next navigation */}
-            <div className="flex justify-between pt-1">
+            <div className="flex justify-between pt-0.5">
               <button
                 onClick={goPrev}
                 disabled={activeIdx <= 0}

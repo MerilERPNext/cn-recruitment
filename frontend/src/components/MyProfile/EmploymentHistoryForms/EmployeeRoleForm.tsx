@@ -14,6 +14,9 @@ import { useLoadingOverlay } from "../../../context/OverlayContext";
 interface InitialEmployeeRoleData {
   employee_role: string;
   start_date: string;
+  // History row name of the existing line being edited. Sent as record_name so
+  // the backend moves/edits that line in place instead of appending a new one.
+  employee_role_row_name?: string;
 }
 
 interface EmployeeRoleFormProps {
@@ -118,7 +121,15 @@ const EmployeeRoleForm = ({
       await wrap(
         () => updateEmploymentDetails({
           employee: currentEmployee?.employee,
-          fields: [{ field: "employee_role", value: data.employee_role }],
+          fields: [{
+            field: "employee_role",
+            value: data.employee_role,
+            // On edit, identify the existing row so the backend updates it in
+            // place (incl. start_date) rather than creating a duplicate.
+            ...(isEdit && initialEditData?.employee_role_row_name
+              ? { record_name: initialEditData.employee_role_row_name }
+              : {}),
+          }],
           start_date: data.startDate,
           mode: isEdit ? "update" : "new",
         }),

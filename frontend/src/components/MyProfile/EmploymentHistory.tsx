@@ -263,7 +263,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         functionalArea={item?.functional_area?.name || ""}
                         is_promotion={item.is_promotion}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item) : undefined}
-                        onDelete={canDeleteEmploymentHistory && item.can_delete ? () => setPendingDelete({ type: "history", names: collectRowNames(item as unknown as Record<string, unknown>), subSection: "work_role" }) : undefined}
+                        onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => setPendingDelete({ type: "history", names: collectRowNames(item as unknown as Record<string, unknown>), subSection: "work_role" }) : undefined}
                       />
                     </div>
                   ))}
@@ -301,7 +301,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         state={item.state}
                         city={item.city}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "work_location") : undefined}
-                        onDelete={canDeleteEmploymentHistory && item.can_delete ? () => {
+                        onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
                           const names = [item.work_location?.row_name].filter(Boolean) as string[];
                           setPendingDelete({ type: "history", names, subSection: "work_location" });
                         } : undefined}
@@ -340,7 +340,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         employment_type={item.employment_type}
                         employee_subtype={item.employee_subtype}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employment_type") : undefined}
-                        onDelete={canDeleteEmploymentHistory && item.can_delete ? () => {
+                        onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
                           const names = [item.employment_type?.row_name, item.employee_subtype?.row_name].filter(Boolean) as string[];
                           setPendingDelete({ type: "history", names, subSection: "employment_type" });
                         } : undefined}
@@ -378,7 +378,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         is_promotion={item.is_promotion}
                         employee_role={item.employee_role}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "employee_role") : undefined}
-                        onDelete={canDeleteEmploymentHistory && item.can_delete ? () => {
+                        onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
                           const names = [item.employee_role?.row_name].filter(Boolean) as string[];
                           setPendingDelete({ type: "history", names, subSection: "employee_role" });
                         } : undefined}
@@ -415,7 +415,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         to_date={item.to_date}
                         is_current={item.is_current}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item, "cost_center") : undefined}
-                        onDelete={canDeleteEmploymentHistory && item.can_delete ? () => {
+                        onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
                           const names = item.allocations.map((a) => a.row_name).filter(Boolean) as string[];
                           setPendingDelete({ type: "cost_center", names, subSection: "cost_center" });
                         } : undefined}
@@ -534,6 +534,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             work_location: (editItem as WorkLocation).work_location?.id || "",
             start_date: editItem.from_date,
             end_date: editItem.to_date,
+            // Row name lets the backend edit THIS line in place (incl. start_date)
+            // instead of appending a duplicate when the date changes.
+            work_location_row_name: (editItem as WorkLocation).work_location?.row_name,
           } : undefined}
         />
       )}
@@ -554,6 +557,16 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 start_date: editItem.from_date,
                 end_date: editItem.to_date,
                 is_promotion: (editItem as WorkRole).is_promotion,
+                // Per-field row names: each maps to its own history line, so the
+                // whole card is edited in place (incl. start_date) on edit.
+                record_names: {
+                  company: (editItem as WorkRole).company?.row_name,
+                  department: (editItem as WorkRole).department?.row_name,
+                  designation: (editItem as WorkRole).designation?.row_name,
+                  functional_area: (editItem as WorkRole).functional_area?.row_name,
+                  grade: (editItem as WorkRole).grade?.row_name,
+                  band: (editItem as WorkRole).band?.row_name,
+                },
               } : undefined}
             />
           </div>
@@ -571,6 +584,10 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             employee_subtype: (editItem as unknown as EmploymentTypes).employee_subtype?.id || "",
             start_date: editItem.from_date,
             end_date: editItem.to_date,
+            // Per-field row names: each maps to its own history line, so both are
+            // edited in place (incl. start_date) instead of spawning duplicates.
+            employment_type_row_name: (editItem as unknown as EmploymentTypes).employment_type?.row_name,
+            employee_subtype_row_name: (editItem as unknown as EmploymentTypes).employee_subtype?.row_name,
           } : undefined}
         />
       )}
@@ -584,6 +601,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           initialEditData={editItem ? {
             employee_role: (editItem as unknown as EmployeeRole).employee_role?.id || "",
             start_date: editItem.from_date,
+            // Row name lets the backend edit THIS line in place (incl. start_date)
+            // instead of appending a duplicate when the date changes.
+            employee_role_row_name: (editItem as unknown as EmployeeRole).employee_role?.row_name,
           } : undefined}
         />
       )}

@@ -3,6 +3,54 @@ from frappe.utils import getdate
 from hrms.payroll.doctype.salary_structure.salary_structure import make_salary_slip
 from frappe import _
 
+def _session_employee():
+    """The Employee linked to the logged-in user, if any."""
+    if frappe.session.user in ("Guest", None):
+        return None
+    return frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "name")
+
+
+def _is_hr_privileged():
+    """A user with payroll/HR rights who may view any employee's data."""
+    return bool(
+        frappe.has_permission("Salary Slip", "read")
+        or frappe.has_permission("Salary Structure Assignment", "read")
+    )
+
+
+def _can_view_employee(employee):
+    """Who may view an employee's compensation/PII:
+      - the employee themselves,
+      - anyone in that employee's management chain (the existing "view as"
+        feature managers use via X-Target-Employee-Id / ?targetEmployee URL),
+      - an HR/payroll-privileged user.
+    Closes the IDOR (arbitrary employee id) without breaking the manager/HR view.
+    """
+    if not employee:
+        return False
+    me = _session_employee()
+    if me and me == employee:
+        return True
+    if _is_hr_privileged():
+        return True
+    if me:
+        cur, seen = employee, set()
+        for _ in range(20):  # walk reports_to up; cap guards against cycles
+            mgr = frappe.db.get_value("Employee", cur, "reports_to")
+            if not mgr or mgr in seen:
+                break
+            if mgr == me:
+                return True
+            seen.add(mgr)
+            cur = mgr
+    return False
+
+
+def _require_employee_access(employee):
+    if not _can_view_employee(employee):
+        frappe.throw(_("Not permitted to view this employee's data."), frappe.PermissionError)
+
+
 def process_components(components, ctc_component_names, comp_type):
     component_list = []
     total = 0
@@ -27,13 +75,23 @@ def generate_salary_slip(employee):
 
     monthly_ctc_eligible=0
 
-    try:
-        target_employee = frappe.request.headers.get("X-Target-Employee-Id")
-        if target_employee:
-            employee = target_employee
-        if not employee:
-            return {"error": "Employee not provided"}
+    # The frontend's "view as" feature targets an employee via this header.
+    # Kept for compatibility, but now authorized below (previously it let any
+    # caller view any employee's salary). Guard the request access so a non-HTTP
+    # / internal call (frappe.request is None) never throws here.
+    request = getattr(frappe, "request", None)
+    target_employee = request.headers.get("X-Target-Employee-Id") if request else None
+    if target_employee:
+        employee = target_employee
 
+    if not employee:
+        return {"error": "Employee not provided"}
+
+    # Authorization first (outside the broad try/except below, so a denial is a
+    # clean 403 and never gets swallowed into a generic error).
+    _require_employee_access(employee)
+
+    try:
         payroll_settings = frappe.get_single("Payroll Settings")
 
         if payroll_settings.show_monthly_ctc:
@@ -162,6 +220,11 @@ def address_details(user_id):
                 "status": "error",
                 "message": _("Active employee not found for the given user ID.")
             }
+
+        # Authorization: self / management chain / HR — same model as salary.
+        # (Was previously open to any logged-in user for any user_id.)
+        if user_id != frappe.session.user and not _can_view_employee(employee_name):
+            return {"status": "error", "message": _("Not permitted.")}
 
         addresses = frappe.get_all(
 

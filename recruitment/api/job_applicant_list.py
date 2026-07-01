@@ -42,15 +42,21 @@ def get_job_applicants_with_stats(job_opening=None, owners=None):
 
 	scoped = {"job_title": job_opening} if job_opening else {}
 
-	def _count(extra=None):
-		filters = dict(scoped)
-		if extra:
-			filters.update(extra)
-		return len(frappe.get_list("Job Applicant", filters=filters, fields=["name"], limit_page_length=0))
+	# One permission-scoped grouped count instead of ~one unbounded pull per
+	# status. get_list (not get_all) keeps the user's permission filtering, so
+	# the tab counts are identical to before — just a single query.
+	grouped = frappe.get_list(
+		"Job Applicant",
+		filters=scoped,
+		fields=["status", "count(name) as c"],
+		group_by="status",
+		limit_page_length=0,
+	)
+	by_status = {row.status: row.c for row in grouped}
 
-	tab_counts = {"All": _count()}
+	tab_counts = {"All": sum(by_status.values())}
 	for opt in status_options:
-		tab_counts[opt] = _count({"status": opt})
+		tab_counts[opt] = by_status.get(opt, 0)
 
 	# --- Opening header (when scoped) ---
 	opening_info = None

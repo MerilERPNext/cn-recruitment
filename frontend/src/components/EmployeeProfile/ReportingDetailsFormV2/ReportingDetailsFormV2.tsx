@@ -53,9 +53,13 @@ const escapeHtml = (value: string) =>
 const buildReportsToItemTemplate = (data: any) => {
     const item = data?.item || {};
     const name = isUsableLocationValue(item.employee_name) ? item.employee_name : "-";
-    const id = isUsableLocationValue(item.name) ? item.name : "-";
-    const department = isUsableLocationValue(item.department) ? item.department : "";
-    const branch = isUsableLocationValue(item.branch) ? item.branch : "";
+    const id = isUsableLocationValue(item.employee_id) ? item.employee_id : "-";
+    const department = isUsableLocationValue(item.department_display)
+        ? item.department_display
+        : isUsableLocationValue(item.department) ? item.department : "";
+    const branch = isUsableLocationValue(item.branch_display)
+        ? item.branch_display
+        : isUsableLocationValue(item.branch) ? item.branch : "";
     const location = [department, branch].filter(Boolean).join(", ");
     return `<span><div>${escapeHtml(name)} (${escapeHtml(id)})</div><div style="font-size:0.85em;color:#6b7280;">${escapeHtml(location)}</div></span>`;
 };
@@ -92,12 +96,30 @@ const ReportingDetailsFormV2 = ({
 
     const initialSubmissionData = useMemo(() => {
         if (isEdit && initialEditData) {
+            const reportsToValue = initialEditData.reports_to || "";
+            const reportsToItem = reportsToValue ? {
+                employee_id: reportsToValue,
+                employee_name: initialEditData.reports_to_name || "",
+                department_display: initialEditData.department_name || "",
+                branch_display: initialEditData.branch_name || "",
+            } : undefined;
             return {
                 data: {
-                    reports_to: initialEditData.reports_to || "",
+                    // Store full object so the function template can render the
+                    // rich chip immediately (no valueProperty → Formio keeps the object).
+                    reports_to: reportsToItem,
                     start_date: initialEditData.start_date || "",
                     end_date: initialEditData.end_date || "",
                 },
+                // Keep selectData as fallback: Formio uses it when the choice
+                // isn't in the loaded list (search-driven API returns nothing on open).
+                ...(reportsToItem ? {
+                    metadata: {
+                        selectData: {
+                            reports_to: reportsToItem,
+                        },
+                    },
+                } : {}),
             };
         }
         return { data: {} };
@@ -112,7 +134,9 @@ const ReportingDetailsFormV2 = ({
                 () => updateEmpReportingDetailsRecord({
                     employee: currentEmployee?.employee || "",
                     field: categoryField,
-                    value: String(data?.reports_to ?? ""),
+                    value: typeof data?.reports_to === 'object' && data.reports_to !== null
+                        ? String((data.reports_to as any)?.employee_id ?? "")
+                        : String(data?.reports_to ?? ""),
                     start_date: data?.start_date ? formatToIndianDate(data.start_date) : "",
                     end_date: data?.end_date ? formatToIndianDate(data.end_date) : undefined,
                     mode: isEdit ? "update" : "new",
@@ -171,53 +195,11 @@ const ReportingDetailsFormV2 = ({
                             if (reportsToComponent?.component) {
                                 reportsToComponent.component.template = buildReportsToItemTemplate;
                             }
-                            const searchInputEl = reportsToComponent?.choices?.input?.element;
-                            if (searchInputEl && !searchInputEl.__searchFilterBound) {
-                                searchInputEl.__searchFilterBound = true;
-                                const baseUrl = "/api/resource/Employee";
-                                const baseFields = ["name", "employee_name", "department", "branch"];
-                                const buildUrl = (search: string) => {
-                                    const filters: unknown[] = [["status", "=", "Active"]];
-                                    if (search) {
-                                        filters.push(["employee_name", "like", `%${search}%`]);
-                                    }
-                                    return `${baseUrl}?fields=${encodeURIComponent(JSON.stringify(baseFields))}&filters=${encodeURIComponent(JSON.stringify(filters))}`;
-                                };
-                                let debounceTimer: ReturnType<typeof setTimeout>;
-                                searchInputEl.addEventListener("input", (event: Event) => {
-                                    const value = (event.target as HTMLInputElement).value;
-                                    clearTimeout(debounceTimer);
-                                    debounceTimer = setTimeout(() => {
-                                        const newUrl = buildUrl(value);
-                                        reportsToComponent.component.data.url = newUrl;
-                                        reportsToComponent.loadItems(newUrl, undefined, reportsToComponent.requestHeaders);
-                                    }, 300);
-                                });
-                            }
 
                             if (!initialSubmissionSet.current) {
                                 instance?.setSubmission?.(initialSubmissionData).then(() => {
                                     instance?.checkConditions?.();
                                     instance?.redraw?.();
-
-                                    const selectComponent = instance?.getComponent?.("reports_to");
-                                    selectComponent?.itemsLoaded?.then(() => {
-                                        const value = initialEditData?.reports_to;
-                                        const fetchedItems = selectComponent.downloadedResources || [];
-                                        const alreadyPresent = value && fetchedItems.some(
-                                            (item: any) => item?.name === value,
-                                        );
-                                        if (value && !alreadyPresent) {
-                                            const syntheticItem = {
-                                                name: value,
-                                                employee_name: initialEditData?.reports_to_name || "",
-                                                department: initialEditData?.department_name || "",
-                                                branch: initialEditData?.branch_name || "",
-                                            };
-                                            selectComponent.setItems([syntheticItem, ...fetchedItems]);
-                                        }
-                                        instance?.redraw?.();
-                                    });
                                 });
                                 initialSubmissionSet.current = true;
                             }

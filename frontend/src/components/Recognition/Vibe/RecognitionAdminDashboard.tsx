@@ -1,9 +1,7 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  Download,
-  Eye,
   Filter,
   Pencil,
   Search,
@@ -13,28 +11,35 @@ import {
   Inbox,
 } from "lucide-react";
 import Button from "../../shared/atoms/Button";
+import FilterPanel, {
+  type DateRange,
+  type FilterField,
+  type FilterValues,
+} from "../../shared/molecules/FilterPanel";
+import SettingsPanel, {
+  type SettingsColumn,
+  type TableSettings,
+} from "../../shared/molecules/SettingsPanel";
+
+import {
+  useRecognitionAdminDashboard,
+  type RecognitionAdminParams,
+} from "../../../services/recognitionService";
+import CreateProgramModal from "./CreateProgramModal";
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Types
  * ──────────────────────────────────────────────────────────────────────────── */
-type Status = "Active" | "Inactive" | "Archived";
-type AwardStatus = "Active" | "Inactive" | "Archived";
-
 interface AppreciationProgram {
   code: string;
   name: string;
   startDate: string;
   endDate: string;
-  status: Status;
+  status: string;
 }
 
-interface AwardProgram {
-  code: string;
-  name: string;
+interface AwardProgram extends AppreciationProgram {
   awardType: string;
-  startDate: string;
-  endDate: string;
-  status: AwardStatus;
   nominations: "Open" | "Closed";
 }
 
@@ -45,45 +50,29 @@ interface TeamRegistration {
   programName: string;
   createdBy: string;
   createdOn: string;
-  status: Status;
+  status: string;
 }
 
 type TabKey = "appreciation" | "award" | "team";
 
-/* ────────────────────────────────────────────────────────────────────────────
- * Dummy data
- * ──────────────────────────────────────────────────────────────────────────── */
-const APPRECIATION_PROGRAMS: AppreciationProgram[] = [
-  { code: "2022-PW-02", name: "Smiley Award", startDate: "01-01-2022", endDate: "31-12-2023", status: "Inactive" },
-  { code: "2022-OOB-PW", name: "Out of box", startDate: "01-01-2022", endDate: "31-12-2023", status: "Inactive" },
-  { code: "2022-POB-PW", name: "Pat on the Back", startDate: "01-01-2022", endDate: "31-12-2023", status: "Inactive" },
-  { code: "2022-PW-03", name: "Best Buddy", startDate: "01-01-2022", endDate: "31-12-2023", status: "Inactive" },
-  { code: "2022-TY-PW", name: "Thank you", startDate: "01-01-2022", endDate: "31-12-2023", status: "Inactive" },
-  { code: "2025-POB-PW", name: "Pat on the Back", startDate: "09-04-2025", endDate: "31-03-2026", status: "Inactive" },
-  { code: "2025-PW-03", name: "Best Buddy", startDate: "24-03-2025", endDate: "31-03-2026", status: "Inactive" },
-  { code: "2025-Smile-PW", name: "Smiley Award", startDate: "22-07-2025", endDate: "31-03-2026", status: "Inactive" },
-  { code: "2026-TY-PW", name: "Thank You", startDate: "12-01-2026", endDate: "31-03-2026", status: "Inactive" },
-  { code: "Great Team work", name: "Great Team work", startDate: "17-02-2026", endDate: "17-02-2026", status: "Active" },
-  { code: "2026-OOB-PW", name: "Out of box", startDate: "01-02-2026", endDate: "31-03-2026", status: "Inactive" },
-  { code: "2026-POB-PW", name: "Pat on the Back", startDate: "01-02-2026", endDate: "31-03-2026", status: "Inactive" },
-];
+// The query controls a server-driven DataTable emits to its parent.
+interface TableQuery {
+  search: string;
+  sortKey: string | null;
+  sortDir: "asc" | "desc";
+  page: number;
+  pageSize: number;
+  filterValues: FilterValues;
+}
 
-const AWARD_PROGRAMS: AwardProgram[] = [
-  { code: "2022-BesC-PW", name: "Best Counsellor", awardType: "Individual", startDate: "01-01-2023", endDate: "20-01-2023", status: "Active", nominations: "Closed" },
-  { code: "2022-BestM-PW", name: "Best Marketing", awardType: "Individual", startDate: "01-01-2023", endDate: "10-01-2023", status: "Active", nominations: "Closed" },
-  { code: "2022-BFacM-PW", name: "Best of Best Admin's", awardType: "Individual", startDate: "01-01-2023", endDate: "20-01-2023", status: "Active", nominations: "Closed" },
-  { code: "2022-BOPE-PW", name: "Batch Ops Excellence Award", awardType: "Individual", startDate: "01-01-2023", endDate: "20-01-2023", status: "Active", nominations: "Closed" },
-  { code: "2022-BStuA-PW", name: "Best Student Angel", awardType: "Individual", startDate: "01-01-2023", endDate: "20-01-2023", status: "Active", nominations: "Closed" },
-  { code: "2022-BTAC-PW", name: "Best Talent Acquisition", awardType: "Individual", startDate: "01-01-2023", endDate: "28-01-2023", status: "Active", nominations: "Closed" },
-  { code: "2022-BugF-PW", name: "Bug Identifier", awardType: "Individual", startDate: "01-01-2023", endDate: "20-01-2023", status: "Active", nominations: "Closed" },
-  { code: "2022-CA-PW", name: "Performer of the Quarter Coach-Acad", awardType: "Individual", startDate: "01-01-2023", endDate: "20-01-2023", status: "Active", nominations: "Closed" },
-  { code: "2022-CoC-PW", name: "Clean coder", awardType: "Individual", startDate: "01-01-2023", endDate: "20-01-2023", status: "Active", nominations: "Closed" },
-  { code: "2022-DEC1-PW", name: "Star performer of the Month DEC 2022", awardType: "Individual", startDate: "01-01-2023", endDate: "31-01-2023", status: "Active", nominations: "Open" },
-  { code: "2026-TEAM-PW", name: "Best Team of the Year", awardType: "Team", startDate: "01-01-2026", endDate: "31-12-2026", status: "Active", nominations: "Open" },
-  { code: "2026-INNOV-PW", name: "Innovation Champion", awardType: "Individual", startDate: "01-01-2026", endDate: "31-12-2026", status: "Active", nominations: "Open" },
-];
-
-const TEAM_REGISTRATIONS: TeamRegistration[] = [];
+const INITIAL_QUERY: TableQuery = {
+  search: "",
+  sortKey: null,
+  sortDir: "asc",
+  page: 1,
+  pageSize: 10,
+  filterValues: {},
+};
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Small UI helpers
@@ -112,73 +101,91 @@ const StatCard = ({ value, label }: { value: number; label: string }) => (
   </div>
 );
 
-const ToolbarIcon = ({
-  icon,
-  label,
-}: {
-  icon: React.ReactNode;
-  label: string;
-}) => (
-  <button
-    title={label}
-    aria-label={label}
-    className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-  >
-    {icon}
-  </button>
-);
+
 
 interface Column<T> {
   key: string;
   header: string;
   sortable?: boolean;
   render: (row: T) => React.ReactNode;
-  sortValue?: (row: T) => string | number;
   className?: string;
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Generic table (search + sort + pagination) — shared by all tabs
+ * Generic server-driven table — search / filter / sort / pagination emit a
+ * TableQuery to the parent, which fetches the matching rows from the API.
  * ──────────────────────────────────────────────────────────────────────────── */
 function DataTable<T>({
   rows,
+  total,
+  loading,
   columns,
-  searchableText,
+  filterFields = [],
+  onQueryChange,
 }: {
   rows: T[];
+  total: number;
+  loading?: boolean;
   columns: Column<T>[];
-  searchableText: (row: T) => string;
+  filterFields?: FilterField[];
+  onQueryChange: (q: TableQuery) => void;
 }) {
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [sortKey, setSortKey] = useState<string | null>(columns[0]?.key ?? null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    let data = q
-      ? rows.filter((r) => searchableText(r).toLowerCase().includes(q))
-      : [...rows];
+  // Toolbar drawers.
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterValues, setFilterValues] = useState<FilterValues>({});
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
-    const col = columns.find((c) => c.key === sortKey);
-    if (col?.sortValue) {
-      data = [...data].sort((a, b) => {
-        const av = col.sortValue!(a);
-        const bv = col.sortValue!(b);
-        if (av < bv) return sortDir === "asc" ? -1 : 1;
-        if (av > bv) return sortDir === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-    return data;
-  }, [rows, search, sortKey, sortDir, columns, searchableText]);
+  // Column visibility + density. "actions" is always shown (not toggleable).
+  const toggleableColumns: SettingsColumn[] = useMemo(
+    () =>
+      columns
+        .filter((c) => c.key !== "actions")
+        .map((c) => ({ key: c.key, label: c.header })),
+    [columns],
+  );
+  const [tableSettings, setTableSettings] = useState<TableSettings>({
+    density: "comfort",
+    visibleColumns: toggleableColumns.map((c) => c.key),
+  });
 
-  const total = filtered.length;
+  const renderColumns = columns.filter(
+    (c) => c.key === "actions" || tableSettings.visibleColumns.includes(c.key),
+  );
+  const rowPad =
+    tableSettings.density === "compact"
+      ? "py-1.5"
+      : tableSettings.density === "expanded"
+        ? "py-5"
+        : "py-3";
+
+  // Debounce the free-text search before it hits the API.
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search.trim()), 350);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  // Emit the query whenever any control changes; the parent fetches the page.
+  useEffect(() => {
+    onQueryChange({ search: debouncedSearch, sortKey, sortDir, page, pageSize, filterValues });
+  }, [debouncedSearch, sortKey, sortDir, page, pageSize, filterValues, onQueryChange]);
+
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const safePage = Math.min(page, totalPages);
+
+  // Keep the page within range when the result set shrinks.
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
   const start = (safePage - 1) * pageSize;
-  const pageRows = filtered.slice(start, start + pageSize);
+  const pageRows = rows;
 
   const toggleSort = (key: string) => {
     if (sortKey === key) {
@@ -206,7 +213,7 @@ function DataTable<T>({
     return pages;
   }, [totalPages, safePage]);
 
-  const gridCols = columns.map((c) => c.className || "1fr").join(" ");
+  const gridCols = renderColumns.map((c) => c.className || "1fr").join(" ");
 
   return (
     <div className="flex flex-col">
@@ -225,10 +232,28 @@ function DataTable<T>({
           />
         </div>
         <div className="flex items-center gap-2">
-          <ToolbarIcon icon={<Filter className="h-4 w-4" />} label="Filter" />
-          <ToolbarIcon icon={<Settings2 className="h-4 w-4" />} label="Settings" />
-          <ToolbarIcon icon={<Eye className="h-4 w-4" />} label="Column visibility" />
-          <ToolbarIcon icon={<Download className="h-4 w-4" />} label="Export" />
+          {filterFields.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setFilterOpen(true)}
+              title="Filter"
+              aria-label="Filter"
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+            >
+              <Filter className="h-4 w-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            title="Settings"
+            aria-label="Settings"
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+          >
+            <Settings2 className="h-4 w-4" />
+          </button>
+   
+        
         </div>
       </div>
 
@@ -240,7 +265,7 @@ function DataTable<T>({
             className="grid gap-4 border-b border-gray-100 bg-gray-50 px-5 py-3"
             style={{ gridTemplateColumns: gridCols }}
           >
-            {columns.map((col) => {
+            {renderColumns.map((col) => {
               const active = sortKey === col.key;
               return (
                 <button
@@ -265,7 +290,11 @@ function DataTable<T>({
           </div>
 
           {/* Body */}
-          {pageRows.length === 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-gray-400">
+              <p className="text-sm">Loading…</p>
+            </div>
+          ) : pageRows.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-gray-400">
               <Inbox className="h-10 w-10" />
               <p className="text-sm">There are no records to display</p>
@@ -274,10 +303,10 @@ function DataTable<T>({
             pageRows.map((row, idx) => (
               <div
                 key={idx}
-                className="grid items-center gap-4 border-b border-gray-50 px-5 py-3 text-sm text-gray-700 last:border-b-0 hover:bg-gray-50/60"
+                className={`grid items-center gap-4 border-b border-gray-50 px-5 ${rowPad} text-sm text-gray-700 last:border-b-0 hover:bg-gray-50/60`}
                 style={{ gridTemplateColumns: gridCols }}
               >
-                {columns.map((col) => (
+                {renderColumns.map((col) => (
                   <div key={col.key} className="min-w-0 truncate">
                     {col.render(row)}
                   </div>
@@ -350,6 +379,27 @@ function DataTable<T>({
           <span>per page</span>
         </div>
       </div>
+
+      {filterFields.length > 0 && (
+        <FilterPanel
+          open={filterOpen}
+          fields={filterFields}
+          values={filterValues}
+          onClose={() => setFilterOpen(false)}
+          onApply={(v) => {
+            setFilterValues(v);
+            setPage(1);
+          }}
+        />
+      )}
+
+      <SettingsPanel
+        open={settingsOpen}
+        columns={toggleableColumns}
+        value={tableSettings}
+        onClose={() => setSettingsOpen(false)}
+        onApply={setTableSettings}
+      />
     </div>
   );
 }
@@ -376,64 +426,103 @@ const StatRow = ({ stats }: { stats: { value: number; label: string }[] }) => (
  * ──────────────────────────────────────────────────────────────────────────── */
 export default function RecognitionAdminDashboard() {
   const [tab, setTab] = useState<TabKey>("appreciation");
+  const [query, setQuery] = useState<TableQuery>(INITIAL_QUERY);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editCode, setEditCode] = useState<string | null>(null);
 
-  // Appreciation stats
-  const apprStats = useMemo(() => {
-    const total = APPRECIATION_PROGRAMS.length;
-    const active = APPRECIATION_PROGRAMS.filter((p) => p.status === "Active").length;
-    const inactive = APPRECIATION_PROGRAMS.filter((p) => p.status === "Inactive").length;
-    const archived = APPRECIATION_PROGRAMS.filter((p) => p.status === "Archived").length;
-    return [
-      { value: total, label: "Total Programs" },
-      { value: active, label: "Active Programs" },
-      { value: inactive, label: "Inactive Programs" },
-      { value: archived, label: "Archived Programs" },
-    ];
-  }, []);
+  const openCreate = () => {
+    setEditCode(null);
+    setModalOpen(true);
+  };
+  const openEdit = (code: string) => {
+    setEditCode(code);
+    setModalOpen(true);
+  };
 
-  // Award stats
-  const awardStats = useMemo(() => {
-    const total = AWARD_PROGRAMS.length;
-    const open = AWARD_PROGRAMS.filter((p) => p.status === "Active" && p.nominations === "Open").length;
-    const closed = AWARD_PROGRAMS.filter((p) => p.status === "Active" && p.nominations === "Closed").length;
-    const inactive = AWARD_PROGRAMS.filter((p) => p.status === "Inactive").length;
-    const archived = AWARD_PROGRAMS.filter((p) => p.status === "Archived").length;
-    return [
-      { value: total, label: "Total Programs" },
-      { value: open, label: "Active Programs - Nominations Open" },
-      { value: closed, label: "Active Programs - Nominations Closed" },
-      { value: inactive, label: "Inactive Programs" },
-      { value: archived, label: "Archived Programs" },
-    ];
-  }, []);
+  const onQueryChange = useCallback((q: TableQuery) => setQuery(q), []);
+
+  const changeTab = (t: TabKey) => {
+    if (t === tab) return;
+    setQuery(INITIAL_QUERY);
+    setTab(t);
+  };
+
+  // Map the table query + tab → API params (filtering happens server-side).
+  const params = useMemo<RecognitionAdminParams>(() => {
+    const fv = query.filterValues;
+    const names = (fv.name as string[]) || [];
+    const startRange = (fv.startDate as DateRange) || { from: "", to: "" };
+    const endRange = (fv.endDate as DateRange) || { from: "", to: "" };
+    return {
+      tab,
+      search: query.search || undefined,
+      status: (fv.status as string) || undefined,
+      award_type: (fv.awardType as string) || undefined,
+      names: names.join(",") || undefined,
+      start_from: startRange.from || undefined,
+      start_to: startRange.to || undefined,
+      end_from: endRange.from || undefined,
+      end_to: endRange.to || undefined,
+      sort_field: query.sortKey || undefined,
+      sort_order: query.sortDir,
+      start: (query.page - 1) * query.pageSize,
+      page_length: query.pageSize,
+    };
+  }, [tab, query]);
+
+  const { data, isLoading } = useRecognitionAdminDashboard(params);
+  const rows = data?.data ?? [];
+  const total = data?.total_count ?? 0;
+  const stats = data?.stats ?? [];
+  const nameOptions = data?.filter_options?.names ?? [];
+  const statusOptions = data?.filter_options?.statuses ?? [];
+  const awardTypeOptions = data?.filter_options?.award_types ?? [];
+
+  const appreciationFilters: FilterField[] = [
+    { key: "status", label: "Status", type: "single", options: statusOptions },
+    { key: "name", label: "Program Name", type: "multi", options: nameOptions },
+    { key: "startDate", label: "Program Start Date", type: "daterange" },
+    { key: "endDate", label: "Program End Date", type: "daterange" },
+  ];
+  const awardFilters: FilterField[] = [
+    { key: "status", label: "Status", type: "single", options: statusOptions },
+    { key: "awardType", label: "Award Type", type: "single", options: awardTypeOptions },
+    { key: "name", label: "Program Name", type: "multi", options: nameOptions },
+    { key: "startDate", label: "Award Start Date", type: "daterange" },
+    { key: "endDate", label: "Award End Date", type: "daterange" },
+  ];
 
   return (
     <div className="flex h-full flex-col bg-app font-brand">
       {/* Header */}
-      <div className="flex flex-col gap-3 border-b border-gray-100 bg-white px-6 pt-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-gray-100 bg-white px-6 py-5  sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-lg font-bold tracking-tight text-gray-900">
           Recognition Admin Dashboard
         </h1>
-        <Button variant="outline" size="md" onClick={() => {}}>
+        <Button variant="outline" size="sm" onClick={openCreate}>
           CREATE NEW PROGRAM
         </Button>
       </div>
+
+      <CreateProgramModal
+        open={modalOpen}
+        editCode={editCode}
+        onClose={() => setModalOpen(false)}
+      />
 
       {/* Tabs */}
       <div className="flex gap-6 border-b border-gray-100 bg-white px-6">
         {TABS.map((t) => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key)}
+            onClick={() => changeTab(t.key)}
             className={`relative py-3 text-xs font-semibold uppercase tracking-wide transition-colors ${
-              tab === t.key
-                ? "text-primary"
-                : "text-gray-500 hover:text-gray-700"
+              tab === t.key ? "text-primary" : "text-gray-500 hover:text-gray-700"
             }`}
           >
             {t.label}
             {tab === t.key && (
-              <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />
+              <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-lg bg-primary" />
             )}
           </button>
         ))}
@@ -441,156 +530,105 @@ export default function RecognitionAdminDashboard() {
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-6 pb-10">
+        {tab !== "team" && <StatRow stats={stats} />}
+
         {tab === "appreciation" && (
-          <>
-            <StatRow stats={apprStats} />
-            <DataTable<AppreciationProgram>
-              rows={APPRECIATION_PROGRAMS}
-              searchableText={(r) => `${r.code} ${r.name} ${r.status}`}
-              columns={[
-                {
-                  key: "code",
-                  header: "Program Code",
-                  sortable: true,
-                  className: "1.3fr",
-                  sortValue: (r) => r.code,
-                  render: (r) => <span className="font-medium text-gray-900">{r.code}</span>,
-                },
-                {
-                  key: "name",
-                  header: "Program Name",
-                  sortable: true,
-                  className: "1.5fr",
-                  sortValue: (r) => r.name,
-                  render: (r) => r.name,
-                },
-                {
-                  key: "start",
-                  header: "Program Start Date",
-                  sortable: true,
-                  className: "1fr",
-                  sortValue: (r) => r.startDate.split("-").reverse().join("-"),
-                  render: (r) => r.startDate,
-                },
-                {
-                  key: "end",
-                  header: "Program End Date",
-                  sortable: true,
-                  className: "1fr",
-                  sortValue: (r) => r.endDate.split("-").reverse().join("-"),
-                  render: (r) => r.endDate,
-                },
-                {
-                  key: "status",
-                  header: "Status",
-                  className: "0.8fr",
-                  render: (r) => <StatusPill status={r.status} />,
-                },
-                {
-                  key: "actions",
-                  header: "Actions",
-                  className: "0.6fr",
-                  render: () => (
+          <DataTable<AppreciationProgram>
+            key="appreciation"
+            rows={rows as AppreciationProgram[]}
+            total={total}
+            loading={isLoading}
+            onQueryChange={onQueryChange}
+            filterFields={appreciationFilters}
+            columns={[
+              {
+                key: "code",
+                header: "Program Code",
+                sortable: true,
+                className: "1.3fr",
+                render: (r) => <span className="font-medium text-gray-900">{r.code}</span>,
+              },
+              { key: "name", header: "Program Name", sortable: true, className: "1.5fr", render: (r) => r.name },
+              { key: "start", header: "Program Start Date", sortable: true, className: "1fr", render: (r) => r.startDate },
+              { key: "end", header: "Program End Date", sortable: true, className: "1fr", render: (r) => r.endDate },
+              { key: "status", header: "Status", className: "0.8fr", render: (r) => <StatusPill status={r.status} /> },
+              {
+                key: "actions",
+                header: "Actions",
+                className: "0.6fr",
+                render: (r) => (
+                  <button
+                    title="Edit"
+                    onClick={() => openEdit(r.code)}
+                    className="text-primary hover:text-primary/80"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                ),
+              },
+            ]}
+          />
+        )}
+
+        {tab === "award" && (
+          <DataTable<AwardProgram>
+            key="award"
+            rows={rows as AwardProgram[]}
+            total={total}
+            loading={isLoading}
+            onQueryChange={onQueryChange}
+            filterFields={awardFilters}
+            columns={[
+              {
+                key: "code",
+                header: "Program Code",
+                sortable: true,
+                className: "1.2fr",
+                render: (r) => <span className="font-medium text-gray-900">{r.code}</span>,
+              },
+              { key: "name", header: "Program Name", sortable: true, className: "1.8fr", render: (r) => r.name },
+              { key: "awardType", header: "Award Type", sortable: true, className: "0.9fr", render: (r) => r.awardType },
+              { key: "start", header: "Award Start Date", sortable: true, className: "1fr", render: (r) => r.startDate },
+              { key: "end", header: "Award End Date", sortable: true, className: "1fr", render: (r) => r.endDate },
+              { key: "status", header: "Status", className: "0.7fr", render: (r) => <StatusPill status={r.status} /> },
+              {
+                key: "actions",
+                header: "Actions",
+                className: "1.3fr",
+                render: (r) => (
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => openEdit(r.code)}>
+                      View Details
+                    </Button>
                     <button
                       title="Edit"
+                      onClick={() => openEdit(r.code)}
                       className="text-primary hover:text-primary/80"
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
-                  ),
-                },
-              ]}
-            />
-          </>
-        )}
-
-        {tab === "award" && (
-          <>
-            <StatRow stats={awardStats} />
-            <DataTable<AwardProgram>
-              rows={AWARD_PROGRAMS}
-              searchableText={(r) => `${r.code} ${r.name} ${r.awardType} ${r.status}`}
-              columns={[
-                {
-                  key: "code",
-                  header: "Program Code",
-                  sortable: true,
-                  className: "1.2fr",
-                  sortValue: (r) => r.code,
-                  render: (r) => <span className="font-medium text-gray-900">{r.code}</span>,
-                },
-                {
-                  key: "name",
-                  header: "Program Name",
-                  sortable: true,
-                  className: "1.8fr",
-                  sortValue: (r) => r.name,
-                  render: (r) => r.name,
-                },
-                {
-                  key: "awardType",
-                  header: "Award Type",
-                  sortable: true,
-                  className: "0.9fr",
-                  sortValue: (r) => r.awardType,
-                  render: (r) => r.awardType,
-                },
-                {
-                  key: "start",
-                  header: "Award Start Date",
-                  sortable: true,
-                  className: "1fr",
-                  sortValue: (r) => r.startDate.split("-").reverse().join("-"),
-                  render: (r) => r.startDate,
-                },
-                {
-                  key: "end",
-                  header: "Award End Date",
-                  sortable: true,
-                  className: "1fr",
-                  sortValue: (r) => r.endDate.split("-").reverse().join("-"),
-                  render: (r) => r.endDate,
-                },
-                {
-                  key: "status",
-                  header: "Status",
-                  className: "0.7fr",
-                  render: (r) => <StatusPill status={r.status} />,
-                },
-                {
-                  key: "actions",
-                  header: "Actions",
-                  className: "1.3fr",
-                  render: () => (
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => {}}>
-                        View Details
-                      </Button>
-                      <button title="Edit" className="text-primary hover:text-primary/80">
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ),
-                },
-              ]}
-            />
-          </>
+                  </div>
+                ),
+              },
+            ]}
+          />
         )}
 
         {tab === "team" && (
           <div className="pt-4">
             <DataTable<TeamRegistration>
-              rows={TEAM_REGISTRATIONS}
-              searchableText={(r) =>
-                `${r.teamName} ${r.teamType} ${r.programName} ${r.createdBy} ${r.status}`
-              }
+              key="team"
+              rows={rows as TeamRegistration[]}
+              total={total}
+              loading={isLoading}
+              onQueryChange={onQueryChange}
               columns={[
-                { key: "teamName", header: "Team Name", sortable: true, className: "1.2fr", sortValue: (r) => r.teamName, render: (r) => r.teamName },
-                { key: "teamType", header: "Team type", sortable: true, className: "1fr", sortValue: (r) => r.teamType, render: (r) => r.teamType },
+                { key: "teamName", header: "Team Name", sortable: true, className: "1.2fr", render: (r) => r.teamName },
+                { key: "teamType", header: "Team type", sortable: true, className: "1fr", render: (r) => r.teamType },
                 { key: "members", header: "Number of Team Members", className: "1.2fr", render: (r) => r.members },
-                { key: "programName", header: "Program Name", sortable: true, className: "1.2fr", sortValue: (r) => r.programName, render: (r) => r.programName },
+                { key: "programName", header: "Program Name", sortable: true, className: "1.2fr", render: (r) => r.programName },
                 { key: "createdBy", header: "Created by", className: "1fr", render: (r) => r.createdBy },
-                { key: "createdOn", header: "Created On", sortable: true, className: "1fr", sortValue: (r) => r.createdOn, render: (r) => r.createdOn },
+                { key: "createdOn", header: "Created On", sortable: true, className: "1fr", render: (r) => r.createdOn },
                 { key: "status", header: "Status", className: "0.8fr", render: (r) => <StatusPill status={r.status} /> },
                 {
                   key: "actions",

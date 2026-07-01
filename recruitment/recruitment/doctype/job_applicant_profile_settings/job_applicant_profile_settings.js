@@ -97,6 +97,61 @@
 				display: flex; justify-content: space-between; align-items: center;
 			}
 			.apf-head-title { font-size: 16px; color: #111827; font-weight: 600; }
+			.apf-add-field {
+				border: none; background: #2563EB; color: #fff; cursor: pointer;
+				font-size: 12.5px; font-weight: 600; padding: 7px 14px; border-radius: 6px;
+				white-space: nowrap;
+			}
+			.apf-add-field:hover { background: #1D4ED8; }
+
+			/* Bulk field-flow dialog grid */
+			.ffd-flowbar {
+				display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+				padding: 8px 2px 12px; border-bottom: 1px solid #F3F4F6; margin-bottom: 10px;
+			}
+			.ffd-flow-label { font-size: 10.5px; font-weight: 700; color: #6B7280; letter-spacing: 0.06em; margin-right: 4px; }
+			.ffd-chip {
+				display: inline-flex; align-items: center; gap: 4px; background: #EFF6FF;
+				color: #1D4ED8; border: 1px solid #BFDBFE; border-radius: 999px;
+				padding: 3px 10px; font-size: 12px; font-weight: 500;
+			}
+			.ffd-chip-x { border: none; background: transparent; color: #1D4ED8; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 0 0 2px; }
+			.ffd-chip-x:hover { color: #B91C1C; }
+			.ffd-arrow { color: #9CA3AF; font-size: 13px; }
+			.ffd-add-dt {
+				border: 1px dashed #93C5FD; background: #fff; color: #2563EB; cursor: pointer;
+				font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; margin-left: 4px;
+			}
+			.ffd-add-dt:hover { background: #EFF6FF; }
+			.ffd-hint { font-size: 11.5px; color: #6B7280; margin: 0 0 8px; }
+			.ffd-grid-wrap { overflow-x: auto; border: 1px solid #E5E7EB; border-radius: 8px; }
+			.ffd-grid { width: 100%; border-collapse: collapse; font-size: 12px; }
+			.ffd-grid thead th {
+				background: #F9FAFB; color: #6B7280; font-size: 10.5px; font-weight: 600;
+				letter-spacing: 0.04em; text-align: left; padding: 7px 8px; border-bottom: 1px solid #E5E7EB;
+				white-space: nowrap;
+			}
+			.ffd-grid tbody td { padding: 5px 8px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
+			.ffd-grid tbody tr:last-child td { border-bottom: none; }
+			.ffd-cell, .ffd-grid .ffd-in {
+				width: 100%; min-width: 130px; border: 1px solid #E5E7EB; border-radius: 5px;
+				padding: 4px 6px; font-size: 12px; background: #fff; box-sizing: border-box;
+			}
+			.ffd-cell:focus, .ffd-grid .ffd-in:focus { border-color: #93C5FD; outline: none; }
+			.ffd-opts-btn {
+				width: 100%; min-width: 130px; border: 1px solid #D1D5DB; background: #F9FAFB;
+				color: #374151; cursor: pointer; font-size: 12px; padding: 4px 8px; border-radius: 5px;
+				text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+			}
+			.ffd-opts-btn:hover { background: #EFF6FF; border-color: #93C5FD; color: #1D4ED8; }
+			.ffd-opts-na { color: #9CA3AF; font-size: 12px; padding-left: 6px; }
+			.ffd-row-del { border: none; background: transparent; color: #9CA3AF; cursor: pointer; font-size: 15px; padding: 2px 6px; border-radius: 4px; }
+			.ffd-row-del:hover { color: #EF4444; background: #FEF2F2; }
+			.ffd-add-row {
+				border: 1px dashed #D1D5DB; background: #fff; color: #374151; cursor: pointer;
+				font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 6px; margin-top: 10px;
+			}
+			.ffd-add-row:hover { background: #F9FAFB; border-color: #9CA3AF; }
 			.apf-head-sub {
 				font-size: 11px; color: #6B7280; letter-spacing: 0.05em;
 				text-transform: uppercase; margin-top: 2px;
@@ -325,6 +380,326 @@
 		return mainRow + (isTable ? renderChildConfigRow(row) : "");
 	}
 
+	// Field-type list mirrors the nextai Data Element options.
+	const FIELD_TYPE_OPTIONS = [
+		"Data", "Small Text", "Text", "Select", "Date", "Datetime",
+		"Int", "Float", "Currency", "Check", "Link",
+	];
+	const MAP_MODE = "Map Existing Fields";
+	const FF = "recruitment.recruitment.field_flow_sync";
+
+	/**
+	 * Darwin-style bulk "Add Custom Field" dialog. A spreadsheet grid (custom HTML
+	 * field): each ROW is a field, each COLUMN is a doctype in the flow. Map
+	 * Existing → every cell is a dropdown of that doctype's fields (blank = skip).
+	 * Create New → columns become Label / Type / Options and the field is created
+	 * on every flow doctype. The flow defaults to Job Applicant → Employee
+	 * Onboarding → Employee and can be extended (Add doctype auto-detects the
+	 * connecting link field). Update creates the nextai records one row at a time.
+	 */
+	function openFieldFlowDialog(frm) {
+		const state = { flow_name: "", flow: [], mode: "Create New Field", rows: [] };
+		let d;
+
+		function emptyRow() {
+			return state.mode === MAP_MODE
+				? { fields: {} }
+				: { field_label: "", field_type: "Data", options_raw: "", reqd: 0, hidden: 0 };
+		}
+
+		function hostEl() {
+			return d.fields_dict.grid_host.$wrapper.get(0);
+		}
+
+		function optionTags(fields, selected) {
+			let h = `<option value="">${__("— skip —")}</option>`;
+			(fields || []).forEach((f) => {
+				h += `<option value="${escapeHtml(f.value)}" ${f.value === selected ? "selected" : ""}>${escapeHtml(f.label)}</option>`;
+			});
+			return h;
+		}
+
+		function renderFlowbar() {
+			const chips = state.flow.map((f, idx) => {
+				const isLast = idx === state.flow.length - 1;
+				const x = (isLast && state.flow.length > 1)
+					? `<button class="ffd-chip-x" title="${__("Remove from flow")}">×</button>` : "";
+				return `<span class="ffd-chip">${escapeHtml(f.doctype)}${x}</span>`;
+			}).join(`<span class="ffd-arrow">→</span>`);
+			return `<div class="ffd-flowbar">
+				<span class="ffd-flow-label">FLOW</span>${chips}
+				<button class="ffd-add-dt">+ ${__("Add doctype")}</button>
+			</div>`;
+		}
+
+		// Options cell adapts to the field type: Link → DocType picker button,
+		// Select → multi-line options editor button, others → nothing to set.
+		function optionsCell(row, i) {
+			if (row.field_type === "Link") {
+				const v = row.options_raw || "";
+				return `<button class="ffd-opts-btn" data-row="${i}">${v ? escapeHtml(v) : __("Choose DocType")}</button>`;
+			}
+			if (row.field_type === "Select") {
+				const n = (row.options_raw || "").split(/\n/).map((s) => s.trim()).filter(Boolean).length;
+				return `<button class="ffd-opts-btn" data-row="${i}">${__("Edit options")} (${n})</button>`;
+			}
+			return `<span class="ffd-opts-na">—</span>`;
+		}
+
+		function openOptionsEditor(i) {
+			syncFromDom();
+			const row = state.rows[i];
+			if (row.field_type === "Link") {
+				frappe.prompt(
+					[{ fieldtype: "Link", options: "DocType", fieldname: "v", label: __("Target DocType"), reqd: 1, default: row.options_raw || "" }],
+					(vals) => { state.rows[i].options_raw = vals.v || ""; render(); },
+					__("Link target"), __("Set")
+				);
+			} else if (row.field_type === "Select") {
+				frappe.prompt(
+					[{ fieldtype: "Small Text", fieldname: "v", label: __("Options (one per line)"), default: row.options_raw || "" }],
+					(vals) => { state.rows[i].options_raw = vals.v || ""; render(); },
+					__("Select options"), __("Set")
+				);
+			}
+		}
+
+		function renderGrid() {
+			if (state.mode === MAP_MODE) {
+				const head = state.flow.map((f) => `<th>${escapeHtml(f.doctype)}</th>`).join("") + "<th></th>";
+				const body = state.rows.map((row, i) => {
+					const cells = state.flow.map((f) =>
+						`<td><select class="ffd-cell" data-row="${i}" data-dt="${escapeHtml(f.doctype)}">${optionTags(f.fields, (row.fields || {})[f.doctype] || "")}</select></td>`
+					).join("");
+					return `<tr>${cells}<td><button class="ffd-row-del" data-row="${i}" title="${__("Remove")}">×</button></td></tr>`;
+				}).join("");
+				return `<div class="ffd-grid-wrap"><table class="ffd-grid"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+			}
+			const head = ["LABEL", "TYPE", "OPTIONS", "REQ", "HIDE", ""].map((h) => `<th>${h}</th>`).join("");
+			const body = state.rows.map((row, i) => `<tr>
+				<td><input class="ffd-in" data-row="${i}" data-k="field_label" value="${escapeHtml(row.field_label || "")}" placeholder="${__("Field Label")}"/></td>
+				<td><select class="ffd-in" data-row="${i}" data-k="field_type">${FIELD_TYPE_OPTIONS.map((t) => `<option ${t === row.field_type ? "selected" : ""}>${t}</option>`).join("")}</select></td>
+				<td>${optionsCell(row, i)}</td>
+				<td><input type="checkbox" class="ffd-chk" data-row="${i}" data-k="reqd" ${row.reqd ? "checked" : ""}/></td>
+				<td><input type="checkbox" class="ffd-chk" data-row="${i}" data-k="hidden" ${row.hidden ? "checked" : ""}/></td>
+				<td><button class="ffd-row-del" data-row="${i}" title="${__("Remove")}">×</button></td>
+			</tr>`).join("");
+			return `<div class="ffd-grid-wrap"><table class="ffd-grid"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+		}
+
+		function render() {
+			const h = hostEl();
+			if (!h) return;
+			if (!state.flow.length) {
+				h.innerHTML = `<div style="padding:20px;color:#6B7280;">${__("Loading…")}</div>`;
+				return;
+			}
+			const hint = state.mode === MAP_MODE
+				? __("Pick the existing field on each doctype. Leave a cell blank to skip that doctype. The first column is the source.")
+				: __("New field is created on every doctype in the flow above.");
+			h.innerHTML = renderFlowbar()
+				+ `<div class="ffd-hint">${hint}</div>`
+				+ renderGrid()
+				+ `<button class="ffd-add-row">+ ${__("Add field")}</button>`;
+			bindGrid();
+		}
+
+		function syncFromDom() {
+			const h = hostEl();
+			if (!h) return;
+			if (state.mode === MAP_MODE) {
+				state.rows.forEach((row, i) => {
+					row.fields = row.fields || {};
+					state.flow.forEach((f) => {
+						const el = h.querySelector(`select.ffd-cell[data-row="${i}"][data-dt="${f.doctype}"]`);
+						if (el) row.fields[f.doctype] = el.value;
+					});
+				});
+			} else {
+				state.rows.forEach((row, i) => {
+					h.querySelectorAll(`.ffd-in[data-row="${i}"]`).forEach((el) => { row[el.getAttribute("data-k")] = el.value; });
+					h.querySelectorAll(`.ffd-chk[data-row="${i}"]`).forEach((el) => { row[el.getAttribute("data-k")] = el.checked ? 1 : 0; });
+				});
+			}
+		}
+
+		function bindGrid() {
+			const h = hostEl();
+			const addRow = h.querySelector(".ffd-add-row");
+			if (addRow) addRow.addEventListener("click", () => { syncFromDom(); state.rows.push(emptyRow()); render(); });
+			const addDt = h.querySelector(".ffd-add-dt");
+			if (addDt) addDt.addEventListener("click", addDoctype);
+			const chipX = h.querySelector(".ffd-chip-x");
+			if (chipX) chipX.addEventListener("click", removeLastDoctype);
+			h.querySelectorAll(".ffd-row-del").forEach((b) => b.addEventListener("click", () => {
+				const i = +b.getAttribute("data-row");
+				syncFromDom();
+				state.rows.splice(i, 1);
+				if (!state.rows.length) state.rows.push(emptyRow());
+				render();
+			}));
+			// Create mode: changing the type re-renders so the Options cell adapts.
+			h.querySelectorAll('select.ffd-in[data-k="field_type"]').forEach((sel) =>
+				sel.addEventListener("change", () => { syncFromDom(); render(); }));
+			h.querySelectorAll(".ffd-opts-btn").forEach((b) =>
+				b.addEventListener("click", () => openOptionsEditor(+b.getAttribute("data-row"))));
+			// Map mode: selecting the source field auto-fills same-named cells downstream.
+			if (state.mode === MAP_MODE && state.flow.length) {
+				const src = state.flow[0].doctype;
+				h.querySelectorAll(`select.ffd-cell[data-dt="${src}"]`).forEach((sel) => sel.addEventListener("change", () => {
+					const i = +sel.getAttribute("data-row");
+					const val = sel.value;
+					state.flow.forEach((f, idx) => {
+						if (idx === 0) return;
+						const cell = h.querySelector(`select.ffd-cell[data-row="${i}"][data-dt="${f.doctype}"]`);
+						if (cell && !cell.value && (f.fields || []).some((x) => x.value === val)) cell.value = val;
+					});
+				}));
+			}
+		}
+
+		function pushDoctype(dt, docfield) {
+			frappe.call({ method: `${FF}.get_doctype_mappable_fields`, args: { doctype: dt } }).then((r) => {
+				syncFromDom();
+				state.flow.push({ doctype: dt, docfield: docfield, fields: (r && r.message) || [] });
+				render();
+			});
+		}
+
+		function pickLink(dt, cands) {
+			const dlg = new frappe.ui.Dialog({
+				title: __("Choose link field"),
+				fields: [{
+					fieldname: "lf", fieldtype: "Select", reqd: 1,
+					label: __("Link field on {0} that connects into the flow", [dt]),
+					options: cands.map((c) => c.label).join("\n"),
+				}],
+				primary_action_label: __("Add"),
+				primary_action(v) { dlg.hide(); const c = cands.find((x) => x.label === v.lf); if (c) pushDoctype(dt, c.docfield); },
+			});
+			dlg.show();
+		}
+
+		function addDoctype() {
+			const dlg = new frappe.ui.Dialog({
+				title: __("Add doctype to flow"),
+				fields: [{ fieldname: "dt", fieldtype: "Link", options: "DocType", label: __("DocType"), reqd: 1 }],
+				primary_action_label: __("Next"),
+				primary_action(v) {
+					const dt = v.dt;
+					dlg.hide();
+					if (!dt) return;
+					if (state.flow.some((f) => f.doctype === dt)) { frappe.msgprint(__("{0} is already in the flow.", [dt])); return; }
+					frappe.call({
+						method: `${FF}.resolve_flow_link`,
+						args: { target_doctype: dt, existing_doctypes: JSON.stringify(state.flow.map((f) => f.doctype)) },
+					}).then((r) => {
+						const cands = (r && r.message) || [];
+						if (!cands.length) {
+							frappe.msgprint(__("No Link field on {0} points to a doctype already in the flow. Add such a Link field first.", [dt]));
+						} else if (cands.length === 1) {
+							pushDoctype(dt, cands[0].docfield);
+						} else {
+							pickLink(dt, cands);
+						}
+					});
+				},
+			});
+			dlg.show();
+		}
+
+		function removeLastDoctype() {
+			if (state.flow.length <= 1) return;
+			syncFromDom();
+			const removed = state.flow.pop();
+			if (state.mode === MAP_MODE) state.rows.forEach((row) => { if (row.fields) delete row.fields[removed.doctype]; });
+			render();
+		}
+
+		function onSubmit() {
+			syncFromDom();
+			const editable = d.get_value("editable_after_fetch") ? 1 : 0;
+			let rows = [];
+			if (state.mode === MAP_MODE) {
+				rows = state.rows
+					.filter((r) => r.fields && Object.values(r.fields).some((v) => v))
+					.map((r) => ({ fields: r.fields }));
+			} else {
+				rows = state.rows.filter((r) => (r.field_label || "").trim()).map((r) => {
+					const out = { field_label: r.field_label, field_type: r.field_type, reqd: r.reqd ? 1 : 0, hidden: r.hidden ? 1 : 0 };
+					if (r.field_type === "Link") out.field_options = (r.options_raw || "").trim();
+					else if (r.field_type === "Select") out.select_options = (r.options_raw || "").replace(/[;,]/g, "\n");
+					return out;
+				});
+			}
+			if (!rows.length) { frappe.msgprint(__("Add at least one field to map/create.")); return; }
+
+			const payload = {
+				flow_name: state.flow_name,
+				flow: state.flow.map((f) => ({ target_doctype: f.doctype, docfield: f.docfield })),
+				source_mode: state.mode,
+				editable_after_fetch: editable,
+				rows: rows,
+			};
+			d.disable_primary_action();
+			frappe.call({
+				method: `${FF}.save_field_flows_bulk`,
+				args: { payload: JSON.stringify(payload) },
+				freeze: true,
+				freeze_message: __("Creating field flows…"),
+			}).then((r) => {
+				d.enable_primary_action();
+				const res = (r && r.message) || {};
+				const created = (res.created || []).length;
+				const errs = res.errors || [];
+				if (errs.length) {
+					frappe.msgprint({
+						title: __("Some rows could not be applied"),
+						indicator: "orange",
+						message: errs.map((e) => `${__("Row")} ${e.row}: ${frappe.utils.escape_html(e.error)}`).join("<br>"),
+					});
+				}
+				if (created) {
+					frappe.show_alert({ message: __("{0} field flow(s) created", [created]), indicator: "green" });
+					d.hide();
+					frm.reload_doc();
+				}
+			}).catch(() => d.enable_primary_action());
+		}
+
+		function loadFlow() {
+			frappe.call({ method: `${FF}.get_field_flow_picker` }).then((r) => {
+				const m = (r && r.message) || {};
+				state.flow_name = m.flow_name || "Recruitment Profile Flow";
+				state.flow = (m.doctypes || []).map((x) => ({ doctype: x.doctype, docfield: x.docfield || "", fields: x.fields || [] }));
+				if (!state.rows.length) state.rows = [emptyRow()];
+				render();
+			});
+		}
+
+		injectStyles();
+		d = new frappe.ui.Dialog({
+			title: __("Add / Map Custom Fields"),
+			size: "extra-large",
+			fields: [
+				{
+					fieldname: "source_mode", fieldtype: "Select", label: __("Mode"),
+					options: ["Create New Field", MAP_MODE].join("\n"), default: "Create New Field",
+					onchange() { state.mode = d.get_value("source_mode"); state.rows = [emptyRow()]; render(); },
+				},
+				{
+					fieldname: "editable_after_fetch", fieldtype: "Check", default: 1,
+					label: __("Editable After Fetch (pre-fill downstream but keep editable)"),
+				},
+				{ fieldtype: "HTML", fieldname: "grid_host" },
+			],
+			primary_action_label: __("Update"),
+			primary_action() { onSubmit(); },
+		});
+		d.show();
+		loadFlow();
+	}
+
 	function renderUI(host, frm, state) {
 		const rows = frm.doc.default_application_fields || [];
 
@@ -388,6 +763,7 @@
 							<div class="apf-head-sub">APPLICATION FIELDS</div>
 							<div class="apf-head-title">${escapeHtml(active)}</div>
 						</div>
+						<button class="apf-add-field" data-section="${escapeHtml(active)}">+ Add Custom Field</button>
 					</div>
 					<div class="apf-scroll">
 						<table class="apf-table">
@@ -402,6 +778,12 @@
 	}
 
 	function bindEvents(host, frm, state) {
+		host.querySelectorAll(".apf-add-field").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				openFieldFlowDialog(frm, btn.getAttribute("data-section"));
+			});
+		});
+
 		host.querySelectorAll(".apf-side-item").forEach((el) => {
 			el.addEventListener("click", () => {
 				state.activeSection = el.getAttribute("data-section");

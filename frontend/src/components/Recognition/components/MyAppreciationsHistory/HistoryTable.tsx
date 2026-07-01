@@ -2,6 +2,7 @@ import CardTable from "../../../shared/CardTable";
 import { Typography } from "../../../shared/atoms/Typography";
 import AppreciationImage from "./AppreciationImage";
 import HistoryActions from "./HistoryActions";
+import PersonAvatar from "./PersonAvatar";
 import { TABLE_TITLES, TABLE_WIDTHS } from "./constants";
 import type { AppreciationHistoryItem } from "./types";
 
@@ -44,19 +45,22 @@ const HistoryTable = ({ items, relationLabel }: HistoryTableProps) => (
               </span>
             </div>
 
-            <Typography
-              variant="bodySmall"
-              className="truncate text-center font-bold text-blue-600"
-            >
-              {item.person}
-            </Typography>
+            <div className="flex min-w-0 items-center justify-center gap-2">
+              <PersonAvatar name={item.person} imageUrl={item.personImage} />
+              <Typography
+                variant="bodySmall"
+                className="truncate font-bold text-blue-600"
+              >
+                {item.person}
+              </Typography>
+            </div>
             <Typography
               variant="bodySmall"
               className="text-center font-semibold text-gray-700"
             >
               {item.date}
             </Typography>
-            <HistoryActions className="mx-auto" />
+            <HistoryActions item={item} className="mx-auto" />
           </div>
         ))}
       </div>

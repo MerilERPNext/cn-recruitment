@@ -5,6 +5,7 @@ export type AppreciationHistoryItem = {
   title: string;
   value: string;
   person: string;
+  personImage?: string;
   date: string;
   imageUrl?: string;
   tab: AppreciationHistoryTab;

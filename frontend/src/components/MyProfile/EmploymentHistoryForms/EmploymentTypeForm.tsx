@@ -16,6 +16,10 @@ interface InitialEmploymentTypeData {
   employee_subtype: string;
   start_date: string;
   end_date?: string | null;
+  // Per-field history row names. Each is sent as that field's record_name so the
+  // backend edits both lines in place instead of appending duplicates on a date change.
+  employment_type_row_name?: string;
+  employee_subtype_row_name?: string;
 }
 
 interface EmploymentTypeFormProps {
@@ -120,11 +124,23 @@ const EmploymentTypeForm = ({
         return;
       }
 
-      const fields: { field: string; value: string }[] = [
-        { field: "employment_type", value: data.employment_type },
+      const fields: { field: string; value: string; record_name?: string }[] = [
+        {
+          field: "employment_type",
+          value: data.employment_type,
+          ...(isEdit && initialEditData?.employment_type_row_name
+            ? { record_name: initialEditData.employment_type_row_name }
+            : {}),
+        },
       ];
       if (data.employee_subtype) {
-        fields.push({ field: "employee_subtype", value: data.employee_subtype });
+        fields.push({
+          field: "employee_subtype",
+          value: data.employee_subtype,
+          ...(isEdit && initialEditData?.employee_subtype_row_name
+            ? { record_name: initialEditData.employee_subtype_row_name }
+            : {}),
+        });
       }
 
       await wrap(
