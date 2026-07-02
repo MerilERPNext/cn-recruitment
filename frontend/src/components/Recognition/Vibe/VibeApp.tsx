@@ -35,7 +35,7 @@ const VibeApp: React.FC = () => {
     return (
       <div className="flex min-h-screen flex-col bg-white">
         <header className="sticky top-0 z-50 bg-white shadow-sm">
-          <HeaderBar title="Vibe" />
+          <HeaderBar title="Recognition" />
           <NavigationTabs
             tabs={VIBE_TABS}
             activeTab={activeTab}
@@ -50,7 +50,7 @@ const VibeApp: React.FC = () => {
   }
 
   return (
-    <DesktopLayoutWrapper title="Vibe">
+    <DesktopLayoutWrapper title="Recognition">
       <div className="h-full overflow-y-auto">
         <Outlet />
       </div>
