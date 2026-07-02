@@ -154,7 +154,7 @@ const SimplifiedChatInput: React.FC<SimplifiedChatInputProps> = ({
       )}
 
       {/* Input area */}
-      <div className="sm:p-4 p-2">
+      <div className="p-4">
         <div className="flex items-center gap-3">
           {/* Attachment button */}
           <div className="flex items-center border border-gray-300 rounded-xl focus-within:ring-2 focus-within:ring-blue-500/30 focus-within:border-blue-500 overflow-hidden w-full pl-2">

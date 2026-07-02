@@ -537,7 +537,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
       <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
 
       {/* Modal */}
-      <div className="relative w-full sm:max-w-2xl sm:mx-4 bg-white sm:rounded-xl shadow-xl max-sm:h-[100vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative w-full sm:max-w-2xl sm:mx-4 bg-white sm:rounded-xl shadow-xl max-sm:h-[100dvh] max-sm:rounded-none sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <Typography variant="h3" color="primary">
