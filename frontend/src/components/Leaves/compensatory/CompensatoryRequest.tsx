@@ -64,10 +64,10 @@ const CompensatoryRequest: React.FC = () => {
     setSelectedRequest(null);
   };
 
-  if (userError || employeeError) {
+  if (userError) {
     return (
       <div className="p-4 text-center text-red-600">
-        Failed to load Compensatory Requests. Please try again.
+        Failed to load User Data. Please try again.
       </div>
     );
   }
@@ -110,9 +110,9 @@ const CompensatoryRequest: React.FC = () => {
           ]}
           columnWidths={["1fr", "1fr", "1fr", "1.5fr", "1fr", "1fr"]}
         >
-          {isLoading || isUserLoading || isEmployeeLoading ? (
+          {isUserLoading || isEmployeeLoading || (isLoading && !!currentEmployee?.name) ? (
             <CardSkeleton />
-          ) : filteredData.length === 0 ? (
+          ) : !currentEmployee?.name || filteredData.length === 0 ? (
             <NoDataFound title="No Records Found" subtitle="No compensatory requests match the selected status." />
           ) : (
             filteredData.map((item) => (
