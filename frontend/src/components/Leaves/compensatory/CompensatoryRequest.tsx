@@ -29,7 +29,6 @@ const CompensatoryRequest: React.FC = () => {
   const {
     data: currentEmployee,
     isLoading: isEmployeeLoading,
-    error: employeeError,
   } = useEmployeeByUserId(userId);
   const [selectedStatus, setSelectedStatus] = useState("Issued");
 
