@@ -6,13 +6,11 @@ import TicketStatsCards from "./TicketStatsCards";
 import TicketTable from "./TicketTable";
 import TicketFiltersComponent from "./TicketFilters";
 import SearchInputWrapper from "../shared/SearchBar";
-import ResolutionModal from "./ResolutionModal";
+import TicketCloseModal from "./TicketCloseModal";
 import TicketDrawer from "./TicketDrawer";
 import {
   useTicketList,
   useFilterableFields,
-  useCloseTicket,
-  useRequestClosure,
   useCategories,
   useUserLookup,
   useEmployeesByEmails,
@@ -23,6 +21,7 @@ import {
   useGetTicketStats,
   useReopenTicket,
 } from "../../hooks/useHelpDeskTickets";
+import { useTicketCloseFlow } from "../../hooks/useTicketCloseFlow";
 import useDebounce from "../../hooks/useDebounce";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
@@ -31,8 +30,6 @@ import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
-import { useFileUploader } from "../../hooks/useFileUploader";
-import { getFileComponents } from "../../utils/flowUtils";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
@@ -55,11 +52,6 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
   const [pageLength, setPageLength] = useState(20);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const [subTab, setSubTab] = useState<"myself" | "others">("myself");
-
-  // Resolution Modal State
-  const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
-  const [selectedTicketForClose, setSelectedTicketForClose] = useState<HDTicket | null>(null);
-  const [isRequestClosureMode, setIsRequestClosureMode] = useState(false);
 
   // Ticket Drawer State
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
@@ -88,10 +80,11 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
   const { data: userLookup } = useUserLookup();
 
   // Mutations
-  const closeTicketMutation = useCloseTicket();
-  const requestClosureMutation = useRequestClosure();
   const revokeTicketMutation = useRevokeTicket();
   const reopenTicketMutation = useReopenTicket();
+
+  // Centralized close/resolve flow
+  const closeFlow = useTicketCloseFlow({ currentUserEmail });
 
   // UI Permission checks
   const { data: userUiPermission } = useGetUiPermission("Help Desk");
@@ -156,27 +149,8 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
   }, [onDrawerStateChange]);
 
   const handleClose = useCallback((ticket: HDTicket) => {
-    const isRaiserOrAdmin =
-      ticket.raised_by === currentUserEmail || ticket.owner === currentUserEmail;
-
-    if (isRaiserOrAdmin) {
-      // Check if resolution already exists
-      if (ticket.resolution_details) {
-        // Close directly without modal
-        closeTicketMutation.mutate({ ticketId: ticket.name });
-      } else {
-        // Show resolution modal
-        setSelectedTicketForClose(ticket);
-        setIsRequestClosureMode(false);
-        setIsResolutionModalOpen(true);
-      }
-    } else {
-      // Show request closure modal
-      setSelectedTicketForClose(ticket);
-      setIsRequestClosureMode(true);
-      setIsResolutionModalOpen(true);
-    }
-  }, [currentUserEmail, closeTicketMutation]);
+    closeFlow.initiateClose(ticket);
+  }, [closeFlow]);
 
   // handle revoke ticket 
   const { show, hide } = useLoadingOverlay();
@@ -213,113 +187,8 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
   }, [hide, show, reopenTicketMutation])
 
   const handleResolve = useCallback((ticket: HDTicket) => {
-    const isRaiserOrAdmin = ticket.raised_by === currentUserEmail || ticket.owner === currentUserEmail;
-    if (isRaiserOrAdmin) {
-
-      // Show resolution modal
-      setSelectedTicketForClose(ticket);
-      setIsRequestClosureMode(false);
-      setIsResolutionModalOpen(true);
-    } else {
-      // Show request closure modal
-      setSelectedTicketForClose(ticket);
-      setIsRequestClosureMode(true);
-      setIsResolutionModalOpen(true);
-    }
-  }, [currentUserEmail])
-
-  const { uploadFiles } = useFileUploader();
-  const handleResolutionSubmit = useCallback(async (resolution: string, exitFormSubmission?: any, feedbackFormSubmission?: any, exitAttachments?: File[], feedbackAttachments?: File[]) => {
-    if (!selectedTicketForClose) return;
-
-    try {
-      show("Processing...");
-
-      if (!isRequestClosureMode) {
-        // 1. Upload Exit Form files
-        if (exitAttachments && exitAttachments.length > 0) {
-          show("Uploading exit form files...");
-          const uploadResults = await uploadFiles(exitAttachments, "HD Ticket", selectedTicketForClose.name);
-          if (exitFormSubmission?.answer) {
-            let uploadIdx = 0;
-            const fileComponents = getFileComponents(exitFormSubmission.schema?.components || []);
-            fileComponents.forEach(comp => {
-              const val = exitFormSubmission.answer[comp.key];
-              if (Array.isArray(val)) {
-                exitFormSubmission.answer[comp.key] = val.map(fileObj => {
-                  if (fileObj.file && uploadIdx < uploadResults.length) {
-                    const uploadRes = uploadResults[uploadIdx++];
-                    return {
-                      storage: "url",
-                      name: uploadRes.file_name,
-                      url: uploadRes.file_url,
-                      size: uploadRes.file_size,
-                      type: uploadRes.file_type,
-                      data: { role: "remote" }
-                    };
-                  }
-                  return fileObj;
-                });
-              }
-            });
-          }
-        }
-
-        // 2. Upload Feedback Form files
-        if (feedbackAttachments && feedbackAttachments.length > 0) {
-          show("Uploading feedback form files...");
-          const uploadResults = await uploadFiles(feedbackAttachments, "HD Ticket", selectedTicketForClose.name);
-          if (feedbackFormSubmission?.answer) {
-            let uploadIdx = 0;
-            const fileComponents = getFileComponents(feedbackFormSubmission.schema?.components || []);
-            fileComponents.forEach(comp => {
-              const val = feedbackFormSubmission.answer[comp.key];
-              if (Array.isArray(val)) {
-                feedbackFormSubmission.answer[comp.key] = val.map(fileObj => {
-                  if (fileObj.file && uploadIdx < uploadResults.length) {
-                    const uploadRes = uploadResults[uploadIdx++];
-                    return {
-                      storage: "url",
-                      name: uploadRes.file_name,
-                      url: uploadRes.file_url,
-                      size: uploadRes.file_size,
-                      type: uploadRes.file_type,
-                      data: { role: "remote" }
-                    };
-                  }
-                  return fileObj;
-                });
-              }
-            });
-          }
-        }
-      }
-
-      if (isRequestClosureMode) {
-        await requestClosureMutation.mutateAsync({
-          ticketId: selectedTicketForClose.name,
-          resolutionNotes: resolution,
-        });
-        toast.success("Closure request sent");
-      } else {
-        await closeTicketMutation.mutateAsync({
-          ticketId: selectedTicketForClose.name,
-          resolutionDetails: resolution,
-          closingFormData: exitFormSubmission ? JSON.stringify(exitFormSubmission) : undefined,
-          feedbackFormData: feedbackFormSubmission ? JSON.stringify(feedbackFormSubmission) : undefined
-        });
-        toast.success("Ticket closed successfully");
-      }
-      setIsResolutionModalOpen(false);
-      setSelectedTicketForClose(null);
-    } catch (error) {
-      const formatedError = errorResponseFormater(error, "Failed to process ticket closure");
-      toast.error(formatedError);
-      console.error("Action aborted", error);
-    } finally {
-      hide();
-    }
-  }, [selectedTicketForClose, isRequestClosureMode, closeTicketMutation, requestClosureMutation, uploadFiles, show, hide]);
+    closeFlow.initiateResolve(ticket);
+  }, [closeFlow])
 
   const handleApplyFilters = useCallback((newFilters: TicketFilters) => {
     setFilters(newFilters);
@@ -344,21 +213,19 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
         <div className="flex gap-6 border-b border-gray-200 mt-2">
           <button
             onClick={() => setSubTab("myself")}
-            className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
-              subTab === "myself"
+            className={`pb-2 text-sm font-medium border-b-2 transition-colors ${subTab === "myself"
                 ? "border-primary-500 text-primary-600"
                 : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+              }`}
           >
             Raised for Myself
           </button>
           <button
             onClick={() => setSubTab("others")}
-            className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
-              subTab === "others"
+            className={`pb-2 text-sm font-medium border-b-2 transition-colors ${subTab === "others"
                 ? "border-primary-500 text-primary-600"
                 : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
+              }`}
           >
             Raised for Others
           </button>
@@ -471,19 +338,13 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
         )}
       </div>
 
-      {/* Resolution Modal */}
-      {isResolutionModalOpen && createPortal(
-        <ResolutionModal
-          isOpen={isResolutionModalOpen}
-          onClose={() => {
-            setIsResolutionModalOpen(false);
-            setSelectedTicketForClose(null);
-          }}
-          onSubmit={handleResolutionSubmit}
-          ticket={selectedTicketForClose}
-          isRequestClosure={isRequestClosureMode}
-          isLoading={closeTicketMutation.isPending || requestClosureMutation.isPending}
-
+      {/* Centralized Close/Resolve Modal */}
+      {closeFlow.modalState.isOpen && createPortal(
+        <TicketCloseModal
+          modalState={closeFlow.modalState}
+          onClose={closeFlow.closeModal}
+          onSubmit={closeFlow.handleModalSubmit}
+          isLoading={closeFlow.isProcessing}
         />
         , document.body)}
       {/* Ticket Detail Drawer */}
