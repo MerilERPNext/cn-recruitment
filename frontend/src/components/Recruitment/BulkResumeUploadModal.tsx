@@ -184,18 +184,21 @@ const BulkResumeUploadModal = ({
             <span className="font-medium text-primary">Browse Files</span>
           </p>
           <p className="text-[11px] text-gray-400">PDF, DOC, DOCX · multiple files supported</p>
-          <input
-            ref={inputRef}
-            type="file"
-            accept={ACCEPT}
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files?.length) addFiles(e.target.files);
-              e.target.value = "";
-            }}
-          />
         </div>
+
+        {/* Hidden picker — kept as a sibling of the drop zone so the drop zone's
+            onClick doesn't bubble from the input's own click. */}
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPT}
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            if (e.target.files?.length) addFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
 
         {/* Unsupported files warning */}
         {rejected.length > 0 && (

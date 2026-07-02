@@ -628,13 +628,13 @@ function StaticReviewSections({
   ];
 
   const job: { label: string; value: any; employeeId?: string }[] = [
-    { label: "Recruitment Start Date", value: formatToIndianDate(formData.recruitment_start_date as string) },
+    { label: "Recruitment Start Date", value: formData.recruitment_start_date ? formatToIndianDate(formData.recruitment_start_date as string) : undefined },
     {
       label: "Hiring Lead",
       value: formData.hiring_lead_title ?? formData.hiring_lead,
       employeeId: formData.hiring_lead,
     },
-    { label: "Expected By Date", value: formatToIndianDate(formData.expected_by as string) },
+    { label: "Expected By Date", value: formData.expected_by ? formatToIndianDate(formData.expected_by as string) : undefined },
     {
       label: "Employment Type",
       value: formData.employment_type_title ?? formData.employment_type,

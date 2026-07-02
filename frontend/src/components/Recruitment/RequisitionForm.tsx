@@ -1388,42 +1388,45 @@ const RequisitionForm = () => {
           filters: designation,
           fieldname: "custom_functional_area",
         });
-        const faId: string | undefined = desigRes?.custom_functional_area;
-        if (!faId) return;
+        // When the designation has no functional area, faId is "" — we still
+        // fall through to clear any stale value from the previous designation.
+        const faId: string = desigRes?.custom_functional_area || "";
         // Resolve the human-readable title (functional_area_name) via the form's
         // standard field-options endpoint so the field shows the TITLE, not the
         // id. `include` guarantees the linked id is in the results.
         let faTitle = faId;
-        try {
-          const opts: any = await FrappeAPI.callMethod(
-            "recruitment.api.job_requisition.get_link_field_options",
-            { doctype: "Functional Area", include: faId, limit: 1 }
-          );
-          const match = (opts?.results || []).find((r: any) => r.id === faId);
-          if (match?.label) faTitle = match.label;
-        } catch {
-          /* fall back to the id as the label */
+        if (faId) {
+          try {
+            const opts: any = await FrappeAPI.callMethod(
+              "recruitment.api.job_requisition.get_link_field_options",
+              { doctype: "Functional Area", include: faId, limit: 1 }
+            );
+            const match = (opts?.results || []).find((r: any) => r.id === faId);
+            if (match?.label) faTitle = match.label;
+          } catch {
+            /* fall back to the id as the label */
+          }
         }
         setFormData((prev: any) => {
           if (prev.designation !== designation) return prev; // designation moved on
           // Mirror the derived Functional Area into every position row so all
-          // rows stay in sync with the requisition's designation.
+          // rows stay in sync with the requisition's designation (clearing the
+          // title when there is no functional area).
           const positions = Array.isArray(prev.positions)
-            ? prev.positions.map((p: any) => ({
-                ...p,
-                functional_area: faId,
-                functional_area_title: faTitle,
-              }))
+            ? prev.positions.map((p: any) => {
+                const updated = { ...p, functional_area: faId };
+                if (faTitle) updated.functional_area_title = faTitle;
+                else delete updated.functional_area_title;
+                return updated;
+              })
             : prev.positions;
           if (prev.functional_area === faId && positions === prev.positions) {
             return prev;
           }
-          return {
-            ...prev,
-            functional_area: faId,
-            functional_area_title: faTitle,
-            positions,
-          };
+          const next: any = { ...prev, functional_area: faId, positions };
+          if (faTitle) next.functional_area_title = faTitle;
+          else delete next.functional_area_title;
+          return next;
         });
         pushFormSync();
       } catch (e) {
@@ -1528,6 +1531,9 @@ const RequisitionForm = () => {
           updated.functional_area = newData.functional_area;
           updated.functional_area_title =
             newData.functional_area_title || newData.functional_area;
+        } else {
+          updated.functional_area = "";
+          delete updated.functional_area_title;
         }
         return updated;
       });
@@ -2265,7 +2271,18 @@ const RequisitionForm = () => {
                     ...(((formData as any).custom_pre_screened_candidates || [])
                       .map((c: any) => c?.cv)
                       .filter(Boolean)
-                      .map((url: string) => url.split("/").pop() as string)),
+                      .map((url: string) => {
+                        // Strip any query/hash, take the last path segment, and
+                        // decode %20 etc. so duplicate detection matches the
+                        // original file name.
+                        const base =
+                          url.split("?")[0].split("#")[0].split("/").pop() || "";
+                        try {
+                          return decodeURIComponent(base);
+                        } catch {
+                          return base;
+                        }
+                      })),
                   ]}
                 />
               </div>
