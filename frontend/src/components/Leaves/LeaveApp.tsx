@@ -21,7 +21,8 @@ type TabName =
   | "holidays"
   | "my-requests"
   | "team-requests"
-  | "compensatory";
+  | "compensatory"
+  | "history";
 
 const tabRoutes: Record<TabName, string> = {
   "leave-balance": "/webapp/leave-app/leaves/leave-balance",
@@ -29,6 +30,7 @@ const tabRoutes: Record<TabName, string> = {
   "my-requests": "/webapp/leave-app/leaves/leave-requests/my",
   "team-requests": "/webapp/leave-app/leaves/leave-requests/team",
   compensatory: "/webapp/leave-app/compensatory-request",
+  history: "/webapp/leave-app/leaves/history",
 };
 
 const LeaveAppInner: React.FC = () => {
@@ -70,8 +72,21 @@ const LeaveAppInner: React.FC = () => {
       },
     ];
 
+    // History tab is mobile-only — inject it when not on desktop
+    if (!isDesktop) {
+      allTabs.push({
+        key: "history",
+        label: "History",
+        permissionKey: "My Requests",
+      });
+    }
+
     if (!userUiPermission || userUiPermission.length === 0) {
-      return allTabs.map(({ key, label }) => ({ key, label }));
+      const result = allTabs.map(({ key, label }) => ({ key, label }));
+      if (!isDesktop) {
+        return result.filter((tab) => tab.key === "leave-balance" || tab.key === "holidays" || tab.key === "history");
+      }
+      return result;
     }
 
     const leaveAppPermission = userUiPermission.find(
@@ -82,7 +97,7 @@ const LeaveAppInner: React.FC = () => {
       return [];
     }
 
-    return allTabs
+    const result = allTabs
       .filter((tab) => {
         const pagePermission = leaveAppPermission.pages?.find(
           (page) => page.page_name === tab.permissionKey,
@@ -90,7 +105,13 @@ const LeaveAppInner: React.FC = () => {
         return pagePermission && pagePermission.enabled;
       })
       .map(({ key, label }) => ({ key, label }));
-  }, [userUiPermission]);
+
+    if (!isDesktop) {
+      return result.filter((tab) => tab.key === "leave-balance" || tab.key === "holidays" || tab.key === "history");
+    }
+
+    return result;
+  }, [userUiPermission, isDesktop]);
 
   const { showModal, openModal, closeModal } = useRequestLeaveModal();
 
@@ -179,6 +200,7 @@ const LeaveAppInner: React.FC = () => {
 
       {!showModal &&
         activeTab !== "holidays" &&
+        activeTab !== "history" &&
         !isViewAllActive &&
         canRequestLeave && (
           <div className="sticky bottom-0 bg-white rounded-md shadow-lg py-2 px-4 w-full z-50">

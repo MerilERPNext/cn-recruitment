@@ -2282,18 +2282,19 @@ def get_allowed_replacement_employee_statuses():
 
 
 @frappe.whitelist()
-def get_hiring_lead_options(company=None, search_text=None, query=None, txt=None, limit=20, include=None):
+def get_hiring_lead_options(company=None, employee=None, search_text=None, query=None, txt=None, limit=20, include=None):
     """Employee options for the Job Requisition 'Hiring lead' field.
 
-    When a **Company Wise** Hiring Lead Configuration matches `company`, the list
-    is limited to Employees whose linked User is a configured hiring lead. Falls
-    back to ALL Employees when no configuration matches, so requisition creation
-    is never blocked. Same response shape as get_link_field_options."""
+    Limited to configured hiring leads when a Hiring Lead Configuration matches —
+    **Company Wise** by `company`, or **Assignment Framework** by `employee` (the
+    requisition's Hiring Manager / Requested By). Falls back to ALL Employees when
+    no configuration matches, so requisition creation is never blocked. Same
+    response shape as get_link_field_options."""
     from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
-        get_config_users_for_company,
+        get_config_users,
     )
 
-    leads, _ = get_config_users_for_company(company)
+    leads, _ = get_config_users(company, employee)
     filters = {"user_id": ["in", list(leads)]} if leads else None
     return get_link_field_options(
         "Employee", search_text=search_text, query=query, txt=txt,
@@ -2302,17 +2303,18 @@ def get_hiring_lead_options(company=None, search_text=None, query=None, txt=None
 
 
 @frappe.whitelist()
-def get_recruiter_options(company=None, search_text=None, query=None, txt=None, limit=20, include=None):
+def get_recruiter_options(company=None, employee=None, search_text=None, query=None, txt=None, limit=20, include=None):
     """User options for the Job Requisition 'Assign to Recruiter' field.
 
-    When a **Company Wise** Hiring Lead Configuration matches `company`, the list
-    is limited to the configured recruiters. Falls back to ALL users when no
+    Limited to configured recruiters when a Hiring Lead Configuration matches —
+    **Company Wise** by `company`, or **Assignment Framework** by `employee` (the
+    requisition's Hiring Manager / Requested By). Falls back to ALL users when no
     configuration matches. Same response shape as get_link_field_options."""
     from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
-        get_config_users_for_company,
+        get_config_users,
     )
 
-    _, recruiters = get_config_users_for_company(company)
+    _, recruiters = get_config_users(company, employee)
     filters = {"name": ["in", list(recruiters)]} if recruiters else None
     return get_link_field_options(
         "User", search_text=search_text, query=query, txt=txt,
@@ -2321,15 +2323,21 @@ def get_recruiter_options(company=None, search_text=None, query=None, txt=None, 
 
 
 @frappe.whitelist()
-def get_hiring_lead_employees(company=None, search_text=None, limit=20, skip=0):
+def get_hiring_lead_employees(company=None, employee=None, search_text=None, limit=20, skip=0):
     """UI-facing list of Employees selectable as the Job Requisition 'Hiring lead'.
 
     Mirrors the Desk form behaviour so the external/React UI shows the SAME list:
       * When a **Company Wise** Hiring Lead Configuration matches `company`, the
         result is limited to the configured hiring leads (Employees whose linked
         User is configured for that company).
-      * When no configuration matches, ALL Employees are returned, so the flow is
-        never blocked — identical to the Desk `get_hiring_lead_options` fallback.
+      * When an **Assignment Framework** Hiring Lead Configuration matches
+        `employee` (the requisition's Hiring Manager / Requested By, via its
+        Dynamic User Assignments), the configured hiring leads are added too.
+      * When no configuration matches either key, ALL Employees are returned, so
+        the flow is never blocked — identical to the Desk fallback.
+
+    `employee` is the Employee ID whose Assignment Framework membership drives the
+    match; pass the requisition's Hiring Manager. Company Wise callers may omit it.
 
     Unlike `get_hiring_lead_options` (which returns the Desk link-widget
     ``{id, label}`` shape), this returns the richer employee fields a form needs
@@ -2339,7 +2347,7 @@ def get_hiring_lead_employees(company=None, search_text=None, limit=20, skip=0):
 
         {
           "status": "success",
-          "configured": true,            # whether a Company Wise config applied
+          "configured": true,            # whether any config restricted the list
           "total": 3,
           "results": [
             {"employee": "HR-EMP-0001", "employee_name": "...",
@@ -2350,12 +2358,13 @@ def get_hiring_lead_employees(company=None, search_text=None, limit=20, skip=0):
         }
     """
     from recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration import (
-        get_config_users_for_company,
+        get_config_users,
     )
 
-    leads, _ = get_config_users_for_company(company)
-    # `leads` is the set of configured hiring-lead Users for this company. An empty
-    # set means "no Company Wise config matched" -> no restriction (show everyone).
+    leads, _ = get_config_users(company, employee)
+    # `leads` is the set of configured hiring-lead Users matched via the Company
+    # Wise (`company`) and/or Assignment Framework (`employee`) paths. An empty set
+    # means "no config matched" -> no restriction (show everyone).
     filters = {"user_id": ["in", list(leads)]} if leads else {}
 
     search = (search_text or "").strip()
@@ -2634,6 +2643,36 @@ def _enforce_requested_by_lock(doc, settings):
             _("'Requested By' cannot be changed after the requisition is created. "
               "Enable 'Allow Hiring Manager Override' in Recruitment Settings to allow this.")
         )
+
+
+def _company_group_members(company):
+    """Companies in the same corporate group as `company`, via ERPNext's Company
+    tree (parent_company / is_group / nested-set lft-rgt).
+
+    Returns a set that always includes `company` itself. When the company has no
+    group parent, or the tree isn't set up, it falls back to just ``{company}``
+    so the "Same Group Company" filter degrades to the company itself rather than
+    erroring."""
+    if not company:
+        return set()
+    members = {company}
+    try:
+        parent = frappe.db.get_value("Company", company, "parent_company")
+        if not parent:
+            return members
+        grp = frappe.db.get_value("Company", parent, ["lft", "rgt"], as_dict=True)
+        if grp and grp.get("lft") is not None and grp.get("rgt") is not None:
+            members.update(
+                frappe.get_all(
+                    "Company",
+                    filters={"lft": [">=", grp.lft], "rgt": ["<=", grp.rgt]},
+                    pluck="name",
+                )
+            )
+    except Exception:
+        # Never let group resolution break the picker — restrict to the company.
+        pass
+    return members
 
 
 @frappe.whitelist()

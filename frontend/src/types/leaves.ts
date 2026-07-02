@@ -137,6 +137,54 @@ export interface HolidayApiResponse {
   message: { status: string; data: HolidayGroup[] };
 }
 
+export interface LeaveHistoryItem {
+  name: string;
+  owner: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  naming_series: string;
+  employee: string;
+  employee_name: string;
+  leave_type: string;
+  custom_leave_type_name?: string;
+  company: string;
+  department: string;
+  custom_optional_holidays?: string | null;
+  custom_optionall_holidays?: string | null;
+  from_date: string;
+  to_date: string;
+  half_day: number;
+  half_day_date: string | null;
+  custom_second_half_day_date?: string | null;
+  custom_half_day_type?: string;
+  total_leave_days: number;
+  custom_rejection_reason?: string | null;
+  custom_reason?: string | null;
+  custom_manager_leave_message?: string | null;
+  description?: string;
+  custom_sandwich_applied?: number;
+  custom_attachment?: string | null;
+  leave_balance: number;
+  custom_compensatory_leave_request?: string | null;
+  custom_auto_created: number;
+  custom_auto_creation_type?: string;
+  custom_pay_rate: number;
+  leave_approver?: string | null;
+  leave_approver_name?: string | null;
+  follow_via_email: number;
+  posting_date: string;
+  status: string;
+  salary_slip?: string | null;
+  color?: string | null;
+  letter_head?: string | null;
+  amended_from?: string | null;
+  doctype: string;
+  comp_off_consumption?: unknown[];
+}
+
 export interface TeamRequest {
   id: string;
   name: string;

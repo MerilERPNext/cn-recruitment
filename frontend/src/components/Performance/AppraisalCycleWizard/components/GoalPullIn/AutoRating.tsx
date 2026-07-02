@@ -139,7 +139,7 @@ const AutoRating = ({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_400px]">
+      <div className="grid grid-cols-1 gap-12 xl:grid-cols-[1fr_400px]">
         {/* Left Column: Matrix */}
         <div>
           <Typography

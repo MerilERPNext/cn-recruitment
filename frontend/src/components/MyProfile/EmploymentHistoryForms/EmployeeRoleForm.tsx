@@ -14,6 +14,7 @@ import { useLoadingOverlay } from "../../../context/OverlayContext";
 interface InitialEmployeeRoleData {
   employee_role: string;
   start_date: string;
+  end_date?: string | null;
   // History row name of the existing line being edited. Sent as record_name so
   // the backend moves/edits that line in place instead of appending a new one.
   employee_role_row_name?: string;
@@ -54,6 +55,7 @@ const EmployeeRoleForm = ({
     if (isEdit && initialEditData) {
       newData.employee_role = initialEditData.employee_role;
       newData.startDate = initialEditData.start_date;
+      newData.endDate = initialEditData.end_date || "";
       shouldUpdate = true;
     } else if (!isEdit) {
       newData.employee_role = "";
@@ -131,6 +133,7 @@ const EmployeeRoleForm = ({
               : {}),
           }],
           start_date: data.startDate,
+          ...(data.endDate ? { to_date: data.endDate } : {}),
           mode: isEdit ? "update" : "new",
         }),
         isEdit ? "Updating Employee Role..." : "Adding Employee Role...",

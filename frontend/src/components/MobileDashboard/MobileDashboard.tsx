@@ -445,7 +445,7 @@ const MobileDashboard: React.FC = () => {
                   key={item.name}
                   autoScrollDelay={item.auto_scroll_frequency * 1000}
                 >
-                  <NoticeSlide data={item} />
+                  <NoticeSlide data={item} fullWidthBackground />
                 </CarouselSlide>
               ))}
             </Carousel>

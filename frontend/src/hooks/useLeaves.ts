@@ -20,6 +20,7 @@ import type {
   PolicyQuestionsResponse,
   AttendanceStatusResponse,
   LeaveDateRangeResponse,
+  LeaveHistoryItem,
 } from "../types/leaves";
 import toast from "react-hot-toast";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
@@ -604,3 +605,13 @@ export const useGetLeaveDateRange = (
     staleTime: 0,
   });
 };
+
+export const useGetLeaveHistory = (year: string) => {
+  return useQuery<LeaveHistoryItem[]>({
+    queryKey: ["leave-history", year],
+    queryFn: () => leaveService.getLeaveHistory(year),
+    enabled: !!year,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+

@@ -354,9 +354,12 @@ export const requisitionFormSchemas = {
                 input: true,
                 dataSrc: "url",
                 data: {
-                  url: '/api/method/recruitment.api.job_requisition.get_hiring_lead_employees?company={{ data.company }}',
+                  // company -> Company Wise config match; hiring_manager (the
+                  // requisition's Employee) -> Assignment Framework config match.
+                  url: '/api/method/recruitment.api.job_requisition.get_hiring_lead_employees?company={{ data.company }}&employee={{ data.hiring_manager }}',
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
+                refreshOn: ["company", "hiring_manager"],
                 limit: 20,
                 selectValues: "message.results",
                 valueProperty: "employee",

@@ -1272,7 +1272,7 @@ const ExpensesList: React.FC = () => {
       <div
         className={`flex-1 overflow-y-auto md:px-4 pb-5 ${isDraftFilter && selectedMyExpensesDraftIds.size > 0 ? "pb-28 md:pb-24" : "md:pb-20"}`}
       >
-        {currentEmployee?.name && activeTab === "expenses" && (
+        {activeTab === "expenses" && (
           <>
             <CardTable
               titles={tableTitles}
@@ -1285,14 +1285,22 @@ const ExpensesList: React.FC = () => {
             >
               <DataListView
                 queryKey={["expense-claims-all"]}
-                customAPI={{
-                  method:
-                    "cn_leave_shift_managment.api.get_open_approval_todos",
-                  params: {
-                    doctype: "Expense Claim",
-                    employee: currentEmployee?.name,
-                  },
-                }}
+                customAPI={
+                  currentEmployee?.name
+                    ? {
+                        method: "cn_leave_shift_managment.api.get_open_approval_todos",
+                        params: {
+                          doctype: "Expense Claim",
+                          employee: currentEmployee?.name,
+                        },
+                      }
+                    : undefined
+                }
+                fetchFunction={
+                  !currentEmployee?.name
+                    ? async () => ({ message: [], data: [] } as any)
+                    : undefined
+                }
                 ItemComponent={(props: { item: any }) => {
                   const item = props.item;
                   const expenseClaim = item?.reference_document;
@@ -1797,7 +1805,7 @@ const ExpensesList: React.FC = () => {
           </>
         )}
 
-        {currentEmployee?.name && activeTab === "shared" && (
+        {activeTab === "shared" && (
           <CardTable
             titles={[
               "Employee Id",
@@ -1823,10 +1831,19 @@ const ExpensesList: React.FC = () => {
           >
             <DataListView
               queryKey={["shared-expenses", currentEmployee?.name ?? ""]}
-              customAPI={{
-                method:
-                  "chatnext_expense_trips.expense_claim.get_shared_expenses_for_employee",
-              }}
+              customAPI={
+                currentEmployee?.name
+                  ? {
+                      method:
+                        "chatnext_expense_trips.expense_claim.get_shared_expenses_for_employee",
+                    }
+                  : undefined
+              }
+              fetchFunction={
+                !currentEmployee?.name
+                  ? async () => ({ message: { data: [] }, data: [] } as any)
+                  : undefined
+              }
               ItemComponent={(props: { item: any }) => {
                 const row = props.item?.message?.data
                   ? props.item.message.data

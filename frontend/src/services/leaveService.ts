@@ -6,6 +6,7 @@ import type {
   AttendanceStatusResponse,
   ButtonStatusResponse,
   LeaveFieldResponse,
+  LeaveHistoryItem,
   LeavePassbookMetadataResponse,
   LeavePassbookResponse,
   LeaveReason,
@@ -66,7 +67,7 @@ export const leaveService = {
   getLeaveBalance: async (
     employeeId: string,
     date: string,
-    leaveType?: string
+    leaveType?: string,
   ): Promise<LeaveBalanceResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.custom_get_leave_details",
@@ -74,7 +75,7 @@ export const leaveService = {
         employee: employeeId,
         date: date,
         ...(leaveType ? { leave_type: leaveType } : {}),
-      }
+      },
     );
 
     return response as LeaveBalanceResponse;
@@ -82,27 +83,28 @@ export const leaveService = {
 
   getHolidays: async (
     employeeId: string,
-    year: string
+    year: string,
   ): Promise<HolidayGroup[]> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_holidays",
-      { employee: employeeId, year }
+      { employee: employeeId, year },
     );
     const typed = response as HolidayApiResponse;
     return typed.message.data;
   },
 
-  allowApplicationOfOptionalHolidaysForPastDates: async (): Promise<boolean> => {
-    const response = await FrappeAPI.callMethod(
-      "cn_leave_shift_managment.cn_leave_shift_managment.doctype.leave_settings.leave_settings.allow_application_of_optional_holidays_for_past_dates"
-    );
+  allowApplicationOfOptionalHolidaysForPastDates:
+    async (): Promise<boolean> => {
+      const response = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.cn_leave_shift_managment.doctype.leave_settings.leave_settings.allow_application_of_optional_holidays_for_past_dates",
+      );
 
-    return response as boolean;
-  },
+      return response as boolean;
+    },
 
   getTeamRequests: async (): Promise<TeamRequest[]> => {
     const response = await FrappeAPI.callMethod(
-      "cn_leave_shift_managment.api.get_leave_applications"
+      "cn_leave_shift_managment.api.get_leave_applications",
     );
     return (response as TeamRequest[]).map((req) => ({
       ...req,
@@ -112,14 +114,14 @@ export const leaveService = {
 
   postTaskAction: async (
     todo_ids: string | string[],
-    selected_action: "Approve" | "Reject"
+    selected_action: "Approve" | "Reject",
   ) => {
     return FrappeAPI.callMethod(
       "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.action_api_handler",
       {
         todo_ids: Array.isArray(todo_ids) ? todo_ids : [todo_ids],
         selected_action,
-      }
+      },
     );
   },
 
@@ -128,7 +130,7 @@ export const leaveService = {
       "cn_leave_shift_managment.cn_leave_shift_managment.overtime.get_employee_compoff_with_pay_status",
       {
         employee: employeeId,
-      }
+      },
     );
 
     return response as CompOffResponse[];
@@ -139,14 +141,14 @@ export const leaveService = {
       "cn_leave_shift_managment.cn_leave_shift_managment.compoff_sandwich.create_leave_encashment",
       {
         comp_off_name,
-      }
+      },
     );
   },
 
   getLeaveRequestFields: async (
     leaveType: string,
     fromDate?: string,
-    toDate?: string
+    toDate?: string,
   ): Promise<LeaveFieldResponse> => {
     const params: Record<string, string> = {
       leave_type: leaveType,
@@ -156,7 +158,7 @@ export const leaveService = {
 
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_leave_application_field_config",
-      params
+      params,
     );
 
     return response as LeaveFieldResponse;
@@ -164,7 +166,7 @@ export const leaveService = {
 
   getLeaveReason: async (): Promise<LeaveReason[]> => {
     const response = await FrappeAPI.callMethod(
-      "cn_leave_shift_managment.api.get_leave_application_reasons"
+      "cn_leave_shift_managment.api.get_leave_application_reasons",
     );
     return response as LeaveReason[];
   },
@@ -174,7 +176,7 @@ export const leaveService = {
       "cn_leave_shift_managment.custom_apis.get_leave_application_buttons",
       {
         employee,
-      }
+      },
     );
     return response as ButtonStatusResponse;
   },
@@ -266,14 +268,14 @@ export const leaveService = {
       "cn_leave_shift_managment.custom_apis.force_cancel_leave_application",
       {
         leave_application_name,
-      }
+      },
     );
   },
 
   editApproved: async (
     leave_application: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    new_values: string | Record<string, any>
+    new_values: string | Record<string, any>,
   ) => {
     if (!leave_application) {
       throw new Error("leave_application is required");
@@ -291,20 +293,20 @@ export const leaveService = {
       {
         leave_application,
         new_values: formattedValues,
-      }
+      },
     );
   },
 
   getAttendancePolicyForDate: async (
     employee: string | number,
-    targetDate: string
+    targetDate: string,
   ): Promise<AttendancePolicyResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_attendance_policy_for_date_api",
       {
         employee: String(employee),
         target_date: targetDate,
-      }
+      },
     );
 
     return response as AttendancePolicyResponse;
@@ -312,14 +314,14 @@ export const leaveService = {
 
   getPassbookTransactionMetadata: async (
     employeeId: string,
-    leaveType: string
+    leaveType: string,
   ): Promise<LeavePassbookMetadataResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_leave_passbook_metadata",
       {
         employee: employeeId,
         leave_type: leaveType,
-      }
+      },
     );
 
     return response as LeavePassbookMetadataResponse;
@@ -328,7 +330,7 @@ export const leaveService = {
   getPassbookTransaction: async (
     employeeId: string,
     leaveType: string,
-    cycleStart: string
+    cycleStart: string,
   ): Promise<LeavePassbookResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_leave_passbook_entries",
@@ -336,7 +338,7 @@ export const leaveService = {
         employee: employeeId,
         leave_type: leaveType,
         cycle_start: cycleStart,
-      }
+      },
     );
 
     return response as LeavePassbookResponse;
@@ -344,14 +346,14 @@ export const leaveService = {
 
   getAccrualJournalMetadata: async (
     employeeId: string,
-    leaveType: string
+    leaveType: string,
   ): Promise<AccrualJournalMetadataResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_accrual_journal_metadata",
       {
         employee: employeeId,
         leave_type: leaveType,
-      }
+      },
     );
 
     return response as AccrualJournalMetadataResponse;
@@ -360,7 +362,7 @@ export const leaveService = {
   getAccrualJournalEntries: async (
     employeeId: string,
     leaveType: string,
-    periodNumber: number
+    periodNumber: number,
   ): Promise<AccrualJournalEntriesResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_accrual_journal_entries",
@@ -368,7 +370,7 @@ export const leaveService = {
         employee: employeeId,
         leave_type: leaveType,
         period_number: periodNumber,
-      }
+      },
     );
 
     return response as AccrualJournalEntriesResponse;
@@ -376,14 +378,14 @@ export const leaveService = {
 
   getPolicyQuestions: async (
     doctypeName: string,
-    targetDoctype: string
+    targetDoctype: string,
   ): Promise<PolicyQuestionsResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.cn_leave_shift_managment.doctype.policy_question.policy_question.get_policy_questions",
       {
         doctype_name: doctypeName,
         target_doctype: targetDoctype,
-      }
+      },
     );
 
     return response as PolicyQuestionsResponse;
@@ -395,7 +397,7 @@ export const leaveService = {
       "cn_leave_shift_managment.api.create_leave_application",
       {
         leave_data: leaveData,
-      }
+      },
     );
   },
 
@@ -405,14 +407,14 @@ export const leaveService = {
       "cn_leave_shift_managment.api.create_leave_application_batch",
       {
         leave_data: leaveData,
-      }
+      },
     );
   },
 
   getAttendanceStatus: async (
     employeeId: string,
     fromDate: string,
-    toDate: string
+    toDate: string,
   ): Promise<AttendanceStatusResponse> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_attendance_status",
@@ -420,7 +422,7 @@ export const leaveService = {
         employee: employeeId,
         from_date: fromDate,
         to_date: toDate,
-      }
+      },
     );
 
     return response as AttendanceStatusResponse;
@@ -429,20 +431,20 @@ export const leaveService = {
   bulkUpdateRejectionReason: async (
     doctype: string,
     docnames: string[],
-    comment: string
+    comment: string,
   ) => {
-    return FrappeAPI.callMethod("recruitment.api.update_comment.update_comment", {
-      doctype,
-      docnames,
-      fieldname: "custom_rejection_reason",
-      comment,
-    });
+    return FrappeAPI.callMethod(
+      "recruitment.api.update_comment.update_comment",
+      {
+        doctype,
+        docnames,
+        fieldname: "custom_rejection_reason",
+        comment,
+      },
+    );
   },
 
-  updateRejectionReason: async (
-    leaveApplicationId: string,
-    reason: string
-  ) => {
+  updateRejectionReason: async (leaveApplicationId: string, reason: string) => {
     if (!leaveApplicationId) {
       throw new Error("Leave Application ID is required");
     }
@@ -453,19 +455,19 @@ export const leaveService = {
 
   isRejectionReasonMandatory: async (): Promise<{ message: boolean }> => {
     const response = await FrappeAPI.callMethod(
-      "cn_leave_shift_managment.api.is_rejection_reason_mandatory"
+      "cn_leave_shift_managment.api.is_rejection_reason_mandatory",
     );
     return response as { message: boolean };
   },
 
   checkAttachmentMandatory: async (
-    leaveType: string
+    leaveType: string,
   ): Promise<{ is_mandatory: number }> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.check_attachment_mandatory_for_leave",
       {
         leave_type: leaveType,
-      }
+      },
     );
     return response as { is_mandatory: number };
   },
@@ -475,7 +477,7 @@ export const leaveService = {
     leaveType: string,
     fromDate: string,
     toDate: string,
-    individualDates: string
+    individualDates: string,
   ): Promise<number> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.override.get_number_of_leave_days",
@@ -485,25 +487,35 @@ export const leaveService = {
         from_date: fromDate,
         to_date: toDate,
         individual_dates: individualDates,
-      }
+      },
     );
     // Handle both { message: number } and number directly
-    return typeof response === "object" && response !== null && "message" in response
+    return typeof response === "object" &&
+      response !== null &&
+      "message" in response
       ? (response as { message: number }).message
       : (response as number);
   },
 
   getLeaveDateRange: async (
     employee: string,
-    leaveType: string
+    leaveType: string,
   ): Promise<LeaveDateRangeResponse> => {
     const response = await FrappeAPI.getMethod(
       "cn_leave_shift_managment.api.get_leave_application_date_range",
       {
         employee,
         leave_type: leaveType,
-      }
+      },
     );
     return response as LeaveDateRangeResponse;
+  },
+
+  getLeaveHistory: async (year: string): Promise<LeaveHistoryItem[]> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_leave_shift_managment.api.get_reportees_leave_applications",
+      { year },
+    );
+    return response as LeaveHistoryItem[];
   },
 };

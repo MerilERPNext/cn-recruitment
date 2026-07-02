@@ -3,6 +3,7 @@ import EmpAttendanceRequestCard from "../EmpAttendanceRequestCard";
 import DataListView from "../../../DataListView";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
 import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
+import NoDataFound from "../../../shared/atoms/NoDataFound";
 
 type prop = {
   currentEmployee?:
@@ -22,22 +23,35 @@ const Cardtable: React.FC<prop> = ({
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
 
   return (
-    <>
-      {effectiveEmployeeId ? (
-        <DataListView
-          queryKey={[
-            "attendance-requests",
-            "calendar-page",
-            effectiveEmployeeId,
-          ]}
-          customAPI={{
-            method: "cn_leave_shift_managment.api.get_open_approval_todos",
-            params: {
-              doctype: "Attendance Request",
-              employee: effectiveEmployeeId,
-            },
-          }}
-          ItemComponent={(props: { item: MyAttendanceRequest }) => {
+      <DataListView
+        queryKey={[
+          "attendance-requests",
+          "calendar-page",
+          effectiveEmployeeId || "no-employee",
+        ]}
+        customAPI={
+          effectiveEmployeeId
+            ? {
+                method: "cn_leave_shift_managment.api.get_open_approval_todos",
+                params: {
+                  doctype: "Attendance Request",
+                  employee: effectiveEmployeeId,
+                },
+              }
+            : undefined
+        }
+        fetchFunction={
+          !effectiveEmployeeId
+            ? async () => ({ message: [], data: [] } as any)
+            : undefined
+        }
+        noRecordsScreen={
+          <NoDataFound
+            title="No Attendance Requests"
+            subtitle="There are no attendance requests matching your criteria."
+          />
+        }
+        ItemComponent={(props: { item: MyAttendanceRequest }) => {
             return (
               <EmpAttendanceRequestCard
                 type="pending"
@@ -64,10 +78,6 @@ const Cardtable: React.FC<prop> = ({
           loadMorePagination={true}
           showPagination={false}
         />
-      ) : (
-        <></>
-      )}
-    </>
   );
 };
 

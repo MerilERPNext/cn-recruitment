@@ -58,11 +58,11 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({
 
       {/* Drawer */}
       <div
-        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg transition-transform duration-300 z-50 pt-2 ${
+        className={`fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg transition-transform duration-300 z-50 pt-2 flex flex-col max-h-[100dvh] ${
           isOpen ? "translate-y-0" : "translate-y-full"
         } ${className}`}
       >
-        <div className="px-4 pb-6">{children}</div>
+        <div className="px-4 flex-1 flex flex-col min-h-0">{children}</div>
       </div>
     </>,
     document.body

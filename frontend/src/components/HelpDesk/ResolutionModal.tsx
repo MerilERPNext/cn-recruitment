@@ -190,7 +190,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg sm:mx-4  flex flex-col sm:max-h-[80vh] max-sm:h-full bg-white sm:rounded-xl shadow-xl">
+      <div className="relative w-full max-w-lg sm:mx-4 flex flex-col sm:max-h-[80vh] max-sm:h-[100dvh] bg-white sm:rounded-xl max-sm:rounded-none shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>

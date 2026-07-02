@@ -243,6 +243,10 @@ const TeamLeaveRequest = lazyWithRetry(
   () => import("./components/Leaves/TeamLeaveRequest"),
   "TeamLeaveRequest",
 );
+const LeaveHistory = lazyWithRetry(
+  () => import("./components/Leaves/LeaveHistory"),
+  "LeaveHistory",
+);
 const AttendanceSummary = lazyWithRetry(
   () => import("./components/Attendance/AttendanceSummary"),
   "AttendanceSummary",
@@ -1262,6 +1266,11 @@ export const routesConfig: AppRoute[] = [
         path: "compensatory-request",
         element: <CompensatoryRequest />,
         permissionKey: "Compensatory",
+      },
+      {
+        path: "leaves/history",
+        element: <LeaveHistory />,
+        permissionKey: "My Requests",
       },
       {
         path: "request",

@@ -34,7 +34,7 @@ const MicroAppInDashboard: React.FC = () => {
     <Card shadow="sm" className="h-full ">
       <div className="flex items-center justify-between mb-4">
         <Typography variant="subheading" color="title">
-          Admin apps
+          Apps
         </Typography>
       </div>
       <DndProvider backend={HTML5Backend}>

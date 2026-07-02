@@ -63,21 +63,59 @@ interface ParsedMessage {
   quotedContent: string | null;
   quotedSender: string | null;
   mainContent: string;
+  extractedAttachments?: { file_url: string; file_name: string }[];
 }
 
 const parseQuotedContent = (htmlContent: string): ParsedMessage => {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, 'text/html');
+    let extractedAttachments: { file_url: string; file_name: string }[] = [];
+
+    // Extract injected attachments div before looking for blockquotes
+    let attachmentsDiv = doc.querySelector('.attachments');
+    let legacyAttachmentsUl: Element | null = null;
+    let legacyAttachmentsTitle: Element | null = null;
+
+    // Fallback for older tickets lacking the .attachments class
+    if (!attachmentsDiv) {
+      const divs = Array.from(doc.querySelectorAll('div'));
+      legacyAttachmentsTitle = divs.find(d => d.textContent?.trim() === 'Attachments:') || null;
+      if (legacyAttachmentsTitle && legacyAttachmentsTitle.nextElementSibling?.tagName.toLowerCase() === 'ul') {
+        legacyAttachmentsUl = legacyAttachmentsTitle.nextElementSibling;
+      }
+    }
+
+    if (attachmentsDiv || legacyAttachmentsUl) {
+      const targetContainer = attachmentsDiv || legacyAttachmentsUl;
+      const links = targetContainer?.querySelectorAll('a');
+      links?.forEach((link) => {
+        const file_url = link.getAttribute('href');
+        const file_name = link.textContent?.trim();
+        if (file_url && file_name) {
+          extractedAttachments.push({ file_url, file_name });
+        }
+      });
+
+      if (attachmentsDiv) {
+        const prev = attachmentsDiv.previousElementSibling;
+        if (prev && prev.tagName.toLowerCase() === 'br') prev.remove();
+        attachmentsDiv.remove();
+      } else if (legacyAttachmentsTitle && legacyAttachmentsUl) {
+        const prev = legacyAttachmentsTitle.previousElementSibling;
+        if (prev && prev.tagName.toLowerCase() === 'br') prev.remove();
+        legacyAttachmentsUl.remove();
+        legacyAttachmentsTitle.remove();
+      }
+    }
 
     // Find blockquote or gmail_quote or outlook reply markers
     const blockquote = doc.querySelector('blockquote, .gmail_quote, #appendonsend, .reply-to-content');
+    let quotedSender: string | null = null;
 
     if (blockquote) {
-      const quotedContent = blockquote.innerHTML;
 
       // Try to parse sender from "On [date], [name] wrote:" pattern
-      let quotedSender: string | null = null;
       const prevSibling = blockquote.previousElementSibling;
       if (prevSibling && prevSibling.textContent) {
         const match = prevSibling.textContent.match(/On .+?, (.+?) wrote:/);
@@ -93,17 +131,16 @@ const parseQuotedContent = (htmlContent: string): ParsedMessage => {
       if (prevSibling && prevSibling.textContent?.includes(' wrote:')) {
         prevSibling.remove();
       }
-
-      const mainContent = doc.body.innerHTML.trim();
-
-      return {
-        quotedContent: quotedContent.trim() || null,
-        quotedSender,
-        mainContent: mainContent || htmlContent
-      };
     }
 
-    return { quotedContent: null, quotedSender: null, mainContent: htmlContent };
+    const mainContent = doc.body.innerHTML.trim();
+
+    return {
+      quotedContent: blockquote ? blockquote.innerHTML.trim() || null : null,
+      quotedSender,
+      mainContent: mainContent || htmlContent,
+      extractedAttachments
+    };
   } catch {
     return { quotedContent: null, quotedSender: null, mainContent: htmlContent };
   }
@@ -564,11 +601,11 @@ const Avatar: React.FC<AvatarProps> = ({ sender, isCurrentUser }) => (
       <img
         src={sender.avatar}
         alt={sender.name}
-        className="w-10 h-10 rounded-xl object-cover"
+        className="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-sm"
       />
     ) : (
       <div
-        className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium ${isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+        className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold shadow-sm ${isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-600"
           }`}
       >
         {getInitials(sender.name)}
@@ -591,7 +628,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({
   if (!attachments || attachments.length === 0) return null;
 
   return (
-    <div className="mt-3 pt-3 border-t border-gray-200/30 flex flex-wrap gap-2">
+    <div className={`mt-3 pt-3 border-t flex flex-wrap gap-2 ${isCurrentUser ? "border-white/20" : "border-gray-100"}`}>
       {attachments.map((attachment, index) => {
         const { category, iconColor, bgColor } = getFileTypeInfo(attachment.file_name);
         return (
@@ -600,21 +637,21 @@ const AttachmentList: React.FC<AttachmentListProps> = ({
             onClick={() =>
               onPreviewFile({ url: attachment.file_url, name: attachment.file_name })
             }
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border max-w-full ${isCurrentUser
-              ? "bg-blue-400/10 border-blue-400/20 text-blue-100 hover:bg-blue-400/20"
-              : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
-              }`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border max-w-full shadow-sm ${
+              isCurrentUser
+                ? "bg-white/15 border-white/20 text-white hover:bg-white/25"
+                : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+            }`}
           >
-            <div
-              className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${isCurrentUser ? "bg-blue-500/20" : bgColor
-                }`}
-            >
+            <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${bgColor}`}>
               <FileTypeIcon
                 category={category}
-                className={`w-3.5 h-3.5 ${isCurrentUser ? "text-blue-200" : iconColor}`}
+                className={`w-3.5 h-3.5 ${iconColor}`}
               />
             </div>
-            <span className="truncate max-w-[150px] font-medium">{attachment.file_name}</span>
+            <span className={`truncate max-w-[150px] font-medium ${isCurrentUser ? "text-white" : "text-gray-700"}`}>
+              {attachment.file_name}
+            </span>
           </button>
         );
       })}
@@ -677,18 +714,18 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
 
   if (isCurrentUser) {
     return (
-      <div className="group flex justify-end gap-3 mb-6 simplified-chat-view-quoted-message-a">
+      <div className="group flex justify-end items-end gap-2.5 mb-5 simplified-chat-view-quoted-message-a">
         {!isTicketClosed && (
           <button
             onClick={() => onReplyingTo(message)}
-            className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+            className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all mb-5"
             title="Reply"
           >
             <Reply className="w-4 h-4" />
           </button>
         )}
         <div className="flex flex-col items-end max-w-[75%]">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md px-5 py-4 max-w-full overflow-hidden">
+          <div className="bg-blue-500 text-white rounded-2xl rounded-br-sm px-4 py-3 max-w-full overflow-hidden shadow-sm shadow-blue-200">
             {quotedContent && (
               <QuotedMessage
                 content={quotedContent}
@@ -699,7 +736,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             )}
             <div
               onClick={onContentClick}
-              className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg"
+              className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg leading-relaxed"
               dangerouslySetInnerHTML={{ __html: content }}
             />
             <AttachmentList
@@ -708,7 +745,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
               onPreviewFile={onPreviewFile}
             />
           </div>
-          <span className="text-xs text-gray-400 mt-2 mr-1">{formatTime(timestamp)}</span>
+          <span className="text-[11px] text-gray-400 mt-1.5 mr-1">{formatTime(timestamp)}</span>
         </div>
         <Avatar sender={sender} isCurrentUser={true} />
       </div>
@@ -716,11 +753,11 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   }
 
   return (
-    <div className="group flex justify-start gap-3 mb-6">
+    <div className="group flex justify-start items-end gap-2.5 mb-5">
       <Avatar sender={sender} isCurrentUser={false} />
       <div className="flex flex-col items-start max-w-[75%]">
-        <div className="bg-[#F5F0E8] rounded-2xl rounded-bl-md px-5 py-4 max-w-full overflow-hidden">
-          <div className="text-xs text-gray-500 mb-2 font-medium">{sender.name}</div>
+        <div className="bg-white rounded-2xl rounded-bl-sm px-4 py-3 max-w-full overflow-hidden shadow-sm border border-gray-100">
+          <div className="text-[11px] text-gray-400 mb-1.5 font-medium tracking-wide">{sender.name}</div>
           {quotedContent && (
             <QuotedMessage
               content={quotedContent}
@@ -731,7 +768,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
           )}
           <div
             onClick={onContentClick}
-            className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg"
+            className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg leading-relaxed"
             dangerouslySetInnerHTML={{ __html: content }}
           />
           <AttachmentList
@@ -740,12 +777,12 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             onPreviewFile={onPreviewFile}
           />
         </div>
-        <span className="text-xs text-gray-400 mt-2 ml-1">{formatTime(timestamp)}</span>
+        <span className="text-[11px] text-gray-400 mt-1.5 ml-1">{formatTime(timestamp)}</span>
       </div>
       {!isTicketClosed && (
         <button
           onClick={() => onReplyingTo(message)}
-          className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+          className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all mb-5"
           title="Reply"
         >
           <Reply className="w-4 h-4" />
@@ -797,10 +834,21 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     const msgs: SimpleChatMessage[] = [];
     const ticketCreationTime = new Date(ticket.creation).getTime();
 
+    // XSS-safe fallback: escape ticket.subject before injecting into HTML
+    const escapedSubject = (ticket.subject || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+    // Parse the original description to extract embedded attachments
+    const parsedDescription = parseQuotedContent(ticket.description || "<p>" + escapedSubject + "</p>");
+
     // Add original request as first message
     msgs.push({
       id: `${ticket.name}-original`,
-      content: ticket.description || `<p>${ticket.subject}</p>`,
+      content: parsedDescription.mainContent,
       sender: {
         name: ticket.contact?.name || ticket.raised_by,
         email: ticket.raised_by,
@@ -808,7 +856,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       },
       timestamp: new Date(ticket.creation),
       isCurrentUser: ticket.raised_by === currentUserEmail,
-      attachments: [],
+      attachments: parsedDescription.extractedAttachments || [],
     });
 
     // Add communications (emails) - skip the first one if it matches ticket creation time
@@ -824,6 +872,15 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       // Parse quoted content from the message
       const parsed = parseQuotedContent(comm.content || '');
 
+      // Combine real attachments with extracted attachments, de-duped by file_url
+      const combinedAttachments = [
+        ...(comm.attachments || []),
+        ...(parsed.extractedAttachments || [])
+      ].filter(
+        (attachment, index, self) =>
+          self.findIndex((a) => a.file_url === attachment.file_url) === index
+      );
+
       msgs.push({
         id: comm.name,
         content: parsed.mainContent,
@@ -836,7 +893,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         },
         timestamp: new Date(comm.creation),
         isCurrentUser: comm.sender === currentUserEmail,
-        attachments: comm.attachments || [],
+        attachments: combinedAttachments,
       });
     });
 
@@ -1158,7 +1215,10 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   // Handle accept closure (for Resolved tickets)
   const handleAcceptClosure = async () => {
     try {
-      await closeResolvedMutation.mutateAsync({ ticketId: ticket.name });
+      await closeTicketMutation.mutateAsync({
+        ticketId: ticket.name,
+        resolutionDetails: ticket?.resolution_details || "resolved",
+      });
       toast.success("Ticket closed successfully");
     } catch {
       toast.error("Failed to close ticket");
@@ -1592,7 +1652,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       ) : (
         <>
           {/* Chat Content Area */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="flex-1 overflow-y-auto px-4 py-5" style={{ background: "#f7f8fa" }}>
             {Object.entries(groupedMessages).length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full">
                 <MessageSquare className="w-12 h-12 text-gray-300 mb-3" />
@@ -1605,9 +1665,9 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               <div>
                 {Object.entries(groupedMessages).map(([dateKey, dateMessages]) => (
                   <div key={dateKey}>
-                    {/* Date separator - RECTANGULAR not elliptical */}
-                    <div className="flex items-center justify-center my-6">
-                      <span className="px-4 py-1 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-500 shadow-sm">
+                    {/* Date separator - pill/lozenge style matching Figma */}
+                    <div className="flex items-center justify-center my-5">
+                      <span className="px-5 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-500 shadow-sm tracking-wide">
                         {dateKey}
                       </span>
                     </div>

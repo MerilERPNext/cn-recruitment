@@ -5,11 +5,13 @@
  * Flow:
  *   1. The recruiter clicks "Attach Resumes" in the form top bar and uploads one
  *      or more resume files (multi-select).
- *   2. The uploaded files are held on the form as pending resumes (the button
- *      shows the count). Nothing is created yet.
- *   3. On the next Save of the Job Opening, each pending resume becomes one
- *      Draft Job Applicant (job_title + designation carried from the opening,
- *      resume stored in resume_attachment). A future parsing API fills the rest.
+ *   2. As soon as the uploads settle, each file becomes one Draft Job Applicant
+ *      (job_title + designation carried from the opening, resume stored in
+ *      resume_attachment). A future parsing API fills the rest.
+ *
+ * Creation happens directly on upload — it does NOT require saving the Job
+ * Opening. This lets external recruiters (who have no write permission on Job
+ * Opening) add applicants without a Save step.
  *
  * Server: recruitment.api.resume_applicants.create_applicants_from_resumes
  */
@@ -26,31 +28,29 @@
 		return frm.__pending_resumes;
 	}
 
-	function queuedAlert(frm) {
-		// on_success fires once per file; debounce so a single alert shows for the
-		// whole batch (50 resumes → one message, not 50), reflecting the total.
-		if (frm.__queued_alert_timer) clearTimeout(frm.__queued_alert_timer);
-		frm.__queued_alert_timer = setTimeout(() => {
-			const count = pending(frm).length;
-			if (!count) return;
-			frappe.show_alert({
-				message: __("{0} resume(s) queued — save the Job Opening to create them.", [count]),
-				indicator: "blue",
-			});
-		}, 700);
+	function scheduleCreate(frm) {
+		// on_success fires once per file; debounce so a whole multi-file batch is
+		// created in a single server call (50 resumes → one call, not 50) once the
+		// uploads settle.
+		if (frm.__create_timer) clearTimeout(frm.__create_timer);
+		frm.__create_timer = setTimeout(() => createApplicants(frm), 700);
 	}
 
 	function refreshButtonLabel(frm) {
-		const count = pending(frm).length;
-		const label = count
-			? __("Attach Resumes ({0})", [count])
-			: __("Attach Resumes");
 		if (frm.__attach_resumes_btn) {
-			frm.__attach_resumes_btn.text(label);
+			frm.__attach_resumes_btn.text(__("Attach Resumes"));
 		}
 	}
 
 	function openUploader(frm) {
+		if (frm.is_new()) {
+			frappe.msgprint({
+				title: __("Save First"),
+				message: __("Save this Job Opening before attaching resumes."),
+				indicator: "orange",
+			});
+			return;
+		}
 		if (frm.doc.status === "Closed") {
 			frappe.msgprint({
 				title: __("Not Allowed"),
@@ -66,7 +66,7 @@
 			// Keep the files standalone (don't clutter the opening's attachments) —
 			// each one is referenced from its own applicant's resume_attachment.
 			restrictions: { allowed_file_types: ALLOWED_TYPES },
-			upload_notes: __("Each resume becomes a Job Applicant when you save."),
+			upload_notes: __("Each resume becomes a Job Applicant as soon as it uploads."),
 			// Called once per successfully uploaded file.
 			on_success(file_doc) {
 				if (!file_doc || !file_doc.file_url) return;
@@ -74,10 +74,10 @@
 					file_url: file_doc.file_url,
 					file_name: file_doc.file_name || file_doc.file_url,
 				});
-				refreshButtonLabel(frm);
-				// Mark dirty so Save becomes available and the after_save hook fires.
-				frm.dirty();
-				queuedAlert(frm);
+				// Create directly on upload — no Save required (external recruiters
+				// have no write permission on Job Opening). Debounced so a multi-file
+				// batch becomes one server call.
+				scheduleCreate(frm);
 			},
 		});
 	}
@@ -87,7 +87,7 @@
 		if (!resumes.length || frm.__creating_applicants) return;
 
 		frm.__creating_applicants = true;
-		// Hand the queue off and clear it immediately so a second save can't
+		// Hand the queue off and clear it immediately so an overlapping batch can't
 		// double-create the same resumes.
 		const batch = resumes.slice();
 		frm.__pending_resumes = [];
@@ -135,6 +135,9 @@
 			},
 			always() {
 				frm.__creating_applicants = false;
+				// Resumes uploaded while this batch was in flight were queued but
+				// skipped (guard above) — flush them now.
+				if (pending(frm).length) scheduleCreate(frm);
 			},
 		});
 	}
@@ -145,10 +148,6 @@
 				openUploader(frm)
 			);
 			refreshButtonLabel(frm);
-		},
-
-		after_save(frm) {
-			createApplicants(frm);
 		},
 	});
 })();

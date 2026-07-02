@@ -75,6 +75,11 @@ frappe.ui.form.on("Job Offer", {
 	refresh: function(frm) {
 		frm.trigger("filter_jo_expiry_date");
 
+		// Component picker: Earnings -> only Earning salary components,
+		// Deductions -> only Deduction ones.
+		frm.set_query("component", "custom_earnings", () => ({ filters: { type: "Earning" } }));
+		frm.set_query("component", "custom_deduction", () => ({ filters: { type: "Deduction" } }));
+
 		// Open the print preview using the employment-type-specific print format
 		// (Recruitment Settings mapping), not the doctype default that Frappe's
 		// own print icon uses. Always available for any saved Job Offer.
