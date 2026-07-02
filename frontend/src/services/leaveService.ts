@@ -6,7 +6,7 @@ import type {
   AttendanceStatusResponse,
   ButtonStatusResponse,
   LeaveFieldResponse,
-  LeaveHistoryEmployee,
+  LeaveHistoryItem,
   LeavePassbookMetadataResponse,
   LeavePassbookResponse,
   LeaveReason,
@@ -511,11 +511,11 @@ export const leaveService = {
     return response as LeaveDateRangeResponse;
   },
 
-  getLeaveHistory: async (year: string): Promise<LeaveHistoryEmployee[]> => {
+  getLeaveHistory: async (year: string): Promise<LeaveHistoryItem[]> => {
     const response = await FrappeAPI.getMethod(
       "cn_leave_shift_managment.api.get_reportees_leave_applications",
       { year },
     );
-    return response as LeaveHistoryEmployee[];
+    return response as LeaveHistoryItem[];
   },
 };
