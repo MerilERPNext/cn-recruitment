@@ -131,11 +131,11 @@ const Notifications = () => {
   };
 
   return (
-    <>
+    <div className="space-y-3 w-full ">
       {/* Left Panel: Events Matrix */}
-      <section className="flex-1 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col">
+      <section className="flex-1 rounded-xl border w-full border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col">
         <div className="overflow-x-auto w-full">
-          <table className="w-full text-left min-w-[700px]">
+          <table className="w-full  text-left min-w-[700px]">
             <thead>
               <tr className="border-b border-gray-100">
                 <th className="px-5 py-4 text-[12px] font-bold text-gray-600 uppercase tracking-widest w-1/4">
@@ -231,7 +231,7 @@ const Notifications = () => {
       </section>
 
       {/* Right Panel: Sidebars */}
-      <aside className="w-full lg:w-[320px] xl:w-[360px] flex flex-col gap-6 shrink-0">
+      <aside className="w-full lg:w-full flex flex-col lg:flex-row gap-6 shrink-0">
         {/* Template Preview */}
         <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm flex flex-col h-full">
           <Typography
@@ -303,7 +303,7 @@ const Notifications = () => {
           </Typography>
         </section>
       </aside>
-    </>
+    </div>
   );
 };
 
