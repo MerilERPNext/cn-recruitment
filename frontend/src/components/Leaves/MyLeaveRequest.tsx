@@ -228,18 +228,27 @@ const MyLeaveRequests = ({
             }
             columnSortConfig={COLUMN_SORT_CONFIG_MY_LEAVE_REQUEST}
           >
-            {currentEmployee?.name && (
-              <DataListView
-                queryKey="leave-requests"
-                customAPI={{
-                  method:
-                    "cn_leave_shift_managment.api.get_open_approval_todos",
-
-                  params: {
-                    doctype: "Leave Application",
-                    employee: currentEmployee?.name,
-                  },
-                }}
+            {/* Always render DataListView for UI consistency (filter bar + empty state). 
+                If no employee is linked, use a mock fetchFunction to safely return empty data. */}
+            <DataListView
+              queryKey="leave-requests"
+              customAPI={
+                currentEmployee?.name
+                  ? {
+                      method:
+                        "cn_leave_shift_managment.api.get_open_approval_todos",
+                      params: {
+                        doctype: "Leave Application",
+                        employee: currentEmployee?.name,
+                      },
+                    }
+                  : undefined
+              }
+              fetchFunction={
+                !currentEmployee?.name
+                  ? async () => ({ message: [], data: [] } as any)
+                  : undefined
+              }
                 ItemComponent={(props: { item: MyLeaveRequestType }) => (
                   <EmpLeaveRequestCard
                     data={props.item}
@@ -271,7 +280,6 @@ const MyLeaveRequests = ({
                 loadMorePagination={false}
                 showPagination={true}
               />
-            )}
           </CardTable>
         )}
       </div>
