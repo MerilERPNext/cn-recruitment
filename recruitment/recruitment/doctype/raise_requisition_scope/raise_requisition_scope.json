@@ -1,0 +1,92 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:configuration_name",
+ "creation": "2026-07-02 10:00:00.000000",
+ "description": "Specify the groups of Employees (via User Assignments) who can raise Requisitions, and optionally restrict raising Requisitions to specific reporting levels / scopes. Create one record per Employees+Scope pairing.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "configuration_name",
+  "intro_html",
+  "employees_section",
+  "employees_allowed_to_raise_requisitions",
+  "scope_section",
+  "scope_of_raising_requisitions"
+ ],
+ "fields": [
+  {
+   "description": "A label for this configuration (e.g. \"Org-wide Hiring Managers\", \"Sales Dept Leads\").",
+   "fieldname": "configuration_name",
+   "fieldtype": "Data",
+   "label": "Configuration Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "intro_html",
+   "fieldtype": "HTML",
+   "options": "<div class=\"text-muted\" style=\"padding:8px 0\">Each record pairs a group of Employees (who may raise requisitions) with the scope within which they may raise. Add more records for different Employees+Scope combinations. When <b>no</b> record configures any Employees, every user may raise requisitions.</div>"
+  },
+  {
+   "fieldname": "employees_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Configure which employees are allowed to raise requisitions using User Assignment attributes.",
+   "fieldname": "employees_allowed_to_raise_requisitions",
+   "fieldtype": "Table MultiSelect",
+   "label": "Employees Allowed to Raise Requisitions",
+   "options": "Raise Requisition Allowed Assignment"
+  },
+  {
+   "fieldname": "scope_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Define the departments, hierarchies, or assignments within which the selected users can raise requisitions. If multiple requisition scopes are satisfied for an employee, only the first one will be considered. Leave empty for organization-wide scope.",
+   "fieldname": "scope_of_raising_requisitions",
+   "fieldtype": "Table MultiSelect",
+   "label": "Scope of Raising Requisitions",
+   "options": "Raise Requisition Scope Assignment"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-07-02 11:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Raise Requisition Scope",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "HR User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "configuration_name"
+}

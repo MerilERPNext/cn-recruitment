@@ -39,6 +39,7 @@ import {
 import toast from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
 import FrappeAPI from "../../utils/frappeAPI";
+import { requisitionService } from "../../services/requisitionService";
 import { useQueryClient } from "@tanstack/react-query";
 import { Edit, X, FileText, Loader2 } from "lucide-react";
 import { IoMdCloudUpload } from "react-icons/io";
@@ -654,6 +655,28 @@ const RequisitionForm = () => {
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // Gate guard for direct navigation to the New Requisition URL (bypassing the
+  // "Raise Requisition Request" button check). Editing an existing requisition
+  // is always allowed; only NEW creation is gated. The server before_insert
+  // hook stays the authoritative block — this is purely for a clean UX.
+  useEffect(() => {
+    if (isEditMode) return;
+    let cancelled = false;
+    (async () => {
+      const res = await requisitionService.checkCanRaiseRequisition();
+      if (!cancelled && !res.allowed) {
+        toast.error(
+          res.reason || "You are not permitted to raise requisitions.",
+          { duration: 6000 }
+        );
+        navigate("/webapp/recruitment/requisition");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditMode, navigate]);
 
   useEffect(() => {
     let cancelled = false;

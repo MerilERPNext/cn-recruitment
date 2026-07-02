@@ -4,6 +4,7 @@ from recruitment.api.candidate_portal import (
     _compute_candidate_field_counts,
     _get_active_pre_release,
     _get_onboarding_portal_rows,
+    _iter_onboarding_contact_users,
 )
 
 DOCTYPENAME = "Employee Onboarding"
@@ -120,19 +121,30 @@ def get_dashboard(email):
             onboarding_stage = "Onboarding Pending"
 
         # ── Key Contacts ──────────────────────────────────────────────────────
-        key_contacts = frappe.get_all(
-            "Employee Key Contact",
-            filters={"parent": row.name, "parenttype": DOCTYPENAME},
-            fields=["name", "employee", "role", "email", "phone_number", "idx"],
-            order_by="idx asc",
-        )
-
-        for contact in key_contacts:
-            contact["employee_name"] = (
-                frappe.db.get_value("Employee", contact["employee"], "employee_name")
-                if contact.get("employee")
-                else None
-            )
+        # Sourced from the Onboarding Setup fields (Onboarding Buddy / Teammates /
+        # Manager) instead of a dedicated child table. Response shape is unchanged
+        # so the UI keeps rendering the same cards.
+        key_contacts = []
+        seen_contacts = set()
+        for user_id, role_label in _iter_onboarding_contact_users(onboarding_doc):
+            employee = frappe.db.get_value("Employee", {"user_id": user_id}, "name")
+            if not employee or (employee, role_label) in seen_contacts:
+                continue
+            seen_contacts.add((employee, role_label))
+            emp = frappe.db.get_value(
+                "Employee", employee,
+                ["employee_name", "company_email", "custom_office_mobile_no"],
+                as_dict=True,
+            ) or {}
+            key_contacts.append({
+                "name": f"{role_label}-{employee}",
+                "employee": employee,
+                "role": role_label,
+                "email": emp.get("company_email"),
+                "phone_number": emp.get("custom_office_mobile_no"),
+                "idx": len(key_contacts) + 1,
+                "employee_name": emp.get("employee_name"),
+            })
 
         # ── Work Location ─────────────────────────────────────────────────────
         work_location_details = None
