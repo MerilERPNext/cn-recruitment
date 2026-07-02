@@ -143,8 +143,24 @@ const TicketCloseModal: React.FC<TicketCloseModalProps> = ({
     unknown
   > | null>(null);
 
+  // Reset state when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setConfirmAction("no");
+      setExitFormSubmission(null);
+      setFeedbackFormSubmission(null);
+      setExitFormAttachment([]);
+      setFeedbackFormAttachment([]);
+      setExitFormJson(null);
+      setFeedbackFormJson(null);
+      setIsExitFormValid(true);
+      setIsFeedbackFormValid(true);
+    }
+  }, [isOpen]);
+
   // Parse exit form JSON
   useEffect(() => {
+    if (!isOpen) return;
     if (
       !ticket?.custom_category ||
       !ticket?.custom_sub_category ||
@@ -160,10 +176,11 @@ const TicketCloseModal: React.FC<TicketCloseModalProps> = ({
       (comp) => !(comp.type === "button" && comp.action === "submit"),
     );
     setExitFormJson({ display: "form", components: filteredComponents });
-  }, [exitFormJsonData, ticket?.custom_category, ticket?.custom_sub_category]);
+  }, [isOpen, exitFormJsonData, ticket?.custom_category, ticket?.custom_sub_category]);
 
   // Parse feedback form JSON
   useEffect(() => {
+    if (!isOpen) return;
     if (
       !ticket?.custom_category ||
       !ticket?.custom_sub_category ||
@@ -180,21 +197,11 @@ const TicketCloseModal: React.FC<TicketCloseModalProps> = ({
     );
     setFeedbackFormJson({ display: "form", components: filteredComponents });
   }, [
+    isOpen,
     feedbackFormJsonData,
     ticket?.custom_category,
     ticket?.custom_sub_category,
   ]);
-
-  // Reset state when modal opens/closes
-  useEffect(() => {
-    if (isOpen) {
-      setConfirmAction("no");
-      setExitFormSubmission(null);
-      setFeedbackFormSubmission(null);
-      setExitFormAttachment([]);
-      setFeedbackFormAttachment([]);
-    }
-  }, [isOpen]);
 
   const handleFeedbackFormChange = (submission: {
     isValid: boolean;

@@ -317,7 +317,6 @@ const TicketDetailView: React.FC = () => {
   // At this point, we know ticket is loaded and user is an HD Agent
 
   const isSending = sendEmailMutation.isPending;
-  // const isClosing = closeFlow.isProcessing;
   const isTicketClosed = ticket.status === "Closed" || ticket.status === "Resolved";
 
   // Resolution content component

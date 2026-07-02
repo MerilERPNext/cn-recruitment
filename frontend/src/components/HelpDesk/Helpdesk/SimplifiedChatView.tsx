@@ -754,10 +754,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     }
   };
 
-  // Handle accept closure (for Resolved tickets) — uses centralized close flow
-  // const handleAcceptClosure = () => {
-  //   closeFlow.initiateClose(ticket);
-  // };
 
   const handleRevoke = async () => {
     try {

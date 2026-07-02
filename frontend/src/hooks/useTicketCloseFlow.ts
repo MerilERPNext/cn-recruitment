@@ -16,6 +16,7 @@
  *   - Toast notifications
  */
 import { useCallback, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useCloseTicket,
   useRequestClosure,
@@ -88,6 +89,7 @@ const DEFAULT_RESOLUTION = "resolved";
 export const useTicketCloseFlow = ({
   currentUserEmail,
 }: TicketCloseFlowOptions): TicketCloseFlowReturn => {
+  const queryClient = useQueryClient();
   const [modalState, setModalState] = useState<CloseFlowModalState>({
     isOpen: false,
     ticket: null,
@@ -180,11 +182,15 @@ export const useTicketCloseFlow = ({
           return;
         }
 
+        // Deep clone submissions to avoid mutating the original state in place
+        const clonedExitSubmission = exitFormSubmission ? JSON.parse(JSON.stringify(exitFormSubmission)) : null;
+        const clonedFeedbackSubmission = feedbackFormSubmission ? JSON.parse(JSON.stringify(feedbackFormSubmission)) : null;
+
         // Upload exit form files
         if (exitAttachments && exitAttachments.length > 0) {
           await uploadFormFiles(
             exitAttachments,
-            exitFormSubmission,
+            clonedExitSubmission,
             ticket.name,
             "exit form",
           );
@@ -194,7 +200,7 @@ export const useTicketCloseFlow = ({
         if (feedbackAttachments && feedbackAttachments.length > 0) {
           await uploadFormFiles(
             feedbackAttachments,
-            feedbackFormSubmission,
+            clonedFeedbackSubmission,
             ticket.name,
             "feedback form",
           );
@@ -204,11 +210,11 @@ export const useTicketCloseFlow = ({
           await closeTicketMutation.mutateAsync({
             ticketId: ticket.name,
             resolutionDetails: DEFAULT_RESOLUTION,
-            closingFormData: exitFormSubmission
-              ? JSON.stringify(exitFormSubmission)
+            closingFormData: clonedExitSubmission
+              ? JSON.stringify(clonedExitSubmission)
               : undefined,
-            feedbackFormData: feedbackFormSubmission
-              ? JSON.stringify(feedbackFormSubmission)
+            feedbackFormData: clonedFeedbackSubmission
+              ? JSON.stringify(clonedFeedbackSubmission)
               : undefined,
           });
           toast.success("Ticket resolved successfully");
@@ -218,11 +224,11 @@ export const useTicketCloseFlow = ({
             ticketId: ticket.name,
             resolutionDetails:
               ticket.resolution_details || DEFAULT_RESOLUTION,
-            closingFormData: exitFormSubmission
-              ? JSON.stringify(exitFormSubmission)
+            closingFormData: clonedExitSubmission
+              ? JSON.stringify(clonedExitSubmission)
               : undefined,
-            feedbackFormData: feedbackFormSubmission
-              ? JSON.stringify(feedbackFormSubmission)
+            feedbackFormData: clonedFeedbackSubmission
+              ? JSON.stringify(clonedFeedbackSubmission)
               : undefined,
           });
           toast.success("Ticket closed successfully");
@@ -266,16 +272,27 @@ export const useTicketCloseFlow = ({
         return;
       }
 
+      if (!ticket.custom_category || !ticket.custom_sub_category) {
+        await executeCloseOrResolve(ticket, mode);
+        return;
+      }
+
       try {
         show("Checking requirements...");
         const [exitFormRes, feedbackFormRes] = await Promise.all([
-          FrappeAPI.callMethod("pw_helpdesk.customizations.api.ticket.get_exit_form_json", {
-            category: ticket.custom_category,
-            sub_category: ticket.custom_sub_category,
+          queryClient.fetchQuery({
+            queryKey: ["hd-exit-form-json", ticket.custom_category, ticket.custom_sub_category],
+            queryFn: () => FrappeAPI.callMethod("pw_helpdesk.customizations.api.ticket.get_exit_form_json", {
+              category: ticket.custom_category,
+              sub_category: ticket.custom_sub_category,
+            })
           }).catch(() => null),
-          FrappeAPI.callMethod("pw_helpdesk.customizations.api.ticket.get_feedback_form_json", {
-            category: ticket.custom_category,
-            sub_category: ticket.custom_sub_category,
+          queryClient.fetchQuery({
+            queryKey: ["hd-feedback-form-json", ticket.custom_category, ticket.custom_sub_category],
+            queryFn: () => FrappeAPI.callMethod("pw_helpdesk.customizations.api.ticket.get_feedback_form_json", {
+              category: ticket.custom_category,
+              sub_category: ticket.custom_sub_category,
+            })
           }).catch(() => null),
         ]);
         
@@ -313,16 +330,26 @@ export const useTicketCloseFlow = ({
    */
   const initiateResolve = useCallback(
     async (ticket: CloseFlowTicket) => {
+      if (!ticket.custom_category || !ticket.custom_sub_category) {
+        await executeCloseOrResolve(ticket, "resolve");
+        return;
+      }
       try {
         show("Checking requirements...");
         const [exitFormRes, feedbackFormRes] = await Promise.all([
-          FrappeAPI.callMethod("pw_helpdesk.customizations.api.ticket.get_exit_form_json", {
-            category: ticket.custom_category,
-            sub_category: ticket.custom_sub_category,
+          queryClient.fetchQuery({
+            queryKey: ["hd-exit-form-json", ticket.custom_category, ticket.custom_sub_category],
+            queryFn: () => FrappeAPI.callMethod("pw_helpdesk.customizations.api.ticket.get_exit_form_json", {
+              category: ticket.custom_category,
+              sub_category: ticket.custom_sub_category,
+            })
           }).catch(() => null),
-          FrappeAPI.callMethod("pw_helpdesk.customizations.api.ticket.get_feedback_form_json", {
-            category: ticket.custom_category,
-            sub_category: ticket.custom_sub_category,
+          queryClient.fetchQuery({
+            queryKey: ["hd-feedback-form-json", ticket.custom_category, ticket.custom_sub_category],
+            queryFn: () => FrappeAPI.callMethod("pw_helpdesk.customizations.api.ticket.get_feedback_form_json", {
+              category: ticket.custom_category,
+              sub_category: ticket.custom_sub_category,
+            })
           }).catch(() => null),
         ]);
         
