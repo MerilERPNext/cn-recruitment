@@ -559,3 +559,18 @@ export interface BulkAttendanceAdjustmentResponse {
   ],
   "total_requests": number
 }
+
+export interface TeamStatusRecord {
+  date: string;
+  status: string;
+  working_hours: number | null;
+  leave_type: string;
+  holiday_name: string;
+}
+
+export interface TeamStatusEmployee {
+  employee: string;
+  employee_name: string;
+  image: string | null;
+  records: TeamStatusRecord[];
+}

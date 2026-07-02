@@ -243,6 +243,10 @@ const TeamLeaveRequest = lazyWithRetry(
   () => import("./components/Leaves/TeamLeaveRequest"),
   "TeamLeaveRequest",
 );
+const LeaveHistory = lazyWithRetry(
+  () => import("./components/Leaves/LeaveHistory"),
+  "LeaveHistory",
+);
 const AttendanceSummary = lazyWithRetry(
   () => import("./components/Attendance/AttendanceSummary"),
   "AttendanceSummary",
@@ -266,6 +270,10 @@ const EmployeeAttendance = lazyWithRetry(
 const TeamAttendance = lazyWithRetry(
   () => import("./components/Attendance/Team/TeamAttendance"),
   "TeamAttendance",
+);
+const TeamStatus = lazyWithRetry(
+  () => import("./components/Attendance/Team/TeamStatus"),
+  "TeamStatus",
 );
 const AttendanceRequestFormV2 = lazyWithRetry(
   () =>
@@ -1170,6 +1178,11 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Team Attendance",
       },
       {
+        path: "team-status",
+        element: <TeamStatus />,
+        permissionKey: "Team Attendance",
+      },
+      {
         path: "team-attendance",
         element: <TeamAttendance />,
         permissionKey: "Team Attendance",
@@ -1253,6 +1266,11 @@ export const routesConfig: AppRoute[] = [
         path: "compensatory-request",
         element: <CompensatoryRequest />,
         permissionKey: "Compensatory",
+      },
+      {
+        path: "leaves/history",
+        element: <LeaveHistory />,
+        permissionKey: "My Requests",
       },
       {
         path: "request",

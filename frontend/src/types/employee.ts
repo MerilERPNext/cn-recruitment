@@ -401,6 +401,8 @@ export interface EmployeeSupplementary {
   employment_types?: EmploymentTypes[];
   employee_roles?: EmployeeRole[];
   cost_centers?: EmployeeCostCenter[];
+  company_name?: string;
+  current_address?: string;
 }
 
 export interface Employee extends EmployeeFromAPI, EmployeeSupplementary { }
@@ -517,6 +519,8 @@ export interface EmployeeIdCard {
   employee_number?: string;
   contact?: string;
   email?: string;
+  blood_group?: string;
+  company_name?: string;
 }
 
 // Employee list item for search/selection

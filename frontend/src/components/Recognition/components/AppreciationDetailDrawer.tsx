@@ -155,7 +155,7 @@ const AppreciationDetailDrawer: React.FC<Props> = ({
                       className="mt-3 flex items-center gap-2"
                     >
                       <span
-                        className={`relative h-5 w-9 rounded-full transition-colors ${
+                        className={`relative h-5 w-9 rounded-xl transition-colors ${
                           hideNote ? "bg-primary" : "bg-gray-300"
                         }`}
                       >

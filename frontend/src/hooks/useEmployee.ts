@@ -127,6 +127,9 @@ export const DEFAULT_EMPLOYEE_FIELDS = [
   "final_confirmation_date",
   "custom_dotted_line_manager",
   "dotted_manager_member_id",
+  "blood_group",
+  "custom_emergency_blood_group",
+  "company_name",
 ] as const;
 
 export interface EmployeeDetilsType {

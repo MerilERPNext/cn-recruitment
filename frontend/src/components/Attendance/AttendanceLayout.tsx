@@ -74,9 +74,15 @@ const AttendanceLayoutContent: React.FC = () => {
     };
   }, [showActionsDropdown]);
 
-  const tabs: Tab[] = useMemo(() => {
+  type AttendanceTab = Tab & {
+    permissionKey: string;
+    mobileOnly?: boolean;
+    desktopOnly?: boolean;
+  };
+
+  const tabs: AttendanceTab[] = useMemo(() => {
     if (permittedPages && permittedPages?.length > 0) {
-      const tabList = [
+      const tabList: AttendanceTab[] = [
         {
           label: "Attendance Summary",
           key: "summary",
@@ -88,39 +94,53 @@ const AttendanceLayoutContent: React.FC = () => {
           permissionKey: "My Attendance",
         },
         {
+          label: "Team Status",
+          key: "team-status",
+          permissionKey: "Team Attendance",
+          mobileOnly: true,
+        },
+        {
           label: "Team Attendance",
           key: "team-attendance",
           permissionKey: "Team Attendance",
+          desktopOnly: true,
         },
         {
           label: "My Requests",
           key: "attendance-request",
           permissionKey: "My Requests",
+          desktopOnly: true,
         },
         {
           label: "Team Requests",
           key: "team-attendance-requests",
           permissionKey: "Team Requests",
+          desktopOnly: true,
         },
         {
           label: "Planned Overtime",
           key: "my-overtime-requests",
           permissionKey: "Planned Overtime",
+          desktopOnly: true,
         },
         {
           label: "Team Overtime",
           key: "team-overtime-requests",
           permissionKey: "Team Overtime",
+          desktopOnly: true,
         },
       ];
-      // return tabList
-      return tabList.filter((tab) =>
-        permittedPages?.includes(tab?.permissionKey),
-      );
+      return tabList
+        .filter((tab) => permittedPages?.includes(tab.permissionKey))
+        .filter((tab) => {
+          if (tab.mobileOnly) return !isDesktop;
+          if (tab.desktopOnly) return isDesktop;
+          return true;
+        });
     } else {
       return [];
     }
-  }, [permittedPages]);
+  }, [permittedPages, isDesktop]);
 
   const calendarSubTabs = useMemo(
     () => [{ label: "My Attendance Details", key: "emp-attendance" }],
