@@ -145,7 +145,7 @@ const WizardShell = ({
             </Typography>
           </div>
 
-          <div className="flex snap-x gap-2 overflow-x-scroll scrollbar-visible lg:scrollbar-hide px-3 pb-3 [-webkit-overflow-scrolling:touch] lg:block lg:min-h-0 lg:flex-1 lg:space-y-2 lg:overflow-y-auto lg:px-3 lg:pt-2">
+          <div className="flex snap-x gap-2 overflow-x-scroll lg:overflow-x-hidden lg:scrollbar-hide px-3 pb-3 [-webkit-overflow-scrolling:touch] lg:block lg:min-h-0 lg:flex-1 lg:space-y-2 lg:overflow-y-auto lg:px-3 lg:pt-2">
             {data.steps.map((step, index) => {
               const active = step.id === data.activeStepId;
               const complete = index < activeStepIndex;
