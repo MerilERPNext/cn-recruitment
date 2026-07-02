@@ -601,6 +601,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           initialEditData={editItem ? {
             employee_role: (editItem as unknown as EmployeeRole).employee_role?.id || "",
             start_date: editItem.from_date,
+            end_date: editItem.to_date,
             // Row name lets the backend edit THIS line in place (incl. start_date)
             // instead of appending a duplicate when the date changes.
             employee_role_row_name: (editItem as unknown as EmployeeRole).employee_role?.row_name,
