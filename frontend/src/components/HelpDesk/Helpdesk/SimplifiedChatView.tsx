@@ -80,7 +80,7 @@ const parseQuotedContent = (htmlContent: string): ParsedMessage => {
     // Fallback for older tickets lacking the .attachments class
     if (!attachmentsDiv) {
       const divs = Array.from(doc.querySelectorAll('div'));
-      legacyAttachmentsTitle = divs.find(d => d.innerHTML.includes('<strong>Attachments:</strong>')) || null;
+      legacyAttachmentsTitle = divs.find(d => d.textContent?.trim() === 'Attachments:') || null;
       if (legacyAttachmentsTitle && legacyAttachmentsTitle.nextElementSibling?.tagName.toLowerCase() === 'ul') {
         legacyAttachmentsUl = legacyAttachmentsTitle.nextElementSibling;
       }
@@ -834,8 +834,16 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     const msgs: SimpleChatMessage[] = [];
     const ticketCreationTime = new Date(ticket.creation).getTime();
 
+    // XSS-safe fallback: escape ticket.subject before injecting into HTML
+    const escapedSubject = (ticket.subject || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
     // Parse the original description to extract embedded attachments
-    const parsedDescription = parseQuotedContent(ticket.description || `<p>${ticket.subject}</p>`);
+    const parsedDescription = parseQuotedContent(ticket.description || "<p>" + escapedSubject + "</p>");
 
     // Add original request as first message
     msgs.push({
@@ -864,11 +872,14 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       // Parse quoted content from the message
       const parsed = parseQuotedContent(comm.content || '');
 
-      // Combine real attachments with extracted attachments from HTML
+      // Combine real attachments with extracted attachments, de-duped by file_url
       const combinedAttachments = [
         ...(comm.attachments || []),
         ...(parsed.extractedAttachments || [])
-      ];
+      ].filter(
+        (attachment, index, self) =>
+          self.findIndex((a) => a.file_url === attachment.file_url) === index
+      );
 
       msgs.push({
         id: comm.name,
