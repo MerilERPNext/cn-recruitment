@@ -1158,7 +1158,10 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   // Handle accept closure (for Resolved tickets)
   const handleAcceptClosure = async () => {
     try {
-      await closeResolvedMutation.mutateAsync({ ticketId: ticket.name });
+      await closeTicketMutation.mutateAsync({
+        ticketId: ticket.name,
+        resolutionDetails: ticket?.resolution_details || "resolved",
+      });
       toast.success("Ticket closed successfully");
     } catch {
       toast.error("Failed to close ticket");
