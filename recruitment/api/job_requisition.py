@@ -2645,6 +2645,36 @@ def _enforce_requested_by_lock(doc, settings):
         )
 
 
+def _company_group_members(company):
+    """Companies in the same corporate group as `company`, via ERPNext's Company
+    tree (parent_company / is_group / nested-set lft-rgt).
+
+    Returns a set that always includes `company` itself. When the company has no
+    group parent, or the tree isn't set up, it falls back to just ``{company}``
+    so the "Same Group Company" filter degrades to the company itself rather than
+    erroring."""
+    if not company:
+        return set()
+    members = {company}
+    try:
+        parent = frappe.db.get_value("Company", company, "parent_company")
+        if not parent:
+            return members
+        grp = frappe.db.get_value("Company", parent, ["lft", "rgt"], as_dict=True)
+        if grp and grp.get("lft") is not None and grp.get("rgt") is not None:
+            members.update(
+                frappe.get_all(
+                    "Company",
+                    filters={"lft": [">=", grp.lft], "rgt": ["<=", grp.rgt]},
+                    pluck="name",
+                )
+            )
+    except Exception:
+        # Never let group resolution break the picker — restrict to the company.
+        pass
+    return members
+
+
 @frappe.whitelist()
 def get_replacement_employee_options(
     search_text=None, query=None, txt=None, limit=20, include=None,
