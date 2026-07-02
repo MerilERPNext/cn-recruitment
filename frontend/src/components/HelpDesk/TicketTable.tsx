@@ -525,10 +525,10 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
   };
 
   return (
-    <BottomDrawer isOpen={isOpen} onClose={onClose}>
-      <div className="flex flex-col h-[90vh] -mx-4 -mb-6">
+    <BottomDrawer isOpen={isOpen} onClose={onClose} className="max-sm:h-[100dvh] max-sm:rounded-none max-sm:pt-0">
+      <div className="flex flex-col h-full -mx-4 -mb-6">
         {/* Header */}
-        <div className="flex flex-col gap-3 px-4 pt-3 pb-3 bg-white sticky top-0 z-10 rounded-t-2xl border-b border-gray-100">
+        <div className="flex flex-col gap-3 px-4 pt-3 pb-3 bg-white sticky top-0 z-10 max-sm:rounded-none rounded-t-2xl border-b border-gray-100">
           {/* Title Row */}
           <div className="flex justify-between items-start gap-3">
             <div className="flex gap-3 items-center flex-1 min-w-0">
