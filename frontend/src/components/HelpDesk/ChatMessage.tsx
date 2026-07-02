@@ -110,7 +110,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
 
   // Simple avatar component
   const Avatar = ({ size = "md" }: { size?: "sm" | "md" }) => {
-    const sizeClasses = size === "sm" ? "w-8 h-8 text-xs" : "w-10 h-10 text-sm";
+    const sizeClasses = size === "sm" ? "w-8 h-8 text-xs" : "w-9 h-9 text-sm";
 
     return (
       <div className="flex-shrink-0">
@@ -118,11 +118,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           <img
             src={sender.avatar}
             alt={sender.name}
-            className={`${sizeClasses} rounded-xl object-cover`}
+            className={`${sizeClasses} rounded-full object-cover ring-2 ring-white shadow-sm`}
           />
         ) : (
           <div
-            className={`${sizeClasses} rounded-xl flex items-center justify-center font-medium ${isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+            className={`${sizeClasses} rounded-full flex items-center justify-center font-semibold shadow-sm ${isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-600"
               }`}
           >
             {getInitials(sender.name)}
@@ -188,58 +188,58 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   }
 
   if (isCurrentUser) {
-    // Right-aligned message (current user) - blue gradient
+    // Right-aligned message (current user) - blue solid
     return (
-      <div className="flex justify-end gap-3 mb-6">
+      <div className="flex justify-end items-end gap-2.5 mb-5">
         <div className="flex flex-col items-end max-w-[75%]">
           {/* Type badge */}
           <div className="mb-2">{getTypeBadge()}</div>
 
           {/* Message bubble */}
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md px-5 py-4">
+          <div className="bg-blue-500 text-white rounded-2xl rounded-br-sm px-4 py-3 shadow-sm shadow-blue-200">
             <div
               onClick={handleContentClick}
-              className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer"
+              className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer leading-relaxed"
               dangerouslySetInnerHTML={createMarkup(content)}
             />
             <AttachmentList />
           </div>
 
           {/* Timestamp */}
-          <span className="text-xs text-gray-400 mt-2 mr-1">{formatTime(timestamp)}</span>
+          <span className="text-[11px] text-gray-400 mt-1.5 mr-1">{formatTime(timestamp)}</span>
         </div>
         <Avatar />
       </div>
     );
   }
 
-  // Left-aligned message (other users) - warm cream color
+  // Left-aligned message (other users) - clean white with shadow
   return (
-    <div className="flex justify-start gap-3 mb-6">
+    <div className="flex justify-start items-end gap-2.5 mb-5">
       <Avatar />
 
       <div className="flex flex-col items-start max-w-[75%]">
         {/* Type badge */}
         <div className="mb-2">{getTypeBadge()}</div>
 
-        {/* Message bubble - warm cream/beige color */}
-        <div className="bg-[#F5F0E8] rounded-2xl rounded-bl-md px-5 py-4">
+        {/* Message bubble - white with subtle shadow */}
+        <div className="bg-white rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm border border-gray-100">
           {/* Sender name */}
-          <div className="text-xs text-gray-500 mb-2 font-medium">
+          <div className="text-[11px] text-gray-400 mb-1.5 font-medium tracking-wide">
             {sender.name}
           </div>
 
           {/* Content */}
           <div
             onClick={handleContentClick}
-            className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer"
+            className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer leading-relaxed"
             dangerouslySetInnerHTML={createMarkup(content)}
           />
           <AttachmentList />
         </div>
 
         {/* Timestamp */}
-        <span className="text-xs text-gray-400 mt-2 ml-1">{formatTime(timestamp)}</span>
+        <span className="text-[11px] text-gray-400 mt-1.5 ml-1">{formatTime(timestamp)}</span>
       </div>
       {/* File Preview Modal */}
       {previewFile && (
