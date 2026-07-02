@@ -13,7 +13,11 @@ listing and submit so the frontend has a single place to call for Careers Page.
 
 import frappe
 
-from recruitment.api.candidate_auth import candidate_required, get_current_candidate
+from recruitment.api.candidate_auth import (
+	candidate_required,
+	enforce_candidate_identity,
+	get_current_candidate,
+)
 
 from . import _common
 
@@ -21,19 +25,39 @@ from . import _common
 CHANNEL = "careers"
 
 
+def _applied_openings(email, opening_names):
+	"""Set of opening names this candidate (by email) has already applied to.
+
+	One query for the whole page. `job_title` on Job Applicant is the Link to
+	Job Opening, so it holds the opening name."""
+	if not email or not opening_names:
+		return set()
+	return set(
+		frappe.get_all(
+			"Job Applicant",
+			filters={"email_id": email, "job_title": ["in", list(opening_names)]},
+			pluck="job_title",
+		)
+	)
+
+
 @candidate_required
-def list_openings(search_term=None, filters=None):
+def list_openings(search_term=None, filters=None, email=None):
 	"""List openings active on the Careers Page for the authenticated candidate.
 
 	`search_term` optionally does a free-text match on job code / title / labels.
 	`filters` is an optional dict (or JSON string) of {fieldname: value | [values]}
 	keyed by the configured Career Page Search Filter fields; only those fields are
-	honoured. Authentication is enforced via the `candidate_portal_session` cookie
+	honoured. `email` optionally scopes the "already applied" check — it must be the
+	authenticated candidate's own email (enforced), otherwise the session email is
+	used. Authentication is enforced via the `candidate_portal_session` cookie
 	(see `recruitment.api.candidate_auth.candidate_required`).
 
 	Returns ``{"columns": [...], "search_filters": [...], "openings": [...]}`` so
 	the frontend can render the card, the search bar and the filter section from a
-	single call. ``openings`` is the card list after search + filters are applied.
+	single call. Each opening carries ``"applied": true/false`` — true when this
+	candidate already created a Job Applicant for that opening, so the frontend can
+	disable re-applying.
 	"""
 	columns = _common.get_configured_columns(CHANNEL)
 	search_filters = _common.get_configured_search_filters()
@@ -50,6 +74,17 @@ def list_openings(search_term=None, filters=None):
 		and _common.card_matches_search(c, search_term, extra_keys=search_keys)
 		and _common.card_matches_filters(c, selected, search_filters)
 	]
+
+	# "Already applied" status. Use the candidate's own email — if the frontend
+	# passes one, it must match the authenticated session (no querying another
+	# candidate's application status).
+	check_email = (email or get_current_candidate() or "").strip().lower()
+	if email and check_email:
+		enforce_candidate_identity(email=check_email)
+	applied = _applied_openings(check_email, [c["name"] for c in openings])
+	for c in openings:
+		c["applied"] = c["name"] in applied
+
 	return {"columns": columns, "search_filters": search_filters, "openings": openings}
 
 
