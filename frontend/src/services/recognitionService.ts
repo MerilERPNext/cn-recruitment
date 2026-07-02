@@ -436,10 +436,13 @@ export type AppreciationProgramsResponse = {
 };
 
 // ─── Eligible programs (get_eligible_programs) ────────────────────────────────
+export type ProgramType = "Appreciation" | "Award";
+
 export type EligibleProgram = {
   program_name: string;
   program_title: string;
   program_description: string;
+  program_type?: ProgramType | null;
   program_logo?: string | null;
   start_date: string;
   end_date: string;
@@ -453,13 +456,18 @@ export type EligibleProgramsResponse = {
   eligible_programs: EligibleProgram[];
 };
 
-export const useEligiblePrograms = (employee?: string) => {
+// `programType` filters the list server-side: "Appreciation" (profile Appreciate)
+// or "Award" (active programs).
+export const useEligiblePrograms = (
+  employee?: string,
+  programType?: ProgramType,
+) => {
   return useQuery<EligibleProgramsResponse>({
-    queryKey: ["recognition", "eligible-programs", employee],
+    queryKey: ["recognition", "eligible-programs", employee, programType],
     queryFn: async () => {
       const response = await FrappeAPI.callMethod(
         "chatnext_work_connect.chatnext_work_connect.api.recognition_eligibility.get_eligible_programs",
-        { employee },
+        { employee, program_type: programType },
       );
       return response as EligibleProgramsResponse;
     },

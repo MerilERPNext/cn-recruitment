@@ -149,6 +149,54 @@ const STRUCTURAL_GRID_KEYS = new Set<string>([
   "vacancy_type",
 ]);
 
+// Fields that are ALWAYS auto-derived from the selected Designation
+// (Designation.custom_functional_area) — both the Basic Details field
+// (`custom_functional_area`) and the Position-row column (`functional_area`).
+// The dynamic layer forces them READ-ONLY and NOT mandatory so a backend
+// config can never make them editable or required.
+const AUTO_DERIVED_READONLY_FIELDS = new Set<string>([
+  "custom_functional_area",
+  "functional_area",
+]);
+
+// Backend fieldname → the dependency filter its option URL must carry and the
+// field it refreshes on. Keeps a generated Link field in sync with its parent:
+//   • Employment Type / Work Location filter by the selected company,
+//   • Functional Area filters by the selected designation.
+const LINK_FIELD_DEPENDENCIES: Record<string, { filter: string; on: string }> = {
+  custom_employment_type_link: {
+    filter: "&custom_company={{ data.company }}",
+    on: "company",
+  },
+  custom_location: {
+    filter: "&custom_company={{ data.company }}",
+    on: "company",
+  },
+  // Position child-table "Employee Type" column (Position Details.employee_type
+  // → Employment Type) — scope to the requisition's company.
+  employee_type: {
+    filter: "&custom_company={{ data.company }}",
+    on: "company",
+  },
+  custom_functional_area: {
+    filter: "&designation={{ data.designation }}",
+    on: "designation",
+  },
+};
+
+// Force a component to read-only + non-mandatory when its fieldname is one of
+// the auto-derived fields. Also strips the `required-field` marker class.
+function enforceAutoDerived(component: any, fieldname: string): any {
+  if (!AUTO_DERIVED_READONLY_FIELDS.has(fieldname)) return component;
+  const next: any = { ...component, disabled: true };
+  next.validate = { ...(next.validate || {}), required: false };
+  if (typeof next.customClass === "string") {
+    const cls = next.customClass.replace(/\brequired-field\b/g, "").trim();
+    next.customClass = cls || undefined;
+  }
+  return next;
+}
+
 // ---------------------------------------------------------------------------
 // Flatten the config into a fast lookup: fieldname → BackendField, plus the set
 // of every fieldname that appears anywhere in the config (tabs + child_groups).
@@ -342,7 +390,7 @@ function filterGridColumns(
     if (renderedKeys.has(fieldname)) return;
     if (STRUCTURAL_GRID_KEYS.has(fieldname)) return;
     if (Array.isArray(field.nested_fields)) return;
-    const gen = generateComponent(field);
+    const gen = enforceAutoDerived(generateComponent(field), fieldname);
     // Inside a grid the required asterisk is drawn in the column header, so drop
     // the top-level `required-field` marker class (it would leak a `*` per row).
     delete gen.customClass;
@@ -367,6 +415,8 @@ export function gateRuleApplies(
   if (!flat) return true;
   const fieldname = KEY_TO_FIELDNAME[key];
   if (!fieldname) return true; // not backend-controlled → static behavior
+  // Auto-derived fields (Functional Area) are never gated.
+  if (AUTO_DERIVED_READONLY_FIELDS.has(fieldname)) return false;
   const field = flat.byFieldname.get(fieldname);
   if (!field) return flat.restrict ? false : true; // absent ⇒ hidden when restrict
   return Boolean(field.is_mandatory);
@@ -408,6 +458,8 @@ export function childFieldMandatory(
   staticDefault: boolean
 ): boolean {
   if (!flat) return staticDefault;
+  // Auto-derived columns (Functional Area) are never required.
+  if (AUTO_DERIVED_READONLY_FIELDS.has(fieldname)) return false;
   const cg = flat.childGroups?.[childGroupKey];
   if (!cg || !Array.isArray(cg.fields)) return staticDefault;
   const field = cg.fields.find((f: BackendField) => f.fieldname === fieldname);
@@ -483,7 +535,9 @@ function overrideComponent(
     }
   }
 
-  return next;
+  // Auto-derived fields (Functional Area) are always read-only + non-mandatory,
+  // regardless of the backend `is_mandatory` / `read_only` flags.
+  return enforceAutoDerived(next, field.fieldname);
 }
 
 // ---------------------------------------------------------------------------
@@ -586,6 +640,12 @@ function generateComponent(field: BackendField): any {
     validate: { required },
   };
 
+  // Company / Designation dependent Link fields must carry their dependency
+  // filter (and refresh when the parent changes) even when auto-generated —
+  // Employment Type & Work Location filter by company, Functional Area by
+  // designation. Mirrors the static schema so the behaviour is identical.
+  const dependency = LINK_FIELD_DEPENDENCIES[field.fieldname];
+
   switch (field.fieldtype) {
     case "Link":
       return {
@@ -594,13 +654,16 @@ function generateComponent(field: BackendField): any {
         placeholder: `Select ${field.label}`,
         dataSrc: "url",
         data: {
-          url: `/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=${field.options || ""}`,
+          url: `/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=${field.options || ""}${dependency?.filter || ""}`,
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
         valueProperty: "id",
         template: "<span>{{ item.label }}</span>",
         limit: 20,
+        ...(dependency
+          ? { refreshOn: dependency.on, clearOnRefresh: true }
+          : {}),
       };
 
     case "Select":
@@ -683,7 +746,7 @@ function extraComponentsForStep(
   });
 
   extras.sort((a, b) => (a.order || 0) - (b.order || 0));
-  return extras.map(generateComponent);
+  return extras.map((f) => enforceAutoDerived(generateComponent(f), f.fieldname));
 }
 
 // ---------------------------------------------------------------------------
@@ -890,6 +953,8 @@ export function requiredRulesForKnownTab(
     (section.fields || []).forEach((f) => {
       if (!f.is_mandatory) return;
       if (KNOWN_CHILD_GROUP_FIELDS.has(f.fieldname)) return;
+      // Functional Area is auto-derived (read-only) — never gate on it.
+      if (AUTO_DERIVED_READONLY_FIELDS.has(f.fieldname)) return;
       rules.push({ key: formKeyForFieldname(f.fieldname), label: f.label });
     })
   );
