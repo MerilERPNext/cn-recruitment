@@ -568,7 +568,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           return att;
         }),
       );
-
+      onCancel?.();
       // Use showToast so partial-success responses (some days created, some
       // failed) render separate success + error toasts automatically.
       errorResponseFormater(
