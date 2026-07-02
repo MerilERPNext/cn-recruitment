@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ReactNode, ReactElement } from "react";
 import Button from "../shared/atoms/Button";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 import {
   FlattenedConfig,
   BackendField,
@@ -434,12 +435,16 @@ export default function RequisitionReviewStep({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-base">
               {scalarFields.map((field) => {
                 const rf = resolveReviewField(field, formData);
+                const isDate =
+                  rf.fieldtype === "Date" || rf.fieldtype === "Datetime";
                 const display =
                   rf.fieldtype === "Check"
                     ? rf.value
                       ? "Yes"
                       : "No"
-                    : renderValue(rf.value);
+                    : isDate && rf.value
+                      ? formatToIndianDate(rf.value as string)
+                      : renderValue(rf.value);
                 return (
                   <FieldCell
                     key={rf.fieldname}
@@ -623,13 +628,13 @@ function StaticReviewSections({
   ];
 
   const job: { label: string; value: any; employeeId?: string }[] = [
-    { label: "Recruitment Start Date", value: formData.recruitment_start_date },
+    { label: "Recruitment Start Date", value: formatToIndianDate(formData.recruitment_start_date as string) },
     {
       label: "Hiring Lead",
       value: formData.hiring_lead_title ?? formData.hiring_lead,
       employeeId: formData.hiring_lead,
     },
-    { label: "Expected By Date", value: formData.expected_by },
+    { label: "Expected By Date", value: formatToIndianDate(formData.expected_by as string) },
     {
       label: "Employment Type",
       value: formData.employment_type_title ?? formData.employment_type,

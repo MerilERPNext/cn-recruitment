@@ -100,12 +100,16 @@ export const requisitionFormSchemas = {
       },
 
       {
+        // Functional Area is auto-derived from the selected Designation
+        // (Designation.custom_functional_area), so it is READ-ONLY and NOT
+        // mandatory. The value is populated by RequisitionForm when the
+        // designation changes.
         type: "select",
         key: "functional_area",
         label: "Functional Area",
-        placeholder: "Select Functional Area",
-        customClass: "required-field",
+        placeholder: "Auto-filled from Designation",
         input: true,
+        disabled: true,
         dataSrc: "url",
         data: {
           url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}&disabled=0',
@@ -115,8 +119,7 @@ export const requisitionFormSchemas = {
         valueProperty: "id",
         template: "<span>{{ item.label }}</span>",
         refreshOn: "designation",
-        validate: { required: true },
-        clearOnRefresh: true,
+        validate: { required: false },
         limit: 20,
 
       },
@@ -325,7 +328,7 @@ export const requisitionFormSchemas = {
                 type: "datetime",
                 key: "recruitment_start_date",
                 label: "Recruitment Start Date",
-                format: "yyyy-MM-dd",
+                format: "dd-MM-yyyy",
                 enableDate: true,
                 enableTime: false,
                 // Edit mode: keep the API's posting_date (mapped into
@@ -387,7 +390,7 @@ export const requisitionFormSchemas = {
                 key: "expected_by",
                 label: "Expected By Date",
                 customClass: "required-field",
-                format: "yyyy-MM-dd",
+                format: "dd-MM-yyyy",
                 validate: { required: true },
                 enableTime: false,
                 datePicker: { minDate: "moment()" },
@@ -408,13 +411,15 @@ export const requisitionFormSchemas = {
                 placeholder: "Select Employment Type",
                 dataSrc: "url",
                 data: {
-                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employment Type",
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employment Type&custom_company={{ data.company }}",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message.results",
                 valueProperty: "id",
                 template: "<span>{{ item.label }}</span>",
                 validate: { required: true },
+                refreshOn: "company",
+                clearOnRefresh: true,
                 limit: 20,
 
               },
@@ -440,13 +445,15 @@ export const requisitionFormSchemas = {
                 placeholder: "Select Branch",
                 dataSrc: "url",
                 data: {
-                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch",
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch&custom_company={{ data.company }}",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message.results",
                 valueProperty: "id",
                 template: "<span>{{ item.label }}</span>",
                 validate: { required: true },
+                refreshOn: "company",
+                clearOnRefresh: true,
                 limit: 20,
 
               },
@@ -574,6 +581,15 @@ export const requisitionFormSchemas = {
   },
   positionSelection: {
     components: [
+      // Info banner shown only above the Position Details section.
+      {
+        type: "htmlelement",
+        tag: "div",
+        className:
+          "flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 text-blue-800 px-3 py-2.5 mb-3 text-sm",
+        content:
+          '<i class="fa fa-info-circle mt-0.5 text-blue-500"></i><span><strong>Note:</strong> Create a separate requisition for each different work location. If multiple positions belong to the same location, they should be included within a single requisition.</span>',
+      },
       // NOTE: The Total / New / Replacement count inputs are rendered as plain
       // React inputs in RequisitionForm.tsx (currentStep === 2) to avoid the
       // form.io controlled-input override issue. They must NOT be duplicated as
@@ -624,22 +640,28 @@ export const requisitionFormSchemas = {
                 validateOn: "blur",
                 dataSrc: "url",
                 data: {
-                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch",
+                  // Scoped to the requisition's company (top-level `data.company`).
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch&custom_company={{ data.company }}",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 limit: 20,
                 selectValues: "message.results",
                 valueProperty: "id",
                 template: "<span>{{ item.label }}</span>",
+                refreshOn: "company",
+                clearOnRefresh: true,
                 validate: { required: true },
               },
               {
+                // Auto-derived from the requisition's Designation → every row
+                // mirrors the top-level Functional Area. Read-only, not
+                // mandatory; `calculateValue` copies the requisition value into
+                // each position row automatically.
                 type: "select",
                 key: "functional_area",
                 label: "Functional Area",
-                placeholder: "Select Area",
-                // Validate only after the field is touched (see note above).
-                validateOn: "blur",
+                placeholder: "Auto-filled from Designation",
+                disabled: true,
                 dataSrc: "url",
                 data: {
                   url: '/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Functional Area&designation={{ data.designation }}&disabled=0',
@@ -649,7 +671,7 @@ export const requisitionFormSchemas = {
                 valueProperty: "id",
                 limit: 20,
                 template: "<span>{{ item.label }}</span>",
-                validate: { required: true },
+                validate: { required: false },
               },
               {
                 type: "select",
