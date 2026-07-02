@@ -137,22 +137,25 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     if (!attachments || attachments.length === 0) return null;
 
     return (
-      <div className="mt-3 pt-3 border-t border-gray-200/30 flex flex-wrap gap-2">
+      <div className={`mt-3 pt-3 border-t flex flex-wrap gap-2 ${isCurrentUser ? "border-white/20" : "border-gray-100"}`}>
         {attachments.map((attachment, index) => {
           const { category, iconColor, bgColor } = getFileTypeInfo(attachment.file_name);
           return (
             <button
               key={index}
               onClick={() => setPreviewFile({ url: attachment.file_url, name: attachment.file_name })}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border ${isCurrentUser
-                ? "bg-blue-400/20 border-blue-400/30 text-blue-50 hover:bg-blue-400/30 shadow-sm shadow-blue-500/10"
-                : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
-                }`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border shadow-sm ${
+                isCurrentUser
+                  ? "bg-white/15 border-white/20 text-white hover:bg-white/25"
+                  : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+              }`}
             >
-              <div className={`w-6 h-6 rounded flex items-center justify-center ${isCurrentUser ? "bg-blue-500/30" : bgColor}`}>
-                <FileTypeIcon category={category} className={`w-3.5 h-3.5 ${isCurrentUser ? "text-white" : iconColor}`} />
+              <div className={`w-6 h-6 rounded flex items-center justify-center ${bgColor}`}>
+                <FileTypeIcon category={category} className={`w-3.5 h-3.5 ${iconColor}`} />
               </div>
-              <span className="truncate max-w-[150px] font-medium">{attachment.file_name}</span>
+              <span className={`truncate max-w-[150px] font-medium ${isCurrentUser ? "text-white" : "text-gray-700"}`}>
+                {attachment.file_name}
+              </span>
             </button>
           );
         })}

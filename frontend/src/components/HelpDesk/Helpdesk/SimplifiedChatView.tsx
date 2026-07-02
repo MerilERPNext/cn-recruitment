@@ -63,21 +63,59 @@ interface ParsedMessage {
   quotedContent: string | null;
   quotedSender: string | null;
   mainContent: string;
+  extractedAttachments?: { file_url: string; file_name: string }[];
 }
 
 const parseQuotedContent = (htmlContent: string): ParsedMessage => {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, 'text/html');
+    let extractedAttachments: { file_url: string; file_name: string }[] = [];
+
+    // Extract injected attachments div before looking for blockquotes
+    let attachmentsDiv = doc.querySelector('.attachments');
+    let legacyAttachmentsUl: Element | null = null;
+    let legacyAttachmentsTitle: Element | null = null;
+
+    // Fallback for older tickets lacking the .attachments class
+    if (!attachmentsDiv) {
+      const divs = Array.from(doc.querySelectorAll('div'));
+      legacyAttachmentsTitle = divs.find(d => d.innerHTML.includes('<strong>Attachments:</strong>')) || null;
+      if (legacyAttachmentsTitle && legacyAttachmentsTitle.nextElementSibling?.tagName.toLowerCase() === 'ul') {
+        legacyAttachmentsUl = legacyAttachmentsTitle.nextElementSibling;
+      }
+    }
+
+    if (attachmentsDiv || legacyAttachmentsUl) {
+      const targetContainer = attachmentsDiv || legacyAttachmentsUl;
+      const links = targetContainer?.querySelectorAll('a');
+      links?.forEach((link) => {
+        const file_url = link.getAttribute('href');
+        const file_name = link.textContent?.trim();
+        if (file_url && file_name) {
+          extractedAttachments.push({ file_url, file_name });
+        }
+      });
+
+      if (attachmentsDiv) {
+        const prev = attachmentsDiv.previousElementSibling;
+        if (prev && prev.tagName.toLowerCase() === 'br') prev.remove();
+        attachmentsDiv.remove();
+      } else if (legacyAttachmentsTitle && legacyAttachmentsUl) {
+        const prev = legacyAttachmentsTitle.previousElementSibling;
+        if (prev && prev.tagName.toLowerCase() === 'br') prev.remove();
+        legacyAttachmentsUl.remove();
+        legacyAttachmentsTitle.remove();
+      }
+    }
 
     // Find blockquote or gmail_quote or outlook reply markers
     const blockquote = doc.querySelector('blockquote, .gmail_quote, #appendonsend, .reply-to-content');
+    let quotedSender: string | null = null;
 
     if (blockquote) {
-      const quotedContent = blockquote.innerHTML;
 
       // Try to parse sender from "On [date], [name] wrote:" pattern
-      let quotedSender: string | null = null;
       const prevSibling = blockquote.previousElementSibling;
       if (prevSibling && prevSibling.textContent) {
         const match = prevSibling.textContent.match(/On .+?, (.+?) wrote:/);
@@ -93,17 +131,16 @@ const parseQuotedContent = (htmlContent: string): ParsedMessage => {
       if (prevSibling && prevSibling.textContent?.includes(' wrote:')) {
         prevSibling.remove();
       }
-
-      const mainContent = doc.body.innerHTML.trim();
-
-      return {
-        quotedContent: quotedContent.trim() || null,
-        quotedSender,
-        mainContent: mainContent || htmlContent
-      };
     }
 
-    return { quotedContent: null, quotedSender: null, mainContent: htmlContent };
+    const mainContent = doc.body.innerHTML.trim();
+
+    return {
+      quotedContent: blockquote ? blockquote.innerHTML.trim() || null : null,
+      quotedSender,
+      mainContent: mainContent || htmlContent,
+      extractedAttachments
+    };
   } catch {
     return { quotedContent: null, quotedSender: null, mainContent: htmlContent };
   }
@@ -591,7 +628,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({
   if (!attachments || attachments.length === 0) return null;
 
   return (
-    <div className="mt-3 pt-3 border-t border-gray-200/30 flex flex-wrap gap-2">
+    <div className={`mt-3 pt-3 border-t flex flex-wrap gap-2 ${isCurrentUser ? "border-white/20" : "border-gray-100"}`}>
       {attachments.map((attachment, index) => {
         const { category, iconColor, bgColor } = getFileTypeInfo(attachment.file_name);
         return (
@@ -600,21 +637,21 @@ const AttachmentList: React.FC<AttachmentListProps> = ({
             onClick={() =>
               onPreviewFile({ url: attachment.file_url, name: attachment.file_name })
             }
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border max-w-full ${isCurrentUser
-              ? "bg-blue-400/10 border-blue-400/20 text-blue-100 hover:bg-blue-400/20"
-              : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
-              }`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border max-w-full shadow-sm ${
+              isCurrentUser
+                ? "bg-white/15 border-white/20 text-white hover:bg-white/25"
+                : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+            }`}
           >
-            <div
-              className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${isCurrentUser ? "bg-blue-500/20" : bgColor
-                }`}
-            >
+            <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${bgColor}`}>
               <FileTypeIcon
                 category={category}
-                className={`w-3.5 h-3.5 ${isCurrentUser ? "text-blue-200" : iconColor}`}
+                className={`w-3.5 h-3.5 ${iconColor}`}
               />
             </div>
-            <span className="truncate max-w-[150px] font-medium">{attachment.file_name}</span>
+            <span className={`truncate max-w-[150px] font-medium ${isCurrentUser ? "text-white" : "text-gray-700"}`}>
+              {attachment.file_name}
+            </span>
           </button>
         );
       })}
@@ -797,10 +834,13 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     const msgs: SimpleChatMessage[] = [];
     const ticketCreationTime = new Date(ticket.creation).getTime();
 
+    // Parse the original description to extract embedded attachments
+    const parsedDescription = parseQuotedContent(ticket.description || `<p>${ticket.subject}</p>`);
+
     // Add original request as first message
     msgs.push({
       id: `${ticket.name}-original`,
-      content: ticket.description || `<p>${ticket.subject}</p>`,
+      content: parsedDescription.mainContent,
       sender: {
         name: ticket.contact?.name || ticket.raised_by,
         email: ticket.raised_by,
@@ -808,7 +848,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       },
       timestamp: new Date(ticket.creation),
       isCurrentUser: ticket.raised_by === currentUserEmail,
-      attachments: [],
+      attachments: parsedDescription.extractedAttachments || [],
     });
 
     // Add communications (emails) - skip the first one if it matches ticket creation time
@@ -824,6 +864,12 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       // Parse quoted content from the message
       const parsed = parseQuotedContent(comm.content || '');
 
+      // Combine real attachments with extracted attachments from HTML
+      const combinedAttachments = [
+        ...(comm.attachments || []),
+        ...(parsed.extractedAttachments || [])
+      ];
+
       msgs.push({
         id: comm.name,
         content: parsed.mainContent,
@@ -836,7 +882,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         },
         timestamp: new Date(comm.creation),
         isCurrentUser: comm.sender === currentUserEmail,
-        attachments: comm.attachments || [],
+        attachments: combinedAttachments,
       });
     });
 

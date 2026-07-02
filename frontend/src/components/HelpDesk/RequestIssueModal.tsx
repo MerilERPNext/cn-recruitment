@@ -345,7 +345,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
 
     // Attachments section
     if (files.length > 0) {
-      html += '<br/><div><strong>Attachments:</strong></div><ul>';
+      html += '<br/><div class="attachments"><strong>Attachments:</strong><ul>';
       files.forEach((file) => {
         const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.file_name);
         const escapedUrl = escapeHtml(file.file_url);
@@ -356,7 +356,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
           html += '<li><a href="' + escapedUrl + '" target="_blank">' + escapedName + '</a></li>';
         }
       });
-      html += '</ul>';
+      html += '</ul></div>';
     }
 
     return html;
