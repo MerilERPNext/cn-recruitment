@@ -1,11 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Calendar, ChevronRight, User } from "lucide-react";
+import { Calendar, ChevronRight } from "lucide-react";
 import { useGetLeaveHistory } from "../../hooks/useLeaves";
-import type {
-  LeaveApplication,
-  LeaveHistoryEmployee,
-} from "../../types/leaves";
+import type { LeaveHistoryItem } from "../../types/leaves";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import CustomDropdown from "../shared/CustomDropdown";
 import StatusBadge from "../shared/atoms/statusBadge";
@@ -13,17 +10,11 @@ import { NoDataFound } from "../shared/atoms/NoDataFound";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
 
-type HistoryLeaveDoc = LeaveApplication & {
-  custom_leave_type_name?: string;
-  custom_manager_leave_message?: string | null;
-  custom_sandwich_applied?: number;
-};
-
 /* ────────────────────────────────────────────
  * Individual history card – matches reference
  * ──────────────────────────────────────────── */
 interface HistoryCardProps {
-  data: HistoryLeaveDoc;
+  data: LeaveHistoryItem;
 }
 
 const HistoryCard: React.FC<HistoryCardProps> = ({ data }) => {
@@ -34,9 +25,24 @@ const HistoryCard: React.FC<HistoryCardProps> = ({ data }) => {
   const formattedDate = format(dateObj, "do MMMM");
   const leaveTypeName = data.custom_leave_type_name || data.leave_type || "";
 
-  // Adjust status logic based on doc status and cancellation
   const status = data.status;
   const cleanDescription = sanitizeToPlainText(data.description);
+
+  // Build the card title – prefer description, fall back to leave type name
+  const cardTitle = data.name;
+
+  // Determine if it's a half-day leave
+  const isHalfDay = data.half_day === 1;
+  const halfDayLabel = isHalfDay
+    ? data.custom_half_day_type
+      ? `Half day (${data.custom_half_day_type})`
+      : "Half day leave"
+    : "";
+
+  // Subtitle: date | leave type (| half day info)
+  const subtitleParts = [formattedDate, leaveTypeName];
+  if (halfDayLabel) subtitleParts.push(halfDayLabel);
+  const subtitle = subtitleParts.join(" | ");
 
   return (
     <div
@@ -52,11 +58,9 @@ const HistoryCard: React.FC<HistoryCardProps> = ({ data }) => {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-900 truncate">
-            {data.custom_reason || cleanDescription || leaveTypeName}
+            {cardTitle}
           </p>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {formattedDate} | {leaveTypeName}
-          </p>
+          <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
           <div className="mt-1.5">
             <StatusBadge status={status} />
           </div>
@@ -88,6 +92,10 @@ const HistoryCard: React.FC<HistoryCardProps> = ({ data }) => {
                 : data.total_leave_days + " Day"}
             </span>
           </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Leave Type</span>
+            <span className="text-gray-900 font-medium">{leaveTypeName}</span>
+          </div>
           {cleanDescription && (
             <div className="flex justify-between">
               <span className="text-gray-500">Description</span>
@@ -96,70 +104,12 @@ const HistoryCard: React.FC<HistoryCardProps> = ({ data }) => {
               </span>
             </div>
           )}
-          {data.custom_reason && (
+          {data.custom_rejection_reason && (
             <div className="flex justify-between">
-              <span className="text-gray-500">Reason</span>
-              <span className="text-gray-900 font-medium">
-                {data.custom_reason}
+              <span className="text-gray-500">Rejection Reason</span>
+              <span className="text-gray-900 font-medium text-right max-w-[60%]">
+                {data.custom_rejection_reason}
               </span>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-/* ────────────────────────────────────────────
- * Employee History Accordion
- * ──────────────────────────────────────────── */
-interface EmployeeHistoryAccordionProps {
-  data: LeaveHistoryEmployee;
-}
-
-const EmployeeHistoryAccordion: React.FC<EmployeeHistoryAccordionProps> = ({
-  data,
-}) => {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div className="mb-4">
-      <div
-        className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3.5 cursor-pointer flex justify-between items-center transition-colors hover:bg-gray-50"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <User className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">
-              {data.employee_name}
-            </p>
-            <p className="text-xs text-gray-500">{data.employee}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded-xl">
-            {data.leave_applications?.length || 0} leaves
-          </span>
-          <ChevronRight
-            className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
-              expanded ? "rotate-90" : ""
-            }`}
-          />
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="mt-3 pl-4 sm:pl-8 border-l-2 border-gray-100">
-          {data.leave_applications && data.leave_applications.length > 0 ? (
-            data.leave_applications.map((leave) => (
-              <HistoryCard key={leave.name} data={leave as HistoryLeaveDoc} />
-            ))
-          ) : (
-            <div className="py-4 text-center text-sm text-gray-500 bg-gray-50 rounded-lg">
-              No leave applications found for this employee.
             </div>
           )}
         </div>
@@ -185,12 +135,9 @@ const LeaveHistory: React.FC = () => {
     });
   }, [currentYear]);
 
-  const { data: teamHistoryData, isLoading: isHistoryLoading } =
-    useGetLeaveHistory(year);
+  const { data: historyData, isLoading } = useGetLeaveHistory(year);
 
-  const historyList: LeaveHistoryEmployee[] = teamHistoryData || [];
-
-  const isLoading = isHistoryLoading;
+  const historyList: LeaveHistoryItem[] = historyData || [];
 
   return (
     <div className="flex flex-col h-full bg-white/50 px-3 py-4 sm:p-6 min-h-full pb-24">
@@ -218,8 +165,8 @@ const LeaveHistory: React.FC = () => {
           />
         ) : (
           <div>
-            {historyList.map((emp) => (
-              <EmployeeHistoryAccordion key={emp.employee} data={emp} />
+            {historyList.map((leave) => (
+              <HistoryCard key={leave.name} data={leave} />
             ))}
           </div>
         )}
