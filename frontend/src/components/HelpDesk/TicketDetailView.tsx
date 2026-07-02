@@ -4,10 +4,10 @@ import { X, Info, MessageSquare, Loader2, CheckCircle, XCircle, Edit3 } from "lu
 import {
   useTicketDetail,
   useSendEmailReply,
-  useCloseTicket,
-  useRequestClosure,
   TicketDetail,
 } from "../../hooks/useHelpDeskTickets";
+import { useTicketCloseFlow } from "../../hooks/useTicketCloseFlow";
+import TicketCloseModal from "./TicketCloseModal";
 import { useCurrentUser, isHDAgent } from "../../hooks/useCurrentUser";
 import ChatMessage, { ChatMessageData } from "./ChatMessage";
 import ChatInput, { EmailOptions } from "./ChatInput";
@@ -17,112 +17,9 @@ import SimplifiedChatView from "./Helpdesk/SimplifiedChatView";
 import toast from "react-hot-toast";
 import { showCloseTicketButton } from "./hdelpdeskUtils";
 
+
+
 type TabType = "activity" | "resolution";
-
-// Resolution Modal Component
-interface ResolutionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (resolution: string) => void;
-  isLoading: boolean;
-  isRaiser: boolean;
-  existingResolution?: string;
-}
-
-const ResolutionModal: React.FC<ResolutionModalProps> = ({
-  isOpen,
-  onClose,
-  onSubmit,
-  isLoading,
-  isRaiser,
-  existingResolution,
-}) => {
-  const [resolution, setResolution] = useState(existingResolution || "");
-
-  useEffect(() => {
-    if (isOpen) {
-      setResolution(existingResolution || "");
-    }
-  }, [isOpen, existingResolution]);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = () => {
-    if (!resolution.trim()) {
-      toast.error("Please enter resolution details");
-      return;
-    }
-    onSubmit(resolution);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {isRaiser ? "Close Ticket" : "Request Closure"}
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="px-6 py-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Resolution Details <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            value={resolution}
-            onChange={(e) => setResolution(e.target.value)}
-            placeholder="Describe how this issue was resolved..."
-            rows={5}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-          />
-          <p className="text-xs text-gray-500 mt-2">
-            {isRaiser
-              ? "This will close the ticket and save the resolution details."
-              : "This will send a closure request to the ticket raiser."}
-          </p>
-        </div>
-
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-          <button
-            onClick={onClose}
-            disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isLoading || !resolution.trim()}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Processing...
-              </>
-            ) : isRaiser ? (
-              <>
-                <CheckCircle className="w-4 h-4" />
-                Close Ticket
-              </>
-            ) : (
-              <>
-                <CheckCircle className="w-4 h-4" />
-                Request Closure
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const TicketDetailView: React.FC = () => {
   const { ticketId } = useParams<{ ticketId: string }>();
@@ -132,8 +29,7 @@ const TicketDetailView: React.FC = () => {
   // State
   const [activeTab, setActiveTab] = useState<TabType>("activity");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
-  const [isEditingResolution, setIsEditingResolution] = useState(false);
+
 
   // Queries - ALL hooks must be called before any conditional returns
   const { data: ticket, isLoading: ticketLoading, error } = useTicketDetail(ticketId || "");
@@ -141,8 +37,9 @@ const TicketDetailView: React.FC = () => {
 
   // Mutations - must be called unconditionally (before any returns)
   const sendEmailMutation = useSendEmailReply();
-  const closeTicketMutation = useCloseTicket();
-  const requestClosureMutation = useRequestClosure();
+
+  // Centralized close/resolve flow
+  const closeFlow = useTicketCloseFlow({ currentUserEmail: currentUser?.email || "" });
 
   // Combined loading state - wait for BOTH ticket AND user data
   const isLoading = ticketLoading || userLoading;
@@ -405,31 +302,10 @@ const TicketDetailView: React.FC = () => {
     }
   };
 
-  // Handle close ticket
-  const handleCloseTicket = async (resolution: string) => {
-    if (!ticketId) return;
-
-    try {
-      if (canClose) {
-        // Direct close for raiser/admin
-        await closeTicketMutation.mutateAsync({
-          ticketId,
-          resolutionDetails: resolution,
-        });
-        toast.success("Ticket closed successfully");
-      } else {
-        // Request closure for others
-        await requestClosureMutation.mutateAsync({
-          ticketId,
-          resolutionNotes: resolution,
-        });
-        toast.success("Closure request sent successfully");
-      }
-      setIsResolutionModalOpen(false);
-      setIsEditingResolution(false);
-    } catch {
-      toast.error("Failed to close ticket");
-    }
+  // Handle close ticket — delegated to centralized flow
+  const handleCloseTicketAction = () => {
+    if (!ticket) return;
+    closeFlow.initiateClose(ticket);
   };
 
   // Handle close
@@ -441,7 +317,7 @@ const TicketDetailView: React.FC = () => {
   // At this point, we know ticket is loaded and user is an HD Agent
 
   const isSending = sendEmailMutation.isPending;
-  const isClosing = closeTicketMutation.isPending || requestClosureMutation.isPending;
+  // const isClosing = closeFlow.isProcessing;
   const isTicketClosed = ticket.status === "Closed" || ticket.status === "Resolved";
 
   // Resolution content component
@@ -459,7 +335,7 @@ const TicketDetailView: React.FC = () => {
           </p>
           {canClose && (
             <button
-              onClick={() => setIsResolutionModalOpen(true)}
+              onClick={handleCloseTicketAction}
               className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
               <CheckCircle className="w-4 h-4" />
@@ -468,7 +344,7 @@ const TicketDetailView: React.FC = () => {
           )}
           {!canClose && (
             <button
-              onClick={() => setIsResolutionModalOpen(true)}
+              onClick={handleCloseTicketAction}
               className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
             >
               <CheckCircle className="w-4 h-4" />
@@ -495,10 +371,7 @@ const TicketDetailView: React.FC = () => {
             </div>
             {canEditResolution && (
               <button
-                onClick={() => {
-                  setIsEditingResolution(true);
-                  setIsResolutionModalOpen(true);
-                }}
+                onClick={() => handleCloseTicketAction()}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               >
                 <Edit3 className="w-4 h-4" />
@@ -535,10 +408,7 @@ const TicketDetailView: React.FC = () => {
             </div>
             {canEditResolution && !resolutionAddedByOther && (
               <button
-                onClick={() => {
-                  setIsEditingResolution(true);
-                  setIsResolutionModalOpen(true);
-                }}
+                onClick={() => handleCloseTicketAction()}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               >
                 <Edit3 className="w-4 h-4" />
@@ -608,7 +478,7 @@ const TicketDetailView: React.FC = () => {
           {/* Close Ticket Button - show only if not closed */}
           {!isTicketClosed && (
             <button
-              onClick={() => setIsResolutionModalOpen(true)}
+              onClick={handleCloseTicketAction}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${canClose
                 ? "bg-green-500 text-white hover:bg-green-600"
                 : "bg-amber-500 text-white hover:bg-amber-600"
@@ -742,17 +612,12 @@ const TicketDetailView: React.FC = () => {
         onClose={() => setIsSidebarOpen(false)}
       />
 
-      {/* Resolution Modal */}
-      <ResolutionModal
-        isOpen={isResolutionModalOpen}
-        onClose={() => {
-          setIsResolutionModalOpen(false);
-          setIsEditingResolution(false);
-        }}
-        onSubmit={handleCloseTicket}
-        isLoading={isClosing}
-        isRaiser={canClose}
-        existingResolution={isEditingResolution ? ticket.resolution_details : undefined}
+      {/* Centralized Close/Resolve Modal */}
+      <TicketCloseModal
+        modalState={closeFlow.modalState}
+        onClose={closeFlow.closeModal}
+        onSubmit={closeFlow.handleModalSubmit}
+        isLoading={closeFlow.isProcessing}
       />
     </div>
   );
