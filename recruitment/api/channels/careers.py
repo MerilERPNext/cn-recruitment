@@ -42,6 +42,25 @@ def _applied_openings(email, opening_names):
 	)
 
 
+def _saved_openings(email, opening_names):
+	"""Set of opening names this candidate (by email) has saved.
+
+	`Saved Job Opening` holds one doc per `candidate_email`; the saved openings
+	live in its `job_openings` child table (Saved Job Opening Item.job_opening)."""
+	if not email or not opening_names:
+		return set()
+	parent = frappe.db.get_value("Saved Job Opening", {"candidate_email": email}, "name")
+	if not parent:
+		return set()
+	return set(
+		frappe.get_all(
+			"Saved Job Opening Item",
+			filters={"parent": parent, "job_opening": ["in", list(opening_names)]},
+			pluck="job_opening",
+		)
+	)
+
+
 @candidate_required
 def list_openings(search_term=None, filters=None, email=None, page=None, limit=None):
 	"""List openings active on the Careers Page for the authenticated candidate.
@@ -64,7 +83,8 @@ def list_openings(search_term=None, filters=None, email=None, page=None, limit=N
 	frontend can render the card, the search bar and the filter section from a single
 	call. Each opening carries ``"applied": true/false`` — true when this candidate
 	already created a Job Applicant for that opening, so the frontend can disable
-	re-applying.
+	re-applying — and ``"saved": true/false`` — true when this candidate has this
+	opening in their Saved Job Opening list.
 	"""
 	columns = _common.get_configured_columns(CHANNEL)
 	search_filters = _common.get_configured_search_filters()
@@ -109,9 +129,12 @@ def list_openings(search_term=None, filters=None, email=None, page=None, limit=N
 	check_email = (email or get_current_candidate() or "").strip().lower()
 	if email and check_email:
 		enforce_candidate_identity(email=check_email)
-	applied = _applied_openings(check_email, [c["name"] for c in openings])
+	page_names = [c["name"] for c in openings]
+	applied = _applied_openings(check_email, page_names)
+	saved = _saved_openings(check_email, page_names)
 	for c in openings:
 		c["applied"] = c["name"] in applied
+		c["saved"] = c["name"] in saved
 
 	return {
 		"columns": columns,
