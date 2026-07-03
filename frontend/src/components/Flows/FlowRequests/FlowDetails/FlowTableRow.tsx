@@ -1,7 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import {
-  Attachment,
   FlowRequestItem,
   FlowRequestStage,
 } from "../../../../types/flows";
@@ -9,24 +8,16 @@ import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import { Typography } from "../../../shared/atoms/Typography";
 
-import { createPortal } from "react-dom";
 import { handleActionType } from "../../../../hooks/userApprovalList";
 import {
   extractAllocatedToUserArray,
   extractRolesAndUsers,
-  FormIOForm,
   getStageActorDetails,
 } from "../../../../utils/flowUtils";
 import { getStageAssignedUsersCell } from "../../../../utils/getAssignedUsersCell";
 import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
-import Button from "../../../shared/atoms/Button";
-import FormPreview from "../../../shared/molecules/FormPreview";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
-import ReviewForm from "../../Separation/components/ReviewForm";
-import ActModal from "./ActModal";
-import AttachmentPreview from "./AttachmentPreview";
-import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
-import StageRetriggerButton from "../../StageRetriggerButton";
+import FlowStageActions from "./FlowStageActions";
 
 const FlowTableRow = ({
   stage,
@@ -43,38 +34,6 @@ const FlowTableRow = ({
   initiatorForms?: FlowRequestItem["initiator_forms"];
   handleAction: handleActionType;
 }) => {
-  const actions = useMemo(() => {
-    try {
-      return stage?.todo?.custom_doctype_actions
-        ? JSON.parse(stage.todo.custom_doctype_actions)
-        : [];
-    } catch (e) {
-      console.error("Failed to parse custom_doctype_actions", e);
-      return [];
-    }
-  }, [stage?.todo?.custom_doctype_actions]);
-  const actionsWithForm = useMemo(() => {
-    try {
-      return stage?.todo?.custom_doctype_actions_with_form
-        ? JSON.parse(
-          stage.todo.custom_doctype_actions_with_form.replace(/'/g, '"'),
-        )
-        : [];
-    } catch (e) {
-      console.error("Failed to parse custom_doctype_actions_with_form", e);
-      return [];
-    }
-  }, [stage?.todo?.custom_doctype_actions_with_form]);
-
-  const onAction = (action: string, data: FlowRequestStage["todo"]) => {
-    handleAction(action, {
-      todo_id: data.name,
-      custom_approval_type: data?.custom_approval_type ?? "Approval Matrix",
-      custom_open_chatnext_assistant_on_action:
-        actionsWithForm.includes(action),
-    });
-    setShowActModal(false);
-  };
   const { data: currentUser } = useCurrentUser();
 
   const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
@@ -104,36 +63,6 @@ const FlowTableRow = ({
       stage.user,
     );
   }, [stage]);
-
-  const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [showActModal, setShowActModal] = useState(false);
-  const [responseData, setResponseData] = useState<{
-    addAttachment?: Attachment[];
-  } | null>(null);
-  const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
-
-  const handleShowForm = () => {
-    if (!stage?.form_json?.components) return;
-
-    const schema = stage.form_json.components;
-
-    let data: Record<string, unknown> = {};
-
-    try {
-      data = stage?.form_data_display || JSON.parse(
-        stage?.approval_response_data ||
-        "{}",
-      );
-    } catch (error) {
-      console.error("Invalid approval_response_data JSON:", error);
-      data = {};
-    }
-    setFormSchema({ display: "form", components: schema });
-    setFormAnswer(data);
-    setResponseData(data);
-    setShowForm(true);
-  };
 
   return (
     <div
@@ -214,74 +143,16 @@ const FlowTableRow = ({
         </Typography>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <>
-          <MyApprovalActionPill
-            uiPermission={{
-              app: "HR Process",
-              page: "Flow Requests",
-              actionKeysMap: {
-                nudge: "nudge",
-              }
-            }}
-
-            isPendingStatus={isPendingStatus}
-            todoId={stage?.todo?.name}
-
-          />
-          <StageRetriggerButton
-            todoId={stage?.todo?.name}
-            page="Flow Requests"
-          />
-          {(stage?.approval_response_data_display ||
-            stage?.approval_response_data) && (
-              <Button variant="outline" onClick={handleShowForm}>
-                Review Form
-              </Button>
-            )}
-          {canPerformActions && (
-            <Button
-              variant="contain"
-              bgColor="primary"
-              size="md"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowActModal(true);
-              }}
-            >
-              Act
-            </Button>
-          )}
-        </>
-      </div>
-      {formSchema &&
-        showForm &&
-        createPortal(
-          <ReviewForm onClose={() => setShowForm(false)}>
-            <FormPreview
-              containerId={`flow-stage-${stage.stage_name}-form-preview`}
-              schema={formSchema}
-              submissionData={formAnswer}
-              readOnly={true}
-            />
-            <AttachmentPreview
-              attachments={responseData?.addAttachment || []}
-            />
-          </ReviewForm>,
-          document.body,
-        )}
-      {showActModal && (
-        <ActModal
+        <FlowStageActions
           stage={stage}
-          stageIndex={stageIndex}
           stages={stages}
+          stageIndex={stageIndex}
           initiatorForms={initiatorForms}
-          actions={actions}
-          onAction={(action) => onAction(action, stage?.todo)}
-          recordId={stage?.todo?.name}
-          onClose={() => setShowActModal(false)}
+          handleAction={handleAction}
+          variant="pill"
+          canAct={canPerformActions}
         />
-      )}
+      </div>
     </div>
   );
 };

@@ -4,6 +4,7 @@ interface MenuItem {
   label: string;
   icon?: React.ReactNode;
   onClick: () => void;
+  className?: string;
 }
 
 interface DropdownMenuProps {
@@ -67,7 +68,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
       {open && (
         <div
           className={`
-            absolute w-40 rounded-lg shadow-lg bg-white ring-1 ring-black/5 z-20
+            absolute min-w-[160px] w-max rounded-lg shadow-lg bg-white ring-1 ring-black/5 z-20
             ${positionClasses[placement]}
           `}
         >
@@ -79,7 +80,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                     item.onClick();
                     setOpen(false);
                   }}
-                  className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-primary/10 ${className}`}
+                  className={`flex items-center gap-2 w-full whitespace-nowrap px-4 py-2 text-sm hover:bg-primary/10 ${className || ""} ${item.className || ""}`}
                 >
                   {item.icon}
                   {item.label}
