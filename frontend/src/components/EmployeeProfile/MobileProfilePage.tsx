@@ -7,14 +7,14 @@ import {
 import defaultProfile from "../../assets/user.png";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
-import { ChevronRight } from "lucide-react";
 import {
+    ChevronRight,
     HelpCircle,
     CreditCard,
     ShieldCheck,
     LogOut,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import useLogout from "../../hooks/useLogout";
 
 type QuickAction = {
@@ -45,6 +45,7 @@ const quickActions: QuickAction[] = [
 
 
 const MobileProfilePage = () => {
+    const navigate = useNavigate();
     const { targetEmployeeId } = useTargetUser();
     const { data: currentUser, isLoading: isCurrentUserLoading } =
         useCurrentEmployeeDetails({ logged_in_employee_details: true });
@@ -61,10 +62,9 @@ const MobileProfilePage = () => {
     const { mutateAsync: logout } = useLogout();
     const logoutHandler = async () => {
         try {
-            if (window?.isApp) {
-                window?.nativeInterface?.execute("logout").then(() => {
-                    alert("Logged out");
-                })
+            if (window?.isApp && window?.nativeInterface?.execute) {
+                await window.nativeInterface.execute("logout");
+                alert("Logged out");
             } else {
                 await logout();
             }
@@ -106,10 +106,9 @@ const MobileProfilePage = () => {
                         variant="contain"
                         size="sm"
                         className="w-fit mt-2 px-3"
+                        onClick={() => navigate("/webapp/employee-profile")}
                     >
-                        <Link to="/webapp/employee-profile">
-                            View Profile
-                        </Link>
+                        View Profile
                     </Button>
                 </div>
             </div>
