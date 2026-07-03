@@ -163,12 +163,32 @@ def list_columns():
 @candidate_required
 def get_application_fields(opening):
 	"""Return the field list the authenticated candidate sees when filling
-	out the careers application for `opening`."""
+	out the careers application for `opening`, pre-filled with any values the
+	candidate has already saved for it (a Draft Job Applicant preferred), so
+	resuming a draft surfaces the previously entered values instead of blanks."""
 	if not opening:
 		frappe.throw(frappe._("opening is required"))
 	if opening not in _common.get_openings_active_on_channel(CHANNEL):
 		frappe.throw(frappe._("This opening is not currently posted on the careers page."))
-	return _common.get_application_fields_for_channel(opening, CHANNEL)
+
+	# Pre-fill from the authenticated candidate's own Job Applicant for this
+	# opening (Draft preferred, else the most recent one). Scoped strictly to
+	# the session email so one candidate can never read another's values.
+	candidate_email = (get_current_candidate() or "").strip().lower()
+	job_applicant = None
+	if candidate_email:
+		job_applicant = frappe.db.get_value(
+			"Job Applicant",
+			{"email_id": candidate_email, "job_title": opening, "status": "Draft"},
+			"name",
+			order_by="modified desc",
+		) or frappe.db.get_value(
+			"Job Applicant",
+			{"email_id": candidate_email, "job_title": opening},
+			"name",
+			order_by="modified desc",
+		)
+	return _common.get_application_fields_for_channel(opening, CHANNEL, job_applicant=job_applicant)
 
 
 @candidate_required
