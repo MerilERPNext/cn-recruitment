@@ -1,12 +1,30 @@
 import React from "react";
-import { ShieldX, Mail } from "lucide-react";
+import { ShieldX, Mail, LogOut } from "lucide-react";
 import { Typography } from "./atoms/Typography";
+import useLogout from "../../hooks/useLogout";
 
 interface PermissionDeniedScreenProps {
   onRetry?: () => void;
 }
 
 const PermissionDeniedScreen: React.FC<PermissionDeniedScreenProps> = ({ onRetry }) => {
+  const { mutateAsync: logout } = useLogout();
+
+  const logoutHandler = async () => {
+    try {
+      if (window.isApp) {
+        window.nativeInterface.execute("logout").then(() => {
+          alert("Logged out");
+        });
+      } else {
+        await logout();
+      }
+      sessionStorage.removeItem("viewed_employee_id");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-surface p-6">
       <div
@@ -64,13 +82,25 @@ const PermissionDeniedScreen: React.FC<PermissionDeniedScreenProps> = ({ onRetry
           </Typography>
         </div>
 
-        {/* Retry button */}
-        <button
-          className="inline-flex items-center justify-center px-8 py-2.5 text-sm font-semibold text-white bg-primary hover:bg-primary-600 rounded-xl border-none cursor-pointer transition-all duration-200 shadow-md shadow-primary-300/25 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary-300/35 active:translate-y-0"
-          onClick={onRetry || (() => window.location.reload())}
-        >
-          Try Again
-        </button>
+        {/* Action buttons */}
+        <div className="flex flex-col gap-3">
+          {/* Retry button */}
+          <button
+            className="inline-flex items-center justify-center px-8 py-2.5 text-sm font-semibold text-white bg-primary hover:bg-primary-600 rounded-xl border-none cursor-pointer transition-all duration-200 shadow-md shadow-primary-300/25 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary-300/35 active:translate-y-0"
+            onClick={onRetry || (() => window.location.reload())}
+          >
+            Try Again
+          </button>
+
+          {/* Logout button */}
+          <button
+            className="inline-flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-semibold text-error bg-error-50 hover:bg-error-100 rounded-xl border border-error-100 cursor-pointer transition-all duration-200 shadow-sm hover:-translate-y-0.5 active:translate-y-0"
+            onClick={logoutHandler}
+          >
+            <LogOut size={16} strokeWidth={2} />
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );
