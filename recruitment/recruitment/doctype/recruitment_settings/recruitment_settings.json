@@ -63,7 +63,9 @@
   "disable_hiring_lead_edit_job_step_4",
   "disable_hiring_lead_edit_job_step_5",
   "restrict_act_as_admin_offer_approval",
-  "allow_hiring_lead_change_designation_at_offer"
+  "allow_hiring_lead_change_designation_at_offer",
+  "sla_tat_section",
+  "enable_sla_tat"
  ],
  "fields": [
   {
@@ -438,6 +440,18 @@
    "fieldname": "allow_hiring_lead_change_designation_at_offer",
    "fieldtype": "Check",
    "label": "Allow Hiring lead to change Designation at Offer Stage"
+  },
+  {
+   "fieldname": "sla_tat_section",
+   "fieldtype": "Section Break",
+   "label": "SLA & TAT"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_sla_tat",
+   "fieldtype": "Check",
+   "label": "Enable SLA & TAT Tracking",
+   "description": "Master switch for TA SLA Settings. When ON, the system measures Turn Around Times (Time to Fill/Hire/First Action) against configured points & targets, and flags stage SLA breaches for recruiters. When OFF (or when TA SLA Settings is left unconfigured), recruitment works exactly as before — no computation, notifications, or archival run."
   }
  ],
  "index_web_pages_for_search": 1,

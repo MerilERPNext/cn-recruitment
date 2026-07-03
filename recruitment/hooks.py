@@ -359,6 +359,13 @@ scheduler_events = {
             # Pay every referral reward installment that is due and still eligible.
             "recruitment.recruitment.referral_reward_engine.process_due_referral_payouts",
         ],
+        "0 2 * * *": [
+            # TA SLA Settings engine — no-op unless "Enable SLA & TAT Tracking" is
+            # on. Flags candidates overdue in their current stage, then archives
+            # its own stale breach ToDos. See recruitment.recruitment.sla_tat_engine.
+            "recruitment.recruitment.sla_tat_engine.scan_sla_breaches",
+            "recruitment.recruitment.sla_tat_engine.archive_sla_breach_todos",
+        ],
     }
 }
 
