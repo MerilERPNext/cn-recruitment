@@ -24,6 +24,7 @@ import SettingsPanel, {
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import {
   useAwardNominations,
+  useDoctypeOptions,
   useSetNominationPublished,
   type AwardNominationCategory,
   type AwardNominationRow,
@@ -138,7 +139,15 @@ const AwardsNominationWorkflows: React.FC = () => {
 
   const counts = response?.counts;
   const statusOptions = response?.filter_options?.statuses ?? [];
-  const programOptions = response?.filter_options?.programs ?? [];
+
+  // Nomination Program → Employee Nomination.`award` is a Link → Award, so
+  // options come from the Award doctype via the resource API. Label shows
+  // "Award Name (ID)" to match the column; value = award id (the backend
+  // matches nominations by award id).
+  const { data: programOptions = [] } = useDoctypeOptions("Award", {
+    labelTemplate: "{award_name} ({name})",
+    orderBy: "award_name asc",
+  });
 
   const filterFields = useMemo<FilterField[]>(
     () => [

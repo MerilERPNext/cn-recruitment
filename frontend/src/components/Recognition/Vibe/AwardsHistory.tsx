@@ -15,7 +15,7 @@ import FilterPanel, {
   type FilterValues,
 } from "../../shared/molecules/FilterPanel";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
-import { useAwardPrograms } from "../../../services/recognitionService";
+import { useAwardPrograms, useDoctypeOptions } from "../../../services/recognitionService";
 import EmployeeMultiSelect from "../components/MyAppreciationsHistory/EmployeeMultiSelect";
 import RecognitionRowActions from "../components/RecognitionRowActions";
 
@@ -34,29 +34,6 @@ const resolveImage = (image?: string | null): string | undefined => {
 
 // Static filter fields — the "Select Program" options come from the API.
 const STATIC_FILTER_FIELDS: FilterField[] = [
-  {
-    key: "recognizerType",
-    label: "Select Recognizer / Recipient Type",
-    type: "multi",
-    options: [
-      { label: "ALL", value: "all" },
-      { label: "L1 Manager", value: "l1-manager" },
-      { label: "L2 Manager", value: "l2-manager" },
-      { label: "Reporting Span (Up to 5 Levels)", value: "reporting-span" },
-      { label: "Others", value: "others" },
-    ],
-  },
-  {
-    key: "recognizedWith",
-    label: "Select Recognized with",
-    type: "multi",
-    options: [
-      { label: "Points", value: "points" },
-      { label: "Non-Point Rewards", value: "non-point-rewards" },
-      { label: "Values", value: "values" },
-      { label: "Recognition Cards", value: "recognition-cards" },
-    ],
-  },
   {
     key: "time",
     label: "Time",
@@ -79,7 +56,6 @@ const STATIC_FILTER_FIELDS: FilterField[] = [
 const INITIAL_FILTER_VALUES: FilterValues = {
   program: "",
   recognizerType: [],
-  recognizedWith: [],
   time: "",
   timeRange: { from: "", to: "" },
 };
@@ -154,8 +130,6 @@ const AwardsHistory: React.FC = () => {
     program: (filterValues.program as string) || undefined,
     recognizer_type:
       ((filterValues.recognizerType as string[]) || []).join(",") || undefined,
-    recognized_with:
-      ((filterValues.recognizedWith as string[]) || []).join(",") || undefined,
     time: time || undefined,
     from_date: time === "custom" ? timeRange.from || undefined : undefined,
     to_date: time === "custom" ? timeRange.to || undefined : undefined,
@@ -174,8 +148,23 @@ const AwardsHistory: React.FC = () => {
   const { data: response, isLoading, isError, error, refetch, isFetching } =
     useAwardPrograms(apiParams);
 
-  // Select Program options from the API.
-  const programOptions = response?.filter_options?.programs ?? [];
+  // Select Program: `program_name` is a Link → Recognition Program, so options
+  // come from the Recognition Program doctype (Award-type) via the resource API.
+  // Value = program id (matches the backend `program` filter).
+  const { data: programOptions = [] } = useDoctypeOptions("Recognition Program", {
+    labelField: "program_name",
+    filters: [["program_type", "=", "Award"]],
+    orderBy: "program_name asc",
+  });
+
+  // Recognizer / Recipient Type options are the Role doctype list, fetched
+  // dynamically from the backend via the Frappe resource API (Recognition
+  // Program's `recognizers_relationship_with_receiver` is a Link → Role).
+  const { data: roleOptions = [] } = useDoctypeOptions("Role", {
+    filters: [["disabled", "=", 0]],
+    orderBy: "name asc",
+  });
+
   const filterFields = useMemo<FilterField[]>(
     () => [
       {
@@ -184,9 +173,15 @@ const AwardsHistory: React.FC = () => {
         type: "single",
         options: programOptions,
       },
+      {
+        key: "recognizerType",
+        label: "Select Recognizer / Recipient Type",
+        type: "multi",
+        options: roleOptions,
+      },
       ...STATIC_FILTER_FIELDS,
     ],
-    [programOptions],
+    [programOptions, roleOptions],
   );
 
   // Distinct people for the persons multi-select (from the API).

@@ -23,6 +23,7 @@ import SettingsPanel, {
 
 import {
   useRecognitionAdminDashboard,
+  useDoctypeOptions,
   type RecognitionAdminParams,
 } from "../../../services/recognitionService";
 import CreateProgramModal from "./CreateProgramModal";
@@ -474,20 +475,35 @@ export default function RecognitionAdminDashboard() {
   const rows = data?.data ?? [];
   const total = data?.total_count ?? 0;
   const stats = data?.stats ?? [];
-  const nameOptions = data?.filter_options?.names ?? [];
   const statusOptions = data?.filter_options?.statuses ?? [];
   const awardTypeOptions = data?.filter_options?.award_types ?? [];
 
+  // Program Name filter → Recognition Program doctype (Link) via the resource
+  // API, scoped to each tab's program type. Value = program_name (matches the
+  // backend `names` filter). Status / Award Type stay as Select-derived enums.
+  const { data: appreciationNameOptions = [] } = useDoctypeOptions("Recognition Program", {
+    labelField: "program_name",
+    valueField: "program_name",
+    filters: [["program_type", "=", "Appreciation"]],
+    orderBy: "program_name asc",
+  });
+  const { data: awardNameOptions = [] } = useDoctypeOptions("Recognition Program", {
+    labelField: "program_name",
+    valueField: "program_name",
+    filters: [["program_type", "=", "Award"]],
+    orderBy: "program_name asc",
+  });
+
   const appreciationFilters: FilterField[] = [
     { key: "status", label: "Status", type: "single", options: statusOptions },
-    { key: "name", label: "Program Name", type: "multi", options: nameOptions },
+    { key: "name", label: "Program Name", type: "multi", options: appreciationNameOptions },
     { key: "startDate", label: "Program Start Date", type: "daterange" },
     { key: "endDate", label: "Program End Date", type: "daterange" },
   ];
   const awardFilters: FilterField[] = [
     { key: "status", label: "Status", type: "single", options: statusOptions },
     { key: "awardType", label: "Award Type", type: "single", options: awardTypeOptions },
-    { key: "name", label: "Program Name", type: "multi", options: nameOptions },
+    { key: "name", label: "Program Name", type: "multi", options: awardNameOptions },
     { key: "startDate", label: "Award Start Date", type: "daterange" },
     { key: "endDate", label: "Award End Date", type: "daterange" },
   ];
