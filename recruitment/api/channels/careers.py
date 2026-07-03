@@ -528,7 +528,9 @@ def toggle_saved_job_opening(candidate_email, job_opening):
 
 @candidate_required
 def get_saved_job_openings(candidate_email):
-	"""The list of Job Opening names this candidate has saved."""
+	"""The Job Openings this candidate has saved, as full cards (same shape as
+	`list_openings`). Each card carries ``"saved": true`` and an ``"applied"``
+	flag (true only for a real, non-Draft application)."""
 	email = (candidate_email or "").strip().lower()
 	if not email:
 		return _err("candidate_email is required.", 400)
@@ -540,7 +542,19 @@ def get_saved_job_openings(candidate_email):
 
 	doc = frappe.get_doc("Saved Job Opening", existing_name)
 	ids = [r.job_opening for r in (doc.job_openings or []) if r.job_opening]
-	return {"status": "success", "total": len(ids), "saved_job_openings": ids}
+
+	applied = _applied_openings(email, ids)
+	openings = []
+	for name in ids:
+		card = _common.get_opening_card(name)
+		if not card:
+			# Saved opening was since deleted — skip it rather than ship a null.
+			continue
+		card["applied"] = name in applied
+		card["saved"] = True
+		openings.append(card)
+
+	return {"status": "success", "total": len(openings), "saved_job_openings": openings}
 
 
 # ---------------------------------------------------------------------------
