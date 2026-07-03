@@ -14,6 +14,7 @@ interface DailyConfigProps {
   value: Record<string, DayConfig>;
   onChange: (val: Record<string, DayConfig>) => void;
   attendanceStatus?: AttendanceStatusItem[];
+  halfDayAllowed?: boolean;
 }
 
 const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
@@ -45,6 +46,7 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
   value,
   onChange,
   attendanceStatus,
+  halfDayAllowed = true,
 }) => {
   const { isMobile } = useScreenSize();
   const dates = useMemo(
@@ -53,6 +55,7 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
   );
 
   const applyToAll = (type: DayConfig) => {
+    if (!halfDayAllowed && (type === "First Half" || type === "Second Half")) return;
     const next: Record<string, DayConfig> = {};
     dates.forEach((d) => {
       next[d] = type;
@@ -80,23 +83,25 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
         <span className="font-medium text-gray-700">Apply to all:</span>
 
         <div className="flex items-center gap-x-6 gap-y-2 flex-wrap">
-          <label className="flex items-center gap-1.5 cursor-pointer select-none text-gray-600 hover:text-gray-900">
+          <label className={`flex items-center gap-1.5 select-none ${!halfDayAllowed ? "cursor-not-allowed opacity-50 text-gray-400" : "cursor-pointer text-gray-600 hover:text-gray-900"}`}>
             <input
               type="radio"
               name="apply-all"
               checked={allSame === "First Half"}
               onChange={() => applyToAll("First Half")}
+              disabled={!halfDayAllowed}
               className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
             />
             First Half
           </label>
 
-          <label className="flex items-center gap-1.5 cursor-pointer select-none text-gray-600 hover:text-gray-900">
+          <label className={`flex items-center gap-1.5 select-none ${!halfDayAllowed ? "cursor-not-allowed opacity-50 text-gray-400" : "cursor-pointer text-gray-600 hover:text-gray-900"}`}>
             <input
               type="radio"
               name="apply-all"
               checked={allSame === "Second Half"}
               onChange={() => applyToAll("Second Half")}
+              disabled={!halfDayAllowed}
               className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
             />
             Second Half
@@ -113,6 +118,12 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
             Full Day
           </label>
         </div>
+
+        {!halfDayAllowed && (
+          <p className="text-xs text-amber-600 mt-1">
+            Half day option is not available for this leave type.
+          </p>
+        )}
       </div>
 
       {/* Conditionally Render Table on Desktop/Tablet and Cards on Mobile */}
@@ -164,7 +175,7 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
 
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-6">
-                      <label className="flex items-center gap-1.5 cursor-pointer select-none text-gray-700 hover:text-gray-900 text-sm">
+                      <label className={`flex items-center gap-1.5 select-none text-sm ${!halfDayAllowed ? "cursor-not-allowed opacity-50 text-gray-400" : "cursor-pointer text-gray-700 hover:text-gray-900"}`}>
                         <input
                           type="radio"
                           name={`half-${date}`}
@@ -172,12 +183,13 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
                           onChange={() =>
                             onChange({ ...value, [date]: "First Half" })
                           }
+                          disabled={!halfDayAllowed}
                           className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                         />
                         First Half
                       </label>
 
-                      <label className="flex items-center gap-1.5 cursor-pointer select-none text-gray-700 hover:text-gray-900 text-sm">
+                      <label className={`flex items-center gap-1.5 select-none text-sm ${!halfDayAllowed ? "cursor-not-allowed opacity-50 text-gray-400" : "cursor-pointer text-gray-700 hover:text-gray-900"}`}>
                         <input
                           type="radio"
                           name={`half-${date}`}
@@ -185,6 +197,7 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
                           onChange={() =>
                             onChange({ ...value, [date]: "Second Half" })
                           }
+                          disabled={!halfDayAllowed}
                           className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                         />
                         Second Half
@@ -251,7 +264,7 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
 
                 {/* Radio options inside a custom horizontal pill selector for cards */}
                 <div className="flex items-center justify-between gap-1.5 bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-xs">
-                  <label className="flex items-center gap-1.5 cursor-pointer select-none text-gray-700 hover:text-gray-900 flex-1 justify-center">
+                  <label className={`flex items-center gap-1.5 select-none flex-1 justify-center ${!halfDayAllowed ? "cursor-not-allowed opacity-50 text-gray-400" : "cursor-pointer text-gray-700 hover:text-gray-900"}`}>
                     <input
                       type="radio"
                       name={`half-mobile-${date}`}
@@ -259,12 +272,13 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
                       onChange={() =>
                         onChange({ ...value, [date]: "First Half" })
                       }
+                      disabled={!halfDayAllowed}
                       className="h-3.5 w-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
                     />
                     <span>First Half</span>
                   </label>
 
-                  <label className="flex items-center gap-1.5 cursor-pointer select-none text-gray-700 hover:text-gray-900 flex-1 justify-center border-l border-gray-200 pl-1.5">
+                  <label className={`flex items-center gap-1.5 select-none flex-1 justify-center border-l border-gray-200 pl-1.5 ${!halfDayAllowed ? "cursor-not-allowed opacity-50 text-gray-400" : "cursor-pointer text-gray-700 hover:text-gray-900"}`}>
                     <input
                       type="radio"
                       name={`half-mobile-${date}`}
@@ -272,6 +286,7 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
                       onChange={() =>
                         onChange({ ...value, [date]: "Second Half" })
                       }
+                      disabled={!halfDayAllowed}
                       className="h-3.5 w-3.5 text-blue-600 border-gray-300 focus:ring-blue-500"
                     />
                     <span>Second Half</span>

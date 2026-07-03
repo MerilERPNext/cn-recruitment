@@ -253,27 +253,30 @@ _KEY_CONTACT_ROLES = (
 )
 
 
-def _append_key_contact_rows(doc, applicant):
-    """Adds Onboarding Buddy / Joining Buddy / Manager rows to Employee Onboarding's
-    custom_key_contacts child table. Each role is a User on the applicant; we resolve
-    it to the matching Employee via Employee.user_id. Rows with no matching Employee
-    are skipped (the row needs an Employee link to satisfy the child schema)."""
-    existing = {
-        (row.employee, (row.role or "").strip())
-        for row in (doc.get("custom_key_contacts") or [])
-        if row.employee
-    }
+def _iter_onboarding_contact_users(eo_doc, applicant_doc=None):
+    """Yield ``(user_id, role_label)`` for the onboarding key contacts, read straight
+    from the Onboarding Setup fields — Onboarding Buddy + Teammates (Table MultiSelect,
+    each holding multiple Users) and Manager (single User Link). Falls back to the same
+    fields on the Job Applicant when the onboarding has none.
+
+    This replaces the old ``custom_key_contacts`` child table: the buddy/manager fields
+    are now the single source of truth, so no separate contacts table is maintained."""
     for source_field, role_label in _KEY_CONTACT_ROLES:
-        user_id = applicant.get(source_field)
-        if not user_id:
+        value = eo_doc.get(source_field) if eo_doc is not None else None
+        if not value and applicant_doc is not None:
+            value = applicant_doc.get(source_field)
+        if not value:
             continue
-        employee = frappe.db.get_value("Employee", {"user_id": user_id}, "name")
-        if not employee:
-            continue
-        if (employee, role_label) in existing:
-            continue
-        doc.append("custom_key_contacts", {"employee": employee, "role": role_label})
-        existing.add((employee, role_label))
+
+        if isinstance(value, list):
+            # Table MultiSelect (Onboarding Buddy User rows) -> each row's `user`.
+            for row in value:
+                user_id = row.get("user") if hasattr(row, "get") else getattr(row, "user", None)
+                if user_id:
+                    yield user_id, role_label
+        else:
+            # Single Link (User) — e.g. Manager, or the applicant's scalar fields.
+            yield value, role_label
 
 
 def _seed_buddy_table(doc, fieldname, users):
@@ -351,7 +354,6 @@ _ONBOARDING_AUTOMAP_SKIP = frozenset({
     "boarding_status", "employee_onboarding_template", "date_of_joining",
     "boarding_begins_on", "custom_onboarding_portal_form", "custom_bgv_vendor",
     "custom_onboarding_buddy", "custom_joining_buddy", "custom_manager",
-    "custom_key_contacts",
     # Onboarding Automation tab — populated explicitly by _apply_onboarding_automation_fields.
     "custom_onboarding_recruiter", "custom_onboarding_spoc", "custom_onboarding_teammates",
 })
@@ -474,13 +476,9 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
     stamps the release fields onto it, links back via custom_pre_onboarding_employee_onboarding,
     and clears the action item.
 
-    If a draft EO already exists, refreshes BGV Vendor + custom_key_contacts (Onboarding/
-    Joining Buddy + Manager, resolved to Employee via user_id) from the applicant and returns
-    its name. Existing key-contact rows are preserved; only missing role/employee combinations
-    are appended.
-
-    Buddies/Manager (Users) are stored as rows in custom_key_contacts (resolved to Employee
-    via user_id), not as separate Link fields on Employee Onboarding."""
+    If a draft EO already exists, refreshes BGV Vendor and the Onboarding Setup fields
+    (Onboarding Buddy / Teammates / Manager, via _apply_onboarding_automation_fields)
+    from the applicant and returns its name."""
     if not job_applicant_id:
         return None
 
@@ -500,7 +498,6 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
             if eo_doc.docstatus == 0:
                 if applicant.get("custom_bgv_vendor"):
                     eo_doc.custom_bgv_vendor = applicant.get("custom_bgv_vendor")
-                _append_key_contact_rows(eo_doc, applicant)
                 accepted_offer = frappe.db.get_value(
                     "Job Offer",
                     {"job_applicant": job_applicant_id, "status": "Accepted", "docstatus": ("<", 2)},
@@ -529,8 +526,6 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
         doc.job_offer = job_offer
     doc.custom_onboarding_portal_form = applicant.custom_onboarding_portal_form
     doc.custom_bgv_vendor = applicant.get("custom_bgv_vendor")
-
-    _append_key_contact_rows(doc, applicant)
 
     prefill = prefill or {}
     doj = (
@@ -905,9 +900,9 @@ def _get_joining_info(eo_doc, applicant_doc):
 
 
 def _get_key_contacts(eo_doc, applicant_doc):
-    """Resolve Onboarding Buddy / Joining Buddy / Manager into ready-to-render
-    contact cards. Prefers the Employee Onboarding custom_key_contacts child rows;
-    falls back to the buddy/manager User fields on the onboarding (or applicant)."""
+    """Resolve Onboarding Buddy / Teammates / Manager into ready-to-render contact
+    cards, straight from the Onboarding Setup fields (custom_onboarding_buddy /
+    custom_joining_buddy / custom_manager), with a Job Applicant fallback."""
     contacts = []
     seen = set()
 
@@ -938,18 +933,8 @@ def _get_key_contacts(eo_doc, applicant_doc):
             "image": emp.image,
         })
 
-    rows = list(eo_doc.get("custom_key_contacts") or []) if eo_doc is not None else []
-    for r in rows:
-        add(r.employee, (r.role or "Contact").strip(), r.get("email"), r.get("phone_number"))
-
-    # Fallback: resolve the buddy/manager User links when no child rows exist yet.
-    if not contacts:
-        for source_field, role_label in _KEY_CONTACT_ROLES:
-            user_id = (eo_doc.get(source_field) if eo_doc is not None else None) \
-                or (applicant_doc.get(source_field) if applicant_doc is not None else None)
-            if not user_id:
-                continue
-            add(frappe.db.get_value("Employee", {"user_id": user_id}, "name"), role_label)
+    for user_id, role_label in _iter_onboarding_contact_users(eo_doc, applicant_doc):
+        add(frappe.db.get_value("Employee", {"user_id": user_id}, "name"), role_label)
 
     return contacts
 

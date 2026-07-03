@@ -38,7 +38,7 @@ const Appreciations = () => {
 
     // Award list = recognition programs the giver is eligible to recognize in.
     const { data: eligiblePrograms, isLoading: programsLoading } =
-        useEligiblePrograms(currentEmployee?.employee);
+        useEligiblePrograms(currentEmployee?.employee, "Appreciation");
     const { mutate: createAppreciation, isPending: isSubmitting } =
         useCreateEmployeeAppreciation();
 

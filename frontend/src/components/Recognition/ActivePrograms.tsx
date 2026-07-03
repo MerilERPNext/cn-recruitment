@@ -36,6 +36,7 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
   });
   const { data: eligibleData, isLoading: eligibleLoading } = useEligiblePrograms(
     user?.employee,
+    "Award",
   );
 
   // Map the API response → the RecognitionProgram shape this card renders.

@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import costCenterFormSchema from "./costCenterFormSchema.json";
+import { withComponentDisabled } from "../../../utils/withComponentDisabled";
 import "../../../formio.custom.css";
 import Button from "../../shared/atoms/Button";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -26,6 +27,9 @@ interface CostCenterFormProps {
   onSuccess?: () => void;
   isEdit?: boolean;
   defaultStartDate?: string | null;
+  // When true (the very first slide for this section), the start date is locked
+  // to the employee's joining date and shown read-only.
+  lockStartDate?: boolean;
   initialEditData?: InitialCostCenterData;
 }
 
@@ -34,6 +38,7 @@ const CostCenterForm = ({
   onSuccess,
   isEdit = false,
   defaultStartDate,
+  lockStartDate = false,
   initialEditData,
 }: CostCenterFormProps) => {
   const [instance, setInstance] = useState<any>(null);
@@ -90,6 +95,13 @@ const CostCenterForm = ({
         });
     }
   }, [instance, isEdit, initialEditData, defaultStartDate]);
+
+  // First slide for this section: render the start date read-only, locked to
+  // the joining date. Baked into the schema (reliable for datetime widgets).
+  const formSchema = useMemo(
+    () => withComponentDisabled(costCenterFormSchema, "start_date", !!lockStartDate && !isEdit),
+    [lockStartDate, isEdit],
+  );
 
   const validateForm = (allocations: any[], startDate: string): boolean => {
     if (!startDate) {
@@ -241,7 +253,7 @@ const CostCenterForm = ({
 
           `}</style>
           <Form
-            form={costCenterFormSchema}
+            form={formSchema}
             onFormReady={(form: any) => {
               setInstance(form);
               form.setPristine(true);

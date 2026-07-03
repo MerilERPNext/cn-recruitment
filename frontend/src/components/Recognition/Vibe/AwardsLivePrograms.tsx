@@ -333,7 +333,7 @@ const AwardsLivePrograms: React.FC = () => {
     <div className="p-4 md:p-6">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-1 text-sm text-gray-500">
-          <span>Vibe</span>
+          <span>Recognition</span>
           <span>/</span>
           <span className="font-semibold text-gray-900">All Awards</span>
         </div>

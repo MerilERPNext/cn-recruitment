@@ -2711,3 +2711,47 @@ def get_replacement_employee_options(
         "Employee", search_text=search_text, query=query, txt=txt,
         limit=limit, include=include, filters=filters,
     )
+
+
+@frappe.whitelist()
+def activate_job_requisition(job_requisition, job_opening):
+    """List-view "Activate Job Requisition" action — associate an existing Job
+    Opening with the requisition (mirrors HRMS's "Associate Job Opening": stamps
+    job_requisition + vacancies onto the chosen Job Opening) AND marks the
+    requisition itself as "Open & Approved"."""
+    if not job_requisition or not job_opening:
+        frappe.throw(frappe._("Both Job Requisition and Job Opening are required."))
+    frappe.has_permission("Job Requisition", "write", doc=job_requisition, throw=True)
+    frappe.has_permission("Job Opening", "write", doc=job_opening, throw=True)
+
+    # Strict one opening <-> one requisition:
+    # (a) the opening must not already belong to a *different* requisition.
+    existing_req = frappe.db.get_value("Job Opening", job_opening, "job_requisition")
+    if existing_req and existing_req != job_requisition:
+        frappe.throw(
+            frappe._("Job Opening {0} is already associated with Job Requisition {1}.").format(
+                frappe.bold(job_opening), frappe.bold(existing_req)
+            ),
+            title=frappe._("Already Associated"),
+        )
+    # (b) the requisition must not already have a *different* opening.
+    existing_opening = frappe.db.get_value(
+        "Job Opening", {"job_requisition": job_requisition, "name": ["!=", job_opening]}, "name"
+    )
+    if existing_opening:
+        frappe.throw(
+            frappe._("Job Requisition {0} is already associated with Job Opening {1}.").format(
+                frappe.bold(job_requisition), frappe.bold(existing_opening)
+            ),
+            title=frappe._("Already Associated"),
+        )
+
+    doc = frappe.get_doc("Job Requisition", job_requisition)
+    # associate_job_opening is inherited from the HRMS JobRequisition class.
+    doc.associate_job_opening(job_opening)
+
+    # Activating a requisition opens it up.
+    if doc.status != "Open & Approved":
+        frappe.db.set_value("Job Requisition", job_requisition, "status", "Open & Approved")
+
+    return {"job_requisition": job_requisition, "job_opening": job_opening, "status": "Open & Approved"}

@@ -48,12 +48,17 @@ const ExpensesApp: React.FC = () => {
     "My Advances",
   );
 
-  const [activeTab, setActiveTab] = useState<TabName>("Expenses");
+  const [activeTab, setActiveTab] = useState<TabName>("Summary");
 
   const tabs: Tab[] = useMemo(() => {
     const allTabs: { key: TabName; label: string; permissionKey: string }[] = [
-      { key: "Expenses", label: "Expenses", permissionKey: "Expense Claims" },
-      { key: "Team", label: "Team", permissionKey: "Team Requests" },
+      {
+        key: "Summary",
+        label: "Expense Summary",
+        permissionKey: "ExpenseSummary",
+      },
+      { key: "Expenses", label: "My Expenses", permissionKey: "Expense Claims" },
+      { key: "Team", label: "Team Expenses", permissionKey: "Team Requests" },
       {
         key: "My Advances",
         label: "My Advances",
@@ -63,11 +68,6 @@ const ExpensesApp: React.FC = () => {
         key: "Team Advances",
         label: "Team Advances",
         permissionKey: "Team Advances",
-      },
-      {
-        key: "Summary",
-        label: "Summary",
-        permissionKey: "ExpenseSummary",
       },
     ];
 

@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Button from "../../shared/atoms/Button";
 import employmentHistoryFormSchema from "./employmentHistoryFormSchema.json";
+import { withComponentDisabled } from "../../../utils/withComponentDisabled";
 import {
   useAddEmployeeHistoryMutation,
   useCurrentEmployeeDetails,
@@ -33,6 +34,9 @@ interface EmploymentHistoryProps {
   onCancel?: () => void;
   isEdit?: boolean;
   defaultStartDate?: string | null;
+  // When true (the very first slide for this section), the start date is locked
+  // to the employee's joining date and shown read-only.
+  lockStartDate?: boolean;
   initialEditData?: InitialEditData;
 }
 
@@ -41,6 +45,7 @@ const EmploymentHistoryForm = ({
   onSuccess,
   isEdit = false,
   defaultStartDate,
+  lockStartDate = false,
   initialEditData,
 }: EmploymentHistoryProps) => {
   const [instance, setInstance] = useState<any>(null);
@@ -168,6 +173,13 @@ const EmploymentHistoryForm = ({
     initialEditData,
   ]);
 
+  // First slide for this section: render the start date read-only, locked to
+  // the joining date. Baked into the schema (reliable for datetime widgets).
+  const formSchema = useMemo(
+    () => withComponentDisabled(employmentHistoryFormSchema, "startDate", !!lockStartDate && !isEdit),
+    [lockStartDate, isEdit],
+  );
+
   const validateForm = (data: any) => {
     if (!instance) return false;
 
@@ -285,7 +297,7 @@ const EmploymentHistoryForm = ({
               </div>
             )}
           <Form
-            form={employmentHistoryFormSchema}
+            form={formSchema}
             /** CRITICAL FIX: Do NOT pass submission prop */
             onFormReady={(form: any) => {
               setInstance(form);

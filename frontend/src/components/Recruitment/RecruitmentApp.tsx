@@ -5,6 +5,8 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Button from "../shared/atoms/Button";
 import NavigationTabs, { Tab } from "../NavigationTab";
+import toast from "react-hot-toast";
+import { requisitionService } from "../../services/requisitionService";
 
 type TabName =
   | "Requisitions"
@@ -70,9 +72,28 @@ const RecruitmentApp: React.FC = () => {
     );
   };
 
-  const handleAction = () => {
+  const [checkingCanRaise, setCheckingCanRaise] = useState(false);
+
+  const handleAction = async () => {
     if (location.pathname === "/webapp/recruitment/requisition") {
-      navigate("/webapp/recruitment/requisition/new");
+      // Gate up front: check the Raise Requisition Scope config before opening
+      // the form. A non-permitted user gets the same message as the server block,
+      // right on click, instead of filling the form and being rejected at submit.
+      if (checkingCanRaise) return;
+      setCheckingCanRaise(true);
+      try {
+        const res = await requisitionService.checkCanRaiseRequisition();
+        if (!res.allowed) {
+          toast.error(
+            res.reason || "You are not permitted to raise requisitions.",
+            { duration: 6000 }
+          );
+          return;
+        }
+        navigate("/webapp/recruitment/requisition/new");
+      } finally {
+        setCheckingCanRaise(false);
+      }
     } else if (location.pathname === "/webapp/recruitment/referrals") {
       navigate("/webapp/recruitment/refer");
     }
