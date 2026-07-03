@@ -37,7 +37,6 @@ const FlowTableRow = ({
   const { data: currentUser } = useCurrentUser();
 
   const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
-  const isPendingStatus = ["pending", "open"].includes(stage.status?.toLowerCase());
   const allocatedToUserArray = extractAllocatedToUserArray(allocatedTo.users);
   const canPerformActions = useMemo(() => {
     if (!isActive || !stage.can_act) return false;

@@ -18,7 +18,6 @@ interface WorkflowStageActionsProps {
   handleAction: handleActionType;
   variant?: "pill" | "buttons";
   canAct: boolean;
-  page?: "Flow Requests" | "Separation" | "Confirmation";
   idx?: number;
 }
 
@@ -27,7 +26,6 @@ const WorkflowStageActions = ({
   handleAction,
   variant = "pill",
   canAct,
-  page = "Flow Requests",
   idx = 0,
 }: WorkflowStageActionsProps) => {
   const hasReviewForm = !!(stage?.form_data && stage.status !== "Pending");
