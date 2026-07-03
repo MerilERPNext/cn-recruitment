@@ -89,20 +89,56 @@ def _coerce_form_data(form_data):
 	frappe.throw(frappe._("form_data must be a JSON object or JSON string."))
 
 
+# Field types whose value is textual — an empty string "" is a valid value for
+# these. For every other type (Date, Int, Float, Currency, Check, Table, ...) an
+# empty string is meaningless and, worse, makes Frappe raise TypeError at save
+# (e.g. iterating "" as a child table). Those get normalised to None / [].
+_TEXTUAL_FIELDTYPES = {
+	"Data", "Small Text", "Text", "Long Text", "Text Editor", "Code",
+	"HTML Editor", "Markdown Editor", "Select", "Link", "Dynamic Link",
+	"Attach", "Attach Image", "Read Only", "Password", "Phone", "Signature",
+	"Barcode", "Color", "JSON", "Geolocation",
+}
+
+
+def _clean_value_for_field(df, value):
+	"""Normalise a raw form value for its target field so typed columns don't
+	choke on empty strings. Table fields must be a list (else emptied); other
+	non-text fields turn "" into None."""
+	if df.fieldtype in ("Table", "Table MultiSelect"):
+		return value if isinstance(value, list) else []
+	if value == "" and df.fieldtype not in _TEXTUAL_FIELDTYPES:
+		return None
+	return value
+
+
 def _apply_form_data(doc, payload):
 	"""Set each payload key onto the Job Applicant. Child tables are reset then
-	reappended; keys not on the doctype are ignored."""
+	reappended — each row cleaned against the child doctype's own fields, dropping
+	keys that aren't real child fields. Typed fields are protected from empty-string
+	values that would otherwise raise TypeError at save."""
+	meta = doc.meta
 	for fieldname, value in payload.items():
-		df = doc.meta.get_field(fieldname)
+		df = meta.get_field(fieldname)
 		if not df:
 			continue
-		if df.fieldtype in ("Table", "Table MultiSelect") and isinstance(value, list):
+		if df.fieldtype in ("Table", "Table MultiSelect"):
 			doc.set(fieldname, [])
+			if not isinstance(value, list):
+				continue
+			child_meta = frappe.get_meta(df.options)
 			for row in value:
-				if isinstance(row, dict):
-					doc.append(fieldname, row)
+				if not isinstance(row, dict):
+					continue
+				clean = {}
+				for k, v in row.items():
+					cdf = child_meta.get_field(k)
+					if not cdf:
+						continue  # not a real child field — drop it
+					clean[k] = _clean_value_for_field(cdf, v)
+				doc.append(fieldname, clean)
 		else:
-			doc.set(fieldname, value)
+			doc.set(fieldname, _clean_value_for_field(df, value))
 
 
 def _find_draft(email, opening):
@@ -406,6 +442,21 @@ def _opening_context(opening_name):
 	}
 
 
+def _draft_progress(doc):
+	"""How complete a draft is, measured against the careers fields configured
+	for its opening: ``total`` = number of configured careers fields, ``filled``
+	= how many of them the candidate has a value for, ``percentage`` = filled/total."""
+	fields = _common.get_application_fields_for_channel(doc.job_title, CHANNEL)
+	total = len(fields)
+	if not total:
+		return {"total": 0, "filled": 0, "percentage": 0}
+	filled = sum(
+		1 for f in fields
+		if doc.get(f.get("reference_name")) not in (None, "", [], {})
+	)
+	return {"total": total, "filled": filled, "percentage": round(filled * 100 / total)}
+
+
 def _serialize_draft(doc):
 	opening = doc.job_title
 	display = _opening_context(opening)
@@ -419,6 +470,7 @@ def _serialize_draft(doc):
 		"experience": display["experience"],
 		"employment_type": display["employment_type"],
 		"status": doc.status,
+		"progress": _draft_progress(doc),
 		"creation": doc.creation,
 		"modified": doc.modified,
 	}
