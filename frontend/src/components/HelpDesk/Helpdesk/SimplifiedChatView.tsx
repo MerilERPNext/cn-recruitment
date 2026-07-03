@@ -5,28 +5,20 @@ import { X, Loader2, MessageSquare, CheckCircle, Reply, XCircle, Clock, ChevronD
 import {
   TicketDetail,
   useSendEmailReply,
-  useCloseTicket,
-  useCloseResolvedTicket,
   useRejectResolution,
   useResolutionHistory,
   useUserLookup,
   useEmployeeByUserEmail,
-  useGetFeedbackFormJson,
-  useGetExitFormJson,
   useRevokeTicket,
   useReopenTicket,
 } from "../../../hooks/useHelpDeskTickets";
+import { useTicketCloseFlow } from "../../../hooks/useTicketCloseFlow";
+import TicketCloseModal from "../TicketCloseModal";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import SimplifiedChatInput from "../SimplifiedChatInput";
 import toast from "react-hot-toast";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { showCloseTicketButton } from "../hdelpdeskUtils";
-import { FormIOForm, getFileComponents } from "../../../utils/flowUtils";
-import { getRequiredKeys } from "../../../utils/formioUtils";
-import { Form } from "@tsed/react-formio";
-import { FormioFormSkeleton } from "../LoadingSkeletons";
-import { FormioPreviewItem, FormioPreviewPortal } from "../../shared/molecules/FormioPreview";
-import { useFileUploader } from "../../../hooks/useFileUploader";
 import Modal from "../../shared/Modal";
 import FormPreview from "../../shared/molecules/FormPreview";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
@@ -63,21 +55,59 @@ interface ParsedMessage {
   quotedContent: string | null;
   quotedSender: string | null;
   mainContent: string;
+  extractedAttachments?: { file_url: string; file_name: string }[];
 }
 
 const parseQuotedContent = (htmlContent: string): ParsedMessage => {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlContent, 'text/html');
+    let extractedAttachments: { file_url: string; file_name: string }[] = [];
+
+    // Extract injected attachments div before looking for blockquotes
+    let attachmentsDiv = doc.querySelector('.attachments');
+    let legacyAttachmentsUl: Element | null = null;
+    let legacyAttachmentsTitle: Element | null = null;
+
+    // Fallback for older tickets lacking the .attachments class
+    if (!attachmentsDiv) {
+      const divs = Array.from(doc.querySelectorAll('div'));
+      legacyAttachmentsTitle = divs.find(d => d.textContent?.trim() === 'Attachments:') || null;
+      if (legacyAttachmentsTitle && legacyAttachmentsTitle.nextElementSibling?.tagName.toLowerCase() === 'ul') {
+        legacyAttachmentsUl = legacyAttachmentsTitle.nextElementSibling;
+      }
+    }
+
+    if (attachmentsDiv || legacyAttachmentsUl) {
+      const targetContainer = attachmentsDiv || legacyAttachmentsUl;
+      const links = targetContainer?.querySelectorAll('a');
+      links?.forEach((link) => {
+        const file_url = link.getAttribute('href');
+        const file_name = link.textContent?.trim();
+        if (file_url && file_name) {
+          extractedAttachments.push({ file_url, file_name });
+        }
+      });
+
+      if (attachmentsDiv) {
+        const prev = attachmentsDiv.previousElementSibling;
+        if (prev && prev.tagName.toLowerCase() === 'br') prev.remove();
+        attachmentsDiv.remove();
+      } else if (legacyAttachmentsTitle && legacyAttachmentsUl) {
+        const prev = legacyAttachmentsTitle.previousElementSibling;
+        if (prev && prev.tagName.toLowerCase() === 'br') prev.remove();
+        legacyAttachmentsUl.remove();
+        legacyAttachmentsTitle.remove();
+      }
+    }
 
     // Find blockquote or gmail_quote or outlook reply markers
     const blockquote = doc.querySelector('blockquote, .gmail_quote, #appendonsend, .reply-to-content');
+    let quotedSender: string | null = null;
 
     if (blockquote) {
-      const quotedContent = blockquote.innerHTML;
 
       // Try to parse sender from "On [date], [name] wrote:" pattern
-      let quotedSender: string | null = null;
       const prevSibling = blockquote.previousElementSibling;
       if (prevSibling && prevSibling.textContent) {
         const match = prevSibling.textContent.match(/On .+?, (.+?) wrote:/);
@@ -93,354 +123,24 @@ const parseQuotedContent = (htmlContent: string): ParsedMessage => {
       if (prevSibling && prevSibling.textContent?.includes(' wrote:')) {
         prevSibling.remove();
       }
-
-      const mainContent = doc.body.innerHTML.trim();
-
-      return {
-        quotedContent: quotedContent.trim() || null,
-        quotedSender,
-        mainContent: mainContent || htmlContent
-      };
     }
 
-    return { quotedContent: null, quotedSender: null, mainContent: htmlContent };
+    const mainContent = doc.body.innerHTML.trim();
+
+    return {
+      quotedContent: blockquote ? blockquote.innerHTML.trim() || null : null,
+      quotedSender,
+      mainContent: mainContent || htmlContent,
+      extractedAttachments
+    };
   } catch {
     return { quotedContent: null, quotedSender: null, mainContent: htmlContent };
   }
 };
 
-const removeFormioFile = (formId: string, compKey: string, index: number) => {
-  try {
-    const rootNode = document.getElementById(formId) || document;
-    const container = rootNode.querySelector(`.formio-component-${compKey}`);
-    if (container) {
-      const removeButtons = container.querySelectorAll(
-        'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times'
-      );
-      if (removeButtons && removeButtons[index]) {
-        (removeButtons[index] as HTMLElement).click();
-      } else {
-        console.error("Form.io native remove button not found");
-      }
-    }
-  } catch (err) {
-    console.error("Failed to remove file from formio", err);
-  }
-};
-
-const renderFormioPreviews = (formId: string, formSchema: any, submissionData: any, readOnly: boolean = false) => {
-  if (!formSchema?.components) return null;
-  const fileComps = getFileComponents(formSchema.components);
-  if (fileComps.length === 0) return null;
-
-  return (
-    <>
-      {fileComps.map((comp) => {
-        const rawFiles = submissionData?.[comp.key as string];
-        const files = Array.isArray(rawFiles) ? rawFiles : (rawFiles ? [rawFiles] : []);
-        if (files.length === 0) return null;
-
-        return (
-          <FormioPreviewPortal key={comp.key} compKey={comp.key as string} formContainerId={formId}>
-            <div className="space-y-2 mt-2 w-full">
-              {files.map((fileObj, idx) => (
-                <FormioPreviewItem
-                  key={`${comp.key}-${idx}`}
-                  fileObj={fileObj}
-                  onRemove={() => removeFormioFile(formId, comp.key as string, idx)}
-                  readOnly={readOnly}
-                />
-              ))}
-            </div>
-          </FormioPreviewPortal>
-        );
-      })}
-    </>
-  );
-};
-
-// Resolution Modal Component
-interface ResolutionModalProps {
-  ticket: TicketDetail,
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (resolution: string, exitFormSubmission?: any, feedbackFormSubmission?: any, exitAttachments?: File[], feedbackAttachments?: File[]) => void;
-  isLoading: boolean;
-  isRaiser: boolean;
-  isClosingTicket: boolean;
-  isResolving?: boolean;
-}
-
-export const ResolutionModal: React.FC<ResolutionModalProps> = ({
-  ticket,
-  isOpen,
-  onClose,
-  onSubmit,
-  isClosingTicket,
-  isLoading,
-  isResolving,
-}) => {
-  const [resolution, setResolution] = useState("");
-  const [confirmClose, setConfirmClose] = useState<"yes" | "no">("no");
-
-  /* Formio Exit and Feedback Form Logic */
-  const { data: exitFormJsonData, isLoading: exitFormJsonLoading } = useGetExitFormJson({ category: ticket?.custom_category, sub_category: ticket?.custom_sub_category });
-  const { data: feedbackFormJsonData, isLoading: feedbackFormJsonLoading } = useGetFeedbackFormJson({ category: ticket?.custom_category, sub_category: ticket?.custom_sub_category });
-  const [feedbackFormAttachment, setFeedbackFormAttachment] = useState<File[]>([]);
-  const [exitFormAttachment, setExitFormAttachment] = useState<File[]>([]);
-
-  const exitFormRef = useRef(null)
-  const feedbackFormRef = useRef(null)
-
-  const [exitFormJson, setExitFormJson] = useState<FormIOForm | null>(null);
-  const [feedbackFormJson, setFeedbackFormJson] = useState<FormIOForm | null>(null);
-
-  const [isExitFormValid, setIsExitFormValid] = useState<boolean>(true);
-  const [isFeedbackFormValid, setIsFeedbackFormValid] = useState<boolean>(true);
-
-  const [exitFormSubmission, setExitFormSubmission] = useState<Record<string, unknown> | null>(null);
-  const [feedbackFormSubmission, setFeedbackFormSubmission] = useState<Record<string, unknown> | null>(null);
-
-  useEffect(() => {
-    if (!ticket?.custom_category || !ticket?.custom_sub_category || !Array.isArray(exitFormJsonData?.form_json?.components)) return;
-    const components = exitFormJsonData?.form_json?.components;
-    const requiredKeys = getRequiredKeys(components);
-
-    setIsExitFormValid(requiredKeys.length === 0);
-    if (components.length < 1) return;
-    const filteredComponents = components.filter((comp) => !(comp.type === "button" && comp.action === "submit"));
-
-    setExitFormJson({ display: "form", components: filteredComponents });
-  }, [exitFormJsonData, ticket?.custom_category, ticket?.custom_sub_category]);
-
-  useEffect(() => {
-    if (!ticket?.custom_category || !ticket?.custom_sub_category || !Array.isArray(feedbackFormJsonData?.form_json?.components)) return;
-    const components = feedbackFormJsonData?.form_json?.components;
-    const requiredKeys = getRequiredKeys(components);
-
-    setIsFeedbackFormValid(requiredKeys.length === 0);
-    if (components.length < 1) return;
-    const filteredComponents = components.filter((comp) => !(comp.type === "button" && comp.action === "submit"));
-
-    setFeedbackFormJson({ display: "form", components: filteredComponents });
-  }, [feedbackFormJsonData, ticket?.custom_category, ticket?.custom_sub_category]);
 
 
-  const handleFeedbackFormChange = (submission: { isValid: boolean, data: Record<string, unknown> }) => {
-    setFeedbackFormSubmission(submission.data)
-    setIsFeedbackFormValid(submission.isValid);
-    const fileComponents = getFileComponents(feedbackFormJson?.components || []);
-    const extractedFiles: File[] = [];
 
-    fileComponents.forEach((comp) => {
-      const value = submission.data[comp.key];
-
-      if (Array.isArray(value)) {
-        value.forEach((file) => {
-          if (file?.file) {
-            extractedFiles.push(file);
-          }
-        });
-      }
-    });
-
-    setFeedbackFormAttachment(extractedFiles);
-  };
-
-  const handleExitFormChange = (submission: { isValid: boolean, data: Record<string, unknown> }) => {
-    setExitFormSubmission(submission.data)
-    setIsExitFormValid(submission.isValid);
-
-    const fileComponents = getFileComponents(exitFormJson?.components || []);
-    const extractedFiles: File[] = [];
-
-    fileComponents.forEach((comp) => {
-      const value = submission.data[comp.key];
-
-      if (Array.isArray(value)) {
-        value.forEach((file) => {
-          if (file?.file) {
-            extractedFiles.push(file);
-          }
-        });
-      }
-    });
-    setExitFormAttachment(extractedFiles);
-  };
-  /* END:  Formio Exit and Feedback Form Logic */
-
-  useEffect(() => {
-    if (isOpen) {
-      setResolution("");
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = () => {
-    const payloadResolution = "resolved";
-
-    if (isClosingTicket) {
-      const exitData = exitFormJson ? { schema: exitFormJson, answer: exitFormSubmission ?? {} } : (exitFormSubmission ?? null);
-      const feedbackData = feedbackFormJson ? { schema: feedbackFormJson, answer: feedbackFormSubmission ?? {} } : (feedbackFormSubmission ?? null);
-      onSubmit(payloadResolution, exitData, feedbackData, exitFormAttachment, feedbackFormAttachment);
-    }
-    else {
-      onSubmit(payloadResolution);
-    }
-  };
-
-  const disableSubmit = isLoading ||
-    (isClosingTicket ? confirmClose === "no" : !resolution.trim()) ||
-    (isClosingTicket && (!isExitFormValid || !isFeedbackFormValid));
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="formio-hide-attachment  relative w-full max-w-lg sm:mx-4  flex flex-col sm:max-h-[80vh] max-sm:h-full bg-white sm:rounded-xl shadow-xl">
-        {/** Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {isResolving ? "Resolve Ticket" : "Close Ticket"}
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        {/** Body */}
-        <div className="px-6 overflow-y-auto flex-1 py-4">
-          {isClosingTicket ? (
-            <div className="mb-4">
-              <p className="text-sm font-medium text-gray-800 mb-4">
-                Do you want to close the ticket?
-              </p>
-              <div className="flex gap-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="confirmClose"
-                    value="yes"
-                    checked={confirmClose === "yes"}
-                    onChange={() => setConfirmClose("yes")}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">Yes</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="confirmClose"
-                    value="no"
-                    checked={confirmClose === "no"}
-                    onChange={() => setConfirmClose("no")}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">No</span>
-                </label>
-              </div>
-            </div>
-          ) : (
-            <>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Resolution Details <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={resolution}
-                onChange={(e) => setResolution(e.target.value)}
-                placeholder="Describe how this issue was resolved..."
-                rows={5}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                {isResolving
-                  ? "This will save the resolution and set the ticket status to Resolved."
-                  : "This will close the ticket and save the resolution details."}
-              </p>
-            </>
-          )}
-
-          {
-            feedbackFormJsonLoading &&
-            <FormioFormSkeleton />
-          }
-          {!feedbackFormJsonLoading && feedbackFormJson && <div className="w-full show-req-astrik mt-4 ">
-            <Typography variant="subheading" className="mb-1">Feedback Form Details</Typography>
-            <div id={`feedback-form-container-chat-${ticket.name}`} className="w-full border-gray-100 rounded-lg p-4 border-1">
-              <Form
-                form={feedbackFormJson}
-                ref={feedbackFormRef}
-                options={{
-                  buttonSettings: {
-                    showSubmit: false
-                  }
-                }}
-                onChange={handleFeedbackFormChange}
-              />
-              {renderFormioPreviews(`feedback-form-container-chat-${ticket.name}`, feedbackFormJson, feedbackFormSubmission)}
-            </div>
-          </div>
-          }
-          {
-            exitFormJsonLoading &&
-            <FormioFormSkeleton />
-          }
-          {!exitFormJsonLoading && exitFormJson && <div className="w-full show-req-astrik mt-4 ">
-            <Typography variant="subheading" className="mb-1">Issue Closure Form</Typography>
-            <div id={`exit-form-container-chat-${ticket.name}`} className="w-full border-gray-100 rounded-lg p-4 border-1">
-              <Form
-                form={exitFormJson}
-                ref={exitFormRef}
-                options={{
-                  buttonSettings: {
-                    showSubmit: false
-                  }
-                }}
-                onChange={handleExitFormChange}
-              />
-              {renderFormioPreviews(`exit-form-container-chat-${ticket.name}`, exitFormJson, exitFormSubmission)}
-            </div>
-          </div>
-          }
-        </div>
-
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-          <button
-            onClick={onClose}
-            disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={disableSubmit}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Processing...
-              </>
-            ) : isResolving ? (
-              <>
-                <CheckCircle className="w-4 h-4" />
-                Resolve Ticket
-              </>
-            ) : (
-              <>
-                <CheckCircle className="w-4 h-4" />
-                Close Ticket
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-      {/** Footer */}
-    </div>
-  );
-};
 
 // Reject Resolution Modal Component
 interface RejectResolutionModalProps {
@@ -564,11 +264,11 @@ const Avatar: React.FC<AvatarProps> = ({ sender, isCurrentUser }) => (
       <img
         src={sender.avatar}
         alt={sender.name}
-        className="w-10 h-10 rounded-xl object-cover"
+        className="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-sm"
       />
     ) : (
       <div
-        className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium ${isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+        className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold shadow-sm ${isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-600"
           }`}
       >
         {getInitials(sender.name)}
@@ -591,7 +291,7 @@ const AttachmentList: React.FC<AttachmentListProps> = ({
   if (!attachments || attachments.length === 0) return null;
 
   return (
-    <div className="mt-3 pt-3 border-t border-gray-200/30 flex flex-wrap gap-2">
+    <div className={`mt-3 pt-3 border-t flex flex-wrap gap-2 ${isCurrentUser ? "border-white/20" : "border-gray-100"}`}>
       {attachments.map((attachment, index) => {
         const { category, iconColor, bgColor } = getFileTypeInfo(attachment.file_name);
         return (
@@ -600,21 +300,20 @@ const AttachmentList: React.FC<AttachmentListProps> = ({
             onClick={() =>
               onPreviewFile({ url: attachment.file_url, name: attachment.file_name })
             }
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border max-w-full ${isCurrentUser
-              ? "bg-blue-400/10 border-blue-400/20 text-blue-100 hover:bg-blue-400/20"
-              : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border max-w-full shadow-sm ${isCurrentUser
+              ? "bg-white/15 border-white/20 text-white hover:bg-white/25"
+              : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
               }`}
           >
-            <div
-              className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${isCurrentUser ? "bg-blue-500/20" : bgColor
-                }`}
-            >
+            <div className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${bgColor}`}>
               <FileTypeIcon
                 category={category}
-                className={`w-3.5 h-3.5 ${isCurrentUser ? "text-blue-200" : iconColor}`}
+                className={`w-3.5 h-3.5 ${iconColor}`}
               />
             </div>
-            <span className="truncate max-w-[150px] font-medium">{attachment.file_name}</span>
+            <span className={`truncate max-w-[150px] font-medium ${isCurrentUser ? "text-white" : "text-gray-700"}`}>
+              {attachment.file_name}
+            </span>
           </button>
         );
       })}
@@ -677,18 +376,18 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
 
   if (isCurrentUser) {
     return (
-      <div className="group flex justify-end gap-3 mb-6 simplified-chat-view-quoted-message-a">
+      <div className="group flex justify-end items-end gap-2.5 mb-5 simplified-chat-view-quoted-message-a">
         {!isTicketClosed && (
           <button
             onClick={() => onReplyingTo(message)}
-            className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+            className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all mb-5"
             title="Reply"
           >
             <Reply className="w-4 h-4" />
           </button>
         )}
         <div className="flex flex-col items-end max-w-[75%]">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md px-5 py-4 max-w-full overflow-hidden">
+          <div className="bg-blue-500 text-white rounded-2xl rounded-br-sm px-4 py-3 max-w-full overflow-hidden shadow-sm shadow-blue-200">
             {quotedContent && (
               <QuotedMessage
                 content={quotedContent}
@@ -699,7 +398,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             )}
             <div
               onClick={onContentClick}
-              className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg"
+              className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg leading-relaxed"
               dangerouslySetInnerHTML={{ __html: content }}
             />
             <AttachmentList
@@ -708,7 +407,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
               onPreviewFile={onPreviewFile}
             />
           </div>
-          <span className="text-xs text-gray-400 mt-2 mr-1">{formatTime(timestamp)}</span>
+          <span className="text-[11px] text-gray-400 mt-1.5 mr-1">{formatTime(timestamp)}</span>
         </div>
         <Avatar sender={sender} isCurrentUser={true} />
       </div>
@@ -716,11 +415,11 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   }
 
   return (
-    <div className="group flex justify-start gap-3 mb-6">
+    <div className="group flex justify-start items-end gap-2.5 mb-5">
       <Avatar sender={sender} isCurrentUser={false} />
       <div className="flex flex-col items-start max-w-[75%]">
-        <div className="bg-[#F5F0E8] rounded-2xl rounded-bl-md px-5 py-4 max-w-full overflow-hidden">
-          <div className="text-xs text-gray-500 mb-2 font-medium">{sender.name}</div>
+        <div className="bg-white rounded-2xl rounded-bl-sm px-4 py-3 max-w-full overflow-hidden shadow-sm border border-gray-100">
+          <div className="text-[11px] text-gray-400 mb-1.5 font-medium tracking-wide">{sender.name}</div>
           {quotedContent && (
             <QuotedMessage
               content={quotedContent}
@@ -731,7 +430,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
           )}
           <div
             onClick={onContentClick}
-            className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg"
+            className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer [&_img]:!max-w-full [&_img]:h-auto [&_img]:rounded-lg leading-relaxed"
             dangerouslySetInnerHTML={{ __html: content }}
           />
           <AttachmentList
@@ -740,12 +439,12 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             onPreviewFile={onPreviewFile}
           />
         </div>
-        <span className="text-xs text-gray-400 mt-2 ml-1">{formatTime(timestamp)}</span>
+        <span className="text-[11px] text-gray-400 mt-1.5 ml-1">{formatTime(timestamp)}</span>
       </div>
       {!isTicketClosed && (
         <button
           onClick={() => onReplyingTo(message)}
-          className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+          className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all mb-5"
           title="Reply"
         >
           <Reply className="w-4 h-4" />
@@ -762,19 +461,18 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<"chat" | "resolution">("chat");
-  const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-  const [isResolvingTicket, setIsResolvingTicket] = useState(false);
   const [replyingTo, setReplyingTo] = useState<SimpleChatMessage | null>(null);
   const { isDesktop } = useScreenSize();
   const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
   // Mutations
   const sendEmailMutation = useSendEmailReply();
-  const closeTicketMutation = useCloseTicket();
-  const closeResolvedMutation = useCloseResolvedTicket();
   const rejectResolutionMutation = useRejectResolution();
   const revokeTicketMutation = useRevokeTicket();
   const reopenTicketMutation = useReopenTicket();
+
+  // Centralized close/resolve flow
+  const closeFlow = useTicketCloseFlow({ currentUserEmail });
 
   // UI Permissions
   const { data: userUiPermission } = useGetUiPermission("Help Desk");
@@ -797,10 +495,21 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     const msgs: SimpleChatMessage[] = [];
     const ticketCreationTime = new Date(ticket.creation).getTime();
 
+    // XSS-safe fallback: escape ticket.subject before injecting into HTML
+    const escapedSubject = (ticket.subject || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+    // Parse the original description to extract embedded attachments
+    const parsedDescription = parseQuotedContent(ticket.description || "<p>" + escapedSubject + "</p>");
+
     // Add original request as first message
     msgs.push({
       id: `${ticket.name}-original`,
-      content: ticket.description || `<p>${ticket.subject}</p>`,
+      content: parsedDescription.mainContent,
       sender: {
         name: ticket.contact?.name || ticket.raised_by,
         email: ticket.raised_by,
@@ -808,7 +517,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       },
       timestamp: new Date(ticket.creation),
       isCurrentUser: ticket.raised_by === currentUserEmail,
-      attachments: [],
+      attachments: parsedDescription.extractedAttachments || [],
     });
 
     // Add communications (emails) - skip the first one if it matches ticket creation time
@@ -824,6 +533,15 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       // Parse quoted content from the message
       const parsed = parseQuotedContent(comm.content || '');
 
+      // Combine real attachments with extracted attachments, de-duped by file_url
+      const combinedAttachments = [
+        ...(comm.attachments || []),
+        ...(parsed.extractedAttachments || [])
+      ].filter(
+        (attachment, index, self) =>
+          self.findIndex((a) => a.file_url === attachment.file_url) === index
+      );
+
       msgs.push({
         id: comm.name,
         content: parsed.mainContent,
@@ -836,7 +554,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         },
         timestamp: new Date(comm.creation),
         isCurrentUser: comm.sender === currentUserEmail,
-        attachments: comm.attachments || [],
+        attachments: combinedAttachments,
       });
     });
 
@@ -1012,134 +730,15 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   };
 
   // Handle close ticket button click
-  const handleCloseButtonClick = async () => {
-    // If resolution already exists, close directly without popup
-    if (ticket.resolution_details) {
-      try {
-        await closeTicketMutation.mutateAsync({
-          ticketId: ticket.name,
-          resolutionDetails: ticket.resolution_details,
-        });
-        toast.success("Ticket closed successfully");
-      } catch {
-        toast.error("Failed to close ticket");
-      }
-    } else {
-      // No resolution exists, show popup to enter resolution
-      setIsResolutionModalOpen(true);
-    }
+  const handleCloseButtonClick = () => {
+    closeFlow.initiateClose(ticket);
   };
 
   // Handle resolve ticket button click
   const handleResolveButtonClick = () => {
-    setIsResolvingTicket(true);
-    setIsResolutionModalOpen(true);
+    closeFlow.initiateResolve(ticket);
   };
   const loadingContext = useLoadingOverlay();
-  const { uploadFiles } = useFileUploader();
-  // Handle close ticket with resolution from modal
-  const handleCloseTicket = async (resolution: string, exitFormSubmission?: any, feedbackFormSubmission?: any, exitAttachments?: File[], feedbackAttachments?: File[]) => {
-    try {
-      const finalExitFormSubmission = exitFormSubmission;
-      const finalFeedbackFormSubmission = feedbackFormSubmission;
-
-      loadingContext.show("Closing ticket...");
-
-      // 1. First upload Exit Form files if they exist
-      if (exitAttachments && exitAttachments.length > 0) {
-        loadingContext.show("Uploading exit form files...");
-        const uploadResults = await uploadFiles(exitAttachments, "HD Ticket", ticket.name);
-
-        // Map results back to exitFormSubmission
-        if (exitFormSubmission?.answer) {
-          let uploadIdx = 0;
-          const fileComponents = getFileComponents(exitFormSubmission.schema?.components || []);
-          fileComponents.forEach(comp => {
-            const val = exitFormSubmission.answer[comp.key];
-            if (Array.isArray(val)) {
-              exitFormSubmission.answer[comp.key] = val.map(fileObj => {
-                if (fileObj.file && uploadIdx < uploadResults.length) {
-                  const uploadRes = uploadResults[uploadIdx++];
-                  return {
-                    storage: "url",
-                    name: uploadRes.file_name,
-                    url: uploadRes.file_url,
-                    size: uploadRes.file_size,
-                    type: uploadRes.file_type,
-                    data: { role: "remote" }
-                  };
-                }
-                return fileObj;
-              });
-            }
-          });
-        }
-      }
-
-      // 2. Upload Feedback Form files if they exist
-      if (feedbackAttachments && feedbackAttachments.length > 0) {
-        loadingContext.show("Uploading feedback form files...");
-        const uploadResults = await uploadFiles(feedbackAttachments, "HD Ticket", ticket.name);
-
-        // Map results back to feedbackFormSubmission
-        if (feedbackFormSubmission?.answer) {
-          let uploadIdx = 0;
-          const fileComponents = getFileComponents(feedbackFormSubmission.schema?.components || []);
-          fileComponents.forEach(comp => {
-            const val = feedbackFormSubmission.answer[comp.key];
-            if (Array.isArray(val)) {
-              feedbackFormSubmission.answer[comp.key] = val.map(fileObj => {
-                if (fileObj.file && uploadIdx < uploadResults.length) {
-                  const uploadRes = uploadResults[uploadIdx++];
-                  return {
-                    storage: "url",
-                    name: uploadRes.file_name,
-                    url: uploadRes.file_url,
-                    size: uploadRes.file_size,
-                    type: uploadRes.file_type,
-                    data: { role: "remote" }
-                  };
-                }
-                return fileObj;
-              });
-            }
-          });
-        }
-      }
-
-      // 3. Close the ticket with updated form data
-      await closeTicketMutation.mutateAsync({
-        ticketId: ticket.name,
-        resolutionDetails: resolution,
-        closingFormData: finalExitFormSubmission ? JSON.stringify(finalExitFormSubmission) : undefined,
-        feedbackFormData: finalFeedbackFormSubmission ? JSON.stringify(finalFeedbackFormSubmission) : undefined
-      });
-
-      toast.success("Ticket closed successfully");
-      setIsResolutionModalOpen(false);
-    } catch (error) {
-      console.error("Failed to close ticket:", error);
-      toast.error("Failed to close ticket");
-    } finally {
-      loadingContext.hide();
-    }
-  };
-
-  // Handle save resolution (sets status to Resolved, not Closed)
-  const handleSaveResolution = async (resolution: string) => {
-    try {
-      await closeTicketMutation.mutateAsync({
-        ticketId: ticket.name,
-        resolutionDetails: resolution,
-        status: "Resolved", // Set to Resolved, not Closed
-      });
-      toast.success("Resolution saved successfully");
-      setIsResolutionModalOpen(false);
-      setIsResolvingTicket(false);
-    } catch {
-      toast.error("Failed to save resolution");
-    }
-  };
 
   // Handle reject resolution
   const handleRejectResolution = async (rejectionReason: string) => {
@@ -1155,15 +754,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     }
   };
 
-  // Handle accept closure (for Resolved tickets)
-  const handleAcceptClosure = async () => {
-    try {
-      await closeResolvedMutation.mutateAsync({ ticketId: ticket.name });
-      toast.success("Ticket closed successfully");
-    } catch {
-      toast.error("Failed to close ticket");
-    }
-  };
 
   const handleRevoke = async () => {
     try {
@@ -1190,7 +780,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   };
 
   const isSending = sendEmailMutation.isPending;
-  const isClosing = closeTicketMutation.isPending || closeResolvedMutation.isPending;
+  const isClosing = closeFlow.isProcessing;
 
   const parseForm = (form: string | null | undefined) => {
     if (typeof form === "string") {
@@ -1235,7 +825,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     actionItems.push({
       label: isClosing ? "Closing..." : "Accept Closure",
       icon: <CheckCircle className="w-4 h-4 text-green-600" />,
-      onClick: handleAcceptClosure,
+      onClick: handleCloseButtonClick,
     });
     actionItems.push({
       label: "Reject",
@@ -1301,7 +891,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             Add resolution details to close this ticket
           </p>
           <button
-            onClick={() => setIsResolutionModalOpen(true)}
+            onClick={() => closeFlow.initiateClose(ticket)}
             className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors bg-green-500 hover:bg-green-600"
           >
             <CheckCircle className="w-4 h-4" />
@@ -1592,7 +1182,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       ) : (
         <>
           {/* Chat Content Area */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="flex-1 overflow-y-auto px-4 py-5" style={{ background: "#f7f8fa" }}>
             {Object.entries(groupedMessages).length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full">
                 <MessageSquare className="w-12 h-12 text-gray-300 mb-3" />
@@ -1605,9 +1195,9 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               <div>
                 {Object.entries(groupedMessages).map(([dateKey, dateMessages]) => (
                   <div key={dateKey}>
-                    {/* Date separator - RECTANGULAR not elliptical */}
-                    <div className="flex items-center justify-center my-6">
-                      <span className="px-4 py-1 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-500 shadow-sm">
+                    {/* Date separator - pill/lozenge style matching Figma */}
+                    <div className="flex items-center justify-center my-5">
+                      <span className="px-5 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-500 shadow-sm tracking-wide">
                         {dateKey}
                       </span>
                     </div>
@@ -1647,19 +1237,12 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         </>
       )}
 
-      {/* Resolution Modal */}
-      <ResolutionModal
-        ticket={ticket}
-        isOpen={isResolutionModalOpen}
-        onClose={() => {
-          setIsResolutionModalOpen(false);
-          setIsResolvingTicket(false);
-        }}
-        onSubmit={isResolvingTicket ? handleSaveResolution : handleCloseTicket}
-        isLoading={isClosing}
-        isRaiser={true}
-        isClosingTicket={!isResolvingTicket}
-        isResolving={isResolvingTicket}
+      {/* Centralized Close/Resolve Modal */}
+      <TicketCloseModal
+        modalState={closeFlow.modalState}
+        onClose={closeFlow.closeModal}
+        onSubmit={closeFlow.handleModalSubmit}
+        isLoading={closeFlow.isProcessing}
       />
 
       {/* Reject Resolution Modal */}

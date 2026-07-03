@@ -248,6 +248,12 @@ doc_events = {
         "on_update_after_submit": "recruitment.api.action_center.sync_job_offer_action_item"
     },
     "Job Requisition": {
+        "before_insert": [
+            # Gate: only employees configured under Raise Requisition Scope may
+            # raise requisitions (empty config ⇒ everyone allowed). Authoritative
+            # block across Desk, React/ESS API and scripted inserts.
+            "recruitment.recruitment.doctype.raise_requisition_scope.raise_requisition_scope.enforce_can_raise",
+        ],
         "validate": [
             # Keep no_of_positions in sync with the actual custom_position_details
             # row count on every save (Desk UI edits, scripted updates, etc.).

@@ -12,6 +12,8 @@
   "role_type",
   "assigned_section",
   "assigned_user",
+  "assigned_buddies",
+  "assigned_teammates",
   "assigned_manager",
   "filters_section",
   "department",
@@ -56,7 +58,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Role Type",
-   "options": "Onboarding Buddy\nTeammates\nManager",
+   "options": "Onboarding Buddy\nTeammates\nManager\nAll",
    "reqd": 1
   },
   {
@@ -65,17 +67,33 @@
    "label": "Assignment"
   },
   {
-   "depends_on": "eval:doc.role_type && doc.role_type!='Manager'",
+   "depends_on": "eval:doc.role_type=='Onboarding Buddy' || doc.role_type=='Teammates'",
    "description": "Select one or more users. For Onboarding Buddy and Teammates roles, all of these are assigned to the candidate's Employee Onboarding.",
    "fieldname": "assigned_user",
    "fieldtype": "Table MultiSelect",
    "label": "Assigned Users",
-   "mandatory_depends_on": "eval:doc.role_type && doc.role_type!='Manager'",
+   "mandatory_depends_on": "eval:doc.role_type=='Onboarding Buddy' || doc.role_type=='Teammates'",
    "options": "Onboarding Buddy User"
   },
   {
-   "depends_on": "eval:doc.role_type=='Manager'",
-   "description": "The Manager is a single Employee (used only when Role Type is Manager).",
+   "depends_on": "eval:doc.role_type=='All'",
+   "description": "Onboarding Buddies for the 'All' rule (multiple). Assigned to the candidate's Employee Onboarding Onboarding Buddy field.",
+   "fieldname": "assigned_buddies",
+   "fieldtype": "Table MultiSelect",
+   "label": "Onboarding Buddies",
+   "options": "Onboarding Buddy User"
+  },
+  {
+   "depends_on": "eval:doc.role_type=='All'",
+   "description": "Teammates for the 'All' rule (multiple). Assigned to the candidate's Employee Onboarding Teammates field.",
+   "fieldname": "assigned_teammates",
+   "fieldtype": "Table MultiSelect",
+   "label": "Teammates",
+   "options": "Onboarding Buddy User"
+  },
+  {
+   "depends_on": "eval:doc.role_type=='Manager' || doc.role_type=='All'",
+   "description": "The Manager is a single Employee (used when Role Type is Manager or All).",
    "fieldname": "assigned_manager",
    "fieldtype": "Link",
    "label": "Manager (Employee)",

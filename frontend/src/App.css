@@ -102,7 +102,16 @@
   padding: 0 !important;
   background: transparent !important;
 }
-
+.scrollbar-visible::-webkit-scrollbar {
+  height: 2px;
+}
+.scrollbar-visible::-webkit-scrollbar-track {
+  background: #e5e7eb;
+}
+.scrollbar-visible::-webkit-scrollbar-thumb {
+  background: #474747;
+  border-radius: 4px;
+}
 .address-form-container .row {
   /* increase specificity and force no-wrap */
   display: flex !important;

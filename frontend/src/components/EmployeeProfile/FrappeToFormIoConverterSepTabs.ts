@@ -1504,6 +1504,21 @@ export async function convertFieldsToSimpleTabbedData(
       }
     } else if (field.fieldtype === "Section Break") {
       if (!currentTab) continue;
+
+      // Unlabeled section breaks (often auto-generated layout artifacts with
+      // no header) shouldn't fragment the current grid into a new section —
+      // that leaves stray gaps when the split section's field count isn't a
+      // multiple of the grid's column count. Treat them like a Column Break
+      // instead, only closing the section when it actually has a label.
+      if (!field.label && currentSection) {
+        flushColumn();
+        currentColumn = {
+          key: `${currentSection.key}_col${currentSection.columns.length}`,
+          fields: [],
+        };
+        continue;
+      }
+
       flushSection();
       currentSection = {
         label: field.label || "",

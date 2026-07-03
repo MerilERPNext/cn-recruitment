@@ -6,6 +6,12 @@ def get_doctype_with_custom_fields(doctype_name):
     if not doctype_name:
         frappe.throw(_("Doctype name is required"))
 
+    if not frappe.has_permission(doctype_name, "read"):
+        frappe.throw(
+            _("Not permitted to read {0}").format(doctype_name),
+            frappe.PermissionError,
+        )
+
     meta = frappe.get_meta(doctype_name)
     standard_fields = [{
         "fieldname": f.fieldname,

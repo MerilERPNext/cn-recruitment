@@ -39,10 +39,28 @@ import {
 import toast from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
 import FrappeAPI from "../../utils/frappeAPI";
+import BulkResumeUploadModal, { type UploadedResume } from "./BulkResumeUploadModal";
+import { requisitionService } from "../../services/requisitionService";
 import { useQueryClient } from "@tanstack/react-query";
 import { Edit, X, FileText, Loader2 } from "lucide-react";
 import { IoMdCloudUpload } from "react-icons/io";
 import "../../formio.custom.css";
+
+// Normalise any date the form may hold — ISO (yyyy-mm-dd), Indian (dd-MM-yyyy),
+// a Date, or a full ISO timestamp — into the backend's yyyy-mm-dd. Dates are
+// displayed as dd-MM-yyyy in the form, so the payload must accept that too.
+const toBackendDate = (v: unknown): string => {
+  const today = () => new Date().toISOString().split("T")[0];
+  if (!v) return today();
+  if (typeof v === "string") {
+    const dmy = v.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+    if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+    const ymd = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (ymd) return `${ymd[1]}-${ymd[2]}-${ymd[3]}`;
+  }
+  const d = new Date(v as any);
+  return isNaN(d.getTime()) ? today() : d.toISOString().split("T")[0];
+};
 
 // ---------------------------------------------------------------------------
 // Validation config per step index
@@ -55,7 +73,8 @@ const stepValidationRules: Record<string, { key: string; label: string }[]> = {
     { key: "company", label: "Company" },
     { key: "department", label: "Department" },
     { key: "designation", label: "Designation" },
-    { key: "functional_area", label: "Functional Area" },
+    // Functional Area is auto-derived from Designation (read-only, not
+    // mandatory) — so it is NOT part of the required gate.
   ],
   jobDetails: [
     { key: "salary_currency", label: "Salary Range (Currency)" },
@@ -142,9 +161,8 @@ function validateStep(
       if (colRequired("location") && !pos.location) {
         errors.push(`Position ${i + 1}: Location is required.`);
       }
-      if (colRequired("functional_area") && !pos.functional_area) {
-        errors.push(`Position ${i + 1}: Functional Area is required.`);
-      }
+      // Functional Area is auto-derived from the requisition designation
+      // (read-only) — never block the user on it.
       if (colRequired("reporting_manager") && !pos.reporting_manager) {
         errors.push(`Position ${i + 1}: Reporting Manager is required.`);
       }
@@ -336,6 +354,11 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
       replacement_for: p.replacement_for,
       replacement_for_title: p.replacement_for_title,
 
+      // Backend-generated "Employee Type" column — carry the saved value (and
+      // its title) so the field isn't empty on edit.
+      employee_type: p.employee_type,
+      employee_type_title: p.employee_type_title,
+
       cost_center_allocations: p.cost_center_allocations,
     })),
 
@@ -517,6 +540,15 @@ function applyPositionCounts(newData: any, changedKey: string) {
     position_number: idx + 1,
     vacancy_type: idx < newP ? "New" : "Replacement",
     ...(idx < newP ? { replacement_for: "" } : {}),
+    // Functional Area mirrors the requisition (derived from Designation) in
+    // every row — carry the title too so the column shows it, not the id.
+    ...(newData.functional_area
+      ? {
+          functional_area: newData.functional_area,
+          functional_area_title:
+            newData.functional_area_title || newData.functional_area,
+        }
+      : {}),
   }));
 
   return newData;
@@ -554,6 +586,7 @@ const POSITION_SELECT_TITLE_KEYS: [string, string][] = [
   ["functional_area", "functional_area_title"],
   ["reporting_manager", "reporting_manager_title"],
   ["replacement_for", "replacement_for_title"],
+  ["employee_type", "employee_type_title"],
 ];
 
 function buildSelectData(data: any): Record<string, any> {
@@ -654,6 +687,28 @@ const RequisitionForm = () => {
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // Gate guard for direct navigation to the New Requisition URL (bypassing the
+  // "Raise Requisition Request" button check). Editing an existing requisition
+  // is always allowed; only NEW creation is gated. The server before_insert
+  // hook stays the authoritative block — this is purely for a clean UX.
+  useEffect(() => {
+    if (isEditMode) return;
+    let cancelled = false;
+    (async () => {
+      const res = await requisitionService.checkCanRaiseRequisition();
+      if (!cancelled && !res.allowed) {
+        toast.error(
+          res.reason || "You are not permitted to raise requisitions.",
+          { duration: 6000 }
+        );
+        navigate("/webapp/recruitment/requisition");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isEditMode, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -887,6 +942,48 @@ const RequisitionForm = () => {
     },
     [loading, pushFormSync]
   );
+
+  // ── Bulk resume upload → one candidate row per uploaded resume ──
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+
+  const handleBulkResumesUploaded = (results: UploadedResume[]) => {
+    if (!results.length) return;
+    const base = (formDataRef.current?.custom_pre_screened_candidates || []).length;
+    const newRows = results.map((r) => ({
+      // Seed the candidate name from the file name (sans extension).
+      candidate_name: r.fileName.replace(/\.[^.]+$/, ""),
+      email: "",
+      phone: "",
+      cv: r.fileUrl,
+      offer_directly: false,
+    }));
+    setFormData((prev: any) => ({
+      ...prev,
+      custom_pre_screened_candidates: [
+        ...(prev.custom_pre_screened_candidates || []),
+        ...newRows,
+      ],
+    }));
+    // Track the file name / id for each new row so the inline column shows the
+    // uploaded file and "Remove file" works.
+    setCandidateFileNames((m) => {
+      const n = { ...m };
+      results.forEach((r, i) => {
+        n[base + i] = r.fileName;
+      });
+      return n;
+    });
+    setCandidateFileIds((m) => {
+      const n = { ...m };
+      results.forEach((r, i) => {
+        if (r.fileId) n[base + i] = r.fileId;
+      });
+      return n;
+    });
+    toast.success(
+      `${results.length} resume${results.length > 1 ? "s" : ""} uploaded — ${results.length} candidate row${results.length > 1 ? "s" : ""} created`
+    );
+  };
 
   // ── Row-level mutations for the custom Pre-Screened Candidates table ──
   const addCandidate = () => {
@@ -1277,8 +1374,82 @@ const RequisitionForm = () => {
     return val === undefined || val === null ? "" : String(val);
   };
 
+  // #1 Functional Area auto-fetch: a Designation links to exactly one Functional
+  // Area (Designation.custom_functional_area). When the user picks a designation,
+  // pull that linked Functional Area and populate the field automatically, keeping
+  // it in sync with the selected designation.
+  const autoFillFunctionalArea = useCallback(
+    async (designation: string) => {
+      try {
+        // Functional Area is taken straight from the Designation record (the
+        // Designation doctype already stores it in `custom_functional_area`).
+        const desigRes: any = await FrappeAPI.callMethod("frappe.client.get_value", {
+          doctype: "Designation",
+          filters: designation,
+          fieldname: "custom_functional_area",
+        });
+        // When the designation has no functional area, faId is "" — we still
+        // fall through to clear any stale value from the previous designation.
+        const faId: string = desigRes?.custom_functional_area || "";
+        // Resolve the human-readable title (functional_area_name) via the form's
+        // standard field-options endpoint so the field shows the TITLE, not the
+        // id. `include` guarantees the linked id is in the results.
+        let faTitle = faId;
+        if (faId) {
+          try {
+            const opts: any = await FrappeAPI.callMethod(
+              "recruitment.api.job_requisition.get_link_field_options",
+              { doctype: "Functional Area", include: faId, limit: 1 }
+            );
+            const match = (opts?.results || []).find((r: any) => r.id === faId);
+            if (match?.label) faTitle = match.label;
+          } catch {
+            /* fall back to the id as the label */
+          }
+        }
+        setFormData((prev: any) => {
+          if (prev.designation !== designation) return prev; // designation moved on
+          // Mirror the derived Functional Area into every position row so all
+          // rows stay in sync with the requisition's designation (clearing the
+          // title when there is no functional area).
+          const positions = Array.isArray(prev.positions)
+            ? prev.positions.map((p: any) => {
+                const updated = { ...p, functional_area: faId };
+                if (faTitle) updated.functional_area_title = faTitle;
+                else delete updated.functional_area_title;
+                return updated;
+              })
+            : prev.positions;
+          if (prev.functional_area === faId && positions === prev.positions) {
+            return prev;
+          }
+          const next: any = { ...prev, functional_area: faId, positions };
+          if (faTitle) next.functional_area_title = faTitle;
+          else delete next.functional_area_title;
+          return next;
+        });
+        pushFormSync();
+      } catch (e) {
+        console.error("Functional area auto-fetch failed", e);
+      }
+    },
+    [pushFormSync]
+  );
+
   const handleChange = (changed: { data: any; changed?: { component?: { key?: string }; value?: any }; metadata?: any }) => {
     const newData = { ...formData, ...changed.data };
+
+    // When the user changes the Designation, auto-populate the Functional Area
+    // from the designation's linked value (and clear it when designation clears).
+    const changedKey = changed.changed?.component?.key;
+    if (changedKey === "designation") {
+      if (newData.designation) {
+        void autoFillFunctionalArea(newData.designation);
+      } else {
+        newData.functional_area = "";
+        delete newData.functional_area_title;
+      }
+    }
 
     // Capture the human-readable label of each url/link <select> alongside its
     // stored id, so the Review tab (and the preview payload) can show the title
@@ -1353,6 +1524,17 @@ const RequisitionForm = () => {
         POSITION_SELECT_TITLE_KEYS.forEach(([key, titleKey]) => {
           if (!updated[key]) delete updated[titleKey];
         });
+        // Functional Area is auto-derived from the requisition designation, so
+        // every row mirrors the top-level id AND its title (so the column shows
+        // the title, not the id — including newly-added rows).
+        if (newData.functional_area) {
+          updated.functional_area = newData.functional_area;
+          updated.functional_area_title =
+            newData.functional_area_title || newData.functional_area;
+        } else {
+          updated.functional_area = "";
+          delete updated.functional_area_title;
+        }
         return updated;
       });
     }
@@ -1440,9 +1622,7 @@ const RequisitionForm = () => {
       custom_salary_range_min: finalData.salary_min,
       custom_salary_range_max: finalData.salary_max,
       custom_salary_timeframe: finalData.salary_timeframe,
-      posting_date: finalData.recruitment_start_date
-        ? new Date(finalData.recruitment_start_date).toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0],
+      posting_date: toBackendDate(finalData.recruitment_start_date),
       requested_by_dept: finalData.department,
       custom_type_of_position: (finalData.positions || [])[0]?.vacancy_type || "New",
       no_of_positions: finalData.number_of_positions || (finalData.positions || []).length || 1,
@@ -1452,7 +1632,7 @@ const RequisitionForm = () => {
         ? Number(finalData.expected_compensation)
         : undefined,
       expected_by: finalData.expected_by
-        ? new Date(finalData.expected_by).toISOString().split("T")[0]
+        ? toBackendDate(finalData.expected_by)
         : undefined,
       custom_employment_type: ["Full Time", "Part Time", "Contract", "Intern", "Freelance"].includes(
         finalData.employment_type || ""
@@ -2063,13 +2243,48 @@ const RequisitionForm = () => {
                     </tbody>
                   </table>
                 </div>
-                <button
-                  type="button"
-                  onClick={addCandidate}
-                  className="mt-2 px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition"
-                >
-                  + Add Candidate
-                </button>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={addCandidate}
+                    className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 transition"
+                  >
+                    + Add Candidate
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBulkUploadOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-primary/40 text-primary rounded text-sm hover:bg-primary/5 transition"
+                  >
+                    <IoMdCloudUpload className="text-base" />
+                    Bulk Upload Resumes
+                  </button>
+                </div>
+
+                <BulkResumeUploadModal
+                  open={bulkUploadOpen}
+                  onClose={() => setBulkUploadOpen(false)}
+                  uploadFile={(file) => uploadMutation.mutateAsync(file)}
+                  onUploaded={handleBulkResumesUploaded}
+                  existingFileNames={[
+                    ...Object.values(candidateFileNames),
+                    ...(((formData as any).custom_pre_screened_candidates || [])
+                      .map((c: any) => c?.cv)
+                      .filter(Boolean)
+                      .map((url: string) => {
+                        // Strip any query/hash, take the last path segment, and
+                        // decode %20 etc. so duplicate detection matches the
+                        // original file name.
+                        const base =
+                          url.split("?")[0].split("#")[0].split("/").pop() || "";
+                        try {
+                          return decodeURIComponent(base);
+                        } catch {
+                          return base;
+                        }
+                      })),
+                  ]}
+                />
               </div>
             )}
 

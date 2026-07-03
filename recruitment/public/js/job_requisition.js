@@ -13,6 +13,33 @@
 //     without scrolling through raw Text Editor markup.
 
 frappe.ui.form.on("Job Requisition", {
+    onload(frm) {
+        // Gate: on a NEW requisition, check Raise Requisition Scope up front so a
+        // user who isn't permitted gets a clean popup and is bounced back instead
+        // of filling the form only to be blocked at save. The server-side
+        // before_insert hook remains the authoritative block.
+        if (!frm.is_new()) {
+            return;
+        }
+        frappe.call({
+            method: "recruitment.recruitment.doctype.raise_requisition_scope.raise_requisition_scope.check_can_raise_requisition",
+            callback(r) {
+                const res = r.message || {};
+                if (res.allowed) {
+                    return;
+                }
+                frappe.msgprint({
+                    title: __("Not Allowed to Raise Requisition"),
+                    indicator: "red",
+                    message: res.reason || __("You are not permitted to raise requisitions."),
+                });
+                // Send them somewhere harmless rather than leaving a form they
+                // cannot save open.
+                frappe.set_route("List", "Job Requisition");
+            },
+        });
+    },
+
     refresh(frm) {
         render_description_preview(frm);
     },

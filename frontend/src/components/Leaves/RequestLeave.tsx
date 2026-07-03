@@ -365,6 +365,23 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     formData.toDate || undefined,
   );
 
+  // Reset daily config to "Full Day" when half-day is not allowed for the selected leave type
+  useEffect(() => {
+    if (fields?.show?.half_day === 0) {
+      setDailyConfig((prev) => {
+        const hasHalfDay = Object.values(prev).some(
+          (v) => v === "First Half" || v === "Second Half",
+        );
+        if (!hasHalfDay) return prev;
+        const next: Record<string, "Full Day" | "First Half" | "Second Half"> = {};
+        Object.keys(prev).forEach((d) => {
+          next[d] = "Full Day";
+        });
+        return next;
+      });
+    }
+  }, [fields?.show?.half_day]);
+
   const { data: dateRangeData } = useGetLeaveDateRange(
     currentEmployee?.name,
     formData.leaveType,
@@ -551,7 +568,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           return att;
         }),
       );
-
+      onCancel?.();
       // Use showToast so partial-success responses (some days created, some
       // failed) render separate success + error toasts automatically.
       errorResponseFormater(
@@ -755,6 +772,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             value={dailyConfig}
             onChange={setDailyConfig}
             attendanceStatus={attendanceStatus}
+            halfDayAllowed={fields?.show?.half_day === 1}
           />
         )}
       </div>

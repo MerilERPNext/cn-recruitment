@@ -448,6 +448,50 @@
 			syncActiveTabFromFilters(listview);
 			renderTabs();
 			fetchAux();
+
+			// "Activate Job Requisition" — associate an existing Job Opening with
+			// the selected requisition (same as the form's Associate Job Opening).
+			listview.page.add_action_item(__("Activate Job Requisition"), () => {
+				const selected = listview.get_checked_items();
+				if (!selected.length) {
+					frappe.msgprint(__("Select a Job Requisition first.")); return;
+				}
+				if (selected.length > 1) {
+					frappe.msgprint(__("Please select a single Job Requisition to activate.")); return;
+				}
+				const row = selected[0];
+				const req = row.name;
+				frappe.prompt(
+					[{
+						fieldname: "job_opening", label: __("Job Opening"),
+						fieldtype: "Link", options: "Job Opening", reqd: 1,
+						description: __("The Job Opening to associate with {0}.", [req]),
+						// Dynamic filter — same as HRMS Associate Job Opening: scope to
+						// the requisition's company / designation / department, status Open.
+						get_query: () => {
+							const filters = { status: "Open" };
+							if (row.company) filters.company = row.company;
+							if (row.designation) filters.designation = row.designation;
+							if (row.department) filters.department = row.department;
+							return { filters };
+						},
+					}],
+					(values) => {
+						frappe.call({
+							method: "recruitment.api.job_requisition.activate_job_requisition",
+							args: { job_requisition: req, job_opening: values.job_opening },
+							freeze: true,
+							freeze_message: __("Activating…"),
+							callback: () => {
+								frappe.show_alert({ message: __("Job Requisition activated"), indicator: "green" });
+								listview.refresh();
+							},
+						});
+					},
+					__("Activate Job Requisition"),
+					__("Activate"),
+				);
+			});
 		},
 
 		refresh(listview) {

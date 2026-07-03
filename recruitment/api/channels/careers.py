@@ -12,8 +12,13 @@ listing and submit so the frontend has a single place to call for Careers Page.
 """
 
 import frappe
+from frappe.utils import cint
 
-from recruitment.api.candidate_auth import candidate_required, get_current_candidate
+from recruitment.api.candidate_auth import (
+	candidate_required,
+	enforce_candidate_identity,
+	get_current_candidate,
+)
 
 from . import _common
 
@@ -21,19 +26,65 @@ from . import _common
 CHANNEL = "careers"
 
 
+def _applied_openings(email, opening_names):
+	"""Set of opening names this candidate (by email) has already applied to.
+
+	One query for the whole page. `job_title` on Job Applicant is the Link to
+	Job Opening, so it holds the opening name."""
+	if not email or not opening_names:
+		return set()
+	return set(
+		frappe.get_all(
+			"Job Applicant",
+			filters={"email_id": email, "job_title": ["in", list(opening_names)]},
+			pluck="job_title",
+		)
+	)
+
+
+def _saved_openings(email, opening_names):
+	"""Set of opening names this candidate (by email) has saved.
+
+	`Saved Job Opening` holds one doc per `candidate_email`; the saved openings
+	live in its `job_openings` child table (Saved Job Opening Item.job_opening)."""
+	if not email or not opening_names:
+		return set()
+	parent = frappe.db.get_value("Saved Job Opening", {"candidate_email": email}, "name")
+	if not parent:
+		return set()
+	return set(
+		frappe.get_all(
+			"Saved Job Opening Item",
+			filters={"parent": parent, "job_opening": ["in", list(opening_names)]},
+			pluck="job_opening",
+		)
+	)
+
+
 @candidate_required
-def list_openings(search_term=None, filters=None):
+def list_openings(search_term=None, filters=None, email=None, page=None, limit=None):
 	"""List openings active on the Careers Page for the authenticated candidate.
 
 	`search_term` optionally does a free-text match on job code / title / labels.
 	`filters` is an optional dict (or JSON string) of {fieldname: value | [values]}
 	keyed by the configured Career Page Search Filter fields; only those fields are
-	honoured. Authentication is enforced via the `candidate_portal_session` cookie
+	honoured. `email` optionally scopes the "already applied" check — it must be the
+	authenticated candidate's own email (enforced), otherwise the session email is
+	used. Authentication is enforced via the `candidate_portal_session` cookie
 	(see `recruitment.api.candidate_auth.candidate_required`).
 
-	Returns ``{"columns": [...], "search_filters": [...], "openings": [...]}`` so
-	the frontend can render the card, the search bar and the filter section from a
-	single call. ``openings`` is the card list after search + filters are applied.
+	`page` (1-based) and `limit` optionally paginate the result. Search/filters are
+	applied first, then the matching set is sliced — so paging is consistent with the
+	visible list. When `limit` is omitted the full matching list is returned (unchanged
+	behaviour); the `pagination` block is always present so the frontend can rely on it.
+
+	Returns ``{"columns": [...], "search_filters": [...], "openings": [...],
+	"pagination": {"total", "page", "limit", "total_pages", "has_more"}}`` so the
+	frontend can render the card, the search bar and the filter section from a single
+	call. Each opening carries ``"applied": true/false`` — true when this candidate
+	already created a Job Applicant for that opening, so the frontend can disable
+	re-applying — and ``"saved": true/false`` — true when this candidate has this
+	opening in their Saved Job Opening list.
 	"""
 	columns = _common.get_configured_columns(CHANNEL)
 	search_filters = _common.get_configured_search_filters()
@@ -50,7 +101,47 @@ def list_openings(search_term=None, filters=None):
 		and _common.card_matches_search(c, search_term, extra_keys=search_keys)
 		and _common.card_matches_filters(c, selected, search_filters)
 	]
-	return {"columns": columns, "search_filters": search_filters, "openings": openings}
+
+	# Paginate the matched set. `limit` omitted (or <= 0) -> return everything, so
+	# existing callers that don't pass paging keep the full list.
+	total = len(openings)
+	page = max(cint(page), 1)
+	limit = cint(limit)
+	if limit > 0:
+		start = (page - 1) * limit
+		openings = openings[start:start + limit]
+		total_pages = -(-total // limit)  # ceil division
+		has_more = page < total_pages
+	else:
+		total_pages = 1
+		has_more = False
+	pagination = {
+		"total": total,
+		"page": page,
+		"limit": limit,
+		"total_pages": total_pages,
+		"has_more": has_more,
+	}
+
+	# "Already applied" status, for the current page only. Use the candidate's own
+	# email — if the frontend passes one, it must match the authenticated session
+	# (no querying another candidate's application status).
+	check_email = (email or get_current_candidate() or "").strip().lower()
+	if email and check_email:
+		enforce_candidate_identity(email=check_email)
+	page_names = [c["name"] for c in openings]
+	applied = _applied_openings(check_email, page_names)
+	saved = _saved_openings(check_email, page_names)
+	for c in openings:
+		c["applied"] = c["name"] in applied
+		c["saved"] = c["name"] in saved
+
+	return {
+		"columns": columns,
+		"search_filters": search_filters,
+		"openings": openings,
+		"pagination": pagination,
+	}
 
 
 @candidate_required
