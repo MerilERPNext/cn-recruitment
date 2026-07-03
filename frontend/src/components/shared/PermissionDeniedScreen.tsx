@@ -13,9 +13,8 @@ const PermissionDeniedScreen: React.FC<PermissionDeniedScreenProps> = ({ onRetry
   const logoutHandler = async () => {
     try {
       if (window.isApp) {
-        window.nativeInterface.execute("logout").then(() => {
-          alert("Logged out");
-        });
+        await window.nativeInterface?.execute("logout");
+        alert("Logged out");
       } else {
         await logout();
       }
