@@ -19,7 +19,7 @@ interface EmploymentHistoryCardProps {
   onDelete?: () => void;
 }
 
-const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({ company, functionalArea, department, band, grade, start_date, end_date, isCurrent, is_promotion = false, onEdit, onDelete }) => {
+const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({ company, functionalArea, department, band, grade, start_date, end_date, designation, isCurrent, is_promotion = false, onEdit, onDelete }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift  max-w-[90vw] min-w-[90vw]  md:min-w-[400px] md:max-w-[400px]">
       <div className="absolute top-4 right-4 flex items-center gap-2">
@@ -51,30 +51,45 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({ company, 
       <div className="space-y-4 pr-28">
         <div>
           <p className="text-xs text-gray-500">Group Company</p>
-          <p className="font-semibold text-gray-900">{company || "-"}</p>
+          <Tooltip content={company || "-"}>
+            <p className="font-semibold text-gray-900 line-clamp-1">{company || "-"}</p>
+          </Tooltip>
         </div>
         <div>
           <p className="text-xs text-gray-500">Department</p>
-          <p className="font-semibold text-gray-900">{department || "-"}</p>
+          <Tooltip content={department || "-"}>
+
+            <p className="font-semibold text-gray-900 line-clamp-1">{department || "-"}</p>
+          </Tooltip>
         </div>
         <div>
           <p className="text-xs text-gray-500">Designation</p>
-          <p className="font-semibold text-gray-900 flex items-center gap-1.5">
-            Associate
+          <div className=" flex gap-1 items-center justify-start">
+
+            <Tooltip content={designation || "-"}>
+              <p className="font-semibold text-gray-900 flex line-clamp-1 items-center gap-1.5">
+                {designation || "-"}
+              </p>
+            </Tooltip>
             {is_promotion && (
               <Tooltip content="Promotion">
                 <TrendingUp className="text-success h-4 w-4" />
               </Tooltip>
             )}
-          </p>
+          </div>
         </div>
         <div>
           <p className="text-xs text-gray-500">Band</p>
-          <p className="font-semibold text-gray-900">{band || "-"}</p>
+          <Tooltip content={band || "-"}>
+
+            <p className="font-semibold text-gray-900 line-clamp-1">{band || "-"}</p>
+          </Tooltip>
         </div>
         <div>
           <p className="text-xs text-gray-500">Grade</p>
-          <p className="font-semibold text-gray-900">{grade || "-"}</p>
+          <Tooltip content={grade || "-"}>
+            <p className="font-semibold text-gray-900 line-clamp-1">{grade || "-"}</p>
+          </Tooltip>
         </div>
         <div>
           <p className="text-xs text-gray-500">Functional Area</p>

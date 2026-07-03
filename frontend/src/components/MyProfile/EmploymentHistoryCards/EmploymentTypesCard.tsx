@@ -2,6 +2,7 @@ import React from "react";
 import { EditIcon, TrashIcon } from "lucide-react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import IconButton from "../../shared/atoms/IconButton";
+import Tooltip from "../../shared/Tooltip";
 
 interface Field {
     id: string | null;
@@ -73,18 +74,22 @@ const EmploymentTypesCard: React.FC<EmploymentTypesCardProps> = ({
                     <p className="text-xs text-gray-500">
                         Employment Type
                     </p>
-                    <p className="font-semibold text-gray-900">
-                        {employment_type?.name || "-"}
-                    </p>
+                    <Tooltip content={employment_type?.name || "-"}>
+                        <p className="font-semibold text-gray-900 line-clamp-1">
+                            {employment_type?.name || "-"}
+                        </p>
+                    </Tooltip>
                 </div>
 
                 <div>
                     <p className="text-xs text-gray-500">
                         Employee Subtype
                     </p>
-                    <p className="font-semibold text-gray-900">
-                        {employee_subtype?.name || "-"}
-                    </p>
+                    <Tooltip content={employee_subtype?.name || "-"}>
+                        <p className="font-semibold text-gray-900 line-clamp-1">
+                            {employee_subtype?.name || "-"}
+                        </p>
+                    </Tooltip>
                 </div>
 
                 <div>

@@ -1,5 +1,6 @@
 import React from "react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import Tooltip from "../../shared/Tooltip";
 
 interface EmploymentSegmentsCardProps {
     from_date: string;
@@ -39,13 +40,15 @@ const EmploymentSegmentsCard: React.FC<EmploymentSegmentsCardProps> = ({
                             segments.map(([segmentName, percentage]) => (
                                 <div
                                     key={segmentName}
-                                    className="flex items-center justify-between"
+                                    className="flex items-center justify-between gap-2"
                                 >
-                                    <span className="text-gray-900 font-medium">
-                                        {segmentName}
-                                    </span>
+                                    <Tooltip content={segmentName}>
+                                        <span className="text-gray-900 font-medium line-clamp-1">
+                                            {segmentName}
+                                        </span>
+                                    </Tooltip>
 
-                                    <span className="text-sm text-gray-600">
+                                    <span className="text-sm text-gray-600 flex-shrink-0">
                                         {percentage}%
                                     </span>
                                 </div>

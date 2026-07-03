@@ -2,6 +2,7 @@ import React from "react";
 import { EditIcon, TrashIcon } from "lucide-react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import IconButton from "../../shared/atoms/IconButton";
+import Tooltip from "../../shared/Tooltip";
 
 interface CostCenter {
     id: string;
@@ -73,13 +74,15 @@ const EmployeeCostCenterCard: React.FC<EmployeeCostCenterCardProps> = ({
                             allocations.map((allocation, index) => (
                                 <div
                                     key={`${allocation.cost_center.id}-${index}`}
-                                    className="flex items-center justify-between"
+                                    className="flex items-center justify-between gap-2"
                                 >
-                                    <span className="text-gray-900 font-medium">
-                                        {allocation.cost_center.name}
-                                    </span>
+                                    <Tooltip content={allocation.cost_center.name}>
+                                        <span className="text-gray-900 font-medium line-clamp-1">
+                                            {allocation.cost_center.name}
+                                        </span>
+                                    </Tooltip>
 
-                                    <span className="text-sm text-gray-600">
+                                    <span className="text-sm text-gray-600 flex-shrink-0">
                                         {allocation.percentage}%
                                     </span>
                                 </div>
