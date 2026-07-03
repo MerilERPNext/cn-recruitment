@@ -51,9 +51,9 @@ const WorkflowStageActions = ({
       console.error("Invalid form_data JSON:", error);
       return;
     }
-    const schema = (formData as any)?.form?.components ?? [];
-    const data = (formData as any)?.submission_data ?? {};
+    const schema = (formData as any)?.form?.components;
     if (!schema) return;
+    const data = (formData as any)?.submission_data ?? {};
     setFormSchema({ display: "form", components: schema });
     setFormAnswer(data);
     setResponseData(data);
@@ -85,6 +85,10 @@ const WorkflowStageActions = ({
   }, [stage?.todo?.custom_doctype_actions_with_form]);
 
   const onAction = (action: string, data: any) => {
+    if (!data?.name) {
+      console.error("Action failed: Missing todo name.");
+      return;
+    }
     handleAction(
       action,
       {

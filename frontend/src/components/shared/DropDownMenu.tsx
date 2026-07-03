@@ -56,7 +56,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
   return (
     <div
       ref={menuRef}
-      className="relative inline-block text-left"
+      className={`relative inline-block text-left ${className || ""}`}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Custom Trigger */}
@@ -80,7 +80,7 @@ const DropdownMenu: React.FC<DropdownMenuProps> = ({
                     item.onClick();
                     setOpen(false);
                   }}
-                  className={`flex items-center gap-2 w-full whitespace-nowrap px-4 py-2 text-sm hover:bg-primary/10 ${className || ""} ${item.className || ""}`}
+                  className={`flex items-center gap-2 w-full whitespace-nowrap px-4 py-2 text-sm hover:bg-primary/10 ${item.className || ""}`}
                 >
                   {item.icon}
                   {item.label}

@@ -124,6 +124,10 @@ const FlowStageActions = ({
   }, [stage?.todo?.custom_doctype_actions_with_form]);
 
   const onAction = (action: string, data: FlowRequestStage["todo"]) => {
+    if (!data?.name) {
+      console.error("Action failed: Missing todo name.");
+      return;
+    }
     handleAction(action, {
       todo_id: data.name,
       custom_approval_type: data?.custom_approval_type ?? "Approval Matrix",
