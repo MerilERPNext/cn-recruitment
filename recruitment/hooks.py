@@ -199,7 +199,9 @@ doc_events = {
 	},
      "Interview": {
         "before_save": "recruitment.customizations.interview.interview.check_feedback_of_previous_interview",
-        "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+        "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
+        "on_update": "recruitment.customizations.interview.interview.reset_follow_up_on_verdict",
+        "on_update_after_submit": "recruitment.customizations.interview.interview.reset_follow_up_on_verdict"
     },
     "Interview Feedback": {
         "on_submit": "recruitment.customizations.interview_feedback.interview_feedback.on_submit_feedback"
@@ -220,7 +222,8 @@ doc_events = {
 
     },
      "Job Applicant": {
-        "before_save": "recruitment.customizations.job_applicant.validate_blacklist"
+        "before_save": "recruitment.customizations.job_applicant.validate_blacklist",
+        "on_update": "recruitment.customizations.job_applicant.create_follow_up_interview"
 
     },
     "Appointment Letter":{ 
