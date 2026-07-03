@@ -46,9 +46,9 @@ const FlowTable: React.FC<FlowTableProps> = ({ data, noPadding = false }) => {
     <div className={noPadding ? "px-4 sm:px-0 max-sm:pb-8" : "sm:px-7 px-4 max-sm:pb-8"}>
       <CardTable
         titles={titles}
-        noBorder={noPadding}
-        noShadow={noPadding}
-        noRound={noPadding}
+        noBorder={noPadding || !isDesktop}
+        noShadow={noPadding || !isDesktop}
+        noRound={noPadding || !isDesktop}
       >
         <StaticListView
           data={data.approval_stages}
