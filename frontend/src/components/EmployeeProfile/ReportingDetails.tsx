@@ -335,6 +335,13 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
           isEdit={isEditing}
           category={getCategoryLabel(selectedCategory)}
           categoryField={selectedCategoryField}
+          // First slide for this category -> lock start date to the joining date.
+          lockStartDate={((hierarchyData?.data || {})[selectedCategory] || []).length === 0}
+          defaultStartDate={
+            ((hierarchyData?.data || {})[selectedCategory] || []).length === 0
+              ? currentEmployee?.date_of_joining || null
+              : new Date().toISOString()
+          }
           initialEditData={selectedItem ? {
             name: selectedItem.name,
             reports_to: selectedItem.records,

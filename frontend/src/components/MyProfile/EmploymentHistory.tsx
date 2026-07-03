@@ -76,11 +76,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
     )
   );
 
-  const hasEmploymentHistory = history.length > 0;
-
-  const defaultStartDateForAdd = !hasEmploymentHistory
-    ? data?.date_of_joining
-    : new Date().toISOString();
+  // The very first slide of ANY section must start on the employee's joining
+  // date and that date is not editable. Once a section already has a slide,
+  // adding another defaults to today and the start date is freely editable.
+  const joiningDate = data?.date_of_joining || null;
+  const firstAddProps = (isFirst: boolean) => ({
+    defaultStartDate: isFirst ? joiningDate : new Date().toISOString(),
+    lockStartDate: isFirst,
+  });
   const { data: userUiPermission } = useGetUiPermission("Profile");
   const canEditEmploymentHistory = isActionEnabled(
     userUiPermission,
@@ -529,7 +532,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           onCancel={handleCloseModal}
           onSuccess={handleFormSuccess}
           isEdit={isEditing}
-          defaultStartDate={defaultStartDateForAdd}
+          {...firstAddProps(workLocation.length === 0)}
           initialEditData={editItem ? {
             work_location: (editItem as WorkLocation).work_location?.id || "",
             start_date: editItem.from_date,
@@ -548,7 +551,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               onCancel={handleCloseModal}
               onSuccess={handleFormSuccess}
               isEdit={isEditing}
-              defaultStartDate={defaultStartDateForAdd}
+              {...firstAddProps(history.length === 0)}
               initialEditData={editItem ? {
                 company: (editItem as WorkRole).company?.id || "",
                 department: (editItem as WorkRole).department?.id || "",
@@ -578,7 +581,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           onCancel={handleCloseModal}
           onSuccess={handleFormSuccess}
           isEdit={isEditing}
-          defaultStartDate={defaultStartDateForAdd}
+          {...firstAddProps(employmentTypes.length === 0)}
           initialEditData={editItem ? {
             employment_type: (editItem as unknown as EmploymentTypes).employment_type?.id || "",
             employee_subtype: (editItem as unknown as EmploymentTypes).employee_subtype?.id || "",
@@ -597,7 +600,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           onCancel={handleCloseModal}
           onSuccess={handleFormSuccess}
           isEdit={isEditing}
-          defaultStartDate={defaultStartDateForAdd}
+          {...firstAddProps(employeeRoles.length === 0)}
           initialEditData={editItem ? {
             employee_role: (editItem as unknown as EmployeeRole).employee_role?.id || "",
             start_date: editItem.from_date,
@@ -614,7 +617,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
           onCancel={handleCloseModal}
           onSuccess={handleFormSuccess}
           isEdit={isEditing}
-          defaultStartDate={defaultStartDateForAdd}
+          {...firstAddProps(costCenters.length === 0)}
           initialEditData={editItem ? {
             allocations: (editItem as unknown as EmployeeCostCenter).allocations.map((a) => ({
               cost_center_id: a.cost_center.id,

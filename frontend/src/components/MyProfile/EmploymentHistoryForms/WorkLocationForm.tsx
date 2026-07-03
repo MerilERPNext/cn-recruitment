@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Button from "../../shared/atoms/Button";
 import workLocationFormSchema from "./workLocationFormSchema.json";
+import { withComponentDisabled } from "../../../utils/withComponentDisabled";
 import {
   useCurrentEmployeeDetails,
   useUpdateEmploymentDetailsMutation,
@@ -25,6 +26,9 @@ interface WorkLocationFormProps {
   onSuccess?: () => void;
   isEdit?: boolean;
   defaultStartDate?: string | null;
+  // When true (the very first slide for this section), the start date is locked
+  // to the employee's joining date and shown read-only.
+  lockStartDate?: boolean;
   initialEditData?: InitialWorkLocationData;
 }
 
@@ -33,6 +37,7 @@ const WorkLocationForm = ({
   onSuccess,
   isEdit = false,
   defaultStartDate,
+  lockStartDate = false,
   initialEditData,
 }: WorkLocationFormProps) => {
   const [instance, setInstance] = useState<any>(null);
@@ -77,6 +82,13 @@ const WorkLocationForm = ({
         });
     }
   }, [instance, isEdit, initialEditData, defaultStartDate]);
+
+  // First slide for this section: render the start date read-only, locked to
+  // the joining date. Baked into the schema (reliable for datetime widgets).
+  const formSchema = useMemo(
+    () => withComponentDisabled(workLocationFormSchema, "startDate", !!lockStartDate && !isEdit),
+    [lockStartDate, isEdit],
+  );
 
   const validateForm = (data: any) => {
     if (!instance) return false;
@@ -175,7 +187,7 @@ const WorkLocationForm = ({
         {/* Form */}
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 pb-12 relative">
           <Form
-            form={workLocationFormSchema}
+            form={formSchema}
             onFormReady={(form: any) => {
               setInstance(form);
               form.setPristine(true);
