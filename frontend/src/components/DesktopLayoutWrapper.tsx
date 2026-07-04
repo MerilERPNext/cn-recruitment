@@ -45,6 +45,15 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const currentEmpIsLoading = currentEmpListIsLoading || currentEmpMethodIsLoading;
   const { clearTargetEmployee } = useTargetUser();
   const { data: currentUser } = useCurrentUser();
+  const [imageLoadError, setImageLoadError] = useState(false);
+
+  useEffect(() => {
+    setImageLoadError(false);
+  }, [currentEmployee?.image]);
+
+  const profileImageSrc = imageLoadError
+    ? defaultProfile
+    : currentEmployee?.image || defaultProfile;
   const canRedirectToDesk = currentUser?.roles?.some((role) =>
     ["System User", "Payroll Manager", "System Manager"].includes(role.role),
   );
@@ -205,9 +214,10 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                   </div>
                   <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20">
                     <img
-                      src={currentUser?.user_image || defaultProfile}
+                      src={profileImageSrc}
                       alt="User avatar"
                       className="w-full h-full object-cover"
+                      onError={() => setImageLoadError(true)}
                     />
                   </div>
                   <ChevronDown
@@ -246,9 +256,10 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     </div>
                     <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20">
                       <img
-                        src={currentEmployee?.image || defaultProfile}
+                        src={profileImageSrc}
                         alt="User avatar"
                         className="w-full h-full object-cover"
+                        onError={() => setImageLoadError(true)}
                       />
                     </div>
                     <ChevronDown
@@ -267,9 +278,10 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       {/* Avatar */}
                       <div className="w-14 h-14 flex-shrink-0 rounded-full overflow-hidden border border-gray-300">
                         <img
-                          src={currentEmployee?.image || defaultProfile}
+                          src={profileImageSrc}
                           alt="User avatar"
                           className="w-full h-full object-cover"
+                          onError={() => setImageLoadError(true)}
                         />
                       </div>
 

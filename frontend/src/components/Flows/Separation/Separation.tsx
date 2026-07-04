@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock, MoreVertical, XCircle, FileText, Eye } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
 import {
   useCurrentEmployeeDetails,
@@ -30,6 +30,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { FlowRequestItem } from "../../../types/flows";
 import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
 import Tooltip from "../../shared/Tooltip";
+import DropdownMenu from "../../shared/DropDownMenu";
 import RejectionReasonModal from "../../shared/RejectionReasonModal";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
@@ -255,52 +256,91 @@ const Separation = () => {
   }
   /* ---------------------------------------------------------- */
 
+  const mobileMenuItems = [];
+  if (showRevokeButton) {
+    mobileMenuItems.push({
+      label: "Revoke Separation",
+      onClick: () => setIsRevokeModalOpen(true),
+      icon: <XCircle size={16} />,
+      className: "text-red-600 hover:bg-red-50 hover:text-red-700",
+    });
+  }
+  if (item?.request_id) {
+    mobileMenuItems.push({
+      label: "Activity Log",
+      onClick: () => setIsActivityLogOpen(true),
+      icon: <FileText size={16} />,
+      className: "text-gray-700",
+    });
+  }
+  if (canViewWorkflow) {
+    mobileMenuItems.push({
+      label: "View Workflow",
+      onClick: handleShowWorkflow,
+      icon: <Eye size={16} />,
+      className: "text-gray-700",
+    });
+  }
+
   return (
     <div className=" md:p-4 md:gap-4">
-      <div className="flex items-center gap-1 mb-2">
-        <div className="flex flex-col md:mb-4 max-md:px-4">
+      <div className="flex items-center justify-between mb-2 px-4 md:px-0">
+        <div className="flex flex-col md:mb-4">
           {isDesktop && <Typography variant="h4">Separation</Typography>}
           <Typography variant="bodySmall" color="body2">
             View Your Separation Process
           </Typography>
         </div>
-        {showRevokeButton && (
-          <Button
-            variant="outline"
-            bgColor="error"
-            onClick={() => setIsRevokeModalOpen(true)}
-            className="flex items-center gap-2 py-1.5 transition-all rounded-md shadow-sm ml-auto mr-2"
-            disabled={isRevoking}
-          >
-            Revoke Separation
-          </Button>
-        )}
-        <Button
-          variant="outline"
-          onClick={() => setIsActivityLogOpen(true)}
-          className={`flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm mr-2 ${!showRevokeButton ? "ml-auto" : ""}`}
-          disabled={!item?.request_id}
-        >
-          Activity Log
-        </Button>
-        {isDesktop && !!item && canRetrigger && item?.request_id && flowRequestData?.can_reinitiate_flow && (
-          <RetriggerButton
-            funnelActivityId={item.request_id}
-            employeeName={flowRequestData?.initiated_for}
-            showRetriggerForText={true}
-            flowName="Separation"
-            className="mr-2"
-          />
-        )}
-        {canViewWorkflow && (
-          <Button
-            onClick={handleShowWorkflow}
-            size="md"
-            bgColor="primary"
-            className="hover:bg-primary my-2 text-white mr-4"
-          >
-            View Workflow
-          </Button>
+        {isDesktop ? (
+          <div className="flex items-center gap-2">
+            {showRevokeButton && (
+              <Button
+                variant="outline"
+                bgColor="error"
+                onClick={() => setIsRevokeModalOpen(true)}
+                className="flex items-center gap-2 py-1.5 transition-all rounded-md shadow-sm"
+                disabled={isRevoking}
+              >
+                Revoke Separation
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => setIsActivityLogOpen(true)}
+              className="flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm"
+              disabled={!item?.request_id}
+            >
+              Activity Log
+            </Button>
+            {!!item && canRetrigger && item?.request_id && flowRequestData?.can_reinitiate_flow && (
+              <RetriggerButton
+                funnelActivityId={item.request_id}
+                employeeName={flowRequestData?.initiated_for}
+                showRetriggerForText={true}
+                flowName="Separation"
+              />
+            )}
+            {canViewWorkflow && (
+              <Button
+                onClick={handleShowWorkflow}
+                size="md"
+                bgColor="primary"
+                className="hover:bg-primary text-white"
+              >
+                View Workflow
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center">
+            {mobileMenuItems.length > 0 && (
+              <DropdownMenu items={mobileMenuItems} placement="bottom-left">
+                <button className="p-2 border border-gray-300 focus:bg-primary-100/30 focus:ring-primary focus:ring-2 ring-offset-1 text-gray-700 rounded-md flex items-center justify-center hover:bg-primary-50/30">
+                  <MoreVertical size={20} />
+                </button>
+              </DropdownMenu>
+            )}
+          </div>
         )}
       </div>
       {!isDesktop && !!item && canRetrigger && item?.request_id && flowRequestData?.can_reinitiate_flow && (

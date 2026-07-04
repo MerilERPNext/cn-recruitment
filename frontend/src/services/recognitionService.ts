@@ -15,6 +15,63 @@ const BADGE_API_BASE = "chatnext_work_connect.chatnext_work_connect.api.badge";
 const NOMINATION_API_BASE = "chatnext_work_connect.chatnext_work_connect.api.nomination";
 const WC_SETTINGS_API_BASE = "chatnext_work_connect.chatnext_work_connect.api.work_connect_settings";
 
+// ─── Generic doctype → filter options (Frappe resource API) ───────────────────
+// Fetches a doctype's records via /api/resource/<doctype> and maps them to
+// { label, value } filter options. Mirrors the Payroll Period select pattern so
+// any filter that maps to a real doctype/Link field can be driven dynamically
+// from the backend instead of a hardcoded list.
+export type SelectOption = { label: string; value: string };
+
+export const useDoctypeOptions = (
+  doctype: string,
+  opts?: {
+    labelField?: string;
+    // A "{field}" template for the label, e.g. "{award_name} ({name})".
+    // Takes precedence over labelField when set.
+    labelTemplate?: string;
+    // Field to use as the option value; defaults to the docname (`name`).
+    valueField?: string;
+    filters?: [string, string, unknown][];
+    orderBy?: string;
+    limit?: number;
+    enabled?: boolean;
+  },
+) => {
+  const labelField = opts?.labelField;
+  const labelTemplate = opts?.labelTemplate;
+  const valueField = opts?.valueField;
+  return useQuery<SelectOption[]>({
+    queryKey: ["doctype-options", doctype, opts],
+    enabled: opts?.enabled ?? true,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const templateFields = labelTemplate
+        ? Array.from(labelTemplate.matchAll(/\{(\w+)\}/g)).map((m) => m[1])
+        : [];
+      const fields = Array.from(
+        new Set([
+          "name",
+          ...(labelField ? [labelField] : []),
+          ...(valueField ? [valueField] : []),
+          ...templateFields,
+        ]),
+      );
+      const res = await FrappeAPI.getDocumentList(doctype, {
+        fields,
+        filters: opts?.filters as any,
+        orderBy: opts?.orderBy ?? "name asc",
+        limit: opts?.limit ?? 500,
+      });
+      return (res.data as any[]).map((r) => ({
+        value: (valueField && r[valueField]) || r.name,
+        label: labelTemplate
+          ? labelTemplate.replace(/\{(\w+)\}/g, (_, f) => r[f] ?? "")
+          : (labelField && r[labelField]) || r.name,
+      }));
+    },
+  });
+};
+
 // Recognition Type interface
 export interface RecognitionType {
   name: string;

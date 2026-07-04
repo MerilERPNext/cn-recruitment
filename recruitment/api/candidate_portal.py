@@ -1598,8 +1598,8 @@ def get_portal_field_names(job_applicant_id=None):
 #   field config for a careers application form:
 #     recruitment.api.channels.careers.get_application_fields(opening)
 #
-#   submit the application (creates a new Job Applicant, stamps source):
-#     recruitment.api.channels.careers.submit_application(opening, data)
+#   save / submit the application (one status-driven endpoint — draft vs submit):
+#     recruitment.api.channels.careers.submit_application(job_applicant_email, job_opening, form_data, status)
 #
 # The new endpoints source their field config from
 # Job Opening → custom_application_fields (with Job Applicant Profile Settings

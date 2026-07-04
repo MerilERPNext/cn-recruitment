@@ -2,6 +2,7 @@ import React from "react";
 import { EditIcon, TrashIcon } from "lucide-react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import IconButton from "../../shared/atoms/IconButton";
+import Tooltip from "../../shared/Tooltip";
 
 interface LocationField {
   id: string;
@@ -71,37 +72,47 @@ const EmploymentWorkLocationCard: React.FC<
         <div className="space-y-4 pr-20">
           <div>
             <p className="text-xs text-gray-500">Work Location</p>
-            <p className="font-semibold text-gray-900">
-              {work_location?.name || "-"}
-            </p>
+            <Tooltip content={work_location?.name || "-"}>
+              <p className="font-semibold text-gray-900 line-clamp-1">
+                {work_location?.name || "-"}
+              </p>
+            </Tooltip>
           </div>
 
           <div>
             <p className="text-xs text-gray-500">Office Area</p>
-            <p className="font-semibold text-gray-900">
-              {office_area?.name || "-"}
-            </p>
+            <Tooltip content={office_area?.name || "-"}>
+              <p className="font-semibold text-gray-900 line-clamp-1">
+                {office_area?.name || "-"}
+              </p>
+            </Tooltip>
           </div>
 
           <div>
             <p className="text-xs text-gray-500">Country</p>
-            <p className="font-semibold text-gray-900">
-              {country?.name || "-"}
-            </p>
+            <Tooltip content={country?.name || "-"}>
+              <p className="font-semibold text-gray-900 line-clamp-1">
+                {country?.name || "-"}
+              </p>
+            </Tooltip>
           </div>
 
           <div>
             <p className="text-xs text-gray-500">State</p>
-            <p className="font-semibold text-gray-900">
-              {state?.name || "-"}
-            </p>
+            <Tooltip content={state?.name || "-"}>
+              <p className="font-semibold text-gray-900 line-clamp-1">
+                {state?.name || "-"}
+              </p>
+            </Tooltip>
           </div>
 
           <div>
             <p className="text-xs text-gray-500">City</p>
-            <p className="font-semibold text-gray-900">
-              {city?.name || "-"}
-            </p>
+            <Tooltip content={city?.name || "-"}>
+              <p className="font-semibold text-gray-900 line-clamp-1">
+                {city?.name || "-"}
+              </p>
+            </Tooltip>
           </div>
 
           <div>

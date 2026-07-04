@@ -116,12 +116,12 @@ const FlowApp: React.FC = () => {
     if (location.pathname === "/webapp/flow-app/initiate-flow") {
       setSeprateRoute("Initiate Flow");
     } else if (
-      location.pathname.startsWith("/webapp/flow-app/separation-workflow/")
+      location.pathname.startsWith("/webapp/flow-app/separation-workflow")
     ) {
       setSeprateRoute("SeparationWorkflow");
-    } else if (location.pathname.startsWith("/webapp/flow-app/flow-request/")) {
+    } else if (location.pathname.startsWith("/webapp/flow-app/flow-request")) {
       setSeprateRoute("Flow Request");
-    } else if (location.pathname.startsWith("/webapp/flow-app/separation-record/")) {
+    } else if (location.pathname.startsWith("/webapp/flow-app/separation-record")) {
       setSeprateRoute("SeparationRecord");
     } else {
       setSeprateRoute(null);

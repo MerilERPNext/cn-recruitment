@@ -18,6 +18,7 @@ import TeamLoanRequest from "./components/Compansation/Loan/TeamLoan/TeamLoanReq
 import Perquisite from "./components/Compansation/Perquisite/Perquisite";
 import IncomeTaxSheet from "./components/Compansation/TaxSheet/TaxSheet";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
+import MobileProfilePage from "./components/EmployeeProfile/MobileProfilePage";
 //import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
 import AddExpenseFormV2 from "./components/Expenses-App/ExpenseClaim/AddExpenseFormV2";
 import {
@@ -537,6 +538,11 @@ const FAQPage = lazyWithRetry(
 const TicketDetailView = lazyWithRetry(
   () => import("./components/HelpDesk/TicketDetailView"),
   "TicketDetailView",
+);
+
+const MobileRequestIssuePage = lazyWithRetry(
+  () => import("./components/HelpDesk/MobileRequestIssuePage"),
+  "MobileRequestIssuePage",
 );
 
 const TodoPage = lazyWithRetry(
@@ -1075,6 +1081,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/employee-profile",
     element: <EmployeeProfile />,
     permissionKey: "Employee Profile",
+  },
+  {
+    path: "/webapp/mobile-profile",
+    element: <MobileProfilePage />,
+    permissionKey: "Mobile Profile",
   },
   {
     path: "/webapp/employee-profile/assignment-details",
@@ -1654,6 +1665,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/helpdesk/ticket/:ticketId",
     element: <TicketDetailView />,
     permissionKey: "Help Desk Ticket",
+  },
+  {
+    path: "/webapp/helpdesk/request-issue",
+    element: <MobileRequestIssuePage />,
+    permissionKey: "Request Issue",
   },
   {
     path: "/webapp/employee-onboarding",
