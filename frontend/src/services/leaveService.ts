@@ -1,4 +1,4 @@
-import FrappeAPI from "../utils/frappeAPI";
+import FrappeAPI, { getTargetEmployeeId } from "../utils/frappeAPI";
 import { uploadReplaceLeaveAttachments } from "../components/Leaves/replaceLeaveHelper";
 import type {
   AccrualJournalEntriesResponse,
@@ -25,8 +25,10 @@ export type AttendancePolicyResponse = {
 
 export const leaveService = {
   getMyLeaveRequests: async (employeeId: string): Promise<LeaveRequest[]> => {
+    const targetEmployeeId = getTargetEmployeeId();
+    const filterEmployeeId = targetEmployeeId ? targetEmployeeId : employeeId;
     const result = await FrappeAPI.getDocumentList("Leave Application", {
-      filters: [["employee", "=", employeeId]],
+      filters: [["employee", "=", filterEmployeeId]],
       fields: [
         "name",
         "leave_type",
