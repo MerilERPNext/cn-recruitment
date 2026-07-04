@@ -265,6 +265,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         isCurrent={item.is_current}
                         functionalArea={item?.functional_area?.name || ""}
                         is_promotion={item.is_promotion}
+                        designation={item?.designation?.name || ""}
                         onEdit={canEditEmploymentHistory ? () => handleEditCard(item) : undefined}
                         onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => setPendingDelete({ type: "history", names: collectRowNames(item as unknown as Record<string, unknown>), subSection: "work_role" }) : undefined}
                       />

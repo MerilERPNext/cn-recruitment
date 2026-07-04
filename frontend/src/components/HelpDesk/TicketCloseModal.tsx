@@ -293,8 +293,8 @@ const TicketCloseModal: React.FC<TicketCloseModalProps> = ({
     confirmAction === "no" ||
     (!isRequestClosure && (!isExitFormValid || !isFeedbackFormValid));
 
-  // Whether the forms section should be shown (not for requestClosure)
-  const showForms = !isRequestClosure;
+  // Whether the forms section should be shown (not for requestClosure and confirmed)
+  const showForms = !isRequestClosure && confirmAction === "yes";
   const formsLoading = exitFormJsonLoading || feedbackFormJsonLoading;
   const hasForms = !!exitFormJson || !!feedbackFormJson;
 
@@ -411,7 +411,7 @@ const TicketCloseModal: React.FC<TicketCloseModalProps> = ({
               )}
 
               {/* Info text when no forms are configured */}
-              {!formsLoading && !hasForms && confirmAction === "yes" && (
+              {!formsLoading && !hasForms && (
                 <p className="text-xs text-gray-500 mt-2">
                   {isResolving
                     ? "This will set the ticket status to Resolved."

@@ -1,4 +1,5 @@
 import frappe
+from frappe import _
 from frappe.model.document import Document
 
 
@@ -32,6 +33,41 @@ class TASLASettings(Document):
 
 	def validate(self):
 		self.ensure_sla_task_rows()
+		self.validate_tat_points()
+		self.validate_target_assignments()
+
+	def validate_tat_points(self):
+		"""A TAT's Start and End points must differ (a zero-length window is a
+		misconfiguration). Only checked when both points are chosen."""
+		checks = [
+			(_("Time To Fill"), self.tat_fill_start_point, self.tat_fill_end_point),
+			(_("Time To Hire"), self.tat_hire_start_point, self.tat_hire_end_point),
+			(
+				_("Time To First Action"),
+				self.tat_first_action_start_point,
+				self.tat_first_action_end_point,
+			),
+		]
+		for label, start, end in checks:
+			if start and end and start == end:
+				frappe.throw(
+					_("{0}: Start Point and End Point cannot be the same.").format(label)
+				)
+
+	def validate_target_assignments(self):
+		"""Prevent duplicate Target TAT rows for the same Designation / User."""
+		seen = set()
+		for row in self.target_tat_assignments or []:
+			if not (row.target_type and row.target_value):
+				continue
+			key = (row.target_type, row.target_value)
+			if key in seen:
+				frappe.throw(
+					_("Duplicate Target TAT assignment for {0} '{1}'.").format(
+						row.target_type, row.target_value
+					)
+				)
+			seen.add(key)
 
 	def ensure_sla_task_rows(self):
 		existing_keys = {row.task_key for row in (self.sla_tasks or [])}

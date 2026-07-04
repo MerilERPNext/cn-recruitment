@@ -1,24 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Check, Clock, X, User } from "lucide-react";
 import StatusBadge from "../../../shared/atoms/statusBadge";
-import { Attachment, FlowRequestItem, FlowRequestStage } from "../../../../types/flows";
+import { FlowRequestItem, FlowRequestStage } from "../../../../types/flows";
 
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
-import { extractRolesAndUsers, FormIOForm, getStageActorDetails } from "../../../../utils/flowUtils";
+import { extractRolesAndUsers, getStageActorDetails } from "../../../../utils/flowUtils";
 import { Typography } from "../../../shared/atoms/Typography";
-import Button from "../../../shared/atoms/Button";
-import { createPortal } from "react-dom";
-import ReviewForm from "../../Separation/components/ReviewForm";
-import AttachmentPreview from "./AttachmentPreview";
 import MobileAllocatedTo from "../../../shared/MobileAllocatedTo";
-import FormPreview from "../../../shared/molecules/FormPreview";
-import ActModal from "./ActModal";
 import { handleActionType } from "../../../../hooks/userApprovalList";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
-import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
-import StageRetriggerButton from "../../StageRetriggerButton";
+import FlowStageActions from "./FlowStageActions";
 
 const getIcon = (status: string) => {
     const iconProps = { size: 20, strokeWidth: 3, className: "text-white" };
@@ -75,28 +68,9 @@ const FlowTableRow = ({
         stage.status === "Completed" || stage.status === "Approved";
     const nextStage = stages[index + 1];
 
-    const actions = stage?.todo?.custom_doctype_actions
-        ? JSON.parse(stage?.todo?.custom_doctype_actions)
-        : [];
-    const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
-        ? JSON.parse(
-            stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'),
-        )
-        : [];
-
-    const onAction = (action: string, data: any) => {
-        handleAction(action, {
-            todo_id: data.name,
-            custom_approval_type: data.custom_approval_type,
-            custom_open_chatnext_assistant_on_action:
-                actionsWithForm.includes(action),
-        });
-        setShowActModal(false);
-    };
     const { data: currentUser } = useCurrentUser();
 
     const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
-    const isPendingStatus = ["pending", "open"].includes(stage.status?.toLowerCase());
     const canPerformActions = useMemo(() => {
         if (!isActive || !stage.can_act) return false;
         let actionPermission = false;
@@ -122,39 +96,12 @@ const FlowTableRow = ({
         );
     }, [stage]);
 
-    const [showActModal, setShowActModal] = useState(false);
-
     const lineColor =
         isCompleted &&
             nextStage?.status !== "Failed" &&
             nextStage?.status !== "Rejected"
             ? "bg-green-500"
             : "bg-gray-300";
-
-    const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
-    const [showForm, setShowForm] = useState(false);
-    const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
-    const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
-
-    const handleShowForm = () => {
-        const schema = stage?.form_json?.components;
-        let data: Record<string, unknown> = {};
-        try {
-            data = stage?.form_data_display || JSON.parse(
-                stage?.approval_response_data ||
-                "{}",
-            );
-        } catch (error) {
-            console.error("Invalid approval_response_data JSON:", error);
-        }
-        if (!schema) return;
-        setFormSchema({ display: "form", components: schema });
-        setFormAnswer(data);
-        setResponseData(data);
-        setShowForm(true);
-    }
-
-
 
     return (
         <div
@@ -308,77 +255,18 @@ const FlowTableRow = ({
                         </div>
                     </div>
                 </div>
-                <div className={`flex items-center justify-center `}>
-                    <MyApprovalActionPill
+                <div className="w-full flex flex-col gap-2">
+                    <FlowStageActions
+                        stage={stage}
+                        stages={stages}
+                        stageIndex={index}
+                        initiatorForms={initiatorForms}
+                        handleAction={handleAction}
                         variant="buttons"
-                        uiPermission={{
-                            app: "HR Process",
-                            page: "Flow Requests",
-                            actionKeysMap: {
-                                nudge: "nudge",
-                            }
-                        }}
-                        todoId={stage?.todo?.name}
-                        isPendingStatus={isPendingStatus}
+                        canAct={canPerformActions}
                     />
-                    <div className="ml-2">
-                        <StageRetriggerButton
-                            todoId={stage?.todo?.name}
-                            page="Flow Requests"
-                        />
-                    </div>
                 </div>
-                {(stage?.approval_response_data_display || stage?.approval_response_data) && (
-                    <Button
-                        onClick={handleShowForm}
-                        className="mt-2 w-full"
-                        variant="outline"
-                    >
-                        Review Form
-                    </Button>
-                )}
-                {canPerformActions && (
-                    <div className="flex flex-wrap gap-2 mt-3 w-full">
-                        <Button
-                            variant="contain"
-                            bgColor="primary"
-                            size="md"
-                            fullWidth
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setShowActModal(true);
-                            }}
-                        >
-                            Act
-                        </Button>
-                    </div>
-                )}
             </div>
-            {formSchema && showForm && createPortal(
-                <ReviewForm onClose={() => setShowForm(false)}>
-                    <FormPreview
-                        containerId={`request-detail-${stage.stage_name}-form-preview`}
-                        schema={formSchema}
-                        submissionData={formAnswer}
-                        readOnly={true}
-                    />
-                    <AttachmentPreview attachments={responseData?.addAttachment || []} />
-                </ReviewForm>,
-                document.body,
-            )}
-            {showActModal && (
-                <ActModal
-                    stage={stage}
-                    stageIndex={index}
-                    stages={stages}
-                    initiatorForms={initiatorForms}
-                    actions={actions}
-                    onAction={(action) => onAction(action, stage?.todo)}
-                    recordId={stage?.todo?.name}
-                    onClose={() => setShowActModal(false)}
-                />
-            )}
         </div>
     );
 };
