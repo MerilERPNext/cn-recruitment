@@ -28,7 +28,7 @@ const CATEGORY_FIELD_MAP: Record<string, string> = {
   "HOD": "custom_hod",
   "CXO": "custom_cxo",
   "HRBP": "custom_hrbp",
-  "HRBP Lead": "custom_hrbp_lead",
+  "HRBP Lead": "hrbp_lead",
 };
 
 const CATEGORY_LABEL_MAP: Record<string, string> = {
