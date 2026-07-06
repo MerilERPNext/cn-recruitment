@@ -81,7 +81,7 @@ const FlowApp: React.FC = () => {
   const [showInitiateModel, setShowInitiateModel] = useState<boolean>(false);
 
   const showInitiateButton =
-    activeTab === "Flow Requests" && seprateRoute === "Flow Request" && canInitiateFlow;
+    activeTab === "Flow Requests" && !seprateRoute && canInitiateFlow;
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
@@ -104,6 +104,7 @@ const FlowApp: React.FC = () => {
 
     if (matchedTab) {
       setActiveTab(matchedTab);
+      setSeprateRoute(null);
     }
 
     if (location.pathname === "/webapp/flow-app/initiate-flow") {
@@ -112,8 +113,6 @@ const FlowApp: React.FC = () => {
       location.pathname.startsWith("/webapp/flow-app/separation-workflow")
     ) {
       setSeprateRoute("SeparationWorkflow");
-    } else if (location.pathname.startsWith("/webapp/flow-app/flow-request")) {
-      setSeprateRoute("Flow Request");
     } else if (location.pathname.startsWith("/webapp/flow-app/separation-record")) {
       setSeprateRoute("SeparationRecord");
     } else {

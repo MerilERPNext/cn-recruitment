@@ -125,6 +125,7 @@ export type FlowRequestStage = {
     reference_document?: {
       custom_status?: string;
       custom_created_from_confirmation?: 1 | 0;
+      recommended_for_separation?: 1 | 0;
     }
     custom_approval_type: "Approval Matrix" | "Multi Actions";
     name: string;

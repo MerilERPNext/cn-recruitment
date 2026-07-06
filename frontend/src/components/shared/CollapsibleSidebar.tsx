@@ -972,7 +972,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         <div className="flex-shrink-0">
                           <Icon className="h-5 w-5" />
                           {!isExpanded && getNavItemCount(item.label) > 0 && (
-                            <span className="absolute -top-0.5 -right-1 min-w-[16px] size-4 p-2 rounded-full bg-error text-white text-[10px] font-bold flex items-center justify-center">
+                            <span className="absolute -top-0.5 -right-1 min-w-[16px]  max-h-5 p-2 rounded-xl bg-error text-white text-[10px] font-bold flex items-center justify-center">
                               {getNavItemCount(item.label)}
                             </span>
                           )}
@@ -992,7 +992,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                           </Typography>
                         </span>
                         {isExpanded && getNavItemCount(item.label) > 0 && (
-                          <span className="ml-auto min-w-[22px] size-5 p-2 rounded-full bg-error-50 text-error text-xs font-semibold flex items-center justify-center">
+                          <span className="ml-auto w-fit  max-h-5 size-5 p-2 rounded-xl bg-error-50 text-error text-xs font-semibold flex items-center justify-center">
                             {getNavItemCount(item.label)}
                           </span>
                         )}
@@ -1018,7 +1018,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         <div className="flex-shrink-0">
                           <Icon className="h-5 w-5" />
                           {!isExpanded && getNavItemCount(item.label) > 0 && (
-                            <span className="absolute -top-0.5 -right-1 min-w-[16px] size-4 p-2 rounded-full bg-error text-white text-[10px] font-bold flex items-center justify-center">
+                            <span className="absolute -top-0.5 -right-1 w-fit min-w-[16px] max-h-5 p-2 rounded-xl bg-error text-white text-[10px] font-bold flex items-center justify-center">
                               {getNavItemCount(item.label)}
                             </span>
                           )}
@@ -1038,7 +1038,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                           </Typography>
                         </span>
                         {isExpanded && getNavItemCount(item.label) > 0 && (
-                          <span className="ml-auto min-w-[22px] size-5 p-2 rounded-full bg-error-50 text-error text-xs font-semibold flex items-center justify-center">
+                          <span className="ml-auto w-fit size-5 p-2 rounded-xl bg-error-50 text-error text-xs font-semibold flex items-center justify-center">
                             {getNavItemCount(item.label)}
                           </span>
                         )}
@@ -1159,7 +1159,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                       {/* Badge for sub-item */}
                                       {isExpanded && subItemCount > 0 && (
                                         <span
-                                          className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0"} min-w-[20px] size-5 rounded-full bg-error-50 text-error text-[10px] font-bold flex items-center justify-center mr-6`}
+                                          className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0"} w-fit max-h-5 px-2 rounded-xl bg-error-50 text-error text-[10px] font-bold flex items-center justify-center mr-6`}
                                         >
                                           {subItemCount}
                                         </span>
