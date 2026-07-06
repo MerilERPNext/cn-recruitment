@@ -5,7 +5,7 @@ import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { useScheduledImports } from "../../hooks/useScheduledImports";
+import { useScheduledImportsSummary } from "../../hooks/useScheduledImports";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { scheduledImportsService } from "../../services/scheduledImportsService";
 import type {
@@ -30,6 +30,15 @@ import FrappeListView from "../ListView";
 import ImportSummaryCards from "./ImportSummaryCards";
 
 const MODULE_PERMISSION_KEY = "Scheduled Imports";
+
+const EMPTY_SUMMARY: ImportStatusSummary = {
+  total: 0,
+  pendingApproval: 0,
+  pendingScheduled: 0,
+  processing: 0,
+  processed: 0,
+  failedCancelled: 0,
+};
 
 const COLUMN_TITLES = [
   "Import ID",
@@ -76,7 +85,10 @@ const ScheduledImportsPage: React.FC = () => {
   });
   const [orderBy, setOrderBy] = useState<string>("creation desc");
 
-  const { data: allImports = [] } = useScheduledImports(
+  // Summary counts come straight from the backend (single GROUP BY query),
+  // not from reducing the fetched list — so they're exact and unbounded
+  // rather than capped at the list's page limit.
+  const { data: summary = EMPTY_SUMMARY } = useScheduledImportsSummary(
     owner ?? "",
     monthFilter,
   );
@@ -88,29 +100,6 @@ const ScheduledImportsPage: React.FC = () => {
     );
     return appPerm?.enabled;
   }, [uiPermissions]);
-
-  const summary: ImportStatusSummary = useMemo(() => {
-    return allImports.reduce<ImportStatusSummary>(
-      (acc, item) => {
-        acc.total += 1;
-        if (item.status === "Draft") acc.pendingApproval += 1;
-        else if (item.status === "Processing") acc.processing += 1;
-        else if (item.status === "Processed") acc.processed += 1;
-        else if (item.status === "Scheduled") acc.pendingScheduled += 1;
-        else if (item.status === "Failed" || item.status === "Cancelled")
-          acc.failedCancelled += 1;
-        return acc;
-      },
-      {
-        total: 0,
-        pendingApproval: 0,
-        pendingScheduled: 0,
-        processing: 0,
-        processed: 0,
-        failedCancelled: 0,
-      },
-    );
-  }, [allImports]);
 
   // Reset to first page on filter/search change
   const handleFilterChange = useCallback((filter: string) => {
@@ -241,7 +230,7 @@ const ScheduledImportsPage: React.FC = () => {
                 const filters: Record<string, any> = {};
                 if (owner) filters.owner = owner;
                 if (activeFilter === "pending-approval")
-                  filters.status = "Draft";
+                  filters.status = "Pending for approval";
                 else if (activeFilter === "pending-scheduled")
                   filters.status = "Scheduled";
                 else if (activeFilter === "processing")
@@ -303,7 +292,8 @@ const ScheduledImportsPage: React.FC = () => {
             defaultFilters={(() => {
               const filters: Record<string, any> = {};
               if (owner) filters.owner = owner;
-              if (activeFilter === "pending-approval") filters.status = "Draft";
+              if (activeFilter === "pending-approval")
+                filters.status = "Pending for approval";
               else if (activeFilter === "pending-scheduled")
                 filters.status = "Scheduled";
               else if (activeFilter === "processing")

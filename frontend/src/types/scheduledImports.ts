@@ -1,5 +1,6 @@
 export type ImportStatus =
   | "Draft"
+  | "Pending for approval"
   | "Processed"
   | "Scheduled"
   | "Processing"
