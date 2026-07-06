@@ -248,7 +248,7 @@ export default function ApprovalDetails({
   title,
   data
 }: ApprovalDetailsProps) {
-  const isDesktop = useScreenSize();
+  const { isDesktop } = useScreenSize();
 
   const firstStage = data.approval_stages?.[0];
 
