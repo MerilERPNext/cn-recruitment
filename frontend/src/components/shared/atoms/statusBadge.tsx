@@ -171,11 +171,22 @@ function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         icon: <X className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
-    case "Pending Approval":
+    // `status` is already lower-cased above, so the previous
+    // `case "Pending Approval"` never matched — use lower-cased keys.
+    case "pending approval":
       return {
         label: "Pending Approval",
         bgClass: "bg-yellow-100",
         textClass: "text-yellow-800",
+        icon: <Clock className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+
+    // The Scheduled Data Import "Pending for approval" status.
+    case "pending for approval":
+      return {
+        label: "Pending for approval",
+        bgClass: "bg-orange-100",
+        textClass: "text-orange-700",
         icon: <Clock className="w-3 h-3 md:w-4 md:h-4" />,
       };
 

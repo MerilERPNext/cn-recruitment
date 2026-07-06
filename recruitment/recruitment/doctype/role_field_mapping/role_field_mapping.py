@@ -14,7 +14,19 @@ class RoleFieldMapping(Document):
 
 @frappe.whitelist()
 def get_link_fields_for_doctype(from_doctype, linked_field_doctype):
- 
+
+    # Metadata-enumeration fix: `from_doctype` is a free-form DocType link in the
+    # Role Field Mapping admin dialog, so it cannot be allowlisted to a bounded
+    # set. Instead gate on the owning config doctype: only callers who may read
+    # "Role Field Mapping" (the Settings form this utility populates) may
+    # enumerate a doctype's Link fields. Runs BEFORE any get_meta lookup so no
+    # information about the data model leaks.
+    if not frappe.has_permission("Role Field Mapping", "read"):
+        frappe.throw(
+            _("Not permitted to read {0}").format(from_doctype),
+            frappe.PermissionError,
+        )
+
     if not from_doctype or not linked_field_doctype:
         return {"fields": []}
 

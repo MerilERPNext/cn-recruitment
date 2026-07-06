@@ -1,10 +1,36 @@
 // services/scheduledImportsService.ts
-import type { ScheduledDataImport } from "../types/scheduledImports";
+import type {
+  ImportStatusSummary,
+  ScheduledDataImport,
+} from "../types/scheduledImports";
 import { FrappeAPI } from "../utils/frappeAPI";
 
 const DOCTYPE = "Scheduled Data Import";
 
+const EMPTY_SUMMARY: ImportStatusSummary = {
+  total: 0,
+  pendingApproval: 0,
+  pendingScheduled: 0,
+  processing: 0,
+  processed: 0,
+  failedCancelled: 0,
+};
+
 export const scheduledImportsService = {
+  // Server-side aggregated status counts for the summary cards. Runs a
+  // single GROUP BY on the backend instead of tallying every row in the
+  // browser. Scoped to owner + month, matching the list the page shows.
+  getStatusSummary: async (
+    owner: string,
+    monthFilter?: string,
+  ): Promise<ImportStatusSummary> => {
+    const message = (await FrappeAPI.getMethod(
+      "nextai.nextai.doctype.scheduled_data_import.scheduled_data_import.get_status_summary",
+      { owner, month_filter: monthFilter ?? "" },
+    )) as Partial<ImportStatusSummary> | null;
+    return { ...EMPTY_SUMMARY, ...(message ?? {}) };
+  },
+
   getImportsByOwner: async (
     owner: string,
     monthFilter?: string,
