@@ -208,7 +208,9 @@ const ConfirmationWorkflow = () => {
     enabledActions.initiate_confirmation &&
     showConfirmationButton?.show_button &&
     !employeeConfirmationPending?.[0] &&
-    activeEmployee?.custom_employment_status == "On Probation";
+    activeEmployee?.custom_employment_status == "On Probation" &&
+    employeeConfirmationAll?.[0]?.approval_status === "Pending"
+    ;
 
   useEffect(() => {
     const refreshCurrentPageData = () => {
