@@ -123,6 +123,7 @@ export type FlowRequestStage = {
   approval_response_data_display?: string;
   todo: {
     reference_document?: {
+      custom_status?: string;
       custom_created_from_confirmation?: 1 | 0;
     }
     custom_approval_type: "Approval Matrix" | "Multi Actions";

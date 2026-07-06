@@ -209,7 +209,7 @@ const ConfirmationWorkflow = () => {
     showConfirmationButton?.show_button &&
     !employeeConfirmationPending?.[0] &&
     activeEmployee?.custom_employment_status == "On Probation" &&
-    employeeConfirmationAll?.[0]?.approval_status === "Pending"
+    !["Approved", "Completed", "Pending", "Draft"].includes(employeeConfirmationAll?.[0]?.approval_status || "")
     ;
 
   useEffect(() => {
