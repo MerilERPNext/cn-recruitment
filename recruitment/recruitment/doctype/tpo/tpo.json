@@ -1,0 +1,237 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:TPO-{####}",
+ "creation": "2026-07-06 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "college_details_section",
+  "college_full_name",
+  "college_short_name",
+  "column_break_college",
+  "city",
+  "state",
+  "address_section",
+  "address",
+  "primary_tpo_section",
+  "primary_tpo_name",
+  "primary_tpo_email",
+  "column_break_primary_tpo",
+  "primary_tpo_phone",
+  "secondary_tpo_section",
+  "secondary_tpo_name",
+  "secondary_tpo_email",
+  "column_break_secondary_tpo",
+  "secondary_tpo_phone",
+  "academic_details_section",
+  "batch_size",
+  "sales_marketing_batch_size",
+  "column_break_academic",
+  "university_affiliated_to",
+  "courses_section",
+  "course_mba",
+  "course_pgdm",
+  "course_mms"
+ ],
+ "fields": [
+  {
+   "fieldname": "college_details_section",
+   "fieldtype": "Section Break",
+   "label": "College Details"
+  },
+  {
+   "fieldname": "college_full_name",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Full Name of College",
+   "options": "Institute",
+   "reqd": 1
+  },
+  {
+   "fieldname": "college_short_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Short Form of College",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_college",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "city",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "City",
+   "reqd": 1,
+   "options": "City"
+  },
+  {
+   "fieldname": "state",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "State",
+   "reqd": 1,
+   "options": "State"
+  },
+  {
+   "fieldname": "address_section",
+   "fieldtype": "Section Break",
+   "label": "Address"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Small Text",
+   "label": "Address",
+   "reqd": 1
+  },
+  {
+   "fieldname": "primary_tpo_section",
+   "fieldtype": "Section Break",
+   "label": "Primary TPO"
+  },
+  {
+   "fieldname": "primary_tpo_name",
+   "fieldtype": "Data",
+   "label": "Primary TPO Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "primary_tpo_email",
+   "fieldtype": "Data",
+   "label": "Primary TPO Email ID",
+   "options": "Email",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_primary_tpo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "primary_tpo_phone",
+   "fieldtype": "Data",
+   "options": "Phone",
+   "label": "Primary TPO Phone Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "secondary_tpo_section",
+   "fieldtype": "Section Break",
+   "label": "Secondary TPO"
+  },
+  {
+   "fieldname": "secondary_tpo_name",
+   "fieldtype": "Data",
+   "label": "Secondary TPO Name"
+  },
+  {
+   "fieldname": "secondary_tpo_email",
+   "fieldtype": "Data",
+   "options": "Email",
+   "label": "Secondary TPO Email ID"
+  },
+  {
+   "fieldname": "column_break_secondary_tpo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "secondary_tpo_phone",
+   "fieldtype": "Data",
+   "options": "Phone",
+   "label": "Secondary TPO Phone Number"
+  },
+  {
+   "fieldname": "academic_details_section",
+   "fieldtype": "Section Break",
+   "label": "Academic Details"
+  },
+  {
+   "fieldname": "batch_size",
+   "fieldtype": "Int",
+   "label": "Batch Size",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sales_marketing_batch_size",
+   "fieldtype": "Int",
+   "label": "Sales & Marketing Batch Size",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_academic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "university_affiliated_to",
+   "fieldtype": "Data",
+   "label": "University Affiliated To",
+   "reqd": 1
+  },
+  {
+   "fieldname": "courses_section",
+   "fieldtype": "Section Break",
+   "label": "Courses Offered"
+  },
+  {
+   "fieldname": "course_mba",
+   "fieldtype": "Check",
+   "label": "MBA"
+  },
+  {
+   "fieldname": "course_pgdm",
+   "fieldtype": "Check",
+   "label": "PGDM"
+  },
+  {
+   "fieldname": "course_mms",
+   "fieldtype": "Check",
+   "label": "MMS"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-07-06 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "TPO",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 0,
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "college_full_name",
+ "track_changes": 1
+}

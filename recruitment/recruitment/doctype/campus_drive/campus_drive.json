@@ -1,0 +1,329 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:DRV-{YYYY}-{####}",
+ "creation": "2026-07-03 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "configuration_tab",
+  "overview_section",
+  "drive_name",
+  "drive_owner",
+  "drive_start_date",
+  "column_break_overview",
+  "drive_status",
+  "drive_id",
+  "drive_end_date",
+  "participating_institutes_section",
+  "participating_institutes",
+  "linked_openings_section",
+  "linked_job_openings",
+  "registration_config_section",
+  "registration_open_from",
+  "total_seat_capacity",
+  "column_break_registration_config",
+  "registration_link",
+  "batch_eligibility_section",
+  "graduation_year",
+  "minimum_academic_percentage",
+  "column_break_batch_eligibility",
+  "eligible_streams",
+  "registration_form_tab",
+  "registration_form_section",
+  "registration_form_enabled",
+  "registration_form_title",
+  "column_break_registration_form_intro",
+  "form_field_count",
+  "mandatory_field_count",
+  "tpo_verified_field_count",
+  "registration_form_description",
+  "registration_form_qr_code",
+  "registration_fields_section",
+  "registration_fields",
+  "rounds_tab",
+  "rounds_section",
+  "rounds",
+  "round_panel_section",
+  "round_panelists",
+  "gd_groups_section",
+  "gd_groups"
+ ],
+ "fields": [
+  {
+   "fieldname": "configuration_tab",
+   "fieldtype": "Tab Break",
+   "label": "Configuration"
+  },
+  {
+   "fieldname": "overview_section",
+   "fieldtype": "Section Break",
+   "label": "Drive Details"
+  },
+  {
+   "fieldname": "drive_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Drive Name",
+   "reqd": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "drive_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nLive\nIn Progress\nCompleted\nClosed",
+   "reqd": 1
+  },
+  {
+   "default": "__user",
+   "fieldname": "drive_owner",
+   "fieldtype": "Link",
+   "label": "Drive Owner",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_overview",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "drive_id",
+   "fieldtype": "Data",
+   "label": "Drive ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "drive_start_date",
+   "fieldtype": "Date",
+   "label": "Drive Window Start",
+   "reqd": 1
+  },
+  {
+   "fieldname": "drive_end_date",
+   "fieldtype": "Date",
+   "label": "Drive Window End",
+   "reqd": 1
+  },
+  {
+   "fieldname": "participating_institutes_section",
+   "fieldtype": "Section Break",
+   "label": "Participating Institutes"
+  },
+  {
+   "fieldname": "participating_institutes",
+   "fieldtype": "Table",
+   "label": "Participating Institutes",
+   "options": "Campus Drive Institute"
+  },
+  {
+   "fieldname": "linked_openings_section",
+   "fieldtype": "Section Break",
+   "label": "Linked Job Openings"
+  },
+  {
+   "fieldname": "linked_job_openings",
+   "fieldtype": "Table",
+   "label": "Linked Job Openings",
+   "options": "Campus Drive Job Opening"
+  },
+  {
+   "fieldname": "registration_config_section",
+   "fieldtype": "Section Break",
+   "label": "Registration"
+  },
+  {
+   "fieldname": "registration_open_from",
+   "fieldtype": "Date",
+   "label": "Registration Opens From"
+  },
+  {
+   "fieldname": "total_seat_capacity",
+   "fieldtype": "Int",
+   "label": "Total Seat Capacity"
+  },
+  {
+   "fieldname": "column_break_registration_config",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "registration_link",
+   "fieldtype": "Data",
+   "label": "Registration Link"
+  },
+  {
+   "fieldname": "batch_eligibility_section",
+   "fieldtype": "Section Break",
+   "label": "Batch Eligibility"
+  },
+  {
+   "fieldname": "graduation_year",
+   "fieldtype": "Int",
+   "label": "Graduation Year"
+  },
+  {
+   "fieldname": "minimum_academic_percentage",
+   "fieldtype": "Percent",
+   "label": "Minimum Academic Percentage"
+  },
+  {
+   "fieldname": "column_break_batch_eligibility",
+   "fieldtype": "Column Break"
+  },
+   {
+    "fieldname": "eligible_streams",
+    "fieldtype": "Table MultiSelect",
+    "label": "Eligible Streams",
+    "options": "Campus Drive Eligible Stream"
+   },
+  {
+   "fieldname": "registration_form_tab",
+   "fieldtype": "Tab Break",
+   "label": "Registration Form"
+  },
+  {
+   "fieldname": "registration_form_section",
+   "fieldtype": "Section Break",
+   "label": "Campus Registration Form"
+  },
+  {
+   "default": "1",
+   "fieldname": "registration_form_enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "registration_form_title",
+   "fieldtype": "Data",
+   "label": "Form Title"
+  },
+  {
+   "fieldname": "column_break_registration_form_intro",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "form_field_count",
+   "fieldtype": "Int",
+   "label": "Fields On Form",
+   "read_only": 1
+  },
+  {
+   "fieldname": "mandatory_field_count",
+   "fieldtype": "Int",
+   "label": "Mandatory Fields",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tpo_verified_field_count",
+   "fieldtype": "Int",
+   "label": "TPO Verified Fields",
+   "read_only": 1
+  },
+  {
+   "fieldname": "registration_form_description",
+   "fieldtype": "Small Text",
+   "label": "Form Description"
+  },
+  {
+   "fieldname": "registration_form_qr_code",
+   "fieldtype": "Attach Image",
+   "label": "Registration QR Code"
+  },
+  {
+   "fieldname": "registration_fields_section",
+   "fieldtype": "Section Break",
+   "label": "Registration Fields"
+  },
+  {
+   "fieldname": "registration_fields",
+   "fieldtype": "Table",
+   "label": "Registration Fields",
+   "options": "Campus Drive Registration Field"
+  },
+  {
+   "fieldname": "rounds_tab",
+   "fieldtype": "Tab Break",
+   "label": "Rounds"
+  },
+  {
+   "fieldname": "rounds_section",
+   "fieldtype": "Section Break",
+   "label": "Rounds"
+  },
+  {
+   "fieldname": "rounds",
+   "fieldtype": "Table",
+   "label": "Rounds",
+   "options": "Campus Drive Round"
+  },
+  {
+   "fieldname": "round_panel_section",
+   "fieldtype": "Section Break",
+   "label": "Round Panelists"
+  },
+  {
+   "fieldname": "round_panelists",
+   "fieldtype": "Table",
+   "label": "Round Panelists",
+   "options": "Campus Drive Round Panelist"
+  },
+  {
+   "fieldname": "gd_groups_section",
+   "fieldtype": "Section Break",
+   "label": "GD Groups"
+  },
+  {
+   "fieldname": "gd_groups",
+   "fieldtype": "Table",
+   "label": "GD Groups",
+   "options": "Campus Drive GD Group"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-07-03 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Campus Drive",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 0,
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "drive_name",
+ "track_changes": 1
+}
+
