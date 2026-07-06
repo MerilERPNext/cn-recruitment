@@ -108,7 +108,7 @@ export type FlowRequestStage = {
   stage_name: string;
   allocated_to: Array<allocatedToType>;
   user_id: string;
-  form_data_display: Record<string, unknown>;
+  form_data_display?: Record<string, unknown>;
   user: string;
   role: string | null;
   status: string;
@@ -122,6 +122,9 @@ export type FlowRequestStage = {
   approval_response_data: string;
   approval_response_data_display?: string;
   todo: {
+    reference_document?: {
+      custom_created_from_confirmation?: 1 | 0;
+    }
     custom_approval_type: "Approval Matrix" | "Multi Actions";
     name: string;
     custom_doctype_actions: string;

@@ -7,6 +7,7 @@ import InitiateFlow from "./Initiate/InitiateFlow";
 import HeaderBar from "../HeaderBar";
 import Button from "../shared/atoms/Button";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 type TabName = "Flow Requests" | "Onboarding" | "Confirmation" | "Separation";
 
@@ -27,15 +28,7 @@ const FlowApp: React.FC = () => {
   const location = useLocation();
   const { data: userUiPermission } = useGetUiPermission("HR Process");
 
-  const canInitiateFlow = useMemo(() => {
-    const initiateFlowPage = userUiPermission?.[0]?.pages?.find(
-      (item) => item.page_name === "Flow Requests",
-    );
-    const initiateAction = initiateFlowPage?.actions?.find(
-      (action) => action.action_name === "initiate",
-    );
-    return !!initiateAction?.enabled;
-  }, [userUiPermission]);
+  const canInitiateFlow = isActionEnabled(userUiPermission, "initiate", "Flow Requests")
 
   const tabs: Tab[] = useMemo(() => {
     const allTabs: { key: TabName; label: string; permissionKey: string }[] = [
@@ -88,7 +81,7 @@ const FlowApp: React.FC = () => {
   const [showInitiateModel, setShowInitiateModel] = useState<boolean>(false);
 
   const showInitiateButton =
-    activeTab === "Flow Requests" && !seprateRoute && canInitiateFlow;
+    activeTab === "Flow Requests" && seprateRoute === "Flow Request" && canInitiateFlow;
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
