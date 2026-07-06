@@ -19,6 +19,10 @@
 			{ label: "VIEW",      col: "view_refer",      type: "toggle" },
 			{ label: "MANDATORY", col: "mandatory_refer", type: "toggle" },
 		]},
+		{ key: "campus",   label: "CAMPUS HIRING", cls: "campus", cols: [
+			{ label: "VIEW",      col: "view_campus",      type: "toggle" },
+			{ label: "MANDATORY", col: "mandatory_campus", type: "toggle" },
+		]},
 		{ key: "preoffer", label: "PRE-OFFER", cls: "preoffer", cols: [
 			{ label: "VIEW",      col: "view_preoffer",      type: "toggle" },
 			{ label: "MANDATORY", col: "mandatory_preoffer", type: "toggle" },
@@ -51,6 +55,10 @@
 		{ label: "REFER",     cols: [
 			{ col: "view_refer",        label: "VIEW" },
 			{ col: "mandatory_refer",   label: "MANDATORY" },
+		]},
+		{ label: "CAMPUS HIRING", cols: [
+			{ col: "view_campus",        label: "VIEW" },
+			{ col: "mandatory_campus",   label: "MANDATORY" },
 		]},
 		{ label: "PRE-OFFER", cols: [
 			{ col: "view_preoffer",      label: "VIEW" },
@@ -172,6 +180,7 @@
 			.apf-group-careers       { color: #B45309 !important; }
 			.apf-group-ijp           { color: #1D4ED8 !important; }
 			.apf-group-refer         { color: #047857 !important; }
+			.apf-group-campus        { color: #6D28D9 !important; }
 			.apf-group-preoffer      { color: #C2410C !important; }
 			.apf-group-general       { color: #4B5563 !important; }
 			.apf-group-preoffer-rules{ color: #B91C1C !important; }

@@ -67,8 +67,8 @@ _PERF_INDEX_TARGETS = [
     ("Interview", "job_applicant"),
     ("Interview", "job_opening"),
     ("Interview Detail", "interviewer"),
-    ("Job Opening External Recruiter", "external_recruiter"),
-    ("Job Opening External Recruiter", "external_recruiter_group"),
+    ("Job Opening Posting Channel", "external_recruiter"),
+    ("Job Opening Posting Channel", "external_recruiter_group"),
     ("TA External Recruiter Group Member", "external_recruiter"),
 ]
 

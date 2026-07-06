@@ -52,6 +52,7 @@ def _init_child_field_config(child_doctype):
 				"view_careers": 1,      "mandatory_careers": 0,
 				"view_ijp": 1,          "mandatory_ijp": 0,
 				"view_refer": 1,        "mandatory_refer": 0,
+				"view_campus": 1,       "mandatory_campus": 0,
 				"view_preoffer": 1,     "mandatory_preoffer": 0,
 			}
 		return json.dumps(config) if config else ""
@@ -160,6 +161,7 @@ class JobApplicantProfileSettings(Document):
 				"view_careers": 0, "mandatory_careers": 0,
 				"view_ijp": 0, "mandatory_ijp": 0,
 				"view_refer": 0, "mandatory_refer": 0,
+				"view_campus": 0, "mandatory_campus": 0,
 				"view_preoffer": 0, "mandatory_preoffer": 0,
 				"ctq_flag": 0,
 				"visibility": "All",
@@ -251,6 +253,8 @@ def get_job_applicant_profile_template(opening=None):
 			"mandatory_ijp": pick(ref, "mandatory_ijp"),
 			"view_refer": pick(ref, "view_refer"),
 			"mandatory_refer": pick(ref, "mandatory_refer"),
+			"view_campus": pick(ref, "view_campus"),
+			"mandatory_campus": pick(ref, "mandatory_campus"),
 			"view_preoffer": pick(ref, "view_preoffer"),
 			"mandatory_preoffer": pick(ref, "mandatory_preoffer"),
 			"ctq_flag": pick(ref, "ctq_flag"),

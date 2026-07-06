@@ -17,6 +17,8 @@
   "mandatory_ijp",
   "view_refer",
   "mandatory_refer",
+  "view_campus",
+  "mandatory_campus",
   "view_preoffer",
   "mandatory_preoffer",
   "ctq_flag",
@@ -102,6 +104,18 @@
    "fieldname": "mandatory_refer",
    "fieldtype": "Check",
    "label": "Refer: Mandatory"
+  },
+  {
+   "default": "0",
+   "fieldname": "view_campus",
+   "fieldtype": "Check",
+   "label": "Campus: View"
+  },
+  {
+   "default": "0",
+   "fieldname": "mandatory_campus",
+   "fieldtype": "Check",
+   "label": "Campus: Mandatory"
   },
   {
    "default": "0",
