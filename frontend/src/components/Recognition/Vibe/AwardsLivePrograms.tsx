@@ -6,6 +6,7 @@ import { Card } from "../../shared/atoms/Card";
 import { Check, ChevronDown, Search, Trophy } from "lucide-react";
 import Avatar from "./Avatar";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
   useAwardEmployeePoints,
   useAwardPrograms,
@@ -291,7 +292,8 @@ const AwardsLivePrograms: React.FC = () => {
   const { data: currentUser } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
-  const employeeId = currentUser?.employee ?? "";
+  const { targetEmployeeId } = useTargetUser();
+  const employeeId = targetEmployeeId || currentUser?.employee || "";
   // `direction` is sent in the payload so the server returns only that tab's
   // awards. One query per direction keeps both tab counts accurate.
   const { data: receivedResp, isLoading: receivedLoading } = useAwardPrograms({

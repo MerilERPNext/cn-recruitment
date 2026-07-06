@@ -15,6 +15,7 @@ import FilterPanel, {
   type FilterValues,
 } from "../../shared/molecules/FilterPanel";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useAwardPrograms, useDoctypeOptions } from "../../../services/recognitionService";
 import EmployeeMultiSelect from "../components/MyAppreciationsHistory/EmployeeMultiSelect";
 import RecognitionRowActions from "../components/RecognitionRowActions";
@@ -103,7 +104,8 @@ const AwardsHistory: React.FC = () => {
   const { data: user } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
-  const employeeId = user?.employee ?? "";
+  const { targetEmployeeId } = useTargetUser();
+  const employeeId = targetEmployeeId || user?.employee || "";
 
   const [activeTab, setActiveTab] = useState<"Received" | "Given">("Received");
   const [query, setQuery] = useState("");

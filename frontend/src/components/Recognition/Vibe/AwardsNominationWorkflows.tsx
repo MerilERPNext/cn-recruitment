@@ -22,6 +22,7 @@ import SettingsPanel, {
   type TableSettings,
 } from "../../shared/molecules/SettingsPanel";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
   useAwardNominations,
   useDoctypeOptions,
@@ -82,7 +83,8 @@ const AwardsNominationWorkflows: React.FC = () => {
   const { data: currentUser } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
-  const employeeId = currentUser?.employee ?? "";
+  const { targetEmployeeId } = useTargetUser();
+  const employeeId = targetEmployeeId || currentUser?.employee || "";
 
   const [activePill, setActivePill] = useState(0);
   const [query, setQuery] = useState("");

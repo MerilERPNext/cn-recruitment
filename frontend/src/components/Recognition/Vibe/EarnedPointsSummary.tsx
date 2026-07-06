@@ -9,6 +9,7 @@ import {
   Search,
 } from "lucide-react";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import FilterPanel, {
   type DateRange,
@@ -43,7 +44,8 @@ const EarnedPointsSummary: React.FC = () => {
   const { data: user } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
-  const employeeId = user?.employee ?? "";
+  const { targetEmployeeId } = useTargetUser();
+  const employeeId = targetEmployeeId || user?.employee || "";
 
   const [query, setQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
