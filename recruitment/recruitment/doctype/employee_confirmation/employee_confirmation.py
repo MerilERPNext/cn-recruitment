@@ -10,9 +10,8 @@ from frappe.utils import getdate, today, add_days
 class EmployeeConfirmation(Document):
     	
 	def before_save(self):
-		if self.set_separation_date and not self.separation_applicable_date:
-			applicable_date = self.get_separation_applicable_date()
-			self.separation_applicable_date = applicable_date or add_days(getdate(today()), 1)
+		if self.status == "Initiate Separation" or self.recommended_for_separation:
+			self.separation_applicable_date = self.get_separation_applicable_date()
 
 	def on_submit(self):
 		confirmation_policy = frappe.get_doc("Confirmation Policy", self.confirmation_policy)
@@ -34,6 +33,11 @@ class EmployeeConfirmation(Document):
 			employee = frappe.get_doc("Employee", self.employee)
 			employee.custom_employment_status = "Recommended for Separation"
 			employee.save()
+
+			applicable = self.separation_applicable_date
+			if not self.separation_created and (not applicable or getdate(applicable) <= getdate(today())):
+				self.create_employee_separation(employee)
+				self.db_set("separation_created", 1)
 
 	def create_employee_separation(self, employee=None):
 		if employee is None:

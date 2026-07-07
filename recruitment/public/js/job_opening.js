@@ -25,6 +25,10 @@
 			{ label: "VIEW",      col: "view_refer",      type: "toggle" },
 			{ label: "MANDATORY", col: "mandatory_refer", type: "toggle" },
 		]},
+		{ key: "campus",   label: "CAMPUS HIRING", cls: "campus", cols: [
+			{ label: "VIEW",      col: "view_campus",      type: "toggle" },
+			{ label: "MANDATORY", col: "mandatory_campus", type: "toggle" },
+		]},
 		{ key: "preoffer", label: "PRE-OFFER", cls: "preoffer", cols: [
 			{ label: "VIEW",      col: "view_preoffer",      type: "toggle" },
 			{ label: "MANDATORY", col: "mandatory_preoffer", type: "toggle" },
@@ -57,6 +61,10 @@
 		{ label: "REFER",     cols: [
 			{ col: "view_refer",        label: "VIEW" },
 			{ col: "mandatory_refer",   label: "MANDATORY" },
+		]},
+		{ label: "CAMPUS HIRING", cols: [
+			{ col: "view_campus",        label: "VIEW" },
+			{ col: "mandatory_campus",   label: "MANDATORY" },
 		]},
 		{ label: "PRE-OFFER", cols: [
 			{ col: "view_preoffer",      label: "VIEW" },
@@ -126,6 +134,7 @@
 			.apf-group-careers       { color: #B45309 !important; }
 			.apf-group-ijp           { color: #1D4ED8 !important; }
 			.apf-group-refer         { color: #047857 !important; }
+			.apf-group-campus        { color: #6D28D9 !important; }
 			.apf-group-preoffer      { color: #C2410C !important; }
 			.apf-group-general       { color: #4B5563 !important; }
 			.apf-group-preoffer-rules{ color: #B91C1C !important; }
@@ -565,7 +574,8 @@
 					const stateRow = state.rows.find((sr) => sr.reference_name === docRow.reference_name);
 					if (!stateRow) return;
 					["view_careers", "mandatory_careers", "view_ijp", "mandatory_ijp",
-					 "view_refer", "mandatory_refer", "view_preoffer", "mandatory_preoffer",
+					 "view_refer", "mandatory_refer", "view_campus", "mandatory_campus",
+					 "view_preoffer", "mandatory_preoffer",
 					 "ctq_flag"].forEach((col) => { stateRow[col] = docRow[col] ? 1 : 0; });
 					["visibility", "editability", "preoffer_visibility", "preoffer_edit_approve"].forEach((col) => {
 						if (docRow[col]) stateRow[col] = docRow[col];

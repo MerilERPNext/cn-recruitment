@@ -20,9 +20,11 @@ export type RecognitionActionItem = {
   status?: string;
 };
 
-// Decode the base64 certificate PDF and trigger a download.
+// Decode the base64 certificate PDF and trigger a download. Tolerates a
+// "data:...;base64," prefix and any whitespace/newlines in the payload.
 const downloadPdf = (filename: string, base64: string) => {
-  const bytes = atob(base64);
+  const clean = (base64 || "").replace(/^data:[^,]*,/, "").replace(/\s/g, "");
+  const bytes = atob(clean);
   const arr = new Uint8Array(bytes.length);
   for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
   const blob = new Blob([arr], { type: "application/pdf" });
@@ -59,15 +61,15 @@ const RecognitionRowActions: React.FC<RecognitionRowActionsProps> = ({
   const [downloading, setDownloading] = useState(false);
 
   const download = async () => {
-    if (!item.name) return;
+    if (!item.name || downloading) return;
     setDownloading(true);
-    const id = toast.loading("Generating PDF…");
     try {
       const { filename, content_base64 } = await fetchAppreciationCertificate(item.name);
       downloadPdf(filename, content_base64);
-      toast.success("Certificate downloaded.", { id });
+      // Only surface a toast once the certificate is generated and downloaded.
+      toast.success("Certificate downloaded.");
     } catch (err) {
-      toast.error((err as Error)?.message || "Download failed.", { id });
+      toast.error((err as Error)?.message || "Download failed.");
     } finally {
       setDownloading(false);
     }

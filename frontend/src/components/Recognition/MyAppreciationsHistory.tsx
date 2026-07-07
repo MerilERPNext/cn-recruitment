@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
+import { useTargetUser } from "../../context/ViewedUserContext";
 import FilterPanel, {
   type DateRange,
   type FilterField,
@@ -50,7 +51,8 @@ const MyAppreciationsHistory: React.FC = () => {
   const { data: user } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
-  const employeeId = user?.employee ?? "";
+  const { targetEmployeeId } = useTargetUser();
+  const employeeId = targetEmployeeId || user?.employee || "";
 
   const [activeTab, setActiveTab] =
     useState<AppreciationHistoryTab>("received");

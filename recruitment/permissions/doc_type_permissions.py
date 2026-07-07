@@ -12,19 +12,20 @@ def _assigned_openings_subquery(recruiter):
     """SQL subquery yielding Job Opening names this external recruiter is assigned
     to — directly, or via any TA External Recruiter Group they belong to — AND
     whose posting window is currently live (today within Display From…Display To;
-    blank dates = open-ended). Matches the `custom_external_recruiters` child rows
-    on Job Opening."""
+    blank dates = open-ended). Reads from custom_posting_options (unified channel
+    table) rows where post_to is 'External Recruiter' or 'External Recruiter Group'."""
     rec = frappe.db.escape(recruiter, percent=False)
     return f"""
-        SELECT er.parent
-        FROM `tabJob Opening External Recruiter` AS er
-        WHERE er.parenttype = 'Job Opening'
-          AND er.parentfield = 'custom_external_recruiters'
-          AND (er.display_from IS NULL OR er.display_from <= CURDATE())
-          AND (er.display_to IS NULL OR er.display_to >= CURDATE())
+        SELECT pc.parent
+        FROM `tabJob Opening Posting Channel` AS pc
+        WHERE pc.parenttype = 'Job Opening'
+          AND pc.parentfield = 'custom_posting_options'
+          AND pc.post_to IN ('External Recruiter', 'External Recruiter Group')
+          AND (pc.display_from IS NULL OR pc.display_from <= CURDATE())
+          AND (pc.display_to IS NULL OR pc.display_to >= CURDATE())
           AND (
-                er.external_recruiter = {rec}
-                OR er.external_recruiter_group IN (
+                pc.external_recruiter = {rec}
+                OR pc.external_recruiter_group IN (
                     SELECT gm.parent
                     FROM `tabTA External Recruiter Group Member` AS gm
                     WHERE gm.parenttype = 'TA External Recruiter Group'
@@ -35,13 +36,12 @@ def _assigned_openings_subquery(recruiter):
 
 
 def set_external_recruiter_posting_status(doc, method=None):
-    """Job Opening `validate` hook: set each External Recruiter row's read-only
-    `job_posting_status` to Active when today is within its Display From…Display To
-    window (blank = open-ended), else Inactive — so the grid reflects live
-    availability (which the permission scoping also enforces)."""
+    """Job Opening `validate` hook: set each posting channel row's `status` to
+    Active when today is within its Display From…Display To window (blank =
+    open-ended), else Inactive. Applies to all rows in custom_posting_options."""
     from frappe.utils import getdate, today
 
-    rows = doc.get("custom_external_recruiters") or []
+    rows = doc.get("custom_posting_options") or []
     if not rows:
         return
     today_d = getdate(today())
@@ -51,7 +51,7 @@ def set_external_recruiter_posting_status(doc, method=None):
             active = False
         if r.display_to and getdate(r.display_to) < today_d:
             active = False
-        r.job_posting_status = "Active" if active else "Inactive"
+        r.status = "Active" if active else "Inactive"
 
 
 def _is_opening_assigned(opening, recruiter):
@@ -61,8 +61,11 @@ def _is_opening_assigned(opening, recruiter):
     from frappe.utils import getdate, today
 
     rows = frappe.get_all(
-        "Job Opening External Recruiter",
-        filters={"parent": opening, "parenttype": "Job Opening", "parentfield": "custom_external_recruiters"},
+        "Job Opening Posting Channel",
+        filters={
+            "parent": opening, "parenttype": "Job Opening", "parentfield": "custom_posting_options",
+            "post_to": ["in", ["External Recruiter", "External Recruiter Group"]],
+        },
         fields=["external_recruiter", "external_recruiter_group", "display_from", "display_to"],
     )
     if not rows:
@@ -126,14 +129,21 @@ def job_applicant_has_permission(doc, ptype, user):
 
 def job_opening_query(user):
     """External recruiters see only the Job Openings assigned to them (directly or
-    via a group). Everyone else is unrestricted by this app (standard perms apply)."""
+    via a group). Everyone else is unrestricted by this app (standard perms apply).
+
+    A privileged role (System Manager / Recruiter Admin / HR User / Management)
+    always wins: such a user sees every opening even when they *also* carry the
+    External Recruiter role — otherwise an HR person who happens to also be set up
+    as an external recruiter (and has no TA External Recruiter record) would be
+    scoped down to nothing. Mirrors the exemption in ``ja_query``."""
     if not user:
         user = frappe.session.user
     if user == "Administrator":
         return "1 = 1"
 
-    roles = frappe.get_roles(user)
-    if EXTERNAL_RECRUITER_ROLE in roles:
+    roles = set(frappe.get_roles(user))
+    privileged = {"System Manager", "Recruiter Admin", "HR User", "Management"}
+    if EXTERNAL_RECRUITER_ROLE in roles and not (privileged & roles):
         recruiter = _external_recruiter_name(user)
         if not recruiter:
             return "1 = 0"  # role but no recruiter record → see nothing

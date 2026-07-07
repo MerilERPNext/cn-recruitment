@@ -1,4 +1,4 @@
-import { Check, Clock, Hourglass, X } from "lucide-react";
+import { Check, Clock, Hourglass, X, CircleSlash } from "lucide-react";
 
 export const statusConfig = {
   completed: {
@@ -22,7 +22,12 @@ export const statusConfig = {
     bg: "bg-red-500",
     line: "bg-gray-500",
   },
-  default : {
+  skipped: {
+    icon: CircleSlash,
+    bg: "bg-slate-300",
+    line: "bg-slate-300",
+  },
+  default: {
     icon: Clock,
     bg: "bg-gray-400",
     line: "bg-gray-400",

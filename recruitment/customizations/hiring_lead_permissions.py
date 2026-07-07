@@ -13,7 +13,7 @@ Each gate:
 Settings are "Allow …" flags — when a flag is OFF, the matching edit is blocked.
 
 Implemented gates:
-  #1  allow_hiring_lead_edit_external_recruiter   → Job Opening.custom_external_recruiters
+  #1  allow_hiring_lead_edit_external_recruiter   → Job Opening.custom_posting_options (External Recruiter rows)
   #2  allow_hiring_lead_edit_application_fields    → Job Opening.custom_application_fields
   #3  allow_hiring_lead_edit_pre_offer_fields      → Job Opening.custom_application_fields
                                                      (Pre-Offer columns only)
@@ -119,8 +119,8 @@ def validate_job_opening_hiring_lead_edits(doc, method=None):
 	if _exempt() or not is_hiring_lead_for_company(doc.get("company")):
 		return
 	s = _settings()
-	if not s.get("allow_hiring_lead_edit_external_recruiter") and _table_changed(doc, "custom_external_recruiters"):
-		frappe.throw(_("Hiring leads are not allowed to edit the External Recruiter assignment on a Job Opening. Enable it in Recruitment Settings → Hiring Lead Permission Settings."))
+	if not s.get("allow_hiring_lead_edit_external_recruiter") and _table_changed(doc, "custom_posting_options"):
+		frappe.throw(_("Hiring leads are not allowed to edit the Posting Options (including External Recruiter assignments) on a Job Opening. Enable it in Recruitment Settings → Hiring Lead Permission Settings."))
 	if not s.get("allow_hiring_lead_edit_application_fields") and _table_changed(doc, "custom_application_fields"):
 		frappe.throw(_("Hiring leads are not allowed to edit Application Fields on a Job Opening. Enable it in Recruitment Settings → Hiring Lead Permission Settings."))
 	if not s.get("allow_hiring_lead_edit_pre_offer_fields") and _table_subfields_changed(doc, "custom_application_fields", _PREOFFER_SUBFIELDS):

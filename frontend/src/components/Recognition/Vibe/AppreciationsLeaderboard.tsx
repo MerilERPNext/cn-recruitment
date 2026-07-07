@@ -5,6 +5,7 @@ import { Card } from "../../shared/atoms/Card";
 import { Search, Star } from "lucide-react";
 import Avatar from "./Avatar";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
   useAppreciationLeaderboard,
   useAppreciationPrograms,
@@ -142,7 +143,8 @@ const AppreciationsLeaderboard: React.FC = () => {
   const { data: currentUser } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
-  const employeeId = currentUser?.employee ?? "";
+  const { targetEmployeeId } = useTargetUser();
+  const employeeId = targetEmployeeId || currentUser?.employee || "";
   const { data: receivedResp, isLoading: receivedLoading } = useAppreciationPrograms({
     employee: employeeId,
     direction: "received",
