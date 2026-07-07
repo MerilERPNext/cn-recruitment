@@ -591,30 +591,27 @@ def get_saved_job_openings(candidate_email):
 		return _err("candidate_email is required.", 400)
 	enforce_candidate_identity(email=email)
 
+	columns = _common.get_configured_columns(CHANNEL)
+	extra_fields = [c["fieldname"] for c in columns]
+
 	existing_name = frappe.db.get_value("Saved Job Opening", {"candidate_email": email}, "name")
 	if not existing_name:
-		return {"status": "success", "total": 0, "saved_job_openings": []}
+		return {"success": True, "columns": columns, "openings": [], "total": 0}
 
 	doc = frappe.get_doc("Saved Job Opening", existing_name)
 	ids = [r.job_opening for r in (doc.job_openings or []) if r.job_opening]
-
-	# Build extra_fields from configured columns so saved cards carry the same
-	# fields as list_openings cards — same shape, same component on the frontend.
-	columns = _common.get_configured_columns(CHANNEL)
-	extra_fields = [c["fieldname"] for c in columns]
 
 	applied = _applied_openings(email, ids)
 	openings = []
 	for name in ids:
 		card = _common.get_opening_card(name, extra_fields=extra_fields)
 		if not card:
-			# Saved opening was since deleted — skip it rather than ship a null.
 			continue
 		card["applied"] = name in applied
 		card["saved"] = True
 		openings.append(card)
 
-	return {"status": "success", "total": len(openings), "saved_job_openings": openings}
+	return {"success": True, "columns": columns, "openings": openings, "total": len(openings)}
 
 
 # ---------------------------------------------------------------------------
