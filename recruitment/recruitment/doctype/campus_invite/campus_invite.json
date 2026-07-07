@@ -16,8 +16,6 @@
   "job_openings",
   "tpo_contacts_section",
   "tpo_contacts",
-  "email_section",
-  "email_template",
   "amended_from"
  ],
  "fields": [
@@ -51,6 +49,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Institute",
+   "link_filters": "[[\"Institute\",\"region\",\"=\",\"eval:doc.region\"]]",
    "options": "Institute",
    "reqd": 1
   },
@@ -84,18 +83,6 @@
    "label": "TPO Contacts",
    "options": "Institute TPO Contact",
    "read_only": 1
-  },
-  {
-   "fieldname": "email_section",
-   "fieldtype": "Section Break",
-   "label": "Invitation Email"
-  },
-  {
-   "description": "Optional. Overrides the built-in 'TPO Set Password' email. Jinja vars: tpo_name, link, login_url, email.",
-   "fieldname": "email_template",
-   "fieldtype": "Link",
-   "label": "Campus Invite Email Template",
-   "options": "Email Template"
   },
   {
    "fieldname": "amended_from",

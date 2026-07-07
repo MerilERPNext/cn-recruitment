@@ -31,7 +31,7 @@ PORTAL_LABEL = {
 	"careers": "Careers Page",
 	"refer":   "Refer",
 	"ijp":     "IJP",
-	"campus":  "Campus Hiring",
+	"campus":  "Campus",
 }
 
 # Job Applicant Source master record to stamp on the applicant after submit.

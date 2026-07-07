@@ -19,50 +19,10 @@ TPO_ROLE = "TPO"
 # ...) remain reachable via role permissions, which are module-independent.
 TPO_ALLOWED_MODULES = ("Recruitment",)
 
-# Editable in Desk -> Email Template. Jinja vars: tpo_name, link, login_url, email.
-# Falls back to the in-code HTML below when the template is missing.
+# Email Template used for the TPO set-password mail. Configure it in
+# Campus Settings -> TPO Set Password Email Template; this name is the fallback
+# looked up when that setting is blank. Jinja vars: tpo_name, link, login_url, email.
 SET_PASSWORD_EMAIL_TEMPLATE = "TPO Set Password"
-
-SET_PASSWORD_EMAIL_HTML = """
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;margin:0;padding:28px 12px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <tr><td align="center">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e6e8eb;">
-      <tr><td style="background:#111827;padding:30px 36px;">
-        <div style="color:#ffffff;font-size:19px;font-weight:700;letter-spacing:.2px;">Campus Recruitment Portal</div>
-        <div style="color:#9ca3af;font-size:12px;margin-top:5px;text-transform:uppercase;letter-spacing:.08em;">TPO Access</div>
-      </td></tr>
-      <tr><td style="padding:34px 36px 8px;">
-        <p style="margin:0 0 16px;font-size:17px;font-weight:600;color:#111827;">Hi {{ tpo_name }},</p>
-        <p style="margin:0 0 20px;font-size:14px;color:#4b5563;line-height:1.75;">
-          A <strong style="color:#111827;">TPO</strong> account has been created for you on the Campus Recruitment Portal.
-          To view the campus drives and job openings shared with your institute, please set your password using the secure link below.
-        </p>
-        <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 26px;">
-          <tr><td align="center" bgcolor="#2490ef" style="border-radius:9px;">
-            <a href="{{ link }}" target="_blank" style="display:inline-block;padding:14px 34px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:9px;">Set Your Password &rarr;</a>
-          </td></tr>
-        </table>
-        <p style="margin:0 0 6px;font-size:12px;color:#6b7280;">Button not working? Copy and paste this link into your browser:</p>
-        <p style="margin:0 0 24px;font-size:12px;word-break:break-all;"><a href="{{ link }}" style="color:#2490ef;text-decoration:none;">{{ link }}</a></p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:10px;border:1px solid #eef0f2;">
-          <tr><td style="padding:16px 18px;font-size:13px;color:#4b5563;line-height:1.7;">
-            <span style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;">Your login details</span><br>
-            Email:&nbsp; <span style="color:#111827;font-weight:600;">{{ email }}</span><br>
-            Sign in at:&nbsp; <a href="{{ login_url }}" style="color:#2490ef;text-decoration:none;">{{ login_url }}</a>
-          </td></tr>
-        </table>
-      </td></tr>
-      <tr><td style="padding:22px 36px 28px;">
-        <hr style="border:none;border-top:1px solid #eef0f2;margin:0 0 16px;">
-        <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.7;">
-          This link is unique to you and expires after it is used or after a short period. If you weren't expecting this email, you can safely ignore it.
-        </p>
-      </td></tr>
-    </table>
-    <p style="margin:16px 0 0;font-size:11px;color:#b0b6bd;">&copy; Campus Recruitment Team &middot; Please do not reply to this automated message.</p>
-  </td></tr>
-</table>
-"""
 
 
 def ensure_tpo_role():
@@ -165,22 +125,29 @@ def _send_set_password_email(user, display_name=None, override_template=None):
 			"email": user.email,
 		}
 
-		subject = _("Set your password - TPO access")
-		message = None
-		template_name = override_template or SET_PASSWORD_EMAIL_TEMPLATE
-		if template_name and frappe.db.exists("Email Template", template_name):
-			from frappe.email.doctype.email_template.email_template import get_email_template
+		# Template is configured in Campus Settings; falls back to an Email Template
+		# named "TPO Set Password". No in-code body - it's fully configurable.
+		template_name = (
+			override_template
+			or frappe.db.get_single_value("Campus Settings", "tpo_set_password_email_template")
+			or SET_PASSWORD_EMAIL_TEMPLATE
+		)
+		if not (template_name and frappe.db.exists("Email Template", template_name)):
+			frappe.log_error(
+				f"No TPO set-password Email Template configured (Campus Settings -> "
+				f"TPO Set Password Email Template). User {user.name} was created but "
+				f"no email was sent.",
+				"TPO: set-password template missing",
+			)
+			return
 
-			rendered = get_email_template(template_name, context)
-			subject = rendered.get("subject") or subject
-			message = rendered.get("message")
-		if not message:
-			message = frappe.render_template(SET_PASSWORD_EMAIL_HTML, context)
+		from frappe.email.doctype.email_template.email_template import get_email_template
 
+		rendered = get_email_template(template_name, context)
 		frappe.sendmail(
 			recipients=[user.email],
-			subject=subject,
-			message=message,
+			subject=rendered.get("subject") or _("Set your password - TPO access"),
+			message=rendered.get("message"),
 			reference_doctype="User",
 			reference_name=user.name,
 		)

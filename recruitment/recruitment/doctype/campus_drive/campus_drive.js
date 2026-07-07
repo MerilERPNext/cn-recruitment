@@ -2,7 +2,12 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("Campus Drive", {
-	// Placeholder for parent form events.
+	setup: function (frm) {
+		// Only openings actively posted to the Campus channel can be linked.
+		frm.set_query("job_opening", "linked_job_openings", function () {
+			return { query: "recruitment.api.campus_openings.campus_job_opening_query" };
+		});
+	},
 });
 
 frappe.ui.form.on("Campus Drive Job Opening", {

@@ -2,6 +2,21 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("Campus Invite", {
+	setup: function (frm) {
+		// Only openings actively posted to the Campus channel can be linked.
+		frm.set_query("job_opening", "job_openings", function () {
+			return { query: "recruitment.api.campus_openings.campus_job_opening_query" };
+		});
+	},
+
+	region: function (frm) {
+		// Institute is filtered by Region (declarative link_filters). Clear a
+		// stale Institute selection when the Region changes.
+		if (frm.doc.institute) {
+			frm.set_value("institute", null);
+		}
+	},
+
 	institute: function (frm) {
 		frm.clear_table("tpo_contacts");
 		frm.refresh_field("tpo_contacts");

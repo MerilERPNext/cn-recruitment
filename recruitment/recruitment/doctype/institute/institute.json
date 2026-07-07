@@ -9,7 +9,6 @@
   "basic_details_section",
   "institute_name",
   "college_short_name",
-  "city",
   "column_break_basic_1",
   "tier",
   "state",
@@ -17,6 +16,7 @@
   "column_break_basic_2",
   "is_active",
   "recommended_visit_window",
+  "city",
   "address_section",
   "address",
   "academic_details_section",
@@ -58,6 +58,7 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "City",
+   "link_filters": "[[\"City\",\"state\",\"=\",\"eval:doc.state\"]]",
    "options": "City"
   },
   {
@@ -84,6 +85,7 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Region",
+   "link_filters": "[[\"Region\",\"state_id\",\"=\",\"eval:doc.state\"]]",
    "options": "Region"
   },
   {

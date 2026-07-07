@@ -41,14 +41,13 @@ class CampusInvite(Document):
 
 		for contact in recipients:
 			# Creates/syncs the Desk User (TPO role only, single TPO workspace) and
-			# emails a "set your password" link. The optional email_template on this
-			# doc overrides the built-in TPO Set Password template.
+			# emails a "set your password" link, using the template configured in
+			# Campus Settings -> TPO Set Password Email Template.
 			provision_tpo_user(
 				email=contact.email,
 				full_name=contact.contact_name,
 				enabled=True,
 				send_email=True,
-				override_template=self.email_template or None,
 			)
 			# Reflect the invite on the source Institute's contact row.
 			frappe.db.set_value(
