@@ -42,7 +42,7 @@ const PILLS: { label: string; category: AwardNominationCategory }[] = [
 const NOMINATION_COLUMNS: SettingsColumn[] = [
   { key: "id", label: "Nomination ID" },
   { key: "program", label: "Nomination Program Names(ID)" },
-  { key: "nominatedBy", label: "Nominated By" },
+  { key: "nominatedBy", label: "Recognizer" },
   { key: "nominationDate", label: "Nomination Date" },
   { key: "lastActionDate", label: "Last Action Date" },
   { key: "status", label: "Approval Status" },
@@ -55,7 +55,9 @@ const INITIAL_TABLE_SETTINGS: TableSettings = {
 };
 
 const INITIAL_FILTER_VALUES: FilterValues = {
-  approvalStatus: "",
+  // Default the Approval Status filter to "Approved" so the API payload sends
+  // status=Approved (only approved nominations show by default; still changeable).
+  approvalStatus: "Approved",
   nominationDate: { from: "", to: "" },
   lastActionDate: { from: "", to: "" },
   program: [],
@@ -162,6 +164,13 @@ const AwardsNominationWorkflows: React.FC = () => {
   );
 
   const pageRows: AwardNominationRow[] = response?.data ?? [];
+  // Column header reflects the configured recognizer persona (Advanced Settings).
+  const recognizerLabel =
+    response?.recognizer_persona === "Publisher"
+      ? "Published By"
+      : response?.recognizer_persona === "Group Company"
+        ? "Group Company"
+        : "Nominated By";
   const total = response?.total_count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -309,7 +318,7 @@ const AwardsNominationWorkflows: React.FC = () => {
                   <th className="px-4 py-3 font-semibold">Nomination Program Names(ID)</th>
                 )}
                 {showCol("nominatedBy") && (
-                  <th className="px-4 py-3 font-semibold">Nominated By</th>
+                  <th className="px-4 py-3 font-semibold">{recognizerLabel}</th>
                 )}
                 {showCol("nominationDate") && (
                   <th className="px-4 py-3 font-semibold">

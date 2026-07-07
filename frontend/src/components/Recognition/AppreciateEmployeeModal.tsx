@@ -5,7 +5,7 @@ import { Typography } from "../shared/atoms/Typography";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import { EmployeeSearchList } from "./EmployeeSearchList";
 import { BadgeCard } from "./BadgeCard";
-import { useGetBadgeTypes, useAppreciateEmployee } from "../../services/recognitionService";
+import { useGetBadgeTypes, useAppreciateEmployee, useRecognitionFlags } from "../../services/recognitionService";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import toast from "react-hot-toast";
@@ -45,6 +45,7 @@ export const AppreciateEmployeeModal: React.FC<
     selectedEmployeeId ? [["name", "=", selectedEmployeeId]] : undefined
   );
   const appreciateMutation = useAppreciateEmployee();
+  const { minimumNominationCharacters } = useRecognitionFlags();
 
   const badges = badgesData?.badges || [];
   const selectedEmployee = selectedEmployeeData?.[0] as Employee | undefined;
@@ -95,6 +96,13 @@ export const AppreciateEmployeeModal: React.FC<
 
     if (!reason.trim()) {
       toast.error("Please enter a message");
+      return;
+    }
+
+    if (minimumNominationCharacters > 0 && reason.trim().length < minimumNominationCharacters) {
+      toast.error(
+        `Message must be at least ${minimumNominationCharacters} character${minimumNominationCharacters > 1 ? "s" : ""}.`,
+      );
       return;
     }
 

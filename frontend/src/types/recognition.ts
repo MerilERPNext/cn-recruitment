@@ -18,6 +18,7 @@ export interface RecognitionProgram {
   voting_end_date?: string;
   current_phase?: string;
   overall_progress?: number;
+  nominate_upto?: number | null;
 }
 
 export interface LeaderboardEntry {

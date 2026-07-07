@@ -4,6 +4,10 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
 import HeaderBar from "../../HeaderBar";
 import NavigationTabs, { Tab } from "../../NavigationTab";
+import {
+  useRecognitionFlags,
+  recognitionPageVisible,
+} from "../../../services/recognitionService";
 
 export const VIBE_BASE = "/webapp/recognition/vibe";
 
@@ -24,6 +28,10 @@ const VibeApp: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Feature flags from the Advanced Settings doctype gate which tabs are shown.
+  const flags = useRecognitionFlags();
+  const visibleTabs = VIBE_TABS.filter((t) => recognitionPageVisible(t.key, flags));
+
   const activeTab =
     VIBE_TABS.find((t) => location.pathname.startsWith(`${VIBE_BASE}/${t.key}`))?.key ||
     "dashboard";
@@ -37,7 +45,7 @@ const VibeApp: React.FC = () => {
         <header className="sticky top-0 z-50 bg-white shadow-sm">
           <HeaderBar title="Recognition" />
           <NavigationTabs
-            tabs={VIBE_TABS}
+            tabs={visibleTabs}
             activeTab={activeTab}
             onTabChange={(tab) => navigate(`${VIBE_BASE}/${tab}`)}
           />

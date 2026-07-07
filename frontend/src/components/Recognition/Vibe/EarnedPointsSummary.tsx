@@ -17,7 +17,11 @@ import FilterPanel, {
   type FilterValues,
   type NumberRange,
 } from "../../shared/molecules/FilterPanel";
-import { useEmployeePoints } from "../../../services/recognitionService";
+import { Navigate } from "react-router-dom";
+import {
+  useEmployeePoints,
+  useRecognitionFlags,
+} from "../../../services/recognitionService";
 
 const REDEMPTION_FILTER_FIELDS: FilterField[] = [
   { key: "dateOfRedemption", label: "Date of Redemption", type: "daterange" },
@@ -41,6 +45,9 @@ const Stat: React.FC<{ value: string; label: string }> = ({ value, label }) => (
 );
 
 const EarnedPointsSummary: React.FC = () => {
+  // Blocked entirely when hidden in Advanced Settings (hide_rewards_point_summary).
+  const recognitionFlags = useRecognitionFlags();
+
   const { data: user } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
@@ -80,6 +87,7 @@ const EarnedPointsSummary: React.FC = () => {
       date: r.date ? formatToIndianDate(r.date) : "—",
       orderId: r.name,
       transactionId: "—",
+      entryType: r.entry_type,
       points: r.points,
       source: r.program || r.award || r.recognition_type || "—",
       comments: r.remarks || "—",
@@ -94,6 +102,11 @@ const EarnedPointsSummary: React.FC = () => {
   }, [pointsData, q]);
 
   const fmt = (n: number) => n.toLocaleString("en-IN");
+
+  // Page disabled in Advanced Settings — redirect away (blocks direct URL access).
+  if (recognitionFlags.loaded && recognitionFlags.hideRewardsPointSummary) {
+    return <Navigate to="/webapp/recognition/vibe/dashboard" replace />;
+  }
 
   return (
     <div className="p-4 md:p-6">
@@ -196,7 +209,14 @@ const EarnedPointsSummary: React.FC = () => {
                   <td className="px-5 py-4 text-sm text-gray-700">{row.date}</td>
                   <td className="px-5 py-4 text-sm text-gray-700">{row.orderId}</td>
                   <td className="px-5 py-4 text-sm text-gray-700">{row.transactionId}</td>
-                  <td className="px-5 py-4 text-sm font-semibold text-red-500">{row.points}</td>
+                  <td
+                    className={`px-5 py-4 text-sm font-semibold ${
+                      row.entryType === "Earned" ? "text-emerald-600" : "text-red-500"
+                    }`}
+                  >
+                    {row.entryType === "Earned" ? "+" : "-"}
+                    {row.points}
+                  </td>
                   <td className="px-5 py-4 text-sm text-gray-700">{row.source}</td>
                   <td className="px-5 py-4 text-sm text-gray-700">{row.comments}</td>
                 </tr>
