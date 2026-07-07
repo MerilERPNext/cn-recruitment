@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import Button from "../../shared/atoms/Button";
 import workLocationFormSchema from "./workLocationFormSchema.json";
 import { withComponentDisabled } from "../../../utils/withComponentDisabled";
+import { withDateBounds } from "../../../utils/withDateBounds";
 import {
   useCurrentEmployeeDetails,
   useUpdateEmploymentDetailsMutation,
@@ -29,6 +30,15 @@ interface WorkLocationFormProps {
   // When true (the very first slide for this section), the start date is locked
   // to the employee's joining date and shown read-only.
   lockStartDate?: boolean;
+  // Date-picker bounds (YYYY-MM-DD): disallow overlaps with neighbouring slides
+  // and any date before the joining date.
+  startMinDate?: string;
+  startMaxDate?: string;
+  endMinDate?: string;
+  endMaxDate?: string;
+  // When the previous (older) slide is a locked previous-employee tile, freeze
+  // the start date (read-only) so only end date is editable.
+  disableStartDate?: boolean;
   initialEditData?: InitialWorkLocationData;
 }
 
@@ -38,6 +48,11 @@ const WorkLocationForm = ({
   isEdit = false,
   defaultStartDate,
   lockStartDate = false,
+  startMinDate,
+  startMaxDate,
+  endMinDate,
+  endMaxDate,
+  disableStartDate = false,
   initialEditData,
 }: WorkLocationFormProps) => {
   const [instance, setInstance] = useState<any>(null);
@@ -85,10 +100,16 @@ const WorkLocationForm = ({
 
   // First slide for this section: render the start date read-only, locked to
   // the joining date. Baked into the schema (reliable for datetime widgets).
-  const formSchema = useMemo(
-    () => withComponentDisabled(workLocationFormSchema, "startDate", !!lockStartDate && !isEdit),
-    [lockStartDate, isEdit],
-  );
+  const formSchema = useMemo(() => {
+    let s = withComponentDisabled(
+      workLocationFormSchema,
+      "startDate",
+      (!!lockStartDate && !isEdit) || !!disableStartDate,
+    );
+    s = withDateBounds(s, "startDate", { minDate: startMinDate, maxDate: startMaxDate });
+    s = withDateBounds(s, "endDate", { minDate: endMinDate, maxDate: endMaxDate });
+    return s;
+  }, [lockStartDate, isEdit, disableStartDate, startMinDate, startMaxDate, endMinDate, endMaxDate]);
 
   const validateForm = (data: any) => {
     if (!instance) return false;
