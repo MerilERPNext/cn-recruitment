@@ -229,6 +229,8 @@ export type FlowRequestDetailItem = {
 export type WorkflowStage = {
   status: string;
   allocated_to: allocatedToType[];
+  action_taken_by?: string | null; // email
+  action_taken_by_name?: string | null;
   role_assigned_users?: RoleAssignedUsersType[];
   selected_action: string | null;
   target: string;
