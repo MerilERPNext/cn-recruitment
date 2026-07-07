@@ -101,41 +101,4 @@ def get_interview_feedback_records(interview_id):
     
     return interview_feedback_records
 
-
-def reset_follow_up_on_verdict(self, method):
-    """Clear the applicant's follow-up dropdown once a round reaches a verdict.
-
-    Fires on Interview ``on_update`` / ``on_update_after_submit``. When an
-    Interview transitions into ``"Cleared"`` or ``"Rejected"``, the linked Job
-    Applicant's ``Follow-up Interview Needed?`` dropdown
-    (``custom_follow_up_interview_needed``) is reset to blank so HR can decide
-    again (after a Cleared round) or is left locked out (after a Rejected one).
-
-    Only the *transition* into a verdict is acted on — re-saving an already
-    Cleared interview must not wipe a decision HR has made in the meantime.
-
-    :param self: the Interview document being saved.
-    :param method: the doc-event name (unused).
-    """
-    if self.status not in ("Cleared", "Rejected"):
-        return
-    if not self.job_applicant:
-        return
-
-    before = self.get_doc_before_save()
-    if before and before.get("status") == self.status:
-        # Status did not change into a verdict on this save.
-        return
-
-    current = frappe.db.get_value(
-        "Job Applicant", self.job_applicant, "custom_follow_up_interview_needed"
-    )
-    if current:
-        frappe.db.set_value(
-            "Job Applicant",
-            self.job_applicant,
-            "custom_follow_up_interview_needed",
-            "",
-        )
-
         

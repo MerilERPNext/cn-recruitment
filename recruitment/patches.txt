@@ -9,3 +9,4 @@
 recruitment.patches.interviewfeedback_funnel
 recruitment.patches.add_duplicate_check_fields #2
 recruitment.patches.add_follow_up_interview_field
+recruitment.patches.relocate_follow_up_interview_field

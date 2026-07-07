@@ -1540,22 +1540,20 @@ frappe.ui.form.on('Job Applicant', {
 
 
 // ---------------------------------------------------------------------------
-// Follow-up interview gate
+// Job Offer gate
 // ---------------------------------------------------------------------------
-// Drives the "Follow-up Interview Needed?" (custom_follow_up_interview_needed)
-// dropdown and the "Create > Job Offer" button on Job Applicant:
-//
-//   - The dropdown is editable ONLY when the latest interview round is Cleared;
-//     it is locked (read-only) at every other point in the flow.
-//   - "Create > Job Offer" appears ONLY when the dropdown is "No" AND the latest
-//     interview round is Cleared. The stock (status == "Accepted") button is
-//     removed so this gated button is the single Create-dropdown entry point.
+// Gates the "Create > Job Offer" button on Job Applicant. The follow-up
+// decision now lives on the Interview (set by the interviewer per round), so
+// the gate reads the applicant's most recent round: the button appears ONLY
+// when that round is Cleared AND its follow-up verdict is "No". The stock
+// (status == "Accepted") button is removed so this gated button is the single
+// Create-dropdown entry point.
 //
 // State is computed server-side by
 //   recruitment.customizations.job_applicant.get_follow_up_state
-// The dropdown reset (on Cleared/Rejected) and the blank-draft spawn (on "Yes")
-// live in recruitment/customizations/interview/interview.py and
-// recruitment/customizations/job_applicant.py respectively.
+// The follow-up field lives on the Interview Feedback (set with the Result when
+// the interviewer submits feedback); the gate reads the latest feedback by date.
+// "Yes" flags a further round is needed; HR creates it the normal way.
 frappe.ui.form.on("Job Applicant", {
     refresh: function (frm) {
         if (frm.is_new()) {
@@ -1572,21 +1570,8 @@ frappe.ui.form.on("Job Applicant", {
             callback: function (r) {
                 const state = (r && r.message) || {};
 
-                // Keep the field VISIBLE in every state, locked when not editable.
-                // NOTE: Frappe auto-hides *empty read-only* fields (get_status ->
-                // "None"), so using read_only to lock it makes it vanish instead of
-                // greying out. Instead keep read_only=0 (always shown) and disable
-                // the underlying input so it stays visible-but-greyed when locked.
-                const followUpField = frm.fields_dict.custom_follow_up_interview_needed;
-                if (followUpField) {
-                    frm.set_df_property("custom_follow_up_interview_needed", "read_only", 0);
-                    frm.refresh_field("custom_follow_up_interview_needed");
-                    if (followUpField.$input) {
-                        followUpField.$input.prop("disabled", !state.editable);
-                    }
-                }
-
-                // Gated "Create > Job Offer": dropdown "No" AND latest round Cleared.
+                // Gated "Create > Job Offer": latest round's follow-up "No" AND
+                // that round Cleared.
                 if (state.offer_eligible) {
                     frm.add_custom_button(
                         __("Job Offer"),
