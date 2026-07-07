@@ -10,6 +10,7 @@ import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import {
     useEligiblePrograms,
     useCreateEmployeeAppreciation,
+    useRecognitionFlags,
 } from "../../services/recognitionService";
 
 // Local YYYY-MM-DD for the appreciation date sent in the payload.
@@ -42,6 +43,9 @@ const Appreciations = () => {
     const { mutate: createAppreciation, isPending: isSubmitting } =
         useCreateEmployeeAppreciation();
 
+    // Appreciations must be enabled in the Advanced Settings doctype.
+    const { enableAppreciations, minimumNominationCharacters } = useRecognitionFlags();
+
     const programs = eligiblePrograms?.eligible_programs ?? [];
 
     // Close the award panel on outside click.
@@ -65,6 +69,12 @@ const Appreciations = () => {
         }
         if (!modal.programName) {
             toast.error("Please select an award");
+            return;
+        }
+        if (minimumNominationCharacters > 0 && modal.note.trim().length < minimumNominationCharacters) {
+            toast.error(
+                `Note must be at least ${minimumNominationCharacters} character${minimumNominationCharacters > 1 ? "s" : ""}.`,
+            );
             return;
         }
 
@@ -91,6 +101,9 @@ const Appreciations = () => {
             }
         );
     };
+
+    // Hidden entirely when Appreciations are disabled in Advanced Settings.
+    if (!enableAppreciations) return null;
 
     return (
         <div className="relative" ref={wrapperRef}>
@@ -167,7 +180,9 @@ const Appreciations = () => {
                     {/* Note */}
                     <div>
                         <Typography variant="label" className="block mb-2 font-medium">
-                            Note
+                            {minimumNominationCharacters > 0
+                                ? `Note (min ${minimumNominationCharacters} characters)`
+                                : "Note"}
                         </Typography>
                         <textarea
                             value={modal.note}
@@ -175,6 +190,17 @@ const Appreciations = () => {
                             placeholder="Add a note for this appreciation (e.g., Outstanding performance on Project X)"
                             className="w-full min-h-[100px] p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm resize-none"
                         />
+                        {minimumNominationCharacters > 0 && (
+                            <p
+                                className={`mt-1 text-xs ${
+                                    modal.note.trim().length < minimumNominationCharacters
+                                        ? "text-red-500"
+                                        : "text-gray-400"
+                                }`}
+                            >
+                                {modal.note.trim().length}/{minimumNominationCharacters} characters
+                            </p>
+                        )}
                     </div>
 
                     {/* Actions */}

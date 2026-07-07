@@ -72,6 +72,85 @@ export const useDoctypeOptions = (
   });
 };
 
+// ─── Advanced Settings (Recognition) via the Frappe resource API ──────────────
+// The "Advanced Settings" Single doctype is read/written directly through the
+// resource API (/api/resource/Advanced Settings/Advanced Settings) — no custom
+// backend endpoint.
+export type AdvancedSettings = Record<string, unknown>;
+
+export const useAdvancedSettings = () => {
+  return useQuery<AdvancedSettings>({
+    queryKey: ["recognition", "advanced-settings"],
+    queryFn: async () => {
+      const doc = await FrappeAPI.getDocument("Advanced Settings", "Advanced Settings");
+      return doc as AdvancedSettings;
+    },
+  });
+};
+
+// Strict feature flags derived from the Advanced Settings doctype: a feature is
+// enabled ONLY when its flag == 1. Drives which Recognition pages / buttons /
+// displays are shown on the frontend (managed from the doctype in the desk).
+export type RecognitionFlags = {
+  loaded: boolean;
+  enableAppreciations: boolean;
+  enableIndividualAwards: boolean;
+  enableTeamAwards: boolean;
+  enableAwards: boolean; // individual OR team
+  displayIndividualAwardWinners: boolean;
+  displayTeamAwardWinners: boolean;
+  displayAppreciationProgramsInLeaderboard: boolean;
+  hideRewardsPointSummary: boolean;
+  hideBudgetedPointsFrontend: boolean;
+  hideNominateUptoValue: boolean;
+  /** Minimum characters required in an appreciation/nomination note (0 = no minimum). */
+  minimumNominationCharacters: number;
+};
+
+const truthy = (v: unknown) => v === 1 || v === "1" || v === true;
+
+// Whether a Recognition sub-page (by its route key) is visible under the flags.
+// Dashboard / Feed / Admin Dashboard are always shown; the rest are gated.
+export const recognitionPageVisible = (
+  key: string,
+  flags: RecognitionFlags,
+): boolean => {
+  switch (key) {
+    case "my-appreciations-history":
+    case "appreciations-leaderboard":
+      return flags.enableAppreciations;
+    case "awards-live":
+    case "awards-history":
+    case "nomination-workflows":
+      return flags.enableAwards;
+    case "earned-points":
+      return !flags.hideRewardsPointSummary;
+    default:
+      return true;
+  }
+};
+
+export const useRecognitionFlags = (): RecognitionFlags => {
+  const { data, isSuccess } = useAdvancedSettings();
+  const s = (data ?? {}) as Record<string, unknown>;
+  const enableIndividualAwards = truthy(s.enable_individual_awards);
+  const enableTeamAwards = truthy(s.enable_team_awards);
+  return {
+    loaded: isSuccess,
+    enableAppreciations: truthy(s.enable_appreciations),
+    enableIndividualAwards,
+    enableTeamAwards,
+    enableAwards: enableIndividualAwards || enableTeamAwards,
+    displayIndividualAwardWinners: truthy(s.display_individual_award_winners),
+    displayTeamAwardWinners: truthy(s.display_team_award_winners),
+    displayAppreciationProgramsInLeaderboard: truthy(s.display_appreciation_programs_in_leaderboard),
+    hideRewardsPointSummary: truthy(s.hide_rewards_point_summary),
+    hideBudgetedPointsFrontend: truthy(s.hide_budgeted_points_frontend),
+    hideNominateUptoValue: truthy(s.hide_nominate_upto_value),
+    minimumNominationCharacters: Number(s.minimum_nomination_characters) || 0,
+  };
+};
+
 // Recognition Type interface
 export interface RecognitionType {
   name: string;
@@ -505,6 +584,8 @@ export type EligibleProgram = {
   end_date: string;
   program_has_reward: boolean;
   reward_type: string;
+  /** "Nominate Upto" value (number_of_recognition_allowed_by_same_recognizer). */
+  nominate_upto?: number | null;
 };
 
 export type EligibleProgramsResponse = {
@@ -540,6 +621,8 @@ export type CreateEmployeeAppreciationPayload = {
   points?: number;
   note?: string;
   date?: string;
+  /** JSON-stringified submission from the program's attached panel form. */
+  custom_form_data?: string;
 };
 
 export const useCreateEmployeeAppreciation = () => {
@@ -560,6 +643,57 @@ export const useCreateEmployeeAppreciation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recognition"] });
       queryClient.invalidateQueries({ queryKey: ["all-emp-appreciations-badges"] });
+    },
+  });
+};
+
+// ─── Panel form (program's attached Microapp Form Widget) ─────────────────────
+// A program may reference a Microapp Form Widget via
+// `attach_form_for_panel_members`. This hook resolves that link and returns the
+// widget's form.io schema (`custom_form_data`) so the active-program panel can
+// render the form. Pure resource-API reads — no custom backend method needed.
+export type PanelForm = {
+  widget: string;
+  label: string;
+  /** Parsed form.io schema ({ components: [...] }). */
+  schema: { components?: unknown[] } | null;
+};
+
+export const usePanelForm = (programName?: string) => {
+  return useQuery<PanelForm | null>({
+    queryKey: ["recognition", "panel-form", programName],
+    enabled: !!programName,
+    queryFn: async () => {
+      // 1. Read the program's attached form widget link.
+      const program = (await FrappeAPI.getDocument(
+        "Recognition Program",
+        programName as string,
+        ["attach_form_for_panel_members"],
+      )) as { attach_form_for_panel_members?: string | null };
+      const widgetName = program?.attach_form_for_panel_members;
+      if (!widgetName) return null;
+
+      // 2. Read the widget's form.io schema + label.
+      const widget = (await FrappeAPI.getDocument(
+        "Microapp Form Widget",
+        widgetName,
+        ["name", "label", "custom_form_data"],
+      )) as { name: string; label?: string; custom_form_data?: string | null };
+
+      let schema: PanelForm["schema"] = null;
+      if (widget?.custom_form_data) {
+        try {
+          schema =
+            typeof widget.custom_form_data === "string"
+              ? JSON.parse(widget.custom_form_data)
+              : (widget.custom_form_data as PanelForm["schema"]);
+        } catch (e) {
+          console.error("Failed to parse panel form custom_form_data", e);
+          schema = null;
+        }
+      }
+
+      return { widget: widget.name, label: widget.label || widget.name, schema };
     },
   });
 };
@@ -604,6 +738,7 @@ export type EmployeePointsParams = {
 
 export type RedemptionEntry = {
   name: string;
+  entry_type?: "Earned" | "Redeemed";
   points: number;
   date: string;
   program?: string;
@@ -713,6 +848,8 @@ export type AppreciationLeaderboardResponse = {
   tab: "receivers" | "recognizers";
   data: LeaderboardPersonEntry[];
   total_count: number;
+  /** Whether ranks/scores are driven by total points or appreciation count. */
+  ranking_basis?: "points" | "count";
   filter_options: { programs: { value: string; label: string }[] };
 };
 
@@ -836,10 +973,18 @@ export type AwardNominationCategory =
   | "individual_raised"
   | "team_raised";
 
+/** Which persona is shown as the recognizer (Advanced Settings.recognizer_persona). */
+export type RecognizerPersona = "Nominator" | "Publisher" | "Group Company";
+
 export type AwardNominationRow = {
   id: string;
   program: string;
+  /** Displayed recognizer, resolved per recognizer_persona. */
   nominatedBy: string;
+  recognizer?: string;
+  recognizerName?: string;
+  recognizerType?: "Employee" | "Company" | "User";
+  recognizerPersona?: RecognizerPersona;
   nominationDate: string;
   lastActionDate: string;
   status: string;
@@ -856,6 +1001,8 @@ export type AwardNominationsResponse = {
     programs: { label: string; value: string }[];
     statuses: { label: string; value: string }[];
   };
+  /** Active recognizer display setting — used to label the recognizer column. */
+  recognizer_persona?: RecognizerPersona;
 };
 
 export type AwardNominationsParams = {

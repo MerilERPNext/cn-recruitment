@@ -41,7 +41,8 @@ const PodiumColumn: React.FC<{
   person: LeaderboardPersonEntry;
   height: string;
   size: number;
-}> = ({ person, height, size }) => (
+  score: number;
+}> = ({ person, height, size, score }) => (
   <div className={`flex flex-col items-center ${height}`}>
     <div className="relative mb-3">
       <StarBadge rank={person.rank} />
@@ -61,7 +62,7 @@ const PodiumColumn: React.FC<{
       </Typography>
       <div className="flex items-center justify-center gap-1.5 mt-2 text-gray-700">
         <Star className="size-4 text-gray-400" />
-        <span className="font-semibold">{person.count}</span>
+        <span className="font-semibold">{score}</span>
       </div>
     </Card>
   </div>
@@ -117,6 +118,12 @@ const AppreciationsLeaderboard: React.FC = () => {
   const entries = lbResp?.data ?? [];
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3);
+
+  // Score shown next to each person follows the leaderboard ranking basis
+  // (Advanced Settings → leaderboard_ranking_based_on_points): points vs count.
+  const rankingBasis = lbResp?.ranking_basis ?? "count";
+  const scoreOf = (p: LeaderboardPersonEntry) =>
+    rankingBasis === "points" ? p.points : p.count;
 
   // Search filters the list below the podium, preserving the true ranks.
   const q = query.trim().toLowerCase();
@@ -232,6 +239,7 @@ const AppreciationsLeaderboard: React.FC = () => {
                           person={col.person!}
                           height={col.height}
                           size={col.size}
+                          score={scoreOf(col.person!)}
                         />
                       ))}
                     </div>
@@ -268,7 +276,7 @@ const AppreciationsLeaderboard: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-1.5 text-gray-700 shrink-0">
                           <Star className="size-4 text-gray-400" />
-                          <span className="font-semibold">{person.count}</span>
+                          <span className="font-semibold">{scoreOf(person)}</span>
                         </div>
                       </div>
                     ))

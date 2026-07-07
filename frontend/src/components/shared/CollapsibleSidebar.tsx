@@ -49,6 +49,7 @@ import { useAppNotificationCounts } from "../../hooks/useAppNotificationCounts";
 import { useSingleCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { useRecognitionFlags } from "../../services/recognitionService";
 import { useTodoPendingCount } from "../../hooks/useTodo";
 import { Typography } from "./atoms/Typography";
 import SidebarSkeleton from "./molecules/Skeletons/SidebarSkeleton";
@@ -89,6 +90,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const [openSubDropdown, setOpenSubDropdown] = useState<string | null>(null);
   const { data: uiPermissions, isLoading: isUiPermissionsLoading } =
     useGetUiPermission();
+  // Advanced Settings flags that hide specific Recognition sub-pages.
+  const recognitionFlags = useRecognitionFlags();
   // const { data: companyLogo } = useCompanyLogo();
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
@@ -713,9 +716,15 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
         // Recognition's sub-sections are all gated by the single "Recognition"
         // app permission (no per-page entries in the backend), so once the app
-        // is enabled we keep all of its sub-items as-is.
+        // is enabled we keep all of its sub-items — except pages hidden by an
+        // Advanced Settings flag (e.g. Earned Points Summary).
         if (item.permissionKey === "Recognition") {
-          return item;
+          const recogSubItems = item.subItems.filter((subItem) =>
+            (subItem.href ?? "").endsWith("/earned-points")
+              ? !recognitionFlags.hideRewardsPointSummary
+              : true,
+          );
+          return { ...item, subItems: recogSubItems };
         }
 
         const filteredSubItems = item.subItems.filter((subItem) => {
@@ -735,7 +744,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         };
       })
       .filter((item): item is NavigationItem => item !== null);
-  }, [uiPermissions]);
+  }, [uiPermissions, recognitionFlags.hideRewardsPointSummary]);
 
   const isSubSubItemActive = (subSubItem: SubSubMenuItem) => {
     if (location.pathname === subSubItem.href) {
