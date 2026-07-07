@@ -634,7 +634,7 @@ def get_applied_jobs(email):
 		APPLICANT_DOCTYPE,
 		filters={"email_id": email, "status": ["!=", DRAFT_STATUS]},
 		fields=[
-			"name", "applicant_name", "status",
+			"name", "applicant_name", "status", "job_title",
 			"designation", "custom_company_finalized", "custom_location",
 			"custom_employment_type", "custom_experience_range",
 			"creation",
@@ -692,15 +692,19 @@ def get_applied_jobs(email):
 				date = creation_date
 			flags.append({"status": stage, "flag": stage in active, "date": date})
 
+		# The Job Applicant's own custom fields are often blank; the linked Job
+		# Opening (`job_title`) is the reliable source for company/location/etc.
+		# Prefer any finalized value on the applicant, fall back to the opening.
+		job_ctx = _opening_context(app.job_title)
 		applications.append({
 			"id": app.name,
 			"applied_on": creation_date,
 			"job": {
-				"designation": app.designation,
-				"company": app.custom_company_finalized,
-				"location": app.custom_location,
-				"experience_range": app.custom_experience_range,
-				"employment_type": app.custom_employment_type,
+				"designation": app.designation or job_ctx["job_title"],
+				"company": app.custom_company_finalized or job_ctx["company"],
+				"location": app.custom_location or job_ctx["location"],
+				"experience_range": app.custom_experience_range or job_ctx["experience"],
+				"employment_type": app.custom_employment_type or job_ctx["employment_type"],
 			},
 			"status": app.status,
 			"flags": flags,
