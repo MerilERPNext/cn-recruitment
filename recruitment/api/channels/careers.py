@@ -433,12 +433,15 @@ def _opening_context(opening_name):
 		elif lo:
 			experience = f"{lo}+ {unit or ''}".strip()
 
+	# Resolve Link fields to their Title Field (e.g. Designation "pe-01" ->
+	# "Pen Pencil", Company -> company_name) so the UI shows names, not ids.
+	# `location` is free-text on the opening, so it's returned as-is.
 	return {
-		"job_title": opening.get("designation"),
-		"company": opening.get("company"),
+		"job_title": _common._link_label("Designation", opening.get("designation")),
+		"company": _common._link_label("Company", opening.get("company")),
 		"location": opening.get("location"),
 		"experience": experience,
-		"employment_type": opening.get("employment_type"),
+		"employment_type": _common._link_label("Employment Type", opening.get("employment_type")),
 	}
 
 
@@ -595,10 +598,15 @@ def get_saved_job_openings(candidate_email):
 	doc = frappe.get_doc("Saved Job Opening", existing_name)
 	ids = [r.job_opening for r in (doc.job_openings or []) if r.job_opening]
 
+	# Build extra_fields from configured columns so saved cards carry the same
+	# fields as list_openings cards — same shape, same component on the frontend.
+	columns = _common.get_configured_columns(CHANNEL)
+	extra_fields = [c["fieldname"] for c in columns]
+
 	applied = _applied_openings(email, ids)
 	openings = []
 	for name in ids:
-		card = _common.get_opening_card(name)
+		card = _common.get_opening_card(name, extra_fields=extra_fields)
 		if not card:
 			# Saved opening was since deleted — skip it rather than ship a null.
 			continue
@@ -637,6 +645,7 @@ def get_applied_jobs(email):
 			"name", "applicant_name", "status", "job_title",
 			"designation", "custom_company_finalized", "custom_location",
 			"custom_employment_type", "custom_experience_range",
+			"custom_expected_ctc",
 			"creation",
 		],
 		order_by="creation asc",
@@ -695,16 +704,20 @@ def get_applied_jobs(email):
 		# The Job Applicant's own custom fields are often blank; the linked Job
 		# Opening (`job_title`) is the reliable source for company/location/etc.
 		# Prefer any finalized value on the applicant, fall back to the opening.
+		# `job_ctx` already holds resolved titles from the opening. Prefer a
+		# finalized value on the applicant (resolved to its title), else fall
+		# back to the opening's title.
 		job_ctx = _opening_context(app.job_title)
 		applications.append({
 			"id": app.name,
 			"applied_on": creation_date,
 			"job": {
-				"designation": app.designation or job_ctx["job_title"],
-				"company": app.custom_company_finalized or job_ctx["company"],
+				"designation": _common._link_label("Designation", app.designation) or job_ctx["job_title"],
+				"company": _common._link_label("Company", app.custom_company_finalized) or job_ctx["company"],
 				"location": app.custom_location or job_ctx["location"],
 				"experience_range": app.custom_experience_range or job_ctx["experience"],
-				"employment_type": app.custom_employment_type or job_ctx["employment_type"],
+				"employment_type": _common._link_label("Employment Type", app.custom_employment_type) or job_ctx["employment_type"],
+				"expected_ctc": app.custom_expected_ctc,
 			},
 			"status": app.status,
 			"flags": flags,
