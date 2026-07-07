@@ -404,6 +404,19 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
             if (maxD) { comp.datePicker.maxDate = maxD; comp.widget.maxDate = maxD; }
           });
         }
+
+        // Same reasoning as above, for the freeze-driven disabled state:
+        // this rebuild starts from the original JSON (no disabled flag), so
+        // re-inject it here or a reqValidationmutation-triggered rebuild
+        // would silently re-enable checkin/checkout while frozen.
+        const freezeActive =
+          requestTypeChanged === "Attendance Adjustment" &&
+          !!(attendanceRequestAttachmentsMandatory as any)
+            ?.freeze_in_out_time_to_shift_timings;
+        (["checkin_time", "checkout_time"] as const).forEach((key) => {
+          const comp = panel?.components?.find((c: SchemaComponent) => c.key === key);
+          if (comp) comp.disabled = freezeActive;
+        });
       }
 
       try {
@@ -419,8 +432,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     // include requiredFieldMap so required flags are respected after filtering
     // include attendanceRequestAttachmentsMandatory so date constraints survive
     // schema rebuilds triggered by reqValidationmutation arriving after attachment data
+    // include requestTypeChanged so the freeze-driven disabled state above is correct
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reqValidationmutation?.data, propSchema, requiredFieldMap, attendanceRequestAttachmentsMandatory]);
+  }, [reqValidationmutation?.data, propSchema, requiredFieldMap, attendanceRequestAttachmentsMandatory, requestTypeChanged]);
 
   const start = useMemo(() => {
     const d = fromDateChanged ? new Date(fromDateChanged) : selectedDate;
@@ -630,6 +644,42 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     });
   }, [attendanceRequestAttachmentsMandatory]);
 
+  // Persist the freeze-driven disabled state directly into the schema, not
+  // just the live formio instance. Whenever attendanceRequestAttachmentsMandatory
+  // (or reqValidationmutation/requiredFieldMap) changes, the schema-filtering
+  // effects above call setFormSchema with a schema cloned from the *original*
+  // JSON — formio's Form.setForm() then sees a schema it hasn't seen before
+  // and calls rebuild(), recreating checkin_time/checkout_time as brand-new
+  // component instances from that schema. A `.disabled` flag set directly on
+  // the old instance doesn't survive that; baking it into the schema here
+  // means every rebuild already has the right value.
+  useEffect(() => {
+    const freezeActive =
+      requestTypeChanged === "Attendance Adjustment" &&
+      !!(attendanceRequestAttachmentsMandatory as any)
+        ?.freeze_in_out_time_to_shift_timings;
+
+    setFormSchema((prev) => {
+      const panel = prev.components?.[0];
+      const alreadyCorrect = ["checkin_time", "checkout_time"].every(
+        (key) =>
+          !!panel?.components?.find((c: SchemaComponent) => c.key === key)
+            ?.disabled === freezeActive,
+      );
+      if (alreadyCorrect) return prev;
+
+      const updated = JSON.parse(JSON.stringify(prev)) as FormSchema;
+      const updatedPanel = updated.components?.[0];
+      (["checkin_time", "checkout_time"] as const).forEach((key) => {
+        const comp = updatedPanel?.components?.find(
+          (c: SchemaComponent) => c.key === key,
+        );
+        if (comp) comp.disabled = freezeActive;
+      });
+      return updated;
+    });
+  }, [attendanceRequestAttachmentsMandatory, requestTypeChanged]);
+
   // Sync attachment mandatory status and date limits onto the live formio instance.
   // This runs after the form is ready and keeps hidden fields + flatpickr in sync
   // with the API response (handles both first-load and request-type changes).
@@ -722,35 +772,35 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         ?.freeze_in_out_time_to_shift_timings;
     const checkinTimeComp = instance.getComponent("checkin_time") as any;
     const checkoutTimeComp = instance.getComponent("checkout_time") as any;
-    if (checkinTimeComp?.component) {
-      checkinTimeComp.component.disabled = freezeActive;
+    // Form.io's renderer reads the component *instance's* `disabled` flag
+    // (Component.js elementInfo() -> `this.disabled`), not the static schema
+    // config at `.component.disabled` — mutating only the schema object never
+    // reaches the rendered <input>'s disabled attribute. Set both so the
+    // schema stays consistent for any future rebuild too.
+    if (checkinTimeComp) {
+      checkinTimeComp.disabled = freezeActive;
+      if (checkinTimeComp.component) {
+        checkinTimeComp.component.disabled = freezeActive;
+      }
     }
-    if (checkoutTimeComp?.component) {
-      checkoutTimeComp.component.disabled = freezeActive;
+    if (checkoutTimeComp) {
+      checkoutTimeComp.disabled = freezeActive;
+      if (checkoutTimeComp.component) {
+        checkoutTimeComp.component.disabled = freezeActive;
+      }
     }
     if (freezeActive) {
-      // Prefer the employee's actual check-in/out log over the shift default
-      // whenever it's available — the shift timing is only a fallback for
-      // when there's no real clock-in/out to show. Wait for the check-ins
-      // query to settle so we don't lock in the shift default just because
-      // it resolved first.
-      const checkinsSettled = !isHomeSummaryLoading && !isHomeSummaryFetching;
-      const actualCheckin = checkinsSettled
-        ? normalizeTime(latestCheckin || latestInAndOutTime?.in_time)
-        : null;
-      const actualCheckout = checkinsSettled
-        ? normalizeTime(latestCheckout || latestInAndOutTime?.out_time)
-        : null;
-
-      // Time components expect "HH:mm:ss" strings (their dataFormat), not Date objects.
-      if (checkinTimeComp && (actualCheckin || shiftStartTimeRaw)) {
-        const normalized = actualCheckin || normalizeTime(shiftStartTimeRaw);
+      // freeze_in_out_time_to_shift_timings === true means the shift's own
+      // start/end always win — no check-in/out log data, ever. The fields
+      // are disabled above, so this is the only value the user can see.
+      if (checkinTimeComp && shiftStartTimeRaw) {
+        const normalized = normalizeTime(shiftStartTimeRaw);
         if (normalized) {
           checkinTimeComp.setValue(normalized, { noUpdateEvent: true });
         }
       }
-      if (checkoutTimeComp && (actualCheckout || shiftEndTimeRaw)) {
-        const normalized = actualCheckout || normalizeTime(shiftEndTimeRaw);
+      if (checkoutTimeComp && shiftEndTimeRaw) {
+        const normalized = normalizeTime(shiftEndTimeRaw);
         if (normalized) {
           checkoutTimeComp.setValue(normalized, { noUpdateEvent: true });
         }
@@ -821,11 +871,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     isFormReady,
     forActionType,
     requestTypeChanged,
-    isHomeSummaryLoading,
-    isHomeSummaryFetching,
-    latestCheckin,
-    latestCheckout,
-    latestInAndOutTime,
   ]);
 
   // const formatTime = (date: Date | string | undefined): string | undefined => {
