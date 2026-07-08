@@ -6,11 +6,29 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "campus_invite_section",
+  "campus_invite",
   "personal_details_section",
   "candidates",
   "amended_from"
  ],
  "fields": [
+  {
+   "fieldname": "campus_invite_section",
+   "fieldtype": "Section Break",
+   "label": "Campus Drive"
+  },
+  {
+   "description": "The Campus Invite these candidates are being registered against. A candidate can only apply to the openings listed on this invite, and only after being registered here.",
+   "fieldname": "campus_invite",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Campus Invite",
+   "link_filters": "[[\"Campus Invite\",\"docstatus\",\"=\",1],[\"Campus Invite\",\"status\",\"!=\",\"Completed\"]]",
+   "options": "Campus Invite",
+   "reqd": 1
+  },
   {
    "fieldname": "personal_details_section",
    "fieldtype": "Section Break",

@@ -51,6 +51,7 @@ import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useRecognitionFlags } from "../../services/recognitionService";
 import { useTodoPendingCount } from "../../hooks/useTodo";
+import Avatar from "./Avatar";
 import { Typography } from "./atoms/Typography";
 import SidebarSkeleton from "./molecules/Skeletons/SidebarSkeleton";
 
@@ -102,7 +103,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     currentEmployeeCompany || "",
   );
 
-  const logoToShow = singleCompanyLogo?.company_logo || "logo not found";
+  const logoToShow = singleCompanyLogo?.company_logo || "";
   const originalCompanyName =
     currentEmployeeCompany || "Company name not found";
   const getTruncatedCompanyName = (name: string, maxLength: number = 20) => {
@@ -907,11 +908,15 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           >
             <Link to="/webapp/">
               <div className="flex items-center  gap-3 h-full">
-                <img
-                  src={typeof logoToShow === "string" ? logoToShow : ""}
-                  alt="companyLogo"
-                  className="w-12 h-12 rounded-full  flex-shrink-0"
-                />
+                <div className="flex-shrink-0">
+                  <Avatar
+                    src={logoToShow || undefined}
+                    name={originalCompanyName}
+                    size="h-12 w-12"
+                    avatarBgColor="bg-primary-50"
+                    avatarTextColor="text-primary-600"
+                  />
+                </div>
                 <div
                   className={`transition-all duration-300 flex flex-col justify-center ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
                     }`}

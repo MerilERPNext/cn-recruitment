@@ -117,7 +117,7 @@ def get_auth_settings():
 
 
 @frappe.whitelist(allow_guest=True)
-def signup(email, password, full_name=None, mobile_no=None):
+def signup(email, password, full_name=None, mobile_no=None, candidate_source=None):
     settings = get_settings()
     _require_enabled(settings)
     if not cint(settings.allow_signup):
@@ -128,7 +128,11 @@ def signup(email, password, full_name=None, mobile_no=None):
     if frappe.db.exists("Candidate Portal User", email):
         frappe.throw(_("Candidate already registered."), frappe.DuplicateEntryError)
 
-    candidate = _create_candidate(email, password, full_name, mobile_no)
+    # Campus candidates arrive from the registration email → the frontend sends
+    # candidate_source="Campus" (a provenance flag). The specific invite is NOT
+    # stored here; it's chosen per application (see campus.get_my_invites).
+    candidate = _create_candidate(email, password, full_name, mobile_no,
+                                  candidate_source=candidate_source)
     if cint(settings.signup_requires_otp_verification):
         if not cint(settings.enable_email_otp):
             frappe.throw(_("Email OTP must be enabled when signup OTP verification is required."))
@@ -175,7 +179,8 @@ def login(email, password):
 
 
 @frappe.whitelist(allow_guest=True)
-def request_email_signup_otp(email, full_name=None, mobile_no=None, mode=None):
+def request_email_signup_otp(email, full_name=None, mobile_no=None, mode=None,
+                             candidate_source=None):
     settings = get_settings()
     _require_enabled(settings)
     if not cint(settings.enable_email_otp):
@@ -227,7 +232,7 @@ def request_email_signup_otp(email, full_name=None, mobile_no=None, mode=None):
         candidate.status = "Pending Verification"
         candidate.email_verified = 0
         candidate.mobile_verified = 0
-        candidate.candidate_source = "Email Signup"
+        _apply_signup_source(candidate, candidate_source, default_source="Email Signup")
         candidate.signup_ip_address = _request_ip()
         candidate.signup_user_agent = _request_user_agent()
         candidate.insert(ignore_permissions=True)
@@ -483,7 +488,7 @@ def get_latest_debug_otp(identifier, purpose="Login", identifier_type="Email"):
     return {"otp": log.otp_preview, "status": log.status, "expires_at": log.expires_at}
 
 
-def _create_candidate(email, password, full_name=None, mobile_no=None):
+def _create_candidate(email, password, full_name=None, mobile_no=None, candidate_source=None):
     first_name, last_name = _split_name(full_name or email.split("@")[0])
     candidate = frappe.new_doc("Candidate Portal User")
     candidate.email = email
@@ -496,8 +501,19 @@ def _create_candidate(email, password, full_name=None, mobile_no=None):
     candidate.password_updated_at = now_datetime()
     candidate.signup_ip_address = _request_ip()
     candidate.signup_user_agent = _request_user_agent()
+    _apply_signup_source(candidate, candidate_source)
     candidate.insert(ignore_permissions=True)
     return candidate
+
+
+def _apply_signup_source(candidate, candidate_source=None, default_source=None):
+    """Stamp the signup provenance flag the frontend sends (e.g. candidate_source=
+    'Campus'). We deliberately do NOT store a specific campus invite on the user: a
+    candidate can be registered across many invites, so the invite is a per-application
+    value (passed at apply time and stored on the Job Applicant), never a user attribute."""
+    source = (candidate_source or "").strip() or default_source
+    if source:
+        candidate.candidate_source = source
 
 
 def ensure_candidate_for_invite(email, full_name=None, mobile_no=None, job_applicant=None, candidate_source=None):

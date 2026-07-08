@@ -54,6 +54,29 @@ def ensure_tpo_permissions():
 		update_permission_property(TPO_DOCTYPE, TPO_ROLE, 0, ptype, 1, validate=False)
 
 
+# Doctypes a TPO must be able to *reference* (e.g. pick a Campus Invite on a
+# Candidate Registration) but never create or modify. Row visibility is further
+# scoped by permission_query_conditions -> campus_invite_query.
+TPO_READONLY_DOCTYPES = ("Campus Invite",)
+
+
+def ensure_tpo_readonly_permissions():
+	"""Grant the TPO role READ-ONLY on referenced doctypes (Campus Invite) and
+	explicitly strip create/write/delete/submit so a TPO can never author or change
+	those records. Idempotent."""
+	from frappe.permissions import add_permission, update_permission_property
+
+	for doctype in TPO_READONLY_DOCTYPES:
+		if not frappe.db.exists("DocType", doctype):
+			continue
+		if not frappe.db.exists("Custom DocPerm", {"parent": doctype, "role": TPO_ROLE, "permlevel": 0}):
+			add_permission(doctype, TPO_ROLE, 0)
+		update_permission_property(doctype, TPO_ROLE, 0, "read", 1, validate=False)
+		# Hard-off everything that would let a TPO create or alter an invite.
+		for ptype in ("create", "write", "delete", "submit", "cancel", "amend", "import", "export"):
+			update_permission_property(doctype, TPO_ROLE, 0, ptype, 0, validate=False)
+
+
 def provision_tpo_user(email, full_name=None, enabled=True, send_email=True, override_template=None):
 	"""Create/sync a Desk User for a TPO and (optionally) email a set-password link.
 
@@ -67,6 +90,7 @@ def provision_tpo_user(email, full_name=None, enabled=True, send_email=True, ove
 
 	ensure_tpo_role()
 	ensure_tpo_permissions()
+	ensure_tpo_readonly_permissions()
 
 	is_new_user = not frappe.db.exists("User", email)
 

@@ -58,3 +58,7 @@ class CampusInvite(Document):
 			)
 
 		self.db_set("invite_sent", 1)
+		# Advance the drive lifecycle so it surfaces to the invited TPOs. HR later
+		# marks it 'Completed' (which hides it from TPOs) when the drive is over.
+		if self.status in (None, "", "Draft"):
+			self.db_set("status", "Invited")

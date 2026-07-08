@@ -17,6 +17,36 @@ def after_migrate():
     repair_broken_fetch_from()
     ensure_performance_indexes()
     ensure_job_offer_salary_period()
+    ensure_tpo_access()
+
+
+def ensure_tpo_access():
+    """Keep the TPO role's permissions in sync on every migrate: create/read/write
+    on Candidate Registration, and READ-ONLY (never create) on Campus Invite."""
+    try:
+        from recruitment.recruitment.tpo_access import (
+            ensure_tpo_role,
+            ensure_tpo_permissions,
+            ensure_tpo_readonly_permissions,
+        )
+
+        ensure_tpo_role()
+        ensure_tpo_permissions()
+        ensure_tpo_readonly_permissions()
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_tpo_access: skipped")
+
+    # Backfill the new Campus Invite.status so pre-existing invites (status NULL)
+    # aren't wrongly hidden by the "status != Completed" list/link filters.
+    try:
+        if frappe.get_meta("Campus Invite").get_field("status"):
+            frappe.db.sql(
+                """UPDATE `tabCampus Invite`
+                   SET status = CASE WHEN docstatus = 1 THEN 'Invited' ELSE 'Draft' END
+                   WHERE status IS NULL OR status = ''"""
+            )
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_tpo_access: campus invite status backfill skipped")
 
 
 def ensure_job_offer_salary_period():

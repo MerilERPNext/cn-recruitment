@@ -45,7 +45,7 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
     if (!isDesktop) {
         return (
             <div
-                className="rounded-2xl my-2 border border-gray-200 shadow-sm bg-white cursor-pointer active:scale-[0.99] transition-all duration-200 overflow-hidden"
+                className="rounded-2xl my-2 border border-primary-200 shadow-sm bg-white border-t-4 border-t-primary cursor-pointer active:scale-[0.99] transition-all duration-200 overflow-hidden"
                 onClick={() => handleShowDetails(request)}
             >
                 {/* Header: Flow Name + Approval Badge */}

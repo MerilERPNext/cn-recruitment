@@ -1,6 +1,7 @@
 import frappe
 
 EXTERNAL_RECRUITER_ROLE = "External Recruiter"
+TPO_ROLE = "TPO"
 
 
 def _external_recruiter_name(user):
@@ -148,6 +149,38 @@ def job_opening_query(user):
         if not recruiter:
             return "1 = 0"  # role but no recruiter record → see nothing
         return f"`tabJob Opening`.name IN ({_assigned_openings_subquery(recruiter)})"
+
+    return "1 = 1"
+
+
+def campus_invite_query(user):
+    """A TPO sees only the Campus Invites that concern them: submitted (sent),
+    not yet Completed, and where their Desk login email is one of the invite's TPO
+    contacts. This scopes the Campus Invite list view AND the Campus Invite link on
+    Candidate Registration (both go through get_list). Privileged roles (System
+    Manager / HR Manager / HR User) are unrestricted.
+
+    Note: a TPO is only ever granted read on Campus Invite (never create/write) —
+    see recruitment.recruitment.tpo_access.ensure_tpo_readonly_permissions."""
+    if not user:
+        user = frappe.session.user
+    if user == "Administrator":
+        return "1 = 1"
+
+    roles = set(frappe.get_roles(user))
+    privileged = {"System Manager", "HR Manager", "HR User", "Recruiter Admin", "Management"}
+    if TPO_ROLE in roles and not (privileged & roles):
+        u = frappe.db.escape(user, percent=False)
+        return f"""(
+            `tabCampus Invite`.docstatus = 1
+            AND (`tabCampus Invite`.status IS NULL OR `tabCampus Invite`.status != 'Completed')
+            AND EXISTS (
+                SELECT 1 FROM `tabInstitute TPO Contact` AS tc
+                WHERE tc.parenttype = 'Campus Invite'
+                  AND tc.parent = `tabCampus Invite`.name
+                  AND LOWER(tc.email) = LOWER({u})
+            )
+        )"""
 
     return "1 = 1"
 

@@ -67,7 +67,7 @@
   {"fieldname": "links_tab", "fieldtype": "Tab Break", "label": "Links"},
   {"fieldname": "candidate_links_section", "fieldtype": "Section Break", "label": "Recruitment Links"},
   {"fieldname": "job_applicant", "fieldtype": "Link", "in_standard_filter": 1, "label": "Job Applicant", "options": "Job Applicant"},
-  {"fieldname": "candidate_source", "fieldtype": "Data", "label": "Candidate Source"},
+  {"fieldname": "candidate_source", "fieldtype": "Data", "in_standard_filter": 1, "label": "Candidate Source", "description": "Where this candidate signed up from (e.g. 'Campus'). Sent by the frontend at signup. Not invite-specific — a candidate may register across many invites."},
   {"fieldname": "converted_employee", "fieldtype": "Link", "label": "Converted Employee", "options": "Employee", "read_only": 1},
   {"fieldname": "audit_tab", "fieldtype": "Tab Break", "label": "Audit"},
   {"fieldname": "signup_context_section", "fieldtype": "Section Break", "label": "Signup Context"},
