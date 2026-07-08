@@ -22,6 +22,7 @@ import NoDataFound from "../shared/atoms/NoDataFound";
 import ConfirmationModal from "../shared/atoms/ConfirmationModal";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { computeSlideDateBounds, toDateOnly } from "../../utils/slideDateBounds";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 
 interface EmploymentHistoryProps {
@@ -122,8 +123,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
       setPendingDeleteName(null);
       onActionSuccess?.();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
-      toast.error(message);
+      toast.error(errorResponseFormater(err, "Something went wrong. Please try again."));
     }
   };
 
@@ -139,8 +139,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
       setPendingDelete(null);
       onActionSuccess?.(subSection);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
-      toast.error(message);
+      toast.error(errorResponseFormater(err, "Something went wrong. Please try again."));
     }
   };
 

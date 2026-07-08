@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import Button from "../../shared/atoms/Button";
 import employmentHistoryFormSchema from "./employmentHistoryFormSchema.json";
 import { withComponentDisabled } from "../../../utils/withComponentDisabled";
@@ -271,8 +272,7 @@ const EmploymentHistoryForm = ({
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       onSuccess ? onSuccess() : onCancel?.();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
-      toast.error(message);
+      toast.error(errorResponseFormater(err, "Something went wrong. Please try again."));
       instance.redraw();
     }
   };
