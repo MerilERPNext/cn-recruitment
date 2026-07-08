@@ -81,6 +81,7 @@ import SearchMembers from "./shared/SearchMembers";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import ViewingAsBanner from "./ViewingAsBanner";
 import formatToIndianDate from "../utils/formatToIndianDate";
+import { RecommendationsForYou } from "./DashboardComponent/RecommendationsForYou";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -545,7 +546,7 @@ export default function DesktopDashboard() {
 
       {/* Main Content */}
       <div
-        className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out`}
+        className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out min-w-0`}
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 border-b border-gray-200 px-6 py-[0.3rem] flex items-center sticky top-0 z-10 gap-4">
@@ -1066,8 +1067,13 @@ export default function DesktopDashboard() {
             </div>
 
             {/* Row 2 & 3: MicroApps (8, span 2) | Events (4) + Requests (4) */}
-            <div className="lg:col-span-8 lg:row-span-2">
-              <MicroAppInDashboard />
+            <div className="lg:col-span-8 lg:row-span-2 flex flex-col gap-4">
+              <div className="flex-1 min-h-0">
+                <MicroAppInDashboard />
+              </div>
+              <div className="flex-shrink-0">
+                <RecommendationsForYou />
+              </div>
             </div>
 
             <div className="lg:col-span-4">
