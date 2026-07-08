@@ -67,7 +67,7 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
   // Render the attached form without its built-in Submit button — the panel's
   // single Submit triggers both the appreciation and this form's data.
   const panelFormSchema = useMemo(
-    () => stripSubmitButtons(panelForm?.schema),
+    () => stripSubmitButtons(panelForm?.schema as any),
     [panelForm?.schema],
   );
 
