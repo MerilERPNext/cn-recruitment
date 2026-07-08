@@ -74,3 +74,34 @@ def job_offer_link(job_applicant_id):
     from frappe.utils import get_url
 
     return f"{get_url()}/job_offer?appl={job_applicant_id}&token={offer_token(job_applicant_id)}"
+
+
+# ---------------------------------------------------------------------------
+# Campus registration links
+# ---------------------------------------------------------------------------
+#
+# A campus candidate never *chooses* an invite. Each TPO registration email is
+# tied to exactly one Campus Invite, so the link simply carries that invite id.
+# The candidate clicks -> signup -> signin, and the frontend keeps the invite id
+# from the URL and passes it to the campus APIs. No per-candidate token: access is
+# gated by the TPO registration itself (is_email_registered_for_invite), so a link
+# can never "fail to open" and irritate the candidate.
+
+def campus_registration_link(email, campus_invite):
+    """Apply URL for the TPO registration email — carries the invite id (and the
+    candidate email) so the frontend picks up the invite from the URL. Use directly:
+        {{ campus_registration_link(email_id, campus_invite) }}
+
+    Base URL comes from Campus Settings -> candidate_portal_url when set (the separate
+    candidate frontend), otherwise the Frappe site URL; the path defaults to
+    /campus-apply and can be aligned with the frontend's actual route there."""
+    from urllib.parse import quote
+    from frappe.utils import get_url
+
+    try:
+        base = frappe.db.get_single_value("Campus Settings", "candidate_portal_url")
+    except Exception:
+        base = None
+    base = (base or get_url()).rstrip("/")
+    em = (email or "").strip().lower()
+    return f"{base}/campus-apply?campus_invite={quote(campus_invite or '')}&email={quote(em)}"
