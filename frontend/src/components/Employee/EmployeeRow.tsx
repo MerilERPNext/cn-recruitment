@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronRightIcon } from "lucide-react";
 
 import Tooltip from "../shared/Tooltip";
@@ -25,17 +25,24 @@ interface AvatarProps {
 }
 
 const Avatar: React.FC<AvatarProps> = ({ name, src }) => {
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [src]);
+
   return (
     <div
       className="h-9 w-9  shrink-0 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-xs font-semibold overflow-hidden border"
       aria-hidden
     >
-      {src ? (
+      {src && !imgError ? (
         <img
           loading="lazy"
           src={src}
           alt={name}
           className="h-full w-full object-cover"
+          onError={() => setImgError(true)}
         />
       ) : (
         <span>{initials(name)}</span>
