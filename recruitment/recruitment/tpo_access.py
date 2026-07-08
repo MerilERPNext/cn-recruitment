@@ -116,8 +116,11 @@ def _send_set_password_email(user, display_name=None, override_template=None):
 	try:
 		from frappe.utils import get_url
 
-		# Generates a one-time reset key and returns the fully-qualified set-password URL.
-		link = user.reset_password(send_email=False)
+		# Generates a one-time reset key and returns the fully-qualified set-password
+		# URL. Method name differs by Frappe version (v16: reset_password,
+		# v15: _reset_password), so pick whichever this build exposes.
+		reset_password = getattr(user, "reset_password", None) or getattr(user, "_reset_password", None)
+		link = reset_password(send_email=False)
 		context = {
 			"tpo_name": display_name or user.first_name or user.email,
 			"link": link,
