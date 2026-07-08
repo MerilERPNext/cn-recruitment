@@ -15,7 +15,6 @@ import {
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import {
   extractRolesAndUsers,
-  getStageActorDetails,
 } from "../../../../utils/flowUtils";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { getStageAssignedUsersCell } from "../../../../utils/getAssignedUsersCell";
@@ -26,7 +25,6 @@ import { Typography } from "../../../shared/atoms/Typography";
 import CardTable from "../../../shared/CardTable";
 import MobileAllocatedTo from "../../../shared/MobileAllocatedTo";
 import Tooltip from "../../../shared/Tooltip";
-import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import WorkflowStageActions from "./WorkflowStageActions";
 
 interface WorkflowTableProps {
@@ -178,17 +176,6 @@ const WorkflowCard = ({
     return actionPermission;
   }, [currentUser, isActive, allocatedTo, stage.can_act]);
 
-  // Action Taken By — reuse the same helper as FlowTableRow
-  const actorDetails = useMemo(() => {
-    if (!stage.selected_action) return null; // no action taken yet
-    return getStageActorDetails(
-      stage.allocated_to,
-      stage.role_assigned_users ?? stage.todo?.role_assigned_users ?? [],
-      stage.target ?? "",
-      stage.target_name ?? "",
-    );
-  }, [stage]);
-
   // Actual Trigger Date — the todo creation timestamp is when the stage was actually triggered
   const actualTriggerDate = stage.todo?.creation ?? null;
 
@@ -264,18 +251,17 @@ const WorkflowCard = ({
 
           {/* Action Taken By */}
           <div className="flex justify-center items-center overflow-hidden">
-            {actorDetails ? (
-              <WrapperHoverCard
-                employeeId={actorDetails.employee}
-                placement="center-left"
+            {stage?.action_taken_by ? (
+              <Tooltip
+                content={stage?.action_taken_by}
               >
                 <Typography
                   variant="bodySmall"
                   className="font-medium truncate text-center cursor-pointer text-primary-600 hover:underline"
                 >
-                  {actorDetails.name}
+                  {stage?.action_taken_by_name}
                 </Typography>
-              </WrapperHoverCard>
+              </Tooltip>
             ) : (
               <Typography
                 variant="bodySmall"
@@ -412,7 +398,7 @@ const WorkflowCard = ({
                 </div>
 
                 {/* Action Taken By */}
-                {actorDetails && (
+                {stage?.action_taken_by_name && (
                   <div className="flex justify-between items-start text-sm gap-4">
                     <Typography
                       variant="mobileCardLabel"
@@ -420,12 +406,16 @@ const WorkflowCard = ({
                     >
                       Action Taken By
                     </Typography>
-                    <Typography
-                      variant="mobileCardValue"
-                      className="text-right flex-1 min-w-0 mt-0.5 text-primary-600"
+                    <Tooltip
+                      content={stage?.action_taken_by}
                     >
-                      {actorDetails.name}
-                    </Typography>
+                      <Typography
+                        variant="mobileCardValue"
+                        className="text-right flex-1 min-w-0 mt-0.5 text-primary-600"
+                      >
+                        {stage?.action_taken_by_name}
+                      </Typography>
+                    </Tooltip>
                   </div>
                 )}
 

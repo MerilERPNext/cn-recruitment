@@ -18,13 +18,6 @@ export interface SlideDateBounds {
 export const toDateOnly = (iso?: string | null): string | undefined =>
   iso ? String(iso).slice(0, 10) : undefined;
 
-/** Shift a `YYYY-MM-DD` date by `n` days, returning `YYYY-MM-DD`. */
-const shiftDays = (isoDate: string, n: number): string => {
-  const d = new Date(isoDate + "T00:00:00");
-  d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
-};
-
 /** Later of two `YYYY-MM-DD` strings (they compare correctly lexicographically). */
 const maxDate = (a?: string, b?: string): string | undefined => {
   if (!a) return b;
@@ -37,11 +30,19 @@ const maxDate = (a?: string, b?: string): string | undefined => {
  * section list (newest-first, as the backend returns it) and the employee's
  * joining date.
  *
- * Rules (no-overlap model, gaps preserved):
- *   - start_date >= joining date, and after the previous (older) slide's end.
+ * Rules (reflow model — a slide may expand into a neighbour, whose touching
+ * boundary the backend then reflows to match):
+ *   - start_date can move back to the older (earlier) slide's START date, and
+ *     never before the joining date. With no older slide it's floored at the
+ *     joining date. (e.g. middle slide 1 Jun–30 Jun with an older 1 May–31 May
+ *     slide -> start_date floor is 1 May; oldest slide -> floor is joining.)
  *   - start_date <= this slide's own end date.
  *   - end_date   >= this slide's own start date.
- *   - end_date   <= day before the next (newer) slide's start (open if latest).
+ *   - end_date can move forward to the newer (later) slide's END date. When the
+ *     newer slide is open-ended (the current "Present" slide) OR this is the
+ *     latest slide, the end_date has no upper limit. (e.g. middle slide with a
+ *     newer open slide -> no end limit; oldest slide 1 May–31 May with a newer
+ *     1 Jun–30 Jun slide -> end_date ceiling is 30 Jun.)
  *   - If the previous (older) slide is a locked previous-employee tile
  *     (can_edit === false), the start_date is frozen (disableStartDate).
  */
@@ -61,20 +62,19 @@ export function computeSlideDateBounds(
   const ownStart = toDateOnly(item?.from_date);
   const ownEnd = toDateOnly(item?.to_date);
 
-  // start_date floor: joining date, and never overlapping the older slide.
+  // start_date floor: joining date, and as far back as the older slide's START
+  // (moving onto it reflows the older slide's end to the day before).
   let startMinDate = joining;
   if (older) {
-    const olderEnd = toDateOnly(older.to_date);
-    const afterOlder = olderEnd ? shiftDays(olderEnd, 1) : undefined;
-    startMinDate = maxDate(joining, afterOlder);
+    startMinDate = maxDate(joining, toDateOnly(older.from_date));
   }
 
-  // end_date ceiling: day before the newer slide's start (open if this is the
-  // latest slide).
+  // end_date ceiling: the newer slide's END date (moving onto it reflows the
+  // newer slide's start). No upper limit when the newer slide is open-ended
+  // ("Present") or this is already the latest slide.
   let endMaxDate: string | undefined;
   if (newer) {
-    const newerStart = toDateOnly(newer.from_date);
-    endMaxDate = newerStart ? shiftDays(newerStart, -1) : undefined;
+    endMaxDate = toDateOnly(newer.to_date);
   }
 
   return {

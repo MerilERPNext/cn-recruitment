@@ -8,13 +8,23 @@
  "field_order": [
   "basic_details_section",
   "institute_name",
-  "city",
+  "college_short_name",
   "column_break_basic_1",
   "tier",
   "state",
+  "region",
   "column_break_basic_2",
   "is_active",
   "recommended_visit_window",
+  "city",
+  "address_section",
+  "address",
+  "academic_details_section",
+  "batch_size",
+  "sales_marketing_batch_size",
+  "column_break_academic",
+  "university_affiliated_to",
+  "courses",
   "streams_section",
   "recognised_streams",
   "tpo_contacts_section",
@@ -38,11 +48,18 @@
    "unique": 1
   },
   {
+   "fieldname": "college_short_name",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Short Form of College"
+  },
+  {
    "fieldname": "city",
    "fieldtype": "Link",
-   "options": "City",
    "in_standard_filter": 1,
-   "label": "City"
+   "label": "City",
+   "link_filters": "[[\"City\",\"state\",\"=\",\"eval:doc.state\"]]",
+   "options": "City"
   },
   {
    "fieldname": "column_break_basic_1",
@@ -60,8 +77,16 @@
   {
    "fieldname": "state",
    "fieldtype": "Link",
-   "options": "State",
-   "label": "State"
+   "label": "State",
+   "options": "State"
+  },
+  {
+   "fieldname": "region",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Region",
+   "link_filters": "[[\"Region\",\"state_id\",\"=\",\"eval:doc.state\"]]",
+   "options": "Region"
   },
   {
    "fieldname": "column_break_basic_2",
@@ -82,15 +107,55 @@
    "label": "Recommended Visit Window"
   },
   {
+   "fieldname": "address_section",
+   "fieldtype": "Section Break",
+   "label": "Address"
+  },
+  {
+   "fieldname": "address",
+   "fieldtype": "Small Text",
+   "label": "Address"
+  },
+  {
+   "fieldname": "academic_details_section",
+   "fieldtype": "Section Break",
+   "label": "Academic Details"
+  },
+  {
+   "fieldname": "batch_size",
+   "fieldtype": "Int",
+   "label": "Batch Size"
+  },
+  {
+   "fieldname": "sales_marketing_batch_size",
+   "fieldtype": "Int",
+   "label": "Sales & Marketing Batch Size"
+  },
+  {
+   "fieldname": "column_break_academic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "university_affiliated_to",
+   "fieldtype": "Data",
+   "label": "University Affiliated To"
+  },
+  {
+   "fieldname": "courses",
+   "fieldtype": "Table MultiSelect",
+   "label": "Courses",
+   "options": "TPO Course"
+  },
+  {
    "fieldname": "streams_section",
    "fieldtype": "Section Break"
   },
-   {
-    "fieldname": "recognised_streams",
-    "fieldtype": "Table MultiSelect",
-    "label": "Recognised Streams",
-    "options": "Campus Drive Eligible Stream"
-   },
+  {
+   "fieldname": "recognised_streams",
+   "fieldtype": "Table MultiSelect",
+   "label": "Recognised Streams",
+   "options": "Campus Drive Eligible Stream"
+  },
   {
    "fieldname": "tpo_contacts_section",
    "fieldtype": "Section Break",
@@ -117,7 +182,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-03 00:00:00.000000",
+ "modified": "2026-07-06 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Institute",

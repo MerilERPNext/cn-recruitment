@@ -10,6 +10,7 @@ import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
   useAwardEmployeePoints,
   useAwardPrograms,
+  useRecognitionFlags,
   AwardPointsAward,
   AwardProgramItem,
 } from "../../../services/recognitionService";
@@ -106,9 +107,12 @@ const TrophyArt: React.FC = () => (
   </div>
 );
 
-const ProgramCard: React.FC<{ program: ProgramVM }> = ({ program }) => (
+const ProgramCard: React.FC<{ program: ProgramVM; showWinners: boolean }> = ({
+  program,
+  showWinners,
+}) => (
   <Card radius="xl" className="relative border border-gray-100 shadow-sm overflow-hidden">
-    <WinnersRibbon />
+    {showWinners && <WinnersRibbon />}
     <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-5 p-5">
       <TrophyArt />
       <div>
@@ -127,7 +131,7 @@ const ProgramCard: React.FC<{ program: ProgramVM }> = ({ program }) => (
           </span>
         </div>
 
-        {program.winners.length > 0 && (
+        {showWinners && program.winners.length > 0 && (
           <div className="mt-5 flex flex-wrap items-start gap-4 sm:gap-5">
             {program.winners.map((w) => (
               <div key={w.employee} className="flex flex-col items-center text-center w-20 sm:w-24">
@@ -315,6 +319,11 @@ const AwardsLivePrograms: React.FC = () => {
   const hiddenCount = activeAwards.length - visibleAwards.length;
   const myAwardsLoading = awardTab === "Received" ? receivedLoading : givenLoading;
 
+  // Award winners are shown only when enabled in the Advanced Settings doctype.
+  const { displayIndividualAwardWinners, displayTeamAwardWinners } =
+    useRecognitionFlags();
+  const showWinners = displayIndividualAwardWinners || displayTeamAwardWinners;
+
   // Filters + Sort drive the server-side request; search filters client-side.
   const { data, isLoading, isError, error, refetch, isFetching } =
     useAwardEmployeePoints({ time_period: timeFilter, sort: sortBy });
@@ -402,7 +411,7 @@ const AwardsLivePrograms: React.FC = () => {
                 <p className="text-xs text-gray-400">Updating…</p>
               )}
               {displayedPrograms.map((p) => (
-                <ProgramCard key={p.award} program={p} />
+                <ProgramCard key={p.award} program={p} showWinners={showWinners} />
               ))}
             </>
           )}

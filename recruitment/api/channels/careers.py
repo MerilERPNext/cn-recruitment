@@ -433,12 +433,15 @@ def _opening_context(opening_name):
 		elif lo:
 			experience = f"{lo}+ {unit or ''}".strip()
 
+	# Resolve Link fields to their Title Field (e.g. Designation "pe-01" ->
+	# "Pen Pencil", Company -> company_name) so the UI shows names, not ids.
+	# `location` is free-text on the opening, so it's returned as-is.
 	return {
-		"job_title": opening.get("designation"),
-		"company": opening.get("company"),
+		"job_title": _common._link_label("Designation", opening.get("designation")),
+		"company": _common._link_label("Company", opening.get("company")),
 		"location": opening.get("location"),
 		"experience": experience,
-		"employment_type": opening.get("employment_type"),
+		"employment_type": _common._link_label("Employment Type", opening.get("employment_type")),
 	}
 
 
@@ -588,9 +591,12 @@ def get_saved_job_openings(candidate_email):
 		return _err("candidate_email is required.", 400)
 	enforce_candidate_identity(email=email)
 
+	columns = _common.get_configured_columns(CHANNEL)
+	extra_fields = [c["fieldname"] for c in columns]
+
 	existing_name = frappe.db.get_value("Saved Job Opening", {"candidate_email": email}, "name")
 	if not existing_name:
-		return {"status": "success", "total": 0, "saved_job_openings": []}
+		return {"success": True, "columns": columns, "openings": [], "total": 0}
 
 	doc = frappe.get_doc("Saved Job Opening", existing_name)
 	ids = [r.job_opening for r in (doc.job_openings or []) if r.job_opening]
@@ -598,15 +604,14 @@ def get_saved_job_openings(candidate_email):
 	applied = _applied_openings(email, ids)
 	openings = []
 	for name in ids:
-		card = _common.get_opening_card(name)
+		card = _common.get_opening_card(name, extra_fields=extra_fields)
 		if not card:
-			# Saved opening was since deleted — skip it rather than ship a null.
 			continue
 		card["applied"] = name in applied
 		card["saved"] = True
 		openings.append(card)
 
-	return {"status": "success", "total": len(openings), "saved_job_openings": openings}
+	return {"success": True, "columns": columns, "openings": openings, "total": len(openings)}
 
 
 # ---------------------------------------------------------------------------
@@ -634,9 +639,10 @@ def get_applied_jobs(email):
 		APPLICANT_DOCTYPE,
 		filters={"email_id": email, "status": ["!=", DRAFT_STATUS]},
 		fields=[
-			"name", "applicant_name", "status",
+			"name", "applicant_name", "status", "job_title",
 			"designation", "custom_company_finalized", "custom_location",
 			"custom_employment_type", "custom_experience_range",
+			"custom_expected_ctc",
 			"creation",
 		],
 		order_by="creation asc",
@@ -692,15 +698,23 @@ def get_applied_jobs(email):
 				date = creation_date
 			flags.append({"status": stage, "flag": stage in active, "date": date})
 
+		# The Job Applicant's own custom fields are often blank; the linked Job
+		# Opening (`job_title`) is the reliable source for company/location/etc.
+		# Prefer any finalized value on the applicant, fall back to the opening.
+		# `job_ctx` already holds resolved titles from the opening. Prefer a
+		# finalized value on the applicant (resolved to its title), else fall
+		# back to the opening's title.
+		job_ctx = _opening_context(app.job_title)
 		applications.append({
 			"id": app.name,
 			"applied_on": creation_date,
 			"job": {
-				"designation": app.designation,
-				"company": app.custom_company_finalized,
-				"location": app.custom_location,
-				"experience_range": app.custom_experience_range,
-				"employment_type": app.custom_employment_type,
+				"designation": _common._link_label("Designation", app.designation) or job_ctx["job_title"],
+				"company": _common._link_label("Company", app.custom_company_finalized) or job_ctx["company"],
+				"location": app.custom_location or job_ctx["location"],
+				"experience_range": app.custom_experience_range or job_ctx["experience"],
+				"employment_type": _common._link_label("Employment Type", app.custom_employment_type) or job_ctx["employment_type"],
+				"expected_ctc": app.custom_expected_ctc,
 			},
 			"status": app.status,
 			"flags": flags,

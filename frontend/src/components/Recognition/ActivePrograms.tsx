@@ -2,11 +2,15 @@ import React, { useState } from "react";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
 import { RecognitionProgram } from "../../types/recognition";
-import { ArrowRight, Users, Clock, Trophy } from "lucide-react";
+import { ArrowRight, Users, Clock, Target, Trophy } from "lucide-react";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { ProgramExpansionPanel } from "./ProgramExpansionPanel";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
-import { useEligiblePrograms } from "../../services/recognitionService";
+import {
+  useEligiblePrograms,
+  useRecognitionFlags,
+} from "../../services/recognitionService";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 interface ActiveProgramsProps {
   programs?: RecognitionProgram[];
@@ -39,6 +43,9 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
     "Award",
   );
 
+  // Hide the "Nominate Upto" value on cards when set in Advanced Settings.
+  const { hideNominateUptoValue } = useRecognitionFlags();
+
   // Map the API response → the RecognitionProgram shape this card renders.
   const apiPrograms: RecognitionProgram[] = (
     eligibleData?.eligible_programs ?? []
@@ -53,6 +60,7 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
     status: "Active",
     days_left: daysLeftUntil(p.end_date),
     category: p.reward_type,
+    nominate_upto: p.nominate_upto,
   }));
 
   // Prefer API data; fall back to the prop (e.g. while the query is loading).
@@ -166,6 +174,12 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
                         <Users className="size-4" />
                         <span>{program.participant_count} joined</span>
                       </div>
+                      {!hideNominateUptoValue && program.end_date && (
+                        <div className="flex items-center gap-1">
+                          <Target className="size-4" />
+                          <span>Nominate Upto {formatToIndianDate(program.end_date)}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 

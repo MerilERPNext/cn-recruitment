@@ -21,6 +21,7 @@ import ConfirmationModal from "../shared/atoms/ConfirmationModal";
 import NoDataFound from "../shared/atoms/NoDataFound";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { computeSlideDateBounds, toDateOnly } from "../../utils/slideDateBounds";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 
 // Sort a reporting category's items current-first, then newest start_date first
@@ -126,8 +127,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
       setPendingDeleteCategory(null);
       onActionSuccess?.(category || undefined);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
-      toast.error(message);
+      toast.error(errorResponseFormater(err, "Something went wrong. Please try again."));
     }
   };
 

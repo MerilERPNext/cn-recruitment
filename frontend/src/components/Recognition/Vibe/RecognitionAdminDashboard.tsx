@@ -26,7 +26,6 @@ import {
   useDoctypeOptions,
   type RecognitionAdminParams,
 } from "../../../services/recognitionService";
-import CreateProgramModal from "./CreateProgramModal";
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Types
@@ -425,19 +424,20 @@ const StatRow = ({ stats }: { stats: { value: number; label: string }[] }) => (
 /* ────────────────────────────────────────────────────────────────────────────
  * Page
  * ──────────────────────────────────────────────────────────────────────────── */
+// Frappe desk route for the Recognition Program doctype. Create/Edit open the
+// doctype form in the desk (which enforces the Recognition Program permissions —
+// regular employees without the role can't access it).
+const RECOGNITION_PROGRAM_DOCTYPE_ROUTE = "/app/recognition-program";
+
 export default function RecognitionAdminDashboard() {
   const [tab, setTab] = useState<TabKey>("appreciation");
   const [query, setQuery] = useState<TableQuery>(INITIAL_QUERY);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editCode, setEditCode] = useState<string | null>(null);
 
   const openCreate = () => {
-    setEditCode(null);
-    setModalOpen(true);
+    window.location.href = `${RECOGNITION_PROGRAM_DOCTYPE_ROUTE}/new`;
   };
   const openEdit = (code: string) => {
-    setEditCode(code);
-    setModalOpen(true);
+    window.location.href = `${RECOGNITION_PROGRAM_DOCTYPE_ROUTE}/${encodeURIComponent(code)}`;
   };
 
   const onQueryChange = useCallback((q: TableQuery) => setQuery(q), []);
@@ -519,12 +519,6 @@ export default function RecognitionAdminDashboard() {
           CREATE NEW PROGRAM
         </Button>
       </div>
-
-      <CreateProgramModal
-        open={modalOpen}
-        editCode={editCode}
-        onClose={() => setModalOpen(false)}
-      />
 
       {/* Tabs */}
       <div className="flex gap-6 border-b border-gray-100 bg-white px-6">
