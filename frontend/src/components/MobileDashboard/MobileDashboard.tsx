@@ -49,6 +49,7 @@ import ViewingAsBanner from "../../components/ViewingAsBanner";
 import MicroAppInDashboard from "../../components/DashboardComponent/MicroAppInDashboard";
 import GeoLocationModal from "./GeoLocationModal";
 import RequestIssueModal from "../../components/HelpDesk/RequestIssueModal";
+import { RecommendationsForYou } from "../../components/DashboardComponent/RecommendationsForYou";
 
 const MobileDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -780,6 +781,7 @@ const MobileDashboard: React.FC = () => {
             <MicroAppInDashboard />
           </div>
         )}
+        <RecommendationsForYou isMobile={true} />
       </div>
       <SideDrawer
         open={isSearchDrawerOpen}
