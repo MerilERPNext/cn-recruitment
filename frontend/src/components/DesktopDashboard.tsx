@@ -151,29 +151,29 @@ export default function DesktopDashboard() {
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-        compareAsc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      )[0]
+      compareAsc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T")),
+      ),
+    )[0]
     : undefined;
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      )[0]
+      compareDesc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T")),
+      ),
+    )[0]
     : undefined;
 
   const lastLog =
     homeSummary && homeSummary.length > 0
       ? [...homeSummary].sort((a, b) =>
-          compareDesc(
-            parseISO(a.time.replace(" ", "T")),
-            parseISO(b.time.replace(" ", "T")),
-          ),
-        )[0]
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T")),
+        ),
+      )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -616,12 +616,15 @@ export default function DesktopDashboard() {
                       src={currentUser?.user_image || defaultProfile}
                       alt="User avatar"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = defaultProfile;
+                      }}
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${
-                      showProfileDropdown ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee ? (
@@ -655,12 +658,15 @@ export default function DesktopDashboard() {
                       src={currentEmployee?.image || defaultProfile}
                       alt="User avatar"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = defaultProfile;
+                      }}
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${
-                      showProfileDropdown ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
               )}
@@ -676,6 +682,10 @@ export default function DesktopDashboard() {
                           src={currentEmployee?.image || defaultProfile}
                           alt="User avatar"
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = defaultProfile;
+                          }}
                         />
                       </div>
 
@@ -1018,11 +1028,10 @@ export default function DesktopDashboard() {
                 </div>
 
                 <div
-                  className={`flex  h-full ${
-                    homeSummary && !homeSummary?.length
+                  className={`flex  h-full ${homeSummary && !homeSummary?.length
                       ? "flex-col-reverse gap-3"
                       : "flex-row gap-3 mt-2"
-                  }`}
+                    }`}
                 >
                   {canShowClockIn?.can_show && (
                     <div className="flex-1">
@@ -1105,13 +1114,12 @@ export default function DesktopDashboard() {
                         onClick={action.onClick}
                       >
                         <div
-                          className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
-                            action.color === "primary"
+                          className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${action.color === "primary"
                               ? "bg-primary-100 text-primary-600"
                               : action.color === "purple"
                                 ? "bg-purple-100 text-purple-600"
                                 : "bg-success-100 text-success"
-                          }`}
+                            }`}
                         >
                           <action.icon className="w-5 h-5 shadow-sm" />
                         </div>

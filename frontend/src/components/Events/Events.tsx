@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useGetAllEmployees } from "../../hooks/useEmployee";
 import { format } from "date-fns";
+import Avatar from "../shared/Avatar";
 import Badge from "../shared/Badge";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
@@ -146,17 +147,13 @@ const Events = () => {
                   >
                     <div className="flex gap-2 items-center">
                       {/* Avatar */}
-                      {employee.image ? (
-                        <img
-                          src={employee.image}
-                          alt={employee.employee_name}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-lg uppercase">
-                          {employee.employee_name.charAt(0)}
-                        </div>
-                      )}
+                      <Avatar
+                        src={employee.image || undefined}
+                        name={employee.employee_name}
+                        size="h-10 w-10"
+                        avatarBgColor="bg-gray-200"
+                        avatarTextColor="text-gray-600"
+                      />
 
                       {/* Text */}
                       <div className="flex leading-tight">
