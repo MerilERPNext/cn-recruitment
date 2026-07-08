@@ -14,19 +14,17 @@ export const RecommendationsForYou: React.FC<RecommendationsForYouProps> = ({
   const { data: cards, isLoading } = useCarouselCards();
   const navigate = useNavigate();
 
-  if (isLoading || !cards || cards.length === 0) return null;
+  const displayCards = React.useMemo(() => {
+    if (!cards) return [];
+    const filtered = isMobile
+      ? cards.filter((card) => card.show_on_mobile_app === 1)
+      : cards;
+    return [...filtered].sort(
+      (a, b) => (a.sort_order || 0) - (b.sort_order || 0),
+    );
+  }, [cards, isMobile]);
 
-  // Filter based on mobile view flag if we are on mobile
-  const filteredCards = isMobile
-    ? cards.filter((card) => card.show_on_mobile_app === 1)
-    : cards;
-
-  // Sort by sort_order
-  const displayCards = [...filteredCards].sort(
-    (a, b) => (a.sort_order || 0) - (b.sort_order || 0),
-  );
-
-  if (displayCards.length === 0) return null;
+  if (isLoading || displayCards.length === 0) return null;
 
   return (
     <div className="w-full flex gap-4 p-4 bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto relative mb-4">
@@ -58,12 +56,12 @@ export const RecommendationsForYou: React.FC<RecommendationsForYouProps> = ({
       {/* Cards list */}
       {displayCards.map((card, idx) => (
         <div
-          key={idx}
+          key={card.card_type || card.card_label || idx}
           onClick={() => {
             if (card.redirect_url) {
               // Determine if it's an absolute url or route
               if (card.redirect_url.startsWith("http")) {
-                window.open(card.redirect_url, "_blank");
+                window.open(card.redirect_url, "_blank", "noopener,noreferrer");
               } else {
                 navigate(`/${card.redirect_url.replace(/^\/+/, "")}`);
               }

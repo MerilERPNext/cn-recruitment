@@ -21,7 +21,7 @@ class CarouselService {
         "cn_hrms_core.cn_hrms_core.apis.carousel.get_carousel_cards",
         {},
       );
-      return (result as CarouselCard[]) || [];
+      return Array.isArray(result) ? (result as CarouselCard[]) : [];
     } catch (error) {
       console.error("Error fetching carousel cards", error);
       return [];
