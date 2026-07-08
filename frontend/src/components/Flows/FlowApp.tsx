@@ -107,7 +107,9 @@ const FlowApp: React.FC = () => {
       setSeprateRoute(null);
     }
 
-    if (location.pathname === "/webapp/flow-app/initiate-flow") {
+    if (location.pathname.startsWith("/webapp/flow-app/flow-request/")) {
+      setSeprateRoute("Flow Request");
+    } else if (location.pathname === "/webapp/flow-app/initiate-flow") {
       setSeprateRoute("Initiate Flow");
     } else if (
       location.pathname.startsWith("/webapp/flow-app/separation-workflow")
