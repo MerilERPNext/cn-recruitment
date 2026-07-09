@@ -11,8 +11,44 @@ class CampusDrive(Document):
 	def validate(self):
 		self.drive_id = self.name
 		self._validate_drive_window()
+		self._sync_campus_invites()
 		self._set_registration_defaults()
 		self._set_round_codes()
+
+	def _sync_campus_invites(self):
+		"""Merge each linked Campus Invite's Institute and Job Openings into
+		participating_institutes / linked_job_openings. Additive and idempotent:
+		existing rows are kept and never duplicated, so this is safe to run on
+		every save regardless of whether the client already fetched them."""
+		if not self.campus_invites:
+			return
+
+		known_institutes = {row.institute for row in (self.participating_institutes or []) if row.institute}
+		known_openings = {row.job_opening for row in (self.linked_job_openings or []) if row.job_opening}
+
+		added = False
+		for invite_row in self.campus_invites:
+			if not invite_row.campus_invite:
+				continue
+			invite = frappe.get_doc("Campus Invite", invite_row.campus_invite)
+
+			if invite.institute and invite.institute not in known_institutes:
+				self.append("participating_institutes", {"institute": invite.institute})
+				known_institutes.add(invite.institute)
+				added = True
+
+			for opening in invite.job_openings or []:
+				if opening.job_opening and opening.job_opening not in known_openings:
+					self.append("linked_job_openings", {"job_opening": opening.job_opening})
+					known_openings.add(opening.job_opening)
+					added = True
+
+		# Link validation (which resolves fetch_from columns like Job Title /
+		# Department) already ran before validate(), so re-run it for the rows we
+		# just appended — otherwise their read-only columns stay blank until the
+		# next save.
+		if added:
+			self._validate_links()
 
 	def on_update(self):
 		# Auto-generate the QR the first time the form is enabled. Refreshing is
@@ -116,3 +152,14 @@ def _qr_png_bytes(data):
 	buffer = BytesIO()
 	pyqrcode.create(data, error="M").png(buffer, scale=6, quiet_zone=2)
 	return buffer.getvalue()
+
+
+@frappe.whitelist()
+def get_campus_invite_details(campus_invite):
+	"""Return the Institute and Job Openings of a Campus Invite so the client can
+	instantly fetch them into the Campus Drive's institute / opening tables."""
+	invite = frappe.get_doc("Campus Invite", campus_invite)
+	return {
+		"institute": invite.institute,
+		"job_openings": [row.job_opening for row in (invite.job_openings or []) if row.job_opening],
+	}
