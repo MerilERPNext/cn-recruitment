@@ -1,0 +1,27 @@
+.verify-email-page {
+	display: flex;
+	justify-content: center;
+	padding: 2rem 1rem;
+}
+
+.verify-card {
+	width: 100%;
+	max-width: 480px;
+	padding: 2rem;
+	border: 1px solid var(--border-color, #e2e8f0);
+	border-radius: 12px;
+	background: var(--card-bg, #fff);
+}
+
+.verify-title {
+	margin-top: 0;
+	margin-bottom: 0.25rem;
+}
+
+.verify-subtitle {
+	margin-bottom: 1.5rem;
+}
+
+.verify-card .form-group {
+	margin-bottom: 1rem;
+}

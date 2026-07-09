@@ -33,14 +33,10 @@
   "registration_form_section",
   "registration_form_enabled",
   "registration_form_title",
+  "registration_form_link",
   "column_break_registration_form_intro",
-  "form_field_count",
-  "mandatory_field_count",
-  "tpo_verified_field_count",
-  "registration_form_description",
+  "registration_form_qr_preview",
   "registration_form_qr_code",
-  "registration_fields_section",
-  "registration_fields",
   "rounds_tab",
   "rounds_section",
   "rounds",
@@ -201,47 +197,27 @@
    "label": "Form Title"
   },
   {
+   "description": "Auto-filled: the email-verification page this drive's QR code points to.",
+   "fieldname": "registration_form_link",
+   "fieldtype": "Data",
+   "label": "Registration Link",
+   "options": "URL",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_registration_form_intro",
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "form_field_count",
-   "fieldtype": "Int",
-   "label": "Fields On Form",
-   "read_only": 1
-  },
-  {
-   "fieldname": "mandatory_field_count",
-   "fieldtype": "Int",
-   "label": "Mandatory Fields",
-   "read_only": 1
-  },
-  {
-   "fieldname": "tpo_verified_field_count",
-   "fieldtype": "Int",
-   "label": "TPO Verified Fields",
-   "read_only": 1
-  },
-  {
-   "fieldname": "registration_form_description",
-   "fieldtype": "Small Text",
-   "label": "Form Description"
+   "fieldname": "registration_form_qr_preview",
+   "fieldtype": "Image",
+   "label": "Registration QR Code",
+   "options": "registration_form_qr_code"
   },
   {
    "fieldname": "registration_form_qr_code",
    "fieldtype": "Attach Image",
    "label": "Registration QR Code"
-  },
-  {
-   "fieldname": "registration_fields_section",
-   "fieldtype": "Section Break",
-   "label": "Registration Fields"
-  },
-  {
-   "fieldname": "registration_fields",
-   "fieldtype": "Table",
-   "label": "Registration Fields",
-   "options": "Campus Drive Registration Field"
   },
   {
    "fieldname": "rounds_tab",
@@ -284,7 +260,13 @@
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
- "links": [],
+ "links": [
+  {
+   "group": "Recruitment",
+   "link_doctype": "Job Applicant",
+   "link_fieldname": "custom_campus_drive"
+  }
+ ],
  "modified": "2026-07-03 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",

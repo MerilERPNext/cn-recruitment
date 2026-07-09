@@ -8,6 +8,34 @@ frappe.ui.form.on("Campus Drive", {
 			return { query: "recruitment.api.campus_openings.campus_job_opening_query" };
 		});
 	},
+
+	refresh: function (frm) {
+		// QR for the candidate apply link — only once the drive is saved and the
+		// registration form is enabled.
+		if (frm.is_new() || !frm.doc.registration_form_enabled) {
+			return;
+		}
+		frm.add_custom_button(
+			__("Generate QR Code"),
+			function () {
+				frm.call({
+					doc: frm.doc,
+					method: "generate_registration_qr",
+					freeze: true,
+					freeze_message: __("Generating QR Code..."),
+				}).then(function (r) {
+					if (r && r.message) {
+						frm.reload_doc();
+						frappe.show_alert(
+							{ message: __("QR Code generated"), indicator: "green" },
+							4
+						);
+					}
+				});
+			},
+			__("Registration Form")
+		);
+	},
 });
 
 frappe.ui.form.on("Campus Drive Job Opening", {
