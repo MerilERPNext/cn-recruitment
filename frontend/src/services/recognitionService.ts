@@ -103,6 +103,10 @@ export type RecognitionFlags = {
   hideRewardsPointSummary: boolean;
   hideBudgetedPointsFrontend: boolean;
   hideNominateUptoValue: boolean;
+  /** CC controls for Recognition emails (Advanced Settings). */
+  enableCcEmployees: boolean;
+  enableCcEmailIds: boolean;
+  sendEmailToRecognizerManager: boolean;
   /** Minimum characters required in an appreciation/nomination note (0 = no minimum). */
   minimumNominationCharacters: number;
 };
@@ -147,6 +151,9 @@ export const useRecognitionFlags = (): RecognitionFlags => {
     hideRewardsPointSummary: truthy(s.hide_rewards_point_summary),
     hideBudgetedPointsFrontend: truthy(s.hide_budgeted_points_frontend),
     hideNominateUptoValue: truthy(s.hide_nominate_upto_value),
+    enableCcEmployees: truthy(s.enable_cc_employees),
+    enableCcEmailIds: truthy(s.enable_cc_email_ids),
+    sendEmailToRecognizerManager: truthy(s.send_email_to_recognizer_manager),
     minimumNominationCharacters: Number(s.minimum_nomination_characters) || 0,
   };
 };
@@ -625,6 +632,10 @@ export type CreateEmployeeAppreciationPayload = {
   custom_form_data?: string;
   /** Comma-separated recognition value(s) selected for this appreciation. */
   values?: string;
+  /** CC employee IDs (only sent when enable_cc_employees is on). */
+  cc_employees?: string[];
+  /** CC external email addresses (only sent when enable_cc_email_ids is on). */
+  cc_email_ids?: string[];
 };
 
 export const useCreateEmployeeAppreciation = () => {

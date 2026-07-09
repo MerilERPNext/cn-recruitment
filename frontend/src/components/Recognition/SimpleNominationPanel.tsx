@@ -14,6 +14,7 @@ import {
 } from "../../services/recognitionService";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import Button from "../shared/atoms/Button";
+import RecognitionCcFields from "./RecognitionCcFields";
 import toast from "react-hot-toast";
 
 // Local YYYY-MM-DD for the date input default.
@@ -58,9 +59,17 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const createAppreciation = useCreateEmployeeAppreciation();
 
-  // Minimum characters required in the note; budget visibility flag (Advanced Settings).
-  const { minimumNominationCharacters, hideBudgetedPointsFrontend } =
-    useRecognitionFlags();
+  // Advanced Settings flags: note minimum, budget visibility, and CC controls.
+  const {
+    minimumNominationCharacters,
+    hideBudgetedPointsFrontend,
+    enableCcEmployees,
+    enableCcEmailIds,
+  } = useRecognitionFlags();
+
+  // CC recipients (only sent when the respective flag is enabled).
+  const [ccEmployees, setCcEmployees] = useState<string[]>([]);
+  const [ccEmails, setCcEmails] = useState<string[]>([]);
 
   // Program budget (total Budget Points from the linked Budgeting Rule).
   const { data: programBudget = 0 } = useProgramBudget(awardName);
@@ -84,7 +93,7 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
   // Render the attached form without its built-in Submit button — the panel's
   // single Submit triggers both the appreciation and this form's data.
   const panelFormSchema = useMemo(
-    () => stripSubmitButtons(panelForm?.schema),
+    () => stripSubmitButtons(panelForm?.schema as FormioSchema),
     [panelForm?.schema],
   );
 
@@ -128,6 +137,10 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
         note: reason || undefined,
         date: todayISO(),
         values: selectedValues.length > 0 ? selectedValues.join(",") : undefined,
+        // Only send CC fields that are enabled and non-empty.
+        cc_employees:
+          enableCcEmployees && ccEmployees.length > 0 ? ccEmployees : undefined,
+        cc_email_ids: enableCcEmailIds && ccEmails.length > 0 ? ccEmails : undefined,
         custom_form_data:
           hasPanelForm && Object.keys(panelFormData).length > 0
             ? JSON.stringify(panelFormData)
@@ -142,6 +155,8 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
         setReason("");
         setSelectedValues([]);
         setValuesOpen(false);
+        setCcEmployees([]);
+        setCcEmails([]);
         setPanelFormData({});
         setShowPanelForm(false);
         onSuccess();
@@ -288,6 +303,16 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
             )}
           </div>
         )}
+
+        {/* CC recipients — shown per Advanced Settings flags. */}
+        <RecognitionCcFields
+          showEmployees={enableCcEmployees}
+          showEmails={enableCcEmailIds}
+          ccEmployees={ccEmployees}
+          onChangeEmployees={setCcEmployees}
+          ccEmails={ccEmails}
+          onChangeEmails={setCcEmails}
+        />
 
         {/* Optional program-attached form for panel members. Revealed on click. */}
         {hasPanelForm && (
