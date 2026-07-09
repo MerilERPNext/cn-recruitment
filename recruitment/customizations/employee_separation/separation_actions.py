@@ -118,6 +118,100 @@ def apply_leave_attendance_decisions(variables=None, answers_var=None, bulk_pos_
 	return result
 
 
+def _rows_from_answers(variables, answers_var, rows_key):
+	ans = (variables or {}).get(answers_var) or {}
+	if not isinstance(ans, dict):
+		return []
+	rows = ans.get(rows_key) or []
+	if not isinstance(rows, list):
+		return []
+	return [r for r in rows if isinstance(r, dict)]
+
+
+def apply_expense_decisions_from_answers(variables=None, answers_var=None, bulk_pos_key=None, bulk_neg_key=None, **kwargs):
+	bulk = _bulk_decision(variables, answers_var, bulk_pos_key, bulk_neg_key, "Approve", "Reject")
+
+	result = {"approved": 0, "rejected": 0, "skipped": 0, "errors": []}
+	for row in _rows_from_answers(variables, answers_var, "custom_pending_expense_claims"):
+		decision = bulk or (row.get("status") or "").strip()
+		claim = row.get("expense_claim")
+		if decision not in ("Approve", "Reject"):
+			result["skipped"] += 1
+			continue
+		if not claim or not frappe.db.exists("Expense Claim", claim):
+			result["errors"].append(f"Expense Claim {claim or '?'} missing")
+			continue
+		try:
+			ec = frappe.get_doc("Expense Claim", claim)
+			if decision == "Approve":
+				if ec.docstatus == 0:
+					ec.approval_status = "Approved"
+					ec.submit()
+					result["approved"] += 1
+				else:
+					result["skipped"] += 1
+			else:
+				if ec.docstatus == 0:
+					ec.approval_status = "Rejected"
+					ec.submit()
+					result["rejected"] += 1
+				elif ec.docstatus == 1 and ec.approval_status == "Approved":
+					ec.cancel()
+					result["rejected"] += 1
+				else:
+					result["skipped"] += 1
+		except Exception as e:
+			result["errors"].append(f"{claim}: {e}")
+			frappe.log_error(
+				message=frappe.get_traceback(),
+				title=f"Expense Decision Error ({claim})",
+			)
+
+	frappe.db.commit()
+	return result
+
+
+def apply_attendance_regularization_from_answers(variables=None, answers_var=None, bulk_pos_key=None, bulk_neg_key=None, **kwargs):
+	bulk = _bulk_decision(variables, answers_var, bulk_pos_key, bulk_neg_key, "Mark Present", "Keep Absent")
+
+	result = {"marked_present": 0, "skipped": 0, "errors": []}
+	for row in _rows_from_answers(variables, answers_var, "custom_absent_days"):
+		action = bulk or (row.get("status") or "").strip()
+		att_name = row.get("attendance")
+		if action != "Mark Present":
+			result["skipped"] += 1
+			continue
+		if not att_name or not frappe.db.exists("Attendance", att_name):
+			result["errors"].append(f"Attendance {att_name or '?'} missing")
+			continue
+		try:
+			att = frappe.get_doc("Attendance", att_name)
+			if att.docstatus != 1 or att.status != "Absent":
+				result["skipped"] += 1
+				continue
+			att.cancel()
+			present = frappe.new_doc("Attendance")
+			present.employee = att.employee
+			present.employee_name = att.employee_name
+			present.attendance_date = att.attendance_date
+			present.company = att.company
+			present.department = att.department
+			present.shift = att.shift
+			present.status = "Present"
+			present.insert(ignore_permissions=True)
+			present.submit()
+			result["marked_present"] += 1
+		except Exception as e:
+			result["errors"].append(f"{att_name}: {e}")
+			frappe.log_error(
+				message=frappe.get_traceback(),
+				title=f"Attendance Regularization Error ({att_name})",
+			)
+
+	frappe.db.commit()
+	return result
+
+
 def apply_attendance_regularization(variables=None, answers_var=None, bulk_pos_key=None, bulk_neg_key=None, **kwargs):
 	sep = _get_separation(variables)
 	if not sep:
