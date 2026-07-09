@@ -8,12 +8,12 @@ their Job Offer (see ``job_offer_update`` -> ``dpdp_consent_required``). It is
 part of the same guest portal flow, so these endpoints are gated with the very
 same signed offer token the candidate already holds — no new scope needed.
 
-Two endpoints:
-  - ``get_dpdp_consent_form``  -> the configured form to render the page.
+The form the page renders comes from ``DPDP Act Settings.get_consent_form``
+(the config lives on that Single). This module owns the write side:
   - ``submit_dpdp_consent``    -> record the candidate's ticks as an immutable
                                   Job Applicant DPDP Consent Log.
 
-Both are defensive: if the feature is off, or the settings/doctypes are not yet
+Defensive by design: if the feature is off, or the settings/doctypes are not yet
 migrated on a site, callers behave exactly as before.
 """
 
@@ -21,7 +21,7 @@ import json
 
 import frappe
 from frappe import _
-from frappe.utils import cint, now_datetime, today
+from frappe.utils import cint, today
 
 from recruitment.job_offer_utils import _authorize_offer, is_dpdp_consent_enabled
 
@@ -69,66 +69,6 @@ def _existing_submitted_log(appl):
         {"job_applicant": appl, "docstatus": 1, "consent_given": 1},
         "name",
     )
-
-
-@frappe.whitelist(allow_guest=True)
-def get_dpdp_consent_form(appl, token=None):
-    """Return the configured DPDP consent form for the candidate portal page.
-
-    ``enabled: False`` means the page should not be shown at all (feature off) —
-    the UI can simply skip straight to onboarding.
-    """
-    if not appl:
-        frappe.throw(_("Missing applicant parameter"))
-    _authorize_offer(appl, token, "read")
-
-    if not is_dpdp_consent_enabled():
-        return {"enabled": False}
-
-    settings = frappe.get_cached_doc("DPDP Act Settings")
-
-    information_clauses = [
-        {"information_collected": row.information_collected, "purpose": row.purpose}
-        for row in (settings.information_clauses or [])
-        if row.is_active
-    ]
-    consent_statements = [
-        {
-            "consent_key": row.consent_key,
-            "statement": row.statement,
-            "is_mandatory": cint(row.is_mandatory),
-        }
-        for row in (settings.consent_statements or [])
-        if row.is_active
-    ]
-
-    applicant = frappe.db.get_value(
-        "Job Applicant", appl, ["applicant_name", "email_id"], as_dict=True
-    ) or {}
-
-    existing = _existing_submitted_log(appl)
-
-    return {
-        "enabled": True,
-        "already_consented": bool(existing),
-        "consent_log": existing,
-        "enforce_before_onboarding": cint(settings.enforce_before_onboarding),
-        "require_all_mandatory": cint(settings.require_all_mandatory),
-        "capture_employee_name": cint(settings.capture_employee_name),
-        "capture_date": cint(settings.capture_date),
-        "form_title": settings.form_title,
-        "form_subtitle": settings.form_subtitle,
-        "intro_content": settings.intro_content,
-        "information_column_label": settings.information_column_label,
-        "purpose_column_label": settings.purpose_column_label,
-        "information_clauses": information_clauses,
-        "closing_content": settings.closing_content,
-        "declaration_heading": settings.declaration_heading,
-        "consent_statements": consent_statements,
-        "confirmation_note": settings.confirmation_note,
-        "applicant_name": applicant.get("applicant_name"),
-        "email_id": applicant.get("email_id"),
-    }
 
 
 @frappe.whitelist(allow_guest=True)
