@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useMemo, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -7,10 +8,13 @@ import {
   useCreateEmployeeAppreciation,
   useEligibleReceivers,
   usePanelForm,
+  useProgramBudget,
+  useProgramValues,
   useRecognitionFlags,
 } from "../../services/recognitionService";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import Button from "../shared/atoms/Button";
+import RecognitionCcFields from "./RecognitionCcFields";
 import toast from "react-hot-toast";
 
 // Local YYYY-MM-DD for the date input default.
@@ -55,8 +59,30 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const createAppreciation = useCreateEmployeeAppreciation();
 
-  // Minimum characters required in the note (Advanced Settings).
-  const { minimumNominationCharacters } = useRecognitionFlags();
+  // Advanced Settings flags: note minimum, budget visibility, and CC controls.
+  const {
+    minimumNominationCharacters,
+    hideBudgetedPointsFrontend,
+    enableCcEmployees,
+    enableCcEmailIds,
+  } = useRecognitionFlags();
+
+  // CC recipients (only sent when the respective flag is enabled).
+  const [ccEmployees, setCcEmployees] = useState<string[]>([]);
+  const [ccEmails, setCcEmails] = useState<string[]>([]);
+
+  // Program budget (total Budget Points from the linked Budgeting Rule).
+  const { data: programBudget = 0 } = useProgramBudget(awardName);
+  const showBudget = programBudget > 0 && !hideBudgetedPointsFrontend;
+
+  // Recognition values for this program (dynamic, comma-separated on the program).
+  const { data: programValues = [] } = useProgramValues(awardName);
+  const [selectedValues, setSelectedValues] = useState<string[]>([]);
+  const [valuesOpen, setValuesOpen] = useState(false);
+  const toggleValue = (v: string) =>
+    setSelectedValues((prev) =>
+      prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v],
+    );
 
   // Optional form attached to the program (attach_form_for_panel_members).
   // Shown below the fields on click when the program has one configured.
@@ -67,7 +93,7 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
   // Render the attached form without its built-in Submit button — the panel's
   // single Submit triggers both the appreciation and this form's data.
   const panelFormSchema = useMemo(
-    () => stripSubmitButtons(panelForm?.schema as any),
+    () => stripSubmitButtons(panelForm?.schema as FormioSchema),
     [panelForm?.schema],
   );
 
@@ -110,6 +136,11 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
         given_by: currentUser?.employee,
         note: reason || undefined,
         date: todayISO(),
+        values: selectedValues.length > 0 ? selectedValues.join(",") : undefined,
+        // Only send CC fields that are enabled and non-empty.
+        cc_employees:
+          enableCcEmployees && ccEmployees.length > 0 ? ccEmployees : undefined,
+        cc_email_ids: enableCcEmailIds && ccEmails.length > 0 ? ccEmails : undefined,
         custom_form_data:
           hasPanelForm && Object.keys(panelFormData).length > 0
             ? JSON.stringify(panelFormData)
@@ -122,6 +153,10 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
         setSelectedEmployee("");
         setSelectedName("");
         setReason("");
+        setSelectedValues([]);
+        setValuesOpen(false);
+        setCcEmployees([]);
+        setCcEmails([]);
         setPanelFormData({});
         setShowPanelForm(false);
         onSuccess();
@@ -140,11 +175,20 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 "> 
+      <div className="flex justify-between align-center">
       <Typography variant="bodyMedium" className="font-semibold">
         Appreciate an Employee
       </Typography>
-
+              {showBudget && (
+          <div className="mt-1 flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2.5">
+            <span className="text-xs font-medium text-gray-500 mr-2">Budget</span>
+            <span className="text-sm font-semibold text-gray-800">
+              {programBudget.toLocaleString("en-IN")} points
+            </span>
+          </div>
+        )}
+</div>
       <div className="space-y-3">
         <div>
           <label className="text-xs text-gray-500 mb-1 block">Select Employee</label>
@@ -195,6 +239,81 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
           )}
         </div>
 
+        {/* Recognition Values — dynamic multi-select from the program's values. */}
+        {programValues.length > 0 && (
+          <div className="relative">
+            <label className="text-xs text-gray-500 mb-1 block">Values</label>
+            <button
+              type="button"
+              onClick={() => setValuesOpen((v) => !v)}
+              className="flex w-full items-center bg-white justify-between rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-left hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <span className={selectedValues.length ? "text-gray-800" : "text-gray-400"}>
+                {selectedValues.length
+                  ? `${selectedValues.length} selected`
+                  : "Select values..."}
+              </span>
+              {valuesOpen ? (
+                <ChevronUp className="size-4 text-gray-400" />
+              ) : (
+                <ChevronDown className="size-4 text-gray-400" />
+              )}
+            </button>
+
+            {/* Selected values as chips (mirrors the appreciation card) —
+                shown above the dropdown list. */}
+            {selectedValues.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {selectedValues.map((v) => (
+                  <span
+                    key={v}
+                    className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600"
+                  >
+                    {v}
+                    <button
+                      type="button"
+                      onClick={() => toggleValue(v)}
+                      className="text-blue-400 hover:text-blue-700"
+                      aria-label={`Remove ${v}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {valuesOpen && (
+              <div className="mt-2 w-full max-h-56 overflow-y-auto rounded-lg border border-gray-200 bg-white p-1">
+                {programValues.map((v) => (
+                  <label
+                    key={v}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-50"
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-primary"
+                      checked={selectedValues.includes(v)}
+                      onChange={() => toggleValue(v)}
+                    />
+                    <span className="text-gray-700">{v}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* CC recipients — shown per Advanced Settings flags. */}
+        <RecognitionCcFields
+          showEmployees={enableCcEmployees}
+          showEmails={enableCcEmailIds}
+          ccEmployees={ccEmployees}
+          onChangeEmployees={setCcEmployees}
+          ccEmails={ccEmails}
+          onChangeEmails={setCcEmails}
+        />
+
         {/* Optional program-attached form for panel members. Revealed on click. */}
         {hasPanelForm && (
           <div>
@@ -214,6 +333,7 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
             {showPanelForm && (
               <div className="mt-3 rounded-lg border border-gray-200 p-3">
                 <Form
+                 
                   form={panelFormSchema as any}
                   submission={{ data: panelFormData }}
                   onChange={(change: any) => {
@@ -235,6 +355,10 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
             Submit
           </Button>
         </div>
+
+        {/* Program budget — shown only when a budget exists and it is not
+            hidden via Advanced Settings (hide_budgeted_points_frontend). */}
+
       </div>
     </div>
   );
