@@ -216,7 +216,10 @@ doc_events = {
     },
     "Employee":{
         "validate":["recruitment.customizations.job_applicant.validate_blacklist_employee","recruitment.customizations.employee.duplicate_check.validate_duplicate_employee"],
-        "after_insert":"recruitment.auto_fetch_fields.link_employee_to_onboarding"
+        "after_insert":[
+            "recruitment.auto_fetch_fields.link_employee_to_onboarding",
+            "recruitment.customizations.employee.leave_policy_assignment.create_leave_policy_assignment",
+        ]
 
     },
      "Job Applicant": {

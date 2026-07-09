@@ -8,3 +8,4 @@
 # Patches added in this section will be executed after doctypes are migrated
 recruitment.patches.interviewfeedback_funnel
 recruitment.patches.add_duplicate_check_fields #2
+recruitment.patches.add_default_leave_policy_field
