@@ -1,0 +1,226 @@
+{
+ "actions": [],
+ "creation": "2026-07-09 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "activation_section",
+  "enabled",
+  "enforce_before_onboarding",
+  "page_content_section",
+  "form_title",
+  "form_subtitle",
+  "intro_content_section",
+  "intro_content",
+  "information_section",
+  "information_column_label",
+  "information_col_break",
+  "purpose_column_label",
+  "information_table_section",
+  "information_clauses",
+  "closing_content_section",
+  "closing_content",
+  "declaration_section",
+  "declaration_heading",
+  "require_all_mandatory",
+  "consent_statements",
+  "acknowledgement_section",
+  "capture_employee_name",
+  "capture_date",
+  "acknowledgement_col_break",
+  "confirmation_note"
+ ],
+ "fields": [
+  {
+   "fieldname": "activation_section",
+   "fieldtype": "Section Break",
+   "label": "Activation"
+  },
+  {
+   "default": "0",
+   "description": "Master switch. When OFF (default), the DPDP consent page is never shown and the system behaves exactly as it does today. Turn ON only for sites/projects that require the DPDP consent step.",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enable DPDP Consent"
+  },
+  {
+   "default": "1",
+   "depends_on": "enabled",
+   "description": "When enabled, the candidate must accept the DPDP consent before Employee Onboarding can be initiated for them. If unchecked, the consent page is shown for acknowledgement but does not block onboarding.",
+   "fieldname": "enforce_before_onboarding",
+   "fieldtype": "Check",
+   "label": "Require Consent Before Onboarding"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "page_content_section",
+   "fieldtype": "Section Break",
+   "label": "Page Header"
+  },
+  {
+   "description": "Main heading of the consent page.",
+   "fieldname": "form_title",
+   "fieldtype": "Data",
+   "label": "Form Title"
+  },
+  {
+   "description": "Sub-heading shown under the title.",
+   "fieldname": "form_subtitle",
+   "fieldtype": "Small Text",
+   "label": "Form Subtitle"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "intro_content_section",
+   "fieldtype": "Section Break",
+   "label": "Introduction"
+  },
+  {
+   "description": "Rich-text introduction shown above the information table.",
+   "fieldname": "intro_content",
+   "fieldtype": "Text Editor",
+   "label": "Introduction Content"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "information_section",
+   "fieldtype": "Section Break",
+   "label": "Information Collected"
+  },
+  {
+   "default": "Information Collected",
+   "description": "Header of the left column of the information table.",
+   "fieldname": "information_column_label",
+   "fieldtype": "Data",
+   "label": "Information Column Label"
+  },
+  {
+   "fieldname": "information_col_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Purpose of Collection and Use",
+   "description": "Header of the right column of the information table.",
+   "fieldname": "purpose_column_label",
+   "fieldtype": "Data",
+   "label": "Purpose Column Label"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "information_table_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Each active row becomes one line of the \"Information Collected / Purpose\" table on the consent page.",
+   "fieldname": "information_clauses",
+   "fieldtype": "Table",
+   "label": "Information Clauses",
+   "options": "DPDP Information Clause"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "closing_content_section",
+   "fieldtype": "Section Break",
+   "label": "Closing Statement"
+  },
+  {
+   "description": "Rich-text content shown after the information table and before the declaration checkboxes.",
+   "fieldname": "closing_content",
+   "fieldtype": "Text Editor",
+   "label": "Closing Content"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "declaration_section",
+   "fieldtype": "Section Break",
+   "label": "Declaration & Consent"
+  },
+  {
+   "default": "Employee Declaration and Consent",
+   "description": "Heading shown above the consent checkboxes.",
+   "fieldname": "declaration_heading",
+   "fieldtype": "Data",
+   "label": "Declaration Heading"
+  },
+  {
+   "default": "1",
+   "description": "When checked, the candidate cannot submit until every statement marked Mandatory is ticked.",
+   "fieldname": "require_all_mandatory",
+   "fieldtype": "Check",
+   "label": "Require All Mandatory Statements"
+  },
+  {
+   "description": "Each active row becomes one consent checkbox on the page.",
+   "fieldname": "consent_statements",
+   "fieldtype": "Table",
+   "label": "Consent Statements",
+   "options": "DPDP Consent Statement"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "acknowledgement_section",
+   "fieldtype": "Section Break",
+   "label": "Acknowledgement Capture"
+  },
+  {
+   "default": "1",
+   "description": "Ask the candidate to type / confirm their name when accepting.",
+   "fieldname": "capture_employee_name",
+   "fieldtype": "Check",
+   "label": "Capture Employee Name"
+  },
+  {
+   "default": "1",
+   "description": "Record the date/time of acceptance in the consent log.",
+   "fieldname": "capture_date",
+   "fieldtype": "Check",
+   "label": "Capture Acceptance Date"
+  },
+  {
+   "fieldname": "acknowledgement_col_break",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Optional short note shown next to the acceptance button (e.g. legal footer).",
+   "fieldname": "confirmation_note",
+   "fieldtype": "Small Text",
+   "label": "Confirmation Note"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-07-09 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "DPDP Act Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

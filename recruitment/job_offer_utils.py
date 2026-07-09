@@ -8,6 +8,18 @@ from frappe.utils import formatdate, now_datetime, time_diff_in_hours, flt, fmt_
 from recruitment.recruitment.link_token import OFFER_SCOPE, offer_token, require_token
 
 
+def is_dpdp_consent_enabled():
+    """Whether the DPDP consent step is switched on in DPDP Act Settings.
+
+    Defensive by design: if the settings single/field does not exist yet (feature
+    not migrated on a site) it returns False, so callers behave exactly as before.
+    """
+    try:
+        return bool(cint(frappe.db.get_single_value("DPDP Act Settings", "enabled")))
+    except Exception:
+        return False
+
+
 def _authorize_offer(appl, token, ptype="read"):
     """Gate the offer endpoints for both audiences:
       - internal desk/HR users (logged in with Job Offer permission) — they call
@@ -198,7 +210,16 @@ def job_offer_update(status, appl, token=None, reason=None, message=None):
             )
 
         webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
-        return {"jo_id": jo_id, "webform": webform}
+
+        # On acceptance, tell the portal whether the DPDP consent page must be
+        # shown before onboarding. False (default) => behaves exactly as before.
+        dpdp_consent_required = is_dpdp_consent_enabled() if status == "Accepted" else False
+
+        return {
+            "jo_id": jo_id,
+            "webform": webform,
+            "dpdp_consent_required": dpdp_consent_required,
+        }
     finally:
         frappe.flags.ignore_permissions = original_ignore
 

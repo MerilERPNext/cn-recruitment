@@ -1,0 +1,63 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-09 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "consent_key",
+  "statement",
+  "is_mandatory",
+  "accepted"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "consent_key",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Key",
+   "read_only": 1
+  },
+  {
+   "columns": 6,
+   "fieldname": "statement",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "label": "Consent Statement",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "fieldname": "is_mandatory",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Mandatory",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "default": "0",
+   "description": "Whether the candidate ticked this statement.",
+   "fieldname": "accepted",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Accepted",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-09 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "DPDP Consent Response",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
