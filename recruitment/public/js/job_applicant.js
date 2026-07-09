@@ -1019,46 +1019,9 @@ frappe.ui.form.on('Job Applicant', {
 });
 
 
-frappe.ui.form.on('Job Applicant', {
-    refresh(frm) {
-        if (frm.doc.__islocal) return;
-
-        // Gated by Recruitment Settings -> Enable Pre Offer Form Button.
-        frappe.db.get_single_value('Recruitment Settings', 'enable_pre_offer_form').then((enabled) => {
-            if (!enabled) return;
-            frm.add_custom_button(__('Send Pre Offer Form'), () => {
-                // Pre-offer fields come from the Job Opening config now — no form to pick,
-                // just confirm and send. The candidate gets a Pre Offer action center item.
-                frappe.confirm(
-                    __('Are you sure you want to send the Pre Offer Form to this candidate?'),
-                    () => {
-                        frappe.call({
-                            method: 'recruitment.api.action_center.send_pre_offer',
-                            args: { job_applicant_id: frm.doc.name },
-                            freeze: true,
-                            freeze_message: __('Sending Pre Offer Form...'),
-                            callback(r) {
-                                if (r.message && r.message.status === 'success') {
-                                    const msg = r.message.already_sent
-                                        ? __('Pre Offer Form already sent — no change.')
-                                        : __('Pre Offer Form sent to candidate.');
-                                    frappe.show_alert({ message: msg, indicator: 'green' });
-                                    frm.reload_doc();
-                                } else {
-                                    frappe.msgprint({
-                                        title: __('Error'),
-                                        indicator: 'red',
-                                        message: (r.message && r.message.message) || __('Failed to send Pre Offer Form.'),
-                                    });
-                                }
-                            },
-                        });
-                    }
-                );
-            }, __('Actions'));
-        });
-    }
-});
+// NOTE: The "Send Pre Offer Form" action now lives inline on the Offer stage of
+// the visual hiring-workflow flow (hiring_workflow_flow.js → sendPreOffer), so the
+// standalone top button was removed to avoid a duplicate control.
 
 
 frappe.ui.form.on('Job Applicant', {
@@ -1235,122 +1198,23 @@ frappe.realtime.on("screening_done", (data) => {
  * hiring stages (custom_hiring_stages). Server: recruitment.api.hiring_stage
  * ------------------------------------------------------------------ */
 (function () {
+    // The stage controls (Move / Jump / Schedule Interview / Reject) now live in
+    // the visual hiring-workflow flow (hiring_workflow_flow.js). Here we only keep
+    // a lightweight dashboard indicator showing the current stage at a glance.
     const API = "recruitment.api.hiring_stage";
-    const GROUP = __("Hiring Workflow");
-
-    function reload(frm) {
-        frm.reload_doc();
-    }
-
-    function scheduleInterview(frm) {
-        frappe.call({
-            method: API + ".prepare_interview",
-            args: { job_applicant: frm.doc.name },
-            freeze: true,
-            callback: (r) => {
-                const m = r && r.message;
-                if (!m) return;
-                frappe.model.with_doctype("Interview", () => {
-                    const d = frappe.model.get_new_doc("Interview");
-                    d.job_applicant = m.job_applicant;
-                    d.interview_round = m.interview_round;
-                    if (m.designation) d.designation = m.designation;
-                    if (m.job_opening) d.job_opening = m.job_opening;
-                    frappe.set_route("Form", "Interview", d.name);
-                });
-            },
-        });
-    }
-
-    function jumpToStage(frm, stages, current) {
-        const names = (stages || []).map((s) => s.stage_name).filter(Boolean);
-        if (!names.length) return;
-        frappe.prompt(
-            [{
-                fieldname: "stage_name",
-                label: __("Move candidate to stage"),
-                fieldtype: "Select",
-                options: names.join("\n"),
-                default: current || names[0],
-                reqd: 1,
-            }],
-            (values) => {
-                frappe.call({
-                    method: API + ".set_stage",
-                    args: { job_applicant: frm.doc.name, stage_name: values.stage_name },
-                    freeze: true,
-                    callback: () => reload(frm),
-                });
-            },
-            __("Jump to Stage"),
-            __("Move")
-        );
-    }
-
-    function rejectCandidate(frm) {
-        frappe.prompt(
-            [{ fieldname: "reason", label: __("Reason"), fieldtype: "Small Text" }],
-            (values) => {
-                frappe.call({
-                    method: API + ".reject_at_current_stage",
-                    args: { job_applicant: frm.doc.name, reason: values.reason || "" },
-                    freeze: true,
-                    callback: () => reload(frm),
-                });
-            },
-            __("Reject Candidate"),
-            __("Reject")
-        );
-    }
-
-    function buildButtons(frm, info) {
-        // Only add the stage buttons, and only when the feature is enabled.
-        if (!(info && info.enabled)) return;
-
-        const stages = (info && info.stages) || [];
-        if (!stages.length) return; // opening has no workflow configured
-
-        const current = info.current_stage;
-        const closed = ["Rejected", "Accepted"].includes(frm.doc.status);
-
-        if (current) {
-            frm.dashboard.add_indicator(
-                __("Stage: {0}", [current]),
-                closed ? "gray" : "blue"
-            );
-        }
-
-        if (!closed) {
-            if (!info.is_last) {
-                frm.add_custom_button(__("Move to Next Stage"), () => {
-                    frappe.call({
-                        method: API + ".move_to_next_stage",
-                        args: { job_applicant: frm.doc.name },
-                        freeze: true,
-                        callback: () => reload(frm),
-                    });
-                }, GROUP);
-            }
-
-            frm.add_custom_button(__("Jump to Stage…"), () => jumpToStage(frm, stages, current), GROUP);
-
-            if (info.current_stage_type === "Interview") {
-                frm.add_custom_button(__("Schedule Interview"), () => scheduleInterview(frm), GROUP);
-            }
-
-            frm.add_custom_button(__("Reject Candidate"), () => rejectCandidate(frm), GROUP);
-        }
-    }
 
     frappe.ui.form.on("Job Applicant", {
         refresh(frm) {
-            // Buttons only apply to a saved applicant (seeding runs after
-            // insert). The tab itself hides/shows natively via depends_on.
             if (frm.is_new()) return;
             frappe.call({
                 method: API + ".get_stage_options",
                 args: { job_applicant: frm.doc.name },
-                callback: (r) => buildButtons(frm, r && r.message),
+                callback: (r) => {
+                    const info = r && r.message;
+                    if (!(info && info.enabled && info.current_stage)) return;
+                    const closed = ["Rejected", "Accepted"].includes(frm.doc.status);
+                    frm.dashboard.add_indicator(__("Stage: {0}", [info.current_stage]), closed ? "gray" : "blue");
+                },
             });
         },
     });

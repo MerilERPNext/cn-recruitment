@@ -20,7 +20,22 @@ import ReportingDetailsFormV2 from "./ReportingDetailsFormV2/ReportingDetailsFor
 import ConfirmationModal from "../shared/atoms/ConfirmationModal";
 import NoDataFound from "../shared/atoms/NoDataFound";
 import { useLoadingOverlay } from "../../context/OverlayContext";
+import { computeSlideDateBounds, toDateOnly } from "../../utils/slideDateBounds";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
+
+// Sort a reporting category's items current-first, then newest start_date first
+// (same order the cards render in and the order computeSlideDateBounds expects).
+const sortReportingItems = (items: any[]): any[] =>
+  [...items].sort((a, b) => {
+    const aIsCurrent = !a.end_date;
+    const bIsCurrent = !b.end_date;
+    if (aIsCurrent && !bIsCurrent) return -1;
+    if (!aIsCurrent && bIsCurrent) return 1;
+    const aDate = a.start_date ? new Date(a.start_date).getTime() : 0;
+    const bDate = b.start_date ? new Date(b.start_date).getTime() : 0;
+    return bDate - aDate;
+  });
 
 const CATEGORY_FIELD_MAP: Record<string, string> = {
   "Manager": "reports_to",
@@ -28,7 +43,7 @@ const CATEGORY_FIELD_MAP: Record<string, string> = {
   "HOD": "custom_hod",
   "CXO": "custom_cxo",
   "HRBP": "custom_hrbp",
-  "HRBP Lead": "custom_hrbp_lead",
+  "HRBP Lead": "hrbp_lead",
 };
 
 const CATEGORY_LABEL_MAP: Record<string, string> = {
@@ -112,10 +127,30 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
       setPendingDeleteCategory(null);
       onActionSuccess?.(category || undefined);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
-      toast.error(message);
+      toast.error(errorResponseFormater(err, "Something went wrong. Please try again."));
     }
   };
+
+  // Date bounds for the currently open reporting add/edit modal. Reporting items
+  // use start_date/end_date and expose can_delete (not can_edit), so map them to
+  // the shape computeSlideDateBounds expects. On ADD only the joining floor
+  // applies (no item yet).
+  const reportingBounds = (() => {
+    const sorted = sortReportingItems((hierarchyData?.data || {})[selectedCategory] || []);
+    const mapped = sorted.map((it: any) => ({
+      from_date: it.start_date,
+      to_date: it.end_date,
+      // The reporting endpoint doesn't surface a prev-employee lock flag yet, so
+      // disableStartDate stays off here; keyed to can_edit for when it does.
+      can_edit: it.can_edit,
+    }));
+    const editIndex = selectedItem
+      ? sorted.findIndex((it: any) => it.name === selectedItem.name)
+      : -1;
+    return isEditing && selectedItem && editIndex >= 0
+      ? computeSlideDateBounds(mapped, mapped[editIndex], currentEmployee?.date_of_joining)
+      : { startMinDate: toDateOnly(currentEmployee?.date_of_joining) };
+  })();
 
   interface HierarchyCardProps {
     name: string;
@@ -128,6 +163,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
     onDelete?: () => void;
     itemName: string;
     canDelete?: boolean;
+    canEdit?: boolean;
   }
 
   const HierarchyCard: React.FC<HierarchyCardProps> = ({
@@ -140,6 +176,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
     onEdit,
     onDelete,
     canDelete,
+    canEdit,
   }) => {
     const isCurrent = !endDate;
 
@@ -158,7 +195,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
               </Link>
 
               <div className="flex gap-1">
-                {id && canEditReportingDetails && (
+                {id && canEditReportingDetails && canEdit !== false && (
                   <IconButton
                     onClick={() => onEdit?.()}
                     icon={<EditIcon className="h-4 w-4" />}
@@ -264,15 +301,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
         {/* Hierarchy History Cards */}
         {Object.keys(CATEGORY_FIELD_MAP).map((category) => {
           const items: any[] = hierarchySections[category] || [];
-          const sortedItems = [...items].sort((a, b) => {
-            const aIsCurrent = !a.end_date;
-            const bIsCurrent = !b.end_date;
-            if (aIsCurrent && !bIsCurrent) return -1;
-            if (!aIsCurrent && bIsCurrent) return 1;
-            const aDate = a.start_date ? new Date(a.start_date).getTime() : 0;
-            const bDate = b.start_date ? new Date(b.start_date).getTime() : 0;
-            return bDate - aDate;
-          });
+          const sortedItems = sortReportingItems(items);
 
           return (
             <div key={category} className="mb-5 md:mb-10" data-subsection={category}>
@@ -308,6 +337,7 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
                         location={item.branch_name}
                         itemName={item?.name}
                         canDelete={!!item.can_delete}
+                        canEdit={item.can_edit !== false}
                         onEdit={() => openEditModal(category, item)}
                         onDelete={() => {
                           setPendingDeleteId(item?.name);
@@ -335,6 +365,14 @@ const ReportingDetails = ({ onActionSuccess }: ReportingDetailsProps) => {
           isEdit={isEditing}
           category={getCategoryLabel(selectedCategory)}
           categoryField={selectedCategoryField}
+          // First slide for this category -> lock start date to the joining date.
+          lockStartDate={((hierarchyData?.data || {})[selectedCategory] || []).length === 0}
+          defaultStartDate={
+            ((hierarchyData?.data || {})[selectedCategory] || []).length === 0
+              ? currentEmployee?.date_of_joining || null
+              : new Date().toISOString()
+          }
+          {...reportingBounds}
           initialEditData={selectedItem ? {
             name: selectedItem.name,
             reports_to: selectedItem.records,

@@ -8,15 +8,43 @@ import frappe
 
 
 def after_install():
-    sync_all_lookup_fields()
     repair_broken_fetch_from()
 
 
 def after_migrate():
-    sync_all_lookup_fields()
     repair_broken_fetch_from()
     ensure_performance_indexes()
     ensure_job_offer_salary_period()
+    ensure_tpo_access()
+
+
+def ensure_tpo_access():
+    """Keep the TPO role's permissions in sync on every migrate: create/read/write
+    on Candidate Registration, and READ-ONLY (never create) on Campus Invite."""
+    try:
+        from recruitment.recruitment.tpo_access import (
+            ensure_tpo_role,
+            ensure_tpo_permissions,
+            ensure_tpo_readonly_permissions,
+        )
+
+        ensure_tpo_role()
+        ensure_tpo_permissions()
+        ensure_tpo_readonly_permissions()
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_tpo_access: skipped")
+
+    # Backfill the new Campus Invite.status so pre-existing invites (status NULL)
+    # aren't wrongly hidden by the "status != Completed" list/link filters.
+    try:
+        if frappe.get_meta("Campus Invite").get_field("status"):
+            frappe.db.sql(
+                """UPDATE `tabCampus Invite`
+                   SET status = CASE WHEN docstatus = 1 THEN 'Invited' ELSE 'Draft' END
+                   WHERE status IS NULL OR status = ''"""
+            )
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_tpo_access: campus invite status backfill skipped")
 
 
 def ensure_job_offer_salary_period():
@@ -67,8 +95,8 @@ _PERF_INDEX_TARGETS = [
     ("Interview", "job_applicant"),
     ("Interview", "job_opening"),
     ("Interview Detail", "interviewer"),
-    ("Job Opening External Recruiter", "external_recruiter"),
-    ("Job Opening External Recruiter", "external_recruiter_group"),
+    ("Job Opening Posting Channel", "external_recruiter"),
+    ("Job Opening Posting Channel", "external_recruiter_group"),
     ("TA External Recruiter Group Member", "external_recruiter"),
 ]
 
@@ -196,17 +224,3 @@ def repair_broken_fetch_from():
                 len(cleared), "; ".join(cleared)
             )
         )
-
-
-def sync_all_lookup_fields():
-    """Populate TA Job Applicant Field from the live Job Applicant schema.
-
-    Both TA Duplicity Check Settings and TA Rehire Check Settings use this
-    same master to drive their field-picker Table MultiSelect.  Calling it
-    here ensures the records exist on any fresh install or after a migrate,
-    without requiring someone to first open a settings form in the browser."""
-    from recruitment.recruitment.doctype.ta_duplicity_check_settings.ta_duplicity_check_settings import (
-        sync_job_applicant_fields,
-    )
-
-    sync_job_applicant_fields()

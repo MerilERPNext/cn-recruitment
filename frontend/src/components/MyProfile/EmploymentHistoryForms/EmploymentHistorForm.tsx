@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import Button from "../../shared/atoms/Button";
 import employmentHistoryFormSchema from "./employmentHistoryFormSchema.json";
+import { withComponentDisabled } from "../../../utils/withComponentDisabled";
+import { withDateBounds } from "../../../utils/withDateBounds";
 import {
   useAddEmployeeHistoryMutation,
   useCurrentEmployeeDetails,
@@ -33,6 +36,18 @@ interface EmploymentHistoryProps {
   onCancel?: () => void;
   isEdit?: boolean;
   defaultStartDate?: string | null;
+  // When true (the very first slide for this section), the start date is locked
+  // to the employee's joining date and shown read-only.
+  lockStartDate?: boolean;
+  // Date-picker bounds (YYYY-MM-DD) so the calendar disallows overlaps with the
+  // neighbouring slides and any date before the joining date.
+  startMinDate?: string;
+  startMaxDate?: string;
+  endMinDate?: string;
+  endMaxDate?: string;
+  // When the previous (older) slide is a locked previous-employee tile, the
+  // start date can't move — render it read-only so only end date is editable.
+  disableStartDate?: boolean;
   initialEditData?: InitialEditData;
 }
 
@@ -41,6 +56,12 @@ const EmploymentHistoryForm = ({
   onSuccess,
   isEdit = false,
   defaultStartDate,
+  lockStartDate = false,
+  startMinDate,
+  startMaxDate,
+  endMinDate,
+  endMaxDate,
+  disableStartDate = false,
   initialEditData,
 }: EmploymentHistoryProps) => {
   const [instance, setInstance] = useState<any>(null);
@@ -168,6 +189,19 @@ const EmploymentHistoryForm = ({
     initialEditData,
   ]);
 
+  // First slide for this section: render the start date read-only, locked to
+  // the joining date. Baked into the schema (reliable for datetime widgets).
+  const formSchema = useMemo(() => {
+    let s = withComponentDisabled(
+      employmentHistoryFormSchema,
+      "startDate",
+      (!!lockStartDate && !isEdit) || !!disableStartDate,
+    );
+    s = withDateBounds(s, "startDate", { minDate: startMinDate, maxDate: startMaxDate });
+    s = withDateBounds(s, "endDate", { minDate: endMinDate, maxDate: endMaxDate });
+    return s;
+  }, [lockStartDate, isEdit, disableStartDate, startMinDate, startMaxDate, endMinDate, endMaxDate]);
+
   const validateForm = (data: any) => {
     if (!instance) return false;
 
@@ -238,8 +272,7 @@ const EmploymentHistoryForm = ({
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       onSuccess ? onSuccess() : onCancel?.();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
-      toast.error(message);
+      toast.error(errorResponseFormater(err, "Something went wrong. Please try again."));
       instance.redraw();
     }
   };
@@ -285,7 +318,7 @@ const EmploymentHistoryForm = ({
               </div>
             )}
           <Form
-            form={employmentHistoryFormSchema}
+            form={formSchema}
             /** CRITICAL FIX: Do NOT pass submission prop */
             onFormReady={(form: any) => {
               setInstance(form);

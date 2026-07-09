@@ -1,14 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
-  Attachment,
   FlowRequestItem,
   WorkflowStage,
 } from "../../../../types/flows";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Clock, RefreshCw, User, X } from "lucide-react";
-import { createPortal } from "react-dom";
+import { Check, Clock, User, X } from "lucide-react";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import {
   handleActionType,
@@ -17,24 +15,17 @@ import {
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import {
   extractRolesAndUsers,
-  FormIOForm,
-  getStageActorDetails,
 } from "../../../../utils/flowUtils";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { getStageAssignedUsersCell } from "../../../../utils/getAssignedUsersCell";
 import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
-import Button from "../../../shared/atoms/Button";
 import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import { Typography } from "../../../shared/atoms/Typography";
 import CardTable from "../../../shared/CardTable";
 import MobileAllocatedTo from "../../../shared/MobileAllocatedTo";
-import FormPreview from "../../../shared/molecules/FormPreview";
 import Tooltip from "../../../shared/Tooltip";
-import WrapperHoverCard from "../../../shared/WrapperHoverCard";
-import ReviewForm from "../../Separation/components/ReviewForm";
-import AttachmentPreview from "./AttachmentPreview";
-import RetriggerModal from "./RetriggerModal";
+import WorkflowStageActions from "./WorkflowStageActions";
 
 interface WorkflowTableProps {
   data: FlowRequestItem;
@@ -52,7 +43,7 @@ const titles = [
   "Actions",
 ];
 
-const columnWidths = ["1fr", "1fr", "1fr", "0.8fr", "1fr", "0.8fr", "1.2fr", "1.5fr"];
+const columnWidths = ["1fr", "150px", "250px", "150px", "150px", "150px", "150px", "150px"];
 const gridTemplate = columnWidths.join(" ");
 
 const WorkflowTable: React.FC<WorkflowTableProps> = ({ data, noPadding = false }) => {
@@ -107,7 +98,7 @@ const WorkflowTable: React.FC<WorkflowTableProps> = ({ data, noPadding = false }
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-4 py-2">
+          <div className="flex flex-col gap-4 py-2 px-2">
             {data.workflow_stages.length > 0 ? (
               data.workflow_stages.map((stage, idx) => (
                 <WorkflowCard
@@ -142,45 +133,7 @@ const WorkflowCard = ({
   isLast: boolean;
   handleAction: handleActionType;
 }) => {
-  const actions = useMemo(() => {
-    try {
-      return stage?.todo?.custom_doctype_actions
-        ? JSON.parse(stage.todo.custom_doctype_actions)
-        : [];
-    } catch (e) {
-      console.error("Failed to parse custom_doctype_actions", e);
-      return [];
-    }
-  }, [stage?.todo?.custom_doctype_actions]);
-
-  const actionsWithForm = useMemo(() => {
-    try {
-      return stage?.todo?.custom_doctype_actions_with_form
-        ? JSON.parse(
-          stage.todo.custom_doctype_actions_with_form.replace(/'/g, '"'),
-        )
-        : [];
-    } catch (e) {
-      console.error("Failed to parse custom_doctype_actions_with_form", e);
-      return [];
-    }
-  }, [stage?.todo?.custom_doctype_actions_with_form]);
-
   const { isDesktop } = useScreenSize();
-
-  const onAction = (action: string, data: any) => {
-    handleAction(
-      action,
-      {
-        todo_id: data.name,
-        custom_approval_type: data.custom_approval_type,
-        custom_open_chatnext_assistant_on_action:
-          !actionsWithForm.includes(action),
-      },
-      "Action Performed Successfully",
-    );
-  };
-
   const { data: currentUser } = useCurrentUser();
 
   // Build allocatedTo from todo's custom_assigned_to_roles + role_assigned_users
@@ -223,17 +176,6 @@ const WorkflowCard = ({
     return actionPermission;
   }, [currentUser, isActive, allocatedTo, stage.can_act]);
 
-  // Action Taken By — reuse the same helper as FlowTableRow
-  const actorDetails = useMemo(() => {
-    if (!stage.selected_action) return null; // no action taken yet
-    return getStageActorDetails(
-      stage.allocated_to,
-      stage.role_assigned_users ?? stage.todo?.role_assigned_users ?? [],
-      stage.target ?? "",
-      stage.target_name ?? "",
-    );
-  }, [stage]);
-
   // Actual Trigger Date — the todo creation timestamp is when the stage was actually triggered
   const actualTriggerDate = stage.todo?.creation ?? null;
 
@@ -270,36 +212,6 @@ const WorkflowCard = ({
     }
   };
 
-  const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [responseData, setResponseData] = useState<{
-    addAttachment?: Attachment[];
-  } | null>(null);
-  const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
-
-  // Retrigger modal state
-  const [showRetriggerModal, setShowRetriggerModal] = useState(false);
-
-  const handleShowForm = () => {
-    let formData: Record<string, unknown> = {};
-    try {
-      formData = JSON.parse(
-        stage?.form_data_display || stage?.form_data ||
-        "{}",
-      );
-    } catch (error) {
-      console.error("Invalid form_data JSON:", error);
-      return;
-    }
-    const schema = (formData as any)?.form?.components ?? [];
-    const data = (formData as any)?.submission_data ?? {};
-    if (!schema) return;
-    setFormSchema({ display: "form", components: schema });
-    setFormAnswer(data);
-    setResponseData(data);
-    setShowForm(true);
-  };
-
   return (
     <>
       {isDesktop ? (
@@ -309,10 +221,15 @@ const WorkflowCard = ({
           style={{ gridTemplateColumns: gridTemplate }}
         >
           {/* Stage Name */}
-          <div className="flex justify-center items-center">
-            <Typography variant="bodySmall" className="font-medium text-center">
-              {stage.trigger_title || "-"}
-            </Typography>
+          <div className="flex justify-center items-center min-w-0 px-2">
+            <Tooltip content={stage.trigger_title || "-"} position="top">
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center truncate max-w-[350px] block cursor-pointer"
+              >
+                {stage.trigger_title || "-"}
+              </Typography>
+            </Tooltip>
           </div>
 
           {/* Assigned To */}
@@ -334,18 +251,17 @@ const WorkflowCard = ({
 
           {/* Action Taken By */}
           <div className="flex justify-center items-center overflow-hidden">
-            {actorDetails ? (
-              <WrapperHoverCard
-                employeeId={actorDetails.employee}
-                placement="center-left"
+            {stage?.action_taken_by ? (
+              <Tooltip
+                content={stage?.action_taken_by}
               >
                 <Typography
                   variant="bodySmall"
                   className="font-medium truncate text-center cursor-pointer text-primary-600 hover:underline"
                 >
-                  {actorDetails.name}
+                  {stage?.action_taken_by_name}
                 </Typography>
-              </WrapperHoverCard>
+              </Tooltip>
             ) : (
               <Typography
                 variant="bodySmall"
@@ -391,25 +307,13 @@ const WorkflowCard = ({
 
           {/* Actions */}
           <div className="flex flex-wrap items-center justify-center gap-2">
-            {stage?.form_data && stage.status !== "Pending" && (
-              <Button variant="outline" onClick={handleShowForm}>
-                Review Form
-              </Button>
-            )}
-            {canPerformActions && actions.length > 0 && (
-              <Button onClick={() => onAction(actions[0], stage?.todo)}>
-                Act
-              </Button>
-            )}
-            {stage.can_retrigger && (
-              <Button
-                variant="outline"
-                onClick={() => setShowRetriggerModal(true)}
-                icon={<RefreshCw size={14} />}
-              >
-                Retrigger
-              </Button>
-            )}
+            <WorkflowStageActions
+              stage={stage}
+              handleAction={handleAction}
+              variant="pill"
+              canAct={canPerformActions}
+              idx={idx}
+            />
           </div>
         </div>
       ) : (
@@ -494,7 +398,7 @@ const WorkflowCard = ({
                 </div>
 
                 {/* Action Taken By */}
-                {actorDetails && (
+                {stage?.action_taken_by_name && (
                   <div className="flex justify-between items-start text-sm gap-4">
                     <Typography
                       variant="mobileCardLabel"
@@ -502,12 +406,16 @@ const WorkflowCard = ({
                     >
                       Action Taken By
                     </Typography>
-                    <Typography
-                      variant="mobileCardValue"
-                      className="text-right flex-1 min-w-0 mt-0.5 text-primary-600"
+                    <Tooltip
+                      content={stage?.action_taken_by}
                     >
-                      {actorDetails.name}
-                    </Typography>
+                      <Typography
+                        variant="mobileCardValue"
+                        className="text-right flex-1 min-w-0 mt-0.5 text-primary-600"
+                      >
+                        {stage?.action_taken_by_name}
+                      </Typography>
+                    </Tooltip>
                   </div>
                 )}
 
@@ -545,64 +453,16 @@ const WorkflowCard = ({
               </div>
             </div>
 
-            {stage?.form_data && stage.status !== "Pending" && (
-              <Button
-                onClick={handleShowForm}
-                className="mt-2 w-full"
-                variant="outline"
-              >
-                Review Form
-              </Button>
-            )}
-            {canPerformActions && actions.length > 0 && (
-              <div className="mt-3">
-                <Button
-                  className="w-full"
-                  onClick={() => onAction(actions[0], stage?.todo)}
-                >
-                  Act
-                </Button>
-              </div>
-            )}
-            {stage.can_retrigger && (
-              <div className="mt-2">
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => setShowRetriggerModal(true)}
-                  icon={<RefreshCw size={14} />}
-                >
-                  Retrigger
-                </Button>
-              </div>
-            )}
+            <WorkflowStageActions
+              stage={stage}
+              handleAction={handleAction}
+              variant="buttons"
+              canAct={canPerformActions}
+              idx={idx}
+            />
           </div>
         </div>
       )}
-
-      {formSchema &&
-        showForm &&
-        createPortal(
-          <ReviewForm onClose={() => setShowForm(false)}>
-            <FormPreview
-              containerId={`workflow-stage-${idx}-form-preview`}
-              schema={formSchema}
-              submissionData={formAnswer}
-              readOnly={true}
-            />
-            <AttachmentPreview
-              attachments={responseData?.addAttachment || []}
-            />
-          </ReviewForm>,
-          document.body,
-        )}
-
-      {/* Retrigger Confirmation Modal */}
-      <RetriggerModal
-        isOpen={showRetriggerModal}
-        onClose={() => setShowRetriggerModal(false)}
-        stage={stage}
-      />
     </>
   );
 };

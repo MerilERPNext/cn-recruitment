@@ -132,6 +132,14 @@ interface FlatpickrInput extends HTMLInputElement {
   __closeOtherFPHandler?: () => void;
 }
 
+// Normalize any date representation to a stable local day-start key so that
+// state (and the react-query keys derived from it) doesn't churn when formio
+// flips between Date objects and ISO strings for the same calendar day.
+const toLocalDayKey = (value: string | Date): string => {
+  const d = value instanceof Date ? value : new Date(value);
+  return isValid(d) ? format(startOfDay(d), "yyyy-MM-dd'T'HH:mm:ss") : String(value);
+};
+
 interface AttendanceRequestFormV2Props {
   onClose: () => void;
   selectedDate?: Date | string;
@@ -396,6 +404,19 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
             if (maxD) { comp.datePicker.maxDate = maxD; comp.widget.maxDate = maxD; }
           });
         }
+
+        // Same reasoning as above, for the freeze-driven disabled state:
+        // this rebuild starts from the original JSON (no disabled flag), so
+        // re-inject it here or a reqValidationmutation-triggered rebuild
+        // would silently re-enable checkin/checkout while frozen.
+        const freezeActive =
+          requestTypeChanged === "Attendance Adjustment" &&
+          !!(attendanceRequestAttachmentsMandatory as any)
+            ?.freeze_in_out_time_to_shift_timings;
+        (["checkin_time", "checkout_time"] as const).forEach((key) => {
+          const comp = panel?.components?.find((c: SchemaComponent) => c.key === key);
+          if (comp) comp.disabled = freezeActive;
+        });
       }
 
       try {
@@ -411,8 +432,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     // include requiredFieldMap so required flags are respected after filtering
     // include attendanceRequestAttachmentsMandatory so date constraints survive
     // schema rebuilds triggered by reqValidationmutation arriving after attachment data
+    // include requestTypeChanged so the freeze-driven disabled state above is correct
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reqValidationmutation?.data, propSchema, requiredFieldMap, attendanceRequestAttachmentsMandatory]);
+  }, [reqValidationmutation?.data, propSchema, requiredFieldMap, attendanceRequestAttachmentsMandatory, requestTypeChanged]);
 
   const start = useMemo(() => {
     const d = fromDateChanged ? new Date(fromDateChanged) : selectedDate;
@@ -445,6 +467,21 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     enabled: !!activeEmployeeId,
   });
 
+  const sortedLogs = useMemo(() => {
+    const rawLogs = homeSummary || [];
+    return [...rawLogs].sort((a, b) => {
+      const timeA = new Date(a.time.replace(" ", "T")).getTime();
+      const timeB = new Date(b.time.replace(" ", "T")).getTime();
+      return timeA - timeB;
+    });
+  }, [homeSummary]);
+
+  const latestCheckin =
+    sortedLogs.find((c) => c.log_type === "IN")?.time || null;
+
+  const latestCheckout =
+    [...sortedLogs].reverse().find((c) => c.log_type === "OUT")?.time || null;
+
   const normalizeTime = (timeStr?: string) => {
     if (!timeStr) return null;
     try {
@@ -463,6 +500,17 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     }
   };
   const initialSubmissionSet = useRef(false);
+  // Once the user manually edits a time field it belongs to them: the prefill
+  // effect must not overwrite it. Flags reset when the date/employee changes,
+  // because that legitimately triggers a fresh prefill.
+  const userEditedTimes = useRef({ checkin: false, checkout: false });
+  // Last value the prefill effect wrote, so re-runs of the effect (query
+  // refetches, isFetching toggles, request-type changes) are no-ops unless the
+  // underlying data actually changed.
+  const lastPrefilledTimes = useRef<{
+    checkin: string | null;
+    checkout: string | null;
+  }>({ checkin: null, checkout: null });
   const initialSubmission = useMemo(
     () => ({
       data: {
@@ -474,21 +522,17 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           defaultAttendanceData?.reference_document?.custom_request_type,
         employee: defaultAttendanceData?.reference_document?.employee,
         company: "",
-        checkin_time: defaultAttendanceData?.reference_document
-          ?.custom_from_time
-          ? new Date(
-            `1970-01-01T${normalizeTime(
-              defaultAttendanceData?.reference_document.custom_from_time,
-            )}`,
-          )
-          : undefined,
-        checkout_time: defaultAttendanceData?.reference_document?.custom_to_time
-          ? new Date(
-            `1970-01-01T${normalizeTime(
-              defaultAttendanceData?.reference_document?.custom_to_time,
-            )}`,
-          )
-          : undefined,
+        // formio time components store values as "HH:mm:ss" strings
+        // (dataFormat); feeding them Date objects makes every reformat cycle
+        // re-parse the value with the wrong format and drift/mangle it.
+        checkin_time:
+          normalizeTime(
+            defaultAttendanceData?.reference_document?.custom_from_time,
+          ) || undefined,
+        checkout_time:
+          normalizeTime(
+            defaultAttendanceData?.reference_document?.custom_to_time,
+          ) || undefined,
         custom__request_reason:
           defaultAttendanceData?.reference_document?.custom__request_reason ||
           "",
@@ -600,6 +644,42 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     });
   }, [attendanceRequestAttachmentsMandatory]);
 
+  // Persist the freeze-driven disabled state directly into the schema, not
+  // just the live formio instance. Whenever attendanceRequestAttachmentsMandatory
+  // (or reqValidationmutation/requiredFieldMap) changes, the schema-filtering
+  // effects above call setFormSchema with a schema cloned from the *original*
+  // JSON — formio's Form.setForm() then sees a schema it hasn't seen before
+  // and calls rebuild(), recreating checkin_time/checkout_time as brand-new
+  // component instances from that schema. A `.disabled` flag set directly on
+  // the old instance doesn't survive that; baking it into the schema here
+  // means every rebuild already has the right value.
+  useEffect(() => {
+    const freezeActive =
+      requestTypeChanged === "Attendance Adjustment" &&
+      !!(attendanceRequestAttachmentsMandatory as any)
+        ?.freeze_in_out_time_to_shift_timings;
+
+    setFormSchema((prev) => {
+      const panel = prev.components?.[0];
+      const alreadyCorrect = ["checkin_time", "checkout_time"].every(
+        (key) =>
+          !!panel?.components?.find((c: SchemaComponent) => c.key === key)
+            ?.disabled === freezeActive,
+      );
+      if (alreadyCorrect) return prev;
+
+      const updated = JSON.parse(JSON.stringify(prev)) as FormSchema;
+      const updatedPanel = updated.components?.[0];
+      (["checkin_time", "checkout_time"] as const).forEach((key) => {
+        const comp = updatedPanel?.components?.find(
+          (c: SchemaComponent) => c.key === key,
+        );
+        if (comp) comp.disabled = freezeActive;
+      });
+      return updated;
+    });
+  }, [attendanceRequestAttachmentsMandatory, requestTypeChanged]);
+
   // Sync attachment mandatory status and date limits onto the live formio instance.
   // This runs after the form is ready and keeps hidden fields + flatpickr in sync
   // with the API response (handles both first-load and request-type changes).
@@ -692,27 +772,37 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         ?.freeze_in_out_time_to_shift_timings;
     const checkinTimeComp = instance.getComponent("checkin_time") as any;
     const checkoutTimeComp = instance.getComponent("checkout_time") as any;
-    if (checkinTimeComp?.component) {
-      checkinTimeComp.component.disabled = freezeActive;
+    // Form.io's renderer reads the component *instance's* `disabled` flag
+    // (Component.js elementInfo() -> `this.disabled`), not the static schema
+    // config at `.component.disabled` — mutating only the schema object never
+    // reaches the rendered <input>'s disabled attribute. Set both so the
+    // schema stays consistent for any future rebuild too.
+    if (checkinTimeComp) {
+      checkinTimeComp.disabled = freezeActive;
+      if (checkinTimeComp.component) {
+        checkinTimeComp.component.disabled = freezeActive;
+      }
     }
-    if (checkoutTimeComp?.component) {
-      checkoutTimeComp.component.disabled = freezeActive;
+    if (checkoutTimeComp) {
+      checkoutTimeComp.disabled = freezeActive;
+      if (checkoutTimeComp.component) {
+        checkoutTimeComp.component.disabled = freezeActive;
+      }
     }
     if (freezeActive) {
+      // freeze_in_out_time_to_shift_timings === true means the shift's own
+      // start/end always win — no check-in/out log data, ever. The fields
+      // are disabled above, so this is the only value the user can see.
       if (checkinTimeComp && shiftStartTimeRaw) {
         const normalized = normalizeTime(shiftStartTimeRaw);
         if (normalized) {
-          checkinTimeComp.setValue(new Date(`1970-01-01T${normalized}`), {
-            noUpdateEvent: true,
-          });
+          checkinTimeComp.setValue(normalized, { noUpdateEvent: true });
         }
       }
       if (checkoutTimeComp && shiftEndTimeRaw) {
         const normalized = normalizeTime(shiftEndTimeRaw);
         if (normalized) {
-          checkoutTimeComp.setValue(new Date(`1970-01-01T${normalized}`), {
-            noUpdateEvent: true,
-          });
+          checkoutTimeComp.setValue(normalized, { noUpdateEvent: true });
         }
       }
     }
@@ -1058,20 +1148,45 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         }
       }
 
-      if (submission?.data?.from_date) {
-        const newFrom = submission.data.from_date.toString();
+      // A new date/employee means a fresh check-in fetch: release ownership
+      // (tracked via native DOM listeners in onFormReady) so the incoming
+      // data can prefill the time fields again.
+      const changedKey = submission?.changed?.component?.key;
+      if (
+        changedKey === "from_date" ||
+        changedKey === "to_date" ||
+        changedKey === "date" ||
+        changedKey === "employee"
+      ) {
+        userEditedTimes.current = { checkin: false, checkout: false };
+        lastPrefilledTimes.current = { checkin: null, checkout: null };
+      }
+
+      // Only re-derive our own date-tracking state when the date field
+      // itself was the one that changed. Reading these off the ambient
+      // submission.data on *every* keystroke (regardless of which field
+      // changed) let unrelated edits (message, reason, etc.) recompute
+      // fromDateChanged/toDateChanged on each change event; formio doesn't
+      // guarantee the same Date reference/precision across change events, so
+      // that recompute could reshape the check-in query filters and cascade
+      // into refetches that overwrote the check-in/out time fields while the
+      // user was typing somewhere else entirely.
+      if (changedKey === "from_date" && submission?.data?.from_date) {
+        const newFrom = toLocalDayKey(submission.data.from_date);
         if (newFrom !== fromDateChanged) setFromDateChanged(newFrom);
       }
-      if (submission?.data?.to_date) {
-        const newTo = submission.data.to_date.toString();
+      if (changedKey === "to_date" && submission?.data?.to_date) {
+        const newTo = toLocalDayKey(submission.data.to_date);
         if (newTo !== toDateChanged) setToDateChanged(newTo);
       }
       // Single-date mode (Attendance Adjustment) drives both from/to date.
-      const singleDateValue = (submission?.data as any)?.date;
-      if (singleDateValue) {
-        const newDate = singleDateValue.toString();
-        if (newDate !== fromDateChanged) setFromDateChanged(newDate);
-        if (newDate !== toDateChanged) setToDateChanged(newDate);
+      if (changedKey === "date") {
+        const singleDateValue = (submission?.data as any)?.date;
+        if (singleDateValue) {
+          const newDate = toLocalDayKey(singleDateValue);
+          if (newDate !== fromDateChanged) setFromDateChanged(newDate);
+          if (newDate !== toDateChanged) setToDateChanged(newDate);
+        }
       }
       if (submission?.changed?.component?.key === "employee") {
         setCurrentlySelectedEmployee(submission.changed.value as any);
@@ -1093,11 +1208,20 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       // Sync attachments from full submission data on every change.
       // We can't rely on changed.component.key for file components with customfiles
       // storage — Form.io does not always populate `changed` for file fields.
+      // Guarded with setAttachments((prev) => ...) so an unrelated field edit
+      // (attachments always absent/empty) doesn't create a new [] reference
+      // and force a re-render on every keystroke.
       const submissionAttachments = submission?.data?.attachments;
       if (Array.isArray(submissionAttachments)) {
-        setAttachments(submissionAttachments as any);
+        setAttachments((prev) => {
+          const prevAny = prev as unknown as unknown[];
+          return prevAny.length === submissionAttachments.length &&
+            prevAny.every((f, i) => f === submissionAttachments[i])
+            ? prev
+            : (submissionAttachments as any);
+        });
       } else if (!submissionAttachments) {
-        setAttachments([]);
+        setAttachments((prev) => (prev.length === 0 ? prev : []));
       }
     },
     [
@@ -1113,21 +1237,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       setAttachments,
     ],
   );
-
-  const sortedLogs = useMemo(() => {
-    const rawLogs = homeSummary || [];
-    return [...rawLogs].sort((a, b) => {
-      const timeA = new Date(a.time.replace(" ", "T")).getTime();
-      const timeB = new Date(b.time.replace(" ", "T")).getTime();
-      return timeA - timeB;
-    });
-  }, [homeSummary]);
-
-  const latestCheckin =
-    sortedLogs.find((c) => c.log_type === "IN")?.time || null;
-
-  const latestCheckout =
-    [...sortedLogs].reverse().find((c) => c.log_type === "OUT")?.time || null;
 
   // 3️⃣ Sync times whenever data or form instance is ready
   useEffect(() => {
@@ -1171,26 +1280,26 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     const finalCheckin = normalizedCheckin || normalizeTime(shiftStart);
     const finalCheckout = normalizedCheckout || normalizeTime(shiftEnd);
 
-    let changed = false;
-    if (checkinComp && finalCheckin) {
-      // Use local Date object instead of ISO string to avoid UTC conversion issues
-      const checkinDate = new Date(`1970-01-01T${finalCheckin}`);
-      checkinComp.setValue(checkinDate as any, { noUpdateEvent: true });
-      changed = true;
-    }
+    // Prefill as "HH:mm:ss" strings (the time component's dataFormat — Date
+    // objects get mangled on reformat cycles). Skip fields the user has edited,
+    // and only write when the prefill value itself changed, so effect re-runs
+    // caused by refetches/isFetching toggles never clobber what's on screen.
+    // setValue updates the DOM input directly, so no full-form redraw is
+    // needed — redrawing here rebuilt every input while the user was typing.
+    const applyPrefill = (
+      comp: FormioComponent | null,
+      value: string | null,
+      key: "checkin" | "checkout",
+    ) => {
+      if (!comp || !value) return;
+      if (userEditedTimes.current[key]) return;
+      if (lastPrefilledTimes.current[key] === value) return;
+      comp.setValue(value, { noUpdateEvent: true });
+      lastPrefilledTimes.current[key] = value;
+    };
 
-    if (checkoutComp && finalCheckout) {
-      // Use local Date object instead of ISO string to avoid UTC conversion issues
-      const checkoutDate = new Date(`1970-01-01T${finalCheckout}`);
-      checkoutComp.setValue(checkoutDate as any, {
-        noUpdateEvent: true,
-      });
-      changed = true;
-    }
-
-    if (changed) {
-      instance.redraw();
-    }
+    applyPrefill(checkinComp, finalCheckin, "checkin");
+    applyPrefill(checkoutComp, finalCheckout, "checkout");
   }, [
     latestCheckin,
     latestCheckout,
@@ -1263,6 +1372,35 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           delete comp.component.selectValues;
           delete comp.component.refreshOn;
         }
+      }
+
+      // Track manual edits to the time fields via real native DOM events,
+      // delegated on the form's root container so it survives formio redraws
+      // (which recreate the input elements but not the container). We can't
+      // rely on the top-level onChange's `changed.component.key` for this:
+      // formio's own noUpdateEvent:true writes still surface as data present
+      // in the submission, and setSubmission()/setValue() calls during setup
+      // do not fire native input/change events, so this only fires on genuine
+      // user interaction.
+      try {
+        const rootEl: HTMLElement | Document =
+          (instance && instance.element) || document;
+        if (rootEl && !(rootEl as any).__timeOwnershipHandlerAttached) {
+          const markOwned = (e: Event) => {
+            const target = e.target as HTMLElement | null;
+            if (!target) return;
+            if (target.closest(".formio-component-checkin_time")) {
+              userEditedTimes.current.checkin = true;
+            } else if (target.closest(".formio-component-checkout_time")) {
+              userEditedTimes.current.checkout = true;
+            }
+          };
+          rootEl.addEventListener("input", markOwned, true);
+          rootEl.addEventListener("change", markOwned, true);
+          (rootEl as any).__timeOwnershipHandlerAttached = true;
+        }
+      } catch (err) {
+        console.warn("time ownership listener bind failed", err);
       }
 
       try {

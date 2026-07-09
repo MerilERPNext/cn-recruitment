@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Attachment } from "../../../../types/flows";
 import HeaderBar from "../../../HeaderBar";
 
-import { ChevronDown, Eye, Pencil, Save } from "lucide-react";
+import { ChevronDown, Eye, Pencil, Save, MoreVertical, FileText } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetFlowRequestById, useUpdateInitiatorFormSubmission } from "../../../../hooks/useFlows";
@@ -26,6 +26,7 @@ import ActivityLogDrawer from "../../../shared/ActivityLogDrawer";
 import RetriggerButton from "../../RetriggerButton";
 
 import { useQueryClient } from "@tanstack/react-query";
+import DropdownMenu from "../../../shared/DropDownMenu";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import toast from "react-hot-toast";
 
@@ -285,29 +286,58 @@ const RequestDetails: React.FC = () => {
             title={data?.flow_name}
             rightSlot={
               <div className="flex items-center gap-2">
-                {haveInitiatorForm && (
+                {isDesktop && haveInitiatorForm && (
                   <Button
                     variant="outline"
                     onClick={handleShowSelfForm}
-                    className={`flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm ${isDesktop ? "px-3" : "px-2"}`}
+                    className="flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm px-3"
                   >
                     <Eye size={16} className="text-primary-600" />
-                    {isDesktop && <span>Initiation Form</span>}
+                    <span>Initiation Form</span>
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  onClick={() => setIsActivityLogOpen(true)}
-                  className={`flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm ${isDesktop ? "px-3" : "px-2"}`}
-                >
-                  {isDesktop && <span>Activity Log</span>}
-                  {!isDesktop && <span>Log</span>}
-                </Button>
+                {isDesktop && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsActivityLogOpen(true)}
+                    className="flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm px-3"
+                  >
+                    <FileText size={16} className="text-gray-500" />
+                    <span>Activity Log</span>
+                  </Button>
+                )}
                 {isDesktop && showRetriggerButton && (
                   <RetriggerButton
                     funnelActivityId={id || ""}
                     employeeName={data?.initiated_for}
                   />
+                )}
+                {!isDesktop && (
+                  <div className="flex items-center">
+                    <DropdownMenu
+                      items={[
+                        ...(haveInitiatorForm
+                          ? [
+                              {
+                                label: "Initiation Form",
+                                icon: <Eye size={16} className="text-primary-600" />,
+                                onClick: handleShowSelfForm,
+                              },
+                            ]
+                          : []),
+                        {
+                          label: "Activity Log",
+                          icon: <FileText size={16} className="text-gray-500" />,
+                          onClick: () => setIsActivityLogOpen(true),
+                        },
+                      ]}
+                      placement="bottom-left"
+                    >
+                      <button className="p-2 border border-gray-300 focus:bg-primary-100/30 focus:ring-primary focus:ring-2 ring-offset-1 text-gray-700 rounded-md flex items-center justify-center hover:bg-primary-50/30 bg-white shadow-sm">
+                        <MoreVertical size={20} />
+                      </button>
+                    </DropdownMenu>
+                  </div>
                 )}
               </div>
             }
@@ -485,7 +515,7 @@ const RequestDetails: React.FC = () => {
             </button>
             <div
               className={`transition-all duration-300 ease-in-out overflow-hidden ${approvalExpanded
-                ? "max-h-[2000px] opacity-100"
+                ? "opacity-100"
                 : "max-h-0 opacity-0"
                 }`}
             >
@@ -542,7 +572,7 @@ const RequestDetails: React.FC = () => {
               </button>
               <div
                 className={`transition-all duration-300 ease-in-out overflow-hidden ${workflowExpanded
-                  ? "max-h-[2000px] opacity-100"
+                  ? "opacity-100"
                   : "max-h-0 opacity-0"
                   }`}
               >

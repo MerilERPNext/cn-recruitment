@@ -81,6 +81,7 @@ import SearchMembers from "./shared/SearchMembers";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import ViewingAsBanner from "./ViewingAsBanner";
 import formatToIndianDate from "../utils/formatToIndianDate";
+import { RecommendationsForYou } from "./DashboardComponent/RecommendationsForYou";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -150,29 +151,29 @@ export default function DesktopDashboard() {
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-        compareAsc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      )[0]
+      compareAsc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T")),
+      ),
+    )[0]
     : undefined;
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      )[0]
+      compareDesc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T")),
+      ),
+    )[0]
     : undefined;
 
   const lastLog =
     homeSummary && homeSummary.length > 0
       ? [...homeSummary].sort((a, b) =>
-          compareDesc(
-            parseISO(a.time.replace(" ", "T")),
-            parseISO(b.time.replace(" ", "T")),
-          ),
-        )[0]
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T")),
+        ),
+      )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -545,7 +546,7 @@ export default function DesktopDashboard() {
 
       {/* Main Content */}
       <div
-        className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out`}
+        className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out min-w-0`}
       >
         {/* Header */}
         <div className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 border-b border-gray-200 px-6 py-[0.3rem] flex items-center sticky top-0 z-10 gap-4">
@@ -615,12 +616,15 @@ export default function DesktopDashboard() {
                       src={currentUser?.user_image || defaultProfile}
                       alt="User avatar"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = defaultProfile;
+                      }}
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${
-                      showProfileDropdown ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee ? (
@@ -654,12 +658,15 @@ export default function DesktopDashboard() {
                       src={currentEmployee?.image || defaultProfile}
                       alt="User avatar"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = defaultProfile;
+                      }}
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${
-                      showProfileDropdown ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
               )}
@@ -675,6 +682,10 @@ export default function DesktopDashboard() {
                           src={currentEmployee?.image || defaultProfile}
                           alt="User avatar"
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = defaultProfile;
+                          }}
                         />
                       </div>
 
@@ -1017,11 +1028,10 @@ export default function DesktopDashboard() {
                 </div>
 
                 <div
-                  className={`flex  h-full ${
-                    homeSummary && !homeSummary?.length
+                  className={`flex  h-full ${homeSummary && !homeSummary?.length
                       ? "flex-col-reverse gap-3"
                       : "flex-row gap-3 mt-2"
-                  }`}
+                    }`}
                 >
                   {canShowClockIn?.can_show && (
                     <div className="flex-1">
@@ -1066,8 +1076,13 @@ export default function DesktopDashboard() {
             </div>
 
             {/* Row 2 & 3: MicroApps (8, span 2) | Events (4) + Requests (4) */}
-            <div className="lg:col-span-8 lg:row-span-2">
-              <MicroAppInDashboard />
+            <div className="lg:col-span-8 lg:row-span-2 flex flex-col gap-4">
+              <div className="flex-1 min-h-0">
+                <MicroAppInDashboard />
+              </div>
+              <div className="flex-shrink-0">
+                <RecommendationsForYou />
+              </div>
             </div>
 
             <div className="lg:col-span-4">
@@ -1099,13 +1114,12 @@ export default function DesktopDashboard() {
                         onClick={action.onClick}
                       >
                         <div
-                          className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
-                            action.color === "primary"
+                          className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${action.color === "primary"
                               ? "bg-primary-100 text-primary-600"
                               : action.color === "purple"
                                 ? "bg-purple-100 text-purple-600"
                                 : "bg-success-100 text-success"
-                          }`}
+                            }`}
                         >
                           <action.icon className="w-5 h-5 shadow-sm" />
                         </div>

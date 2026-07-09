@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 /**
  * Centralized back-navigation hook.
@@ -10,9 +10,8 @@ import { useLocation, useNavigate } from "react-router-dom";
  */
 export const useNavigateBack = () => {
   const navigate = useNavigate();
-  const location = useLocation();
 
-  const canGoBack = location.key !== "default";
+  const canGoBack = (window.history.state?.idx ?? 0) > 0;
 
   const navigateBack = useCallback(() => {
     if (window?.isApp && !canGoBack && window?.nativeInterface?.execute) {

@@ -31,6 +31,7 @@ PORTAL_LABEL = {
 	"careers": "Careers Page",
 	"refer":   "Refer",
 	"ijp":     "IJP",
+	"campus":  "Campus",
 }
 
 # Job Applicant Source master record to stamp on the applicant after submit.
@@ -38,6 +39,7 @@ SOURCE_NAME = {
 	"careers": "Careers Page",
 	"refer":   "Employee Referral",
 	"ijp":     "IJP",
+	"campus":  "Campus Hiring",
 }
 
 
@@ -62,10 +64,14 @@ def get_openings_active_on_channel(channel, opening_filters=None):
 	if opening_filters:
 		filters.update(opening_filters)
 
-	# Pull Open openings then filter by their Posting Options. Doing this in
-	# Python (rather than a raw join) keeps respect of frappe.get_list
-	# permission filtering on Job Opening.
-	openings = frappe.get_list(
+	# Pull Open openings then filter by their Posting Options in Python (rather
+	# than a raw join). Use get_all (no user-permission filtering): visibility on
+	# these portal channels is governed entirely by the Posting Options window and
+	# the per-channel eligibility rules, NOT by Desk read permission on Job Opening.
+	# Core Job Opening grants Desk read only to HR User, so get_list here would
+	# raise PermissionError for an ordinary employee (IJP/Refer) and hide every
+	# opening — the reason employees saw an empty referral/IJP list.
+	openings = frappe.get_all(
 		"Job Opening",
 		filters=filters,
 		fields=["name"],
@@ -479,7 +485,7 @@ def get_application_fields_for_channel(opening_name, channel, job_applicant=None
 	      "value": <current value>,
 	    }, ...]
 	"""
-	if channel not in ("careers", "ijp", "refer", "preoffer"):
+	if channel not in ("careers", "ijp", "refer", "preoffer", "campus"):
 		return []
 
 	view_col = f"view_{channel}"

@@ -9,12 +9,8 @@
   "is_active",
   "column_break_1",
   "priority",
-  "role_type",
   "assigned_section",
   "assigned_user",
-  "assigned_buddies",
-  "assigned_teammates",
-  "assigned_manager",
   "filters_section",
   "department",
   "designation",
@@ -53,52 +49,17 @@
    "reqd": 1
   },
   {
-   "fieldname": "role_type",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Role Type",
-   "options": "Onboarding Buddy\nTeammates\nManager\nAll",
-   "reqd": 1
-  },
-  {
    "fieldname": "assigned_section",
    "fieldtype": "Section Break",
    "label": "Assignment"
   },
   {
-   "depends_on": "eval:doc.role_type=='Onboarding Buddy' || doc.role_type=='Teammates'",
-   "description": "Select one or more users. For Onboarding Buddy and Teammates roles, all of these are assigned to the candidate's Employee Onboarding.",
+   "description": "Select one or more users to assign as the candidate's Onboarding Buddy. (Manager and Teammates are derived automatically from the position's Reporting Manager, not from this rule.)",
    "fieldname": "assigned_user",
    "fieldtype": "Table MultiSelect",
-   "label": "Assigned Users",
-   "mandatory_depends_on": "eval:doc.role_type=='Onboarding Buddy' || doc.role_type=='Teammates'",
-   "options": "Onboarding Buddy User"
-  },
-  {
-   "depends_on": "eval:doc.role_type=='All'",
-   "description": "Onboarding Buddies for the 'All' rule (multiple). Assigned to the candidate's Employee Onboarding Onboarding Buddy field.",
-   "fieldname": "assigned_buddies",
-   "fieldtype": "Table MultiSelect",
    "label": "Onboarding Buddies",
+   "reqd": 1,
    "options": "Onboarding Buddy User"
-  },
-  {
-   "depends_on": "eval:doc.role_type=='All'",
-   "description": "Teammates for the 'All' rule (multiple). Assigned to the candidate's Employee Onboarding Teammates field.",
-   "fieldname": "assigned_teammates",
-   "fieldtype": "Table MultiSelect",
-   "label": "Teammates",
-   "options": "Onboarding Buddy User"
-  },
-  {
-   "depends_on": "eval:doc.role_type=='Manager' || doc.role_type=='All'",
-   "description": "The Manager is a single Employee (used when Role Type is Manager or All).",
-   "fieldname": "assigned_manager",
-   "fieldtype": "Link",
-   "label": "Manager (Employee)",
-   "mandatory_depends_on": "eval:doc.role_type=='Manager'",
-   "options": "Employee"
   },
   {
    "fieldname": "filters_section",

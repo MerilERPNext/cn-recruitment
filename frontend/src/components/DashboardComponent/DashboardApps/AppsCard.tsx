@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDrag, useDrop } from "react-dnd";
 import useCurrentUser from "../../../hooks/useCurrentUser";
@@ -50,6 +50,12 @@ const MyMicroApp: React.FC<MyMicroAppProps> = ({
 
   const { isDesktop } = useScreenSize();
 
+  const [iconLoadError, setIconLoadError] = useState(false);
+
+  useEffect(() => {
+    setIconLoadError(false);
+  }, [item.icon]);
+
   const getNotificationCount = (title?: string) => {
     if (!title || !Array.isArray(notificationData)) return 0;
 
@@ -84,7 +90,7 @@ const MyMicroApp: React.FC<MyMicroAppProps> = ({
     item.icon?.toLowerCase().endsWith(".svg") ||
     item.icon?.toLowerCase().includes(".svg?");
 
-  const iconNode = item.icon ? (
+  const iconNode = item.icon && !iconLoadError ? (
     isSvg ? (
       <div
         className="w-8 h-8"
@@ -101,7 +107,12 @@ const MyMicroApp: React.FC<MyMicroAppProps> = ({
         }}
       />
     ) : (
-      <img src={item.icon} alt={item.title} className="w-8 h-8 rounded-md" />
+      <img
+        src={item.icon}
+        alt={item.title}
+        className="w-8 h-8 rounded-md"
+        onError={() => setIconLoadError(true)}
+      />
     )
   ) : (
     <span className="font-bold text-lg">

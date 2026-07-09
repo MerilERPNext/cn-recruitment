@@ -34,7 +34,6 @@ import {
 } from "../../utils/helperUtils";
 import TasksAwaiting from "../../components/DashboardComponent/TasksAwaiting";
 import EmployeeFallback from "../../components/EmployeeFallback";
-import MobileProfileDrawer from "../../components/EmployeeProfile/MobileProfileDrawer";
 import NotificationBell from "../../components/Notification/NotificationBell";
 import Requests from "../../components/Requests";
 import Button from "../../components/shared/atoms/Button";
@@ -50,6 +49,7 @@ import ViewingAsBanner from "../../components/ViewingAsBanner";
 import MicroAppInDashboard from "../../components/DashboardComponent/MicroAppInDashboard";
 import GeoLocationModal from "./GeoLocationModal";
 import RequestIssueModal from "../../components/HelpDesk/RequestIssueModal";
+import { RecommendationsForYou } from "../../components/DashboardComponent/RecommendationsForYou";
 
 const MobileDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -151,7 +151,6 @@ const MobileDashboard: React.FC = () => {
   );
   const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
-  const [profileDrawer, setProfileDrawer] = useState(false);
   const [isSearchDrawerOpen, setIsSearchDrawerOpen] = useState(false);
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
@@ -394,7 +393,7 @@ const MobileDashboard: React.FC = () => {
       <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-2 py-3 shadow-sm sticky top-0 z-10 flex-shrink-0">
         <div className="flex items-center justify-between">
           <Button
-          bgColor=""
+            bgColor=""
             variant="subtle"
             className="w-12 h-12 p-0 rounded-xl overflow-hidden "
           >
@@ -419,7 +418,7 @@ const MobileDashboard: React.FC = () => {
               <NotificationBell className="text-gray-600 hover:text-gray-800" />
             </button>
 
-            <button 
+            <button
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
               onClick={() => setIsSearchDrawerOpen(true)}
             >
@@ -782,16 +781,8 @@ const MobileDashboard: React.FC = () => {
             <MicroAppInDashboard />
           </div>
         )}
+        <RecommendationsForYou isMobile={true} />
       </div>
-      <SideDrawer
-        open={profileDrawer}
-        onClose={() => setProfileDrawer(false)}
-        title="My Profile"
-        showBackButton
-        className="px-0"
-      >
-        <MobileProfileDrawer />
-      </SideDrawer>
       <SideDrawer
         open={isSearchDrawerOpen}
         onClose={() => setIsSearchDrawerOpen(false)}

@@ -29,8 +29,30 @@ interface ReportingDetailsProps {
     isEdit?: boolean;
     category?: string;
     categoryField?: string;
+    // When true (the very first slide for this category), the start date is
+    // locked to the employee's joining date and shown read-only.
+    defaultStartDate?: string | null;
+    lockStartDate?: boolean;
+    // Date-picker bounds (YYYY-MM-DD): disallow overlaps with neighbouring
+    // reporting slides and any date before the joining date.
+    startMinDate?: string;
+    startMaxDate?: string;
+    endMinDate?: string;
+    endMaxDate?: string;
+    // When the previous (older) slide is a locked previous-employee tile, freeze
+    // the start date (read-only) so only end date is editable.
+    disableStartDate?: boolean;
     initialEditData?: InitialEditData;
 }
+
+// Inject flatpickr min/max onto a Form.io datetime component. Done inline (not
+// via the JSON-cloning `withDateBounds`) because this schema carries a function
+// `template` that JSON serialisation would drop.
+const applyDateBounds = (c: any, minDate?: string, maxDate?: string) => ({
+    ...c,
+    datePicker: { ...(c.datePicker || {}), minDate: minDate ?? null, maxDate: maxDate ?? null },
+    widget: { ...(c.widget || { type: "calendar" }), minDate: minDate ?? null, maxDate: maxDate ?? null },
+});
 
 const isUsableLocationValue = (value: unknown): value is string =>
     typeof value === "string" && value.trim() !== "" && value.trim().toLowerCase() !== "unknown";
@@ -70,6 +92,13 @@ const ReportingDetailsFormV2 = ({
     isEdit = false,
     category = "Reports To",
     categoryField = "reports_to",
+    defaultStartDate,
+    lockStartDate = false,
+    startMinDate,
+    startMaxDate,
+    endMinDate,
+    endMaxDate,
+    disableStartDate = false,
     initialEditData,
 }: ReportingDetailsProps) => {
     const formInstance = useRef<any>(null);
@@ -78,6 +107,10 @@ const ReportingDetailsFormV2 = ({
     const { mutateAsync: updateEmpReportingDetailsRecord, isPending } = useUpdateEmpReportingDetailsRecordMutation();
     const { wrap } = useLoadingOverlay();
 
+    // First slide for this category: bake `disabled` onto the start_date field
+    // so it renders read-only (reliable for the datetime widget). Set in the
+    // schema rather than toggled at runtime, which the flatpickr widget ignores.
+    const lockStart = lockStartDate && !isEdit;
     const formSchema = useMemo(() => ({
         ...reportingDetailsFomSchema,
         components: [{
@@ -89,10 +122,22 @@ const ReportingDetailsFormV2 = ({
                     errorLabel: category,
                     template: buildReportsToItemTemplate,
                 },
-                ...reportingDetailsFomSchema.components[0].components.slice(1),
+                ...reportingDetailsFomSchema.components[0].components.slice(1).map((c: any) => {
+                    if (c.key === "start_date") {
+                        return applyDateBounds(
+                            { ...c, disabled: lockStart || disableStartDate },
+                            startMinDate,
+                            startMaxDate,
+                        );
+                    }
+                    if (c.key === "end_date") {
+                        return applyDateBounds(c, endMinDate, endMaxDate);
+                    }
+                    return c;
+                }),
             ],
         }],
-    }), [category]);
+    }), [category, lockStart, disableStartDate, startMinDate, startMaxDate, endMinDate, endMaxDate]);
 
     const initialSubmissionData = useMemo(() => {
         if (isEdit && initialEditData) {
@@ -122,8 +167,9 @@ const ReportingDetailsFormV2 = ({
                 } : {}),
             };
         }
-        return { data: {} };
-    }, [isEdit, initialEditData]);
+        // Add mode: seed the start date (the joining date for a first slide).
+        return { data: { start_date: defaultStartDate || "" } };
+    }, [isEdit, initialEditData, defaultStartDate]);
 
     const handleSubmit = async () => {
         try {

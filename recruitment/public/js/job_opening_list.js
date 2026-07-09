@@ -64,6 +64,17 @@
 		if (!parts.length) return "?";
 		return ((parts[0][0] || "") + (parts[1] ? parts[1][0] : "")).toUpperCase() || "?";
 	}
+
+	// Click-to-filter — mirrors Frappe's native list view. Frappe binds a delegated
+	// handler on `$result` for `.filterable` elements and reads `data-filter=
+	// "fieldname,operator,value"`. Our custom table renders INTO that same `$result`,
+	// so any cell we tag with `filterable` + `data-filter` gets the exact same
+	// behaviour (click "Draft" -> adds status = Draft filter) for free.
+	function filterCls(value) { return value === null || value === undefined || value === "" ? "" : " filterable"; }
+	function filterData(fieldname, value) {
+		if (value === null || value === undefined || value === "") return "";
+		return ` data-filter="${escapeHtml(fieldname)},=,${escapeHtml(value)}"`;
+	}
 	function daysOpen(doc) {
 		const startStr = doc.posted_on || doc.creation;
 		if (!startStr) return 0;
@@ -104,16 +115,33 @@
 		).join("");
 	}
 	function extraRowCells(doc, listview) {
-		return extraColumns(listview).map((c) => {
-			let html;
-			try {
-				html = frappe.format(doc[c.df.fieldname], c.df, { inline: true }, doc);
-			} catch (e) {
-				const v = doc[c.df.fieldname];
-				html = escapeHtml(v === null || v === undefined ? "" : v);
-			}
-			return `<td class="jo-col-extra">${html == null ? "" : html}</td>`;
-		}).join("");
+		return extraColumns(listview).map((c) =>
+			`<td class="jo-col-extra">${formatCellHtml(doc, c.df)}</td>`
+		).join("");
+	}
+
+	// Render one extra-column value exactly like Frappe's native list cell:
+	// formatted for display, but wrapped in a `.filterable` element (with the raw
+	// stored value in data-filter) for every field type Frappe makes clickable —
+	// i.e. everything except Image / rich-HTML fields.
+	function formatCellHtml(doc, df) {
+		const fieldname = df && df.fieldname;
+		const value = doc[fieldname];
+		if (value === null || value === undefined || value === "") return "";
+		const htmlTypes = (frappe.model && frappe.model.html_fieldtypes) || [];
+		if (df.fieldtype === "Image" || htmlTypes.includes(df.fieldtype)) {
+			try { return frappe.format(value, df, { inline: true }, doc); }
+			catch (e) { return escapeHtml(value); }
+		}
+		// Link: render the raw value as a filter-only anchor (no href) so clicking
+		// filters instead of navigating — matching Frappe's native Link cell.
+		if (df.fieldtype === "Link" || df.fieldtype === "Dynamic Link") {
+			return `<a class="filterable"${filterData(fieldname, value)}>${escapeHtml(value)}</a>`;
+		}
+		let display;
+		try { display = frappe.format(value, df, { inline: true }, doc); }
+		catch (e) { display = escapeHtml(value); }
+		return `<span class="filterable"${filterData(fieldname, value)}>${display == null ? "" : display}</span>`;
 	}
 
 	function injectStyles() {
@@ -158,6 +186,8 @@
 			.jo-table tbody tr { cursor: pointer; }
 			.jo-table tbody tr:hover { background: #FAFAFA; }
 			.jo-table tbody tr:last-child td { border-bottom: none; }
+			.jo-table .filterable { cursor: pointer; }
+			.jo-table .filterable:hover { text-decoration: underline; text-underline-offset: 2px; }
 
 			.jo-check { width: 16px; height: 16px; cursor: pointer; }
 			.jo-opening-title { font-weight: 600; color: #111827; }
@@ -285,7 +315,7 @@
 	function renderStatusPill(status) {
 		if (!status) return `<span class="jo-status-pill" style="background:#F3F4F6;color:#6B7280">—</span>`;
 		const color = getStatusColor(status);
-		return `<span class="jo-status-pill" style="background:${color}1a;color:#111827">
+		return `<span class="jo-status-pill filterable"${filterData("status", status)} style="background:${color}1a;color:#111827">
 			<span class="jo-status-dot" style="background:${color}"></span>${escapeHtml(status)}
 		</span>`;
 	}
@@ -295,7 +325,7 @@
 	function ownerCellHtml(ownerId) {
 		if (!ownerId) return `<span class="jo-owner"><span class="jo-owner-avatar" style="background:#9CA3AF">?</span>—</span>`;
 		const display = ownerId.split("@")[0] || ownerId;
-		return `<span class="jo-owner">
+		return `<span class="jo-owner filterable"${filterData("owner", ownerId)}>
 			<span class="jo-owner-avatar" style="background:${avatarColor(ownerId)}">${escapeHtml(initialsOf(ownerId))}</span>${escapeHtml(display)}
 		</span>`;
 	}
@@ -360,7 +390,7 @@
 			const owner = this.querySelector('[data-stat="owner"]');
 			if (owner && s.owner && s.owner.id) {
 				const display = (s.owner.name || s.owner.id).split(" ")[0];
-				owner.innerHTML = `<span class="jo-owner">
+				owner.innerHTML = `<span class="jo-owner filterable"${filterData("owner", s.owner.id)}>
 					<span class="jo-owner-avatar" style="background:${avatarColor(s.owner.id)}">${escapeHtml(s.owner.initials || "?")}</span>${escapeHtml(display)}
 				</span>`;
 			}
@@ -393,7 +423,7 @@
 		// Row click → open the Job Opening form
 		container.querySelectorAll("tr[data-name]").forEach((tr) => {
 			tr.addEventListener("click", (e) => {
-				if (e.target && e.target.closest("input, button, a, .like-action, .jo-activity")) return;
+				if (e.target && e.target.closest("input, button, a, .like-action, .jo-activity, .filterable")) return;
 				const name = tr.getAttribute("data-name");
 				frappe.set_route("Form", DOCTYPE, name);
 			});

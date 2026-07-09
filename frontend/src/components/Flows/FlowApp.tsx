@@ -7,6 +7,7 @@ import InitiateFlow from "./Initiate/InitiateFlow";
 import HeaderBar from "../HeaderBar";
 import Button from "../shared/atoms/Button";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 type TabName = "Flow Requests" | "Onboarding" | "Confirmation" | "Separation";
 
@@ -27,15 +28,7 @@ const FlowApp: React.FC = () => {
   const location = useLocation();
   const { data: userUiPermission } = useGetUiPermission("HR Process");
 
-  const canInitiateFlow = useMemo(() => {
-    const initiateFlowPage = userUiPermission?.[0]?.pages?.find(
-      (item) => item.page_name === "Flow Requests",
-    );
-    const initiateAction = initiateFlowPage?.actions?.find(
-      (action) => action.action_name === "initiate",
-    );
-    return !!initiateAction?.enabled;
-  }, [userUiPermission]);
+  const canInitiateFlow = isActionEnabled(userUiPermission, "initiate", "Flow Requests")
 
   const tabs: Tab[] = useMemo(() => {
     const allTabs: { key: TabName; label: string; permissionKey: string }[] = [
@@ -111,17 +104,18 @@ const FlowApp: React.FC = () => {
 
     if (matchedTab) {
       setActiveTab(matchedTab);
+      setSeprateRoute(null);
     }
 
-    if (location.pathname === "/webapp/flow-app/initiate-flow") {
+    if (location.pathname.startsWith("/webapp/flow-app/flow-request/")) {
+      setSeprateRoute("Flow Request");
+    } else if (location.pathname === "/webapp/flow-app/initiate-flow") {
       setSeprateRoute("Initiate Flow");
     } else if (
-      location.pathname.startsWith("/webapp/flow-app/separation-workflow/")
+      location.pathname.startsWith("/webapp/flow-app/separation-workflow")
     ) {
       setSeprateRoute("SeparationWorkflow");
-    } else if (location.pathname.startsWith("/webapp/flow-app/flow-request/")) {
-      setSeprateRoute("Flow Request");
-    } else if (location.pathname.startsWith("/webapp/flow-app/separation-record/")) {
+    } else if (location.pathname.startsWith("/webapp/flow-app/separation-record")) {
       setSeprateRoute("SeparationRecord");
     } else {
       setSeprateRoute(null);

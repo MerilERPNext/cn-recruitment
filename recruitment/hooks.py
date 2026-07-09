@@ -73,13 +73,17 @@ doctype_js = {
     "Job Offer": ["public/js/job_offer.js"],
     "Job Applicant": [
         "public/js/job_applicant.js",
+        "public/js/hiring_workflow_flow.js",
         "public/js/pre_offer_field_approval.js",
     ],
     "Job Opening": [
         "public/js/job_opening.js",
         "public/js/job_opening_hiring_workflow.js",
         "public/js/job_opening_attach_resumes.js",
+        "public/js/applicant_field_picker.js",
     ],
+    "TA Duplicity Check Settings": ["public/js/applicant_field_picker.js"],
+    "TA Rehire Check Settings": ["public/js/applicant_field_picker.js"],
     "Job Description": ["public/js/job_description.js"],
     "Job Requisition": ["public/js/job_requisition.js"],
     "Interview": ["public/js/interview.js"],
@@ -143,6 +147,7 @@ permission_query_conditions = {
     "Interview": "recruitment.permissions.doc_type_permissions.interview_query",
     "Job Applicant": "recruitment.permissions.doc_type_permissions.ja_query",
     "Job Opening": "recruitment.permissions.doc_type_permissions.job_opening_query",
+    "Campus Invite": "recruitment.permissions.doc_type_permissions.campus_invite_query",
 }
 
 # Jinja
@@ -157,6 +162,10 @@ jinja = {
 		# Just the token, if you build the URL yourself:
 		#   ...?appl={{ doc.job_applicant }}&token={{ offer_token(doc.job_applicant) }}
 		"recruitment.recruitment.link_token.offer_token",
+		# Campus registration email: build the candidate's apply link (the invite id
+		# is carried in the link, never chosen by the candidate):
+		#   {{ campus_registration_link(email_id, campus_invite) }}
+		"recruitment.recruitment.link_token.campus_registration_link",
 	],
 }
 
@@ -167,8 +176,6 @@ jinja = {
 after_install = "recruitment.recruitment.install.after_install"
 after_migrate = [
     "recruitment.recruitment.install.after_migrate",
-    # Keep the screener "Applicant Field" dropdown live from Job Applicant meta.
-    "recruitment.recruitment.screening_engine.sync_applicant_field_registry",
 ]
 
 # Uninstallation
@@ -245,7 +252,12 @@ doc_events = {
         "before_save": "recruitment.customizations.job_offer.calculate_salary_structure",
         "after_insert": "recruitment.api.action_center.sync_job_offer_action_item",
         "on_submit": "recruitment.api.action_center.sync_job_offer_action_item",
-        "on_update_after_submit": "recruitment.api.action_center.sync_job_offer_action_item"
+        # Reflect Accepted/Rejected offer outcome on the candidate's hiring stage.
+        "on_update": "recruitment.api.hiring_stage.advance_on_job_offer_outcome",
+        "on_update_after_submit": [
+            "recruitment.api.action_center.sync_job_offer_action_item",
+            "recruitment.api.hiring_stage.advance_on_job_offer_outcome",
+        ],
     },
     "Job Requisition": {
         "before_insert": [
@@ -294,6 +306,9 @@ doc_events = {
         "before_save": "recruitment.customizations.job_applicant.validate_blacklist",
         # Hiring Lead Permission Settings (update candidate source).
         "validate": "recruitment.customizations.hiring_lead_permissions.validate_job_applicant_hiring_lead_edits",
+        # Place a new applicant on the linked opening's first hiring stage
+        # (no-op unless the Hiring Workflow feature is enabled).
+        "after_insert": "recruitment.api.hiring_stage.seed_first_stage",
     },
     "Appointment Letter": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
@@ -358,6 +373,13 @@ scheduler_events = {
         "30 1 * * *": [
             # Pay every referral reward installment that is due and still eligible.
             "recruitment.recruitment.referral_reward_engine.process_due_referral_payouts",
+        ],
+        "0 2 * * *": [
+            # TA SLA Settings engine — no-op unless "Enable SLA & TAT Tracking" is
+            # on. Flags candidates overdue in their current stage, then archives
+            # its own stale breach ToDos. See recruitment.recruitment.sla_tat_engine.
+            "recruitment.recruitment.sla_tat_engine.scan_sla_breaches",
+            "recruitment.recruitment.sla_tat_engine.archive_sla_breach_todos",
         ],
     }
 }

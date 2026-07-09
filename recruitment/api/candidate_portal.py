@@ -962,14 +962,45 @@ def _get_onboarding_journey():
     }
 
 
+def _allowed_child_doctypes():
+    """Metadata-enumeration fix: the set of child tables the onboarding Field
+    Inspector legitimately inspects — the ``options`` of every Table /
+    Table MultiSelect field on the onboarding-related forms the inspector renders
+    (Employee Onboarding and Job Applicant). Derived from the live meta so it
+    tracks configuration, while still bounding ``child_doctype`` to genuine child
+    tables reachable from those forms (never an arbitrary backend doctype)."""
+    allowed = set()
+    for parent_dt in ("Employee Onboarding", "Job Applicant"):
+        try:
+            meta = frappe.get_meta(parent_dt)
+        except Exception:
+            continue
+        for df in meta.fields:
+            if df.fieldtype in ("Table", "Table MultiSelect") and df.options:
+                allowed.add(df.options)
+    return allowed
+
+
 @frappe.whitelist()
 def get_child_doctype_fields(child_doctype):
     """Returns all non-layout fields for a given child DocType.
     Used by the Field Inspector UI to populate child field selection panels."""
+    # Metadata-enumeration fix: keep the read gate on the owning config doctype as
+    # an outer authorization check, then constrain `child_doctype` itself to the
+    # child tables actually referenced by the onboarding forms the inspector
+    # renders. The previous code only checked the (unrelated) parent form's
+    # permission and let any `child_doctype` through, so any authenticated user
+    # could enumerate arbitrary doctype field metadata. Both checks run BEFORE any
+    # get_meta lookup so nothing leaks for tampered names.
     frappe.has_permission("Onboarding Portal Forms", "read", throw=True)
     if not child_doctype:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("child_doctype is required.")}
+    if child_doctype not in _allowed_child_doctypes():
+        frappe.throw(
+            _("Not permitted to read {0}").format(child_doctype),
+            frappe.PermissionError,
+        )
     fields = _get_child_table_fields(child_doctype)
     return {"status": "success", "child_doctype": child_doctype, "fields": fields}
 
@@ -1598,8 +1629,8 @@ def get_portal_field_names(job_applicant_id=None):
 #   field config for a careers application form:
 #     recruitment.api.channels.careers.get_application_fields(opening)
 #
-#   submit the application (creates a new Job Applicant, stamps source):
-#     recruitment.api.channels.careers.submit_application(opening, data)
+#   save / submit the application (one status-driven endpoint — draft vs submit):
+#     recruitment.api.channels.careers.submit_application(job_applicant_email, job_opening, form_data, status)
 #
 # The new endpoints source their field config from
 # Job Opening → custom_application_fields (with Job Applicant Profile Settings

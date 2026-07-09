@@ -17,6 +17,9 @@
   "section_break_xbvj",
   "job_offer_print_format",
   "job_offer_print_format_mapping",
+  "send_offer_via_document_template",
+  "job_offer_document_template",
+  "job_offer_document_template_mapping",
   "job_offer_template",
   "employee_onboarding_webform",
   "mapping_fields",
@@ -63,7 +66,9 @@
   "disable_hiring_lead_edit_job_step_4",
   "disable_hiring_lead_edit_job_step_5",
   "restrict_act_as_admin_offer_approval",
-  "allow_hiring_lead_change_designation_at_offer"
+  "allow_hiring_lead_change_designation_at_offer",
+  "sla_tat_section",
+  "enable_sla_tat"
  ],
  "fields": [
   {
@@ -139,6 +144,30 @@
    "fieldtype": "Table",
    "label": "Job Offer Print Format by Employment Type",
    "options": "Job Offer Print Format Mapping"
+  },
+  {
+   "default": "0",
+   "description": "When enabled, Job Offers are rendered from a Document Template (nextai) instead of a Print Format — for the emailed PDF, the candidate portal preview/download, and bulk offers. When off, the Print Format above is used (unchanged).",
+   "fieldname": "send_offer_via_document_template",
+   "fieldtype": "Check",
+   "label": "Send Job Offer via Document Template"
+  },
+  {
+   "depends_on": "eval:doc.send_offer_via_document_template",
+   "description": "Default Document Template used to render the Job Offer. Used as a fallback when no employment-type-specific template is mapped below. Must be a Document Template whose Doctype Name is \"Job Offer\".",
+   "fieldname": "job_offer_document_template",
+   "fieldtype": "Link",
+   "label": "Job Offer Document Template",
+   "mandatory_depends_on": "eval:doc.send_offer_via_document_template",
+   "options": "Document Template"
+  },
+  {
+   "depends_on": "eval:doc.send_offer_via_document_template",
+   "description": "Pick the Job Offer Document Template per Employment Type. When a row matches the applicant's Employment Type it is used; otherwise the default \"Job Offer Document Template\" above is used.",
+   "fieldname": "job_offer_document_template_mapping",
+   "fieldtype": "Table",
+   "label": "Job Offer Document Template by Employment Type",
+   "options": "Job Offer Document Template Mapping"
   },
   {
    "fieldname": "job_offer_template",
@@ -438,6 +467,18 @@
    "fieldname": "allow_hiring_lead_change_designation_at_offer",
    "fieldtype": "Check",
    "label": "Allow Hiring lead to change Designation at Offer Stage"
+  },
+  {
+   "fieldname": "sla_tat_section",
+   "fieldtype": "Section Break",
+   "label": "SLA & TAT"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_sla_tat",
+   "fieldtype": "Check",
+   "label": "Enable SLA & TAT Tracking",
+   "description": "Master switch for TA SLA Settings. When ON, the system measures Turn Around Times (Time to Fill/Hire/First Action) against configured points & targets, and flags stage SLA breaches for recruiters. When OFF (or when TA SLA Settings is left unconfigured), recruitment works exactly as before — no computation, notifications, or archival run."
   }
  ],
  "index_web_pages_for_search": 1,

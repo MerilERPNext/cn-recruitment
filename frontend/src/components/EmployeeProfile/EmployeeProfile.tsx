@@ -115,6 +115,15 @@ const EmployeeProfile: React.FC = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [isFutureTransactionsOpen, setIsFutureTransactionsOpen] =
     useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
+
+  useEffect(() => {
+    setImageLoadError(false);
+  }, [uploadedImage, user?.image]);
+
+  const profileImageSrc = imageLoadError
+    ? defaultProfile
+    : uploadedImage || user?.image || defaultProfile;
 
   const uploadMutation = useFileUpload();
   const updateDocMutation = useUpdateFrappeDocument();
@@ -373,9 +382,10 @@ const EmployeeProfile: React.FC = () => {
             <div className="flex items-start gap-5 px-6 py-6 border-b border-gray-50 bg-white">
               <div className="relative shrink-0">
                 <img
-                  src={uploadedImage || user?.image || defaultProfile}
+                  src={profileImageSrc}
                   alt="User avatar"
                   className="w-24 h-24 rounded-2xl object-cover ring-4 ring-blue-50/10 shadow-sm"
+                  onError={() => setImageLoadError(true)}
                 />
                 <button
                   onClick={handleImageClick}
@@ -570,9 +580,10 @@ const EmployeeProfile: React.FC = () => {
                   <div className="relative group/avatar shrink-0">
                     <div className="w-[120px] h-[120px] rounded-full ring-4 ring-white shadow-md overflow-hidden ">
                       <img
-                        src={uploadedImage || user?.image || defaultProfile}
+                        src={profileImageSrc}
                         alt="User avatar"
                         className="w-full h-full object-cover bg-gray-50 transition-transform duration-500 group-hover/avatar:scale-110"
+                        onError={() => setImageLoadError(true)}
                       />
                     </div>
                     <button

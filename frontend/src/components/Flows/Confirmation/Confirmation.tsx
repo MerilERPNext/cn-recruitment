@@ -208,7 +208,9 @@ const ConfirmationWorkflow = () => {
     enabledActions.initiate_confirmation &&
     showConfirmationButton?.show_button &&
     !employeeConfirmationPending?.[0] &&
-    activeEmployee?.custom_employment_status == "On Probation";
+    activeEmployee?.custom_employment_status == "On Probation" &&
+    !["Approved", "Completed", "Pending", "Draft"].includes(employeeConfirmationAll?.[0]?.approval_status || "")
+    ;
 
   useEffect(() => {
     const refreshCurrentPageData = () => {
@@ -291,13 +293,16 @@ const ConfirmationWorkflow = () => {
     {
       id: 2,
       title: "Employee Self Form Submission",
-      description: "Please submit all required fields",
+      description: item?.category === "Recommend for Separation"
+        ? "skipped"
+        : "Please submit all required fields",
       time: formatToIndianDate(item?.initiated_on || ""),
-      status: showConfirmationButton?.show_button
-        ? "action_required"
-        : "pending",
-      show_confirmation_button:
-        canInitiateConfirmation,
+      status: item?.category === "Recommend for Separation"
+        ? "skipped"
+        : showConfirmationButton?.show_button
+          ? "action_required"
+          : "pending",
+      show_confirmation_button: item?.category === "Recommend for Separation" ? false : canInitiateConfirmation,
       self_confirmation_btn_name: "Initiate Confirmation",
       show_view_form_btn: !!selfInitFormAndAns,
     },
@@ -387,7 +392,9 @@ const ConfirmationWorkflow = () => {
         {/* TimelineDummy  */}
         {timelineData.map((td, idx) => {
           const isLast = idx === timelineData.length - 1 && !postStagesStarted;
-          const status = postStagesStarted ? "completed" : td.status;
+          const status = postStagesStarted
+            ? (td.status === "skipped" ? "skipped" : "completed")
+            : td.status;
           return (
             <div
               className="grid sm:grid-cols-[80px_1fr] grid-cols-[30px_1fr] hover:bg-primary-10"
