@@ -96,10 +96,28 @@ function poa_buildChildParts(entry) {
 }
 
 
+// Frappe hides "empty" tabs during the initial refresh before this HTML field's
+// content lands; force the Pre Offer Approval tab visible after we render.
+function poa_keepTabVisible(frm) {
+    try {
+        (frm.layout && frm.layout.tabs || []).forEach((t) => {
+            if (t.df && t.df.fieldname === "custom_pre_offer_approval_tab") t.toggle(true);
+        });
+        const field = frm.fields_dict["custom_pre_offer_approval_html"];
+        if (field && field.$wrapper) {
+            field.df.hidden = 0;
+            field.$wrapper.removeClass("hide-control").show();
+            field.$wrapper.closest(".form-section")
+                .removeClass("empty-section").addClass("visible-section");
+        }
+    } catch (e) { /* non-fatal */ }
+}
+
 // ── MAIN RENDER ─────────────────────────────────────────────────────────────
 function poa_render(frm, filterStatus, filterText) {
     const $wrapper = frm.fields_dict["custom_pre_offer_approval_html"]?.$wrapper;
     if (!$wrapper || !$wrapper.length) return;
+    poa_keepTabVisible(frm);
 
     const list = poa_parseList(frm);
 

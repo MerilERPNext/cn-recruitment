@@ -19,7 +19,33 @@
 (function () {
     const API = "recruitment.api.hiring_stage";
     const HOST = "custom_hiring_workflow_html";
+    const TAB = "custom_hiring_workflow_tab";
     const esc = frappe.utils.escape_html;
+
+    // Frappe hides "empty" tabs during the initial refresh (a timing race: the
+    // tab is evaluated before this HTML field's content lands). Once we've
+    // rendered content, force the tab visible and re-run section visibility so
+    // it doesn't flash-and-hide.
+    function keepTabVisible(frm) {
+        try {
+            (frm.layout && frm.layout.tabs || []).forEach((t) => {
+                if (t.df && t.df.fieldname === TAB) t.toggle(true);
+            });
+            // Frappe marks our HTML field's section `empty-section` (CSS-collapses
+            // it to 0 height) during the initial refresh, before our content lands
+            // and never re-checks. Un-collapse it so the rendered flow is visible.
+            const field = frm.fields_dict[HOST];
+            if (field && field.$wrapper) {
+                // The HTML control keeps `hide-control` (display:none) because its
+                // refresh() never ran for this inactive tab; un-hide it, and its
+                // section, so the rendered flow is actually visible.
+                field.df.hidden = 0;
+                field.$wrapper.removeClass("hide-control").show();
+                field.$wrapper.closest(".form-section")
+                    .removeClass("empty-section").addClass("visible-section");
+            }
+        } catch (e) { /* non-fatal */ }
+    }
 
     const STATE = {
         done:     { icon: "✓", cls: "hwf-done" },
@@ -249,13 +275,15 @@
         if (type === "Screening") {
             actions += `<button class="hwf-btn" data-act="screening">${__("Run Screening")}</button>`;
         }
-        if (type === "Offer") {
+        if (type === "Pre Offer") {
             const po = view.pre_offer || {};
             const poLabel = po.sent ? __("Resend Pre Offer Form") : __("Send Pre Offer Form");
-            actions += `<button class="hwf-btn" data-act="preoffer">${poLabel}</button>`;
+            actions += `<button class="hwf-btn primary" data-act="preoffer">+ ${poLabel}</button>`;
+        }
+        if (type === "Offer") {
             actions += view.job_offer
                 ? `<button class="hwf-btn" data-act="openoffer">${__("Open Job Offer")}</button>`
-                : `<button class="hwf-btn" data-act="createoffer">+ ${__("Create Job Offer")}</button>`;
+                : `<button class="hwf-btn primary" data-act="createoffer">+ ${__("Create Job Offer")}</button>`;
         }
         actions += `<button class="hwf-btn danger" data-act="reject">✕ ${__("Reject")}</button>`;
 
@@ -270,16 +298,21 @@
                     <span class="text-muted">${iv.scheduled_on ? esc(frappe.datetime.str_to_user(iv.scheduled_on)) : ""}</span>
                 </div>`).join("") + `</div>`;
         }
-        if (type === "Offer") {
+        if (type === "Pre Offer") {
             const po = view.pre_offer || {};
             const c = po.counts || {};
             const bits = [];
-            if (po.sent) bits.push(__("Pre Offer") + ": " + pill(po.status || "Sent"));
+            bits.push(__("Pre Offer") + ": " + pill(po.sent ? (po.status || "Sent") : "Not sent"));
             if ((c.Filled || c.Approved || c.Rejected)) {
                 bits.push(`${__("Approvals")}: ${c.Approved || 0}✓ / ${c.Filled || 0}📝 / ${c.Rejected || 0}✕`);
             }
-            if (view.job_offer) bits.push(__("Job Offer") + ": " + pill(view.job_offer.status || "Open"));
-            if (bits.length) detail = `<div class="hwf-sub">${bits.join(" &nbsp;·&nbsp; ")}</div>`;
+            detail = `<div class="hwf-sub">${bits.join(" &nbsp;·&nbsp; ")}</div>`;
+        }
+        if (type === "Offer") {
+            const bit = view.job_offer
+                ? __("Job Offer") + ": " + pill(view.job_offer.status || "Open")
+                : __("No Job Offer created yet.");
+            detail = `<div class="hwf-sub">${bit}</div>`;
         }
 
         return `<div class="hwf-panel">
@@ -292,18 +325,26 @@
         </div>`;
     }
 
-    function render(frm, view) {
+    function render(frm, view, attempt) {
+        attempt = attempt || 0;
+        frm._hwf_view = view;   // cache so a tab click can re-render
         const field = frm.fields_dict[HOST];
-        if (!field || !field.$wrapper) return;
+        if (!field || !field.$wrapper) {
+            // HTML control not mounted yet (inactive tab) — retry briefly.
+            if (attempt < 20) setTimeout(() => render(frm, view, attempt + 1), 150);
+            return;
+        }
         const $w = field.$wrapper;
 
         if (!view || !view.enabled) {
             $w.html(`<div class="hwf-empty">${__("Hiring Workflow is disabled in Recruitment Settings.")}</div>`);
+            keepTabVisible(frm);
             return;
         }
         const stages = view.stages || [];
         if (!stages.length) {
             $w.html(`<div class="hwf-empty">${__("The linked Job Opening has no hiring stages configured.")}</div>`);
+            keepTabVisible(frm);
             return;
         }
 
@@ -316,7 +357,8 @@
             let plus = "";
             if (isCurrent && !closed) {
                 if (s.stage_type === "Interview") plus = `<button class="hwf-plus" data-plus="interview" data-stage="${esc(s.stage_name)}" title="${__("Schedule Interview")}">+</button>`;
-                else if (s.stage_type === "Offer") plus = `<button class="hwf-plus" data-plus="offer" title="${__("Offer actions")}">+</button>`;
+                else if (s.stage_type === "Pre Offer") plus = `<button class="hwf-plus" data-plus="preoffer" title="${__("Send Pre Offer Form")}">+</button>`;
+                else if (s.stage_type === "Offer") plus = `<button class="hwf-plus" data-plus="offer" title="${__("Create Job Offer")}">+</button>`;
             }
             const arrow = i < stages.length - 1 ? `<span class="hwf-arrow">▸</span>` : "";
             return `<div class="hwf-node ${st.cls}">
@@ -348,8 +390,13 @@
         $w.find('[data-plus="interview"]').on("click", function (e) {
             e.stopPropagation(); scheduleInterview(frm, $(this).data("stage"));
         });
+        $w.find('[data-plus="preoffer"]').on("click", function (e) {
+            e.stopPropagation(); sendPreOffer(frm);
+        });
         $w.find('[data-plus="offer"]').on("click", function (e) {
-            e.stopPropagation(); offerMenu(frm, view, this);
+            e.stopPropagation();
+            if (view.job_offer) frappe.set_route("Form", "Job Offer", view.job_offer.name);
+            else createJobOffer(frm);
         });
         $w.find("[data-open-iv]").on("click", function () {
             frappe.set_route("Form", "Interview", $(this).data("open-iv"));
@@ -364,22 +411,8 @@
             else if (act === "openoffer") frappe.set_route("Form", "Job Offer", view.job_offer.name);
             else if (act === "reject") rejectCandidate(frm);
         });
-    }
 
-    function offerMenu(frm, view) {
-        const po = view.pre_offer || {};
-        const d = new frappe.ui.Dialog({
-            title: __("Offer actions"),
-            primary_action_label: po.sent ? __("Resend Pre Offer Form") : __("Send Pre Offer Form"),
-            primary_action() { d.hide(); sendPreOffer(frm); },
-            secondary_action_label: view.job_offer ? __("Open Job Offer") : __("Create Job Offer"),
-            secondary_action() {
-                d.hide();
-                if (view.job_offer) frappe.set_route("Form", "Job Offer", view.job_offer.name);
-                else createJobOffer(frm);
-            },
-        });
-        d.show();
+        keepTabVisible(frm);
     }
 
     function runScreening(frm) {
@@ -401,11 +434,25 @@
         });
     }
 
+    // Re-render from the cached view whenever the Hiring Workflow tab is
+    // clicked — by then the HTML control is guaranteed to be in the DOM.
+    function bindTabClick(frm) {
+        (frm.layout && frm.layout.tabs || []).forEach((t) => {
+            if (t.df && t.df.fieldname === TAB && t.tab_link) {
+                t.tab_link.off("click.hwf").on("click.hwf", () => {
+                    if (frm._hwf_view) setTimeout(() => render(frm, frm._hwf_view), 50);
+                });
+            }
+        });
+    }
+
     // ── form hook ──
     frappe.ui.form.on("Job Applicant", {
         refresh(frm) {
             injectStyles();
             if (frm.is_new()) return;
+            keepTabVisible(frm);   // show immediately, before the data round-trip
+            bindTabClick(frm);
             frappe.call({
                 method: API + ".get_workflow_view",
                 args: { job_applicant: frm.doc.name },

@@ -23,6 +23,7 @@ import frappe
 from frappe import _
 
 from recruitment.api.action_center import sync_pre_offer_field_rejection_action
+from recruitment.api.hiring_stage import advance_on_pre_offer_approved
 
 
 VALID_STATUSES = frozenset({"Pending", "Filled", "Approved", "Rejected"})
@@ -202,6 +203,7 @@ def update_field_approval_status(job_applicant, fieldname, new_status, comment=N
 	_save_doc(doc)
 	doc.reload()
 	sync_pre_offer_field_rejection_action(doc)
+	advance_on_pre_offer_approved(job_applicant)  # auto-advance to Job Offer when all fields approved
 
 	return {"status": "success", "message": _("Updated"), "data": _load_approval_list(doc)}
 
@@ -249,6 +251,7 @@ def update_section_approval_status(job_applicant, section_name, new_status, comm
 	_save_doc(doc)
 	doc.reload()
 	sync_pre_offer_field_rejection_action(doc)
+	advance_on_pre_offer_approved(job_applicant)  # auto-advance to Job Offer when all fields approved
 
 	approval_list = _load_approval_list(doc)
 	section_data = [r for r in approval_list if r.get("section") == section_name]
@@ -287,6 +290,7 @@ def bulk_update_approval_status(job_applicant, new_status, comment=None):
 	_save_doc(doc)
 	doc.reload()
 	sync_pre_offer_field_rejection_action(doc)
+	advance_on_pre_offer_approved(job_applicant)  # auto-advance to Job Offer when all fields approved
 
 	approval_list = _load_approval_list(doc)
 	return {"status": "success", "message": _("Done"), "counts": _compute_counts(approval_list), "data": approval_list}

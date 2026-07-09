@@ -15,10 +15,10 @@
   {
    "columns": 2,
    "fieldname": "field_name",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Field",
-   "options": "TA Job Applicant Field",
+   "options": "",
    "reqd": 1
   },
   {
@@ -27,7 +27,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Operator",
-   "options": "=\n≥\n≤\n>\n<\n≠\none of\ncontains",
+   "options": "=\n\u2265\n\u2264\n>\n<\n\u2260\none of\ncontains",
    "reqd": 1
   },
   {

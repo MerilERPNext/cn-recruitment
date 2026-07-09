@@ -12,16 +12,18 @@ GET  recruitment.api.channels.campus.get_applied_jobs(email)
 
 Campus-Invite (TPO drive) flow — invite id carried in the email link (no token):
 GET  recruitment.api.channels.campus.get_invite_openings(campus_invite, email=None)
-GET  recruitment.api.channels.campus.get_invite_application_fields(campus_invite, job_opening)
+GET  recruitment.api.channels.campus.get_application_fields(opening)      [campus-enabled fields]
 POST recruitment.api.channels.campus.submit_invite_application(campus_invite, job_opening, email, form_data)
 
 The candidate NEVER chooses an invite. Each TPO registration email is tied to one
 Campus Invite and its link carries that invite id (built by
 recruitment.link_token.campus_registration_link). The candidate clicks -> signup ->
 signin; the frontend keeps campus_invite from the URL and passes it to the calls
-above. Access is gated by the TPO registration (is_email_registered_for_invite), so
-there is no per-candidate token that could fail. submit stamps the invite + its
-institute onto the created Job Applicant (custom_campus_invite / custom_institute).
+above. Form fields come from the shared get_application_fields(opening), which returns
+the opening's campus-enabled fields. Access is gated by the TPO registration
+(is_email_registered_for_invite), so there is no per-candidate token that could fail.
+submit stamps the invite + its institute onto the created Job Applicant
+(custom_campus_invite / custom_institute).
 
 Auth
 ----
@@ -216,12 +218,15 @@ def list_openings(search_term=None, filters=None, email=None, page=None, limit=N
 
 @candidate_required
 def get_application_fields(opening):
-    """Field list shown to the campus applicant for `opening`, pre-filled from
-    any existing Draft for this candidate."""
+    """Campus application fields for `opening` — the fields configured as campus-enabled
+    (view_campus) on that Job Opening — pre-filled from any existing Draft for this
+    candidate. Used by both the campus channel and the Campus Invite (TPO drive) flow;
+    the opening is accepted as-is, so an invite's opening works without being separately
+    posted on the campus channel."""
     if not opening:
         frappe.throw(frappe._("opening is required"))
-    if opening not in _common.get_openings_active_on_channel(CHANNEL):
-        frappe.throw(frappe._("This opening is not currently posted on the campus channel."))
+    if not frappe.db.exists("Job Opening", opening):
+        frappe.throw(frappe._("Invalid job opening."))
 
     candidate_email = (get_current_candidate() or "").strip().lower()
     job_applicant = None
@@ -300,6 +305,12 @@ def submit_application(job_applicant_email, job_opening, form_data=None, status=
         frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "campus.submit_application failed")
         return _err(f"Unable to save application: {type(e).__name__}: {e}", 500)
+
+    # On a real submission, score the candidate against the opening's eligibility
+    # rules → Shortlisted (pass) or Hold + "Eligibility Not Met" (knock-out fail).
+    if target_status == SUBMIT_STATUS:
+        from recruitment.recruitment.eligibility_engine import evaluate_eligibility
+        evaluate_eligibility(doc)
 
     if target_status == DRAFT_STATUS:
         message = "Application draft created." if created else "Application draft updated."
@@ -468,21 +479,6 @@ def get_invite_openings(campus_invite, email=None):
 
 
 @frappe.whitelist(allow_guest=True)
-def get_invite_application_fields(campus_invite, job_opening):
-    """Application fields to render for a chosen opening within a Campus Invite."""
-    invite = _get_submitted_invite(campus_invite)
-    if not invite:
-        return _err("Invalid or unsent campus invite.", 404)
-
-    opening = (job_opening or "").strip()
-    if not opening or opening not in _invite_opening_names(invite.name):
-        return _err("This opening is not part of this campus invite.", 400)
-
-    fields = _common.get_application_fields_for_channel(opening, CHANNEL)
-    return _ok("Fetched application fields.", {"job_opening": opening, "fields": fields})
-
-
-@frappe.whitelist(allow_guest=True)
 def submit_invite_application(campus_invite, job_opening, email, form_data=None):
     """Create a campus Job Applicant for a candidate applying via a Campus Invite.
 
@@ -544,6 +540,11 @@ def submit_invite_application(campus_invite, job_opening, email, form_data=None)
         frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "campus.submit_invite_application failed")
         return _err(f"Unable to submit application: {type(e).__name__}: {e}", 500)
+
+    # Score the candidate against the opening's eligibility rules → Shortlisted
+    # (pass) or Hold + "Eligibility Not Met" (knock-out fail).
+    from recruitment.recruitment.eligibility_engine import evaluate_eligibility
+    evaluate_eligibility(doc)
 
     return _ok(
         "Application submitted.",

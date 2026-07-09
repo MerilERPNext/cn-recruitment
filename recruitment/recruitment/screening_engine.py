@@ -40,44 +40,6 @@ NON_VALUE_FIELDTYPES = {
 # ==============================================================================
 # Applicant-field registry (sourced from Job Applicant meta)
 # ==============================================================================
-def sync_applicant_field_registry():
-	"""Mirror the Job Applicant doctype's fields into the TA Job Applicant Field
-	registry so the screener's "Applicant Field" dropdown is always live — HR
-	never has to maintain it by hand.
-
-	Runs on migrate and can be called on demand. Upsert-only (never deletes), so
-	any manually-added rows are preserved.
-	"""
-	meta = frappe.get_meta("Job Applicant")
-	count = 0
-	for df in meta.fields:
-		if df.fieldtype in NON_VALUE_FIELDTYPES or not df.fieldname:
-			continue
-		label = df.label or df.fieldname
-		if frappe.db.exists("TA Job Applicant Field", df.fieldname):
-			frappe.db.set_value(
-				"TA Job Applicant Field", df.fieldname,
-				{"field_label": label, "field_type": df.fieldtype},
-				update_modified=False,
-			)
-		else:
-			frappe.get_doc({
-				"doctype": "TA Job Applicant Field",
-				"field_name": df.fieldname,
-				"field_label": label,
-				"field_type": df.fieldtype,
-			}).insert(ignore_permissions=True)
-		count += 1
-	frappe.db.commit()
-	return {"synced": count}
-
-
-@frappe.whitelist()
-def refresh_applicant_field_registry():
-	"""Manual trigger (button / API) to re-sync the registry from meta."""
-	return sync_applicant_field_registry()
-
-
 # ==============================================================================
 # Triggers
 # ==============================================================================
@@ -132,6 +94,10 @@ def run_for_applicant(applicant):
 		doc = frappe.get_doc("Job Applicant", applicant)
 		result = evaluate_applicant(doc)
 		apply_result(doc, result)
+		# If the candidate is on a Screening stage of the hiring workflow, advance
+		# (pass) or reject (fail) automatically. No-op unless the feature is on.
+		from recruitment.api.hiring_stage import advance_on_screening_result
+		advance_on_screening_result(applicant, result["result"] == "Passed")
 		frappe.db.commit()
 		frappe.publish_realtime(
 			"screening_done",

@@ -1,6 +1,12 @@
 import frappe
 import json
+from frappe import _
 from frappe.utils import now, get_url, validate_email_address
+
+from recruitment.job_offer_utils import (
+    get_job_offer_document_template,
+    render_job_offer_via_document_template,
+)
 
 
 def _get_support_email():
@@ -39,6 +45,42 @@ def _job_offer_email_context(job_offer, applicant):
         "portal_link": offer_url,
         "support_email": _get_support_email(),
     }
+
+@frappe.whitelist()
+def create_job_offer_for_applicant(job_applicant):
+	"""Create a single Job Offer from a Job Applicant (used by the Offer stage of
+	the hiring-workflow flow). Idempotent: returns the existing offer if one is
+	already open."""
+	frappe.has_permission("Job Offer", "create", throw=True)
+
+	applicant = frappe.db.get_value(
+		"Job Applicant",
+		job_applicant,
+		["name", "applicant_name", "email_id", "designation", "custom_expected_doj", "phone_number"],
+		as_dict=True,
+	)
+	if not applicant:
+		frappe.throw(_("Job Applicant {0} not found.").format(job_applicant))
+
+	existing = frappe.db.exists(
+		"Job Offer", {"job_applicant": applicant.name, "docstatus": ["!=", 2]}
+	)
+	if existing:
+		return {"job_offer": existing, "already_existed": True}
+
+	job_offer = frappe.new_doc("Job Offer")
+	job_offer.job_applicant = applicant.name
+	job_offer.applicant_name = applicant.applicant_name
+	job_offer.applicant_email = applicant.email_id
+	job_offer.designation = applicant.designation
+	job_offer.custom_expected_doj = applicant.custom_expected_doj
+	job_offer.custom_phone_number = applicant.phone_number
+	job_offer.offer_date = frappe.utils.today()
+	job_offer.insert(ignore_permissions=True)
+	frappe.db.set_value("Job Applicant", applicant.name, "status", "Open")
+
+	return {"job_offer": job_offer.name, "already_existed": False}
+
 
 @frappe.whitelist()
 def create_bulk_job_offer(applicants):
@@ -176,6 +218,24 @@ def send_bulk_job_offer(job_offers):
             message = frappe.render_template(message_template, email_context)
 
             # ----------------------------
+            # Attach Document-Template PDF (only when the offer Document
+            # Template feature is enabled and one resolves for this offer).
+            # Bulk offers otherwise remain link-only, as before.
+            # ----------------------------
+            attachments = None
+            template_name = get_job_offer_document_template(job_offer)
+            if template_name:
+                pdf_bytes, filename = render_job_offer_via_document_template(
+                    job_offer, template_name
+                )
+                if pdf_bytes:
+                    attachments = [{
+                        "fname": filename,
+                        "fcontent": pdf_bytes,
+                        "content_type": "application/pdf",
+                    }]
+
+            # ----------------------------
             # Send Email
             # ----------------------------
             try:
@@ -183,6 +243,7 @@ def send_bulk_job_offer(job_offers):
                     recipients=[email],
                     subject=subject,
                     message=message,
+                    attachments=attachments,
                     reference_doctype="Job Offer",
                     reference_name=job_offer.name,
                     args=email_context,

@@ -64,7 +64,7 @@
   {
    "description": "Pick the Job Applicant fields that should be checked when determining rehire eligibility.",
    "fieldname": "select_rehire_check_fields",
-   "fieldtype": "Table MultiSelect",
+   "fieldtype": "Table",
    "label": "Select Re-Hire Check Fields",
    "options": "TA Rehire Check Field"
   }
