@@ -77,7 +77,6 @@ def submit_dpdp_consent(
     token=None,
     responses=None,
     employee_name=None,
-    signature=None,
     acceptance_date=None,
 ):
     """Record the candidate's DPDP consent as an immutable log and return status.
@@ -146,8 +145,6 @@ def submit_dpdp_consent(
 
         if cint(settings.capture_employee_name) and employee_name:
             log.employee_name = employee_name
-        if signature:
-            log.signature = signature
         if cint(settings.capture_date):
             log.acceptance_date = acceptance_date or today()
 

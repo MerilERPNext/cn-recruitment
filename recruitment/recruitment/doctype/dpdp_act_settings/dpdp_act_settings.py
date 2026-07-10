@@ -68,12 +68,6 @@ class DPDPActSettings(Document):
                 "fieldtype": "Data",
                 "is_mandatory": 1,
             })
-        acknowledgement.append({
-            "fieldname": "signature",
-            "label": "Signature",
-            "fieldtype": "Signature",
-            "is_mandatory": 1,
-        })
         if cint(self.capture_date):
             acknowledgement.append({
                 "fieldname": "acceptance_date",
