@@ -8,6 +8,94 @@ frappe.ui.form.on("Campus Drive", {
 			return { query: "recruitment.api.campus_openings.campus_job_opening_query" };
 		});
 	},
+
+	refresh: function (frm) {
+		// QR for the candidate apply link — only once the drive is saved and the
+		// registration form is enabled.
+		if (frm.is_new() || !frm.doc.registration_form_enabled) {
+			return;
+		}
+		frm.add_custom_button(
+			__("Generate QR Code"),
+			function () {
+				frm.call({
+					doc: frm.doc,
+					method: "generate_registration_qr",
+					freeze: true,
+					freeze_message: __("Generating QR Code..."),
+				}).then(function (r) {
+					if (r && r.message) {
+						frm.reload_doc();
+						frappe.show_alert(
+							{ message: __("QR Code generated"), indicator: "green" },
+							4
+						);
+					}
+				});
+			},
+			__("Registration Form")
+		);
+	},
+});
+
+frappe.ui.form.on("Campus Drive Invite", {
+	campus_invite: function (frm, cdt, cdn) {
+		const row = locals[cdt][cdn];
+		if (!row.campus_invite) {
+			return;
+		}
+
+		frappe.call({
+			method: "recruitment.recruitment.doctype.campus_drive.campus_drive.get_campus_invite_details",
+			args: { campus_invite: row.campus_invite },
+			callback: function (r) {
+				if (!r.message) {
+					return;
+				}
+				const data = r.message;
+				let added = 0;
+
+				// Institute -> Participating Institutes
+				if (data.institute) {
+					const exists = (frm.doc.participating_institutes || []).some(
+						(d) => d.institute === data.institute
+					);
+					if (!exists) {
+						const child = frm.add_child("participating_institutes");
+						child.institute = data.institute;
+						added += 1;
+					}
+				}
+
+				// Job Openings -> Linked Job Openings
+				(data.job_openings || []).forEach((jo) => {
+					const exists = (frm.doc.linked_job_openings || []).some(
+						(d) => d.job_opening === jo
+					);
+					if (!exists) {
+						const child = frm.add_child("linked_job_openings");
+						child.job_opening = jo;
+						added += 1;
+					}
+				});
+
+				frm.refresh_field("participating_institutes");
+				frm.refresh_field("linked_job_openings");
+
+				if (added) {
+					frappe.show_alert(
+						{
+							message: __("Institute & Job Openings fetched from {0}", [
+								row.campus_invite,
+							]),
+							indicator: "green",
+						},
+						5
+					);
+				}
+			},
+		});
+	},
 });
 
 frappe.ui.form.on("Campus Drive Job Opening", {

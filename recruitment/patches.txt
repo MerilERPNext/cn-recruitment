@@ -15,3 +15,5 @@ recruitment.patches.setup_external_recruiter_access
 recruitment.patches.delete_posting_channel_custom_fields
 recruitment.patches.hide_posting_channels_tab
 recruitment.patches.delete_posting_channels_tab
+recruitment.patches.add_eligibility_hold_substatus
+recruitment.patches.delete_ta_job_applicant_field

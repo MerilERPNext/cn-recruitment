@@ -12,11 +12,12 @@
  "fields": [
   {
    "fieldname": "applicant_field",
-   "fieldtype": "Link",
+   "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Job Applicant Field",
-   "options": "TA Job Applicant Field",
-   "reqd": 1
+   "options": "",
+   "reqd": 1,
+   "columns": 3
   }
  ],
  "index_web_pages_for_search": 0,

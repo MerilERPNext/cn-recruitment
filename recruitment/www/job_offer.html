@@ -18,7 +18,13 @@
                 <button type="button" class="btn btn-primary" id="accept" onclick="accept()">Accept</button>
             </div><br>
         </center>
-        <div>{{ print }}</div>
+        {% if use_document_template %}
+            <div style="padding: 0 10px;">
+                <iframe src="{{ offer_pdf_data_uri }}" style="width:100%; height:85vh; border:1px solid #ddd;" title="Offer Letter"></iframe>
+            </div>
+        {% else %}
+            <div>{{ print }}</div>
+        {% endif %}
     {% endif %}
 {% else %}
     <div>

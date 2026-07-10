@@ -103,6 +103,10 @@ export type RecognitionFlags = {
   hideRewardsPointSummary: boolean;
   hideBudgetedPointsFrontend: boolean;
   hideNominateUptoValue: boolean;
+  /** CC controls for Recognition emails (Advanced Settings). */
+  enableCcEmployees: boolean;
+  enableCcEmailIds: boolean;
+  sendEmailToRecognizerManager: boolean;
   /** Minimum characters required in an appreciation/nomination note (0 = no minimum). */
   minimumNominationCharacters: number;
 };
@@ -147,6 +151,9 @@ export const useRecognitionFlags = (): RecognitionFlags => {
     hideRewardsPointSummary: truthy(s.hide_rewards_point_summary),
     hideBudgetedPointsFrontend: truthy(s.hide_budgeted_points_frontend),
     hideNominateUptoValue: truthy(s.hide_nominate_upto_value),
+    enableCcEmployees: truthy(s.enable_cc_employees),
+    enableCcEmailIds: truthy(s.enable_cc_email_ids),
+    sendEmailToRecognizerManager: truthy(s.send_email_to_recognizer_manager),
     minimumNominationCharacters: Number(s.minimum_nomination_characters) || 0,
   };
 };
@@ -623,6 +630,12 @@ export type CreateEmployeeAppreciationPayload = {
   date?: string;
   /** JSON-stringified submission from the program's attached panel form. */
   custom_form_data?: string;
+  /** Comma-separated recognition value(s) selected for this appreciation. */
+  values?: string;
+  /** CC employee IDs (only sent when enable_cc_employees is on). */
+  cc_employees?: string[];
+  /** CC external email addresses (only sent when enable_cc_email_ids is on). */
+  cc_email_ids?: string[];
 };
 
 export const useCreateEmployeeAppreciation = () => {
@@ -643,6 +656,59 @@ export const useCreateEmployeeAppreciation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recognition"] });
       queryClient.invalidateQueries({ queryKey: ["all-emp-appreciations-badges"] });
+    },
+  });
+};
+
+// ─── Program budget (Budgeting Rule) ─────────────────────────────────────────
+// A Recognition Program may link a Budgeting Rule via `budgeting_rule`; the
+// budget value is the total Budget Points across that rule's limit rows.
+// Returns 0 when no rule/budget is configured. Reuses the Frappe resource API
+// (no custom endpoint) — the visibility flag comes from useRecognitionFlags
+// (hide_budgeted_points_frontend), so it is not duplicated here.
+export const useProgramBudget = (programName?: string) => {
+  return useQuery<number>({
+    queryKey: ["recognition", "program-budget", programName],
+    enabled: !!programName,
+    queryFn: async () => {
+      const prog = (await FrappeAPI.getDocument(
+        "Recognition Program",
+        programName as string,
+        ["budgeting_rule"],
+      )) as { budgeting_rule?: string | null };
+      const ruleName = prog?.budgeting_rule;
+      if (!ruleName) return 0;
+
+      const rule = (await FrappeAPI.getDocument(
+        "Budgeting Rule",
+        ruleName,
+      )) as { limits?: { budget_points?: number | null }[] };
+      return (rule?.limits ?? []).reduce(
+        (sum, l) => sum + (Number(l?.budget_points) || 0),
+        0,
+      );
+    },
+  });
+};
+
+// ─── Program recognition values ──────────────────────────────────────────────
+// The Recognition Program stores its values as a comma-separated string in the
+// `values` field. This returns them as a clean list for the appreciate form's
+// Values dropdown.
+export const useProgramValues = (programName?: string) => {
+  return useQuery<string[]>({
+    queryKey: ["recognition", "program-values", programName],
+    enabled: !!programName,
+    queryFn: async () => {
+      const p = (await FrappeAPI.getDocument(
+        "Recognition Program",
+        programName as string,
+        ["values"],
+      )) as { values?: string | null };
+      return (p?.values || "")
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean);
     },
   });
 };

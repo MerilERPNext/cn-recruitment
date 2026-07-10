@@ -41,10 +41,36 @@ def get_context(context):
         if job_offers:
             context.doc = job_offers[0]["name"]
 
-            from recruitment.job_offer_utils import get_job_offer_print_format
-            pf = get_job_offer_print_format(context.doc)
+            # Render source: Document Template (when enabled + resolvable) shown
+            # as an embedded PDF, otherwise the Print Format HTML (unchanged).
+            import base64
+            from recruitment.job_offer_utils import (
+                get_job_offer_print_format,
+                get_job_offer_document_template,
+                render_job_offer_via_document_template,
+            )
 
-            context.print = frappe.get_print('Job Offer', context.doc, print_format=pf)
+            context.use_document_template = 0
+            context.offer_pdf_data_uri = ''
+            context.print = ''
+
+            template_name = get_job_offer_document_template(context.doc)
+            if template_name:
+                pdf_bytes, _fname = render_job_offer_via_document_template(
+                    context.doc, template_name
+                )
+                if pdf_bytes:
+                    context.use_document_template = 1
+                    context.offer_pdf_data_uri = (
+                        'data:application/pdf;base64,'
+                        + base64.b64encode(pdf_bytes).decode()
+                    )
+
+            # Fall back to the Print Format HTML if the template is off or the
+            # render failed (already logged inside the helper).
+            if not context.use_document_template:
+                pf = get_job_offer_print_format(context.doc)
+                context.print = frappe.get_print('Job Offer', context.doc, print_format=pf)
 
             # Fetch Job Offer fields for sidebar (only fields that exist)
             jo_meta = frappe.get_meta('Job Offer')

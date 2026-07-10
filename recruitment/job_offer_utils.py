@@ -8,6 +8,18 @@ from frappe.utils import formatdate, now_datetime, time_diff_in_hours, flt, fmt_
 from recruitment.recruitment.link_token import OFFER_SCOPE, offer_token, require_token
 
 
+def is_dpdp_consent_enabled():
+    """Whether the DPDP consent step is switched on in DPDP Act Settings.
+
+    Defensive by design: if the settings single/field does not exist yet (feature
+    not migrated on a site) it returns False, so callers behave exactly as before.
+    """
+    try:
+        return bool(cint(frappe.db.get_single_value("DPDP Act Settings", "enabled")))
+    except Exception:
+        return False
+
+
 def _authorize_offer(appl, token, ptype="read"):
     """Gate the offer endpoints for both audiences:
       - internal desk/HR users (logged in with Job Offer permission) — they call
@@ -69,6 +81,157 @@ def get_job_offer_print_format(job_offer=None):
     return default_pf
 
 
+def get_job_offer_document_template(job_offer=None):
+    """Resolve which Document Template to use for a Job Offer, or None.
+
+    Returns a Document Template name ONLY when the master toggle
+    ``send_offer_via_document_template`` is ON in Recruitment Settings and a
+    template is configured. Selection mirrors ``get_job_offer_print_format``:
+    the template mapped to the applicant's Employment Type
+    (``job_offer_document_template_mapping``) wins, otherwise the single
+    ``job_offer_document_template`` default is used.
+
+    Returns None whenever the toggle is off or nothing is configured, so every
+    caller cleanly falls back to the existing Print Format path. Never raises —
+    any unexpected error degrades to None (Print Format path).
+
+    ``job_offer`` may be a Job Offer name (str) or a Job Offer doc.
+    """
+    try:
+        settings = frappe.get_cached_doc("Recruitment Settings")
+    except Exception:
+        return None
+
+    if not settings or not settings.get("send_offer_via_document_template"):
+        return None
+
+    default_tmpl = settings.get("job_offer_document_template") or None
+
+    if not job_offer:
+        return default_tmpl
+
+    try:
+        if isinstance(job_offer, str):
+            job_applicant = frappe.db.get_value("Job Offer", job_offer, "job_applicant")
+        else:
+            job_applicant = job_offer.get("job_applicant")
+
+        if not job_applicant:
+            return default_tmpl
+
+        employment_type = frappe.db.get_value(
+            "Job Applicant", job_applicant, "custom_employment_type"
+        )
+        if not employment_type:
+            return default_tmpl
+
+        for row in (settings.get("job_offer_document_template_mapping") or []):
+            if row.employment_type == employment_type and row.document_template:
+                return row.document_template
+    except Exception:
+        pass
+
+    return default_tmpl
+
+
+def render_job_offer_via_document_template(job_offer, template_name):
+    """Render a Job Offer to PDF using a nextai Document Template.
+
+    Returns ``(pdf_bytes, filename)``, or ``(None, None)`` on any failure so
+    callers can fall back to the Print Format path. Reuses nextai's proven
+    render + DOCX/HTML -> PDF conversion pipeline (LibreOffice with a
+    mammoth/wkhtmltopdf fallback), honouring the template's PDF password
+    protection. No Employee Documents row is created — we only need the bytes.
+
+    ``job_offer`` may be a Job Offer name (str) or doc.
+    """
+    try:
+        from nextai.funnel.doctype.funnel_task.actions.create_template_document import (
+            generate_docx_document,
+            generate_html_document,
+            ensure_pdf_file,
+        )
+    except Exception:
+        frappe.log_error(
+            title="Job Offer Document Template: nextai pipeline unavailable",
+            message=frappe.get_traceback(),
+        )
+        return None, None
+
+    jo_name = job_offer if isinstance(job_offer, str) else job_offer.get("name")
+
+    try:
+        template = frappe.get_doc("Document Template", template_name)
+
+        if template.template_type == "Docx":
+            file_info = generate_docx_document(template, jo_name)
+        else:
+            file_info = generate_html_document(template, jo_name)
+
+        pdf_password = None
+        if getattr(template, "enable_pdf_password_protection", 0):
+            try:
+                pdf_password = template.get_pdf_password(
+                    template.doctype_name or "Job Offer", jo_name
+                )
+            except Exception:
+                pass
+
+        file_to_attach = ensure_pdf_file(file_info, pdf_password=pdf_password)
+        if not file_to_attach or not file_to_attach.get("file_url"):
+            frappe.log_error(
+                title="Job Offer Document Template: render produced no PDF",
+                message=f"Job Offer: {jo_name}, Template: {template_name}",
+            )
+            return None, None
+
+        src_file = frappe.get_doc("File", {"file_url": file_to_attach["file_url"]})
+        pdf_bytes = src_file.get_content()
+        filename = file_to_attach.get("file_name") or f"{jo_name}.pdf"
+
+        # The nextai pipeline persists the rendered PDF as a standalone private
+        # File doc. We only need the bytes (for email / inline preview / download),
+        # so delete the temp File to avoid accumulating orphans — the portal
+        # preview re-renders on every page view.
+        try:
+            src_file.delete(ignore_permissions=True)
+        except Exception:
+            pass
+
+        return pdf_bytes, filename
+    except Exception:
+        frappe.log_error(
+            title="Job Offer Document Template render failed",
+            message=f"Job Offer: {jo_name}, Template: {template_name}\n{frappe.get_traceback()}",
+        )
+        return None, None
+
+
+def get_job_offer_pdf(job_offer):
+    """Return ``(pdf_bytes, filename)`` for a Job Offer using the configured
+    source: a Document Template when the toggle is on and one resolves,
+    otherwise the Print Format (existing behaviour).
+
+    Central helper so the email / download / bulk flows share one decision.
+    ``job_offer`` may be a Job Offer name (str) or doc.
+    """
+    jo_name = job_offer if isinstance(job_offer, str) else job_offer.get("name")
+    jo_doc = job_offer if not isinstance(job_offer, str) else None
+
+    template_name = get_job_offer_document_template(job_offer)
+    if template_name:
+        pdf_bytes, filename = render_job_offer_via_document_template(job_offer, template_name)
+        if pdf_bytes:
+            return pdf_bytes, filename
+        # Render failed — fall through to the Print Format path (already logged).
+
+    pf = get_job_offer_print_format(job_offer)
+    pdf_bytes = frappe.get_print(
+        "Job Offer", jo_name, doc=jo_doc, print_format=pf, as_pdf=True
+    )
+    return pdf_bytes, f"{jo_name}.pdf"
+
+
 @frappe.whitelist()
 def get_job_offer_print_preview_url(job_offer):
     """Build the Print-view URL for a Job Offer using the employment-type-specific
@@ -115,14 +278,10 @@ def download_job_offer_pdf(appl, token=None):
 
         jo_doc = frappe.get_doc("Job Offer", jo_id)
 
-        pf = get_job_offer_print_format(jo_doc)
+        # Document Template (when enabled) or Print Format (default).
+        pdf_content, filename = get_job_offer_pdf(jo_doc)
 
-        pdf_content = frappe.get_print(
-            "Job Offer", jo_id, doc=jo_doc,
-            print_format=pf, as_pdf=True
-        )
-
-        frappe.local.response.filename = f"{jo_id}.pdf"
+        frappe.local.response.filename = filename
         frappe.local.response.filecontent = pdf_content
         frappe.local.response.type = "pdf"
     finally:
@@ -145,6 +304,20 @@ def preview_job_offer_html(appl, token=None):
         })
         if not jo_id:
             frappe.throw("No active Job Offer found")
+
+        # Document Template (when enabled) is returned as an embedded PDF;
+        # otherwise the Print Format HTML (unchanged).
+        template_name = get_job_offer_document_template(jo_id)
+        if template_name:
+            pdf_bytes, _fname = render_job_offer_via_document_template(jo_id, template_name)
+            if pdf_bytes:
+                import base64
+                data_uri = "data:application/pdf;base64," + base64.b64encode(pdf_bytes).decode()
+                html = (
+                    f'<iframe src="{data_uri}" style="width:100%; height:85vh; '
+                    f'border:1px solid #ddd;" title="Offer Letter"></iframe>'
+                )
+                return {"html": html, "jo_id": jo_id}
 
         pf = get_job_offer_print_format(jo_id)
 
@@ -198,7 +371,16 @@ def job_offer_update(status, appl, token=None, reason=None, message=None):
             )
 
         webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
-        return {"jo_id": jo_id, "webform": webform}
+
+        # On acceptance, tell the portal whether the DPDP consent page must be
+        # shown before onboarding. False (default) => behaves exactly as before.
+        dpdp_consent_required = is_dpdp_consent_enabled() if status == "Accepted" else False
+
+        return {
+            "jo_id": jo_id,
+            "webform": webform,
+            "dpdp_consent_required": dpdp_consent_required,
+        }
     finally:
         frappe.flags.ignore_permissions = original_ignore
 
@@ -342,13 +524,10 @@ def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
     settings = frappe.get_doc("Recruitment Settings")
     job_offer_temp = settings.job_offer_template
 
-    pf = get_job_offer_print_format(jo_doc)
-
-    output_pdf = frappe.get_print(
-        "Job Offer", jo_name, doc=jo_doc, print_format=pf, as_pdf=True, output=None
-    )
+    # Document Template (when enabled) or Print Format (default).
+    output_pdf, filename = get_job_offer_pdf(jo_doc)
     pdf_attachment = {
-        "fname": jo_name + ".pdf",  # Name of the file
+        "fname": filename,  # Name of the file
         "fcontent": output_pdf,  # Byte content of the file
         "content_type": "application/pdf",  # Content type of the file
     }

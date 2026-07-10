@@ -24,6 +24,51 @@ _JO_GUARDED_SELECTS = ("custom_work_experience_range", "custom_preferred_notice_
 # Job Requisition salary-timeframe -> Job Opening salary_per.
 _TIMEFRAME_TO_SALARY_PER = {"Annual": "Year", "Monthly": "Month"}
 
+# Requisition person -> Hiring Team role, in priority order. Each entry is
+# (requisition fieldname, fieldtype, role). "Employee" fields are resolved to
+# their linked User (a hiring-team row needs a User); "User" fields are used
+# as-is. Priority order also breaks ties: if the same user fills two of these
+# fields, the first (highest) role wins and the person is listed once.
+_JR_HIRING_TEAM_SOURCES = (
+    ("requested_by", "Employee", "Hiring Manager"),
+    ("custom_hiring_lead", "Employee", "Hiring Lead"),
+    ("custom_assign_to_recruiter", "User", "Recruiter"),
+)
+
+
+def _resolve_team_user(value, fieldtype):
+    """Return the User id for a requisition person field, or None to skip.
+
+    Employee links resolve to their ``user_id`` (an Employee with no linked user
+    can't be a hiring-team member and is skipped); User links pass through.
+    """
+    if not value:
+        return None
+    if fieldtype == "Employee":
+        return frappe.db.get_value("Employee", value, "user_id") or None
+    return value
+
+
+def _fill_hiring_team_from_requisition(source, target):
+    """Seed the Job Opening's Hiring Team from the requisition's people.
+
+    Only runs when creating an opening *from* a requisition (the mapper path),
+    and only when the target has no hiring team yet — so a manually-built team
+    on an opening that later gets a requisition linked is never overridden.
+    """
+    if not target.meta.has_field("custom_hiring_team"):
+        return
+    if target.get("custom_hiring_team"):
+        return
+
+    seen_users = set()
+    for fieldname, fieldtype, role in _JR_HIRING_TEAM_SOURCES:
+        user = _resolve_team_user(source.get(fieldname), fieldtype)
+        if not user or user in seen_users:
+            continue
+        seen_users.add(user)
+        target.append("custom_hiring_team", {"user": user, "role": role})
+
 
 def _to_number(value):
     """Best-effort numeric parse of a free-text Data field; None when not numeric."""
@@ -63,6 +108,14 @@ def make_job_opening(source_name, target_doc=None):
         # "Open & Approved" aren't valid on Job Opening).
         target.status = "Open"
         target.description = source.description
+
+        # Seed the Hiring Team from the requisition's people (hiring manager,
+        # hiring lead, recruiter). Guarded so it never overrides a team that was
+        # built manually before a requisition was linked.
+        try:
+            _fill_hiring_team_from_requisition(source, target)
+        except Exception:
+            frappe.log_error(frappe.get_traceback(), "make_job_opening hiring-team seed failed")
 
         try:
             company_currency = (

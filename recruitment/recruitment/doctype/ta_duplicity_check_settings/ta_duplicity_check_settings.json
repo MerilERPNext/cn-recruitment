@@ -75,7 +75,7 @@
   {
    "description": "Pick the Job Applicant fields that should be checked to detect duplicate applications.",
    "fieldname": "select_duplicity_check_fields",
-   "fieldtype": "Table MultiSelect",
+   "fieldtype": "Table",
    "label": "Select Duplicity Check Fields",
    "options": "TA Duplicity Check Field"
   },

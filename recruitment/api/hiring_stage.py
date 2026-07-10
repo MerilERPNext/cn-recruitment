@@ -53,7 +53,15 @@ def is_enabled():
 # Reading the workflow definition
 # --------------------------------------------------------------------------- #
 def get_opening_stages(job_opening):
-	"""Return the ordered hiring stages defined on a Job Opening (list of dicts)."""
+	"""Return the ordered hiring stages for a Job Opening (list of dicts).
+
+	Interview stages come from the opening's ``custom_hiring_stages`` table. Two
+	terminal offer stages are then appended *virtually* so every workflow ends the
+	same way: an optional **Pre Job Offer** stage (toggled per-opening via
+	``custom_enable_pre_job_offer``) followed by the final **Job Offer** stage.
+	Keeping them virtual means the toggle takes effect immediately — no re-fetch,
+	no stored rows to migrate.
+	"""
 	if not job_opening:
 		return []
 	rows = frappe.get_all(
@@ -69,6 +77,36 @@ def get_opening_stages(job_opening):
 		],
 		order_by="idx asc",
 	)
+	if not rows:
+		return rows
+	return _append_offer_stages(job_opening, rows)
+
+
+def _terminal_stage(name, stage_type, idx):
+	return {
+		"stage_name": name, "stage_type": stage_type,
+		"sla": 0, "sla_unit": "d", "owner_role": "HR",
+		"notify": 0, "auto": 0, "notes": "", "idx": idx,
+	}
+
+
+def _append_offer_stages(job_opening, rows):
+	"""Append the virtual Pre Job Offer / Job Offer terminal stages."""
+	try:
+		types_present = {(r.get("stage_type") or "") for r in rows}
+		idx = max([(r.get("idx") or 0) for r in rows] or [0])
+		enable_pre = frappe.db.get_value(
+			"Job Opening", job_opening, "custom_enable_pre_job_offer"
+		)
+		if enable_pre and "Pre Offer" not in types_present:
+			idx += 1
+			rows.append(_terminal_stage("Pre Job Offer", "Pre Offer", idx))
+		if "Offer" not in types_present:
+			idx += 1
+			rows.append(_terminal_stage("Job Offer", "Offer", idx))
+	except Exception:
+		# Never let the terminal-stage logic break stage reading.
+		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: append offer stages failed")
 	return rows
 
 
@@ -251,13 +289,17 @@ def _ensure_interview_round(stage_name, designation=None):
 
 
 @frappe.whitelist()
-def prepare_interview(job_applicant):
-	"""Ensure an Interview Round exists for the candidate's current stage and
-	return the values used to prefill a new built-in Interview."""
+def prepare_interview(job_applicant, stage_name=None):
+	"""Ensure an Interview Round exists for a stage and return the values used to
+	prefill a new built-in Interview.
+
+	``stage_name`` lets the flow schedule an interview for a specific Interview
+	stage (the "+" on that stage node); when omitted we use the current stage.
+	"""
 	doc = frappe.get_doc("Job Applicant", job_applicant)
 	stages = get_opening_stages(doc.get("job_title"))
-	current = doc.get(STAGE_FIELD)
-	idx = _find_stage(stages, current) if current else -1
+	target = stage_name or doc.get(STAGE_FIELD)
+	idx = _find_stage(stages, target) if target else -1
 	if idx < 0:
 		frappe.throw(_("Set a hiring stage before scheduling an interview."))
 
@@ -297,7 +339,9 @@ def advance_on_interview_result(interview_name):
 		if idx < 0:
 			return
 		stage = stages[idx]
-		if (stage.get("stage_type") or "") != "Interview" or not stage.get("auto"):
+		# Auto-advance on any Interview-type stage (the whole pipeline is automated
+		# once the Hiring Workflow feature is enabled).
+		if (stage.get("stage_type") or "") != "Interview":
 			return
 
 		if status == "Rejected":
@@ -318,3 +362,198 @@ def advance_on_interview_result(interview_name):
 		)
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: auto-advance failed")
+
+
+# --------------------------------------------------------------------------- #
+# Screening auto-advance (called after the screening engine persists a result)
+# --------------------------------------------------------------------------- #
+def advance_on_screening_result(job_applicant, passed):
+	"""Advance / reject a candidate sitting on a *Screening* stage when the
+	auto-screening result lands. No-op unless the feature is on and the current
+	stage is a Screening-type stage."""
+	try:
+		if not is_hiring_workflow_enabled():
+			return
+		doc = frappe.get_doc("Job Applicant", job_applicant)
+		stages = get_opening_stages(doc.get("job_title"))
+		current = doc.get(STAGE_FIELD)
+		idx = _find_stage(stages, current) if current else -1
+		if idx < 0:
+			return
+		stage = stages[idx]
+		if (stage.get("stage_type") or "") != "Screening":
+			return
+		if not passed:
+			_append_history(doc, stage, "Auto (Rejected)", notes="Screening failed")
+			doc.status = "Rejected"
+			doc.save(ignore_permissions=True)
+			return
+		nxt = idx + 1
+		if nxt < len(stages):
+			_enter_stage(doc, stages[nxt], result="Auto (Screened)", ignore_permissions=True)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: screening advance failed")
+
+
+# --------------------------------------------------------------------------- #
+# Pre-offer auto-advance (called after HR approves pre-offer fields)
+# --------------------------------------------------------------------------- #
+def advance_on_pre_offer_approved(job_applicant):
+	"""When every submitted pre-offer field is Approved and the candidate is on a
+	*Pre Offer* stage, advance to the next stage (the Job Offer stage)."""
+	try:
+		if not is_hiring_workflow_enabled():
+			return
+		doc = frappe.get_doc("Job Applicant", job_applicant)
+		stages = get_opening_stages(doc.get("job_title"))
+		current = doc.get(STAGE_FIELD)
+		idx = _find_stage(stages, current) if current else -1
+		if idx < 0:
+			return
+		stage = stages[idx]
+		if (stage.get("stage_type") or "") != "Pre Offer":
+			return
+		rows = doc.get("custom_pre_offer_field_approvals") or []
+		if not rows:
+			return
+		if not all((r.get("approval_status") or "") == "Approved" for r in rows):
+			return
+		nxt = idx + 1
+		if nxt < len(stages):
+			_enter_stage(doc, stages[nxt], result="Auto (Pre-offer approved)", ignore_permissions=True)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: pre-offer advance failed")
+
+
+# --------------------------------------------------------------------------- #
+# Job Offer outcome (called from the Job Offer doc hooks)
+# --------------------------------------------------------------------------- #
+def advance_on_job_offer_outcome(doc, method=None):
+	"""Reflect a Job Offer's Accepted / Rejected outcome on the candidate when they
+	are on the final *Offer* stage: Accepted clears the pipeline, Rejected rejects."""
+	try:
+		if not is_hiring_workflow_enabled():
+			return
+		status = doc.get("status")
+		if status not in ("Accepted", "Rejected"):
+			return
+		applicant = doc.get("job_applicant")
+		if not applicant:
+			return
+		ja = frappe.get_doc("Job Applicant", applicant)
+		stages = get_opening_stages(ja.get("job_title"))
+		current = ja.get(STAGE_FIELD)
+		idx = _find_stage(stages, current) if current else -1
+		if idx < 0:
+			return
+		stage = stages[idx]
+		if (stage.get("stage_type") or "") != "Offer":
+			return
+		if status == "Accepted" and ja.status != "Accepted":
+			_append_history(ja, stage, "Accepted", notes="Job Offer accepted")
+			ja.status = "Accepted"
+			ja.save(ignore_permissions=True)
+		elif status == "Rejected" and ja.status != "Rejected":
+			_append_history(ja, stage, "Rejected", notes="Job Offer declined")
+			ja.status = "Rejected"
+			ja.save(ignore_permissions=True)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: job offer outcome failed")
+
+
+# --------------------------------------------------------------------------- #
+# Aggregated view for the visual flow (hiring_workflow_flow.js)
+# --------------------------------------------------------------------------- #
+def _latest_history_by_stage(doc):
+	"""Map stage_name -> latest {entered_on, result} from the applicant's history."""
+	latest = {}
+	for row in (doc.get(HISTORY_FIELD) or []):
+		name = row.get("stage_name")
+		if not name:
+			continue
+		prev = latest.get(name)
+		if prev is None or (row.get("entered_on") and row.get("entered_on") >= prev["entered_on"]):
+			latest[name] = {"entered_on": row.get("entered_on"), "result": row.get("result")}
+	return latest
+
+
+@frappe.whitelist()
+def get_workflow_view(job_applicant):
+	"""Everything the visual stepper needs in one round-trip: the ordered stages
+	with per-stage state, interviews grouped by stage, and pre-offer / job-offer
+	status for the Offer stage."""
+	if not is_hiring_workflow_enabled():
+		return {"enabled": False, "stages": []}
+
+	doc = frappe.get_doc("Job Applicant", job_applicant)
+	stages = get_opening_stages(doc.get("job_title"))
+	current = doc.get(STAGE_FIELD)
+	idx = _find_stage(stages, current) if current else -1
+
+	status = doc.get("status")
+	rejected = status == "Rejected"
+	accepted = status == "Accepted"
+	hist = _latest_history_by_stage(doc)
+
+	# Interviews grouped by round name (rounds are named after the stage).
+	interviews_by_stage = {}
+	for iv in frappe.get_all(
+		"Interview",
+		filters={"job_applicant": doc.name},
+		fields=["name", "interview_round", "scheduled_on", "status", "average_rating"],
+		order_by="scheduled_on asc, creation asc",
+	):
+		interviews_by_stage.setdefault(iv.get("interview_round") or "", []).append(iv)
+
+	out_stages = []
+	for i, s in enumerate(stages):
+		if rejected:
+			state = "rejected" if i == idx else ("done" if i < idx else "upcoming")
+		elif accepted:
+			state = "done" if i <= idx else "upcoming"
+		else:
+			state = "done" if i < idx else ("current" if i == idx else "upcoming")
+		info = hist.get(s.get("stage_name")) or {}
+		out_stages.append({
+			"stage_name": s.get("stage_name"),
+			"stage_type": s.get("stage_type"),
+			"state": state,
+			"entered_on": info.get("entered_on"),
+			"result": info.get("result"),
+			"interviews": interviews_by_stage.get(s.get("stage_name"), []),
+		})
+
+	# Pre-offer round + approval snapshot (fields exist once fixtures are applied).
+	pre_offer_rows = doc.get("custom_pre_offer_forms") or []
+	approval_rows = doc.get("custom_pre_offer_field_approvals") or []
+	approval_counts = {"Pending": 0, "Filled": 0, "Approved": 0, "Rejected": 0}
+	for r in approval_rows:
+		st = r.get("approval_status")
+		if st in approval_counts:
+			approval_counts[st] += 1
+	pre_offer = {
+		"sent": bool(pre_offer_rows),
+		"status": (pre_offer_rows[-1].get("status") if pre_offer_rows else None),
+		"counts": approval_counts,
+		"has_rejections": approval_counts["Rejected"] > 0,
+	}
+
+	offer = frappe.db.get_value(
+		"Job Offer",
+		{"job_applicant": doc.name, "docstatus": ["!=", 2]},
+		["name", "status", "docstatus"],
+		as_dict=True,
+	)
+
+	return {
+		"enabled": True,
+		"current_stage": current,
+		"current_stage_index": idx,
+		"current_stage_type": (stages[idx].get("stage_type") if idx >= 0 else None),
+		"is_last": idx >= 0 and idx == len(stages) - 1,
+		"status": status,
+		"is_closed": rejected or accepted,
+		"stages": out_stages,
+		"pre_offer": pre_offer,
+		"job_offer": offer,
+	}
