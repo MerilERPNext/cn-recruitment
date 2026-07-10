@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Attachment } from "../../../../types/flows";
 import HeaderBar from "../../../HeaderBar";
 
-import { ChevronDown, Eye, Pencil, Save, MoreVertical, FileText } from "lucide-react";
+import { ChevronDown, Eye, Pencil, Save, MoreVertical, FileText, XCircle } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
-import { useGetFlowRequestById, useUpdateInitiatorFormSubmission } from "../../../../hooks/useFlows";
+import { useGetFlowRequestById, useUpdateInitiatorFormSubmission, useRevokeFlow } from "../../../../hooks/useFlows";
 import { useGetUiPermission } from "../../../../hooks/userUiPermission";
 import { getActionsEnabled } from "../../../../utils/uiPermission";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
@@ -29,6 +29,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import DropdownMenu from "../../../shared/DropDownMenu";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import toast from "react-hot-toast";
+import RejectionReasonModal from "../../../shared/RejectionReasonModal";
+import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 
 type JsonToFormData = {
   form?: { components?: FormIOComponent[] };
@@ -53,9 +55,11 @@ const RequestDetails: React.FC = () => {
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
   const [isFormValid, setIsFormValid] = useState(true);
+  const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
   const editedSubmissionDataRef = useRef<Record<string, unknown>>({});
 
   const updateInitiatorMutation = useUpdateInitiatorFormSubmission();
+  const revokeFlowMutation = useRevokeFlow();
 
   const { data: userUiPermission } = useGetUiPermission("HR Process");
   const enabledActions = getActionsEnabled(
@@ -69,6 +73,23 @@ const RequestDetails: React.FC = () => {
     data?.initiator_forms && data.initiator_forms.length > 0;
 
   const showRetriggerButton = canRetrigger && !!id && !!data?.can_reinitiate_flow;
+  const showRevokeButton = !!id && !!data?.can_revoke;
+
+  const handleRevokeSubmit = (reason: string) => {
+    if (!id) return;
+    revokeFlowMutation.mutate(
+      { funnel_activity: id, reason },
+      {
+        onSuccess: () => {
+          toast.success("Flow request revoked successfully");
+          setIsRevokeModalOpen(false);
+        },
+        onError: (error: unknown) => {
+          toast.error(errorResponseFormater(error, "Failed to revoke flow request."));
+        },
+      }
+    );
+  };
 
   const handleShowSelfForm = () => {
     let displayData: JsonToFormData;
@@ -296,6 +317,17 @@ const RequestDetails: React.FC = () => {
                     <span>Initiation Form</span>
                   </Button>
                 )}
+                {isDesktop && showRevokeButton && (
+                  <Button
+                    variant="outline"
+                    bgColor="error"
+                    onClick={() => setIsRevokeModalOpen(true)}
+                    className="flex items-center gap-2 py-1.5 transition-all rounded-md shadow-sm"
+                    disabled={revokeFlowMutation.isPending}
+                  >
+                    Revoke Request
+                  </Button>
+                )}
                 {isDesktop && (
                   <Button
                     variant="outline"
@@ -316,6 +348,16 @@ const RequestDetails: React.FC = () => {
                   <div className="flex items-center">
                     <DropdownMenu
                       items={[
+                        ...(showRevokeButton
+                          ? [
+                              {
+                                label: "Revoke Request",
+                                icon: <XCircle size={16} />,
+                                onClick: () => setIsRevokeModalOpen(true),
+                                className: "text-red-600 hover:bg-red-50 hover:text-red-700",
+                              },
+                            ]
+                          : []),
                         ...(haveInitiatorForm
                           ? [
                               {
@@ -647,6 +689,17 @@ const RequestDetails: React.FC = () => {
           </ReviewForm>,
           document.body,
         )}
+      <RejectionReasonModal
+        isOpen={isRevokeModalOpen}
+        isPending={revokeFlowMutation.isPending}
+        required={true}
+        title="Revoke Flow Request"
+        description="Are you sure you want to revoke this flow request? Please provide a reason."
+        label="Reason for Revocation"
+        placeholder="Enter reason for revoking..."
+        onCancel={() => setIsRevokeModalOpen(false)}
+        onSave={handleRevokeSubmit}
+      />
     </div>
   );
 };

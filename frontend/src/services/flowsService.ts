@@ -232,3 +232,17 @@ export const retriggerApprovalFlowEvent = async (
 
   return response as any;
 };
+
+export const revokeFlow = async (
+  funnel_activity: string,
+  reason: string
+) => {
+  const response = await FrappeAPI.callMethod(
+    "nextai.funnel.doctype.flow_config.revoke_flow.revoke_flow",
+    {
+      funnel_activity,
+      reason,
+    }
+  );
+  return response as any;
+};

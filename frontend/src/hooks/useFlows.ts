@@ -21,6 +21,7 @@ import {
   reinitiateStage,
   reinitiateFlow,
   retriggerApprovalFlowEvent,
+  revokeFlow,
 } from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
@@ -395,6 +396,23 @@ export const useRetriggerApprovalFlowEvent = () => {
       queryClient.invalidateQueries({ queryKey: ["get-separation-workflow"] });
       queryClient.invalidateQueries({ queryKey: ["get-separation-funnel"] });
       queryClient.invalidateQueries({ queryKey: ["should-show-confirmation"] });
+    },
+  });
+};
+
+export const useRevokeFlow = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ funnel_activity, reason }: { funnel_activity: string; reason: string }) =>
+      revokeFlow(funnel_activity, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-flow-request-details"] });
+      queryClient.invalidateQueries({ queryKey: ["separation-employee"] });
+      queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
+      queryClient.invalidateQueries({ queryKey: ["get-separation-workflow"] });
+      queryClient.invalidateQueries({ queryKey: ["get-separation-funnel"] });
     },
   });
 };
