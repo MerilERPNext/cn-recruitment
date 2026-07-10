@@ -4,11 +4,25 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "portal_settings_section",
+  "candidate_portal_url",
   "email_settings_section",
   "candidate_registration_email_template",
   "tpo_set_password_email_template"
  ],
  "fields": [
+  {
+   "fieldname": "portal_settings_section",
+   "fieldtype": "Section Break",
+   "label": "Candidate Portal"
+  },
+  {
+   "description": "Base URL of the candidate frontend used to build campus registration links (e.g. https://portal.example.com). Leave blank to use this site's URL.",
+   "fieldname": "candidate_portal_url",
+   "fieldtype": "Data",
+   "label": "Candidate Portal URL",
+   "options": "URL"
+  },
   {
    "fieldname": "email_settings_section",
    "fieldtype": "Section Break",

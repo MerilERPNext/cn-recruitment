@@ -1,3 +1,5 @@
+import re
+
 import frappe
 from frappe import _
 from frappe.utils import validate_email_address
@@ -7,16 +9,35 @@ from frappe.utils import validate_email_address
 IMMEDIATE_REGISTRATION_LINK = "/jobs"
 
 
+def _norm(value):
+	"""Case/space-insensitive text for name comparisons."""
+	return (value or "").strip().casefold()
+
+
+def _digits(value):
+	"""Digits only, for phone-number comparison."""
+	return re.sub(r"\D", "", value or "")
+
+
+def _phone_matches(entered, stored):
+	a, b = _digits(entered), _digits(stored)
+	if not a or not b:
+		return False
+	# Exact, or matching last 10 digits (tolerates country-code prefixes like +91).
+	return a == b or a[-10:] == b[-10:]
+
+
 @frappe.whitelist(allow_guest=True)
-def verify_applicant_email(email, first_name=None, last_name=None, drive=None):
+def verify_applicant_email(email, first_name=None, last_name=None, phone_number=None, drive=None):
 	"""Public endpoint for the email-verification web page.
 
-	Checks whether the supplied email matches an existing Job Applicant
-	(`email_id`). If it does, flags every matching applicant as
-	`custom_email_verified`, links them to the originating Campus Drive (when the
-	`drive` param resolves to a real drive), and returns a "verified" response.
-	Otherwise returns "not verified" along with a (currently dummy) immediate
-	registration link.
+	Core identity is the email: if it isn't an existing Job Applicant we return a
+	"not found" response with the immediate-registration link. If the email IS
+	found, we compare the entered First Name / Last Name / Mobile Number against
+	that applicant's `applicant_name` / `custom_applicant_last_name` /
+	`phone_number` and return a field-level "mismatch" response if any differ.
+	Only when all four line up do we flag the applicant as verified (and link the
+	originating Campus Drive when the `drive` param resolves to a real drive).
 	"""
 	email = (email or "").strip()
 	if not email:
@@ -25,36 +46,58 @@ def verify_applicant_email(email, first_name=None, last_name=None, drive=None):
 	if not validate_email_address(email):
 		frappe.throw(_("Please enter a valid email address."), title=_("Invalid Email"))
 
-	applicants = frappe.get_all(
+	phone_number = (phone_number or "").strip()
+	if not phone_number:
+		frappe.throw(_("Mobile number is required."), title=_("Missing Mobile Number"))
+
+	applicant = frappe.db.get_value(
 		"Job Applicant",
-		filters={"email_id": email},
-		pluck="name",
+		{"email_id": email},
+		["name", "applicant_name", "custom_applicant_last_name", "phone_number"],
+		as_dict=True,
 	)
 
-	if not applicants:
+	# Email is the core identity — if it isn't on file, offer registration.
+	if not applicant:
 		return {
 			"verified": False,
+			"status": "not_found",
 			"message": _("We could not find your email in our system yet."),
 			"registration_link": IMMEDIATE_REGISTRATION_LINK,
 		}
 
-	# Only trust the drive param if it resolves to a real Campus Drive.
+	# Field-by-field validation against the matched applicant.
+	mismatches = []
+	if _norm(first_name) != _norm(applicant.applicant_name):
+		mismatches.append(_("First Name"))
+	if _norm(last_name) != _norm(applicant.custom_applicant_last_name):
+		mismatches.append(_("Last Name"))
+	if not _phone_matches(phone_number, applicant.phone_number):
+		mismatches.append(_("Mobile Number"))
+
+	if mismatches:
+		return {
+			"verified": False,
+			"status": "mismatch",
+			"fields": mismatches,
+			"message": _("These details do not match our records: {0}.").format(
+				", ".join(mismatches)
+			),
+		}
+
+	# All four fields matched — mark verified.
 	drive = (drive or "").strip()
-	campus_drive = drive if drive and frappe.db.exists("Campus Drive", drive) else None
-
 	updates = {"custom_email_verified": 1}
-	if campus_drive:
-		updates["custom_campus_drive"] = campus_drive
+	if drive and frappe.db.exists("Campus Drive", drive):
+		updates["custom_campus_drive"] = drive
 
-	for name in applicants:
-		# set_value bypasses record-level permissions, which is required here
-		# because the caller is a Guest.
-		frappe.db.set_value("Job Applicant", name, updates, update_modified=False)
-
+	# set_value bypasses record-level permissions, required here for a Guest caller.
+	frappe.db.set_value("Job Applicant", applicant.name, updates, update_modified=False)
 	frappe.db.commit()
 
 	return {
 		"verified": True,
-		"message": _("Your email is verified. You can leave this page."),
-		"applicants": applicants,
+		"status": "verified",
+		"message": _("Your details are verified. You can leave this page."),
+		"applicant": applicant.name,
 	}

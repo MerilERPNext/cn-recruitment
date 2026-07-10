@@ -24,9 +24,14 @@ frappe.ready(function () {
 		const email = (document.getElementById("email").value || "").trim();
 		const first_name = (document.getElementById("first_name").value || "").trim();
 		const last_name = (document.getElementById("last_name").value || "").trim();
+		const phone_number = (document.getElementById("phone_number").value || "").trim();
 
 		if (!email) {
 			showInlineError(__("Please enter your email address."));
+			return;
+		}
+		if (!phone_number) {
+			showInlineError(__("Please enter your mobile number."));
 			return;
 		}
 
@@ -35,14 +40,16 @@ frappe.ready(function () {
 		frappe
 			.call({
 				method: "recruitment.api.candidate_verification.verify_applicant_email",
-				args: { email, first_name, last_name, drive: driveId },
+				args: { email, first_name, last_name, phone_number, drive: driveId },
 			})
 			.then((r) => {
 				const data = r.message || {};
 				if (data.verified) {
 					showVerified(data.message);
-				} else {
+				} else if (data.status === "not_found") {
 					showNotVerified(data.message, data.registration_link);
+				} else {
+					showMismatch(data.message);
 				}
 			})
 			.catch(() => {
@@ -76,6 +83,17 @@ frappe.ready(function () {
 				},
 				{ label: __("Close"), kind: "ghost", onClick: closeTab },
 			],
+		});
+	}
+
+	function showMismatch(message) {
+		openModal({
+			type: "warning",
+			title: __("Details Don't Match"),
+			message:
+				message ||
+				__("The details you entered do not match our records. Please check and try again."),
+			actions: [{ label: __("Try Again"), kind: "primary", onClick: hideModal }],
 		});
 	}
 
