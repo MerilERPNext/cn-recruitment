@@ -161,6 +161,21 @@ def submit_dpdp_consent(
         if log.consent_given:
             log.submit()
 
+            # Consent recorded — resume the Employee Onboarding auto-creation that
+            # was gated at Job Offer acceptance. Mirrors the accept-time flow, so
+            # onboarding initializes the moment consent is given. Best-effort:
+            # never let onboarding bookkeeping fail the consent submission.
+            try:
+                from recruitment.api.action_center import (
+                    _auto_release_and_materialize_onboarding,
+                )
+                _auto_release_and_materialize_onboarding(appl, raise_on_error=False)
+            except Exception:
+                frappe.log_error(
+                    frappe.get_traceback(),
+                    "DPDP: resume onboarding after consent failed",
+                )
+
         return {
             "consent_log": log.name,
             "consent_given": bool(log.consent_given),

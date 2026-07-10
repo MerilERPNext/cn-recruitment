@@ -70,11 +70,14 @@ frappe.ui.form.on("Campus Drive Invite", {
 				// Job Openings -> Linked Job Openings
 				(data.job_openings || []).forEach((jo) => {
 					const exists = (frm.doc.linked_job_openings || []).some(
-						(d) => d.job_opening === jo
+						(d) => d.job_opening === jo.job_opening
 					);
 					if (!exists) {
 						const child = frm.add_child("linked_job_openings");
-						child.job_opening = jo;
+						child.job_opening = jo.job_opening;
+						// fetch_from does not run on programmatic add — set the title
+						// explicitly so it shows immediately (no save needed).
+						child.job_title = jo.job_title;
 						added += 1;
 					}
 				});

@@ -471,6 +471,32 @@ def _auto_map_offer_applicant_fields(doc, applicant, job_offer_name=None):
         frappe.log_error(frappe.get_traceback(), "materialize_onboarding: auto-map fields failed")
 
 
+def _dpdp_consent_pending(job_applicant_id):
+    """True when DPDP consent is *enforced* for this applicant but not yet given.
+
+    Gates auto-creation of Employee Onboarding: while consent is pending, onboarding
+    must not be instantiated. Defensive by design — if the feature is off, the
+    setting is not enforcing, or the DPDP doctypes are not present on the site, this
+    returns False so the flow behaves exactly as it does today.
+    """
+    try:
+        from frappe.utils import cint
+        from recruitment.job_offer_utils import is_dpdp_consent_enabled
+
+        if not is_dpdp_consent_enabled():
+            return False
+        if not cint(frappe.db.get_single_value("DPDP Act Settings", "enforce_before_onboarding")):
+            return False
+        given = frappe.db.get_value(
+            "Job Applicant DPDP Consent Log",
+            {"job_applicant": job_applicant_id, "docstatus": 1, "consent_given": 1},
+            "name",
+        )
+        return not bool(given)
+    except Exception:
+        return False
+
+
 def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
     """Creates the Employee Onboarding doc from the applicant's pre-onboarding fields,
     stamps the release fields onto it, links back via custom_pre_onboarding_employee_onboarding,
@@ -509,6 +535,13 @@ def materialize_onboarding_from_applicant(job_applicant_id, prefill=None):
         except Exception:
             frappe.log_error(frappe.get_traceback(), "materialize_onboarding_from_applicant: refresh existing EO failed")
         return existing_eo
+
+    # DPDP gate: while consent is enforced for this applicant and not yet given, do
+    # NOT auto-instantiate the Employee Onboarding. Creation resumes automatically
+    # once the candidate submits consent (submit_dpdp_consent re-runs the auto flow).
+    # Feature off / consent already given => no effect, behaves exactly as before.
+    if _dpdp_consent_pending(job_applicant_id):
+        return None
 
     if not applicant.get("custom_onboarding_portal_form"):
         frappe.throw(_("No Onboarding Portal Form has been released for this applicant."))
