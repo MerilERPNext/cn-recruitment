@@ -22,9 +22,11 @@ applicant creation or interview feedback, and the built-in ``status`` field is
 kept in sync so existing screens keep working.
 """
 
+import json
+
 import frappe
 from frappe import _
-from frappe.utils import now_datetime
+from frappe.utils import flt, get_url, now_datetime, today
 
 # Custom fields added on Job Applicant (see recruitment/custom/job_applicant.json)
 STAGE_FIELD = "custom_current_stage"
@@ -248,6 +250,12 @@ def set_stage(job_applicant, stage_name):
 	if idx < 0:
 		frappe.throw(_("Stage {0} is not part of this Job Opening's workflow.").format(stage_name))
 
+	# Forward-only: a completed / current stage can't be revisited.
+	current = doc.get(STAGE_FIELD)
+	cur_idx = _find_stage(stages, current) if current else -1
+	if idx <= cur_idx:
+		frappe.throw(_("The hiring workflow moves forward only — you can't return to a completed or the current stage."))
+
 	_enter_stage(doc, stages[idx], result="Set")
 	return {"current_stage": stage_name}
 
@@ -272,17 +280,23 @@ def reject_at_current_stage(job_applicant, reason=None):
 def _ensure_interview_round(stage_name, designation=None):
 	"""Return an Interview Round named after the stage, creating it if needed.
 
-	``expected_skill_set`` is a required table on Interview Round; we create the
-	master with ``ignore_mandatory`` so recruiters can fill skills later instead
-	of being blocked at scheduling time.
+	Rounds are shared across openings/designations by stage name. We deliberately
+	keep them **designation-agnostic** — Interview.designation is fetched from the
+	round, and HRMS blocks an interview whose round designation differs from the
+	applicant's. Leaving it empty lets HRMS fill in each applicant's own
+	designation, so one "Screening"/"Technical Round" round serves every opening.
+
+	``expected_skill_set`` is a required table on Interview Round; we create with
+	``ignore_mandatory`` so recruiters can fill skills later.
 	"""
 	existing = frappe.db.get_value("Interview Round", {"round_name": stage_name}, "name")
 	if existing:
+		# Un-pin a legacy round from a single designation so it works for all.
+		if frappe.db.get_value("Interview Round", existing, "designation"):
+			frappe.db.set_value("Interview Round", existing, "designation", None)
 		return existing
 	rnd = frappe.new_doc("Interview Round")
 	rnd.round_name = stage_name
-	if designation:
-		rnd.designation = designation
 	rnd.flags.ignore_mandatory = True
 	rnd.insert(ignore_permissions=True)
 	return rnd.name
@@ -459,6 +473,232 @@ def advance_on_job_offer_outcome(doc, method=None):
 			ja.save(ignore_permissions=True)
 	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: job offer outcome failed")
+
+
+# --------------------------------------------------------------------------- #
+# Candidate review (Screening / Shortlist dialogs)
+# --------------------------------------------------------------------------- #
+@frappe.whitelist()
+def get_candidate_review(job_applicant):
+	"""Summary + resume for the Screening / Shortlist review dialog."""
+	doc = frappe.get_doc("Job Applicant", job_applicant)
+	work = [
+		{
+			"company": r.get("company_name"),
+			"designation": r.get("designation"),
+			"experience": r.get("total_experience"),
+			"address": r.get("address"),
+		}
+		for r in (doc.get("custom_previous_work_experience") or [])
+	]
+	edu = [
+		{
+			"qualification": r.get("qualification"),
+			"school": r.get("school_univ"),
+			"year": r.get("year_of_passing"),
+			"score": r.get("class_per"),
+		}
+		for r in (doc.get("custom_educational_qualification") or [])
+	]
+	source = doc.get("source") or ""
+	if doc.get("source_name"):
+		source = "{0} ({1})".format(source, doc.get("source_name")) if source else doc.get("source_name")
+	return {
+		"name": doc.get("applicant_name"),
+		"email": doc.get("email_id"),
+		"phone": doc.get("phone_number"),
+		"total_experience": doc.get("custom_total_experience"),
+		"current_company": doc.get("custom_current_company_name"),
+		"current_designation": doc.get("custom_current_designation"),
+		"work_experience": work,
+		"education": edu,
+		"source": source,
+		"resume_url": doc.get("resume_attachment"),
+		"resume_link": doc.get("resume_link"),
+		"current_stage": doc.get(STAGE_FIELD),
+	}
+
+
+@frappe.whitelist()
+def complete_review(job_applicant, action, comment=None, tags=None):
+	"""Outcome of a Screening / Shortlist review. ``action`` is 'advance'
+	(Screen / Shortlist) or 'reject'. The comment is logged and any tags added."""
+	doc = frappe.get_doc("Job Applicant", job_applicant)
+	if comment:
+		try:
+			doc.add_comment("Comment", comment)
+		except Exception:
+			pass
+	if tags:
+		tag_list = tags if isinstance(tags, list) else json.loads(tags or "[]")
+		for t in tag_list:
+			try:
+				doc.add_tag(t)
+			except Exception:
+				pass
+	if action == "reject":
+		return reject_at_current_stage(job_applicant, reason=comment)
+	return move_to_next_stage(job_applicant)
+
+
+# --------------------------------------------------------------------------- #
+# Interview completion ("Mark as Completed" → Interview Feedback)
+# --------------------------------------------------------------------------- #
+@frappe.whitelist()
+def complete_interview(job_applicant, rating, comments=None, assessment=None, stage_name=None):
+	"""Create (and submit) an Interview Feedback for the candidate's current (or
+	given) Interview stage, then let the auto-advance hook move them on.
+
+	``assessment`` is "Candidate Selected" (→ Cleared → advance) or
+	"Candidate Rejected" (→ Rejected → reject). ``rating`` is 1–5.
+	"""
+	doc = frappe.get_doc("Job Applicant", job_applicant)
+	stages = get_opening_stages(doc.get("job_title"))
+	target = stage_name or doc.get(STAGE_FIELD)
+	idx = _find_stage(stages, target) if target else -1
+	if idx < 0:
+		frappe.throw(_("Select an interview stage first."))
+	stage = stages[idx]
+	round_name = _ensure_interview_round(stage.get("stage_name"), doc.get("designation"))
+
+	# Reuse an interview scheduled for this stage, else create one now.
+	interview = frappe.db.get_value(
+		"Interview",
+		{"job_applicant": doc.name, "interview_round": round_name, "docstatus": ["<", 2]},
+		"name",
+	)
+	if not interview:
+		iv = frappe.new_doc("Interview")
+		iv.job_applicant = doc.name
+		iv.interview_round = round_name
+		iv.job_opening = doc.get("job_title")
+		if doc.get("designation"):
+			iv.designation = doc.get("designation")
+		iv.scheduled_on = today()
+		# At least one interviewer is mandatory (the feedback's on_submit re-saves
+		# the Interview, re-running validation) — use the acting HR user.
+		iv.append("interview_details", {"interviewer": frappe.session.user})
+		iv.flags.ignore_mandatory = True
+		# Rounds are shared by stage name across designations; skip HRMS's
+		# round↔designation validation so completing feedback never gets blocked.
+		iv.flags.ignore_validate = True
+		iv.insert(ignore_permissions=True)
+		interview = iv.name
+
+	cleared = (assessment or "") == "Candidate Selected"
+	result = "Cleared" if cleared else "Rejected"
+
+	# Rating comes in as 1–5 stars; Interview Feedback stores it as a 0–1 fraction.
+	r = flt(rating)
+	avg = r / 5.0 if r > 1 else r
+
+	fb = frappe.new_doc("Interview Feedback")
+	fb.interview = interview
+	fb.interview_round = round_name
+	fb.interviewer = frappe.session.user
+	fb.job_applicant = doc.name
+	fb.feedback = comments or ""
+	fb.result = result
+	fb.average_rating = avg
+	fb.flags.ignore_mandatory = True
+	fb.flags.ignore_validate = True
+	fb.insert(ignore_permissions=True)
+
+	# Set the interview outcome so the on_submit auto-advance hook acts on it.
+	frappe.db.set_value("Interview", interview, "status", result)
+	fb.submit()
+	frappe.db.commit()
+
+	return {"interview": interview, "feedback": fb.name, "result": result}
+
+
+def _stage_or_throw(doc, stage_name):
+	stages = get_opening_stages(doc.get("job_title"))
+	target = stage_name or doc.get(STAGE_FIELD)
+	idx = _find_stage(stages, target) if target else -1
+	if idx < 0:
+		frappe.throw(_("Select a stage first."))
+	return stages, idx
+
+
+@frappe.whitelist()
+def mark_stage_not_required(job_applicant, stage_name=None, comment=None):
+	"""Skip the current (or given) stage — record 'Not Required' (with the HR's
+	comment) and advance to the next stage without any action."""
+	doc = frappe.get_doc("Job Applicant", job_applicant)
+	stages, idx = _stage_or_throw(doc, stage_name)
+	_append_history(doc, stages[idx], "Not Required", notes=comment)
+	if comment:
+		try:
+			doc.add_comment(
+				"Comment",
+				_("Marked <b>{0}</b> as Not Required: {1}").format(stages[idx].get("stage_name"), comment),
+			)
+		except Exception:
+			pass
+	nxt = idx + 1
+	if nxt >= len(stages):
+		doc.save(ignore_permissions=True)
+		return {"current_stage": stages[idx].get("stage_name"), "skipped": True}
+	stage = _enter_stage(doc, stages[nxt], result="Skipped")
+	return {"current_stage": stage.get("stage_name")}
+
+
+@frappe.whitelist()
+def send_interview_feedback_form(job_applicant, stage_name=None):
+	"""Ensure an Interview exists for the stage and email its interviewer(s) a
+	request to submit feedback (a link to the Interview)."""
+	doc = frappe.get_doc("Job Applicant", job_applicant)
+	stages, idx = _stage_or_throw(doc, stage_name)
+	stage = stages[idx]
+	round_name = _ensure_interview_round(stage.get("stage_name"), doc.get("designation"))
+
+	interview = frappe.db.get_value(
+		"Interview",
+		{"job_applicant": doc.name, "interview_round": round_name, "docstatus": ["<", 2]},
+		"name",
+	)
+	if not interview:
+		iv = frappe.new_doc("Interview")
+		iv.job_applicant = doc.name
+		iv.interview_round = round_name
+		iv.job_opening = doc.get("job_title")
+		iv.scheduled_on = today()
+		iv.append("interview_details", {"interviewer": frappe.session.user})
+		iv.flags.ignore_mandatory = True
+		iv.flags.ignore_validate = True
+		iv.insert(ignore_permissions=True)
+		interview = iv.name
+
+	iv = frappe.get_doc("Interview", interview)
+	interviewers = [r.interviewer for r in (iv.get("interview_details") or []) if r.interviewer]
+	if not interviewers:
+		frappe.throw(_("This interview has no interviewers — schedule it and add interviewers first."))
+
+	url = get_url("/app/interview/" + interview)
+	message = frappe.render_template(
+		"Hello,<br><br>"
+		"Please submit your feedback for the <b>{{ round }}</b> interview with "
+		"<b>{{ applicant }}</b>.<br><br>"
+		"<a href='{{ url }}'>Open the interview to add feedback</a><br><br>"
+		"Regards,<br>Recruitment Team",
+		{"applicant": doc.get("applicant_name") or doc.name, "round": round_name, "url": url},
+	)
+	emailed = True
+	try:
+		frappe.sendmail(
+			recipients=interviewers,
+			subject=_("Interview feedback requested — {0}").format(doc.get("applicant_name") or doc.name),
+			message=message,
+			reference_doctype="Interview",
+			reference_name=interview,
+		)
+	except Exception:
+		emailed = False
+		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: feedback-form email failed")
+	frappe.db.set_value("Interview", interview, "status", "Under Review")
+	frappe.db.commit()
+	return {"interview": interview, "sent_to": interviewers, "emailed": emailed}
 
 
 # --------------------------------------------------------------------------- #

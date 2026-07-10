@@ -97,6 +97,14 @@
         .hwf-btn.primary:hover{background:var(--blue-600,#1479d6);}
         .hwf-btn.danger{color:var(--red-600,#c0392b);border-color:var(--red-200,#f0b4b4);}
         .hwf-btn.danger:hover{background:var(--red-50,#fdeaea);}
+        .hwf-more-wrap{position:relative;display:inline-block;}
+        .hwf-menu{position:absolute;top:calc(100% + 4px);right:0;z-index:50;min-width:190px;
+            background:var(--fg-color,#fff);border:1px solid var(--border-color);border-radius:8px;
+            box-shadow:0 4px 16px rgba(0,0,0,.14);padding:4px;}
+        .hwf-menu a{display:block;padding:7px 12px;border-radius:6px;font-size:.83rem;color:var(--text-color);
+            cursor:pointer;text-decoration:none;white-space:nowrap;}
+        .hwf-menu a:hover{background:var(--control-bg-on-gray,var(--bg-color));}
+        .hwf-menu a.danger{color:var(--red-600,#c0392b);}
         .hwf-banner{padding:9px 12px;border-radius:6px;font-size:.85rem;font-weight:500;}
         .hwf-banner.ok{background:var(--green-50,#eaf7ee);color:var(--green-700,#1e7a34);}
         .hwf-banner.bad{background:var(--red-50,#fdeaea);color:var(--red-700,#b02a2a);}
@@ -131,6 +139,49 @@
 
     function completeStage(frm) {
         call(frm, "move_to_next_stage", {}, true);
+    }
+
+    function markNotRequired(frm, stageName) {
+        const d = new frappe.ui.Dialog({
+            title: __("Mark as Not Required"),
+            fields: [{ fieldtype: "Small Text", fieldname: "comment", label: __("Comments"), reqd: 1 }],
+            primary_action_label: __("Submit"),
+            primary_action(values) {
+                frappe.call({
+                    method: API + ".mark_stage_not_required",
+                    args: { job_applicant: frm.doc.name, stage_name: stageName, comment: values.comment },
+                    freeze: true,
+                    callback: () => {
+                        d.hide();
+                        frappe.show_alert({ message: __("Stage marked Not Required."), indicator: "blue" });
+                        frm.reload_doc();
+                    },
+                });
+            },
+        });
+        d.show();
+    }
+
+    function gotoPreOfferApprovalTab(frm) {
+        const tabs = (frm.layout && frm.layout.tabs) || [];
+        const tab = tabs.find((t) => t.df && t.df.fieldname === "custom_pre_offer_approval_tab");
+        if (tab && tab.tab_link) tab.tab_link.find("a, button").first().trigger("click");
+        else if (frm.scroll_to_field) frm.scroll_to_field("custom_pre_offer_approval_html");
+    }
+
+    function sendFeedbackForm(frm, stageName) {
+        frappe.call({
+            method: API + ".send_interview_feedback_form",
+            args: { job_applicant: frm.doc.name, stage_name: stageName },
+            freeze: true,
+            freeze_message: __("Sending feedback request…"),
+            callback: (r) => {
+                const m = r && r.message;
+                if (!m) return;
+                const to = (m.sent_to || []).join(", ");
+                frappe.show_alert({ message: __("Feedback form sent to {0}", [to || __("interviewers")]), indicator: "green" });
+            },
+        });
     }
 
     function jumpTo(frm, stageName) {
@@ -214,26 +265,19 @@
     }
 
     function createJobOffer(frm) {
-        frappe.confirm(
-            __("Create a Job Offer for this candidate?"),
-            () => {
-                frappe.call({
-                    method: "recruitment.api.bulk_job_offer.create_job_offer_for_applicant",
-                    args: { job_applicant: frm.doc.name },
-                    freeze: true,
-                    freeze_message: __("Creating Job Offer…"),
-                    callback: (r) => {
-                        const m = r && r.message;
-                        if (!m || !m.job_offer) return;
-                        frappe.show_alert({
-                            message: m.already_existed ? __("Job Offer already exists — opening it.") : __("Job Offer created."),
-                            indicator: "green",
-                        });
-                        frappe.set_route("Form", "Job Offer", m.job_offer);
-                    },
-                });
-            }
-        );
+        // Open a prefilled Job Offer form for review (don't create it silently) —
+        // HR fills salary/terms and saves it themselves.
+        frappe.model.with_doctype("Job Offer", () => {
+            const d = frappe.model.get_new_doc("Job Offer");
+            d.job_applicant = frm.doc.name;
+            d.applicant_name = frm.doc.applicant_name;
+            d.applicant_email = frm.doc.email_id;
+            if (frm.doc.designation) d.designation = frm.doc.designation;
+            if (frm.doc.custom_expected_doj) d.custom_expected_doj = frm.doc.custom_expected_doj;
+            if (frm.doc.phone_number) d.custom_phone_number = frm.doc.phone_number;
+            d.offer_date = frappe.datetime.get_today();
+            frappe.set_route("Form", "Job Offer", d.name);
+        });
     }
 
     // ── rendering ──────────────────────────────────────────────────────────
@@ -266,24 +310,39 @@
 
         const type = cur.stage_type || "";
         let actions = "";
-        if (!view.is_last) {
-            actions += `<button class="hwf-btn primary" data-act="complete">✓ ${__("Complete stage")}</button>`;
-        }
-        if (type === "Interview") {
-            actions += `<button class="hwf-btn" data-act="interview">+ ${__("Schedule Interview")}</button>`;
-        }
         if (type === "Screening") {
-            actions += `<button class="hwf-btn" data-act="screening">${__("Run Screening")}</button>`;
-        }
-        if (type === "Pre Offer") {
+            actions += `<button class="hwf-btn primary" data-act="review" data-mode="Screening">${__("Screen")}</button>`;
+            actions += `<button class="hwf-btn" data-act="screening">${__("Run Auto-Screening")}</button>`;
+        } else if (type === "Shortlist") {
+            actions += `<button class="hwf-btn primary" data-act="review" data-mode="Shortlist">${__("Shortlist")}</button>`;
+        } else if (type === "Interview") {
+            actions += `<button class="hwf-btn" data-act="interview">+ ${__("Schedule Interview")}</button>`;
+            actions += `<button class="hwf-btn primary" data-act="markdone">${__("Mark as Completed")}</button>`;
+            actions += `<span class="hwf-more-wrap">
+                <button class="hwf-btn" data-act="more" title="${__("More")}">⋮</button>
+                <div class="hwf-menu" style="display:none;">
+                    <a data-menu="feedbackform">${__("Send Feedback Form")}</a>
+                    <a data-menu="notreq" class="danger">${__("Mark as Not Required")}</a>
+                </div>
+            </span>`;
+        } else if (type === "Pre Offer") {
             const po = view.pre_offer || {};
             const poLabel = po.sent ? __("Resend Pre Offer Form") : __("Send Pre Offer Form");
             actions += `<button class="hwf-btn primary" data-act="preoffer">+ ${poLabel}</button>`;
-        }
-        if (type === "Offer") {
+            actions += `<button class="hwf-btn" data-act="viewpreoffer">${__("View Pre Offer Form")}</button>`;
+            if (!view.is_last) actions += `<button class="hwf-btn" data-act="complete">✓ ${__("Complete stage")}</button>`;
+            actions += `<span class="hwf-more-wrap">
+                <button class="hwf-btn" data-act="more" title="${__("More")}">⋮</button>
+                <div class="hwf-menu" style="display:none;">
+                    <a data-menu="notreq" class="danger">${__("Mark as Not Required")}</a>
+                </div>
+            </span>`;
+        } else if (type === "Offer") {
             actions += view.job_offer
                 ? `<button class="hwf-btn" data-act="openoffer">${__("Open Job Offer")}</button>`
                 : `<button class="hwf-btn primary" data-act="createoffer">+ ${__("Create Job Offer")}</button>`;
+        } else if (!view.is_last) {
+            actions += `<button class="hwf-btn primary" data-act="complete">✓ ${__("Complete stage")}</button>`;
         }
         actions += `<button class="hwf-btn danger" data-act="reject">✕ ${__("Reject")}</button>`;
 
@@ -352,11 +411,14 @@
         const strip = stages.map((s, i) => {
             const st = STATE[s.state] || STATE.upcoming;
             const isCurrent = s.state === "current";
-            const clickable = !closed && !isCurrent;   // jump target
+            // Forward-only: only upcoming stages are jump targets — a completed
+            // or the current stage can't be revisited.
+            const clickable = !closed && s.state === "upcoming";
             // "+" appears on the current stage for actionable types
             let plus = "";
             if (isCurrent && !closed) {
                 if (s.stage_type === "Interview") plus = `<button class="hwf-plus" data-plus="interview" data-stage="${esc(s.stage_name)}" title="${__("Schedule Interview")}">+</button>`;
+                else if (s.stage_type === "Screening" || s.stage_type === "Shortlist") plus = `<button class="hwf-plus" data-plus="review" data-mode="${esc(s.stage_type)}" title="${esc(s.stage_type)}">+</button>`;
                 else if (s.stage_type === "Pre Offer") plus = `<button class="hwf-plus" data-plus="preoffer" title="${__("Send Pre Offer Form")}">+</button>`;
                 else if (s.stage_type === "Offer") plus = `<button class="hwf-plus" data-plus="offer" title="${__("Create Job Offer")}">+</button>`;
             }
@@ -390,6 +452,9 @@
         $w.find('[data-plus="interview"]').on("click", function (e) {
             e.stopPropagation(); scheduleInterview(frm, $(this).data("stage"));
         });
+        $w.find('[data-plus="review"]').on("click", function (e) {
+            e.stopPropagation(); openReviewDialog(frm, $(this).data("mode"));
+        });
         $w.find('[data-plus="preoffer"]').on("click", function (e) {
             e.stopPropagation(); sendPreOffer(frm);
         });
@@ -401,16 +466,34 @@
         $w.find("[data-open-iv]").on("click", function () {
             frappe.set_route("Form", "Interview", $(this).data("open-iv"));
         });
-        $w.find(".hwf-actions .hwf-btn").on("click", function () {
+        $w.find(".hwf-actions .hwf-btn").on("click", function (e) {
             const act = $(this).data("act");
+            if (act === "more") {
+                e.stopPropagation();
+                const menu = $(this).siblings(".hwf-menu");
+                $w.find(".hwf-menu").not(menu).hide();
+                menu.toggle();
+                return;
+            }
             if (act === "complete") completeStage(frm);
             else if (act === "interview") scheduleInterview(frm, view.current_stage);
+            else if (act === "markdone") openInterviewDialog(frm, view);
+            else if (act === "review") openReviewDialog(frm, $(this).data("mode"));
             else if (act === "screening") runScreening(frm);
             else if (act === "preoffer") sendPreOffer(frm);
+            else if (act === "viewpreoffer") gotoPreOfferApprovalTab(frm);
             else if (act === "createoffer") createJobOffer(frm);
             else if (act === "openoffer") frappe.set_route("Form", "Job Offer", view.job_offer.name);
             else if (act === "reject") rejectCandidate(frm);
         });
+        $w.find(".hwf-menu a").on("click", function () {
+            const item = $(this).data("menu");
+            $w.find(".hwf-menu").hide();
+            if (item === "notreq") markNotRequired(frm, view.current_stage);
+            else if (item === "feedbackform") sendFeedbackForm(frm, view.current_stage);
+        });
+        // close any open menu when clicking elsewhere
+        $(document).off("click.hwfmenu").on("click.hwfmenu", () => $w.find(".hwf-menu").hide());
 
         keepTabVisible(frm);
     }
@@ -432,6 +515,114 @@
                 }
             },
         });
+    }
+
+    // ── Screening / Shortlist review dialog ────────────────────────────────
+    function reviewSummaryHtml(m) {
+        const row = (l, v) => v ? `<div style="margin-bottom:8px;"><div class="text-muted" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;">${esc(l)}</div><div>${esc(v)}</div></div>` : "";
+        const work = (m.work_experience || []).map((w) =>
+            `<div>${esc(w.company || "")}${w.designation ? " — " + esc(w.designation) : ""}${w.experience ? " (" + esc(w.experience) + ")" : ""}</div>`).join("") || `<span class="text-muted">—</span>`;
+        const edu = (m.education || []).map((e) =>
+            `<div>${esc(e.qualification || "")}${e.school ? " — " + esc(e.school) : ""}${e.year ? " (" + esc(e.year) + ")" : ""}</div>`).join("") || `<span class="text-muted">—</span>`;
+        const resume = m.resume_url
+            ? `<a href="${esc(m.resume_url)}" target="_blank" class="hwf-link">📄 ${__("View / Download Resume")}</a>`
+            : (m.resume_link ? `<a href="${esc(m.resume_link)}" target="_blank" class="hwf-link">🔗 ${__("Resume Link")}</a>` : `<span class="text-muted">${__("No resume attached")}</span>`);
+        return `<div style="display:flex;gap:24px;flex-wrap:wrap;padding:4px 2px 12px;">
+            <div style="flex:1;min-width:280px;">
+                <h5 style="margin:0 0 2px;">${esc(m.name || "")}</h5>
+                <div class="text-muted" style="margin-bottom:14px;">${esc(m.email || "")}${m.phone ? " · " + esc(m.phone) : ""}</div>
+                ${row(__("Total Experience"), m.total_experience)}
+                ${row(__("Current"), [m.current_designation, m.current_company].filter(Boolean).join(" @ "))}
+                <div style="margin-bottom:8px;"><div class="text-muted" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;">${__("Experience")}</div>${work}</div>
+                <div style="margin-bottom:8px;"><div class="text-muted" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;">${__("Education")}</div>${edu}</div>
+                ${row(__("Source"), m.source)}
+            </div>
+            <div style="flex:0 0 200px;">
+                <div class="text-muted" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;">${__("Resume")}</div>
+                ${resume}
+            </div>
+        </div>`;
+    }
+
+    function submitReview(frm, d, action, values) {
+        const tags = ((values && values.tags) || "").split(",").map((s) => s.trim()).filter(Boolean);
+        frappe.call({
+            method: API + ".complete_review",
+            args: {
+                job_applicant: frm.doc.name,
+                action: action,
+                comment: (values && values.comment) || "",
+                tags: JSON.stringify(tags),
+            },
+            freeze: true,
+            freeze_message: __("Saving…"),
+            callback: () => {
+                d.hide();
+                frappe.show_alert({ message: action === "reject" ? __("Candidate rejected.") : __("Moved to next stage."), indicator: action === "reject" ? "red" : "green" });
+                frm.reload_doc();
+            },
+        });
+    }
+
+    function openReviewDialog(frm, mode) {
+        const actionLabel = mode === "Shortlist" ? __("Shortlist") : __("Screen");
+        const d = new frappe.ui.Dialog({
+            title: `${mode} — ${frm.doc.applicant_name || frm.doc.name}`,
+            size: "large",
+            fields: [
+                { fieldtype: "HTML", fieldname: "summary" },
+                { fieldtype: "Section Break", label: __("Feedback") },
+                { fieldtype: "Small Text", fieldname: "comment", label: __("Comment") },
+                { fieldtype: "Data", fieldname: "tags", label: __("Tags (comma separated)") },
+            ],
+            primary_action_label: actionLabel,
+            primary_action(values) { submitReview(frm, d, "advance", values); },
+            secondary_action_label: __("Reject"),
+            secondary_action() { submitReview(frm, d, "reject", d.get_values(true) || {}); },
+        });
+        d.show();
+        frappe.call({
+            method: API + ".get_candidate_review",
+            args: { job_applicant: frm.doc.name },
+            callback: (r) => {
+                const m = r && r.message;
+                if (m) d.fields_dict.summary.$wrapper.html(reviewSummaryHtml(m));
+            },
+        });
+    }
+
+    // ── Interview completion dialog ("Mark as Completed") ──────────────────
+    function openInterviewDialog(frm, view) {
+        const d = new frappe.ui.Dialog({
+            title: __("Complete Interview"),
+            fields: [
+                { fieldtype: "Rating", fieldname: "rating", label: __("Rating"), reqd: 1 },
+                { fieldtype: "Small Text", fieldname: "comments", label: __("Overall Comments") },
+                { fieldtype: "Select", fieldname: "assessment", label: __("Assessment"), reqd: 1,
+                  options: ["", "Candidate Selected", "Candidate Rejected"].join("\n") },
+            ],
+            primary_action_label: __("Submit"),
+            primary_action(values) {
+                frappe.call({
+                    method: API + ".complete_interview",
+                    args: {
+                        job_applicant: frm.doc.name,
+                        rating: values.rating || 0,
+                        comments: values.comments || "",
+                        assessment: values.assessment,
+                        stage_name: view.current_stage,
+                    },
+                    freeze: true,
+                    freeze_message: __("Saving feedback…"),
+                    callback: () => {
+                        d.hide();
+                        frappe.show_alert({ message: __("Interview feedback recorded."), indicator: "green" });
+                        frm.reload_doc();
+                    },
+                });
+            },
+        });
+        d.show();
     }
 
     // Re-render from the cached view whenever the Hiring Workflow tab is
