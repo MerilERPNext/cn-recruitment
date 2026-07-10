@@ -36,20 +36,51 @@ class DPDPActSettings(Document):
         with no frontend change. When ``appl`` is given, applicant prefill and
         prior-consent status are included too.
         """
-        information_rows = [
-            {"information_collected": row.information_collected, "purpose": row.purpose}
+        # Information table -> a plain list of rows keyed by the configured column
+        # labels, so the UI can render columns straight from the keys.
+        info_label = self.information_column_label or "Information Collected"
+        purpose_label = self.purpose_column_label or "Purpose of Collection and Use"
+        information = [
+            {info_label: row.information_collected, purpose_label: row.purpose}
             for row in (self.information_clauses or [])
             if row.is_active
         ]
+
+        # Consent checkboxes — each carries its input type so the UI can render it.
         consent_statements = [
             {
                 "consent_key": row.consent_key,
                 "statement": row.statement,
+                "fieldtype": "Check",
                 "is_mandatory": cint(row.is_mandatory),
             }
             for row in (self.consent_statements or [])
             if row.is_active
         ]
+
+        # Acknowledgement inputs -> a list of field objects (fieldname, type,
+        # mandatory). Only the ones enabled in Settings are included.
+        acknowledgement = []
+        if cint(self.capture_employee_name):
+            acknowledgement.append({
+                "fieldname": "employee_name",
+                "label": "Employee Name",
+                "fieldtype": "Data",
+                "is_mandatory": 1,
+            })
+        acknowledgement.append({
+            "fieldname": "signature",
+            "label": "Signature",
+            "fieldtype": "Signature",
+            "is_mandatory": 1,
+        })
+        if cint(self.capture_date):
+            acknowledgement.append({
+                "fieldname": "acceptance_date",
+                "label": "Acceptance Date",
+                "fieldtype": "Date",
+                "is_mandatory": 0,
+            })
 
         form = {
             "enabled": True,
@@ -59,24 +90,15 @@ class DPDPActSettings(Document):
                 "subtitle": self.form_subtitle,
             },
             "intro_content": self.intro_content,
-            "information": {
-                "columns": {
-                    "information": self.information_column_label,
-                    "purpose": self.purpose_column_label,
-                },
-                "rows": information_rows,
-            },
+            "information": information,
             "closing_content": self.closing_content,
             "declaration": {
                 "heading": self.declaration_heading,
                 "require_all_mandatory": cint(self.require_all_mandatory),
                 "statements": consent_statements,
             },
-            "acknowledgement": {
-                "capture_employee_name": cint(self.capture_employee_name),
-                "capture_date": cint(self.capture_date),
-                "confirmation_note": self.confirmation_note,
-            },
+            "acknowledgement": acknowledgement,
+            "confirmation_note": self.confirmation_note,
         }
 
         if appl:
