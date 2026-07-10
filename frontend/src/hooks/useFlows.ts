@@ -409,6 +409,10 @@ export const useRevokeFlow = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
       queryClient.invalidateQueries({ queryKey: ["employee-flow-request-details"] });
+      queryClient.invalidateQueries({ queryKey: ["separation-employee"] });
+      queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
+      queryClient.invalidateQueries({ queryKey: ["get-separation-workflow"] });
+      queryClient.invalidateQueries({ queryKey: ["get-separation-funnel"] });
     },
   });
 };

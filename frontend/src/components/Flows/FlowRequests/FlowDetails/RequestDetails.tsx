@@ -692,7 +692,7 @@ const RequestDetails: React.FC = () => {
       <RejectionReasonModal
         isOpen={isRevokeModalOpen}
         isPending={revokeFlowMutation.isPending}
-        required={false}
+        required={true}
         title="Revoke Flow Request"
         description="Are you sure you want to revoke this flow request? Please provide a reason."
         label="Reason for Revocation"
