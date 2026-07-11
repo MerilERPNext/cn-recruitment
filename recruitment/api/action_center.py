@@ -833,6 +833,15 @@ def initiate_onboarding(job_applicant):
             _("This candidate has no <b>Accepted</b> Job Offer yet. Create a Job Offer and set its status to Accepted before initiating onboarding.")
         )
 
+    # DPDP gate: onboarding cannot be initiated until the candidate has given the
+    # required DPDP consent. Clear message here so the HR user knows exactly why
+    # (the chokepoint in materialize would otherwise surface a generic failure).
+    from recruitment.api.candidate_portal import _dpdp_consent_pending
+    if _dpdp_consent_pending(job_applicant):
+        frappe.throw(
+            _("This candidate has not given the required DPDP consent yet. Onboarding can be initiated once the candidate submits their consent.")
+        )
+
     # raise_on_error=True so the user sees the actual reason if anything fails,
     # instead of a generic message.
     eo_name = _auto_release_and_materialize_onboarding(job_applicant, raise_on_error=True)

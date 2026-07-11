@@ -39,7 +39,26 @@ class CampusDrive(Document):
 
 			for opening in invite.job_openings or []:
 				if opening.job_opening and opening.job_opening not in known_openings:
-					self.append("linked_job_openings", {"job_opening": opening.job_opening})
+					# Set the read-only fetch_from columns explicitly — fetch_from only
+					# resolves on interactive link change, not when rows are appended
+					# programmatically like this, so Job Title etc. would otherwise stay
+					# blank in the invite-driven flow.
+					jo = frappe.db.get_value(
+						"Job Opening",
+						opening.job_opening,
+						["job_title", "department", "employment_type", "location",
+						 "planned_vacancies", "vacancies"],
+						as_dict=True,
+					) or {}
+					self.append("linked_job_openings", {
+						"job_opening": opening.job_opening,
+						"job_title": jo.get("job_title"),
+						"department": jo.get("department"),
+						"employment_type": jo.get("employment_type"),
+						"location": jo.get("location"),
+						"planned_hire_count": jo.get("planned_vacancies"),
+						"total_open_positions": jo.get("vacancies"),
+					})
 					known_openings.add(opening.job_opening)
 					added = True
 
@@ -159,7 +178,15 @@ def get_campus_invite_details(campus_invite):
 	"""Return the Institute and Job Openings of a Campus Invite so the client can
 	instantly fetch them into the Campus Drive's institute / opening tables."""
 	invite = frappe.get_doc("Campus Invite", campus_invite)
+	openings = []
+	for row in (invite.job_openings or []):
+		if not row.job_opening:
+			continue
+		openings.append({
+			"job_opening": row.job_opening,
+			"job_title": frappe.db.get_value("Job Opening", row.job_opening, "job_title"),
+		})
 	return {
 		"institute": invite.institute,
-		"job_openings": [row.job_opening for row in (invite.job_openings or []) if row.job_opening],
+		"job_openings": openings,
 	}

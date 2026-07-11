@@ -30,7 +30,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Stage Type",
-   "options": "System\nScreening\nInterview\nPre Offer\nOffer\nDone",
+   "options": "System\nScreening\nShortlist\nInterview\nPre Offer\nOffer\nDone",
    "reqd": 1
   },
   {
