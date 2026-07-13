@@ -7,7 +7,7 @@ import {
 } from "../../hooks/useEmployeeDocuments";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { isActionEnabled } from "../../utils/uiPermission";
+import { getActionsEnabled } from "../../utils/uiPermission";
 import Button from "../shared/atoms/Button";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { LibraryTableSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
@@ -37,24 +37,19 @@ const DocumentLibrary = () => {
 
   const { mutate: submitAcknowledgement } = useSubmitAcknowledgement();
   const { data: userUiPermission } = useGetUiPermission("Profile");
-  const canViewPersonalDocument = isActionEnabled(
+  const {
+    view_personal_document: canViewPersonalDocument,
+    download_personal_document: canDownloadPersonalDocument,
+    view_system_document: canViewSystemDocument,
+    download_system_document: canDownloadSystemDocument,
+  } = getActionsEnabled(
     userUiPermission,
-    "view_personal_document",
-    "Employee Profile",
-  );
-  const canDownloadPersonalDocument = isActionEnabled(
-    userUiPermission,
-    "download_personal_document",
-    "Employee Profile",
-  );
-  const canViewSystemDocument = isActionEnabled(
-    userUiPermission,
-    "view_system_document",
-    "Employee Profile",
-  );
-  const canDownloadSystemDocument = isActionEnabled(
-    userUiPermission,
-    "download_system_document",
+    [
+      "view_personal_document",
+      "download_personal_document",
+      "view_system_document",
+      "download_system_document",
+    ],
     "Employee Profile",
   );
 
