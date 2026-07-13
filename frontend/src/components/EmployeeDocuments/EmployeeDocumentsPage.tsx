@@ -8,7 +8,7 @@ import {
   useSubmitAcknowledgement,
 } from "../../hooks/useEmployeeDocuments";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { isActionEnabled } from "../../utils/uiPermission";
+import { getActionsEnabled } from "../../utils/uiPermission";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import Button from "../shared/atoms/Button";
@@ -47,15 +47,20 @@ const EmployeeDocumentsPage: React.FC = () => {
   const { mutate: submitAcknowledgement } = useSubmitAcknowledgement();
 
   const { data: userUiPermission } = useGetUiPermission("Profile");
-  const canViewDocument = isActionEnabled(
+  const {
+    view_personal_document: canViewPersonalDocument,
+    download_personal_document: canDownloadPersonalDocument,
+    view_system_document: canViewSystemDocument,
+    download_system_document: canDownloadSystemDocument,
+  } = getActionsEnabled(
     userUiPermission,
-    "view_employee_document",
-    "Employee Profile"
-  );
-  const canDownloadDocument = isActionEnabled(
-    userUiPermission,
-    "download_employee_document",
-    "Employee Profile"
+    [
+      "view_personal_document",
+      "download_personal_document",
+      "view_system_document",
+      "download_system_document",
+    ],
+    "Employee Profile",
   );
 
   const handleSubmit = (e: React.MouseEvent) => {
@@ -191,12 +196,15 @@ const EmployeeDocumentsPage: React.FC = () => {
           >
             <StaticListView
               data={filteredDocuments}
-              ItemComponent={(_, doc) =>
-                isMobile ? (
+              ItemComponent={(_, doc) => {
+                const canView = doc.type === "Personal" ? canViewPersonalDocument : canViewSystemDocument;
+                const canDownload = doc.type === "Personal" ? canDownloadPersonalDocument : canDownloadSystemDocument;
+
+                return isMobile ? (
                   <DocumentMobileCard
                     doc={doc}
-                    canViewDocument={canViewDocument}
-                    canDownloadDocument={canDownloadDocument}
+                    canViewDocument={canView}
+                    canDownloadDocument={canDownload}
                     getFileUrl={getFileUrl}
                     setSelectedFile={setSelectedFile}
                     setSelectedDocId={setSelectedDocId}
@@ -204,14 +212,14 @@ const EmployeeDocumentsPage: React.FC = () => {
                 ) : (
                   <DocumentTableRow
                     doc={doc}
-                    canViewDocument={canViewDocument}
-                    canDownloadDocument={canDownloadDocument}
+                    canViewDocument={canView}
+                    canDownloadDocument={canDownload}
                     getFileUrl={getFileUrl}
                     setSelectedFile={setSelectedFile}
                     setSelectedDocId={setSelectedDocId}
                   />
-                )
-              }
+                );
+              }}
               isLoading={isLoading}
               pageSize={20}
               loadMorePagination={true}
