@@ -51,7 +51,7 @@ const ViewSalarySlipModal = () => {
 
 
   if (!salaryId) {
-    return <p className="text-red-500">Salary Slip ID missing in URL.</p>;
+    return <p className="text-error">Salary Slip ID missing in URL.</p>;
   }
 
   return (
@@ -92,7 +92,7 @@ const ViewSalarySlipModal = () => {
 
           {error && (
             <div className="flex items-center justify-center h-full">
-              <p className="text-red-500">{error}</p>
+              <p className="text-error">{error}</p>
             </div>
           )}
 

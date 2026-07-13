@@ -31,12 +31,25 @@ import {
   type AwardNominationRow,
 } from "../../../services/recognitionService";
 import RecognitionRowActions from "../components/RecognitionRowActions";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
+// Data is sourced from Employee Appreciation, which has no team/individual
+// distinction — so only the received / raised pills are shown.
 const PILLS: { label: string; category: AwardNominationCategory }[] = [
   { label: "INDIVIDUAL AWARDS RECEIVED", category: "individual_received" },
   { label: "INDIVIDUAL AWARDS RAISED", category: "individual_raised" },
-  { label: "TEAM AWARDS RAISED", category: "team_raised" },
 ];
+
+// Each nomination pill maps to a page in the "Rewards & Recognition" Modular Ui
+// Permission app. A pill is shown only when its page is enabled, and the
+// View / Publish buttons are gated by that page's actions.
+const RR_APP = "Rewards & Recognition";
+const PILL_PAGE: Record<AwardNominationCategory, string> = {
+  individual_received: "Nominations Workflows - Individual Nominations Received",
+  individual_raised: "Nominations Workflows - Individual Nominations Raised",
+  team_raised: "Nominations Workflows - Team Nominations Raised",
+};
 
 // Toggleable columns for the Settings drawer (data-row keys).
 const NOMINATION_COLUMNS: SettingsColumn[] = [
@@ -119,7 +132,22 @@ const AwardsNominationWorkflows: React.FC = () => {
     setSelectedIds(new Set());
   }, [activePill, filterValues, debouncedQuery, pageSize, sortDir, page]);
 
-  const category = PILLS[activePill].category;
+  // Modular Ui Permission gating for the "Rewards & Recognition" app: pills are
+  // filtered by page permission and the action buttons by action permission.
+  const { data: rrPermission } = useGetUiPermission(RR_APP);
+  const rrApp = rrPermission?.find((a) => a.app_name === RR_APP);
+  const pageEnabled = (pageName: string) =>
+    rrApp ? (rrApp.pages.find((p) => p.page_name === pageName)?.enabled ?? false) : true;
+  const visiblePills = useMemo(
+    () => PILLS.filter((p) => pageEnabled(PILL_PAGE[p.category])),
+    [rrApp],
+  );
+  const safeActivePill = Math.min(activePill, Math.max(0, visiblePills.length - 1));
+
+  const category = (visiblePills[safeActivePill] ?? PILLS[0]).category;
+  const activePage = PILL_PAGE[category];
+  const canView = rrApp ? isActionEnabled(rrPermission, "View", activePage) : true;
+  const canPublish = rrApp ? isActionEnabled(rrPermission, "Publish", activePage) : true;
 
   // All filtering, sorting and pagination are sent to the API as a payload.
   const nomRange = (filterValues.nominationDate as DateRange) || { from: "", to: "" };
@@ -144,13 +172,13 @@ const AwardsNominationWorkflows: React.FC = () => {
   const counts = response?.counts;
   const statusOptions = response?.filter_options?.statuses ?? [];
 
-  // Nomination Program → Employee Nomination.`award` is a Link → Award, so
-  // options come from the Award doctype via the resource API. Label shows
-  // "Award Name (ID)" to match the column; value = award id (the backend
-  // matches nominations by award id).
-  const { data: programOptions = [] } = useDoctypeOptions("Award", {
-    labelTemplate: "{award_name} ({name})",
-    orderBy: "award_name asc",
+  // Appreciations link to a Recognition Program via `program_name`, so the
+  // program filter options come from the Recognition Program doctype. Label
+  // shows "Program Name (ID)" to match the column; value = program id (the
+  // backend matches the program label built from the same fields).
+  const { data: programOptions = [] } = useDoctypeOptions("Recognition Program", {
+    labelTemplate: "{program_name} ({name})",
+    orderBy: "program_name asc",
   });
 
   const filterFields = useMemo<FilterField[]>(
@@ -222,12 +250,12 @@ const AwardsNominationWorkflows: React.FC = () => {
     <div className="p-4 md:p-6">
       {/* Filter pills */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        {PILLS.map((pill, i) => (
+        {visiblePills.map((pill, i) => (
           <button
             key={pill.label}
             onClick={() => setActivePill(i)}
             className={`rounded-xl px-4 py-2 text-xs font-semibold transition-colors ${
-              activePill === i
+              safeActivePill === i
                 ? "bg-gray-900 text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
@@ -272,7 +300,7 @@ const AwardsNominationWorkflows: React.FC = () => {
         </div>
 
         {/* Bulk publish / draft action bar — visible once any row is selected. */}
-        {selectedCount > 0 && (
+        {selectedCount > 0 && canPublish && (
           <div className="flex flex-wrap items-center justify-between gap-3 border-y border-primary/20 bg-primary/5 px-4 py-2.5">
             <span className="text-sm font-medium text-gray-700">
               {selectedCount} selected
@@ -430,9 +458,9 @@ const AwardsNominationWorkflows: React.FC = () => {
                       <td className={`px-4 ${rowPad}`}>
                         <RecognitionRowActions
                           layout="icons"
-                          actions={["view"]}
-                          appreciation={false}
-                          kind="nomination"
+                          actions={canView ? ["view"] : []}
+                          appreciation={true}
+                          kind="appreciation"
                           item={{
                             name: row.id,
                             title: row.program || row.id,
