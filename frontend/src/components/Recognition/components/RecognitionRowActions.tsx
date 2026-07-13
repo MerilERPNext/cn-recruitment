@@ -131,7 +131,7 @@ const RecognitionRowActions: React.FC<RecognitionRowActionsProps> = ({
         appreciation={appreciation}
         kind={kind}
         downloading={downloading}
-        onDownload={appreciation ? download : undefined}
+        onDownload={appreciation && actions.includes("download") ? download : undefined}
       />
     </>
   );
