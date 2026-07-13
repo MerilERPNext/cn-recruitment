@@ -191,7 +191,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Attendance Summary",
         },
         {
-          name: "My Attendance",
+          name: "Attendance",
           icon: Calendar,
           href: "/webapp/attendance/emp-attendance",
           permissionKey: "My Attendance",

@@ -37,14 +37,24 @@ const DocumentLibrary = () => {
 
   const { mutate: submitAcknowledgement } = useSubmitAcknowledgement();
   const { data: userUiPermission } = useGetUiPermission("Profile");
-  const canViewDocument = isActionEnabled(
+  const canViewPersonalDocument = isActionEnabled(
     userUiPermission,
-    "view_employee_document",
+    "view_personal_document",
     "Employee Profile",
   );
-  const canDownloadDocument = isActionEnabled(
+  const canDownloadPersonalDocument = isActionEnabled(
     userUiPermission,
-    "download_employee_document",
+    "download_personal_document",
+    "Employee Profile",
+  );
+  const canViewSystemDocument = isActionEnabled(
+    userUiPermission,
+    "view_system_document",
+    "Employee Profile",
+  );
+  const canDownloadSystemDocument = isActionEnabled(
+    userUiPermission,
+    "download_system_document",
     "Employee Profile",
   );
 
@@ -207,7 +217,7 @@ const DocumentLibrary = () => {
                       <div className="flex gap-2 items-center">
                         {(doc.status === "Approved") && (
                           <>
-                            {canViewDocument && (
+                            {(doc.type === "Personal" ? canViewPersonalDocument : canViewSystemDocument) && (
                               <Button
                                 variant="soft"
                                 onClick={() => setSelectedFile(doc.file_name)}
@@ -215,7 +225,7 @@ const DocumentLibrary = () => {
                                 View
                               </Button>
                             )}
-                            {canDownloadDocument && (
+                            {(doc.type === "Personal" ? canDownloadPersonalDocument : canDownloadSystemDocument) && (
                               <a href={getFileUrl(doc.file_name)} download>
                                 <Button variant="contain">
                                   Download
