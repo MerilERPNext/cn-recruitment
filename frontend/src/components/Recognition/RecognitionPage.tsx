@@ -19,11 +19,21 @@ import Button from "../shared/atoms/Button";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 import { Plus } from "lucide-react";
 
 const RecognitionPage: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const [showAppreciateModal, setShowAppreciateModal] = useState(false);
+
+  // "Appreciate" entry point gated by the "Recognition" app action permission.
+  const { data: uiPermission } = useGetUiPermission("Recognition");
+  const canAppreciate = isActionEnabled(
+    uiPermission,
+    "create_appreciation",
+    "Dashboard",
+  );
 
   // Fetch all data
   const { data: programsData, isLoading: programsLoading } =
@@ -160,7 +170,7 @@ const RecognitionPage: React.FC = () => {
     </div>
   );
 
-  const appreciateButton = (
+  const appreciateButton = canAppreciate ? (
     <Button
       size="md"
       bgColor="primary"
@@ -169,7 +179,7 @@ const RecognitionPage: React.FC = () => {
     >
       Appreciate
     </Button>
-  );
+  ) : null;
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Recognition" actionButton={appreciateButton}>

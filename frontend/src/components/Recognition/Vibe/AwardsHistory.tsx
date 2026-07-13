@@ -19,6 +19,8 @@ import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useAwardPrograms, useDoctypeOptions } from "../../../services/recognitionService";
 import EmployeeMultiSelect from "../components/MyAppreciationsHistory/EmployeeMultiSelect";
 import RecognitionRowActions from "../components/RecognitionRowActions";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 // Resolve relative Frappe file paths (e.g. "/private/files/..") against the API host.
 const API_HOST =
@@ -106,6 +108,12 @@ const AwardsHistory: React.FC = () => {
   });
   const { targetEmployeeId } = useTargetUser();
   const employeeId = targetEmployeeId || user?.employee || "";
+
+  // Row action buttons gated by the "Recognition" app action permissions.
+  const { data: uiPermission } = useGetUiPermission("Recognition");
+  const rowActions = (["download", "view"] as const).filter((a) =>
+    isActionEnabled(uiPermission, a, "Awards History"),
+  );
 
   const [activeTab, setActiveTab] = useState<"Received" | "Given">("Received");
   const [query, setQuery] = useState("");
@@ -320,7 +328,7 @@ const AwardsHistory: React.FC = () => {
                     <td className="px-5 py-4">
                       <RecognitionRowActions
                         layout="buttons"
-                        actions={["download", "view"]}
+                        actions={[...rowActions]}
                         item={{
                           name: row.name,
                           title: row.title,
