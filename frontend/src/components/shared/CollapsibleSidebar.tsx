@@ -700,6 +700,41 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       return allNavigationItems;
     }
 
+    // Per-page gating for Recognition sub-items from the "Rewards & Recognition"
+    // Modular Ui Permission app. Each Recognition route maps to one or more
+    // pages; a sub-item is hidden only when all its mapped pages are explicitly
+    // disabled. Missing app/pages => not restricted (safe fallback).
+    const rrApp = uiPermissions.find(
+      (p) => p.app_name === "Rewards & Recognition",
+    );
+    const RR_ROUTE_PAGES: Record<string, string[]> = {
+      "/my-appreciations-history": ["Appreciations History"],
+      "/appreciations-leaderboard": ["Appreciations Leaderboard"],
+      "/earned-points": ["Earned Points Summary page"],
+      "/awards-live": [
+        "Individual Award programs",
+        "Individual Award Winners",
+        "Team Award programs",
+        "Team Award Winners",
+        "Admin Dashboard",
+      ],
+      "/awards-history": ["Individual Awards History", "Team Awards history"],
+      "/nomination-workflows": [
+        "Nominations Workflows - Individual Nominations Raised",
+        "Nominations Workflows - Individual Nominations Received",
+        "Nominations Workflows - Team Nominations Raised",
+      ],
+    };
+    const rrAllowsHref = (href: string): boolean => {
+      if (!rrApp) return true;
+      const suffix = Object.keys(RR_ROUTE_PAGES).find((s) => href.endsWith(s));
+      if (!suffix) return true;
+      return RR_ROUTE_PAGES[suffix].some(
+        (name) =>
+          rrApp.pages?.find((pg) => pg.page_name === name)?.enabled ?? false,
+      );
+    };
+
     return allNavigationItems
       .map((item) => {
         const appPermission = uiPermissions.find(
@@ -719,11 +754,21 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         // is enabled we keep all of its sub-items — except pages hidden by an
         // Advanced Settings flag (e.g. Earned Points Summary).
         if (item.permissionKey === "Recognition") {
-          const recogSubItems = item.subItems.filter((subItem) =>
-            (subItem.href ?? "").endsWith("/earned-points")
-              ? !recognitionFlags.hideRewardsPointSummary
-              : true,
-          );
+          const recogSubItems = item.subItems.filter((subItem) => {
+            const href = subItem.href ?? "";
+            // Advanced Settings flag still hides the Earned Points page.
+            if (
+              href.endsWith("/earned-points") &&
+              recognitionFlags.hideRewardsPointSummary
+            ) {
+              return false;
+            }
+            // Per-page gating from the "Rewards & Recognition" app.
+            return rrAllowsHref(href);
+          });
+          if (recogSubItems.length === 0) {
+            return null;
+          }
           return { ...item, subItems: recogSubItems };
         }
 

@@ -56,7 +56,7 @@ const Form12B = ({ declarationId, docName, disabled = false }: Props) => {
           ${
             disabled || isPending
               ? "bg-gray-300 text-primary cursor-not-allowed"
-              : "bg-primary text-primary-500 hover:bg-blue-700"
+              : "bg-primary text-white hover:bg-primary-600"
           }
         `}
       >

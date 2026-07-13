@@ -11,6 +11,7 @@ import {
     useEligiblePrograms,
     useCreateEmployeeAppreciation,
     useRecognitionFlags,
+    useProgramValues,
 } from "../../services/recognitionService";
 
 // Local YYYY-MM-DD for the appreciation date sent in the payload.
@@ -28,7 +29,14 @@ const Appreciations = () => {
         programTitle: "",
         note: "",
     });
+    const [selectedValues, setSelectedValues] = useState<string[]>([]);
+    const [valuesOpen, setValuesOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement | null>(null);
+
+    const toggleValue = (v: string) =>
+        setSelectedValues((prev) =>
+            prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v],
+        );
 
     // Effective target (viewed employee) and the giver (logged-in employee).
     const { targetEmployeeId } = useTargetUser();
@@ -46,6 +54,9 @@ const Appreciations = () => {
     // Appreciations must be enabled in the Advanced Settings doctype.
     const { enableAppreciations, minimumNominationCharacters } = useRecognitionFlags();
 
+    // Recognition values for the selected program (dynamic, comma-separated).
+    const { data: programValues = [] } = useProgramValues(modal.programName);
+
     const programs = eligiblePrograms?.eligible_programs ?? [];
 
     // Close the award panel on outside click.
@@ -59,6 +70,8 @@ const Appreciations = () => {
 
     const selectAward = (programName: string, programTitle: string) => {
         setOpen(false);
+        setSelectedValues([]);
+        setValuesOpen(false);
         setModal({ open: true, programName, programTitle, note: "" });
     };
 
@@ -84,12 +97,15 @@ const Appreciations = () => {
                 program_name: modal.programName,
                 given_by: currentEmployee?.employee,
                 note: modal.note || undefined,
+                values: selectedValues.length > 0 ? selectedValues.join(",") : undefined,
                 date: todayISO(),
             },
             {
                 onSuccess: (res) => {
                     if (res?.success) {
                         toast.success(res.message || "Appreciation sent successfully!");
+                        setSelectedValues([]);
+                        setValuesOpen(false);
                         setModal({ open: false, programName: "", programTitle: "", note: "" });
                     } else {
                         toast.error(res?.message || "Failed to send appreciation");
@@ -202,6 +218,71 @@ const Appreciations = () => {
                             </p>
                         )}
                     </div>
+
+                    {/* Recognition Values — dynamic multi-select from the program's values. */}
+                    {programValues.length > 0 && (
+                        <div className="relative">
+                            <Typography variant="label" className="block mb-2 font-medium">
+                                Values
+                            </Typography>
+                            <button
+                                type="button"
+                                onClick={() => setValuesOpen((v) => !v)}
+                                className="flex w-full items-center bg-white justify-between rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-left hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            >
+                                <span className={selectedValues.length ? "text-gray-800" : "text-gray-400"}>
+                                    {selectedValues.length
+                                        ? `${selectedValues.length} selected`
+                                        : "Select values..."}
+                                </span>
+                                {valuesOpen ? (
+                                    <ChevronUp className="size-4 text-gray-400" />
+                                ) : (
+                                    <ChevronDown className="size-4 text-gray-400" />
+                                )}
+                            </button>
+
+                            {selectedValues.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {selectedValues.map((v) => (
+                                        <span
+                                            key={v}
+                                            className="inline-flex items-center gap-1 rounded-lg bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-600"
+                                        >
+                                            {v}
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleValue(v)}
+                                                className="text-primary-400 hover:text-primary-700"
+                                                aria-label={`Remove ${v}`}
+                                            >
+                                                ×
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            {valuesOpen && (
+                                <div className="mt-2 w-full max-h-56 overflow-y-auto rounded-lg border border-gray-200 bg-white p-1">
+                                    {programValues.map((v) => (
+                                        <label
+                                            key={v}
+                                            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-50"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                className="accent-primary"
+                                                checked={selectedValues.includes(v)}
+                                                onChange={() => toggleValue(v)}
+                                            />
+                                            <span className="text-gray-700">{v}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Actions */}
                     <div className="flex justify-end gap-3 pt-2">

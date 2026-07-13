@@ -22,7 +22,7 @@ const statusConfig: Record<
     icon: <X className="w-3 h-3 md:w-4 md:h-4" />,
   },
   Pending: {
-    badgeClass: "bg-yellow-100 text-yellow-800",
+    badgeClass: "bg-warning-100 text-warning-800",
     icon: <Clock className="w-3 h-3 md:w-4 md:h-4" />,
   },
 };
