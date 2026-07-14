@@ -31,7 +31,7 @@ const ListView = () => {
       {isDesktop && (
         <div className="flex-shrink-0">
           <div className="py-1 md:py-4">
-            <Typography variant="h4">My Attendance</Typography>
+            <Typography variant="h4">Attendance</Typography>
             <Typography variant="bodySmall" color="body2">
               Track and manage employee attendance
             </Typography>

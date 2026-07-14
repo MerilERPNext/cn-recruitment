@@ -164,7 +164,7 @@ const CTCSalaryUI = () => {
 
   if (isError || (!isLoading && !salarySlip)) {
     return (
-      <div className="flex justify-center items-center h-64 text-red-500">
+      <div className="flex justify-center items-center h-64 text-error">
         Unable to load salary information.
       </div>
     );

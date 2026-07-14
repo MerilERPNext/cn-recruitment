@@ -7,7 +7,7 @@ import {
 } from "../../hooks/useEmployeeDocuments";
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { isActionEnabled } from "../../utils/uiPermission";
+import { getActionsEnabled } from "../../utils/uiPermission";
 import Button from "../shared/atoms/Button";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { LibraryTableSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
@@ -37,14 +37,19 @@ const DocumentLibrary = () => {
 
   const { mutate: submitAcknowledgement } = useSubmitAcknowledgement();
   const { data: userUiPermission } = useGetUiPermission("Profile");
-  const canViewDocument = isActionEnabled(
+  const {
+    view_personal_document: canViewPersonalDocument,
+    download_personal_document: canDownloadPersonalDocument,
+    view_system_document: canViewSystemDocument,
+    download_system_document: canDownloadSystemDocument,
+  } = getActionsEnabled(
     userUiPermission,
-    "view_employee_document",
-    "Employee Profile",
-  );
-  const canDownloadDocument = isActionEnabled(
-    userUiPermission,
-    "download_employee_document",
+    [
+      "view_personal_document",
+      "download_personal_document",
+      "view_system_document",
+      "download_system_document",
+    ],
     "Employee Profile",
   );
 
@@ -207,7 +212,7 @@ const DocumentLibrary = () => {
                       <div className="flex gap-2 items-center">
                         {(doc.status === "Approved") && (
                           <>
-                            {canViewDocument && (
+                            {(doc.type === "Personal" ? canViewPersonalDocument : canViewSystemDocument) && (
                               <Button
                                 variant="soft"
                                 onClick={() => setSelectedFile(doc.file_name)}
@@ -215,7 +220,7 @@ const DocumentLibrary = () => {
                                 View
                               </Button>
                             )}
-                            {canDownloadDocument && (
+                            {(doc.type === "Personal" ? canDownloadPersonalDocument : canDownloadSystemDocument) && (
                               <a href={getFileUrl(doc.file_name)} download>
                                 <Button variant="contain">
                                   Download

@@ -55,7 +55,7 @@ const PreviewOfITDeclaration = ({ declarationId, disabled = false }: Props) => {
         className={`px-4 py-1 text-sm border rounded-xl
           ${disabled || isPending
             ? "bg-gray-300 text-primary cursor-not-allowed"
-            : "bg-primary text-primary-500 hover:bg-blue-700"
+            : "bg-primary text-white hover:bg-primary-600"
           }
         `}
       >

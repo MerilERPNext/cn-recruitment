@@ -255,7 +255,7 @@ const ApprovalRejectionAdvanceList = ({
           {isBulkSelectEnabled && (
             <input
               type="checkbox"
-              className="mt-1 accent-blue-500"
+              className="mt-1 accent-primary"
               checked={isSelected}
               onClick={(e) => e.stopPropagation()}
               onChange={() => onToggleSelect?.(data?.todo_id)}

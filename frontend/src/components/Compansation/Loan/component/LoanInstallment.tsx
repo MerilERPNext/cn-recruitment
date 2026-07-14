@@ -1,6 +1,7 @@
 import { formatCurrency } from "../../../../utils/currency";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { Typography } from "../../../shared/atoms/Typography";
+import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 import CardTable from "../../../shared/CardTable";
 import { Installment } from "../Type/loan";
 
@@ -71,9 +72,10 @@ export default function LoanInstallments({
             </div>
           ))
         ) : (
-          <div className="text-center text-gray-500 py-4">
-            No installments available.
-          </div>
+          <NoDataFound
+            title="No Installments"
+            subtitle="No installment data available."
+          />
         )}
       </CardTable>
     </div>

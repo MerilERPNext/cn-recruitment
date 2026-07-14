@@ -152,9 +152,6 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-surface gap-4">
         <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
-        <Typography variant="bodySmall" color="body2">
-          Verifying your session...
-        </Typography>
       </div>
     );
   }

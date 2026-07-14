@@ -191,7 +191,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Attendance Summary",
         },
         {
-          name: "My Attendance",
+          name: "Attendance",
           icon: Calendar,
           href: "/webapp/attendance/emp-attendance",
           permissionKey: "My Attendance",
@@ -715,16 +715,25 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           return item;
         }
 
-        // Recognition's sub-sections are all gated by the single "Recognition"
-        // app permission (no per-page entries in the backend), so once the app
-        // is enabled we keep all of its sub-items — except pages hidden by an
-        // Advanced Settings flag (e.g. Earned Points Summary).
+        // Recognition uses the same per-page gating as every other module
+        // (each sub-item's permissionKey matches a page in the "Recognition"
+        // app), plus one Advanced Settings flag that hides Earned Points.
         if (item.permissionKey === "Recognition") {
-          const recogSubItems = item.subItems.filter((subItem) =>
-            (subItem.href ?? "").endsWith("/earned-points")
-              ? !recognitionFlags.hideRewardsPointSummary
-              : true,
-          );
+          const recogSubItems = item.subItems.filter((subItem) => {
+            if (
+              (subItem.href ?? "").endsWith("/earned-points") &&
+              recognitionFlags.hideRewardsPointSummary
+            ) {
+              return false;
+            }
+            const pagePermission = appPermission.pages?.find(
+              (page) => page.page_name === subItem.permissionKey,
+            );
+            return pagePermission ? pagePermission.enabled : false;
+          });
+          if (recogSubItems.length === 0) {
+            return null;
+          }
           return { ...item, subItems: recogSubItems };
         }
 

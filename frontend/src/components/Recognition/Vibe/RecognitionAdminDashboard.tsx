@@ -11,6 +11,8 @@ import {
   Inbox,
 } from "lucide-react";
 import Button from "../../shared/atoms/Button";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import FilterPanel, {
   type DateRange,
   type FilterField,
@@ -413,6 +415,14 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "team", label: "TEAM REGISTRATIONS" },
 ];
 
+// Each tab (child navigation) is gated by an action on the "Admin Dashboard"
+// page of the "Recognition" Modular Ui Permission app.
+const TAB_ACTION: Record<TabKey, string> = {
+  appreciation: "tab_appreciation",
+  award: "tab_award",
+  team: "tab_team",
+};
+
 const StatRow = ({ stats }: { stats: { value: number; label: string }[] }) => (
   <div className="grid grid-cols-2 gap-4 border-b border-gray-100 py-5 sm:grid-cols-4 lg:grid-cols-5">
     {stats.map((s) => (
@@ -439,6 +449,22 @@ export default function RecognitionAdminDashboard() {
   const openEdit = (code: string) => {
     window.location.href = `${RECOGNITION_PROGRAM_DOCTYPE_ROUTE}/${encodeURIComponent(code)}`;
   };
+
+  // Admin action buttons + child-nav (tabs) gated by the "Recognition" app.
+  const { data: uiPermission } = useGetUiPermission("Recognition");
+  const canCreateProgram = isActionEnabled(uiPermission, "create_program", "Admin Dashboard");
+  const canEditProgram = isActionEnabled(uiPermission, "edit_program", "Admin Dashboard");
+  const canViewDetails = isActionEnabled(uiPermission, "view_details", "Admin Dashboard");
+  const visibleTabs = TABS.filter((t) =>
+    isActionEnabled(uiPermission, TAB_ACTION[t.key], "Admin Dashboard"),
+  );
+
+  // If the active tab is not permitted, fall back to the first visible one.
+  useEffect(() => {
+    if (visibleTabs.length && !visibleTabs.some((t) => t.key === tab)) {
+      setTab(visibleTabs[0].key);
+    }
+  }, [visibleTabs, tab]);
 
   const onQueryChange = useCallback((q: TableQuery) => setQuery(q), []);
 
@@ -515,14 +541,16 @@ export default function RecognitionAdminDashboard() {
         <h1 className="text-lg font-bold tracking-tight text-gray-900">
           Recognition Admin Dashboard
         </h1>
-        <Button variant="outline" size="sm" onClick={openCreate}>
-          CREATE NEW PROGRAM
-        </Button>
+        {canCreateProgram && (
+          <Button variant="outline" size="sm" onClick={openCreate}>
+            CREATE NEW PROGRAM
+          </Button>
+        )}
       </div>
 
       {/* Tabs */}
       <div className="flex gap-6 border-b border-gray-100 bg-white px-6">
-        {TABS.map((t) => (
+        {visibleTabs.map((t) => (
           <button
             key={t.key}
             onClick={() => changeTab(t.key)}
@@ -566,15 +594,16 @@ export default function RecognitionAdminDashboard() {
                 key: "actions",
                 header: "Actions",
                 className: "0.6fr",
-                render: (r) => (
-                  <button
-                    title="Edit"
-                    onClick={() => openEdit(r.code)}
-                    className="text-primary hover:text-primary/80"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                ),
+                render: (r) =>
+                  canEditProgram ? (
+                    <button
+                      title="Edit"
+                      onClick={() => openEdit(r.code)}
+                      className="text-primary hover:text-primary/80"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  ) : null,
               },
             ]}
           />
@@ -607,16 +636,20 @@ export default function RecognitionAdminDashboard() {
                 className: "1.3fr",
                 render: (r) => (
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => openEdit(r.code)}>
-                      View Details
-                    </Button>
-                    <button
-                      title="Edit"
-                      onClick={() => openEdit(r.code)}
-                      className="text-primary hover:text-primary/80"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
+                    {canViewDetails && (
+                      <Button variant="outline" size="sm" onClick={() => openEdit(r.code)}>
+                        View Details
+                      </Button>
+                    )}
+                    {canEditProgram && (
+                      <button
+                        title="Edit"
+                        onClick={() => openEdit(r.code)}
+                        className="text-primary hover:text-primary/80"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 ),
               },

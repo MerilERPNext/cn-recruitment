@@ -15,6 +15,8 @@ import {
 import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import Button from "../shared/atoms/Button";
 import RecognitionCcFields from "./RecognitionCcFields";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 import toast from "react-hot-toast";
 
 // Local YYYY-MM-DD for the date input default.
@@ -58,6 +60,10 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const createAppreciation = useCreateEmployeeAppreciation();
+
+  // Submit (nominate) gated by the "Recognition" app action permission.
+  const { data: uiPermission } = useGetUiPermission("Recognition");
+  const canNominate = isActionEnabled(uiPermission, "nominate", "Dashboard");
 
   // Advanced Settings flags: note minimum, budget visibility, and CC controls.
   const {
@@ -345,16 +351,18 @@ export const SimpleNominationPanel: React.FC<SimpleNominationPanelProps> = ({
           </div>
         )}
 
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSubmit}
-            size="md"
-            loading={submitting}
-            disabled={submitting || !selectedEmployee}
-          >
-            Submit
-          </Button>
-        </div>
+        {canNominate && (
+          <div className="flex justify-end">
+            <Button
+              onClick={handleSubmit}
+              size="md"
+              loading={submitting}
+              disabled={submitting || !selectedEmployee}
+            >
+              Submit
+            </Button>
+          </div>
+        )}
 
         {/* Program budget — shown only when a budget exists and it is not
             hidden via Advanced Settings (hide_budgeted_points_frontend). */}

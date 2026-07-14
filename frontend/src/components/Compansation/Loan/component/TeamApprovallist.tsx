@@ -132,7 +132,7 @@ const ApprovalRejectionLoanList = ({
             {isBulkSelectEnabled && (
               <input
                 type="checkbox"
-                className="mt-1 accent-blue-500"
+                className="mt-1 accent-primary"
                 checked={isSelected}
                 onClick={(e) => e.stopPropagation()}
                 onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -295,7 +295,7 @@ const ApprovalRejectionLoanList = ({
           <div className="flex items-center justify-center">
             <input
               type="checkbox"
-              className="accent-blue-500"
+              className="accent-primary"
               checked={isSelected}
               onClick={(e) => e.stopPropagation()}
               onChange={() => onToggleSelect?.(data?.todo_id)}

@@ -45,7 +45,7 @@ const TDSSlipHandler = ({ disabled, selectedPeriod }: Props) => {
         <Button
           onClick={handleView}
           disabled={disabled || isPending}
-          className="px-4 py-1 bg-blue-600 text-white hover:bg-blue-700 border rounded text-sm disabled:opacity-50"
+          className="px-4 py-1 bg-primary text-white hover:bg-primary-600 border rounded text-sm disabled:opacity-50"
         >
           {isPending ? "Loading..." : "Preview TDS"}
         </Button>

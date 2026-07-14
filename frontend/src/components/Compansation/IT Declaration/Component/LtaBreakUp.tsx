@@ -12,32 +12,31 @@ type LTAItem = {
   
   const LTACards = ({ LTAData }: LTACardsProps) => {
     return (
-      <div className="tw-grid tw-grid-cols-1 md:tw-grid-cols-1 lg:tw-grid-cols-1 tw-gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {LTAData.map((item) => (
           <div
             key={item.sl_no}
-            className="tw-rounded-lg tw-border tw-border-gray-200 tw-bg-white tw-p-4 tw-shadow-sm"
+            className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
           >
-            <div className="tw-flex tw-items-center tw-justify-between tw-mb-2">
-              <h3 className="tw-text-sx tw-font-semibold">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold">
                 LTA Record {item.sl_no}
               </h3>
               <span
-                className={`tw-text-xs tw-font-medium tw-px-2 tw-py-1 tw-rounded ${
+                className={`text-xs font-medium px-2 py-1 rounded ${
                   item.lta_exempted === "Yes"
-                    ? "tw-bg-green-100 tw-text-green-700"
-                    : "tw-bg-red-100 tw-text-red-700"
+                    ? "bg-success-100 text-success-600"
+                    : "bg-error-100 text-error-600"
                 }`}
               >
                 Exempted: {item.lta_exempted}
               </span>
             </div>
-  
-            <div className="tw-space-y-1 tw-text-sm tw-text-gray-700">
-  
-              <div className="tw-flex tw-justify-between">
-                <span className="tw-font-medium text-lg">Year</span>
-                <span className="bg-slate-100 px-2 rounded  text-lg">{item.year}</span>
+
+            <div className="space-y-1 text-sm text-gray-700">
+              <div className="flex justify-between">
+                <span className="font-medium text-lg">Year</span>
+                <span className="bg-gray-50 px-2 rounded text-lg">{item.year}</span>
               </div>
             </div>
           </div>

@@ -97,6 +97,19 @@ def get_job_offer_document_template(job_offer=None):
 
     ``job_offer`` may be a Job Offer name (str) or a Job Offer doc.
     """
+    # A template explicitly picked on the Job Offer form wins over everything.
+    try:
+        if job_offer:
+            picked = (
+                job_offer.get("custom_offer_letter_template")
+                if not isinstance(job_offer, str)
+                else frappe.db.get_value("Job Offer", job_offer, "custom_offer_letter_template")
+            )
+            if picked:
+                return picked
+    except Exception:
+        pass
+
     try:
         settings = frappe.get_cached_doc("Recruitment Settings")
     except Exception:
@@ -504,6 +517,87 @@ def get_rejection_reasons():
         "Rejection Reason",
         fields=["name", "reason"]
     )
+
+
+def _read_template_file_bytes(file_url):
+    """Read a template file's bytes robustly — by File record first, then by the
+    file-manager path (handles public/private, missing File docs)."""
+    if not file_url:
+        return None
+    try:
+        fname = frappe.db.get_value("File", {"file_url": file_url}, "name")
+        if fname:
+            return frappe.get_doc("File", fname).get_content()
+    except Exception:
+        pass
+    try:
+        from frappe.utils.file_manager import get_file
+        return get_file(file_url)[1]
+    except Exception:
+        return None
+
+
+@frappe.whitelist()
+def get_offer_template_raw_html(template=None, job_offer=None):
+    """Raw offer-letter template as HTML — placeholders intact, no data — for the
+    'Template' tab on the Job Offer form. Docx templates are converted with
+    mammoth; Html templates are returned as-is.
+    """
+    if not template and job_offer:
+        template = get_job_offer_document_template(job_offer)
+    if not template:
+        return {"html": "<div style='padding:32px;text-align:center;color:#888;'>No offer letter template selected. Pick one in <b>Offer Letter Template</b>, or configure a default in Recruitment Settings.</div>"}
+    try:
+        tdoc = frappe.get_doc("Document Template", template)
+        if not tdoc.template_file:
+            return {"html": "<div style='padding:32px;text-align:center;color:#888;'>This template has no file attached.</div>"}
+        content = _read_template_file_bytes(tdoc.template_file)
+        if content is None:
+            return {"html": "<div style='padding:32px;text-align:center;color:#c0392b;'>The template file <code>" + frappe.utils.escape_html(tdoc.template_file or "") + "</code> was not found on this site.</div>"}
+        if (tdoc.template_type or "").lower() == "docx":
+            import io
+            import mammoth
+            body = mammoth.convert_to_html(io.BytesIO(content)).value
+        else:
+            body = content.decode("utf-8", errors="ignore") if isinstance(content, bytes) else content
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Offer template raw render failed")
+        return {"html": "<div style='padding:32px;text-align:center;color:#c0392b;'>Could not render this template.</div>"}
+    html = (
+        "<div style='padding:28px 36px;max-width:850px;margin:0 auto;background:#fff;color:#222;"
+        "font-family:Georgia,serif;line-height:1.6;'>" + body + "</div>"
+    )
+    return {"html": html, "template": template}
+
+
+@frappe.whitelist()
+def get_offer_letter_preview_html(job_offer):
+    """Offer letter rendered with THIS Job Offer's data — for the 'Preview' tab.
+    Uses the resolved Document Template (embedded PDF) or the Print Format.
+    """
+    frappe.has_permission("Job Offer", "read", doc=job_offer, throw=True)
+    template_name = get_job_offer_document_template(job_offer)
+    if template_name:
+        pdf_bytes, _fn = render_job_offer_via_document_template(job_offer, template_name)
+        if pdf_bytes:
+            import base64
+            data_uri = "data:application/pdf;base64," + base64.b64encode(pdf_bytes).decode()
+            return {
+                "html": f'<iframe src="{data_uri}" style="width:100%;height:78vh;border:1px solid #e0e0e0;border-radius:6px;" title="Offer Letter Preview"></iframe>',
+                "source": "template",
+            }
+    # Fall back to the Print Format preview.
+    from urllib.parse import urlencode
+    params = {"doctype": "Job Offer", "name": job_offer, "trigger_print": 0, "no_letterhead": 0}
+    pf = get_job_offer_print_format(job_offer)
+    if pf:
+        params["format"] = pf
+    url = "/printview?" + urlencode(params)
+    return {
+        "html": f'<iframe src="{url}" style="width:100%;height:78vh;border:1px solid #e0e0e0;border-radius:6px;" title="Offer Letter Preview"></iframe>',
+        "source": "print_format",
+    }
+
 
 @frappe.whitelist()
 def request_for_offer(jo_id):

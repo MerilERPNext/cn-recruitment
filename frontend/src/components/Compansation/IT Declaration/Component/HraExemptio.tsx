@@ -344,7 +344,7 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, ltaData, onChange, LATABreak
         {hraData.attach_reqd !== 0 && (
   <div className="flex flex-col gap-2">
     <label className="text-xs text-gray-700 font-medium">
-      Attachment {hraData.attach_reqd === 1 && <span className="text-red-500">*</span>}
+      Attachment {hraData.attach_reqd === 1 && <span className="text-error">*</span>}
     </label>
     <div className="w-max max-w-md">
       <label className="flex items-center gap-3 border-2 border-dashed border-gray-300  px-3 py-2 w-full cursor-pointer hover:border-gray-500 transition">
@@ -417,7 +417,7 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, ltaData, onChange, LATABreak
             <button
               type="button"
               onClick={() => setShowLTAModal(true)}
-              className="px-4 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
+              className="px-4 py-2 text-sm rounded bg-primary text-white hover:bg-primary-600"
             >
               Use LTA Breakup
             </button>

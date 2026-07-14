@@ -83,7 +83,7 @@ export default function LoanList({
     <CardTable titles={titles} columnWidths={columnWidths}>
       {onSearchChange && (
         <div className="">
-          <div className="flex items-center w-full border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+          <div className="flex items-center w-full border border-gray-300 bg-white focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition">
             <SearchInputWrapper
               searchTerm={searchTerm || ""}
               handleSearch={(e) => onSearchChange(e.target.value)}

@@ -1,5 +1,5 @@
 export interface DocumentItem {
-  type: string;
+  type: "Personal" | "System Generated";
   name: string;
   owner: string;
   creation: string;

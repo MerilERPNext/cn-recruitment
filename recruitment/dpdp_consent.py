@@ -161,15 +161,17 @@ def submit_dpdp_consent(
         if log.consent_given:
             log.submit()
 
-            # Consent recorded — resume the Employee Onboarding auto-creation that
-            # was gated at Job Offer acceptance. Mirrors the accept-time flow, so
-            # onboarding initializes the moment consent is given. Best-effort:
-            # never let onboarding bookkeeping fail the consent submission.
+            # Consent recorded — resume the exact onboarding bootstrap that Job Offer
+            # acceptance normally runs (it was skipped on accept while consent was
+            # pending): create/find the Employee Onboarding AND its candidate Action
+            # Center item. Best-effort — never let this fail the consent submission.
             try:
                 from recruitment.api.action_center import (
-                    _auto_release_and_materialize_onboarding,
+                    _sync_onboarding_action_for_applicant,
                 )
-                _auto_release_and_materialize_onboarding(appl, raise_on_error=False)
+                candidate_email = frappe.db.get_value("Job Applicant", appl, "email_id")
+                if candidate_email:
+                    _sync_onboarding_action_for_applicant(appl, candidate_email)
             except Exception:
                 frappe.log_error(
                     frappe.get_traceback(),

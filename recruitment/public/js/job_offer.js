@@ -80,18 +80,33 @@ frappe.ui.form.on("Job Offer", {
 		frm.set_query("component", "custom_earnings", () => ({ filters: { type: "Earning" } }));
 		frm.set_query("component", "custom_deduction", () => ({ filters: { type: "Deduction" } }));
 
-		// Open the print preview using the employment-type-specific print format
-		// (Recruitment Settings mapping), not the doctype default that Frappe's
-		// own print icon uses. Always available for any saved Job Offer.
+		// Offer Letter Template picker: only Document Templates whose reference
+		// doctype is Job Offer.
+		frm.set_query("custom_offer_letter_template", () => ({
+			filters: { doctype_name: "Job Offer" },
+		}));
+
+		// Offer-letter buttons — each gated by a Recruitment Settings toggle
+		// (both default ON). Only for a saved Job Offer.
 		if (!frm.is_new()) {
-			frm.add_custom_button(__("Preview Offer Letter"), function() {
-				frappe.call({
-					method: "recruitment.job_offer_utils.get_job_offer_print_preview_url",
-					args: { job_offer: frm.doc.name },
-				}).then(function(r) {
-					if (r && r.message) {
-						window.open(r.message, "_blank");
-					}
+			// Print-format preview (employment-type-specific format).
+			frappe.db.get_single_value("Recruitment Settings", "enable_preview_offer_letter_button").then(function(enabled) {
+				if (!enabled) return;
+				frm.add_custom_button(__("Preview Offer Letter"), function() {
+					frappe.call({
+						method: "recruitment.job_offer_utils.get_job_offer_print_preview_url",
+						args: { job_offer: frm.doc.name },
+					}).then(function(r) {
+						if (r && r.message) window.open(r.message, "_blank");
+					});
+				});
+			});
+
+			// Template (raw placeholders) + Preview (rendered) dialog.
+			frappe.db.get_single_value("Recruitment Settings", "enable_offer_letter_button").then(function(enabled) {
+				if (!enabled) return;
+				frm.add_custom_button(__("Offer Letter"), function() {
+					recruitment_open_offer_letter_dialog(frm);
 				});
 			});
 		}
@@ -213,3 +228,51 @@ frappe.ui.form.on("Deductions", {
     percentage: jobOfferComputeRow,
     basis: jobOfferComputeRow,
 });
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Offer Letter dialog — Template (raw placeholders) + Preview (rendered).
+// Template selection is the `custom_offer_letter_template` field on the form;
+// both tabs resolve the template from the Job Offer (form pick → settings default).
+// ─────────────────────────────────────────────────────────────────────────────
+function recruitment_open_offer_letter_dialog(frm) {
+	const d = new frappe.ui.Dialog({
+		title: __("Offer Letter"),
+		size: "extra-large",
+		fields: [{ fieldtype: "HTML", fieldname: "body" }],
+	});
+	const loaded = {};
+	const $body = () => d.fields_dict.body.$wrapper;
+
+	function tabBar(active) {
+		const btn = (id, label) =>
+			`<button class="offer-tab" data-tab="${id}" style="border:none;background:none;padding:9px 16px;cursor:pointer;` +
+			`border-bottom:2px solid ${active === id ? "#2490ef" : "transparent"};` +
+			`font-weight:${active === id ? "600" : "400"};color:${active === id ? "#2490ef" : "#666"};">${label}</button>`;
+		return `<div style="border-bottom:1px solid #e0e0e0;margin-bottom:14px;">${btn("template", __("Template"))}${btn("preview", __("Preview"))}</div>`;
+	}
+
+	function show(tab) {
+		$body().html(tabBar(tab) + `<div class="offer-tab-content" style="min-height:320px;">` +
+			`<div style="padding:40px;text-align:center;color:#888;">${__("Loading…")}</div></div>`);
+		$body().find(".offer-tab").on("click", function () { show($(this).data("tab")); });
+
+		if (loaded[tab]) { $body().find(".offer-tab-content").html(loaded[tab]); return; }
+
+		const method = tab === "template"
+			? "recruitment.job_offer_utils.get_offer_template_raw_html"
+			: "recruitment.job_offer_utils.get_offer_letter_preview_html";
+		frappe.call({ method, args: { job_offer: frm.doc.name } }).then(function (r) {
+			const html = (r && r.message && r.message.html) ||
+				`<div style="padding:40px;text-align:center;color:#888;">${__("Nothing to show.")}</div>`;
+			loaded[tab] = html;
+			// Only paint if the user is still on this tab.
+			const $c = $body().find(".offer-tab-content");
+			if ($c.length) $c.html(html);
+		});
+	}
+
+	d.show();
+	d.$wrapper.find(".modal-dialog").css("max-width", "920px");
+	show("template");
+}
