@@ -1015,7 +1015,7 @@ def _child_group_fields(child_doctype, group, overrides, restrict):
     return cols
 
 
-def _build_form_config(doc=None):
+def _build_form_config(doc=None, hiring_type=None):
     """Meta-first tabs → sections → fields tree for the Job Requisition form,
     with the single settings doc's overrides applied. Parent fields come from
     the doctype layout; child tables are emitted both inline (as a Table field)
@@ -1026,7 +1026,13 @@ def _build_form_config(doc=None):
     rendered minus any field marked Hide.
 
     When `doc` (a Job Requisition) is passed, each field carries its current
-    `value`, so one call powers the edit screen (config + data)."""
+    `value`, so one call powers the edit screen (config + data).
+
+    `hiring_type` optionally resolves the Lateral/Fresher switch server-side:
+    - "Fresher" keeps `custom_regions` and drops `custom_position_details`,
+    - anything else (Lateral / blank) keeps `custom_position_details` and drops
+      `custom_regions`.
+    Omit it to get BOTH tables (the UI then toggles client-side)."""
     settings = _get_form_settings()
     overrides = _load_form_overrides(settings)
     restrict = bool(settings and settings.get("restrict_to_configured"))
@@ -1121,24 +1127,38 @@ def _build_form_config(doc=None):
             "fields": fields,
         }
 
+    # Resolve the Lateral/Fresher switch server-side when the caller passes the
+    # selected hiring type — return only the table that applies so the UI can
+    # render it directly (Fresher → Regions, else → Position Details).
+    if hiring_type is not None:
+        drop = "custom_position_details" if (hiring_type or "").strip() == HIRING_TYPE_FRESHER else "custom_regions"
+        child_groups.pop(drop, None)
+        for tab in tabs:
+            for sec in tab["sections"]:
+                sec["fields"] = [f for f in sec["fields"] if f["fieldname"] != drop]
+
     return {
         "settings": JOB_REQUISITION_FORM_SETTINGS,
         "restrict_to_configured": restrict,
+        "hiring_type": hiring_type,
         "tabs": tabs,
         "child_groups": child_groups,
     }
 
 
 @frappe.whitelist()
-def get_job_requisition_form_config(name=None):
+def get_job_requisition_form_config(name=None, hiring_type=None):
     """Render config for the external Job Requisition form, driven by the single
     `Job Requisition Form Settings` doc.
 
     - `name` optional — a Job Requisition id; when passed, fields carry their
       current `value` so the same call powers the edit screen.
+    - `hiring_type` optional — "Fresher" returns the Regions table (and drops
+      Position Details); "Lateral"/blank returns Position Details (and drops
+      Regions). Omit to get BOTH tables and toggle client-side.
 
     Returns the project response envelope with
-    `{settings, restrict_to_configured, tabs:[{tab, sections:[{section,
+    `{settings, restrict_to_configured, hiring_type, tabs:[{tab, sections:[{section,
     fields:[...]}]}], child_groups}`.
     """
     try:
@@ -1149,7 +1169,7 @@ def get_job_requisition_form_config(name=None):
             doc = frappe.get_doc(JOB_REQUISITION, name)
             doc.check_permission("read")
 
-        config = _build_form_config(doc=doc)
+        config = _build_form_config(doc=doc, hiring_type=hiring_type)
         return _ok(message=_("Form configuration fetched."), data=config, http=200)
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
