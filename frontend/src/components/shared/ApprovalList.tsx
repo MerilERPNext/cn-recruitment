@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactNode, useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import {
   useIsRejectionReasonMandatory,
 } from "../../hooks/useLeaves";
-import { useCreateApprovalComment } from "../../hooks/useCreateApprovalComment";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { commentService } from "../../services/commentService";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { isActionEnabled } from "../../utils/uiPermission";
 import { BulkActionFooter } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
@@ -152,7 +153,8 @@ const ApprovalList = ({
   const [actedIds, setActedIds] = useState<Set<string>>(new Set());
 
   const { data: isLeaveRejectionMandatory } = useIsRejectionReasonMandatory();
-  const commentMutation = useCreateApprovalComment();
+  const queryClient = useQueryClient();
+  const [isCommentSaving, setIsCommentSaving] = useState(false);
   const [showBulkCommentModal, setShowBulkCommentModal] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState<
     "Approve" | "Reject" | null
@@ -365,6 +367,7 @@ const ApprovalList = ({
 
   const handleSaveBulkComment = async (reason: string) => {
     try {
+      setIsCommentSaving(true);
       const docInfos = selectedIds
         .map((id) => {
           const req = allRequests.find((r) => r.todo_id === id);
@@ -379,7 +382,7 @@ const ApprovalList = ({
       if (docInfos.length > 0) {
         await Promise.all(
           docInfos.map((docInfo) =>
-            commentMutation.mutateAsync({
+            commentService.createApprovalComment({
               comment_type: pendingBulkAction === "Approve" ? "Submitted" : "Cancelled",
               reference_doctype: docInfo.doctype,
               reference_name: docInfo.name,
@@ -390,6 +393,15 @@ const ApprovalList = ({
             }),
           ),
         );
+        
+        queryClient.invalidateQueries({ queryKey: ["teamRequests"] });
+        queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
+        queryClient.invalidateQueries({ queryKey: ["attendance-request"] });
+        queryClient.invalidateQueries({ queryKey: ["my-attendance-requests"] });
+        queryClient.invalidateQueries({ queryKey: ["expense-claims"] });
+        queryClient.invalidateQueries({ queryKey: ["todo"] });
+        queryClient.invalidateQueries({ queryKey: ["todo-refdocs"] });
+        queryClient.invalidateQueries({ queryKey: ["todo-approvals"] });
       }
       setShowBulkCommentModal(false);
       if (pendingBulkAction) {
@@ -397,6 +409,8 @@ const ApprovalList = ({
       }
     } catch (error) {
       console.error("Failed to save bulk comment", error);
+    } finally {
+      setIsCommentSaving(false);
     }
   };
 
@@ -604,7 +618,7 @@ const ApprovalList = ({
       />
       <RejectionReasonModal
         isOpen={showBulkCommentModal}
-        isPending={commentMutation.isPending}
+        isPending={isCommentSaving}
         title={pendingBulkAction === "Approve" ? "Approval Comment" : "Rejection Comment"}
         description={`Please add a comment before ${pendingBulkAction === "Approve" ? "approving" : "rejecting"} these requests.`}
         label={`${pendingBulkAction === "Approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}

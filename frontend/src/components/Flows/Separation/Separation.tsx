@@ -74,6 +74,7 @@ const Separation = () => {
       "retrigger_separation",
       "retrigger_termination",
       "revoke_separation",
+      "show_separation_activity_log",
     ],
     "Separation",
   );
@@ -517,7 +518,7 @@ const Separation = () => {
         onSave={handleRevokeSubmit}
       />
 
-      {!showRequestPage && (
+      {!showRequestPage && enabledActions.show_separation_activity_log && (
         <SeparationRecordLog
           separationRecords={separationFunnelDetails?.data}
         />
