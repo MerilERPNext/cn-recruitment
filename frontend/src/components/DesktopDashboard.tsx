@@ -82,6 +82,7 @@ import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import ViewingAsBanner from "./ViewingAsBanner";
 import formatToIndianDate from "../utils/formatToIndianDate";
 import { RecommendationsForYou } from "./DashboardComponent/RecommendationsForYou";
+import Tooltip from "./shared/Tooltip";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -738,27 +739,29 @@ export default function DesktopDashboard() {
                         Company Information
                       </Typography>
                       <div className="space-y-1">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between gap-2">
                           <Typography variant="bodySmall" color="body2">
                             Department:
                           </Typography>
-                          <Typography variant="bodySmall" color="body2">
+                          <Typography variant="bodySmall" color="body2" className="line-clamp-1">
                             {currentEmployee?.department_name || "N/A"}
                           </Typography>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between gap-2">
                           <Typography variant="bodySmall" color="body2">
                             Company:
                           </Typography>
-                          <Typography variant="bodySmall" color="body2">
-                            {currentEmployee?.company_name || "N/A"}
-                          </Typography>
+                          <Tooltip content={currentEmployee?.company_name}>
+                            <Typography variant="bodySmall" color="body2" className="line-clamp-1">
+                              {currentEmployee?.company_name || "N/A"}
+                            </Typography>
+                          </Tooltip>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between gap-2">
                           <Typography variant="bodySmall" color="body2">
                             Join Date:
                           </Typography>
-                          <Typography variant="bodySmall" color="body2">
+                          <Typography variant="bodySmall" color="body2" className="line-clamp-1">
                             {currentEmployee?.date_of_joining ? formatToIndianDate(currentEmployee.date_of_joining) : "N/A"}
                           </Typography>
                         </div>
@@ -1029,8 +1032,8 @@ export default function DesktopDashboard() {
 
                 <div
                   className={`flex  h-full ${homeSummary && !homeSummary?.length
-                      ? "flex-col-reverse gap-3"
-                      : "flex-row gap-3 mt-2"
+                    ? "flex-col-reverse gap-3"
+                    : "flex-row gap-3 mt-2"
                     }`}
                 >
                   {canShowClockIn?.can_show && (
@@ -1115,10 +1118,10 @@ export default function DesktopDashboard() {
                       >
                         <div
                           className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${action.color === "primary"
-                              ? "bg-primary-100 text-primary-600"
-                              : action.color === "purple"
-                                ? "bg-purple-100 text-purple-600"
-                                : "bg-success-100 text-success"
+                            ? "bg-primary-100 text-primary-600"
+                            : action.color === "purple"
+                              ? "bg-purple-100 text-purple-600"
+                              : "bg-success-100 text-success"
                             }`}
                         >
                           <action.icon className="w-5 h-5 shadow-sm" />
