@@ -148,6 +148,13 @@ permission_query_conditions = {
     "Job Applicant": "recruitment.permissions.doc_type_permissions.ja_query",
     "Job Opening": "recruitment.permissions.doc_type_permissions.job_opening_query",
     "Campus Invite": "recruitment.permissions.doc_type_permissions.campus_invite_query",
+    "Candidate Registration": "recruitment.permissions.doc_type_permissions.candidate_registration_query",
+}
+
+# A TPO may only read/act on the Candidate Registrations they own (mirrors the
+# query condition above at the document level). Everyone else defers to defaults.
+has_permission = {
+    "Candidate Registration": "recruitment.permissions.doc_type_permissions.candidate_registration_has_permission",
 }
 
 # Jinja

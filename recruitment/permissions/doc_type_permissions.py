@@ -185,6 +185,56 @@ def campus_invite_query(user):
     return "1 = 1"
 
 
+CANDIDATE_REGISTRATION_PRIVILEGED = {
+    "System Manager",
+    "HR Manager",
+    "HR User",
+    "Recruiter Admin",
+    "Management",
+}
+
+
+def candidate_registration_query(user):
+    """A TPO sees only the Candidate Registrations they created (owner = their login).
+
+    TPOs log in from a Campus Invite email and register their candidates here, so
+    one TPO must never see another's registrations. Privileged roles (System
+    Manager / HR Manager / HR User / Recruiter Admin / Management) stay unrestricted,
+    so nothing changes for HR. Only users carrying the TPO role *without* a
+    privileged role are scoped down."""
+    if not user:
+        user = frappe.session.user
+    if user == "Administrator":
+        return "1 = 1"
+
+    roles = set(frappe.get_roles(user))
+    if TPO_ROLE in roles and not (CANDIDATE_REGISTRATION_PRIVILEGED & roles):
+        return f"`tabCandidate Registration`.owner = {frappe.db.escape(user, percent=False)}"
+
+    return "1 = 1"
+
+
+def candidate_registration_has_permission(doc, ptype, user):
+    """Document-level mirror of ``candidate_registration_query`` so a TPO cannot open
+    another TPO's Candidate Registration via a direct link. Creating is always
+    allowed (the new doc's owner is the TPO); other actions require ownership.
+    Returns None (defer to standard perms) for Administrator and every non-TPO /
+    privileged user, so no other role is affected."""
+    if not user:
+        user = frappe.session.user
+    if user == "Administrator":
+        return None
+
+    roles = set(frappe.get_roles(user))
+    if TPO_ROLE not in roles or (CANDIDATE_REGISTRATION_PRIVILEGED & roles):
+        return None
+
+    if ptype == "create":
+        return True
+    # owner is unset on a brand-new in-memory doc; treat that as the current user.
+    return (doc.owner or user) == user
+
+
 def ja_query(user):
     if not user:
         user = frappe.session.user
