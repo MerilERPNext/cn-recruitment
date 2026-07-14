@@ -22,7 +22,7 @@ import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
-
+import RejectionReasonModal from "../shared/RejectionReasonModal";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 type LeaveAttachment = {
@@ -75,14 +75,13 @@ export function LeaveDetailView({
   const [isActed, setIsActed] = useState(false);
 
   const [showCommentModal, setShowCommentModal] = useState(false);
-  const [rejectionComment, setRejectionComment] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   const handleAction = useCallback(
     async (action: string) => {
       if (["approve", "reject"].includes(action.toLowerCase())) {
         const isMandatory = rejectionMandatoryData ?? true;
-        if (isMandatory && !rejectionComment.trim()) {
+        if (action.toLowerCase() === "approve" || isMandatory) {
           setPendingAction(action);
           setShowCommentModal(true);
           return;
@@ -133,9 +132,6 @@ export function LeaveDetailView({
         if (onAction) {
           onAction();
         }
-        if (action.toLowerCase() === "reject") {
-          setRejectionComment("");
-        }
         setCurrentAction(null);
       } catch (error) {
         setCurrentAction(null);
@@ -149,16 +145,11 @@ export function LeaveDetailView({
       mutation,
       onAction,
       setRefetchAttendance,
-      rejectionComment,
       rejectionMandatoryData,
     ],
   );
 
-  const handleSaveComment = async () => {
-    if (!rejectionComment.trim()) {
-      toast.error("Please enter a comment");
-      return;
-    }
+  const handleSaveComment = async (reason: string) => {
 
     try {
       if (pendingAction) {
@@ -172,14 +163,13 @@ export function LeaveDetailView({
             data?.reference_document?.name || data?.reference_name || "",
           comment_email: user?.name || "",
           comment_by: user?.name || "",
-          content: rejectionComment,
+          content: reason,
           subject: pendingAction.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
         });
 
         setShowCommentModal(false);
         handleAction(pendingAction);
         setPendingAction(null);
-        setRejectionComment("");
       }
     } catch (error) {
       console.error("Failed to save comment", error);
@@ -354,9 +344,9 @@ export function LeaveDetailView({
         </div>
 
         {actionsEnabled &&
-        actions?.length > 0 &&
-        data?.status === "Open" &&
-        !isActed ? (
+          actions?.length > 0 &&
+          data?.status === "Open" &&
+          !isActed ? (
           <div className="w-full bg-white border-t shadow-md p-4 z-20">
             <TeamApprovalActionPill
               actionsEnabled={actionsEnabled}
@@ -382,82 +372,25 @@ export function LeaveDetailView({
           </div>
         )}
       </div>
-      {showCommentModal && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
-          onMouseDown={(e) => {
-            e.stopPropagation();
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          <div
-            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Comment Required
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Please add a comment before{" "}
-              {pendingAction?.toLowerCase() === "approve"
-                ? "approving"
-                : "rejecting"}{" "}
-              this leave request.
-            </p>
-            <div className="mb-4">
-              <label className="text-xs text-gray-500 uppercase mb-1 block">
-                {pendingAction?.toLowerCase() === "approve"
-                  ? "APPROVAL"
-                  : "REJECTION"}{" "}
-                COMMENT *
-              </label>
-              <textarea
-                value={rejectionComment}
-                onChange={(e) => setRejectionComment(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                placeholder={`Enter ${
-                  pendingAction?.toLowerCase() === "approve"
-                    ? "approval"
-                    : "rejection"
-                } comment...`}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                rows={4}
-                autoFocus
-              />
-              <div className={`text-xs mt-1 text-right ${rejectionComment.trim().length >= 15 ? 'text-green-600' : 'text-gray-500'}`}>
-                {rejectionComment.trim().length}/15 characters minimum
-              </div>
-            </div>
-            <div className="flex gap-3 justify-end">
-              <Button
-                onClick={handleCancelComment}
-                size="sm"
-                bgColor="disabled"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveComment}
-                size="sm"
-                bgColor="primary"
-                disabled={
-                  rejectionComment.trim().length < 15 ||
-                  approvalCommentMutation.isPending
-                }
-              >
-                {approvalCommentMutation.isPending ? (
-                  <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "Save & Continue"
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RejectionReasonModal
+        isOpen={showCommentModal}
+        isPending={approvalCommentMutation.isPending}
+        title="Comment Required"
+        description={`Please add a comment before ${pendingAction?.toLowerCase() === "approve"
+            ? "approving"
+            : "rejecting"
+          } this leave request.`}
+        label={`${pendingAction?.toLowerCase() === "approve"
+            ? "APPROVAL"
+            : "REJECTION"
+          } COMMENT *`}
+        placeholder={`Enter ${pendingAction?.toLowerCase() === "approve"
+            ? "approval"
+            : "rejection"
+          } comment...`}
+        onCancel={handleCancelComment}
+        onSave={handleSaveComment}
+      />
     </div>
   ) : null;
 }

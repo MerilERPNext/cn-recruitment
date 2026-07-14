@@ -51,6 +51,7 @@ import {
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
+import RejectionReasonModal from "../../shared/RejectionReasonModal";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 export function TeamExpenseDetailView({
@@ -119,7 +120,6 @@ export function TeamExpenseDetailView({
   const [isActed, setIsActed] = useState(false);
   const [showActionWarning, setShowActionWarning] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const [rejectionComment, setRejectionComment] = useState<string>("");
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [pendingHoldAction, setPendingHoldAction] = useState<string | null>(null);
 
@@ -331,7 +331,7 @@ export function TeamExpenseDetailView({
         return;
       }
 
-      if (["approve", "reject"].includes(action.toLowerCase()) && !rejectionComment.trim()) {
+      if (["approve", "reject"].includes(action.toLowerCase())) {
         setShowCommentModal(true);
         setPendingAction(action);
         return;
@@ -351,7 +351,7 @@ export function TeamExpenseDetailView({
       loading?.wrap(() => performAction(action), actionLoadingShow);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [hasUnsavedChanges, rejectionComment],
+    [hasUnsavedChanges],
   );
 
   const performAction = async (action: string) => {
@@ -399,10 +399,6 @@ export function TeamExpenseDetailView({
         onAction();
       }
 
-      if (action.toLowerCase() === "reject") {
-        setRejectionComment("");
-      }
-
       setCurrentAction(null);
     } catch (error) {
       setCurrentAction(null);
@@ -426,15 +422,7 @@ export function TeamExpenseDetailView({
     setPendingAction(null);
   };
 
-  const handleSaveComment = async () => {
-    if (!rejectionComment.trim()) {
-      toast.error("Please enter a comment");
-      return;
-    }
-    if (rejectionComment.trim().length < 15) {
-      toast.error("Comment must be at least 15 characters long");
-      return;
-    }
+  const handleSaveComment = async (reason: string) => {
 
     try {
       await loading?.wrap(
@@ -445,7 +433,7 @@ export function TeamExpenseDetailView({
             reference_name: claimId,
             comment_email: user?.name || "",
             comment_by: user?.name || "",
-            content: rejectionComment,
+            content: reason,
             subject: pendingAction?.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
           }),
         "Saving comment...",
@@ -456,7 +444,6 @@ export function TeamExpenseDetailView({
       if (pendingAction) {
         loading?.wrap(() => performAction(pendingAction), "Reject");
         setPendingAction(null);
-        setRejectionComment("");
       }
     } catch (error) {
       console.error("Failed to save comment", error);
@@ -1178,58 +1165,16 @@ export function TeamExpenseDetailView({
           )}
 
           {/* Comment modal */}
-          {showCommentModal && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
-              <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Comment Required
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Please add a comment before {pendingAction?.toLowerCase() === "approve" ? "approving" : "rejecting"} this expense claim.
-                </p>
-                <div className="mb-4">
-                  <label className="text-xs text-gray-500 uppercase mb-1 block">
-                    {pendingAction?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *
-                  </label>
-                  <textarea
-                    value={rejectionComment}
-                    onChange={(e) => setRejectionComment(e.target.value)}
-                    placeholder={`Enter your ${pendingAction?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                    rows={4}
-                    autoFocus
-                  />
-                  <div className={`text-xs mt-1 text-right ${rejectionComment.trim().length >= 15 ? 'text-green-600' : 'text-gray-500'}`}>
-                    {rejectionComment.trim().length}/15 characters minimum
-                  </div>
-                </div>
-                <div className="flex gap-3 justify-end">
-                  <Button
-                    onClick={handleCancelComment}
-                    size="sm"
-                    bgColor="disabled"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSaveComment}
-                    size="sm"
-                    bgColor="primary"
-                    disabled={
-                      rejectionComment.trim().length < 15 ||
-                      commentMutation.isPending
-                    }
-                  >
-                    {commentMutation.isPending ? (
-                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      "Save & Continue"
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+          <RejectionReasonModal
+            isOpen={showCommentModal}
+            isPending={commentMutation.isPending}
+            title="Comment Required"
+            description={`Please add a comment before ${pendingAction?.toLowerCase() === "approve" ? "approving" : "rejecting"} this expense claim.`}
+            label={`${pendingAction?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
+            placeholder={`Enter your ${pendingAction?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
+            onCancel={handleCancelComment}
+            onSave={handleSaveComment}
+          />
 
           {/* Unsaved changes warning */}
           {showUnsavedWarning && (
