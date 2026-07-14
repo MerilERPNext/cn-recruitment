@@ -129,6 +129,22 @@ function validateStep(
 
   // Position Selection: validate position rows
   if (stepKey === "positionSelection") {
+    if ((formData as any).custom_hiring_type === "Fresher") {
+      const regions: any[] = Array.isArray((formData as any).custom_regions)
+        ? (formData as any).custom_regions
+        : [];
+      if (regions.length === 0) {
+        errors.push("At least one region is required.");
+      }
+      regions.forEach((region, i) => {
+        if (!region?.region) errors.push(`Region ${i + 1}: Region is required.`);
+        if (!Number.isFinite(Number(region?.no_of_openings)) || Number(region.no_of_openings) < 1) {
+          errors.push(`Region ${i + 1}: No. of Openings must be at least 1.`);
+        }
+      });
+      return errors;
+    }
+
     const positions: any[] = (formData as any).positions ?? [];
     const total = Number((formData as any).number_of_positions) || 0;
     const newPos = Number((formData as any).number_of_new_positions) || 0;
@@ -307,6 +323,8 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
     department: req.department,
     designation: req.designation,
     functional_area: req.custom_functional_area,
+    custom_hiring_type: req.custom_hiring_type || "Lateral",
+    custom_regions: req.custom_regions || [],
     hiring_manager: req.requested_by,
     hiring_lead: req.custom_hiring_lead,
     custom_division: req.custom_division,
@@ -683,10 +701,12 @@ const RequisitionForm = () => {
   const isEditMode = Boolean(existingRequisition);
 
   const [formData, setFormData] = useState<JobRequisitionFormData>({
+    custom_hiring_type: "Lateral",
     number_of_positions: 0,
     number_of_new_positions: 0,
     number_of_replacement_positions: 0,
-    positions: []
+    positions: [],
+    custom_regions: [],
   } as unknown as JobRequisitionFormData);
 
   const [isUpdating, setIsUpdating] = useState(false);
@@ -719,7 +739,8 @@ const RequisitionForm = () => {
     (async () => {
       try {
         const res: any = await FrappeAPI.callMethod(
-          "recruitment.api.job_requisition.get_job_requisition_form_config"
+          "recruitment.api.job_requisition.get_job_requisition_form_config",
+          { hiring_type: formData.custom_hiring_type || "Lateral" }
         );
         // callMethod returns response.data.message → { success, message, data }.
         const data: JobRequisitionFormConfig | undefined = res?.data;
@@ -733,7 +754,7 @@ const RequisitionForm = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [formData.custom_hiring_type]);
 
   // ── Decoupled form.io submission feed (performance) ──────────────────────
   // form.io is uncontrolled: it manages its own field state and reports edits
@@ -1591,6 +1612,11 @@ const RequisitionForm = () => {
   // buildPayload — now includes custom_attachment_url
   // ---------------------------------------------------------------------------
   const buildPayload = (finalData: any): CreateJobRequisitionPayload => {
+    const isFresher = finalData.custom_hiring_type === "Fresher";
+    const regionOpenings = (finalData.custom_regions || []).reduce(
+      (total: number, row: any) => total + (Number(row?.no_of_openings) || 0),
+      0
+    );
     let custom_work_experience: string | undefined = undefined;
     let custom_work_experience_range: string | undefined = undefined;
 
@@ -1650,7 +1676,10 @@ const RequisitionForm = () => {
       posting_date: toBackendDate(finalData.recruitment_start_date),
       requested_by_dept: finalData.department,
       custom_type_of_position: (finalData.positions || [])[0]?.vacancy_type || "New",
-      no_of_positions: finalData.number_of_positions || (finalData.positions || []).length || 1,
+      no_of_positions: isFresher
+        ? regionOpenings || 1
+        : finalData.number_of_positions || (finalData.positions || []).length || 1,
+      custom_hiring_type: isFresher ? "Fresher" : "Lateral",
       custom_division: finalData.custom_division,
       status: finalData.status,
       expected_compensation: finalData.expected_compensation
@@ -1734,6 +1763,16 @@ const RequisitionForm = () => {
       }),
       // ── Attachment URL (uploaded via useFileUpload, same as Invoice.tsx) ──
     };
+
+    // The backend treats these two child tables as mutually exclusive. Do not
+    // send stale lateral Position Details with a Fresher requisition.
+    if (isFresher) {
+      delete payload.custom_position_details;
+      payload.custom_regions = (finalData.custom_regions || []).map((row: any) => ({
+        region: row.region,
+        no_of_openings: Number(row.no_of_openings),
+      }));
+    }
 
     // Extend the payload with dynamic / newly-added backend TAB fields (keyed by
     // their backend fieldname), filling only keys the hardcoded mapping above
@@ -1896,6 +1935,7 @@ const RequisitionForm = () => {
   // Stable key of the active step (drives per-step UI that used to key off a
   // fixed numeric index, now that the tab order is backend-driven).
   const activeKey = steps[currentStep]?.key ?? "";
+  const isFresherHiring = (formData as any).custom_hiring_type === "Fresher";
 
   // Last step = "Review"
   const isLastStep = currentStep === steps.length - 1;
@@ -2009,7 +2049,7 @@ const RequisitionForm = () => {
           <>
             {/* ── Position counts (plain React inputs, kept out of formio to avoid
                  the controlled-input override issue) ── */}
-            {activeKey === "positionSelection" && (
+            {activeKey === "positionSelection" && !isFresherHiring && (
               <div className="mb-4 border rounded-md p-4">
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -2084,7 +2124,7 @@ const RequisitionForm = () => {
                 resolveEmployeeId={resolveEmployeeId}
               />
               {/* Per-column "copy to all rows" buttons in the Position table */}
-              {activeKey === "positionSelection" && (
+              {activeKey === "positionSelection" && !isFresherHiring && (
                 <PositionColumnCopyButtons
                   containerRef={formContainerRef}
                   onCopyColumn={copyColumnToAllPositions}
@@ -2093,7 +2133,7 @@ const RequisitionForm = () => {
             </div>
 
             {/* ── Position Selection summary bar (totals + bulk vacancy-type toggle) ── */}
-            {activeKey === "positionSelection" && (() => {
+            {activeKey === "positionSelection" && !isFresherHiring && (() => {
               const positions: any[] = (formData as any).positions || [];
               const total = positions.length;
               const newCount = positions.filter((p) => p?.vacancy_type === "New").length;

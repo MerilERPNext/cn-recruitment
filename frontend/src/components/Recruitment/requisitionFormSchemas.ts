@@ -822,6 +822,43 @@ export const requisitionFormSchemas = {
               },
             ],
           },
+          {
+            // Fresher requisitions use Regions instead of Position Details.
+            // The dynamic config layer keeps only the table returned by the
+            // Hiring Type-specific configuration response.
+            type: "datagrid",
+            key: "custom_regions",
+            label: "Regions",
+            initEmpty: true,
+            addAnother: "Add Region",
+            reorder: false,
+            components: [
+              {
+                type: "select",
+                key: "region",
+                label: "Region",
+                placeholder: "Select Region",
+                validateOn: "blur",
+                dataSrc: "url",
+                data: {
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Region",
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                limit: 20,
+                selectValues: "message.results",
+                valueProperty: "id",
+                template: "<span>{{ item.label }}</span>",
+                validate: { required: true },
+              },
+              {
+                type: "number",
+                key: "no_of_openings",
+                label: "No. of Openings",
+                validateOn: "blur",
+                validate: { required: true, min: 1 },
+              },
+            ],
+          },
         ],
       },
     ],

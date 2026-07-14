@@ -71,6 +71,8 @@ export interface JobRequisitionFormData {
   positions?: PositionDetail[];
   replacement_positions?: ReplacementPositionDetail[];
   custom_position_details?: any[];
+  custom_regions?: { region: string; no_of_openings: number }[];
+  custom_hiring_type?: "Lateral" | "Fresher";
 
   // Other Details
   comments_instructions?: string;
@@ -106,7 +108,9 @@ export interface CreateJobRequisitionPayload {
   custom_designation_change?: string;
   custom_additional_roles__responsibilities?: string;
   custom_additional_skills?: string;
-  custom_position_details: (PositionDetail | ReplacementPositionDetail)[];
+  custom_position_details?: (PositionDetail | ReplacementPositionDetail)[];
+  custom_regions?: { region: string; no_of_openings: number }[];
+  custom_hiring_type?: "Lateral" | "Fresher";
 
   custom_division?: string;
   expected_compensation?: number;
@@ -211,6 +215,8 @@ export interface RequisitionFormData {
   number_of_new_positions?: number | string;
   number_of_replacement_positions?: number | string;
   positions?: RequisitionPosition[];
+  custom_regions?: { region?: string; no_of_openings?: number }[];
+  custom_hiring_type?: "Lateral" | "Fresher";
   custom_employee_type?: string;
   employment_type?: string;
   custom_work_experience_range?: string;
