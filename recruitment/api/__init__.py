@@ -372,6 +372,41 @@ def get_ticket_list_data(
     if or_filters is None:
         or_filters = []
     
+        # Process or_filters to support searching by category_name for linked category fields
+  
+    processed_or_filters = []
+
+    for flt in or_filters:
+        # Expected format: ["field", "operator", "value"]
+        if (
+            isinstance(flt, (list, tuple))
+            and len(flt) == 3
+            and flt[0] in ("custom_category", "custom_sub_category")
+            and flt[1].lower() == "like"
+        ):
+            search_value = str(flt[2]).replace("%", "").strip()
+            print("search value: 33333333333333" , search_value)
+
+            category_ids = frappe.get_all(
+                "HD Category",
+                filters={
+                    "category_name": ["like", f"%{search_value}%"]
+                },
+                pluck="name",
+            )
+            
+            print("category_ids value: 33333333333333" , category_ids)
+
+            if category_ids:
+                processed_or_filters.append(
+                    [flt[0], "in", category_ids]
+                )
+        else:
+            processed_or_filters.append(flt)
+
+    print("processed_or_filters value: 33333333333333" , processed_or_filters, "or_filters", or_filters)
+    or_filters = processed_or_filters
+    
     # Handle @me support (convert @me to current user)
     from helpdesk.api.doc import handle_at_me_support
     filters = handle_at_me_support(filters)
