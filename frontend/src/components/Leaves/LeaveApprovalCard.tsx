@@ -2,9 +2,10 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import { useCreateApprovalComment } from "../../hooks/useCreateApprovalComment";
+import useCurrentUser from "../../hooks/useCurrentUser";
 import {
   useIsRejectionReasonMandatory,
-  useUpdateRejectionReason,
 } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import formatToIndianDate from "../../utils/formatToIndianDate";
@@ -45,7 +46,8 @@ const LeaveApprovalCard = ({
   isActed = false,
 }: LeaveApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
-  const updateRejectionReasonMutation = useUpdateRejectionReason();
+  const approvalCommentMutation = useCreateApprovalComment();
+  const { data: user } = useCurrentUser();
   const { data: rejectionMandatoryData } = useIsRejectionReasonMandatory();
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [rejectionComment, setRejectionComment] = useState("");
@@ -55,7 +57,7 @@ const LeaveApprovalCard = ({
   } | null>(null);
 
   const handleActionClick = (action: string, actionData: any) => {
-    if (action.toLowerCase() === "reject") {
+    if (["approve", "reject"].includes(action.toLowerCase())) {
       const isMandatory = rejectionMandatoryData ?? true;
       if (isMandatory && !rejectionComment.trim()) {
         setPendingActionData({ action, data: actionData });
@@ -65,10 +67,8 @@ const LeaveApprovalCard = ({
     }
 
     onAction(action, actionData);
-    if (action.toLowerCase() === "reject") {
-      setRejectionComment("");
-    }
   };
+
   const handleSaveComment = async () => {
     if (!rejectionComment.trim()) {
       toast.error("Please enter a comment");
@@ -76,14 +76,21 @@ const LeaveApprovalCard = ({
     }
 
     try {
-      await updateRejectionReasonMutation.mutateAsync({
-        id: data?.reference_document?.name || "",
-        reason: rejectionComment,
-      });
-
-      setShowCommentModal(false);
-
       if (pendingActionData) {
+        await approvalCommentMutation.mutateAsync({
+          comment_type:
+            pendingActionData.action.toLowerCase() === "approve"
+              ? "Submitted"
+              : "Cancelled",
+          reference_doctype: "Leave Application",
+          reference_name: data?.reference_document?.name || "",
+          comment_email: user?.name || "",
+          comment_by: user?.name || "",
+          content: rejectionComment,
+          subject: pendingActionData.action.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
+        });
+
+        setShowCommentModal(false);
         onAction(pendingActionData.action, pendingActionData.data);
         setPendingActionData(null);
         setRejectionComment("");
@@ -436,17 +443,28 @@ const LeaveApprovalCard = ({
               Comment Required
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              Please add a comment before rejecting this leave request.
+              Please add a comment before{" "}
+              {pendingActionData?.action?.toLowerCase() === "approve"
+                ? "approving"
+                : "rejecting"}{" "}
+              this leave request.
             </p>
             <div className="mb-4">
               <label className="text-xs text-gray-500 uppercase mb-1 block">
-                REJECTION REASON *
+                {pendingActionData?.action?.toLowerCase() === "approve"
+                  ? "APPROVAL"
+                  : "REJECTION"}{" "}
+                COMMENT *
               </label>
               <textarea
                 value={rejectionComment}
                 onChange={(e) => setRejectionComment(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
-                placeholder="Enter rejection reason..."
+                placeholder={`Enter ${
+                  pendingActionData?.action?.toLowerCase() === "approve"
+                    ? "approval"
+                    : "rejection"
+                } comment...`}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 rows={4}
                 autoFocus
@@ -466,10 +484,10 @@ const LeaveApprovalCard = ({
                 bgColor="primary"
                 disabled={
                   rejectionComment.trim().length < 15 ||
-                  updateRejectionReasonMutation.isPending
+                  approvalCommentMutation.isPending
                 }
               >
-                {updateRejectionReasonMutation.isPending ? (
+                {approvalCommentMutation.isPending ? (
                   <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   "Save & Continue"

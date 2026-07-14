@@ -3,10 +3,11 @@ import { X } from "lucide-react";
 import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
+import { useCreateApprovalComment } from "../../hooks/useCreateApprovalComment";
+import useCurrentUser from "../../hooks/useCurrentUser";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import {
   useIsRejectionReasonMandatory,
-  useUpdateRejectionReason,
 } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
@@ -51,7 +52,8 @@ export function LeaveDetailView({
   sendBackComment?: string;
 }) {
   const mutation = useApprovalListActions();
-  const updateRejectionReasonMutation = useUpdateRejectionReason();
+  const approvalCommentMutation = useCreateApprovalComment();
+  const { data: user } = useCurrentUser();
   const { data: rejectionMandatoryData } = useIsRejectionReasonMandatory();
   const { setRefetchAttendance } = useGlobalStore();
 
@@ -78,7 +80,7 @@ export function LeaveDetailView({
 
   const handleAction = useCallback(
     async (action: string) => {
-      if (action.toLowerCase() === "reject") {
+      if (["approve", "reject"].includes(action.toLowerCase())) {
         const isMandatory = rejectionMandatoryData ?? true;
         if (isMandatory && !rejectionComment.trim()) {
           setPendingAction(action);
@@ -159,14 +161,22 @@ export function LeaveDetailView({
     }
 
     try {
-      await updateRejectionReasonMutation.mutateAsync({
-        id: data?.reference_document?.name || data?.reference_name || "",
-        reason: rejectionComment,
-      });
-
-      setShowCommentModal(false);
-
       if (pendingAction) {
+        await approvalCommentMutation.mutateAsync({
+          comment_type:
+            pendingAction.toLowerCase() === "approve"
+              ? "Submitted"
+              : "Cancelled",
+          reference_doctype: "Leave Application",
+          reference_name:
+            data?.reference_document?.name || data?.reference_name || "",
+          comment_email: user?.name || "",
+          comment_by: user?.name || "",
+          content: rejectionComment,
+          subject: pendingAction.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
+        });
+
+        setShowCommentModal(false);
         handleAction(pendingAction);
         setPendingAction(null);
         setRejectionComment("");
@@ -391,17 +401,28 @@ export function LeaveDetailView({
               Comment Required
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              Please add a comment before rejecting this leave request.
+              Please add a comment before{" "}
+              {pendingAction?.toLowerCase() === "approve"
+                ? "approving"
+                : "rejecting"}{" "}
+              this leave request.
             </p>
             <div className="mb-4">
               <label className="text-xs text-gray-500 uppercase mb-1 block">
-                REJECTION REASON *
+                {pendingAction?.toLowerCase() === "approve"
+                  ? "APPROVAL"
+                  : "REJECTION"}{" "}
+                COMMENT *
               </label>
               <textarea
                 value={rejectionComment}
                 onChange={(e) => setRejectionComment(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
-                placeholder="Enter rejection reason..."
+                placeholder={`Enter ${
+                  pendingAction?.toLowerCase() === "approve"
+                    ? "approval"
+                    : "rejection"
+                } comment...`}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 rows={4}
                 autoFocus
@@ -421,10 +442,10 @@ export function LeaveDetailView({
                 bgColor="primary"
                 disabled={
                   rejectionComment.trim().length < 15 ||
-                  updateRejectionReasonMutation.isPending
+                  approvalCommentMutation.isPending
                 }
               >
-                {updateRejectionReasonMutation.isPending ? (
+                {approvalCommentMutation.isPending ? (
                   <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   "Save & Continue"

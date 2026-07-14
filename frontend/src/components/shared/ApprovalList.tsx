@@ -5,9 +5,10 @@ import { useLoadingOverlay } from "../../context/OverlayContext";
 import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import {
-  useBulkUpdateRejectionReason,
   useIsRejectionReasonMandatory,
 } from "../../hooks/useLeaves";
+import { useCreateApprovalComment } from "../../hooks/useCreateApprovalComment";
+import useCurrentUser from "../../hooks/useCurrentUser";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -61,8 +62,8 @@ type ApprovalListProps = {
   columnWidths?: string[];
   orderBy?: string;
   noRecordsScreen?:
-    | React.ReactNode
-    | ((filters: Record<string, any>) => React.ReactNode);
+  | React.ReactNode
+  | ((filters: Record<string, any>) => React.ReactNode);
   SkeletonComponent?: React.ComponentType;
   onActiveFiltersChange?: (filters: Record<string, any>) => void;
   onDataLoad?: (data: any[]) => void;
@@ -115,6 +116,7 @@ const ApprovalList = ({
     normalizeFilters(defaultFilters || {}),
   );
 
+  const { data: user } = useCurrentUser();
   const { data: uiPermissionData } = useGetUiPermission(uiPermission?.app);
   const actionsEnabled = isActionEnabled(
     uiPermissionData,
@@ -149,8 +151,8 @@ const ApprovalList = ({
   const [allRequests, setAllRequests] = useState<any[]>([]);
   const [actedIds, setActedIds] = useState<Set<string>>(new Set());
 
-  const { data: isRejectionMandatory } = useIsRejectionReasonMandatory();
-  const bulkUpdateMutation = useBulkUpdateRejectionReason();
+  const { data: isLeaveRejectionMandatory } = useIsRejectionReasonMandatory();
+  const commentMutation = useCreateApprovalComment();
   const [showBulkCommentModal, setShowBulkCommentModal] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState<
     "Approve" | "Reject" | null
@@ -245,8 +247,8 @@ const ApprovalList = ({
         allRequests.map((req) => {
           const actionsWithForm = req?.custom_doctype_actions_with_form
             ? JSON.parse(
-                req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
-              )
+              req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
+            )
             : [];
           if (
             actionsWithForm?.includes("Approve") ||
@@ -347,8 +349,11 @@ const ApprovalList = ({
   const batchActionMutation = useActionOnAttendanceRequest();
 
   const handleBulkActionClick = (action: "Approve" | "Reject") => {
-    if (action === "Reject" && doctype === "Leave Application") {
-      const isMandatory = isRejectionMandatory?.message ?? true;
+    if (["Approve", "Reject"].includes(action) && ["Leave Application", "Attendance Request", "Expense Claim"].includes(doctype)) {
+      let isMandatory = true;
+      if (doctype === "Leave Application" && action === "Reject") {
+        isMandatory = isLeaveRejectionMandatory?.message ?? true;
+      }
       if (isMandatory) {
         setPendingBulkAction(action);
         setShowBulkCommentModal(true);
@@ -360,19 +365,31 @@ const ApprovalList = ({
 
   const handleSaveBulkComment = async (reason: string) => {
     try {
-      const docnames = selectedIds
+      const docInfos = selectedIds
         .map((id) => {
           const req = allRequests.find((r) => r.todo_id === id);
-          return req?.reference_name || req?.reference_document?.name;
+          const refDoc = req?.reference_document;
+          const refDoctype = refDoc?.doctype || req?.reference_type || doctype;
+          const refName = refDoc?.name || req?.reference_name;
+          if (refDoctype && refName) return { doctype: refDoctype, name: refName };
+          return null;
         })
-        .filter(Boolean);
+        .filter(Boolean) as { doctype: string; name: string }[];
 
-      if (docnames.length > 0) {
-        await bulkUpdateMutation.mutateAsync({
-          doctype,
-          docnames,
-          comment: reason,
-        });
+      if (docInfos.length > 0) {
+        await Promise.all(
+          docInfos.map((docInfo) =>
+            commentMutation.mutateAsync({
+              comment_type: pendingBulkAction === "Approve" ? "Submitted" : "Cancelled",
+              reference_doctype: docInfo.doctype,
+              reference_name: docInfo.name,
+              comment_email: user?.name || "",
+              comment_by: user?.name || "",
+              content: reason,
+              subject: pendingBulkAction === "Approve" ? "Request Approved" : "Request Rejected",
+            }),
+          ),
+        );
       }
       setShowBulkCommentModal(false);
       if (pendingBulkAction) {
@@ -409,10 +426,9 @@ const ApprovalList = ({
                     return next;
                   });
                   toast.success(
-                    `Requests ${
-                      action === "Reject"
-                        ? "rejected"
-                        : `${action.toLowerCase()}d`
+                    `Requests ${action === "Reject"
+                      ? "rejected"
+                      : `${action.toLowerCase()}d`
                     } successfully!`,
                   );
                   triggerRefetch();
@@ -508,7 +524,7 @@ const ApprovalList = ({
         noRecordsScreen={
           typeof noRecordsScreen === "function"
             ? (filters: Record<string, any>) =>
-                noRecordsScreen({ ...filters, ...activeFilters })
+              noRecordsScreen({ ...filters, ...activeFilters })
             : noRecordsScreen
         }
         onFiltersChange={handleFiltersChange}
@@ -529,16 +545,16 @@ const ApprovalList = ({
           // header via BulkSelectContext — nothing needed here.
           !isDesktop && finalBulkSelectVisible && allRequests.length > 0
             ? () => (
-                <div className="flex items-center gap-3 px-4 py-2 bg-primary/20  mb-1">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={handleSelectAll}
-                    className="cursor-pointer w-4 h-4"
-                  />
-                  <span className="text-sm">Select all pending requests</span>
-                </div>
-              )
+              <div className="flex items-center gap-3 px-4 py-2 bg-primary/20  mb-1">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={handleSelectAll}
+                  className="cursor-pointer w-4 h-4"
+                />
+                <span className="text-sm">Select all pending requests</span>
+              </div>
+            )
             : undefined
         }
         PostListComponent={
@@ -546,12 +562,12 @@ const ApprovalList = ({
           // Only visible when at least one item is selected.
           finalBulkSelectVisible
             ? () => (
-                <BulkActionFooter
-                  selectedIds={selectedIds}
-                  onBulkAction={handleBulkActionClick}
-                  loadingAction={bulkLoading}
-                />
-              )
+              <BulkActionFooter
+                selectedIds={selectedIds}
+                onBulkAction={handleBulkActionClick}
+                loadingAction={bulkLoading}
+              />
+            )
             : undefined
         }
         renderItem={(item: any) => {
@@ -588,7 +604,11 @@ const ApprovalList = ({
       />
       <RejectionReasonModal
         isOpen={showBulkCommentModal}
-        isPending={bulkUpdateMutation.isPending}
+        isPending={commentMutation.isPending}
+        title={pendingBulkAction === "Approve" ? "Approval Comment" : "Rejection Comment"}
+        description={`Please add a comment before ${pendingBulkAction === "Approve" ? "approving" : "rejecting"} these requests.`}
+        label={`${pendingBulkAction === "Approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
+        placeholder={`Enter ${pendingBulkAction === "Approve" ? "approval" : "rejection"} comment...`}
         onCancel={handleCancelBulkComment}
         onSave={handleSaveBulkComment}
       />

@@ -5,9 +5,10 @@ import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import {
   useGetToDoWithReferenceDoc,
-  useUpdateAttendanceRejectionReason,
   useUpdateAttendanceRequest,
 } from "../../hooks/useAttendance";
+import { useCreateApprovalComment } from "../../hooks/useCreateApprovalComment";
+import useCurrentUser from "../../hooks/useCurrentUser";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -106,7 +107,8 @@ export function AttendanceDetailView({
       },
     );
   };
-  const updateRejectionReasonMutation = useUpdateAttendanceRejectionReason();
+  const updateRejectionReasonMutation = useCreateApprovalComment();
+  const { data: user } = useCurrentUser();
   const { mutate: updateAttendanceRequest } = useUpdateAttendanceRequest();
 
   const loading = useLoadingOverlay();
@@ -184,7 +186,7 @@ export function AttendanceDetailView({
   );
 
   const handleActionClick = (action: string) => {
-    if (action.toLowerCase() === "reject") {
+    if (["approve", "reject"].includes(action.toLowerCase())) {
       setPendingAction(action);
       setShowCommentModal(true);
       return;
@@ -194,12 +196,17 @@ export function AttendanceDetailView({
 
   const handleSaveComment = async (reason: string) => {
     try {
-      await updateRejectionReasonMutation.mutateAsync({
-        id: data?.reference_document?.name || "",
-        reason,
-      });
-      setShowCommentModal(false);
       if (pendingAction) {
+        await updateRejectionReasonMutation.mutateAsync({
+          comment_type: pendingAction.toLowerCase() === "approve" ? "Submitted" : "Cancelled",
+          reference_doctype: "Attendance Request",
+          reference_name: data?.reference_document?.name || "",
+          comment_email: user?.name || "",
+          comment_by: user?.name || "",
+          content: reason,
+          subject: pendingAction.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
+        });
+        setShowCommentModal(false);
         handleAction(pendingAction);
         setPendingAction(null);
       }
@@ -458,7 +465,9 @@ export function AttendanceDetailView({
       <RejectionReasonModal
         isOpen={showCommentModal}
         isPending={updateRejectionReasonMutation.isPending}
-        description="Please add a comment before rejecting this attendance request."
+        description={`Please add a comment before ${pendingAction?.toLowerCase() === "approve" ? "approving" : "rejecting"} this attendance request.`}
+        label={`${pendingAction?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
+        placeholder={`Enter ${pendingAction?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
         onCancel={handleCancelComment}
         onSave={handleSaveComment}
       />

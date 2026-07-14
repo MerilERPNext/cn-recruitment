@@ -2,8 +2,9 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import { useCreateApprovalComment } from "../../../hooks/useCreateApprovalComment";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useExpenseCommentUpdate, useUpdateExpenseClaimStatusAPI } from "../../../hooks/useExpense";
+import { useUpdateExpenseClaimStatusAPI } from "../../../hooks/useExpense";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
@@ -49,7 +50,7 @@ const ExpenseApprovalCard = ({
   onRefetch,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
-  const commentMutation = useExpenseCommentUpdate();
+  const commentMutation = useCreateApprovalComment();
   const updateStatusMutation = useUpdateExpenseClaimStatusAPI();
   const { data: user } = useCurrentUser();
 
@@ -133,14 +134,11 @@ const ExpenseApprovalCard = ({
       return;
     }
 
-    if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
+    if (["approve", "reject"].includes(action.toLowerCase()) && !rejectionComment.trim()) {
       setPendingActionData({ action, data: actionData });
       setShowCommentModal(true);
     } else {
       onAction(action, actionData);
-      if (action.toLowerCase() === "reject") {
-        setRejectionComment("");
-      }
     }
   };
 
@@ -150,22 +148,22 @@ const ExpenseApprovalCard = ({
       return;
     }
 
-    const referenceDoctype =
-      data?.reference_document?.doctype || "Expense Claim";
     const referenceName =
       data?.reference_document?.name || data?.reference_name || "";
 
     try {
-      await commentMutation.mutateAsync({
-        referenceDoctype,
-        referenceName,
-        content: rejectionComment,
-        comment_email: user?.name || "",
-      });
-
-      setShowCommentModal(false);
-
       if (pendingActionData) {
+        await commentMutation.mutateAsync({
+          comment_type: pendingActionData.action.toLowerCase() === "approve" ? "Submitted" : "Cancelled",
+          reference_doctype: "Expense Claim",
+          reference_name: referenceName,
+          comment_email: user?.name || "",
+          comment_by: user?.name || "",
+          content: rejectionComment,
+          subject: pendingActionData.action.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
+        });
+
+        setShowCommentModal(false);
         onAction(pendingActionData.action, pendingActionData.data);
         setPendingActionData(null);
         setRejectionComment("");
@@ -567,16 +565,16 @@ const ExpenseApprovalCard = ({
               Comment Required
             </h3>
             <p className="text-sm text-gray-600 mb-4">
-              Please add a comment before rejecting this expense claim.
+              Please add a comment before {pendingActionData?.action?.toLowerCase() === "approve" ? "approving" : "rejecting"} this expense claim.
             </p>
             <div className="mb-4">
               <label className="text-xs text-gray-500 uppercase mb-1 block">
-                COMMENT *
+                {pendingActionData?.action?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *
               </label>
               <textarea
                 value={rejectionComment}
                 onChange={(e) => setRejectionComment(e.target.value)}
-                placeholder="Enter your rejection comment..."
+                placeholder={`Enter your ${pendingActionData?.action?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 rows={4}
                 autoFocus

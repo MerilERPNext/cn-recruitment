@@ -3,11 +3,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import { useEmployee } from "../../../hooks/useEmployee";
 import {
-  useExpenseCommentUpdate,
   useExpenseLineItemUpdate,
   useGetExpenseAttachments,
   useUpdateExpenseClaimStatusAPI,
 } from "../../../hooks/useExpense";
+import { useCreateApprovalComment } from "../../../hooks/useCreateApprovalComment";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import { Expense, Participant } from "../../../types/expenseAdvance";
@@ -78,7 +78,7 @@ export function TeamExpenseDetailView({
   const updateMutation = useExpenseLineItemUpdate();
   const mutation = useApprovalListActions();
   const updateStatusMutation = useUpdateExpenseClaimStatusAPI();
-  const commentMutation = useExpenseCommentUpdate();
+  const commentMutation = useCreateApprovalComment();
   const { setRefetchAttendance } = useGlobalStore();
   const { data: user } = useCurrentUser();
   const { isDesktop } = useScreenSize();
@@ -331,7 +331,7 @@ export function TeamExpenseDetailView({
         return;
       }
 
-      if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
+      if (["approve", "reject"].includes(action.toLowerCase()) && !rejectionComment.trim()) {
         setShowCommentModal(true);
         setPendingAction(action);
         return;
@@ -440,10 +440,13 @@ export function TeamExpenseDetailView({
       await loading?.wrap(
         () =>
           commentMutation.mutateAsync({
-            referenceDoctype: ref?.doctype || "Expense Claim",
-            referenceName: claimId,
-            content: rejectionComment,
+            comment_type: pendingAction?.toLowerCase() === "approve" ? "Submitted" : "Cancelled",
+            reference_doctype: ref?.doctype || "Expense Claim",
+            reference_name: claimId,
             comment_email: user?.name || "",
+            comment_by: user?.name || "",
+            content: rejectionComment,
+            subject: pendingAction?.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
           }),
         "Saving comment...",
       );
@@ -1182,16 +1185,16 @@ export function TeamExpenseDetailView({
                   Comment Required
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  Please add a comment before rejecting this expense claim.
+                  Please add a comment before {pendingAction?.toLowerCase() === "approve" ? "approving" : "rejecting"} this expense claim.
                 </p>
                 <div className="mb-4">
                   <label className="text-xs text-gray-500 uppercase mb-1 block">
-                    COMMENT *
+                    {pendingAction?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *
                   </label>
                   <textarea
                     value={rejectionComment}
                     onChange={(e) => setRejectionComment(e.target.value)}
-                    placeholder="Enter your rejection comment..."
+                    placeholder={`Enter your ${pendingAction?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                     rows={4}
                     autoFocus
