@@ -57,6 +57,9 @@ PARENT_WRITABLE_FIELDS = (
     "designation",
     "custom_division",
     "custom_functional_area",
+    # Lateral (default) vs Fresher. Drives which child table the create/update
+    # flow consumes — see HIRING_TYPE_FRESHER and create_job_requisition.
+    "custom_hiring_type",
     "no_of_positions",
     "expected_compensation",
     # Job details
@@ -182,10 +185,49 @@ def _list_field(payload, key):
 # ---------------------------------------------------------------------------
 
 
+# Hiring type drives which child table the create/update flow consumes.
+# Anything other than "Fresher" (Lateral, blank, legacy) keeps the original
+# location/position-details behaviour untouched.
+HIRING_TYPE_FRESHER = "Fresher"
+
+
+def _is_fresher(payload):
+    """True only when the requisition is explicitly a Fresher requisition."""
+    return (payload.get("custom_hiring_type") or "").strip() == HIRING_TYPE_FRESHER
+
+
+def _validate_regions(payload):
+    """Fresher flow validation — the `custom_regions` table stands in for
+    `custom_position_details`. Each row needs a region and a positive opening
+    count. Parent-mandatory config is still enforced."""
+    _enforce_config_mandatory(frappe.new_doc(JOB_REQUISITION), payload)
+
+    regions = _list_field(payload, "custom_regions")
+    if not regions:
+        frappe.throw(_("At least one region is required in `custom_regions` for a Fresher requisition."))
+    for idx, r in enumerate(regions, start=1):
+        if not isinstance(r, dict):
+            frappe.throw(_("custom_regions[{0}] must be an object.").format(idx))
+        if not r.get("region"):
+            frappe.throw(_("custom_regions[{0}].region is required (grouping key).").format(idx))
+        try:
+            openings = int(r.get("no_of_openings") or 0)
+        except (TypeError, ValueError):
+            frappe.throw(_("custom_regions[{0}].no_of_openings must be a number.").format(idx))
+        if openings < 1:
+            frappe.throw(_("custom_regions[{0}].no_of_openings must be at least 1.").format(idx))
+
+
 def _validate(payload):
     missing = [k for k in REQUIRED_PARENT_KEYS if not payload.get(k)]
     if missing:
         frappe.throw(_("Missing required fields: {0}").format(", ".join(missing)))
+
+    # Fresher requisitions are validated against `custom_regions` instead of
+    # `custom_position_details` — the Lateral path below is left exactly as-is.
+    if _is_fresher(payload):
+        _validate_regions(payload)
+        return
 
     # Enforce any parent fields the default form config marks Required.
     _enforce_config_mandatory(frappe.new_doc(JOB_REQUISITION), payload)
@@ -227,6 +269,22 @@ def _group_positions_by_location(positions):
             order.append(loc)
         groups[loc].append(p)
     return [(loc, groups[loc]) for loc in order]
+
+
+def _group_openings_by_region(regions):
+    """Fresher flow: total openings per region, preserving first-seen order.
+
+    Mirrors _group_positions_by_location but for the `custom_regions` table —
+    multiple rows for the same region are summed so one Job Requisition is
+    created per unique region carrying that region's total openings."""
+    totals, order = {}, []
+    for r in regions:
+        region = r["region"]
+        if region not in totals:
+            totals[region] = 0
+            order.append(region)
+        totals[region] += int(r.get("no_of_openings") or 0)
+    return [(region, totals[region]) for region in order]
 
 
 def _bypass_hrms_duplicate_check(doc):
@@ -699,6 +757,40 @@ def _build_requisition_doc(payload, positions_for_location):
             "custom_position_details",
             _position_row(p, index, parent_vacancy, parent_functional_area, parent_employee_type),
         )
+
+    return doc
+
+
+def _build_region_requisition_doc(payload, region, openings):
+    """Construct an unsaved Job Requisition for one region (Fresher flow).
+
+    Parallels _build_requisition_doc but for the region grouping:
+      - carries a single `custom_regions` row (this region + its openings),
+      - leaves `custom_position_details` empty (Fresher requisitions don't use
+        the position/location table),
+      - `no_of_positions` = openings for this region,
+      - `custom_type_of_position` = "New" — every Fresher requisition is New.
+
+    sync_no_of_positions / validate_requisition_settings both no-op when
+    `custom_position_details` is empty, so these values are preserved on save."""
+    doc = frappe.new_doc(JOB_REQUISITION)
+    _bypass_hrms_duplicate_check(doc)
+
+    _apply_parent_fields(doc, payload)
+    _ensure_description(doc, payload)
+
+    doc.no_of_positions = openings
+    doc.custom_type_of_position = "New"
+    if not doc.get("custom_hiring_type"):
+        doc.custom_hiring_type = HIRING_TYPE_FRESHER
+    if not doc.get("custom_hiring_lead"):
+        doc.custom_hiring_lead = payload.get("requested_by")
+
+    _apply_qualifications(doc, payload)
+    _apply_skills(doc, payload)
+    _apply_pre_screened(doc, payload)
+
+    doc.append("custom_regions", {"region": region, "no_of_openings": openings})
 
     return doc
 
@@ -1282,29 +1374,48 @@ def create_job_requisition(payload=None):
 
         _validate(payload)
 
-        positions = _list_field(payload, "custom_position_details")
-        groups = _group_positions_by_location(positions)
+        fresher = _is_fresher(payload)
+        if fresher:
+            # Fresher flow: group the `custom_regions` rows by region and create
+            # one requisition per unique region.
+            groups = _group_openings_by_region(_list_field(payload, "custom_regions"))
+        else:
+            # Lateral (default) flow — unchanged.
+            positions = _list_field(payload, "custom_position_details")
+            groups = _group_positions_by_location(positions)
 
         results = []
         savepoint = "create_job_requisition"
         frappe.db.savepoint(savepoint)
         try:
-            # One fresh Job Requisition per unique location in THIS submission.
-            # Each location group carries only its own positions (e.g. 5 openings
-            # across BLR×2 / Mumbai / Kolkata / Noida → 4 requisitions, the BLR one
-            # holding 2 positions). We deliberately do NOT merge into requisitions
-            # from earlier submissions — every submit stands on its own.
-            for location, group_positions in groups:
-                doc = _build_requisition_doc(payload, group_positions)
-                doc.insert(ignore_permissions=False)
-                results.append(
-                    {
-                        "name": doc.name,
-                        "location": location,
-                        "positions_count": len(group_positions),
-                        "action": "created",
-                    }
-                )
+            # One fresh Job Requisition per group in THIS submission — by location
+            # for Lateral, by region for Fresher. Each carries only its own group's
+            # data. We deliberately do NOT merge into requisitions from earlier
+            # submissions — every submit stands on its own.
+            if fresher:
+                for region, openings in groups:
+                    doc = _build_region_requisition_doc(payload, region, openings)
+                    doc.insert(ignore_permissions=False)
+                    results.append(
+                        {
+                            "name": doc.name,
+                            "region": region,
+                            "positions_count": openings,
+                            "action": "created",
+                        }
+                    )
+            else:
+                for location, group_positions in groups:
+                    doc = _build_requisition_doc(payload, group_positions)
+                    doc.insert(ignore_permissions=False)
+                    results.append(
+                        {
+                            "name": doc.name,
+                            "location": location,
+                            "positions_count": len(group_positions),
+                            "action": "created",
+                        }
+                    )
         except Exception:
             frappe.db.rollback(save_point=savepoint)
             raise
@@ -1502,6 +1613,15 @@ def _serialise_requisition(doc):
             ),
         }
         for row in doc.get("custom_position_details") or []
+    ]
+
+    # Fresher requisitions carry their openings in `custom_regions` instead.
+    out["custom_regions"] = [
+        {
+            "region": row.get("region"),
+            "no_of_openings": row.get("no_of_openings"),
+        }
+        for row in doc.get("custom_regions") or []
     ]
 
     out["custom_position_summary"] = [
@@ -1750,6 +1870,24 @@ def update_job_requisition(name=None, payload=None):
             # `no_of_positions` is a UI-level total that may not match the
             # rows we actually persist (location grouping, row removal, etc.).
             doc.no_of_positions = len(positions)
+
+        # Fresher flow: rewrite the `custom_regions` table when provided. Unlike
+        # create, update targets one existing requisition, so rows are replaced
+        # in place (no re-grouping/splitting). `no_of_positions` becomes the sum
+        # of the openings and the type stays "New".
+        if "custom_regions" in payload:
+            regions = _list_field(payload, "custom_regions")
+            doc.set("custom_regions", [])
+            total_openings = 0
+            for r in regions:
+                if not isinstance(r, dict) or not r.get("region"):
+                    continue
+                openings = int(r.get("no_of_openings") or 0)
+                total_openings += openings
+                doc.append("custom_regions", {"region": r["region"], "no_of_openings": openings})
+            if doc.get("custom_regions"):
+                doc.no_of_positions = total_openings
+                doc.custom_type_of_position = "New"
 
         # Rewrite child tables if provided
         if "custom_qualifications" in payload:
