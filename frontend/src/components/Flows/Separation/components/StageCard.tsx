@@ -17,6 +17,8 @@ import { extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
 import FormPreview from "../../../shared/molecules/FormPreview";
 import NudgeButton from "../../../shared/atoms/NudgeButton";
 import StageRetriggerButton from "../../StageRetriggerButton";
+import { useGetUiPermission } from "../../../../hooks/userUiPermission";
+import { getActionsEnabled } from "../../../../utils/uiPermission";
 
 interface CardStagesProps {
   stage: FlowRequestStage;
@@ -72,6 +74,12 @@ const CardStages = ({
 
 
   const { data: currentUser } = useCurrentUser();
+  const { data: userUiPermission } = useGetUiPermission("HR Process");
+  const { act_separation } = getActionsEnabled(
+    userUiPermission,
+    ["act_separation"],
+    "Separation"
+  );
 
   const actions = stage?.todo?.custom_doctype_actions
     ? JSON.parse(stage?.todo?.custom_doctype_actions)
@@ -106,7 +114,7 @@ const CardStages = ({
 
   const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
   const canPerformActions = useMemo(() => {
-    if (!isActive || !stage.can_act) return false;
+    if (!isActive || !stage.can_act || !act_separation) return false;
     let actionPermission = false;
 
     if (allocatedTo?.users && currentUser?.name)
@@ -118,7 +126,7 @@ const CardStages = ({
       );
 
     return actionPermission;
-  }, [currentUser, isActive, allocatedTo, stage.can_act]);
+  }, [currentUser, isActive, allocatedTo, stage.can_act, act_separation]);
 
 
   const mapStatusTimeline = (status: string) => {
