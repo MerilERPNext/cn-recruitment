@@ -220,7 +220,7 @@ const Appreciations = () => {
                     </div>
 
                     {/* Recognition Values — dynamic multi-select from the program's values. */}
-                    {programValues.length > 0 && (
+                    
                         <div className="relative">
                             <Typography variant="label" className="block mb-2 font-medium">
                                 Values
@@ -282,7 +282,7 @@ const Appreciations = () => {
                                 </div>
                             )}
                         </div>
-                    )}
+                
 
                     {/* Actions */}
                     <div className="flex justify-end gap-3 pt-2">
