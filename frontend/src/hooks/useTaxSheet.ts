@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getIncomeTaxComputationData, getTaxSheetData, getTaxSheetHTML, PayrollPeriodsService } from "../services/taxSheetService";
+import { useCurrentUser, isPayrollAdminUser } from "./useCurrentUser";
 
 export function useTaxSheetData(
 employee_id: string | null, company: string | null, selectedPeriod: string | null) {
@@ -14,9 +15,19 @@ employee_id: string | null, company: string | null, selectedPeriod: string | nul
 
   
   export function useTaxSheetPayrollPriodsData(company: string | null) {
+    // Role-based scoping (Compensation module): a Payroll Admin sees Payroll
+    // Periods for all companies (no company filter), while every other user is
+    // scoped to their own company. Based on the logged-in user's roles, so it
+    // stays consistent when viewing another employee via switch-user.
+    const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
+    const payrollAdmin = isPayrollAdminUser(currentUser ?? null);
+    const effectiveCompany = payrollAdmin ? null : company;
+
     return useQuery({
-      queryKey: ["tax-sheet-payroll-periods", company],
-      queryFn: () => PayrollPeriodsService.getPayrollPeriods(company),
+      queryKey: ["tax-sheet-payroll-periods", effectiveCompany, payrollAdmin],
+      queryFn: () => PayrollPeriodsService.getPayrollPeriods(effectiveCompany),
+      // Wait until the user's roles are known so the payload is always correct.
+      enabled: !isUserLoading,
     });
   }
 

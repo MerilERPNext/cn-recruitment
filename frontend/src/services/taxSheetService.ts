@@ -70,11 +70,14 @@ export const getTaxSheetHTML = async (employee: string, payroll_period: string, 
 
 
 export const PayrollPeriodsService = {
+  // `company` is included in the filter only when provided. Payroll Admins pass
+  // null (no company filter -> all Payroll Periods); everyone else passes their
+  // own company so results are scoped to it.
   getPayrollPeriods: async (company: string | null) => {
     const response = await FrappeAPI.getDocumentList("Payroll Period", {
       fields: ["name","start_date","end_date"],
       orderBy: "start_date desc",
-      filters: [["company", "=", company]],
+      ...(company ? { filters: [["company", "=", company]] } : {}),
     });
 
     return response.data;
