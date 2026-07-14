@@ -2233,10 +2233,19 @@ def get_link_field_options(doctype, search_text=None, query=None, txt=None, limi
     # Map any extra query param that corresponds to a real field on the doctype
     # to an equality filter. Empty values (e.g. an unrendered "{{ data.x }}" or a
     # cleared dependent field) are skipped so they don't filter everything out.
+    # Only fields backed by an actual column are filterable — layout/child-table
+    # fields (Table, Table MultiSelect, HTML, Section Break, …) have no column on
+    # the doctype's table, so equality-filtering them raises "Unknown column".
+    from frappe.model import no_value_fields
+
     for key, value in kwargs.items():
         if value in (None, "") or key in filters:
             continue
-        if key == "name" or meta.has_field(key):
+        if key == "name":
+            filters[key] = value
+            continue
+        df = meta.get_field(key)
+        if df and df.fieldtype not in no_value_fields:
             filters[key] = value
 
     search = (search_text or query or txt or "").strip()
