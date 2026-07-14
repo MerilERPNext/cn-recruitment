@@ -323,6 +323,9 @@ def _position_row(p, position_no, parent_vacancy_default, parent_functional_area
         "replacement_for": p.get("replacement_for"),
         "reporting_manager": p.get("reporting_manager"),
         "location": p.get("location"),
+        # Optional sub-location under the row's Branch (filtered by `location`
+        # in the form). Stored as-sent; no row requires it.
+        "sub_location": p.get("sub_location"),
         "functional_area": p.get("functional_area") or parent_functional_area,
         # `employee_type` is mandatory on the child row. The UI collects the
         # employment type once at parent level, so inherit it per-position.
@@ -1487,6 +1490,7 @@ def _serialise_requisition(doc):
             # mislabelled "New" still report the correct type. See _row_vacancy_type.
             "vacancy_type": _row_vacancy_type(row),
             "location": row.get("location"),
+            "sub_location": row.get("sub_location"),
             "reporting_manager": row.get("reporting_manager"),
             "replacement_for": row.get("replacement_for"),
             "employee_type": row.get("employee_type"),

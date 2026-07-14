@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "location",
+  "sub_location",
   "functional_area",
   "replacement_for",
   "reporting_manager",
@@ -42,6 +43,16 @@
    "label": "Location",
    "options": "Branch",
    "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.location",
+   "fieldname": "sub_location",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_list_view": 1,
+   "label": "Sub Location",
+   "link_filters": "[[\"Sub Location\",\"branch\",\"=\",\"eval:doc.location\"]]",
+   "options": "Sub Location"
   },
   {
    "fieldname": "functional_area",
