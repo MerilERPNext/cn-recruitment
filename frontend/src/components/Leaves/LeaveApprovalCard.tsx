@@ -469,6 +469,9 @@ const LeaveApprovalCard = ({
                 rows={4}
                 autoFocus
               />
+              <div className={`text-xs mt-1 text-right ${rejectionComment.trim().length >= 15 ? 'text-green-600' : 'text-gray-500'}`}>
+                {rejectionComment.trim().length}/15 characters minimum
+              </div>
             </div>
             <div className="flex gap-3 justify-end">
               <Button

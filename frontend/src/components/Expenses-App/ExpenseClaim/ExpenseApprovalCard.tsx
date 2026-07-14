@@ -579,11 +579,9 @@ const ExpenseApprovalCard = ({
                 rows={4}
                 autoFocus
               />
-              {rejectionComment.trim().length < 15 && (
-                <p className="text-[10px] mt-1 text-right text-gray-400">
-                  {rejectionComment.trim().length}/15 characters minimum
-                </p>
-              )}
+              <div className={`text-xs mt-1 text-right ${rejectionComment.trim().length >= 15 ? 'text-green-600' : 'text-gray-500'}`}>
+                {rejectionComment.trim().length}/15 characters minimum
+              </div>
             </div>
             <div className="flex gap-3 justify-end">
               <Button
