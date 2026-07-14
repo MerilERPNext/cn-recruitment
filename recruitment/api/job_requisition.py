@@ -834,7 +834,16 @@ _CHILD_TABLE_BY_GROUP = {
     "Qualifications": "custom_qualifications",
     "Skills": "custom_skills",
     "Pre-screened Candidates": "custom_pre_screened_candidates",
+    "Regions": "custom_regions",
 }
+
+# Core Lateral/Fresher switch — always rendered regardless of the settings doc's
+# `restrict_to_configured` allowlist. `custom_hiring_type` is the selector (a
+# parent field); `custom_regions` is its Fresher-only table, surfaced through
+# `child_groups` exactly like `custom_position_details`. Without these the form
+# can't switch modes, so they bypass the strict allowlist.
+_ALWAYS_RENDER_PARENT = frozenset({"custom_hiring_type"})
+_ALWAYS_RENDER_TABLES = frozenset({"custom_regions"})
 
 # Virtual "table inside a table" columns. These are stored as a JSON string in a
 # Long Text field on a child row (NOT a real Frappe child table), so meta alone
@@ -1040,8 +1049,9 @@ def _build_form_config(doc=None):
             continue
 
         ov = overrides.get(("Parent", df.fieldname))
-        # Strict allowlist: only configured fields are rendered.
-        if restrict and ov is None:
+        # Strict allowlist: only configured fields are rendered — except the core
+        # Lateral/Fresher switch fields, which must always be present.
+        if restrict and ov is None and df.fieldname not in _ALWAYS_RENDER_PARENT:
             continue
         expose = (ov.get("expose") if ov else None) or "Default"
         if expose == "Hide":
@@ -1061,6 +1071,7 @@ def _build_form_config(doc=None):
             "read_only": _three_state(ov.get("read_only_override") if ov else None, df.read_only, "Read Only", "Editable"),
             "depends_on": df.get("depends_on") or "",
             "mandatory_depends_on": df.get("mandatory_depends_on") or "",
+            "default": df.get("default") or "",
             "length": df.get("length") or 0,
             "order": int(ov.get("order") or 0) if ov else 0,
         }
@@ -1097,9 +1108,12 @@ def _build_form_config(doc=None):
         tdf = meta.get_field(table_field)
         if not tdf or tdf.fieldtype not in ("Table", "Table MultiSelect") or not tdf.options:
             continue
-        fields = _child_group_fields(tdf.options, group, overrides, restrict)
+        always = table_field in _ALWAYS_RENDER_TABLES
+        # Always-render tables return their full column set even with nothing
+        # configured, so pass restrict=False for them.
+        fields = _child_group_fields(tdf.options, group, overrides, restrict and not always)
         # Drop a group entirely when restrict is on and nothing is configured for it.
-        if restrict and not fields:
+        if restrict and not fields and not always:
             continue
         child_groups[table_field] = {
             "group": group,
