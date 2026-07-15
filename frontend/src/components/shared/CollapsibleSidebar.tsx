@@ -715,21 +715,48 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           return item;
         }
 
-        // Recognition uses the same per-page gating as every other module
-        // (each sub-item's permissionKey matches a page in the "Recognition"
-        // app), plus one Advanced Settings flag that hides Earned Points.
+        // Recognition sub-items map (by route) to the client-defined
+        // "list-view" permission names. A sub-item is shown when at least one
+        // of its mapped pages is enabled; items with no mapping (Active
+        // Programs, Admin Dashboard) are never restricted here. The Earned
+        // Points Advanced Settings flag still applies.
         if (item.permissionKey === "Recognition") {
+          const RECOGNITION_ROUTE_PAGES: Record<string, string[]> = {
+            "/my-appreciations-history": ["Appreciations History"],
+            "/appreciations-leaderboard": ["Appreciations Leaderboard"],
+            "/earned-points": ["Earned Points Summary page"],
+            "/awards-live": [
+              "Individual Award programs",
+              "Individual Award Winners",
+              "Team Award programs",
+              "Team Award Winners",
+            ],
+            "/awards-history": ["Individual Awards History", "Team Awards history"],
+            "/nomination-workflows": [
+              "Nominations Workflows - Individual Nominations Raised",
+              "Nominations Workflows - Individual Nominations Received",
+              "Nominations Workflows - Team Nominations Raised",
+            ],
+          };
           const recogSubItems = item.subItems.filter((subItem) => {
+            const href = subItem.href ?? "";
             if (
-              (subItem.href ?? "").endsWith("/earned-points") &&
+              href.endsWith("/earned-points") &&
               recognitionFlags.hideRewardsPointSummary
             ) {
               return false;
             }
-            const pagePermission = appPermission.pages?.find(
-              (page) => page.page_name === subItem.permissionKey,
+            const suffix = Object.keys(RECOGNITION_ROUTE_PAGES).find((s) =>
+              href.endsWith(s),
             );
-            return pagePermission ? pagePermission.enabled : false;
+            if (!suffix) {
+              return true; // no mapping (e.g. Active Programs, Admin Dashboard)
+            }
+            return RECOGNITION_ROUTE_PAGES[suffix].some(
+              (name) =>
+                appPermission.pages?.find((p) => p.page_name === name)?.enabled ??
+                false,
+            );
           });
           if (recogSubItems.length === 0) {
             return null;
