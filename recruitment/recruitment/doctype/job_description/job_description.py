@@ -16,7 +16,6 @@ from frappe.model.document import Document
 DEFAULT_JD_TEMPLATE = """Group Company: {{ company or "" }}
 Designation: {% for d in designation %}{{ d.designation }}{% if not loop.last %}, {% endif %}{% endfor %}
 Department: {% for d in department %}{{ d.department }}{% if not loop.last %}, {% endif %}{% endfor %}
-Business Unit: {% for b in business_unit %}{{ b.business_unit }}{% if not loop.last %}, {% endif %}{% endfor %}
 Office Location:
 
 Position Description:
