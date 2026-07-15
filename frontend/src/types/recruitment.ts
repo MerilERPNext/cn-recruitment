@@ -2,6 +2,7 @@
 export interface PositionDetail {
   position_number?: number;
   location: string;
+  sub_location?: string;
   functional_area?: string;
   reporting_manager: string;
   employee_type: string;
@@ -11,6 +12,7 @@ export interface PositionDetail {
 export interface ReplacementPositionDetail {
   position_number?: number;
   location: string;
+  sub_location?: string;
   replacement_for: string;
   reporting_manager: string;
   employee_type: string;
@@ -160,11 +162,13 @@ export interface RequisitionPosition {
   position_number?: string | number;
   vacancy_type?: string;
   location?: string;
+  sub_location?: string;
   functional_area?: string;
   reporting_manager?: string;
   replacement_for?: string;
   // Human-readable titles captured alongside the link ids (for display only).
   location_title?: string;
+  sub_location_title?: string;
   functional_area_title?: string;
   reporting_manager_title?: string;
   replacement_for_title?: string;
@@ -264,4 +268,3 @@ export type ReferralApplicationValue =
   | undefined
   | unknown[]
   | Record<string, unknown>;
-

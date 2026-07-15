@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useUpdateAttendanceRejectionReason } from "../../../hooks/useAttendance";
+import { useCreateApprovalComment } from "../../../hooks/useCreateApprovalComment";
+import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import {
@@ -50,7 +51,8 @@ const ApprovalCard = ({
   isActed = false,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
-  const updateRejectionReasonMutation = useUpdateAttendanceRejectionReason();
+  const updateRejectionReasonMutation = useCreateApprovalComment();
+  const { data: user } = useCurrentUser();
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [pendingActionData, setPendingActionData] = useState<{
     action: string;
@@ -60,7 +62,7 @@ const ApprovalCard = ({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleActionClick = (action: string, actionData: any) => {
-    if (action.toLowerCase() === "reject") {
+    if (["approve", "reject"].includes(action.toLowerCase())) {
       setPendingActionData({ action, data: actionData });
       setShowCommentModal(true);
       return;
@@ -70,12 +72,17 @@ const ApprovalCard = ({
 
   const handleSaveComment = async (reason: string) => {
     try {
-      await updateRejectionReasonMutation.mutateAsync({
-        id: data?.reference_document?.name || "",
-        reason,
-      });
-      setShowCommentModal(false);
       if (pendingActionData) {
+        await updateRejectionReasonMutation.mutateAsync({
+          comment_type: pendingActionData.action.toLowerCase() === "approve" ? "Submitted" : "Cancelled",
+          reference_doctype: "Attendance Request",
+          reference_name: data?.reference_document?.name || "",
+          comment_email: user?.name || "",
+          comment_by: user?.name || "",
+          content: reason,
+          subject: pendingActionData.action.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
+        });
+        setShowCommentModal(false);
         onAction(pendingActionData.action, pendingActionData.data);
         setPendingActionData(null);
       }
@@ -332,7 +339,9 @@ const ApprovalCard = ({
       <RejectionReasonModal
         isOpen={showCommentModal}
         isPending={updateRejectionReasonMutation.isPending}
-        description="Please add a comment before rejecting this attendance request."
+        description={`Please add a comment before ${pendingActionData?.action?.toLowerCase() === "approve" ? "approving" : "rejecting"} this attendance request.`}
+        label={`${pendingActionData?.action?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
+        placeholder={`Enter ${pendingActionData?.action?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
         onCancel={handleCancelComment}
         onSave={handleSaveComment}
       />

@@ -95,8 +95,13 @@ export const useTicketList = (
 ) => {
   // Build filters with search and viewMode-based filtering
   const effectiveFilters = { ...filters };
+  const orFilters: any[] = [];
   if (searchTerm) {
-    effectiveFilters.name = ["like", `%${searchTerm}%`];
+    orFilters.push(["name", "like", `%${searchTerm}%`]);
+    orFilters.push(["subject", "like", `%${searchTerm}%`]);
+    orFilters.push(["raised_by", "like", `%${searchTerm}%`]);
+    orFilters.push(["custom_category", "like", `%${searchTerm}%`]);
+    orFilters.push(["custom_sub_category", "like", `%${searchTerm}%`]);
   }
 
   // Apply viewMode-based filtering
@@ -123,7 +128,7 @@ export const useTicketList = (
       const result = await FrappeAPI.callMethod("recruitment.api.get_ticket_list_data", {
         doctype: "HD Ticket",
         filters: effectiveFilters,
-        or_filters: [],
+        or_filters: orFilters,
         order_by: orderBy,
         page_length: pageLength,
         rows: [

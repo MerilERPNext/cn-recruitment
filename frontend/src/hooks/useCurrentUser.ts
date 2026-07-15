@@ -86,6 +86,16 @@ export const isAdminUser = (user: CurrentUser | null): boolean => {
 };
 
 /**
+ * Helper function to check if a user is a Payroll Admin. Used (in the
+ * Compensation module) to decide whether payroll data requests should be scoped
+ * to the user's own company: Payroll Admins see all companies, everyone else is
+ * scoped to their own company.
+ */
+export const isPayrollAdminUser = (user: CurrentUser | null): boolean => {
+  return user?.roles?.some((role) => role.role === "Payroll Admin") ?? false;
+};
+
+/**
  * Helper function to check if a user is an HD Agent (HelpDesk Agent)
  * HD Agents have access to admin features in HelpDesk module
  */

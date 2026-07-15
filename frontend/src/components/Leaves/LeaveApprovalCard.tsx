@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import { useCreateApprovalComment } from "../../hooks/useCreateApprovalComment";
+import useCurrentUser from "../../hooks/useCurrentUser";
 import {
   useIsRejectionReasonMandatory,
-  useUpdateRejectionReason,
 } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
-import Button from "../shared/atoms/Button";
 import StatusBadge from "../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import MobileAllocatedTo from "../shared/MobileAllocatedTo";
+import RejectionReasonModal from "../shared/RejectionReasonModal";
 import Tooltip from "../shared/Tooltip";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
@@ -45,19 +45,19 @@ const LeaveApprovalCard = ({
   isActed = false,
 }: LeaveApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
-  const updateRejectionReasonMutation = useUpdateRejectionReason();
+  const approvalCommentMutation = useCreateApprovalComment();
+  const { data: user } = useCurrentUser();
   const { data: rejectionMandatoryData } = useIsRejectionReasonMandatory();
   const [showCommentModal, setShowCommentModal] = useState(false);
-  const [rejectionComment, setRejectionComment] = useState("");
   const [pendingActionData, setPendingActionData] = useState<{
     action: string;
     data: any;
   } | null>(null);
 
   const handleActionClick = (action: string, actionData: any) => {
-    if (action.toLowerCase() === "reject") {
+    if (["approve", "reject"].includes(action.toLowerCase())) {
       const isMandatory = rejectionMandatoryData ?? true;
-      if (isMandatory && !rejectionComment.trim()) {
+      if (action.toLowerCase() === "approve" || isMandatory) {
         setPendingActionData({ action, data: actionData });
         setShowCommentModal(true);
         return;
@@ -65,28 +65,27 @@ const LeaveApprovalCard = ({
     }
 
     onAction(action, actionData);
-    if (action.toLowerCase() === "reject") {
-      setRejectionComment("");
-    }
   };
-  const handleSaveComment = async () => {
-    if (!rejectionComment.trim()) {
-      toast.error("Please enter a comment");
-      return;
-    }
 
+  const handleSaveComment = async (reason: string) => {
     try {
-      await updateRejectionReasonMutation.mutateAsync({
-        id: data?.reference_document?.name || "",
-        reason: rejectionComment,
-      });
-
-      setShowCommentModal(false);
-
       if (pendingActionData) {
+        await approvalCommentMutation.mutateAsync({
+          comment_type:
+            pendingActionData.action.toLowerCase() === "approve"
+              ? "Submitted"
+              : "Cancelled",
+          reference_doctype: "Leave Application",
+          reference_name: data?.reference_document?.name || "",
+          comment_email: user?.name || "",
+          comment_by: user?.name || "",
+          content: reason,
+          subject: pendingActionData.action.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
+        });
+
+        setShowCommentModal(false);
         onAction(pendingActionData.action, pendingActionData.data);
         setPendingActionData(null);
-        setRejectionComment("");
       }
     } catch (error) {
       console.error("Failed to save comment", error);
@@ -201,7 +200,7 @@ const LeaveApprovalCard = ({
               RoleAssignedUsers={data?.role_assigned_users}
               roles={data?.allocated_roles}
               allocated_to_user={data?.username}
-              role={data?.role}
+              role={data?.role}      /* if action is reject and isMandatory by backend then show */
               position="left"
             >
               <StatusBadge status={data?.reference_document?.status} />
@@ -417,68 +416,25 @@ const LeaveApprovalCard = ({
           </div>
         </div>
       )}
-      {showCommentModal && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
-          onMouseDown={(e) => {
-            e.stopPropagation();
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          <div
-            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Comment Required
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Please add a comment before rejecting this leave request.
-            </p>
-            <div className="mb-4">
-              <label className="text-xs text-gray-500 uppercase mb-1 block">
-                REJECTION REASON *
-              </label>
-              <textarea
-                value={rejectionComment}
-                onChange={(e) => setRejectionComment(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                placeholder="Enter rejection reason..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                rows={4}
-                autoFocus
-              />
-            </div>
-            <div className="flex gap-3 justify-end">
-              <Button
-                onClick={handleCancelComment}
-                size="sm"
-                bgColor="disabled"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveComment}
-                size="sm"
-                bgColor="primary"
-                disabled={
-                  rejectionComment.trim().length < 15 ||
-                  updateRejectionReasonMutation.isPending
-                }
-              >
-                {updateRejectionReasonMutation.isPending ? (
-                  <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "Save & Continue"
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RejectionReasonModal
+        isOpen={showCommentModal}
+        isPending={approvalCommentMutation.isPending}
+        title="Comment Required"
+        description={`Please add a comment before ${pendingActionData?.action?.toLowerCase() === "approve"
+            ? "approving"
+            : "rejecting"
+          } this leave request.`}
+        label={`${pendingActionData?.action?.toLowerCase() === "approve"
+            ? "APPROVAL"
+            : "REJECTION"
+          } COMMENT *`}
+        placeholder={`Enter ${pendingActionData?.action?.toLowerCase() === "approve"
+            ? "approval"
+            : "rejection"
+          } comment...`}
+        onCancel={handleCancelComment}
+        onSave={handleSaveComment}
+      />
     </>
   );
 };

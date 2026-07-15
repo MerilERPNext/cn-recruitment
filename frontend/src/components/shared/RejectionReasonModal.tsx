@@ -33,9 +33,13 @@ const RejectionReasonModal = ({
 
   if (!isOpen) return null;
 
+  const isValid = required
+    ? reason.trim().length >= 15
+    : reason.trim().length === 0 || reason.trim().length >= 15;
+
   const handleSave = () => {
-    if (required && !reason.trim()) {
-      toast.error("Please enter a comment");
+    if (!isValid) {
+      toast.error("Please enter a comment of at least 15 characters");
       return;
     }
     onSave(reason);
@@ -67,6 +71,11 @@ const RejectionReasonModal = ({
             rows={4}
             autoFocus
           />
+          {(required || reason.trim().length > 0) && (
+            <div className={`text-xs mt-1 text-right ${reason.trim().length >= 15 ? 'text-green-600' : 'text-gray-500'}`}>
+              {reason.trim().length}/15 characters minimum
+            </div>
+          )}
         </div>
         <div className="flex gap-3 justify-end">
           <Button onClick={onCancel} size="sm" bgColor="disabled">
@@ -76,7 +85,7 @@ const RejectionReasonModal = ({
             onClick={handleSave}
             size="sm"
             bgColor="primary"
-            disabled={(required && !reason.trim()) || isPending}
+            disabled={!isValid || isPending}
           >
             {isPending ? (
               <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />

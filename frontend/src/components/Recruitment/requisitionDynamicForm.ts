@@ -163,7 +163,10 @@ const AUTO_DERIVED_READONLY_FIELDS = new Set<string>([
 // field it refreshes on. Keeps a generated Link field in sync with its parent:
 //   • Employment Type / Work Location filter by the selected company,
 //   • Functional Area filters by the selected designation.
-const LINK_FIELD_DEPENDENCIES: Record<string, { filter: string; on: string }> = {
+const LINK_FIELD_DEPENDENCIES: Record<
+  string,
+  { filter: string; on: string; doctype?: string; customConditional?: string }
+> = {
   custom_employment_type_link: {
     filter: "&custom_company={{ data.company }}",
     on: "company",
@@ -177,6 +180,17 @@ const LINK_FIELD_DEPENDENCIES: Record<string, { filter: string; on: string }> = 
   employee_type: {
     filter: "&custom_company={{ data.company }}",
     on: "company",
+  },
+  // Position Details.sub_location is a child-row Link. Its options must be
+  // scoped to the Location selected in that same Position Details row. The
+  // `Sub Location` doctype stores that parent link in its `branch` field.
+  sub_location: {
+    filter: "&branch={{ row.location }}",
+    on: "location",
+    doctype: "Sub Location",
+    // Do not show or request sub-locations until this Position Details row has
+    // a location. `clearOnHide` below also clears it when Location is removed.
+    customConditional: "show = !!row.location",
   },
   custom_functional_area: {
     filter: "&designation={{ data.designation }}",
@@ -654,7 +668,7 @@ function generateComponent(field: BackendField): any {
         placeholder: `Select ${field.label}`,
         dataSrc: "url",
         data: {
-          url: `/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=${field.options || ""}${dependency?.filter || ""}`,
+          url: `/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=${dependency?.doctype || field.options || ""}${dependency?.filter || ""}`,
           headers: [{ key: "Accept", value: "application/json" }],
         },
         selectValues: "message.results",
@@ -662,7 +676,14 @@ function generateComponent(field: BackendField): any {
         template: "<span>{{ item.label }}</span>",
         limit: 20,
         ...(dependency
-          ? { refreshOn: dependency.on, clearOnRefresh: true }
+          ? {
+              refreshOn: dependency.on,
+              clearOnRefresh: true,
+              clearOnHide: true,
+              ...(dependency.customConditional
+                ? { customConditional: dependency.customConditional }
+                : {}),
+            }
           : {}),
       };
 

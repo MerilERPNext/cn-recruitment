@@ -1,15 +1,40 @@
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
 import { Form } from "@tsed/react-formio";
 import toast from "react-hot-toast";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useUpdateDottedLineManagerMutation } from "../../../../hooks/useEmployee";
-import schema from "./ChangeDottedLineManagerForm.json";
+import baseSchema from "./ChangeDottedLineManagerForm.json";
 import Button from "../../../shared/atoms/Button";
 import CircularLoader from "../../../shared/atoms/CircularLoader";
 import { useLoadingOverlay } from "../../../../context/OverlayContext";
 import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 import { CustomError } from "../../../../types/attendance";
+
+const isUsable = (v: unknown): v is string =>
+    typeof v === "string" && v.trim() !== "" && v.trim().toLowerCase() !== "null";
+
+const escapeHtml = (v: string) =>
+    v.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const managerItemTemplate = (data: any) => {
+    const item = data?.item ?? {};
+    const name = isUsable(item.employee_name) ? escapeHtml(item.employee_name) : "-";
+    const id = isUsable(item.name) ? escapeHtml(item.name) : "-";
+    const department = isUsable(item.department) ? escapeHtml(item.department) : "";
+    const branch = isUsable(item.branch) ? escapeHtml(item.branch) : "";
+    const location = [department, branch].filter(Boolean).join(", ");
+    return `<span><div>${name} (${id})</div><div style="font-size:0.85em;color:#6b7280;">${location}</div></span>`;
+};
+
+const EMP_FIELDS = encodeURIComponent('["name","employee_name","department","branch"]');
+const buildEmpUrl = (search?: string) => {
+    const filters = search
+        ? [["status", "=", "Active"], ["employee_name", "like", `%${search}%`]]
+        : [["status", "=", "Active"]];
+    return `/api/resource/Employee?fields=${EMP_FIELDS}&filters=${encodeURIComponent(JSON.stringify(filters))}&limit_page_length=20`;
+};
 
 interface ChangeDottedLineManagerProps {
     isOpen: boolean;
@@ -20,6 +45,22 @@ interface ChangeDottedLineManagerProps {
 const ChangeDottedLineManager: React.FC<ChangeDottedLineManagerProps> = ({ isOpen, onClose, employees }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formInstance = useRef<any>(null);
+
+    const schema = useMemo(() => ({
+        ...baseSchema,
+        components: [
+            {
+                ...baseSchema.components[0],
+                template: managerItemTemplate,
+                data: { url: buildEmpUrl() },
+                selectValues: "data",
+                valueProperty: "name",
+                lazyLoad: true,
+                searchEnabled: true,
+            },
+            ...baseSchema.components.slice(1),
+        ],
+    }), []);
 
     const { mutate: updateDottedLineManager, isPending: isUpdateDottedLineManagerLoading } = useUpdateDottedLineManagerMutation()
     const loading = useLoadingOverlay();
@@ -93,6 +134,23 @@ const ChangeDottedLineManager: React.FC<ChangeDottedLineManagerProps> = ({ isOpe
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onFormReady={(instance: any) => {
                             formInstance.current = instance;
+                            // Wait one tick for choices.js to finish rendering its input
+                            setTimeout(() => {
+                                const managerComp = instance.getComponent('dotted_line_manager');
+                                if (!managerComp) return;
+                                const searchInput =
+                                    managerComp.element?.querySelector('input.choices__input--cloned') ??
+                                    managerComp.element?.querySelector('input.choices__input');
+                                if (!searchInput) return;
+                                let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+                                searchInput.addEventListener('input', (e: Event) => {
+                                    const search = (e.target as HTMLInputElement).value.trim();
+                                    if (debounceTimer) clearTimeout(debounceTimer);
+                                    debounceTimer = setTimeout(() => {
+                                        managerComp.loadItems(buildEmpUrl(search || undefined), '');
+                                    }, 300);
+                                });
+                            }, 0);
                         }}
                         options={{
                             builder: { styles: false },

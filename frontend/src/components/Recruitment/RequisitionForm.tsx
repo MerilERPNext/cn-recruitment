@@ -345,6 +345,9 @@ function mapRequisitionToFormData(req: any): Partial<JobRequisitionFormData> {
       location: p.location,
       location_title: p.location_title,
 
+      sub_location: p.sub_location,
+      sub_location_title: p.sub_location_title,
+
       functional_area: p.functional_area,
       functional_area_title: p.functional_area_title,
 
@@ -583,6 +586,7 @@ const SINGLE_SELECT_TITLE_KEYS: [string, string][] = [
 ];
 const POSITION_SELECT_TITLE_KEYS: [string, string][] = [
   ["location", "location_title"],
+  ["sub_location", "sub_location_title"],
   ["functional_area", "functional_area_title"],
   ["reporting_manager", "reporting_manager_title"],
   ["replacement_for", "replacement_for_title"],
@@ -1513,6 +1517,22 @@ const RequisitionForm = () => {
       });
     }
 
+    // A Sub Location belongs to one specific Location within a Position row.
+    // Form.io's `clearOnRefresh` handles this in the widget, but clear the
+    // submitted state too so a previously-selected Sub Location can never be
+    // sent after its parent Location changes.
+    let positionLocationChanged = false;
+    if (Array.isArray(newData.positions)) {
+      newData.positions = newData.positions.map((pos: any, idx: number) => {
+        const previousLocation = (formData as any).positions?.[idx]?.location;
+        if (previousLocation === pos.location) return pos;
+        positionLocationChanged = true;
+        const updated = { ...pos, sub_location: "" };
+        delete updated.sub_location_title;
+        return updated;
+      });
+    }
+
     // Drop stale `_title` fields when their select was cleared, so the Review
     // step falls back to the empty state instead of showing an old title.
     SINGLE_SELECT_TITLE_KEYS.forEach(([key, titleKey]) => {
@@ -1561,6 +1581,10 @@ const RequisitionForm = () => {
     }
 
     setFormData(newData);
+    // form.io is intentionally uncontrolled for grid performance. A location
+    // change is the exception: re-feed this one update so its internal select
+    // value/options cannot keep showing the old Sub Location.
+    if (positionLocationChanged) pushFormSync();
   };
 
   // ---------------------------------------------------------------------------
@@ -1592,6 +1616,7 @@ const RequisitionForm = () => {
       [
         "vacancy_type",
         "location",
+        "sub_location",
         "reporting_manager",
         "functional_area",
         "replacement_for",
@@ -1677,6 +1702,7 @@ const RequisitionForm = () => {
         const row: any = {
           vacancy_type: pos.vacancy_type || "New",
           location: pos.location,
+          sub_location: pos.sub_location,
           reporting_manager: pos.reporting_manager,
           functional_area: pos.functional_area,
           replacement_for:
