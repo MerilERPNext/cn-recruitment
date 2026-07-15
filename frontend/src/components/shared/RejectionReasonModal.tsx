@@ -35,7 +35,7 @@ const RejectionReasonModal = ({
 
   const isValid = required
     ? reason.trim().length >= 15
-    : reason.trim().length === 0 || reason.trim().length >= 15;
+    : true;
 
   const handleSave = () => {
     if (!isValid) {
