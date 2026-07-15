@@ -266,6 +266,39 @@ export default function RequisitionReviewStep({
   // Position counts + the position details table (dynamic columns driven by the
   // backend `child_groups.custom_position_details`).
   const PositionSelectionBody = () => {
+    if ((formData as any).custom_hiring_type === "Fresher") {
+      const regions: any[] = Array.isArray((formData as any).custom_regions)
+        ? (formData as any).custom_regions
+        : [];
+      const totalOpenings = regions.reduce(
+        (total, row) => total + (Number(row?.no_of_openings) || 0),
+        0
+      );
+      return (
+        <div className="space-y-3">
+          <div className="text-base bg-white border border-slate-100 p-3 rounded-lg">
+            <span className="text-slate-400 font-medium block">Total Openings</span>
+            <span className="text-lg font-bold text-slate-800">{totalOpenings}</span>
+          </div>
+          <div className="space-y-2">
+            <label className="text-base text-slate-500 font-medium">Regions</label>
+            {regions.map((row, idx) => (
+              <div key={idx} className="grid grid-cols-2 gap-3 bg-white border border-slate-150 rounded-lg p-3 text-base">
+                <div>
+                  <span className="text-[14px] text-slate-400 font-medium block">Region</span>
+                  <span className="font-semibold text-slate-800">{renderValue(row.region)}</span>
+                </div>
+                <div>
+                  <span className="text-[14px] text-slate-400 font-medium block">No. of Openings</span>
+                  <span className="font-semibold text-slate-800">{renderValue(row.no_of_openings)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     const posFields: BackendField[] =
       formConfig?.childGroups?.custom_position_details?.fields || [];
     // Inline columns (everything except the nested Cost Center Allocations).
