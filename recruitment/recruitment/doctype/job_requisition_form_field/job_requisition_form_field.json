@@ -11,6 +11,7 @@
   "expose",
   "mandatory_override",
   "read_only_override",
+  "hiring_type",
   "layout_section",
   "tab_override",
   "section_override",
@@ -75,6 +76,15 @@
    "label": "Read Only",
    "options": "Default\nRead Only\nEditable",
    "description": "Default = follow meta. Read Only shows the field but drops it from the write allowlist."
+  },
+  {
+   "default": "Lateral",
+   "depends_on": "eval:parent.basis_hiring_type",
+   "fieldname": "hiring_type",
+   "fieldtype": "Select",
+   "label": "Hiring Type",
+   "options": "Both\nFresher\nLateral",
+   "description": "Only used when 'Configure Basis Hiring Type' is ticked on the parent. Both = render for every requisition. Fresher / Lateral = render only for that hiring type."
   },
   {
    "fieldname": "layout_section",

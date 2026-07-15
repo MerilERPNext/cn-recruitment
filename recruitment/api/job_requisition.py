@@ -189,11 +189,23 @@ def _list_field(payload, key):
 # Anything other than "Fresher" (Lateral, blank, legacy) keeps the original
 # location/position-details behaviour untouched.
 HIRING_TYPE_FRESHER = "Fresher"
+HIRING_TYPE_LATERAL = "Lateral"
+# Config-only value: a field configured as "Both" renders for either hiring type.
+HIRING_TYPE_BOTH = "Both"
 
 
 def _is_fresher(payload):
     """True only when the requisition is explicitly a Fresher requisition."""
     return (payload.get("custom_hiring_type") or "").strip() == HIRING_TYPE_FRESHER
+
+
+def _normalise_hiring_type(value):
+    """A requisition's `custom_hiring_type` → canonical "Fresher" / "Lateral".
+
+    Mirrors _is_fresher exactly: only an explicit "Fresher" is Fresher, so blank
+    and legacy values resolve to Lateral — the same bucket the create/update flow
+    puts them in. Keeps render and write in lock-step."""
+    return HIRING_TYPE_FRESHER if (value or "").strip() == HIRING_TYPE_FRESHER else HIRING_TYPE_LATERAL
 
 
 def _validate_regions(payload):
@@ -480,13 +492,22 @@ def _enforce_config_mandatory(doc, payload):
     Required` (parent group). Meta-mandatory fields are NOT enforced here —
     several are auto-filled on save (e.g. `description`) — so only the config's
     explicit Required set is checked, keeping the rule predictable and in one
-    place that the frontend reads too."""
-    overrides = _load_form_overrides()
+    place that the frontend reads too.
+
+    When the hiring-type feature is on, a field is only enforced for the hiring
+    types it is configured for. Without this, a Fresher-only Required field would
+    block every Lateral submission (and vice versa) even though the form never
+    rendered it — the mandatory set must match what the user was actually shown."""
+    settings = _get_form_settings()
+    overrides = _load_form_overrides(settings)
     if not overrides:
         return
+    selected = _resolve_selected_hiring_type(settings, payload.get("custom_hiring_type") or "")
     missing = []
     for (applies_to, fieldname), row in overrides.items():
         if applies_to != "Parent" or row.get("mandatory_override") != "Required":
+            continue
+        if not _row_matches_hiring_type(row, selected):
             continue
         if payload.get(fieldname) in (None, "", []):
             df = doc.meta.get_field(fieldname)
@@ -889,6 +910,45 @@ def _load_form_overrides(settings=None):
     return overrides
 
 
+def _basis_hiring_type(settings=None):
+    """True when the settings doc opts into per-field hiring-type filtering.
+
+    Off (the default, and the state of every already-deployed site) makes every
+    hiring-type code path below inert — the form renders exactly as it did
+    before the feature existed."""
+    settings = settings or _get_form_settings()
+    return bool(settings and settings.get("basis_hiring_type"))
+
+
+def _resolve_selected_hiring_type(settings, hiring_type):
+    """The hiring type to filter config rows by, or None for "don't filter".
+
+    None (no filtering) whenever the feature is off OR the caller didn't say
+    which hiring type it is rendering — the latter is the existing "return both
+    tables and toggle client-side" contract."""
+    if hiring_type is None or not _basis_hiring_type(settings):
+        return None
+    return _normalise_hiring_type(hiring_type)
+
+
+def _row_matches_hiring_type(row, selected):
+    """True when an override row should render for the `selected` hiring type.
+
+    - `selected is None`      → no filtering; every row applies.
+    - row "Both"              → applies to both hiring types.
+    - row blank               → applies. A blank row predates this feature (or
+      was added straight to the Advanced grid), so it is type-agnostic rather
+      than accidentally Fresher-only or Lateral-only.
+    - otherwise               → applies only to its own hiring type.
+    """
+    if selected is None:
+        return True
+    row_type = (row.get("hiring_type") or "").strip()
+    if not row_type or row_type == HIRING_TYPE_BOTH:
+        return True
+    return row_type == selected
+
+
 def _three_state(override_value, meta_value, on, off):
     """Resolve a 3-state Select override against a 0/1 meta default.
     `Default` → meta_value; `on` → 1; `off` → 0."""
@@ -970,7 +1030,7 @@ def _apply_nested_table(col, fieldname):
         col["nested_fields"] = nested["fields"]
 
 
-def _child_group_fields(child_doctype, group, overrides, restrict):
+def _child_group_fields(child_doctype, group, overrides, restrict, selected_hiring_type=None):
     """Columns for a child-table group, config-driven.
 
     When the settings doc has override rows for this group (applies_to == group),
@@ -980,18 +1040,26 @@ def _child_group_fields(child_doctype, group, overrides, restrict):
 
     When the group has no override rows: empty in restrict mode (nothing
     configured), else meta-first (all columns) so an unconfigured table still
-    renders fully."""
+    renders fully.
+
+    `selected_hiring_type` (None unless the hiring-type feature is on AND the
+    caller named a type) keeps only the columns configured for that type. The
+    "was this group configured at all?" test deliberately runs against the
+    UNFILTERED rows, so a group whose columns are all Fresher-only correctly
+    returns nothing for Lateral instead of falling back to the full meta."""
     try:
         cmeta = frappe.get_meta(child_doctype)
     except Exception:
         return []
 
+    configured_rows = [(fn, row) for (grp, fn), row in overrides.items() if grp == group]
+    if not configured_rows:
+        return [] if restrict else _child_columns(child_doctype)
+
     group_rows = sorted(
-        [(fn, row) for (grp, fn), row in overrides.items() if grp == group],
+        [(fn, row) for fn, row in configured_rows if _row_matches_hiring_type(row, selected_hiring_type)],
         key=lambda x: int(x[1].get("order") or 0),
     )
-    if not group_rows:
-        return [] if restrict else _child_columns(child_doctype)
 
     cols = []
     for fn, row in group_rows:
@@ -1015,6 +1083,24 @@ def _child_group_fields(child_doctype, group, overrides, restrict):
     return cols
 
 
+# Sort weight for a tab/section holding no explicitly-ordered field — parks it
+# after every configured group, still in meta order among its unconfigured peers.
+_NO_EXPLICIT_ORDER = 10**9
+
+
+def _sequence_key(fields, meta_seq):
+    """Sort key for a tab or section: (lowest explicit `order` it holds, meta position).
+
+    Field `order` is the only sequence HR actually sets in the builder, and it is
+    per-field — so a tab/section inherits the position of its earliest-ordered
+    field. Without this, tabs render in DocType meta order (first field seen wins)
+    and the configured sequence is silently ignored; a field ordered 10 whose
+    doctype field sits low in the meta would still render its tab last.
+    """
+    explicit = [f["order"] for f in fields if f["order"]]
+    return (min(explicit) if explicit else _NO_EXPLICIT_ORDER, meta_seq)
+
+
 def _build_form_config(doc=None, hiring_type=None):
     """Meta-first tabs → sections → fields tree for the Job Requisition form,
     with the single settings doc's overrides applied. Parent fields come from
@@ -1032,10 +1118,19 @@ def _build_form_config(doc=None, hiring_type=None):
     - "Fresher" keeps `custom_regions` and drops `custom_position_details`,
     - anything else (Lateral / blank) keeps `custom_position_details` and drops
       `custom_regions`.
-    Omit it to get BOTH tables (the UI then toggles client-side)."""
+    Omit it to get BOTH tables (the UI then toggles client-side).
+
+    When the settings doc ticks `Configure Basis Hiring Type` AND `hiring_type`
+    is passed, every configured field (parent and child column) is additionally
+    filtered to those marked for that hiring type or for Both. With the tick off
+    — the default, and the state of every existing site — nothing below changes
+    behaviour."""
     settings = _get_form_settings()
     overrides = _load_form_overrides(settings)
     restrict = bool(settings and settings.get("restrict_to_configured"))
+    basis_hiring_type = _basis_hiring_type(settings)
+    # None = don't filter by hiring type (feature off, or caller didn't name one).
+    selected = _resolve_selected_hiring_type(settings, hiring_type)
     meta = frappe.get_meta(JOB_REQUISITION)
 
     tab_order, tab_map = [], {}
@@ -1055,9 +1150,15 @@ def _build_form_config(doc=None, hiring_type=None):
             continue
 
         ov = overrides.get(("Parent", df.fieldname))
+        always_render = df.fieldname in _ALWAYS_RENDER_PARENT
         # Strict allowlist: only configured fields are rendered — except the core
         # Lateral/Fresher switch fields, which must always be present.
-        if restrict and ov is None and df.fieldname not in _ALWAYS_RENDER_PARENT:
+        if restrict and ov is None and not always_render:
+            continue
+        # Hiring-type filter: drop a configured field that isn't marked for the
+        # hiring type being rendered. The switch field itself never drops — the
+        # form can't change hiring type without it.
+        if ov is not None and not always_render and not _row_matches_hiring_type(ov, selected):
             continue
         expose = (ov.get("expose") if ov else None) or "Default"
         if expose == "Hide":
@@ -1088,7 +1189,9 @@ def _build_form_config(doc=None, hiring_type=None):
             entry["child_doctype"] = df.options
             entry["child_fields"] = _child_columns(df.options, ov)
 
-        tab = tab_map.setdefault(tab_lbl, {"order": [], "map": {}})
+        # `seq` = first-seen (meta) position, the tie-break for tabs/sections that
+        # carry no explicit `order`.
+        tab = tab_map.setdefault(tab_lbl, {"order": [], "map": {}, "seq": len(tab_map)})
         if tab_lbl not in tab_order:
             tab_order.append(tab_lbl)
         if sec_lbl not in tab["map"]:
@@ -1100,12 +1203,20 @@ def _build_form_config(doc=None, hiring_type=None):
     for tab_lbl in tab_order:
         tab = tab_map[tab_lbl]
         sections = []
-        for sec_lbl in tab["order"]:
+        for sec_seq, sec_lbl in enumerate(tab["order"]):
             fields = tab["map"][sec_lbl]
             # Stable sort: explicit `order` first (non-zero), meta order otherwise.
             fields.sort(key=lambda f: (f["order"] == 0, f["order"]))
-            sections.append({"section": sec_lbl, "fields": fields})
-        tabs.append({"tab": tab_lbl, "sections": sections})
+            sections.append(({"section": sec_lbl, "fields": fields}, _sequence_key(fields, sec_seq)))
+        # A section/tab sorts by the lowest `order` it holds, so the sequence HR
+        # sets in the builder is the sequence the form renders. Groups with no
+        # explicit order keep their meta order, after the configured ones.
+        sections.sort(key=lambda pair: pair[1])
+        sections = [sec for sec, _ in sections]
+        tab_fields = [f for sec in sections for f in sec["fields"]]
+        tabs.append(({"tab": tab_lbl, "sections": sections}, _sequence_key(tab_fields, tab["seq"])))
+    tabs.sort(key=lambda pair: pair[1])
+    tabs = [tab for tab, _ in tabs]
 
     # Child-table groups, config-driven: only the columns placed in the builder
     # for each group are returned (so removing one drops it from the response).
@@ -1117,9 +1228,14 @@ def _build_form_config(doc=None, hiring_type=None):
         always = table_field in _ALWAYS_RENDER_TABLES
         # Always-render tables return their full column set even with nothing
         # configured, so pass restrict=False for them.
-        fields = _child_group_fields(tdf.options, group, overrides, restrict and not always)
-        # Drop a group entirely when restrict is on and nothing is configured for it.
-        if restrict and not fields and not always:
+        fields = _child_group_fields(
+            tdf.options, group, overrides, restrict and not always, selected_hiring_type=selected
+        )
+        # Drop a group entirely when nothing is left for it — either because
+        # restrict is on and it was never configured, or because the hiring-type
+        # filter removed all of its columns. `selected is not None` only when the
+        # feature is on, so this stays byte-for-byte the old rule when it is off.
+        if not fields and not always and (restrict or selected is not None):
             continue
         child_groups[table_field] = {
             "group": group,
@@ -1131,15 +1247,28 @@ def _build_form_config(doc=None, hiring_type=None):
     # selected hiring type — return only the table that applies so the UI can
     # render it directly (Fresher → Regions, else → Position Details).
     if hiring_type is not None:
-        drop = "custom_position_details" if (hiring_type or "").strip() == HIRING_TYPE_FRESHER else "custom_regions"
+        drop = (
+            "custom_position_details"
+            if _normalise_hiring_type(hiring_type) == HIRING_TYPE_FRESHER
+            else "custom_regions"
+        )
         child_groups.pop(drop, None)
         for tab in tabs:
             for sec in tab["sections"]:
                 sec["fields"] = [f for f in sec["fields"] if f["fieldname"] != drop]
 
+    # A tab/section can end up empty once the hiring-type filter has run — don't
+    # ship empty shells the UI would render as blank steps. Only prunes when the
+    # feature resolved a hiring type, so the old shape is untouched otherwise.
+    if selected is not None:
+        for tab in tabs:
+            tab["sections"] = [s for s in tab["sections"] if s["fields"]]
+        tabs = [t for t in tabs if t["sections"]]
+
     return {
         "settings": JOB_REQUISITION_FORM_SETTINGS,
         "restrict_to_configured": restrict,
+        "basis_hiring_type": 1 if basis_hiring_type else 0,
         "hiring_type": hiring_type,
         "tabs": tabs,
         "child_groups": child_groups,
@@ -1156,10 +1285,15 @@ def get_job_requisition_form_config(name=None, hiring_type=None):
     - `hiring_type` optional — "Fresher" returns the Regions table (and drops
       Position Details); "Lateral"/blank returns Position Details (and drops
       Regions). Omit to get BOTH tables and toggle client-side.
+      When the settings doc ticks `Configure Basis Hiring Type`, passing this
+      ALSO filters every configured field to the ones marked for that hiring
+      type (or for Both) — so the caller renders `custom_hiring_type` first, then
+      re-calls with the picked value to get that type's fields. `basis_hiring_type`
+      in the response tells the caller whether that second call is needed.
 
     Returns the project response envelope with
-    `{settings, restrict_to_configured, hiring_type, tabs:[{tab, sections:[{section,
-    fields:[...]}]}], child_groups}`.
+    `{settings, restrict_to_configured, basis_hiring_type, hiring_type,
+    tabs:[{tab, sections:[{section, fields:[...]}]}], child_groups}`.
     """
     try:
         doc = None
@@ -1331,6 +1465,9 @@ def _build_seed_rows():
                 "expose": "Show",
                 "mandatory_override": "Required" if mandatory else "Default",
                 "read_only_override": "Default",
+                # Inert unless `basis_hiring_type` is ticked; "Lateral" is the
+                # documented default for a newly-configured field.
+                "hiring_type": HIRING_TYPE_LATERAL,
             })
     return rows
 
