@@ -24,13 +24,20 @@ def campus_job_opening_query(doctype, txt, searchfield, start, page_len, filters
 	or_conditions = None
 	if txt:
 		like = f"%{txt}%"
-		or_conditions = [["name", "like", like], ["job_title", "like", like]]
+		or_conditions = [
+			["name", "like", like],
+			["job_title", "like", like],
+			["custom_region_name", "like", like],
+		]
 
 	return frappe.get_all(
 		"Job Opening",
 		filters={"name": ["in", names]},
 		or_filters=or_conditions,
-		fields=["name", "job_title"],
+		# A custom link query bypasses the doctype's `search_fields` entirely — the
+		# dropdown only ever shows what we select here. Mirror search_fields so these
+		# child-table pickers show the same details as a plain Job Opening link.
+		fields=["name", "job_title", "custom_region_name", "status"],
 		order_by="job_title asc",
 		start=start,
 		page_length=page_len,

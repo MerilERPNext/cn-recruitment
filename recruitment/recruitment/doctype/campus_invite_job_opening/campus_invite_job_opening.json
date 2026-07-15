@@ -8,11 +8,12 @@
  "field_order": [
   "job_opening",
   "job_title",
+  "region",
   "opening_status"
  ],
  "fields": [
   {
-   "columns": 4,
+   "columns": 3,
    "fieldname": "job_opening",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -21,12 +22,22 @@
    "reqd": 1
   },
   {
-   "columns": 4,
+   "columns": 3,
    "fetch_from": "job_opening.job_title",
    "fieldname": "job_title",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Title",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "description": "Auto-fetched from the Job Opening. Reads the region title (e.g. \"North\"), not the Region ID.",
+   "fetch_from": "job_opening.custom_region_name",
+   "fieldname": "region",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Region",
    "read_only": 1
   },
   {
