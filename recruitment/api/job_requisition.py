@@ -57,6 +57,9 @@ PARENT_WRITABLE_FIELDS = (
     "designation",
     "custom_division",
     "custom_functional_area",
+    # Lateral (default) vs Fresher. Drives which child table the create/update
+    # flow consumes — see HIRING_TYPE_FRESHER and create_job_requisition.
+    "custom_hiring_type",
     "no_of_positions",
     "expected_compensation",
     # Job details
@@ -182,10 +185,49 @@ def _list_field(payload, key):
 # ---------------------------------------------------------------------------
 
 
+# Hiring type drives which child table the create/update flow consumes.
+# Anything other than "Fresher" (Lateral, blank, legacy) keeps the original
+# location/position-details behaviour untouched.
+HIRING_TYPE_FRESHER = "Fresher"
+
+
+def _is_fresher(payload):
+    """True only when the requisition is explicitly a Fresher requisition."""
+    return (payload.get("custom_hiring_type") or "").strip() == HIRING_TYPE_FRESHER
+
+
+def _validate_regions(payload):
+    """Fresher flow validation — the `custom_regions` table stands in for
+    `custom_position_details`. Each row needs a region and a positive opening
+    count. Parent-mandatory config is still enforced."""
+    _enforce_config_mandatory(frappe.new_doc(JOB_REQUISITION), payload)
+
+    regions = _list_field(payload, "custom_regions")
+    if not regions:
+        frappe.throw(_("At least one region is required in `custom_regions` for a Fresher requisition."))
+    for idx, r in enumerate(regions, start=1):
+        if not isinstance(r, dict):
+            frappe.throw(_("custom_regions[{0}] must be an object.").format(idx))
+        if not r.get("region"):
+            frappe.throw(_("custom_regions[{0}].region is required (grouping key).").format(idx))
+        try:
+            openings = int(r.get("no_of_openings") or 0)
+        except (TypeError, ValueError):
+            frappe.throw(_("custom_regions[{0}].no_of_openings must be a number.").format(idx))
+        if openings < 1:
+            frappe.throw(_("custom_regions[{0}].no_of_openings must be at least 1.").format(idx))
+
+
 def _validate(payload):
     missing = [k for k in REQUIRED_PARENT_KEYS if not payload.get(k)]
     if missing:
         frappe.throw(_("Missing required fields: {0}").format(", ".join(missing)))
+
+    # Fresher requisitions are validated against `custom_regions` instead of
+    # `custom_position_details` — the Lateral path below is left exactly as-is.
+    if _is_fresher(payload):
+        _validate_regions(payload)
+        return
 
     # Enforce any parent fields the default form config marks Required.
     _enforce_config_mandatory(frappe.new_doc(JOB_REQUISITION), payload)
@@ -227,6 +269,22 @@ def _group_positions_by_location(positions):
             order.append(loc)
         groups[loc].append(p)
     return [(loc, groups[loc]) for loc in order]
+
+
+def _group_openings_by_region(regions):
+    """Fresher flow: total openings per region, preserving first-seen order.
+
+    Mirrors _group_positions_by_location but for the `custom_regions` table —
+    multiple rows for the same region are summed so one Job Requisition is
+    created per unique region carrying that region's total openings."""
+    totals, order = {}, []
+    for r in regions:
+        region = r["region"]
+        if region not in totals:
+            totals[region] = 0
+            order.append(region)
+        totals[region] += int(r.get("no_of_openings") or 0)
+    return [(region, totals[region]) for region in order]
 
 
 def _bypass_hrms_duplicate_check(doc):
@@ -703,6 +761,40 @@ def _build_requisition_doc(payload, positions_for_location):
     return doc
 
 
+def _build_region_requisition_doc(payload, region, openings):
+    """Construct an unsaved Job Requisition for one region (Fresher flow).
+
+    Parallels _build_requisition_doc but for the region grouping:
+      - carries a single `custom_regions` row (this region + its openings),
+      - leaves `custom_position_details` empty (Fresher requisitions don't use
+        the position/location table),
+      - `no_of_positions` = openings for this region,
+      - `custom_type_of_position` = "New" — every Fresher requisition is New.
+
+    sync_no_of_positions / validate_requisition_settings both no-op when
+    `custom_position_details` is empty, so these values are preserved on save."""
+    doc = frappe.new_doc(JOB_REQUISITION)
+    _bypass_hrms_duplicate_check(doc)
+
+    _apply_parent_fields(doc, payload)
+    _ensure_description(doc, payload)
+
+    doc.no_of_positions = openings
+    doc.custom_type_of_position = "New"
+    if not doc.get("custom_hiring_type"):
+        doc.custom_hiring_type = HIRING_TYPE_FRESHER
+    if not doc.get("custom_hiring_lead"):
+        doc.custom_hiring_lead = payload.get("requested_by")
+
+    _apply_qualifications(doc, payload)
+    _apply_skills(doc, payload)
+    _apply_pre_screened(doc, payload)
+
+    doc.append("custom_regions", {"region": region, "no_of_openings": openings})
+
+    return doc
+
+
 # ---------------------------------------------------------------------------
 # META-FIRST FORM CONFIG
 # ---------------------------------------------------------------------------
@@ -742,7 +834,16 @@ _CHILD_TABLE_BY_GROUP = {
     "Qualifications": "custom_qualifications",
     "Skills": "custom_skills",
     "Pre-screened Candidates": "custom_pre_screened_candidates",
+    "Regions": "custom_regions",
 }
+
+# Core Lateral/Fresher switch — always rendered regardless of the settings doc's
+# `restrict_to_configured` allowlist. `custom_hiring_type` is the selector (a
+# parent field); `custom_regions` is its Fresher-only table, surfaced through
+# `child_groups` exactly like `custom_position_details`. Without these the form
+# can't switch modes, so they bypass the strict allowlist.
+_ALWAYS_RENDER_PARENT = frozenset({"custom_hiring_type"})
+_ALWAYS_RENDER_TABLES = frozenset({"custom_regions"})
 
 # Virtual "table inside a table" columns. These are stored as a JSON string in a
 # Long Text field on a child row (NOT a real Frappe child table), so meta alone
@@ -914,7 +1015,7 @@ def _child_group_fields(child_doctype, group, overrides, restrict):
     return cols
 
 
-def _build_form_config(doc=None):
+def _build_form_config(doc=None, hiring_type=None):
     """Meta-first tabs → sections → fields tree for the Job Requisition form,
     with the single settings doc's overrides applied. Parent fields come from
     the doctype layout; child tables are emitted both inline (as a Table field)
@@ -925,7 +1026,13 @@ def _build_form_config(doc=None):
     rendered minus any field marked Hide.
 
     When `doc` (a Job Requisition) is passed, each field carries its current
-    `value`, so one call powers the edit screen (config + data)."""
+    `value`, so one call powers the edit screen (config + data).
+
+    `hiring_type` optionally resolves the Lateral/Fresher switch server-side:
+    - "Fresher" keeps `custom_regions` and drops `custom_position_details`,
+    - anything else (Lateral / blank) keeps `custom_position_details` and drops
+      `custom_regions`.
+    Omit it to get BOTH tables (the UI then toggles client-side)."""
     settings = _get_form_settings()
     overrides = _load_form_overrides(settings)
     restrict = bool(settings and settings.get("restrict_to_configured"))
@@ -948,8 +1055,9 @@ def _build_form_config(doc=None):
             continue
 
         ov = overrides.get(("Parent", df.fieldname))
-        # Strict allowlist: only configured fields are rendered.
-        if restrict and ov is None:
+        # Strict allowlist: only configured fields are rendered — except the core
+        # Lateral/Fresher switch fields, which must always be present.
+        if restrict and ov is None and df.fieldname not in _ALWAYS_RENDER_PARENT:
             continue
         expose = (ov.get("expose") if ov else None) or "Default"
         if expose == "Hide":
@@ -969,6 +1077,7 @@ def _build_form_config(doc=None):
             "read_only": _three_state(ov.get("read_only_override") if ov else None, df.read_only, "Read Only", "Editable"),
             "depends_on": df.get("depends_on") or "",
             "mandatory_depends_on": df.get("mandatory_depends_on") or "",
+            "default": df.get("default") or "",
             "length": df.get("length") or 0,
             "order": int(ov.get("order") or 0) if ov else 0,
         }
@@ -1005,9 +1114,12 @@ def _build_form_config(doc=None):
         tdf = meta.get_field(table_field)
         if not tdf or tdf.fieldtype not in ("Table", "Table MultiSelect") or not tdf.options:
             continue
-        fields = _child_group_fields(tdf.options, group, overrides, restrict)
+        always = table_field in _ALWAYS_RENDER_TABLES
+        # Always-render tables return their full column set even with nothing
+        # configured, so pass restrict=False for them.
+        fields = _child_group_fields(tdf.options, group, overrides, restrict and not always)
         # Drop a group entirely when restrict is on and nothing is configured for it.
-        if restrict and not fields:
+        if restrict and not fields and not always:
             continue
         child_groups[table_field] = {
             "group": group,
@@ -1015,24 +1127,38 @@ def _build_form_config(doc=None):
             "fields": fields,
         }
 
+    # Resolve the Lateral/Fresher switch server-side when the caller passes the
+    # selected hiring type — return only the table that applies so the UI can
+    # render it directly (Fresher → Regions, else → Position Details).
+    if hiring_type is not None:
+        drop = "custom_position_details" if (hiring_type or "").strip() == HIRING_TYPE_FRESHER else "custom_regions"
+        child_groups.pop(drop, None)
+        for tab in tabs:
+            for sec in tab["sections"]:
+                sec["fields"] = [f for f in sec["fields"] if f["fieldname"] != drop]
+
     return {
         "settings": JOB_REQUISITION_FORM_SETTINGS,
         "restrict_to_configured": restrict,
+        "hiring_type": hiring_type,
         "tabs": tabs,
         "child_groups": child_groups,
     }
 
 
 @frappe.whitelist()
-def get_job_requisition_form_config(name=None):
+def get_job_requisition_form_config(name=None, hiring_type=None):
     """Render config for the external Job Requisition form, driven by the single
     `Job Requisition Form Settings` doc.
 
     - `name` optional — a Job Requisition id; when passed, fields carry their
       current `value` so the same call powers the edit screen.
+    - `hiring_type` optional — "Fresher" returns the Regions table (and drops
+      Position Details); "Lateral"/blank returns Position Details (and drops
+      Regions). Omit to get BOTH tables and toggle client-side.
 
     Returns the project response envelope with
-    `{settings, restrict_to_configured, tabs:[{tab, sections:[{section,
+    `{settings, restrict_to_configured, hiring_type, tabs:[{tab, sections:[{section,
     fields:[...]}]}], child_groups}`.
     """
     try:
@@ -1043,7 +1169,7 @@ def get_job_requisition_form_config(name=None):
             doc = frappe.get_doc(JOB_REQUISITION, name)
             doc.check_permission("read")
 
-        config = _build_form_config(doc=doc)
+        config = _build_form_config(doc=doc, hiring_type=hiring_type)
         return _ok(message=_("Form configuration fetched."), data=config, http=200)
     except frappe.PermissionError as exc:
         return _err(str(exc) or _("Not permitted."), http=403)
@@ -1282,29 +1408,48 @@ def create_job_requisition(payload=None):
 
         _validate(payload)
 
-        positions = _list_field(payload, "custom_position_details")
-        groups = _group_positions_by_location(positions)
+        fresher = _is_fresher(payload)
+        if fresher:
+            # Fresher flow: group the `custom_regions` rows by region and create
+            # one requisition per unique region.
+            groups = _group_openings_by_region(_list_field(payload, "custom_regions"))
+        else:
+            # Lateral (default) flow — unchanged.
+            positions = _list_field(payload, "custom_position_details")
+            groups = _group_positions_by_location(positions)
 
         results = []
         savepoint = "create_job_requisition"
         frappe.db.savepoint(savepoint)
         try:
-            # One fresh Job Requisition per unique location in THIS submission.
-            # Each location group carries only its own positions (e.g. 5 openings
-            # across BLR×2 / Mumbai / Kolkata / Noida → 4 requisitions, the BLR one
-            # holding 2 positions). We deliberately do NOT merge into requisitions
-            # from earlier submissions — every submit stands on its own.
-            for location, group_positions in groups:
-                doc = _build_requisition_doc(payload, group_positions)
-                doc.insert(ignore_permissions=False)
-                results.append(
-                    {
-                        "name": doc.name,
-                        "location": location,
-                        "positions_count": len(group_positions),
-                        "action": "created",
-                    }
-                )
+            # One fresh Job Requisition per group in THIS submission — by location
+            # for Lateral, by region for Fresher. Each carries only its own group's
+            # data. We deliberately do NOT merge into requisitions from earlier
+            # submissions — every submit stands on its own.
+            if fresher:
+                for region, openings in groups:
+                    doc = _build_region_requisition_doc(payload, region, openings)
+                    doc.insert(ignore_permissions=False)
+                    results.append(
+                        {
+                            "name": doc.name,
+                            "region": region,
+                            "positions_count": openings,
+                            "action": "created",
+                        }
+                    )
+            else:
+                for location, group_positions in groups:
+                    doc = _build_requisition_doc(payload, group_positions)
+                    doc.insert(ignore_permissions=False)
+                    results.append(
+                        {
+                            "name": doc.name,
+                            "location": location,
+                            "positions_count": len(group_positions),
+                            "action": "created",
+                        }
+                    )
         except Exception:
             frappe.db.rollback(save_point=savepoint)
             raise
@@ -1502,6 +1647,15 @@ def _serialise_requisition(doc):
             ),
         }
         for row in doc.get("custom_position_details") or []
+    ]
+
+    # Fresher requisitions carry their openings in `custom_regions` instead.
+    out["custom_regions"] = [
+        {
+            "region": row.get("region"),
+            "no_of_openings": row.get("no_of_openings"),
+        }
+        for row in doc.get("custom_regions") or []
     ]
 
     out["custom_position_summary"] = [
@@ -1750,6 +1904,24 @@ def update_job_requisition(name=None, payload=None):
             # `no_of_positions` is a UI-level total that may not match the
             # rows we actually persist (location grouping, row removal, etc.).
             doc.no_of_positions = len(positions)
+
+        # Fresher flow: rewrite the `custom_regions` table when provided. Unlike
+        # create, update targets one existing requisition, so rows are replaced
+        # in place (no re-grouping/splitting). `no_of_positions` becomes the sum
+        # of the openings and the type stays "New".
+        if "custom_regions" in payload:
+            regions = _list_field(payload, "custom_regions")
+            doc.set("custom_regions", [])
+            total_openings = 0
+            for r in regions:
+                if not isinstance(r, dict) or not r.get("region"):
+                    continue
+                openings = int(r.get("no_of_openings") or 0)
+                total_openings += openings
+                doc.append("custom_regions", {"region": r["region"], "no_of_openings": openings})
+            if doc.get("custom_regions"):
+                doc.no_of_positions = total_openings
+                doc.custom_type_of_position = "New"
 
         # Rewrite child tables if provided
         if "custom_qualifications" in payload:

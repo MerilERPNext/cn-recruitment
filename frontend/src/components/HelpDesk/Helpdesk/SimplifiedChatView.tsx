@@ -821,7 +821,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   }
 
   // Resolved ticket actions for raiser
-  if (ticket.status === "Resolved" && ticket.raised_by === currentUserEmail) {
+  if (ticket.status === "Requested Closure" && ticket.raised_by === currentUserEmail) {
     actionItems.push({
       label: isClosing ? "Closing..." : "Accept Closure",
       icon: <CheckCircle className="w-4 h-4 text-green-600" />,

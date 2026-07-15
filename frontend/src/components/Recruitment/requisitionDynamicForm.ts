@@ -33,6 +33,7 @@ export interface BackendField {
   mandatory_depends_on?: string;
   length?: number;
   order?: number;
+  default?: any;
   // Nested child table (e.g. Cost Center Allocations inside a Position row).
   is_nested_table?: number;
   nested_label?: string;
@@ -127,6 +128,7 @@ export const TAB_TO_STEP_KEY: Record<string, string> = {
 const KNOWN_CHILD_GROUP_FIELDS = new Set<string>([
   "no_of_positions",
   "custom_position_details",
+  "custom_regions",
   "custom_qualifications",
   "custom_skills",
   "custom_pre_screened_candidates",
@@ -139,6 +141,7 @@ const KNOWN_CHILD_GROUP_FIELDS = new Set<string>([
 // shown from the API.
 const DATAGRID_KEY_TO_CHILD_GROUP: Record<string, string> = {
   positions: "custom_position_details",
+  custom_regions: "custom_regions",
   custom_qualifications: "custom_qualifications",
 };
 
@@ -583,6 +586,10 @@ function transformComponents(components: any[], flat: FlattenedConfig): any[] {
         : null;
       if (fieldMap) {
         c.components = filterGridColumns(c.components, fieldMap, flat);
+      } else if (childGroupKey && flat.restrict) {
+        // The Hiring Type API returns only its applicable child table. Hide the
+        // other static grid (Lateral → Position Details; Fresher → Regions).
+        continue;
       }
       out.push(c);
       continue;
@@ -652,6 +659,9 @@ function generateComponent(field: BackendField): any {
     customClass: required ? "required-field" : undefined,
     disabled: field.read_only ? true : undefined,
     validate: { required },
+    ...(field.default !== undefined && field.default !== ""
+      ? { defaultValue: field.default }
+      : {}),
   };
 
   // Company / Designation dependent Link fields must carry their dependency
