@@ -20,7 +20,7 @@ import { useAwardPrograms, useDoctypeOptions } from "../../../services/recogniti
 import EmployeeMultiSelect from "../components/MyAppreciationsHistory/EmployeeMultiSelect";
 import RecognitionRowActions from "../components/RecognitionRowActions";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
-import { isActionEnabled } from "../../../utils/uiPermission";
+import { isActionEnabled, isPageEnabled } from "../../../utils/uiPermission";
 
 // Resolve relative Frappe file paths (e.g. "/private/files/..") against the API host.
 const API_HOST =
@@ -114,6 +114,12 @@ const AwardsHistory: React.FC = () => {
   const rowActions = (["download", "view"] as const).filter((a) =>
     isActionEnabled(uiPermission, a, "Awards History"),
   );
+  // The underlying data doesn't distinguish individual vs team awards, so the
+  // whole history listing is shown if either type is permitted, hidden if
+  // neither is.
+  const individualHistoryPermitted = isPageEnabled(uiPermission, "Individual Awards History");
+  const teamHistoryPermitted = isPageEnabled(uiPermission, "Team Awards history");
+  const historyPermitted = individualHistoryPermitted || teamHistoryPermitted;
 
   const [activeTab, setActiveTab] = useState<"Received" | "Given">("Received");
   const [query, setQuery] = useState("");
@@ -287,7 +293,13 @@ const AwardsHistory: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
+              {!historyPermitted ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-12 text-center text-sm text-gray-400">
+                    You don&apos;t have permission to view awards history.
+                  </td>
+                </tr>
+              ) : isLoading ? (
                 <tr>
                   <td colSpan={5} className="px-5 py-12 text-center text-sm text-gray-400">
                     Loading awards…

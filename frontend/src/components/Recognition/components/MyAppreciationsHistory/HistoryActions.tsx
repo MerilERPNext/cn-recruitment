@@ -13,7 +13,7 @@ const HistoryActions = ({
   // Gate the row's view/download by the "Recognition" app action permissions.
   const { data: uiPermission } = useGetUiPermission("Recognition");
   const actions = (["download", "view"] as const).filter((a) =>
-    isActionEnabled(uiPermission, a, "My Appreciations History"),
+    isActionEnabled(uiPermission, a, "Appreciations History"),
   );
 
   if (actions.length === 0) return null;

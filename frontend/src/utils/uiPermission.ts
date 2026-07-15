@@ -51,3 +51,16 @@ export function getActionsEnabled<T extends string>(
   }, {} as Record<T, boolean>);
 }
 
+// Check if a page (by page_name) is enabled, across all apps in the response
+// (or within a single app's permission entry).
+export function isPageEnabled(
+  userUiPermission: AppPermission[] | AppPermission | undefined,
+  pageName: string
+): boolean {
+  if (!userUiPermission) return false;
+  const apps = Array.isArray(userUiPermission) ? userUiPermission : [userUiPermission];
+  return apps.some((app) =>
+    app.pages.some((page) => page.page_name === pageName && page.enabled)
+  );
+}
+

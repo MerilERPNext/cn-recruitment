@@ -14,6 +14,8 @@ import {
   AwardPointsAward,
   AwardProgramItem,
 } from "../../../services/recognitionService";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isPageEnabled } from "../../../utils/uiPermission";
 
 // Resolve relative Frappe file paths (e.g. "/private/files/..") against the API host.
 const API_HOST =
@@ -319,10 +321,16 @@ const AwardsLivePrograms: React.FC = () => {
   const hiddenCount = activeAwards.length - visibleAwards.length;
   const myAwardsLoading = awardTab === "Received" ? receivedLoading : givenLoading;
 
-  // Award winners are shown only when enabled in the Advanced Settings doctype.
+  // Award winners are shown only when enabled in the Advanced Settings doctype
+  // AND the corresponding "Individual/Team Award Winners" UI permission is on.
   const { displayIndividualAwardWinners, displayTeamAwardWinners } =
     useRecognitionFlags();
-  const showWinners = displayIndividualAwardWinners || displayTeamAwardWinners;
+  const { data: uiPermission } = useGetUiPermission("Recognition");
+  const individualWinnersPermitted = isPageEnabled(uiPermission, "Individual Award Winners");
+  const teamWinnersPermitted = isPageEnabled(uiPermission, "Team Award Winners");
+  const showWinners =
+    (displayIndividualAwardWinners && individualWinnersPermitted) ||
+    (displayTeamAwardWinners && teamWinnersPermitted);
 
   // Filters + Sort drive the server-side request; search filters client-side.
   const { data, isLoading, isError, error, refetch, isFetching } =

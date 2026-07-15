@@ -621,10 +621,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Dashboard",
         },
         {
-          name: "My Appreciations History",
+          name: "Appreciations History",
           icon: FileText,
           href: "/webapp/recognition/vibe/my-appreciations-history",
-          permissionKey: "My Appreciations History",
+          permissionKey: "Appreciations History",
         },
         {
           name: "Appreciations-Leaderboard",
@@ -654,7 +654,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Earned Points Summary",
           icon: Coins,
           href: "/webapp/recognition/vibe/earned-points",
-          permissionKey: "Earned Points",
+          permissionKey: "Earned Points Summary page",
         },
         {
           name: "Admin Dashboard",

@@ -34,19 +34,18 @@ import RecognitionRowActions from "../components/RecognitionRowActions";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 
-// Data is sourced from Employee Appreciation, which has no team/individual
-// distinction — so only the received / raised pills are shown.
 const PILLS: { label: string; category: AwardNominationCategory }[] = [
   { label: "INDIVIDUAL AWARDS RECEIVED", category: "individual_received" },
   { label: "INDIVIDUAL AWARDS RAISED", category: "individual_raised" },
+  { label: "TEAM AWARDS RAISED", category: "team_raised" },
 ];
 
-// Each pill (child navigation) is gated by an action on the "Nomination
+// Each pill (child navigation) is gated by its own action on the "Nomination
 // Workflows" page of the "Recognition" Modular Ui Permission app.
 const PILL_ACTION: Record<AwardNominationCategory, string> = {
-  individual_received: "tab_received",
-  individual_raised: "tab_raised",
-  team_raised: "tab_raised",
+  individual_received: "individual_received",
+  individual_raised: "individual_raised",
+  team_raised: "team_raised",
 };
 
 // Toggleable columns for the Settings drawer (data-row keys).

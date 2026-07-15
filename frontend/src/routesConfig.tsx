@@ -1729,7 +1729,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "my-appreciations-history",
         element: <MyAppreciationsHistory />,
-        permissionKey: "My Appreciations History",
+        permissionKey: "Appreciations History",
       },
       {
         path: "feed",
@@ -1759,7 +1759,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "earned-points",
         element: <EarnedPointsSummary />,
-        permissionKey: "Earned Points",
+        permissionKey: "Earned Points Summary page",
       },
       {
         path: "admin-dashboard",
