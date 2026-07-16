@@ -55,17 +55,17 @@ frappe.ui.form.on("Campus Drive Invite", {
 				const data = r.message;
 				let added = 0;
 
-				// Institute -> Participating Institutes
-				if (data.institute) {
+				// Institutes -> Participating Institutes
+				(data.institutes || []).forEach((institute) => {
 					const exists = (frm.doc.participating_institutes || []).some(
-						(d) => d.institute === data.institute
+						(d) => d.institute === institute
 					);
 					if (!exists) {
 						const child = frm.add_child("participating_institutes");
-						child.institute = data.institute;
+						child.institute = institute;
 						added += 1;
 					}
-				}
+				});
 
 				// Job Openings -> Linked Job Openings
 				(data.job_openings || []).forEach((jo) => {

@@ -8,6 +8,7 @@
  "field_order": [
   "campus_invite_section",
   "campus_invite",
+  "institute",
   "personal_details_section",
   "candidates",
   "amended_from"
@@ -27,6 +28,16 @@
    "label": "Campus Invite",
    "link_filters": "[[\"Campus Invite\",\"docstatus\",\"=\",1],[\"Campus Invite\",\"status\",\"!=\",\"Completed\"]]",
    "options": "Campus Invite",
+   "reqd": 1
+  },
+  {
+   "description": "Which of the invite's Institutes these candidates belong to. Carried onto each candidate's Job Applicant so HR can filter them by college.",
+   "fieldname": "institute",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Institute",
+   "options": "Institute",
    "reqd": 1
   },
   {

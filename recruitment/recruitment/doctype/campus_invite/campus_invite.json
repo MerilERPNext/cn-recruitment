@@ -10,7 +10,7 @@
   "campus_invite_name",
   "region",
   "column_break_details",
-  "institute",
+  "institutes",
   "status",
   "invite_sent",
   "job_openings_section",
@@ -45,13 +45,11 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "institute",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Institute",
-   "link_filters": "[[\"Institute\",\"region\",\"=\",\"eval:doc.region\"]]",
-   "options": "Institute",
+   "description": "Institutes invited to this drive. TPO Contacts below are auto-populated from all of them, and each candidate's own institute is set on their Candidate Registration.",
+   "fieldname": "institutes",
+   "fieldtype": "Table MultiSelect",
+   "label": "Institutes",
+   "options": "Campus Invite Institute",
    "reqd": 1
   },
   {
@@ -83,7 +81,7 @@
    "options": "Campus Invite Job Opening"
   },
   {
-   "description": "Auto-populated (read-only) from the selected Institute's TPO Contacts.",
+   "description": "Auto-populated (read-only) from the selected Institutes' TPO Contacts. On submit, only the Primary TPO of each institute is given portal access and emailed a login link — the rest are listed for reference.",
    "fieldname": "tpo_contacts_section",
    "fieldtype": "Section Break",
    "label": "TPO Contacts"
