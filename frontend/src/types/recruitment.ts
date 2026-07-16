@@ -1,3 +1,5 @@
+import type { DocumentItem } from "./frappe";
+
 // Position Details Types
 export interface PositionDetail {
   position_number?: number;
@@ -150,7 +152,7 @@ export interface RequisitionListColumn {
   value_key?: string;
 }
 
-export interface JobRequisition {
+export interface JobRequisition extends DocumentItem {
   name: string;
   creation: string;
   modified: string;
