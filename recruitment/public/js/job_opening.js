@@ -613,3 +613,31 @@ frappe.ui.form.on("Job Opening", {
 			});
 	},
 });
+
+// Cascading selection: Company -> Department -> Designation.
+// Department is scoped to the chosen Company (Department.company); Designation is
+// scoped to the chosen Department (Designation.custom_department). Changing a field
+// resets the ones below it so a stale child can't survive a new parent.
+frappe.ui.form.on("Job Opening", {
+	setup(frm) {
+		// Department: enabled only, scoped to the chosen Company.
+		frm.set_query("department", () => {
+			const filters = { disabled: 0 };
+			if (frm.doc.company) filters.company = frm.doc.company;
+			return { filters };
+		});
+		// Designation: Active status only, scoped to the chosen Department.
+		frm.set_query("designation", () => {
+			const filters = { custom_status: "Active" };
+			if (frm.doc.department) filters.custom_department = frm.doc.department;
+			return { filters };
+		});
+	},
+	company(frm) {
+		if (frm.doc.department) frm.set_value("department", null);
+		if (frm.doc.designation) frm.set_value("designation", null);
+	},
+	department(frm) {
+		if (frm.doc.designation) frm.set_value("designation", null);
+	},
+});
