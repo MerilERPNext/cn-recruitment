@@ -1363,6 +1363,104 @@ def get_available_job_requisition_fields():
     }
 
 
+# ---------------------------------------------------------------------------
+# Job Requisition list columns — config-driven column settings for the
+# requisition LIST view. Mirrors the channel column settings
+# (recruitment.api.channels._common.get_configured_columns) but sourced from
+# Recruitment Settings → requisition_list_columns against Job Requisition.
+#
+# This is READ-ONLY config, exposed via its own endpoint. get_job_requisition
+# and the create/update flow are intentionally left untouched — the frontend
+# renders the list from get_requisition_list_columns (headers/order) plus the
+# existing get_job_requisition payload (rows).
+# ---------------------------------------------------------------------------
+
+# Used when nothing is configured, so the list view keeps its current behaviour
+# out of the box. Job Requisition fieldnames; "name" is the Requisition ID.
+_DEFAULT_REQUISITION_COLUMNS = [
+    "name", "designation", "department", "company",
+    "status", "no_of_positions", "posting_date", "expected_by",
+]
+
+# Column key already carries a friendlier label than the raw field for these.
+_REQUISITION_COLUMN_LABEL_OVERRIDES = {"name": "Requisition ID"}
+
+
+def _parse_requisition_column_fieldname(stored):
+    """Extract the fieldname from a stored 'Label (fieldname)' column value (the
+    Autocomplete format used by the settings table). Falls back to the trimmed
+    string when it isn't in that format."""
+    if not stored:
+        return None
+    stored = stored.strip()
+    if stored.endswith(")") and "(" in stored:
+        return stored[stored.rfind("(") + 1:-1].strip()
+    return stored
+
+
+def _requisition_column_label(jr_meta, fieldname):
+    if fieldname in _REQUISITION_COLUMN_LABEL_OVERRIDES:
+        return _REQUISITION_COLUMN_LABEL_OVERRIDES[fieldname]
+    df = jr_meta.get_field(fieldname)
+    if df and df.label:
+        return df.label
+    return fieldname.replace("_", " ").title()
+
+
+def get_configured_requisition_columns():
+    """Ordered, enabled list columns for the Job Requisition list view, from
+    Recruitment Settings → requisition_list_columns. Returns a list of
+    {"fieldname", "label", "value_key"}. Falls back to a default column set when
+    nothing is configured, so the list view keeps working out of the box.
+    Disabled rows, blanks, duplicates and fields that don't exist on Job
+    Requisition (except "name") are dropped."""
+    jr_meta = frappe.get_meta(JOB_REQUISITION)
+
+    fieldnames = []
+    settings = frappe.get_cached_doc("Recruitment Settings")
+    for row in settings.get("requisition_list_columns") or []:
+        if not row.get("enable"):
+            continue
+        fn = _parse_requisition_column_fieldname(row.get("column"))
+        if fn:
+            fieldnames.append(fn)
+
+    if not fieldnames:
+        fieldnames = list(_DEFAULT_REQUISITION_COLUMNS)
+
+    columns, seen = [], set()
+    for fn in fieldnames:
+        if fn in seen or (fn != "name" and not jr_meta.has_field(fn)):
+            continue
+        seen.add(fn)
+        columns.append({
+            "fieldname": fn,
+            "label": _requisition_column_label(jr_meta, fn),
+            "value_key": fn,
+        })
+    return columns
+
+
+@frappe.whitelist()
+def get_requisition_list_columns():
+    """Job Requisition list-view column config in a single call: the ordered,
+    enabled columns configured in Recruitment Settings → requisition_list_columns.
+
+    Returns the standard envelope with
+      data = {"columns": [{"fieldname", "label", "value_key"}, ...]}
+    where `value_key` is the key the flat get_job_requisition payload carries the
+    display value under — so the frontend renders the list from this endpoint
+    (headers + order) and get_job_requisition (rows) with no translation layer.
+
+    New, read-only endpoint: get_job_requisition and the requisition
+    create/update flow are unaffected."""
+    return _ok(
+        message=_("Requisition list columns fetched."),
+        data={"columns": get_configured_requisition_columns()},
+        http=200,
+    )
+
+
 # Explicit map of the live React "Raise a Requisition" form (the 5-step wizard:
 # Basic Details → Job Details → Position Selection → Other Details → Review).
 # Each section is (tab, section, [(applies_to, fieldname, label, mandatory), ...]).
@@ -1730,6 +1828,88 @@ def _vacancy_breakdown(doc):
     return {"total": new + replacement, "new": new, "replacement": replacement, "type": vtype}
 
 
+# ---------------------------------------------------------------------------
+# Approval allocation — "to whom is this requisition's approval currently
+# allocated". Surfaced on each requisition so the UI can show the pending
+# approver(s) on hover over the status. Mirrors the `allocated_to` object shape
+# of cn_leave_shift_managment.api.get_open_approval_todos:
+#     [{"name": <full name>, "employee": <employee id>, "designation_name": <designation>}]
+#
+# The data lives on the Nextai Approval Tracker created when an approval matrix
+# applies (doc_type="Job Requisition", doc_name=<req>). The current allocation is
+# the set of approvers on the tracker's Approval Log Entry rows whose status is
+# still "Pending". Requisitions without a matrix/tracker are unaffected ([]).
+# ---------------------------------------------------------------------------
+
+def _approval_users_from_log(row):
+    """User ids for one pending Approval Log Entry: the primary `user` plus any
+    `custom_allocated_to_users` (a comma-separated list of users)."""
+    users = []
+    if row.get("user"):
+        users.append(str(row["user"]).strip())
+    raw = row.get("custom_allocated_to_users")
+    if raw:
+        users.extend(u.strip() for u in str(raw).split(",") if u.strip())
+    return users
+
+
+def _approval_user_info(user_id):
+    """{name, employee, designation_name} for an approver user — same keys as the
+    leave/shift `allocated_to` object. `designation_name` is the approver's
+    Employee designation (None when they have no Employee record)."""
+    full_name = frappe.db.get_value("User", user_id, "full_name") or user_id
+    emp = frappe.db.get_value(
+        "Employee", {"user_id": user_id}, ["name", "designation"], as_dict=True
+    )
+    return {
+        "name": full_name,
+        "employee": emp.name if emp else None,
+        "designation_name": (emp.designation if emp else None) or None,
+    }
+
+
+def _get_requisition_approval_allocation(name):
+    """Current pending approvers for a Job Requisition, as a list of
+    {name, employee, designation_name} (the get_open_approval_todos `allocated_to`
+    shape). Anchored on the Approval Tracker for this requisition; returns [] when
+    there is no tracker, the tracker isn't Pending, or nothing is currently
+    allocated. Never raises — any lookup failure yields []."""
+    try:
+        tracker_name = frappe.db.get_value(
+            "Approval Tracker",
+            {"doc_type": JOB_REQUISITION, "doc_name": name, "status": "Pending"},
+            "name",
+            order_by="modified desc",
+        )
+        if not tracker_name:
+            return []
+
+        pending_logs = frappe.get_all(
+            "Approval Log Entry",
+            filters={
+                "parent": tracker_name,
+                "parenttype": "Approval Tracker",
+                "parentfield": "approval_logs",
+                "status": "Pending",
+            },
+            fields=["user", "custom_allocated_to_users"],
+        )
+
+        allocation, seen = [], set()
+        for log_row in pending_logs:
+            for user_id in _approval_users_from_log(log_row):
+                if user_id in seen:
+                    continue
+                seen.add(user_id)
+                allocation.append(_approval_user_info(user_id))
+        return allocation
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(), "get_requisition_approval_allocation failed"
+        )
+        return []
+
+
 def _serialise_requisition(doc):
     """Flat round-trip representation of a JR.
     All parent fields keep their DocType field names so the UI can bind
@@ -1744,6 +1924,11 @@ def _serialise_requisition(doc):
         "workflow_state": doc.get("workflow_state"),
         "creation": doc.get("creation"),
         "modified": doc.get("modified"),
+        # Pending approver(s) this requisition's approval is currently allocated
+        # to, for the status-hover UI. [] unless an approval matrix/tracker is
+        # active and Pending. Same object shape as the leave/shift
+        # get_open_approval_todos `allocated_to`.
+        "approval_allocation": _get_requisition_approval_allocation(doc.name),
     }
 
     for field in PARENT_WRITABLE_FIELDS:
