@@ -742,18 +742,15 @@ def _auto_release_and_materialize_onboarding(job_applicant_id, raise_on_error=Fa
         portal_form = applicant.get("custom_onboarding_portal_form")
         if not portal_form:
             from recruitment.api.candidate_portal import resolve_onboarding_portal_form
-            portal_form = resolve_onboarding_portal_form(
-                applicant.get("custom_department"),
-                applicant.get("designation"),
-            )
+            portal_form = resolve_onboarding_portal_form(applicant.name)
             if not portal_form:
                 if raise_on_error:
                     frappe.throw(_(
-                        "No Onboarding Portal Form matches this candidate's Department / Designation, "
+                        "No Onboarding Portal Form's User Assignment matches this candidate, "
                         "and no Default form is configured. Add a matching Onboarding Portal Form (or mark one as Default) and try again."
                     ))
                 frappe.log_error(
-                    "No Onboarding Portal Form matched by Department/Designation and no Default configured; cannot auto-release pre-onboarding on Job Offer Accepted.",
+                    "No Onboarding Portal Form matched by User Assignment and no Default configured; cannot auto-release pre-onboarding on Job Offer Accepted.",
                     "sync_job_offer_action_item: auto-release skipped",
                 )
                 return None

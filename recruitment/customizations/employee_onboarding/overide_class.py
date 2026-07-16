@@ -60,15 +60,17 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
         if self.meta.get_field("custom_onboarding_portal_form") and self.custom_onboarding_portal_form:
             return self.custom_onboarding_portal_form
 
-        default_form = frappe.db.get_value(
-            "Onboarding Portal Forms",
-            {"default": 1},
-            "name",
-            order_by="modified desc",
-        )
-        if default_form:
-            return default_form
+        # Match on User Assignment (which falls back to the Default form), so an
+        # Employee Onboarding created directly — rather than through
+        # initiate_onboarding — still picks the form the candidate qualifies for
+        # instead of silently landing on the Default.
+        from recruitment.api.candidate_portal import resolve_onboarding_portal_form
 
+        form = resolve_onboarding_portal_form(self.job_applicant)
+        if form:
+            return form
+
+        # Last resort: any form at all, rather than rendering an empty portal.
         return frappe.db.get_value(
             "Onboarding Portal Forms",
             {},

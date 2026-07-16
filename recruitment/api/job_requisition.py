@@ -2626,7 +2626,7 @@ def _build_preview_payload(jd_name, source, filled_data=None):
     from recruitment.recruitment.doctype.job_description.job_description import (
         _render_preview,
         _jd_context_with_titles,
-        plain_text_to_html,
+        beautify_jd_html,
         render_with_context,
         substitute_field_tokens,
     )
@@ -2669,7 +2669,7 @@ def _build_preview_payload(jd_name, source, filled_data=None):
         _render_preview(doc)
         rendered = doc.get("preview") or ""
 
-    description_html = plain_text_to_html(rendered)
+    description_html = beautify_jd_html(rendered)
     skills = [
         row.get("skill")
         for row in (doc.get("skills") or [])

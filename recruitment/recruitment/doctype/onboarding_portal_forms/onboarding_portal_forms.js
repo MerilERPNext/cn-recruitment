@@ -12,6 +12,10 @@
 
 frappe.ui.form.on("Onboarding Portal Forms", {
 	onload(frm) {
+		// Only a Job Applicant assignment can select candidates for a form.
+		frm.set_query("user_assignment", () => ({
+			filters: { target_type: "Job Applicant" },
+		}));
 		load_onb_fields(frm);
 	},
 	refresh(frm) {
