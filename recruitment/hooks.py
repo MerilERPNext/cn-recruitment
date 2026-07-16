@@ -292,6 +292,9 @@ doc_events = {
             # Compute each External Recruiter row's read-only posting status from its
             # Display From/To window so the grid reflects live availability.
             "recruitment.permissions.doc_type_permissions.set_external_recruiter_posting_status",
+            # Capture the Regions child table's region on the parent `custom_region`
+            # so it is searchable/filterable from the Job Opening (search_fields).
+            "recruitment.customizations.job_opening_region.set_region_from_regions_table",
             # Guarantee a collision-free web route — sibling requisitions (same
             # company + designation) would otherwise generate an identical route
             # and fail with "Route must be unique". Runs last so it de-duplicates

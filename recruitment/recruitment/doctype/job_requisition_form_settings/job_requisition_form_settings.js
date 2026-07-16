@@ -21,7 +21,17 @@ frappe.ui.form.on("Job Requisition Form Settings", {
 			load_available_fields(frm);
 		}
 	},
+	// Ticking / unticking the option shows or hides the per-chip Hiring Type
+	// picker, so the builder has to redraw.
+	basis_hiring_type(frm) {
+		if (frm._jrfb) frm._jrfb.render();
+	},
 });
+
+// Default Hiring Type for a field in the builder. Inert while
+// `basis_hiring_type` is off; "Lateral" is the documented default when it is on.
+const DEFAULT_HIRING_TYPE = "Lateral";
+const HIRING_TYPES = ["Both", "Fresher", "Lateral"];
 
 // Keep the raw-grid Fieldname cell as a filtered picker too (advanced users).
 frappe.ui.form.on("Job Requisition Form Field", {
@@ -187,6 +197,7 @@ class FormBuilder {
 				read_only: row.read_only_override === "Read Only",
 				hidden: row.expose === "Hide",
 				label_override: row.label_override || "",
+				hiring_type: row.hiring_type || DEFAULT_HIRING_TYPE,
 				selected_child_fields: row.selected_child_fields || "",
 				mandatory_child_fields: row.mandatory_child_fields || "",
 			});
@@ -214,6 +225,7 @@ class FormBuilder {
 						mandatory_override: f.mandatory ? "Required" : "Default",
 						read_only_override: f.read_only ? "Read Only" : "Default",
 						label_override: f.label_override || "",
+						hiring_type: f.hiring_type || DEFAULT_HIRING_TYPE,
 						selected_child_fields: f.selected_child_fields || "",
 						mandatory_child_fields: f.mandatory_child_fields || "",
 					});
@@ -353,6 +365,7 @@ class FormBuilder {
 			read_only: false,
 			hidden: false,
 			label_override: "",
+			hiring_type: DEFAULT_HIRING_TYPE,
 		});
 		this.commit();
 	}
@@ -550,6 +563,7 @@ class FormBuilder {
 							read_only: false,
 							hidden: false,
 							label_override: "",
+							hiring_type: DEFAULT_HIRING_TYPE,
 						};
 					}
 					ordered.push(f);
@@ -789,6 +803,9 @@ class FormBuilder {
 				tag +
 				"</span>"
 		);
+		if (cint(this.frm.doc.basis_hiring_type)) {
+			$chip.append(this.render_hiring_type(f));
+		}
 		$chip.append('<span class="jrfb-ptag" style="background:' + fm.c + '1a;color:' + fm.c + '">' + fm.t + "</span>");
 
 		const $tools = $('<span class="jrfb-chip-tools"></span>');
@@ -833,6 +850,29 @@ class FormBuilder {
 		return $chip;
 	}
 
+	// Per-field Hiring Type picker, shown on each chip only while
+	// `basis_hiring_type` is ticked. Writes straight to the field_overrides row.
+	render_hiring_type(f) {
+		const current = f.hiring_type || DEFAULT_HIRING_TYPE;
+		const $sel = $('<select class="jrfb-ht"></select>').attr(
+			"title",
+			__("Which hiring type shows this field")
+		);
+		HIRING_TYPES.forEach((t) => {
+			$('<option></option>')
+				.attr("value", t)
+				.prop("selected", t === current)
+				.text(__(t))
+				.appendTo($sel);
+		});
+		$sel.addClass(current === "Both" ? "is-both" : current === "Fresher" ? "is-fresher" : "is-lateral");
+		$sel.on("change", (e) => {
+			f.hiring_type = e.target.value || DEFAULT_HIRING_TYPE;
+			this.commit();
+		});
+		return $sel;
+	}
+
 	toggle_btn($parent, text, on, title, handler) {
 		$('<span class="jrfb-tg ' + (on ? "on" : "") + '" title="' + title + '">' + text + "</span>")
 			.appendTo($parent)
@@ -858,6 +898,10 @@ class FormBuilder {
 			Sortable.create(el, {
 				group: { name: "jrfb", pull: true, put: true },
 				draggable: ".jrfb-chip, .jrfb-pitem",
+				// Don't start a drag from the Hiring Type select — a mousedown on
+				// it must reach the native dropdown, not begin dragging the chip.
+				filter: ".jrfb-ht",
+				preventOnFilter: false,
 				animation: 150,
 				ghostClass: "jrfb-ghost",
 				onAdd() {
@@ -947,6 +991,11 @@ function inject_styles() {
 .jrfb-chip-label { font-size:13.5px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .jrfb-chip-src { font-size:9px; color:var(--text-muted); background:var(--subtle-fg,#eef0f2); border-radius:5px; padding:2px 6px; }
 .jrfb-chip-tools { display:flex; align-items:center; gap:5px; }
+.jrfb-ht { flex:0 0 auto; border:1px solid var(--border-color); border-radius:5px; padding:2px 4px; font-size:10px; font-weight:700; cursor:pointer; background:var(--card-bg,#fff); color:var(--text-muted); height:20px; line-height:1; outline:none; }
+.jrfb-ht:hover { border-color:#2490ef; }
+.jrfb-ht.is-lateral { background:#2490ef1a; color:#2490ef; border-color:#2490ef59; }
+.jrfb-ht.is-fresher { background:#21a3661a; color:#21a366; border-color:#21a36659; }
+.jrfb-ht.is-both { background:#8a3ffc1a; color:#8a3ffc; border-color:#8a3ffc59; }
 .jrfb-tg { width:20px; height:20px; line-height:20px; text-align:center; border-radius:5px; font-size:10px; font-weight:700; cursor:pointer; background:var(--subtle-fg,#eef0f2); color:var(--text-muted); transition:all .12s; }
 .jrfb-tg:hover { transform:scale(1.08); }
 .jrfb-tg.on { background:#2490ef; color:#fff; }

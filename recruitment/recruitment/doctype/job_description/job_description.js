@@ -3,20 +3,11 @@
 
 frappe.ui.form.on("Job Description", {
     onload(frm) {
-        // Set cascading filters: Company → Business Unit → Department → Designation
-        frm.set_query("business_unit", function (doc) {
-            return {
-                filters: {
-                    group_company: doc.company,
-                },
-            };
-        });
-
+        // Set cascading filters: Company → Department → Designation
         frm.set_query("department", function (doc) {
-            let business_units = (doc.business_unit || []).map((row) => row.business_unit);
             return {
                 filters: {
-                    custom_business_unit: ["in", business_units],
+                    company: doc.company,
                 },
             };
         });
@@ -51,7 +42,7 @@ frappe.ui.form.on("Job Description", {
 // Re-render the preview whenever any child-table row that the template may
 // reference gets added / edited / removed.
 const _CHILD_DOCTYPES_TO_WATCH = [
-    "JD Designations", "JD Department", "JD Business Unit",
+    "JD Designations", "JD Department",
     "Education Category Table", "Education Degree Table", "Education Specialization Table",
     "Experience Sector Table", "Job Requisition Skill", "Competencies Table",
 ];

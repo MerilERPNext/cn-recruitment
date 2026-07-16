@@ -10,7 +10,6 @@
   "job_description_title",
   "is_default",
   "company",
-  "business_unit",
   "column_break_ueon",
   "department",
   "designation",
@@ -73,12 +72,6 @@
    "fieldtype": "Table MultiSelect",
    "label": "Functional Area",
    "options": "JD Functional Area"
-  },
-  {
-   "fieldname": "business_unit",
-   "fieldtype": "Table MultiSelect",
-   "label": "Business Unit",
-   "options": "JD Business Unit"
   },
   {
    "fieldname": "department",
