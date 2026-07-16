@@ -74,7 +74,9 @@ const Requisition = () => {
       return null;
     }
   });
-  const [apiColumns, setApiColumns] = useState<RequisitionListColumn[]>([]);
+  // `null` means the list response has not supplied its column configuration yet.
+  // This prevents the static columns flashing before the API columns are applied.
+  const [apiColumns, setApiColumns] = useState<RequisitionListColumn[] | null>(null);
   const setSummary = (next: SummaryShape) => {
     _setSummary(next);
     try {
@@ -109,10 +111,16 @@ const Requisition = () => {
     "130px",
   ];
 
-  const activeTitles = apiColumns.length ? apiColumns.map((column) => column.label) : titles;
-  const activeColumnWidths = apiColumns.length
-    ? apiColumns.map((column) => getColumnWidth(column, apiColumns.length))
-    : columnWidths;
+  const activeTitles = apiColumns === null
+    ? []
+    : apiColumns.length
+      ? apiColumns.map((column) => column.label)
+      : titles;
+  const activeColumnWidths = apiColumns === null
+    ? []
+    : apiColumns.length
+      ? apiColumns.map((column) => getColumnWidth(column, apiColumns.length))
+      : columnWidths;
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -167,6 +175,8 @@ const Requisition = () => {
     const initiated = item.creation ? item.creation.split(" ")[0] : "--";
 
     const statusColor = getStatusColor(status);
+
+    if (apiColumns === null) return null;
 
     const renderApiColumnValue = (column: RequisitionListColumn) => {
       const key = column.value_key || column.fieldname;
@@ -521,6 +531,8 @@ const Requisition = () => {
           (column: RequisitionListColumn) => column?.label && (column?.value_key || column?.fieldname),
         ),
       );
+    } else {
+      setApiColumns([]);
     }
 
     return {
@@ -678,7 +690,7 @@ const Requisition = () => {
           <CardTable
           titles={activeTitles}
           columnWidths={activeColumnWidths}
-          columnSortConfig={apiColumns.length ? apiColumns.map((column) => {
+          columnSortConfig={apiColumns?.length ? apiColumns.map((column) => {
             const key = column.value_key || column.fieldname;
             return {
               sortable: true,
@@ -686,7 +698,7 @@ const Requisition = () => {
               field: key,
               getValue: (item: any) => item?.[key] ?? "",
             };
-          }) : REQUISITION_SORT_CONFIG}
+          }) : apiColumns === null ? [] : REQUISITION_SORT_CONFIG}
         >
           <DataListView
             queryKey={["job-requisitions", currentEmployeeName || ""]}
