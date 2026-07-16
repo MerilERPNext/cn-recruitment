@@ -128,14 +128,6 @@ export const requisitionFormSchemas = {
   jobDetails: {
     components: [
       {
-        type: "htmlelement",
-        tag: "div",
-        className:
-          "alert bg-orange-500/10 border-orange-500/10 text-warning-600 mt-3 rounded-md",
-        content:
-          '<i class="fa fa-exclamation-triangle mr-2"></i> There is no job description tagged to this designation. Please configure the job description by contacting your recruiter.',
-      },
-      {
         type: "columns",
         customClass: "my-3",
         columns: [
