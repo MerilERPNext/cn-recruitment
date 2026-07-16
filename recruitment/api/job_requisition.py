@@ -2141,6 +2141,10 @@ def get_job_requisition(
             message=_("Fetched {0} requisition(s).").format(len(items)),
             data={
                 "requisitions": items,
+                # Configured list-view columns (headers + order), bundled here so
+                # the frontend renders the list from a single call. Same payload as
+                # the standalone get_requisition_list_columns endpoint.
+                "columns": get_configured_requisition_columns(),
                 "pagination": {
                     "total": total,
                     "limit": limit,
