@@ -1443,17 +1443,18 @@ def get_configured_requisition_columns():
 
 @frappe.whitelist()
 def get_requisition_list_columns():
-    """Job Requisition list-view column config in a single call: the ordered,
-    enabled columns configured in Recruitment Settings → requisition_list_columns.
+    """OPTIONAL columns-only endpoint. The same `columns` payload is ALSO returned
+    inside get_job_requisition (list mode) under data.columns, so the frontend can
+    render the whole list from ONE call and does NOT need to hit this endpoint.
 
-    Returns the standard envelope with
-      data = {"columns": [{"fieldname", "label", "value_key"}, ...]}
+    Kept only for callers that want the column config on its own (e.g. render the
+    header before the rows load, or a settings preview). Returns the standard
+    envelope with data = {"columns": [{"fieldname", "label", "value_key"}, ...]},
     where `value_key` is the key the flat get_job_requisition payload carries the
-    display value under — so the frontend renders the list from this endpoint
-    (headers + order) and get_job_requisition (rows) with no translation layer.
+    display value under — no translation layer on the frontend.
 
-    New, read-only endpoint: get_job_requisition and the requisition
-    create/update flow are unaffected."""
+    Read-only: get_job_requisition and the requisition create/update flow are
+    unaffected."""
     return _ok(
         message=_("Requisition list columns fetched."),
         data={"columns": get_configured_requisition_columns()},
