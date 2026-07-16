@@ -239,7 +239,7 @@ const AdvancesList: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto md:px-4 pb-4">
+            <div className="flex-1 overflow-y-auto md:px-4 pt-3 md:pt-4 pb-4">
               <CardTable titles={titles} columnWidths={columnWidths} columnSortConfig={PERQUISITE_SORT_CONFIG}>
                 <>
                   {!customAPI ? (

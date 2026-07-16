@@ -329,7 +329,7 @@ export default function SalaryAssignmentList() {
         onToggleAmount={toggleAmount}
       />
 
-      <div className="flex-1 overflow-y-auto md:px-4 md:pb-20">
+      <div className="flex-1 overflow-y-auto md:px-4 pt-3 md:pt-4 md:pb-20">
         {isDesktop ? (
           <CardTable
             titles={titles}
