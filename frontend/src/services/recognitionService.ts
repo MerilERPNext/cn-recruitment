@@ -612,7 +612,8 @@ export const useEligiblePrograms = (
     queryFn: async () => {
       const response = await FrappeAPI.callMethod(
         "chatnext_work_connect.chatnext_work_connect.api.recognition_eligibility.get_eligible_programs",
-        { employee, program_type: programType },
+        // Only approved programs are eligible (Active Programs / profile Appreciate).
+        { employee, program_type: programType, status: "Approved" },
       );
       return response as EligibleProgramsResponse;
     },
