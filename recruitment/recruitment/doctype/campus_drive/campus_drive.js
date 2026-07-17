@@ -102,6 +102,27 @@ frappe.ui.form.on("Campus Drive Invite", {
 });
 
 frappe.ui.form.on("Campus Drive Job Opening", {
+	job_opening: function (frm, cdt, cdn) {
+		// Each Job Opening can be linked once. Mirrors the server-side
+		// validate_unique_job_openings check; caught here for instant feedback.
+		const row = locals[cdt][cdn];
+		if (!row.job_opening) {
+			return;
+		}
+		const dupe = (frm.doc.linked_job_openings || []).find(
+			(d) => d.name !== row.name && d.job_opening === row.job_opening
+		);
+		if (dupe) {
+			const value = row.job_opening;
+			frappe.model.set_value(cdt, cdn, "job_opening", null);
+			frappe.msgprint({
+				title: __("Duplicate Job Opening"),
+				message: __("Job Opening {0} is already linked to this drive.", [value]),
+				indicator: "orange",
+			});
+		}
+	},
+
 	applicant_count: function (frm, cdt, cdn) {
 		const row = locals[cdt][cdn];
 
