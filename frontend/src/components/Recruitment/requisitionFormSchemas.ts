@@ -406,7 +406,7 @@ export const requisitionFormSchemas = {
                 placeholder: "Select Employment Type",
                 dataSrc: "url",
                 data: {
-                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employment Type&custom_company={{ data.company }}",
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employment Type&company={{ data.company }}",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message.results",

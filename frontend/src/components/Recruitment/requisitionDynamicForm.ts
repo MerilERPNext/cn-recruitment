@@ -171,7 +171,7 @@ const LINK_FIELD_DEPENDENCIES: Record<
   { filter: string; on: string; doctype?: string; customConditional?: string }
 > = {
   custom_employment_type_link: {
-    filter: "&custom_company={{ data.company }}",
+    filter: "&company={{ data.company }}",
     on: "company",
   },
   custom_location: {
@@ -181,7 +181,7 @@ const LINK_FIELD_DEPENDENCIES: Record<
   // Position child-table "Employee Type" column (Position Details.employee_type
   // → Employment Type) — scope to the requisition's company.
   employee_type: {
-    filter: "&custom_company={{ data.company }}",
+    filter: "&company={{ data.company }}",
     on: "company",
   },
   // Position Details.sub_location is a child-row Link. Its options must be
