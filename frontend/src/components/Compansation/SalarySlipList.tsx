@@ -32,6 +32,7 @@ import WrapperHoverCard from "../shared/WrapperHoverCard";
 import SalarySlipPDFModal from "./SalarySlipPDFModal";
 import ShowHideButton from "./ui/ShowHideButton";
 import toast from "react-hot-toast";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 // ---- Types ----
 type PayrollPeriod = {
@@ -209,8 +210,14 @@ const SalarySlipsList = () => {
       setFiltersKey((prev) => prev + 1);
     },
     onError: (error: any) => {
+      // Surface the real Frappe validation message (from `_server_messages`),
+      // e.g. "Please assign a Salary Structure for Employee Archana Kumari…"
+      // instead of the generic "Request failed with status code 417".
       toast.error(
-        error?.message || "Failed to release salary slip. Please try again.",
+        errorResponseFormater(
+          error,
+          "Failed to release salary slip. Please try again.",
+        ),
       );
     },
   });
