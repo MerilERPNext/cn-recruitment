@@ -2,10 +2,11 @@ import React, { useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import { Award } from "../../types/employee";
 import ContextualPopup from "../shared/molecules/ContextualPopup";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
 import {
-    useCurrentEmployeeDetails,
-    useGetEmployeeEarnedAppreciations,
-} from "../../hooks/useEmployee";
+    useAppreciationPrograms,
+    AppreciationApiItem,
+} from "../../services/recognitionService";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import Modal from "../shared/Modal";
 import { Typography } from "../shared/atoms/Typography";
@@ -122,11 +123,32 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileC
 
     const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
-    const employee = targetEmployeeId || currentEmployee?.name;
-    const { data: employeeAppreciations } =
-        useGetEmployeeEarnedAppreciations(employee || "");
+    const employee = targetEmployeeId || currentEmployee?.employee || currentEmployee?.name;
 
-    const awards = employeeAppreciations?.badges || [];
+    // Use the SAME data source as the "My Appreciations History" tab so the
+    // profile card and the history page always stay in sync. We only need the
+    // "received" appreciations here (the recognitions this employee earned).
+    const { data: appreciationsResponse } = useAppreciationPrograms({
+        employee: employee || "",
+        direction: "received",
+        start: 0,
+        page_length: 100,
+    });
+
+    // Map the appreciation rows into the `Award` shape that `AwardBadge`
+    // renders (title → badge_name, logo → icon, message → reason, date →
+    // awarded_at). Keeps the badge UI untouched.
+    const awards: Award[] = (appreciationsResponse?.data ?? []).map(
+        (it: AppreciationApiItem) =>
+            ({
+                name: it.name,
+                badge_name: it.title,
+                icon: it.logo,
+                recognition_type: "Appreciation",
+                reason: it.message || it.value || "",
+                awarded_at: it.date,
+            }) as Award,
+    );
     const hasAwards = awards.length > 0;
 
     const displayedAwards = awards.slice(0, 5);

@@ -138,9 +138,14 @@ const App: React.FC = () => {
     const routePermissionKey = routeConfig?.permissionKey;
 
     if (routePermissionKey) {
-      const isPermitted = permittedPages.includes(routePermissionKey);
+      // A route may declare a single page name or several (aggregate pages like
+      // Awards-Live). Access is granted if ANY of the listed pages is enabled.
+      const keys = Array.isArray(routePermissionKey)
+        ? routePermissionKey
+        : [routePermissionKey];
+      const isPermitted = keys.some((key) => permittedPages.includes(key));
       if (!isPermitted) {
-        toast.error(`You do not have permission to access: ${routePermissionKey}`);
+        toast.error(`You do not have permission to access: ${keys.join(", ")}`);
         navigate("/webapp/");
       }
     }

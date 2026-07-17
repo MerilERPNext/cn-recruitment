@@ -18,6 +18,7 @@ import {
 } from "../../hooks/useSalaryDetails";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useTaxSheetPayrollPriodsData } from "../../hooks/useTaxSheet";
+import { useTargetEmployeeCompany } from "../../hooks/useTargetEmployeeCompany";
 import { formatCurrency } from "../../utils/currency";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import DataListView from "../DataListView"; // ← replaced FrappeListView
@@ -109,6 +110,11 @@ const SalarySlipsList = () => {
   const { targetEmployeeId } = useTargetUser();
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: currentUser } = useCurrentUser();
+
+  // When viewing another employee (switch user), the salary-slip payload must
+  // carry the TARGET user's company, not the logged-in user's.
+  const { targetCompany } = useTargetEmployeeCompany();
+  const effectiveCompany = targetEmployeeId ? targetCompany : user?.company;
 
   // Payroll admins (who can also release draft salary slips). The allowed roles
   // are configured in Payroll Settings and fetched via API. Plain employees
@@ -366,6 +372,7 @@ const SalarySlipsList = () => {
               "salary-slips",
               selectedPeriod,
               targetEmployeeId || user?.employee || "",
+              effectiveCompany || "",
               String(filtersKey),
             ]}
             customAPI={{
@@ -373,7 +380,7 @@ const SalarySlipsList = () => {
               params: {
                 doctype: "Salary Slip",
                 employee: targetEmployeeId || user?.employee,
-                company: user?.company,
+                company: effectiveCompany,
                 payroll_period: selectedPeriod,
               },
             }}
