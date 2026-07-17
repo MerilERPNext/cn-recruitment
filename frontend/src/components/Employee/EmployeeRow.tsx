@@ -69,7 +69,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
   function recentSearch(emp: Employee): void {
     const searches: Employee[] = JSON.parse(
-      localStorage.getItem("recentSearches") || "[]",
+      sessionStorage.getItem("recentSearches") || "[]",
     );
 
     let filterData = searches.filter(
@@ -80,7 +80,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
     filterData.unshift(emp);
     filterData = filterData.slice(0, 7);
 
-    localStorage.setItem("recentSearches", JSON.stringify(filterData));
+    sessionStorage.setItem("recentSearches", JSON.stringify(filterData));
     return;
   }
 

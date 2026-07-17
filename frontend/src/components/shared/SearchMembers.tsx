@@ -54,10 +54,11 @@ const SearchMembers = () => {
   // );
 
   const { data: employees, isLoading, error } = useSearchEmployees(query.split(" ").join(","))
+
   // Load recent searches
   useEffect(() => {
     const stored: Employee[] = JSON.parse(
-      localStorage.getItem("recentSearches") || "[]"
+      sessionStorage.getItem("recentSearches") || "[]"
     );
 
     if (!searchQuery) {
@@ -77,7 +78,7 @@ const SearchMembers = () => {
   const removeItemsFromLocal = (idx: number) => {
     const updated = [...recentSearches];
     updated.splice(idx, 1);
-    localStorage.setItem("recentSearches", JSON.stringify(updated));
+    sessionStorage.setItem("recentSearches", JSON.stringify(updated));
     setRecentSearches(updated);
   };
 

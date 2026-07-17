@@ -59,10 +59,11 @@ const SearchMembersApp = () => {
 
   const navigate = useNavigate();
 
+
   // Load recent searches
   useEffect(() => {
     const stored: Employee[] = JSON.parse(
-      localStorage.getItem("recentSearches") || "[]"
+      sessionStorage.getItem("recentSearches") || "[]"
     );
 
     if (!searchQuery) {
@@ -82,7 +83,7 @@ const SearchMembersApp = () => {
   const removeItemsFromLocal = (idx: number) => {
     const updated = [...recentSearches];
     updated.splice(idx, 1);
-    localStorage.setItem("recentSearches", JSON.stringify(updated));
+    sessionStorage.setItem("recentSearches", JSON.stringify(updated));
     setRecentSearches(updated);
   };
 
