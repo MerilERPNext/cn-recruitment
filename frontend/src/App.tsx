@@ -80,6 +80,16 @@ const App: React.FC = () => {
     }
   }, [brandingData]);
 
+  // Clear recent searches on page reload (sessionStorage persists across reloads)
+  useEffect(() => {
+    if (typeof performance !== "undefined" && typeof performance.getEntriesByType === "function") {
+      const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+      if (navEntries.length > 0 && navEntries[0].type === "reload") {
+        sessionStorage.removeItem("recentSearches");
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (isLoading) return;
     if (!currentUser) {
