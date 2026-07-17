@@ -136,6 +136,15 @@ const LoanDetailsModal = ({
     // Use ref name, or fall back to URL param referenceName
     const refDocName = ref?.name || data?.reference_name || referenceName;
 
+    // Map the action label to a valid Loan Application `status` Select value
+    // ("Approve"/"Reject"/"Send Back" are action names, not statuses).
+    const STATUS_BY_ACTION: Record<string, string> = {
+      Approve: "Approved",
+      Reject: "Rejected",
+      "Send Back": "Open",
+    };
+    const mappedStatus = STATUS_BY_ACTION[selectedAction] ?? selectedAction;
+
     try {
       await commentMutation.mutateAsync({
         referenceDoctype,
@@ -156,7 +165,7 @@ const LoanDetailsModal = ({
             formLiveData.custom_defered_date,
           ),
           repayment_method: formLiveData.repayment_method,
-          status: selectedAction,
+          status: mappedStatus,
 
           ...(formLiveData.repayment_method ===
             "Repay Fixed Amount per Period" && {

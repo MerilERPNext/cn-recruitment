@@ -32,10 +32,12 @@ class CampusDrive(Document):
 				continue
 			invite = frappe.get_doc("Campus Invite", invite_row.campus_invite)
 
-			if invite.institute and invite.institute not in known_institutes:
-				self.append("participating_institutes", {"institute": invite.institute})
-				known_institutes.add(invite.institute)
-				added = True
+			# An invite can carry several institutes — bring them all in.
+			for institute_row in invite.institutes or []:
+				if institute_row.institute and institute_row.institute not in known_institutes:
+					self.append("participating_institutes", {"institute": institute_row.institute})
+					known_institutes.add(institute_row.institute)
+					added = True
 
 			for opening in invite.job_openings or []:
 				if opening.job_opening and opening.job_opening not in known_openings:
@@ -175,7 +177,7 @@ def _qr_png_bytes(data):
 
 @frappe.whitelist()
 def get_campus_invite_details(campus_invite):
-	"""Return the Institute and Job Openings of a Campus Invite so the client can
+	"""Return the Institutes and Job Openings of a Campus Invite so the client can
 	instantly fetch them into the Campus Drive's institute / opening tables."""
 	invite = frappe.get_doc("Campus Invite", campus_invite)
 	openings = []
@@ -187,6 +189,7 @@ def get_campus_invite_details(campus_invite):
 			"job_title": frappe.db.get_value("Job Opening", row.job_opening, "job_title"),
 		})
 	return {
-		"institute": invite.institute,
+		# An invite can carry several institutes.
+		"institutes": [row.institute for row in (invite.institutes or []) if row.institute],
 		"job_openings": openings,
 	}

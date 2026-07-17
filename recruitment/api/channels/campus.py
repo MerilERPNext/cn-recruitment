@@ -415,20 +415,43 @@ def get_applied_jobs(email):
 # ---------------------------------------------------------------------------
 
 def _get_submitted_invite(campus_invite):
-    """Return {name, campus_invite_name, institute, status} for a *live* Campus Invite,
-    or None. Openings are only exposed for an invite that has actually been sent
-    (submitted) and is not yet Completed."""
+    """Return {name, campus_invite_name, status} for a *live* Campus Invite, or None.
+
+    Openings are only exposed for an invite that has actually been sent (submitted)
+    and is not yet Completed. Institutes live in the `institutes` child table (an
+    invite can carry several) — read them with `_invite_institutes`.
+    """
     if not campus_invite:
         return None
     row = frappe.db.get_value(
         "Campus Invite",
         campus_invite,
-        ["name", "campus_invite_name", "institute", "status", "docstatus"],
+        ["name", "campus_invite_name", "status", "docstatus"],
         as_dict=True,
     )
     if not row or row.docstatus != 1 or row.status == "Completed":
         return None
     return row
+
+
+def _invite_institutes(campus_invite):
+    """Institutes invited on this Campus Invite."""
+    from recruitment.recruitment.doctype.campus_invite.campus_invite import get_invite_institutes
+
+    return get_invite_institutes(campus_invite)
+
+
+def _candidate_institute(email, campus_invite):
+    """The institute this candidate was registered under for the invite.
+
+    With several institutes per invite the candidate's own institute comes from the
+    Candidate Registration a TPO submitted them on, never from the invite itself.
+    """
+    from recruitment.recruitment.doctype.candidate_registration.candidate_registration import (
+        get_registered_institute,
+    )
+
+    return get_registered_institute(email, campus_invite)
 
 
 def _invite_opening_names(campus_invite):
@@ -450,10 +473,12 @@ def get_invite_openings(campus_invite, email=None):
     """Job Openings offered on a Campus Invite, for the frontend to show the candidate.
 
     The invite id comes straight from the URL the candidate arrived on (no token).
-    Returns ``{"campus_invite", "campus_invite_name", "institute", "openings": [...]}``.
-    Each opening includes ``job_opening`` (id to pass to the next calls), ``job_title``
-    (for display) plus designation/department/location/status, and ``applied``
-    (true/false when `email` is supplied)."""
+    Returns ``{"campus_invite", "campus_invite_name", "institutes", "institute",
+    "openings": [...]}``. ``institutes`` is every institute invited; ``institute`` is
+    this candidate's own (resolved from their Candidate Registration, and only when
+    `email` is supplied). Each opening includes ``job_opening`` (id to pass to the
+    next calls), ``job_title`` (for display) plus designation/department/location/
+    status, and ``applied`` (true/false when `email` is supplied)."""
     invite = _get_submitted_invite(campus_invite)
     if not invite:
         return _err("Invalid or unsent campus invite.", 404)
@@ -473,7 +498,8 @@ def get_invite_openings(campus_invite, email=None):
     return _ok(f"Fetched {len(cards)} opening(s).", {
         "campus_invite": invite.name,
         "campus_invite_name": invite.campus_invite_name,
-        "institute": invite.institute,
+        "institutes": _invite_institutes(invite.name),
+        "institute": _candidate_institute(check_email, invite.name) if check_email else None,
         "openings": cards,
     })
 
@@ -529,8 +555,11 @@ def submit_invite_application(campus_invite, job_opening, email, form_data=None)
         if source and not doc.get("source"):
             doc.source = source
         # Campus provenance so HR can filter these candidates by institute / drive.
-        if invite.institute and doc.meta.has_field("custom_institute"):
-            doc.custom_institute = invite.institute
+        # The invite may carry several institutes, so the candidate's own institute
+        # comes from the Candidate Registration they were registered on.
+        candidate_institute = _candidate_institute(candidate_email, invite.name)
+        if candidate_institute and doc.meta.has_field("custom_institute"):
+            doc.custom_institute = candidate_institute
         if doc.meta.has_field("custom_campus_invite"):
             doc.custom_campus_invite = invite.name
         doc.insert(ignore_permissions=True)
@@ -552,7 +581,7 @@ def submit_invite_application(campus_invite, job_opening, email, form_data=None)
             "name": doc.name,
             "job_opening": opening,
             "campus_invite": invite.name,
-            "institute": invite.institute,
+            "institute": candidate_institute,
             "status": doc.status,
         },
         http=201,

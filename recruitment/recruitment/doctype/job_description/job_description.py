@@ -235,6 +235,214 @@ def detokenize_pills(text):
 	return _PILL_RE.sub(lambda m: _stdhtml.unescape(m.group(1) or ""), text)
 
 
+# ---------------------------------------------------------------------------
+# JD render beautifier
+# ---------------------------------------------------------------------------
+# A rendered Job Description arrives either as PLAIN TEXT ("Label: value" lines,
+# "- item" bullets, bare section titles) or as already-rendered HTML (when the
+# template was authored in the contenteditable builder). Dropped straight into
+# an innerHTML box, either shape reads as one flat, cramped blob.
+#
+# `beautify_jd_html` turns that content into a styled document so every field
+# type reads well:
+#   - section titles             -> headings with a coloured accent bar
+#   - "Label: value" rows         -> aligned label / value pairs
+#   - "- item" lines              -> bullet lists
+#   - comma-joined multi-values   -> chips (Table / Table MultiSelect fields)
+#   - long "Label: prose" lines   -> a lead-in paragraph, not a cramped row
+#
+# HTML input is first flattened back to newline-delimited text (block tags
+# become newlines) so a single parser handles both shapes. Consumed by the desk
+# builder's live preview (`render_description`) and the React "Preview JD" modal
+# (`job_requisition._build_preview_payload`). Never raises — on any error it
+# falls back to `plain_text_to_html`.
+# ---------------------------------------------------------------------------
+
+# Colour palette — one indigo/violet system shared by every render surface.
+# Keys are referenced by the small HTML-builder helpers below.
+_JD_COLORS = {
+	"accent": "#4f46e5",       # indigo-600  — section titles, chips, lead labels
+	"accent2": "#7c3aed",      # violet-600  — gradient companion
+	"accent_dk": "#3730a3",    # indigo-800  — heading text
+	"accent_soft": "#eef2ff",  # indigo-50   — chip / soft backgrounds
+	"chip_bd": "#c7d2fe",      # indigo-200  — chip border
+	"label": "#64748b",        # slate-500   — field labels
+	"value": "#1e293b",        # slate-800   — field values
+	"muted": "#94a3b8",        # slate-400   — empty placeholders
+	"para": "#334155",         # slate-700   — paragraph text
+	"row_line": "#eef1f6",     # hairline between rows
+	"card_bd": "#e6e9f2",      # card border
+}
+
+_JD_BULLET_RE = _re.compile(r"^\s*[-*•]\s+(.*)$")
+_JD_LABEL_RE = _re.compile(r"^(.{1,60}?):\s*(.*)$", _re.DOTALL)
+_JD_SEP_RE = _re.compile(r"^[\-_=–—]{4,}$")  # a divider row of dashes/underscores
+
+
+def _jd_esc(s):
+	return frappe.utils.escape_html(str(s if s is not None else ""))
+
+
+def _jd_html_to_text(s):
+	"""Flatten already-rendered HTML back to newline-delimited text so the
+	structured parser can re-lay-it-out. A contenteditable builder stores each
+	logical line as a <div>/<p> (or separates them with <br>); we turn those
+	block boundaries into newlines and list items into '- ' bullets, then drop
+	the remaining tags. No-op when there are no tags."""
+	if "<" not in s:
+		return s
+	s = _re.sub(r"(?is)<\s*(script|style)\b[^>]*>.*?</\s*\1\s*>", "", s)
+	s = _re.sub(r"(?i)<\s*br\s*/?\s*>", "\n", s)
+	s = _re.sub(r"(?i)<\s*li\b[^>]*>", "\n- ", s)
+	s = _re.sub(r"(?i)<\s*(div|p|tr|h[1-6]|section|header)\b[^>]*>", "\n", s)
+	s = _re.sub(r"(?i)</\s*(div|p|li|tr|h[1-6]|ul|ol|table|section|header)\s*>", "\n", s)
+	s = _re.sub(r"<[^>]+>", "", s)
+	s = _stdhtml.unescape(s)
+	s = _re.sub(r"[ \t]+\n", "\n", s)
+	s = _re.sub(r"\n{3,}", "\n\n", s)
+	return s
+
+
+def _jd_chip(text):
+	c = _JD_COLORS
+	return (
+		'<span style="display:inline-block;padding:2px 11px;margin:2px 5px 2px 0;'
+		'border-radius:999px;background:{bg};border:1px solid {bd};color:{ac};'
+		'font-size:.82em;font-weight:600;line-height:1.55;">{t}</span>'
+	).format(bg=c["accent_soft"], bd=c["chip_bd"], ac=c["accent"], t=_jd_esc(text))
+
+
+def _jd_value_html(value):
+	"""Field value -> HTML. A comma-joined multi-value of short tokens (how
+	Table / Table MultiSelect fields render) becomes chips; a lone value stays
+	text; an empty value shows a muted placeholder."""
+	c = _JD_COLORS
+	value = (value or "").strip()
+	if not value:
+		return '<span style="color:{m};">&mdash;</span>'.format(m=c["muted"])
+	parts = [p.strip() for p in value.split(",") if p.strip()]
+	if len(parts) > 1 and all(len(p) <= 40 for p in parts):
+		return "".join(_jd_chip(p) for p in parts)
+	return _jd_esc(value)
+
+
+def beautify_jd_html(text):
+	"""Structured, colourful HTML for a rendered Job Description — section
+	headings, aligned label/value rows, chips for multi-values, bullet lists.
+	Handles plain-text renders AND already-HTML renders (flattened first). See
+	the module comment above for the full mapping. Never raises."""
+	if not text or not str(text).strip():
+		return ""
+	text = _jd_html_to_text(str(text))
+	c = _JD_COLORS
+
+	def heading(t):
+		return (
+			'<div style="display:flex;align-items:center;gap:9px;margin:22px 0 10px;">'
+			'<span style="flex:0 0 auto;width:4px;height:17px;border-radius:3px;'
+			'background:linear-gradient(180deg,{ac},{a2});"></span>'
+			'<span style="font-size:12px;font-weight:800;letter-spacing:.07em;'
+			'text-transform:uppercase;color:{dk};">{t}</span></div>'
+		).format(ac=c["accent"], a2=c["accent2"], dk=c["accent_dk"], t=_jd_esc(t))
+
+	def field_row(label, value):
+		return (
+			'<div style="display:flex;flex-wrap:wrap;gap:2px 14px;padding:7px 2px;'
+			'border-bottom:1px solid {ln};">'
+			'<div style="flex:0 0 185px;min-width:135px;color:{lb};font-weight:600;'
+			'font-size:.9em;">{l}</div>'
+			'<div style="flex:1 1 220px;color:{v};">{val}</div>'
+			"</div>"
+		).format(ln=c["row_line"], lb=c["label"], v=c["value"], l=_jd_esc(label), val=_jd_value_html(value))
+
+	def lead_paragraph(label, value):
+		return (
+			'<p style="margin:9px 0;color:{p};">'
+			'<strong style="color:{ac};">{l}:</strong> {val}</p>'
+		).format(p=c["para"], ac=c["accent"], l=_jd_esc(label), val=_jd_esc(value))
+
+	def paragraph(t):
+		return '<p style="margin:7px 0;color:{p};">{t}</p>'.format(p=c["para"], t=_jd_esc(t))
+
+	try:
+		lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+		n = len(lines)
+		out = []
+		bullets = []
+
+		def flush_bullets():
+			if bullets:
+				items = "".join(
+					'<div style="display:flex;gap:9px;align-items:flex-start;margin:5px 0;color:{p};">'
+					'<span style="flex:0 0 auto;margin-top:.5em;width:6px;height:6px;border-radius:50%;'
+					'background:{ac};"></span><span>{0}</span></div>'.format(_jd_esc(b), p=c["para"], ac=c["accent"])
+					for b in bullets
+				)
+				out.append('<div style="margin:6px 0 12px;padding-left:2px;">{0}</div>'.format(items))
+				bullets.clear()
+
+		def next_content(i):
+			j = i + 1
+			while j < n and not lines[j].strip():
+				j += 1
+			return lines[j] if j < n else ""
+
+		for i, raw in enumerate(lines):
+			stripped = raw.strip()
+			if not stripped:
+				flush_bullets()
+				continue
+			if _JD_SEP_RE.match(stripped):
+				flush_bullets()
+				continue
+
+			m = _JD_BULLET_RE.match(raw)
+			if m:
+				bullets.append(m.group(1).strip())
+				continue
+			flush_bullets()
+
+			cm = _JD_LABEL_RE.match(stripped)
+			if cm:
+				label, value = cm.group(1).strip(), cm.group(2).strip()
+				if value:
+					# A long value is prose ("Role: Managing the entire …"), not a
+					# field — render it as a readable lead-in paragraph.
+					out.append(lead_paragraph(label, value) if len(value) > 80 else field_row(label, value))
+				else:
+					# Empty value: a heading when a body (prose / bullets) follows,
+					# otherwise a field row awaiting a value.
+					nxt = next_content(i)
+					if _JD_BULLET_RE.match(nxt) or len(nxt.strip()) > 60:
+						out.append(heading(label))
+					else:
+						out.append(field_row(label, ""))
+				continue
+
+			# No colon: a short line is a section title; a long one is prose.
+			if len(stripped) <= 48 and len(stripped.split()) <= 7:
+				out.append(heading(stripped))
+			else:
+				out.append(paragraph(stripped))
+
+		flush_bullets()
+		body = "".join(out)
+		if not body.strip():
+			return ""
+		# Colourful document card: gradient top accent, soft border, roomy padding.
+		return (
+			'<div class="jd-render" style="font-family:-apple-system,BlinkMacSystemFont,'
+			"'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:{v};font-size:14px;"
+			'line-height:1.6;background:#fff;border:1px solid {bd};border-radius:12px;'
+			'overflow:hidden;box-shadow:0 1px 3px rgba(30,41,89,.06);">'
+			'<div style="height:4px;background:linear-gradient(90deg,{ac},{a2});"></div>'
+			'<div style="padding:6px 22px 20px;">{body}</div></div>'
+		).format(v=c["value"], bd=c["card_bd"], ac=c["accent"], a2=c["accent2"], body=body)
+	except Exception:
+		# A preview must never break — fall back to the basic converter.
+		return plain_text_to_html(text)
+
+
 # Placeholder format the JD builder writes into the description, e.g.
 # `#*Office Location*#`, `#*Required Skills*#`. The token inside is the field's
 # display label (or fieldname) the user dragged in.
@@ -319,7 +527,7 @@ def render_description(description=None, doc=None):
 		shim = frappe.new_doc("Job Description")
 	shim.description = description or ""
 	_render_preview(shim)
-	return shim.preview or ""
+	return beautify_jd_html(shim.preview or "")
 
 
 # Fieldtypes that carry no insertable value (layout / system).

@@ -12,6 +12,11 @@ from frappe import _
 
 TPO_ROLE = "TPO"
 
+# The only Institute TPO Contact role that gets a portal user + invite email. An
+# Institute may list several contacts, but exactly one is the Primary TPO (enforced
+# on Institute.validate) and that is the person the Campus Invite provisions.
+PRIMARY_TPO_ROLE = "Primary TPO"
+
 # TPO lives entirely under the Recruitment module (same as External Recruiter).
 # The TPO user has every other module blocked, so their Desk only surfaces
 # Recruitment workspaces; the TPO workspace itself is role-restricted to TPO_ROLE

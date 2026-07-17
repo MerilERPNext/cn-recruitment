@@ -15,6 +15,24 @@ import CardTable, { ColumnSortConfig } from "../shared/CardTable";
 import { Briefcase, CheckCircle, Edit, FileText, FolderOpen } from "lucide-react";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
+import AllocatedToTooltip from "../shared/AllocatedToTooltip";
+import type { JobRequisitionListResponse, RequisitionListColumn } from "../../types/recruitment";
+
+const isDateColumn = (key: string) =>
+  ["creation", "modified", "posting_date", "expected_by", "completed_on"].includes(key) ||
+  key.toLowerCase().includes("date");
+
+const getColumnWidth = (column: RequisitionListColumn, totalColumns: number) => {
+  if (totalColumns <= 6) return "minmax(140px, 1fr)";
+
+  const key = (column.value_key || column.fieldname).toLowerCase();
+  if (key === "name") return "140px";
+  if (key.includes("designation") || key.includes("department")) return "minmax(180px, 1fr)";
+  if (key.includes("company")) return "minmax(160px, 1fr)";
+  if (key === "status") return "150px";
+  if (isDateColumn(key)) return "130px";
+  return "140px";
+};
 
 const EditButton = ({ requisition, onClose }: { requisition: any; onClose: () => void }) => {
   const navigate = useNavigate();
@@ -56,6 +74,9 @@ const Requisition = () => {
       return null;
     }
   });
+  // `null` means the list response has not supplied its column configuration yet.
+  // This prevents the static columns flashing before the API columns are applied.
+  const [apiColumns, setApiColumns] = useState<RequisitionListColumn[] | null>(null);
   const setSummary = (next: SummaryShape) => {
     _setSummary(next);
     try {
@@ -89,6 +110,17 @@ const Requisition = () => {
     "130px",
     "130px",
   ];
+
+  const activeTitles = apiColumns === null
+    ? []
+    : apiColumns.length
+      ? apiColumns.map((column) => column.label)
+      : titles;
+  const activeColumnWidths = apiColumns === null
+    ? []
+    : apiColumns.length
+      ? apiColumns.map((column) => getColumnWidth(column, apiColumns.length))
+      : columnWidths;
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -144,7 +176,56 @@ const Requisition = () => {
 
     const statusColor = getStatusColor(status);
 
+    if (apiColumns === null) return null;
+
+    const renderApiColumnValue = (column: RequisitionListColumn) => {
+      const key = column.value_key || column.fieldname;
+      const value = item?.[`${key}_title`] ?? item?.[key];
+
+      if (key === "status") {
+        return (
+          <div className="flex justify-center items-center">
+            {String(value || "").toLowerCase() === "pending" ? (
+              <AllocatedToTooltip users={item?.approval_allocation} title="Pending With" position="left">
+                <Badge label={String(value || "--")} backgroundColor={getStatusColor(String(value || ""))} />
+              </AllocatedToTooltip>
+            ) : (
+              <Badge label={String(value || "--")} backgroundColor={getStatusColor(String(value || ""))} />
+            )}
+          </div>
+        );
+      }
+
+      const displayValue = isDateColumn(key) && value
+        ? formatToIndianDate(String(value)) || "--"
+        : Array.isArray(value)
+          ? value.filter(Boolean).join(", ") || "--"
+          : value ?? "--";
+
+      return (
+        <Typography variant="bodySmall" className="text-center text-gray-700 truncate block" title={String(displayValue)}>
+          {String(displayValue)}
+        </Typography>
+      );
+    };
+
     if (isDesktop) {
+      if (apiColumns.length) {
+        return (
+          <div
+            className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer items-center min-w-max bg-white"
+            style={{ gridTemplateColumns: activeColumnWidths.join(" ") }}
+            onClick={handleRowClick}
+          >
+            {apiColumns.map((column) => (
+              <div key={`${column.fieldname}-${column.value_key || ""}`} className="min-w-0">
+                {renderApiColumnValue(column)}
+              </div>
+            ))}
+          </div>
+        );
+      }
+
       return (
         <div
           className={`grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer items-center min-w-max bg-white ${showRequesterCard ? "relative z-[60]" : ""}`}
@@ -169,8 +250,18 @@ const Requisition = () => {
             </Typography>
           </div>
 
-          <div className="flex justify-center  items-center">
-            <Badge label={status} backgroundColor={statusColor} />
+          <div className="flex justify-center items-center">
+            {status?.toLowerCase() === "pending" ? (
+              <AllocatedToTooltip
+                users={item?.approval_allocation}
+                title="Pending With"
+                position="left"
+              >
+                <Badge label={status} backgroundColor={statusColor} />
+              </AllocatedToTooltip>
+            ) : (
+              <Badge label={status} backgroundColor={statusColor} />
+            )}
           </div>
 
           <div className="flex flex-col gap-0.5">
@@ -275,6 +366,41 @@ const Requisition = () => {
       );
     }
 
+    if (apiColumns.length) {
+      const statusColumn = apiColumns.find(
+        (column) => (column.value_key || column.fieldname) === "status",
+      );
+
+      return (
+        <Card radius="lg" className="border p-4 mb-3 hover:shadow-md transition-shadow cursor-pointer" onClick={handleRowClick}>
+          <div className="space-y-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <Typography variant="bodySmall" className="font-bold text-gray-900 mb-1 truncate">
+                  {String(item?.[apiColumns[0]?.value_key || apiColumns[0]?.fieldname] ?? "--")}
+                </Typography>
+              </div>
+              {statusColumn && renderApiColumnValue(statusColumn)}
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+              {apiColumns.slice(1).map((column) => {
+                const key = column.value_key || column.fieldname;
+                if (key === "status") return null;
+                return (
+                  <div key={`${column.fieldname}-${column.value_key || ""}`} className="min-w-0">
+                    <Typography variant="bodySmall" className="text-gray-500 text-xs mb-0.5">
+                      {column.label}
+                    </Typography>
+                    {renderApiColumnValue(column)}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </Card>
+      );
+    }
+
     return (
       <Card
         radius="lg"
@@ -292,9 +418,21 @@ const Requisition = () => {
                 {designation}
               </Typography>
             </div>
-            <span className={`px-2.5 py-1 rounded-xl text-xs font-medium ${statusColor} shrink-0`}>
-              {status}
-            </span>
+            {status?.toLowerCase() === "pending" ? (
+              <AllocatedToTooltip
+                users={item?.approval_allocation}
+                title="Pending With"
+                position="bottom"
+              >
+                <span className={`px-2.5 py-1 rounded-xl text-xs font-medium ${statusColor} shrink-0`}>
+                  {status}
+                </span>
+              </AllocatedToTooltip>
+            ) : (
+              <span className={`px-2.5 py-1 rounded-xl text-xs font-medium ${statusColor} shrink-0`}>
+                {status}
+              </span>
+            )}
           </div>
 
           {/* Department, Location & Requester */}
@@ -365,7 +503,7 @@ const Requisition = () => {
       }
     }
 
-    const response: any = await FrappeAPI.callMethod(
+    const response = await FrappeAPI.callMethod(
       "recruitment.api.job_requisition.get_job_requisition",
       {
         start,
@@ -374,7 +512,7 @@ const Requisition = () => {
         employee: currentEmployee?.name,
         order_by: params.orderBy || "modified desc",
       }
-    );
+    ) as JobRequisitionListResponse;
 
     const requisitions = response?.data?.requisitions || [];
     const totalCount = response?.data?.pagination?.total ?? requisitions.length;
@@ -385,6 +523,16 @@ const Requisition = () => {
 
     if (response?.data?.summary) {
       setSummary(response.data.summary);
+    }
+
+    if (Array.isArray(response?.data?.columns)) {
+      setApiColumns(
+        response.data.columns.filter(
+          (column: RequisitionListColumn) => column?.label && (column?.value_key || column?.fieldname),
+        ),
+      );
+    } else {
+      setApiColumns([]);
     }
 
     return {
@@ -465,7 +613,7 @@ const Requisition = () => {
       ({ item }: { item: any }) => (
         <RequisitionItem item={item} onView={setSelectedRequisition} />
       ),
-    []
+    [apiColumns]
   );
 
   const statCards = [
@@ -539,10 +687,18 @@ const Requisition = () => {
         })}
       </div>
       {isDesktop ? (
-        <CardTable
-          titles={titles}
-          columnWidths={columnWidths}
-          columnSortConfig={REQUISITION_SORT_CONFIG}
+          <CardTable
+          titles={activeTitles}
+          columnWidths={activeColumnWidths}
+          columnSortConfig={apiColumns?.length ? apiColumns.map((column) => {
+            const key = column.value_key || column.fieldname;
+            return {
+              sortable: true,
+              type: isDateColumn(key) ? "date" : "string",
+              field: key,
+              getValue: (item: any) => item?.[key] ?? "",
+            };
+          }) : apiColumns === null ? [] : REQUISITION_SORT_CONFIG}
         >
           <DataListView
             queryKey={["job-requisitions", currentEmployeeName || ""]}
@@ -605,10 +761,23 @@ const Requisition = () => {
                   <Typography variant="bodySmall" className="text-gray-500 text-xs mb-0.5">
                     Status
                   </Typography>
-                  <Badge
-                    label={selectedRequisition.status}
-                    backgroundColor={getStatusColor(selectedRequisition.status)}
-                  />
+                  {selectedRequisition?.status?.toLowerCase() === "pending" ? (
+                    <AllocatedToTooltip
+                      users={selectedRequisition?.approval_allocation}
+                      title="Pending With"
+                      position="bottom"
+                    >
+                      <Badge
+                        label={selectedRequisition?.status}
+                        backgroundColor={getStatusColor(selectedRequisition?.status)}
+                      />
+                    </AllocatedToTooltip>
+                  ) : (
+                    <Badge
+                      label={selectedRequisition?.status}
+                      backgroundColor={getStatusColor(selectedRequisition?.status)}
+                    />
+                  )}
                 </div>
                 <div>
                   <Typography variant="bodySmall" className="text-gray-500 text-xs mb-0.5">
