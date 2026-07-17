@@ -57,9 +57,15 @@ const SearchMembers = () => {
 
   // Load recent searches
   useEffect(() => {
-    const stored: Employee[] = JSON.parse(
-      sessionStorage.getItem("recentSearches") || "[]"
-    );
+    let stored: Employee[] = [];
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem("recentSearches") || "[]");
+      if (Array.isArray(parsed)) {
+        stored = parsed;
+      }
+    } catch (e) {
+      console.error("Failed to parse recentSearches from sessionStorage", e);
+    }
 
     if (!searchQuery) {
       setRecentSearches(stored);
