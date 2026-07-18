@@ -17,7 +17,7 @@ employee_id: string | null, company: string | null, selectedPeriod: string | nul
 
   
   export function useTaxSheetPayrollPriodsData(company: string | null) {
-    // Company scoping for the Payroll Period filter:
+    // Company scoping for the Payroll Period filter (Compensation module):
     //  - Switch-user (viewing another employee) -> the TARGET user's company.
     //  - Otherwise: Payroll Admin -> no company (all companies); everyone else
     //    -> their own company.
@@ -25,7 +25,8 @@ employee_id: string | null, company: string | null, selectedPeriod: string | nul
     const payrollAdmin = isPayrollAdminUser(currentUser ?? null);
 
     const { targetEmployeeId } = useTargetUser();
-    // Resolve the target (viewed) employee's company when switch-user is active.
+    // Resolve the switched-to (target) employee's company so the Payroll Period
+    // payload carries the TARGET user's company, not the logged-in user's.
     const { data: targetCompanyResolved } = useQuery({
       queryKey: ["target-employee-company", targetEmployeeId],
       queryFn: async () => {
@@ -34,15 +35,16 @@ employee_id: string | null, company: string | null, selectedPeriod: string | nul
           filters: [["name", "=", targetEmployeeId as string]],
           limit: 1,
         });
-        return ((res.data?.[0] as { company?: string } | undefined)?.company ?? null);
+        return (
+          (res.data?.[0] as { company?: string } | undefined)?.company ?? null
+        );
       },
       enabled: !!targetEmployeeId,
       staleTime: 5 * 60 * 1000,
     });
-    const targetCompany = targetEmployeeId ? (targetCompanyResolved ?? null) : null;
 
     const effectiveCompany = targetEmployeeId
-      ? targetCompany
+      ? targetCompanyResolved ?? null
       : payrollAdmin
         ? null
         : company;

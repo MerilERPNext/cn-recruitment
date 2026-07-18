@@ -98,12 +98,22 @@ export const getProofDateForITDeclaration = async (currentDate: string, employee
     {
         employee: employee,
         doctype: declarationDoctype,
-        payroll_period: payroll_period, 
+        payroll_period: payroll_period,
         posting_date: currentDate,
     }
   );
 
-
+  // The backend wraps its payload in an extra `message` key: it returns
+  // `{ message: { status, message, ... } }`, which Frappe wraps once more.
+  // callMethod strips one layer, leaving `{ message: { status, message, ... } }`,
+  // so `status`/`message` are one level too deep — the UI reads `response.status`
+  // and `response.message` (as a string) and gets `undefined` / an object,
+  // showing an empty paragraph. Unwrap the extra layer so callers get
+  // `{ status, message, ... }` directly.
+  const inner = (response as { message?: unknown })?.message;
+  if (inner && typeof inner === "object") {
+    return inner;
+  }
 
   return response;
 };
