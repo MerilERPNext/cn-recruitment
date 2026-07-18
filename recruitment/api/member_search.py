@@ -7,7 +7,16 @@ def search_members(filters: dict = {}, fields: list = ["name"], pageStart: int =
     # fields + filters via a non-permission-aware db.get_all). Require Employee read.
     frappe.has_permission("Employee", "read", throw=True)
     or_filters = []
-    for field in searchFields:
-        or_filters.append([field, "like", f"%{searchTerm}%"])
-    filters["or"] = or_filters
-    return frappe.db.get_all("Employee", filters=filters, fields=fields, limit_start=pageStart, limit_page_length=pageSize)
+    if searchTerm:
+        for field in searchFields:
+            or_filters.append([field, "like", f"%{searchTerm}%"])
+    # OR conditions must go through get_all's dedicated `or_filters` param. Injecting them as
+    # filters["or"] makes the query builder treat "or" as a fieldname and raise IndexError.
+    return frappe.get_list(
+        "Employee",
+        filters=filters,
+        or_filters=or_filters or None,
+        fields=fields,
+        limit_start=pageStart,
+        limit_page_length=pageSize,
+    )
