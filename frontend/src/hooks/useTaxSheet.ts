@@ -1,6 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getIncomeTaxComputationData, getTaxSheetData, getTaxSheetHTML, PayrollPeriodsService } from "../services/taxSheetService";
 import { useCurrentUser, isPayrollAdminUser } from "./useCurrentUser";
+import { useTargetUser } from "../context/ViewedUserContext";
+import FrappeAPI from "../utils/frappeAPI";
 
 export function useTaxSheetData(
 employee_id: string | null, company: string | null, selectedPeriod: string | null) {
@@ -15,19 +17,51 @@ employee_id: string | null, company: string | null, selectedPeriod: string | nul
 
   
   export function useTaxSheetPayrollPriodsData(company: string | null) {
-    // Role-based scoping (Compensation module): a Payroll Admin sees Payroll
-    // Periods for all companies (no company filter), while every other user is
-    // scoped to their own company. Based on the logged-in user's roles, so it
-    // stays consistent when viewing another employee via switch-user.
+    // Company scoping for the Payroll Period filter (Compensation module):
+    //  - Switch-user (viewing another employee) -> the TARGET user's company.
+    //  - Otherwise: Payroll Admin -> no company (all companies); everyone else
+    //    -> their own company.
     const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
     const payrollAdmin = isPayrollAdminUser(currentUser ?? null);
-    const effectiveCompany = payrollAdmin ? null : company;
+
+    const { targetEmployeeId } = useTargetUser();
+    // Resolve the switched-to (target) employee's company so the Payroll Period
+    // payload carries the TARGET user's company, not the logged-in user's.
+    const { data: targetCompanyResolved } = useQuery({
+      queryKey: ["target-employee-company", targetEmployeeId],
+      queryFn: async () => {
+        const res = await FrappeAPI.getDocumentList("Employee", {
+          fields: ["name", "company"],
+          filters: [["name", "=", targetEmployeeId as string]],
+          limit: 1,
+        });
+        return (
+          (res.data?.[0] as { company?: string } | undefined)?.company ?? null
+        );
+      },
+      enabled: !!targetEmployeeId,
+      staleTime: 5 * 60 * 1000,
+    });
+
+    const effectiveCompany = targetEmployeeId
+      ? targetCompanyResolved ?? null
+      : payrollAdmin
+        ? null
+        : company;
 
     return useQuery({
-      queryKey: ["tax-sheet-payroll-periods", effectiveCompany, payrollAdmin],
+      queryKey: [
+        "tax-sheet-payroll-periods",
+        effectiveCompany,
+        payrollAdmin,
+        targetEmployeeId,
+      ],
       queryFn: () => PayrollPeriodsService.getPayrollPeriods(effectiveCompany),
-      // Wait until the user's roles are known so the payload is always correct.
-      enabled: !isUserLoading,
+      // Wait until roles are known, and (when switching user) until the target's
+      // company has resolved, so the payload is always correct.
+      enabled:
+        !isUserLoading &&
+        (!targetEmployeeId || targetCompanyResolved !== undefined),
     });
   }
 

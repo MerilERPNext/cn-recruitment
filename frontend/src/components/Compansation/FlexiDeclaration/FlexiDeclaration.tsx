@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useGetYearFilterOptions } from "../../../hooks/useBenefit";
+import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import {
   useFlexiComponents,
   useUpdateFlexiComponents,
@@ -60,7 +60,14 @@ export default function FlexiDeclaration() {
   const { targetEmployeeId } = useTargetUser();
   // When an admin/HR is viewing another user, target their employee id.
   const effectiveEmployee = targetEmployeeId || currentEmployee?.name;
-  const { data: yearOptions, isLoading: isYearOptionsLoading } = useGetYearFilterOptions(currentEmployee?.company || "");
+  // Payroll Period dropdown — same Payroll Period resource API used across the
+  // Compensation module (company-scoped, and target-aware: when viewing another
+  // employee via switch-user it sends the TARGET user's company).
+  const { data: yearOptions, isLoading: isYearOptionsLoading } =
+    useTaxSheetPayrollPriodsData(currentEmployee?.company || null) as {
+      data?: { name: string; start_date?: string; end_date?: string }[];
+      isLoading: boolean;
+    };
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
