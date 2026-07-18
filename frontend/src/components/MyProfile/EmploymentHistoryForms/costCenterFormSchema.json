@@ -25,13 +25,12 @@
                             "placeholder": "Select Cost Center",
                             "dataSrc": "url",
                             "data": {
-                                "url": "/api/resource/Cost%20Center?fields=[%22*%22]&filters=[[%22company%22,%22=%22,%22{{ data.company_filter }}%22],[%22disabled%22,%22=%22,0]]"
+                                "url": "/api/resource/Cost%20Center?fields=[%22*%22]&filters=[[%22disabled%22,%22=%22,0]]"
                             },
                             "valueProperty": "name",
                             "template": "<span>{{item.cost_center_name}} ({{ item.name }})</span>",
                             "selectValues": "data",
-                            "lazyLoad": false,
-                            "searchField": "cost_center_name",
+                            "lazyLoad": true,
                             "searchEnabled": true
                         },
                         {

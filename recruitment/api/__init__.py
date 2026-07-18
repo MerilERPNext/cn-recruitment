@@ -10,6 +10,26 @@ from datetime import datetime
 # (identifier injection). Real Frappe column names always match this.
 _SAFE_FIELD_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
+#api/method/recruitment.api.get_user_roles_by_id
+@frappe.whitelist()
+def get_user_roles_by_id(employee_id=None):
+    """Return roles for the user linked to an employee ID and whether that user has any roles."""
+    employee_id = employee_id or None
+
+    if not employee_id:
+        return {"employee_id": None, "roles": [], "has_roles": False}
+
+    employee = frappe.db.get_value("Employee", employee_id, "user_id")
+    user = employee or None
+
+    if not user:
+        return {"employee_id": employee_id, "roles": [], "has_roles": False}
+
+    if not frappe.db.exists("User", user):
+        return {"employee_id": employee_id, "roles": [], "has_roles": False}
+
+    roles = frappe.get_roles(user) or []
+    return {"employee_id": employee_id, "roles": roles, "has_roles": bool(roles)}
 
 def _build_sql_where_clause(filters: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
     """Build a safe SQL WHERE clause from simple Frappe-style filters."""

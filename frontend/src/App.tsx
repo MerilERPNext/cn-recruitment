@@ -80,6 +80,16 @@ const App: React.FC = () => {
     }
   }, [brandingData]);
 
+  // Clear recent searches on page reload (sessionStorage persists across reloads)
+  useEffect(() => {
+    if (typeof performance !== "undefined" && typeof performance.getEntriesByType === "function") {
+      const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+      if (navEntries.length > 0 && navEntries[0].type === "reload") {
+        sessionStorage.removeItem("recentSearches");
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (isLoading) return;
     if (!currentUser) {
@@ -128,9 +138,14 @@ const App: React.FC = () => {
     const routePermissionKey = routeConfig?.permissionKey;
 
     if (routePermissionKey) {
-      const isPermitted = permittedPages.includes(routePermissionKey);
+      // A route may declare a single page name or several (aggregate pages like
+      // Awards-Live). Access is granted if ANY of the listed pages is enabled.
+      const keys = Array.isArray(routePermissionKey)
+        ? routePermissionKey
+        : [routePermissionKey];
+      const isPermitted = keys.some((key) => permittedPages.includes(key));
       if (!isPermitted) {
-        toast.error(`You do not have permission to access: ${routePermissionKey}`);
+        toast.error(`You do not have permission to access: ${keys.join(", ")}`);
         navigate("/webapp/");
       }
     }

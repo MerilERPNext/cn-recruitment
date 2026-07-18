@@ -184,7 +184,15 @@
  "links": [
   {
    "group": "Campus",
-   "link_doctype": "Campus Invite",
+   "is_child_table": 1,
+   "link_doctype": "Campus Invite Institute",
+   "link_fieldname": "institute",
+   "parent_doctype": "Campus Invite",
+   "table_fieldname": "institutes"
+  },
+  {
+   "group": "Campus",
+   "link_doctype": "Candidate Registration",
    "link_fieldname": "institute"
   }
  ],

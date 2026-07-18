@@ -2,6 +2,8 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from recruitment.recruitment.campus_helpers import validate_unique_job_openings
+
 # Round types that need an interview panel / GD grouping in the reference portal.
 PANEL_ROUND_TYPES = {"Group Discussion", "Technical", "HR"}
 GD_ROUND_TYPES = {"Group Discussion"}
@@ -12,6 +14,7 @@ class CampusDrive(Document):
 		self.drive_id = self.name
 		self._validate_drive_window()
 		self._sync_campus_invites()
+		validate_unique_job_openings(self, table_fieldname="linked_job_openings")
 		self._set_registration_defaults()
 		self._set_round_codes()
 
@@ -32,10 +35,12 @@ class CampusDrive(Document):
 				continue
 			invite = frappe.get_doc("Campus Invite", invite_row.campus_invite)
 
-			if invite.institute and invite.institute not in known_institutes:
-				self.append("participating_institutes", {"institute": invite.institute})
-				known_institutes.add(invite.institute)
-				added = True
+			# An invite can carry several institutes — bring them all in.
+			for institute_row in invite.institutes or []:
+				if institute_row.institute and institute_row.institute not in known_institutes:
+					self.append("participating_institutes", {"institute": institute_row.institute})
+					known_institutes.add(institute_row.institute)
+					added = True
 
 			for opening in invite.job_openings or []:
 				if opening.job_opening and opening.job_opening not in known_openings:
@@ -175,7 +180,7 @@ def _qr_png_bytes(data):
 
 @frappe.whitelist()
 def get_campus_invite_details(campus_invite):
-	"""Return the Institute and Job Openings of a Campus Invite so the client can
+	"""Return the Institutes and Job Openings of a Campus Invite so the client can
 	instantly fetch them into the Campus Drive's institute / opening tables."""
 	invite = frappe.get_doc("Campus Invite", campus_invite)
 	openings = []
@@ -187,6 +192,7 @@ def get_campus_invite_details(campus_invite):
 			"job_title": frappe.db.get_value("Job Opening", row.job_opening, "job_title"),
 		})
 	return {
-		"institute": invite.institute,
+		# An invite can carry several institutes.
+		"institutes": [row.institute for row in (invite.institutes or []) if row.institute],
 		"job_openings": openings,
 	}

@@ -7,8 +7,7 @@
  "field_order": [
   "help_section",
   "default",
-  "department",
-  "designation",
+  "user_assignment",
   "help_html",
   "onboarding_form_name",
   "helper_section",
@@ -57,23 +56,14 @@
    "fieldname": "default",
    "fieldtype": "Check",
    "label": "Default",
-   "description": "Used only as a fallback when no form matches the candidate's Department + Designation."
+   "description": "Used only as a fallback when no form's User Assignment matches the candidate."
   },
   {
-   "fieldname": "department",
-   "fieldtype": "Link",
-   "label": "Department",
-   "options": "Department",
-   "in_list_view": 1,
-   "description": "Match this form to candidates in this Department (combined with Designation)."
-  },
-  {
-   "fieldname": "designation",
-   "fieldtype": "Link",
-   "label": "Designation",
-   "options": "Designation",
-   "in_list_view": 1,
-   "description": "Match this form to candidates with this Designation (combined with Department)."
+   "fieldname": "user_assignment",
+   "fieldtype": "Table MultiSelect",
+   "label": "User Assignments",
+   "options": "Onboarding Portal Form Assignment",
+   "description": "Match this form to the candidates selected by any of these User Assignments. Each must have Target Type = Job Applicant."
   },
   {
    "fieldname": "onboarding_form_name",
