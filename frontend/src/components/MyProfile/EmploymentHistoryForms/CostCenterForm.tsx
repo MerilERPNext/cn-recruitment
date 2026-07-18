@@ -88,6 +88,7 @@ const wireCostCenterSearchInputs = (instance: any) => {
 interface AllocationRow {
   cost_center_id: string;
   percentage: number;
+  row_name?: string;
 }
 
 interface InitialCostCenterData {
@@ -131,6 +132,7 @@ const CostCenterForm = ({
 }: CostCenterFormProps) => {
   const [instance, setInstance] = useState<any>(null);
   const initialDataApplied = useRef(false);
+  const initialAllocationsRef = useRef<AllocationRow[]>(initialEditData?.allocations || []);
   const { isDesktop } = useScreenSize();
 
   const { data: currentEmployee } = useCurrentEmployeeDetails({
@@ -254,11 +256,12 @@ const CostCenterForm = ({
       await wrap(
         () => updateCostCenters({
           employee: currentEmployee?.employee,
-          allocations: allocations.map((a: any) => ({
+          allocations: allocations.map((a: any, idx: number) => ({
             cost_center: a.cost_center,
             percentage: Number(a.percentage),
             start_date: startDate,
             to_date: endDate,
+            record_name: initialAllocationsRef.current[idx]?.row_name,
           })),
           mode: isEdit ? "update" : "new",
         }),

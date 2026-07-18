@@ -2,6 +2,8 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from recruitment.recruitment.campus_helpers import validate_unique_job_openings
+
 # Round types that need an interview panel / GD grouping in the reference portal.
 PANEL_ROUND_TYPES = {"Group Discussion", "Technical", "HR"}
 GD_ROUND_TYPES = {"Group Discussion"}
@@ -12,6 +14,7 @@ class CampusDrive(Document):
 		self.drive_id = self.name
 		self._validate_drive_window()
 		self._sync_campus_invites()
+		validate_unique_job_openings(self, table_fieldname="linked_job_openings")
 		self._set_registration_defaults()
 		self._set_round_codes()
 

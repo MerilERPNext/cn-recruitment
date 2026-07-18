@@ -7,19 +7,29 @@
  "engine": "InnoDB",
  "field_order": [
   "institute",
+  "institute_name",
   "tentative_drive_date",
   "completion_status",
   "tpo_confirmed"
  ],
  "fields": [
   {
-   "columns": 3,
+   "columns": 2,
    "fieldname": "institute",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Institute",
    "options": "Institute",
    "reqd": 1
+  },
+  {
+   "columns": 3,
+   "fetch_from": "institute.institute_name",
+   "fieldname": "institute_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Institute Name",
+   "read_only": 1
   },
   {
    "columns": 2,

@@ -18,6 +18,7 @@ import {
 } from "../../hooks/useSalaryDetails";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useTaxSheetPayrollPriodsData } from "../../hooks/useTaxSheet";
+import { useTargetEmployeeCompany } from "../../hooks/useTargetEmployeeCompany";
 import { formatCurrency } from "../../utils/currency";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import DataListView from "../DataListView"; // ← replaced FrappeListView
@@ -31,6 +32,8 @@ import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import SalarySlipPDFModal from "./SalarySlipPDFModal";
 import ShowHideButton from "./ui/ShowHideButton";
+import toast from "react-hot-toast";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 // ---- Types ----
 type PayrollPeriod = {
@@ -108,13 +111,23 @@ const SalarySlipsList = () => {
   const { data: user } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
   const { data: currentUser } = useCurrentUser();
 
+  // When viewing another employee (switch user), the salary-slip payload must
+  // carry the TARGET user's company, not the logged-in user's.
+  const { targetCompany } = useTargetEmployeeCompany();
+  const effectiveCompany = targetEmployeeId ? targetCompany : user?.company;
+
   // Payroll admins (who can also release draft salary slips). The allowed roles
   // are configured in Payroll Settings and fetched via API. Plain employees
   // only ever see submitted slips.
   const { data: payrollAdminRoles = [] } = usePayrollAdminRoles(user?.employee);
+  // A payroll admin holds the "Payroll Admin" role OR any role configured in
+  // Payroll Settings. The role fallback ensures admins are detected even when
+  // the Payroll Settings list is empty (otherwise everyone is treated as a
+  // plain employee — drafts hidden and no Release button).
   const isPayrollAdmin =
-    currentUser?.roles?.some((r) => payrollAdminRoles.includes(r.role)) ??
-    false;
+    currentUser?.roles?.some((r) =>
+      ["Payroll Admin", ...payrollAdminRoles].includes(r.role),
+    ) ?? false;
 
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [filtersKey, setFiltersKey] = useState(0);
@@ -203,15 +216,21 @@ const SalarySlipsList = () => {
       setFiltersKey((prev) => prev + 1);
     },
     onError: (error: any) => {
-      alert(
-        error?.message || "Failed to release salary slip. Please try again.",
+      // Surface the real Frappe validation message (from `_server_messages`),
+      // e.g. "Please assign a Salary Structure for Employee Archana Kumari…"
+      // instead of the generic "Request failed with status code 417".
+      toast.error(
+        errorResponseFormater(
+          error,
+          "Failed to release salary slip. Please try again.",
+        ),
       );
     },
   });
 
   const handleReleaseSalarySlip = (e: React.MouseEvent, salary_slip_id: string) => {
     e.stopPropagation();
-    if (window.confirm("Release this salary slip?")) {
+    if (toast.success("Release this salary slip?")) {
       releaseSlip(salary_slip_id);
     }
   };
@@ -353,6 +372,7 @@ const SalarySlipsList = () => {
               "salary-slips",
               selectedPeriod,
               targetEmployeeId || user?.employee || "",
+              effectiveCompany || "",
               String(filtersKey),
             ]}
             customAPI={{
@@ -360,7 +380,7 @@ const SalarySlipsList = () => {
               params: {
                 doctype: "Salary Slip",
                 employee: targetEmployeeId || user?.employee,
-                company: user?.company,
+                company: effectiveCompany,
                 payroll_period: selectedPeriod,
               },
             }}

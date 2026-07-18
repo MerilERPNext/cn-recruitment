@@ -5,6 +5,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from recruitment.recruitment.campus_helpers import validate_unique_job_openings
 from recruitment.recruitment.tpo_access import PRIMARY_TPO_ROLE, provision_tpo_user
 
 
@@ -44,6 +45,7 @@ def tpo_contacts_for_institutes(institutes):
 class CampusInvite(Document):
 	def validate(self):
 		self._sync_tpo_contacts_from_institutes()
+		validate_unique_job_openings(self)
 
 	@property
 	def institute_names(self):

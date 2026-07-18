@@ -68,9 +68,15 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
   const { setTargetEmployee } = useTargetUser();
 
   function recentSearch(emp: Employee): void {
-    const searches: Employee[] = JSON.parse(
-      localStorage.getItem("recentSearches") || "[]",
-    );
+    let searches: Employee[] = [];
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem("recentSearches") || "[]");
+      if (Array.isArray(parsed)) {
+        searches = parsed;
+      }
+    } catch (e) {
+      console.error("Failed to parse recentSearches from sessionStorage", e);
+    }
 
     let filterData = searches.filter(
       (data) =>
@@ -80,7 +86,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
     filterData.unshift(emp);
     filterData = filterData.slice(0, 7);
 
-    localStorage.setItem("recentSearches", JSON.stringify(filterData));
+    sessionStorage.setItem("recentSearches", JSON.stringify(filterData));
     return;
   }
 

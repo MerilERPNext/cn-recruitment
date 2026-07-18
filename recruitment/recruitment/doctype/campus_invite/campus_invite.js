@@ -64,3 +64,26 @@ frappe.ui.form.on("Campus Invite", {
 		refresh_tpo_preview(frm);
 	},
 });
+
+frappe.ui.form.on("Campus Invite Job Opening", {
+	job_opening: function (frm, cdt, cdn) {
+		// Each Job Opening can appear once. Mirrors the server-side
+		// validate_unique_job_openings check; caught here for instant feedback.
+		const row = locals[cdt][cdn];
+		if (!row.job_opening) {
+			return;
+		}
+		const dupe = (frm.doc.job_openings || []).find(
+			(d) => d.name !== row.name && d.job_opening === row.job_opening
+		);
+		if (dupe) {
+			const value = row.job_opening;
+			frappe.model.set_value(cdt, cdn, "job_opening", null);
+			frappe.msgprint({
+				title: __("Duplicate Job Opening"),
+				message: __("Job Opening {0} is already added in this invite.", [value]),
+				indicator: "orange",
+			});
+		}
+	},
+});

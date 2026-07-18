@@ -59,11 +59,18 @@ const SearchMembersApp = () => {
 
   const navigate = useNavigate();
 
+
   // Load recent searches
   useEffect(() => {
-    const stored: Employee[] = JSON.parse(
-      localStorage.getItem("recentSearches") || "[]"
-    );
+    let stored: Employee[] = [];
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem("recentSearches") || "[]");
+      if (Array.isArray(parsed)) {
+        stored = parsed;
+      }
+    } catch (e) {
+      console.error("Failed to parse recentSearches from sessionStorage", e);
+    }
 
     if (!searchQuery) {
       setRecentSearches(stored);
@@ -82,7 +89,7 @@ const SearchMembersApp = () => {
   const removeItemsFromLocal = (idx: number) => {
     const updated = [...recentSearches];
     updated.splice(idx, 1);
-    localStorage.setItem("recentSearches", JSON.stringify(updated));
+    sessionStorage.setItem("recentSearches", JSON.stringify(updated));
     setRecentSearches(updated);
   };
 
