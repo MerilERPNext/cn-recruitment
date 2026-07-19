@@ -1,0 +1,54 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-13 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "clause_type",
+  "clause_template",
+  "clause_text"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "clause_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Clause Type",
+   "options": "ESOP\nJoining Bonus\nOther Commitment",
+   "reqd": 1
+  },
+  {
+   "columns": 3,
+   "description": "Pick a pre-approved template, or leave blank to type your own.",
+   "fieldname": "clause_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Template",
+   "options": "Job Offer Clause Template"
+  },
+  {
+   "columns": 5,
+   "description": "Final clause text that prints on the offer letter. Prefilled from the template; replace placeholders like [XXXX] with actual values.",
+   "fieldname": "clause_text",
+   "fieldtype": "Text",
+   "in_list_view": 1,
+   "label": "Clause Text",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-13 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Job Offer Clause",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
