@@ -683,7 +683,9 @@ function generateComponent(field: BackendField): any {
         },
         selectValues: "message.results",
         valueProperty: "id",
-        template: "<span>{{ item.label }}</span>",
+        template: field.fieldname === "designation"
+          ? "<span>{{ item.label }} <span style='color:#7f8c8d'>({{ item.id }})</span></span>"
+          : "<span>{{ item.label }}</span>",
         limit: 20,
         ...(dependency
           ? {

@@ -87,11 +87,28 @@ export default function FormEmployeeHoverLayer({
 
     const findEmployeeField = (target: HTMLElement | null) => {
       if (!target) return null;
+      // Only trigger when hovering directly on the template-rendered text
+      // (the <span> from the template), NOT on the empty padding area of
+      // .choices__item.  The template renders <span>label <span>(id)</span></span>,
+      // so we look for a <span> inside .choices__item within .choices__list--single.
+      const templateSpan = target.closest(
+        ".choices__list--single .choices__item > span"
+      ) as HTMLElement | null;
+      // Also accept when target itself is a <span> inside .choices__item
+      // (e.g. the inner id span).
+      const triggerEl =
+        templateSpan ||
+        (target.tagName === "SPAN" &&
+         target.closest(".choices__list--single .choices__item")
+          ? target
+          : null);
+      if (!triggerEl) return null;
       for (const key of EMPLOYEE_FIELD_KEYS) {
-        const el = target.closest(
+        const componentEl = target.closest(
           `.formio-component-${key}`
         ) as HTMLElement | null;
-        if (el && container.contains(el)) return { el, key };
+        if (componentEl && container.contains(componentEl))
+          return { el: triggerEl as HTMLElement, key };
       }
       return null;
     };
@@ -146,11 +163,22 @@ export default function FormEmployeeHoverLayer({
       scheduleHide();
     };
 
+    // Dismiss the popup immediately when the user clicks (opens the dropdown).
+    const onClick = () => {
+      overFieldRef.current = false;
+      overCardRef.current = false;
+      currentElRef.current = null;
+      clearTimeout(hideTimer.current);
+      setAnchor(null);
+    };
+
     container.addEventListener("mouseover", onOver);
     container.addEventListener("mouseout", onOut);
+    container.addEventListener("mousedown", onClick);
     return () => {
       container.removeEventListener("mouseover", onOver);
       container.removeEventListener("mouseout", onOut);
+      container.removeEventListener("mousedown", onClick);
       clearTimeout(hideTimer.current);
     };
   }, [containerRef, resolveEmployeeId, fetchEmployee, scheduleHide]);

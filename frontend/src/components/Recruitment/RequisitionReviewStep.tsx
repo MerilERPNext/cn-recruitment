@@ -652,7 +652,9 @@ function StaticReviewSections({
     },
     {
       label: "Designation",
-      value: formData.designation_title ?? formData.designation,
+      value: formData.designation_title
+        ? `${formData.designation_title} (${formData.designation})`
+        : formData.designation,
     },
     {
       label: "Functional Area",
