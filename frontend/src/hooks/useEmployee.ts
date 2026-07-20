@@ -587,13 +587,7 @@ export const useGetSalaryStructureAssignments = (employee_id: string) => {
     enabled: !!employee_id,
   });
 };
-export const useGetEmployeeAppreciations = () => {
-  return useQuery<{ badges: Award[] } | null>({
-    queryKey: ["all-emp-appreciations"],
-    queryFn: () => profileService.getEmployeeAppreciations(),
-    staleTime: 1000 * 60 * 5,
-  });
-};
+
 export const useGetEmployeeEarnedAppreciations = (employee: string) => {
   return useQuery<{ badges: Award[] } | null>({
     queryKey: ["all-emp-appreciations-badges", employee],
@@ -603,16 +597,6 @@ export const useGetEmployeeEarnedAppreciations = (employee: string) => {
   });
 };
 
-export const useAppreciateAnEmployeeMutation = () => {
-  return useMutation({
-    mutationKey: ["appreciateAnEmployee"],
-    mutationFn: (body: Record<string, unknown>) =>
-      profileService.appreciateAnEmployee(body),
-    onError: (error) => {
-      console.error("Error appreciating an employee:", error);
-    },
-  });
-};
 
 export const useShowAttendanaceAssignmentButton = (
   employee_id: string,

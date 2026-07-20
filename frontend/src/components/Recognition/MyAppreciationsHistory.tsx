@@ -78,6 +78,8 @@ const MyAppreciationsHistory: React.FC = () => {
     direction: activeTab,
     persons: selectedEmployees.join(",") || undefined,
     search: undefined as string | undefined,
+    // Only show approved appreciations in the history list.
+    status: "Approved",
     start: (page - 1) * pageSize,
     page_length: pageSize,
   };

@@ -1,14 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import FrappeAPI from "../utils/frappeAPI";
-import type {
-  RecognitionProgram,
-  LeaderboardEntry,
-  RecognitionMetrics,
-  DepartmentStatus,
-  ProgramWinner,
-  MyRecognitionActivity,
-} from "../types/recognition";
+import type { RecognitionProgram } from "../types/recognition";
 
 const API_BASE = "chatnext_work_connect.chatnext_work_connect.api.recognition";
 const BADGE_API_BASE = "chatnext_work_connect.chatnext_work_connect.api.badge";
@@ -217,33 +210,6 @@ export const useGetBadgeTypes = () => {
   });
 };
 
-// Get all recognition types
-export const useGetRecognitionTypes = (filters?: Record<string, any>) => {
-  return useQuery<{
-    success: boolean;
-    recognition_types: RecognitionType[];
-  }>({
-    queryKey: ["recognition", "types", filters],
-    queryFn: async () => {
-      let params: Record<string, any> | undefined = undefined;
-      if (filters && Object.keys(filters).length > 0) {
-        params = { filters: JSON.stringify(filters) };
-      }
-      
-      const response = await FrappeAPI.callMethod(
-        `${API_BASE}.get_recognition_types`,
-        params
-      );
-      return response as {
-        success: boolean;
-        recognition_types: RecognitionType[];
-      };
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-};
-
 // Get recognition programs (active and ongoing)
 export const useGetRecognitionPrograms = () => {
   return useQuery<{
@@ -258,111 +224,6 @@ export const useGetRecognitionPrograms = () => {
         success: boolean;
         active_programs: RecognitionProgram[];
         ongoing_programs: RecognitionProgram[];
-      };
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
-  });
-};
-
-// Get recognition leaderboard
-export const useGetRecognitionLeaderboard = (
-  period?: string,
-  type: "received" | "given" = "received"
-) => {
-  return useQuery<{
-    success: boolean;
-    leaderboard: LeaderboardEntry[];
-    period?: string;
-    type: string;
-  }>({
-    queryKey: ["recognition", "leaderboard", period, type],
-    queryFn: async () => {
-      const params: Record<string, any> = { type };
-      if (period) params.period = period;
-      
-      const response = await FrappeAPI.callMethod(
-        `${API_BASE}.get_recognition_leaderboard`,
-        params
-      );
-      return response as {
-        success: boolean;
-        leaderboard: LeaderboardEntry[];
-        period?: string;
-        type: string;
-      };
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
-  });
-};
-
-// Get recognition metrics
-export const useGetRecognitionMetrics = (period?: string, year?: number) => {
-  return useQuery<{
-    success: boolean;
-    metrics: RecognitionMetrics;
-  }>({
-    queryKey: ["recognition", "metrics", period, year],
-    queryFn: async () => {
-      const params: Record<string, any> = {};
-      if (period) params.period = period;
-      if (year) params.year = year;
-      
-      const response = await FrappeAPI.callMethod(
-        `${API_BASE}.get_recognition_metrics`,
-        params
-      );
-      return response as {
-        success: boolean;
-        metrics: RecognitionMetrics;
-      };
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-};
-
-// Get department nomination status
-export const useGetDepartmentNominationStatus = () => {
-  return useQuery<{
-    success: boolean;
-    overall_approval_percentage: number;
-    total_pending: number;
-    departments: DepartmentStatus[];
-  }>({
-    queryKey: ["recognition", "department-status"],
-    queryFn: async () => {
-      const response = await FrappeAPI.callMethod(
-        `${API_BASE}.get_department_nomination_status`
-      );
-      return response as {
-        success: boolean;
-        overall_approval_percentage: number;
-        total_pending: number;
-        departments: DepartmentStatus[];
-      };
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    gcTime: 5 * 60 * 1000, // 5 minutes
-  });
-};
-
-// Get last program winners
-export const useGetLastProgramWinners = (limit: number = 3) => {
-  return useQuery<{
-    success: boolean;
-    winners: ProgramWinner[];
-  }>({
-    queryKey: ["recognition", "winners", limit],
-    queryFn: async () => {
-      const response = await FrappeAPI.callMethod(
-        `${API_BASE}.get_last_program_winners`,
-        { limit }
-      );
-      return response as {
-        success: boolean;
-        winners: ProgramWinner[];
       };
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -431,49 +292,6 @@ export const useGetEmployeeRecognitionPoints = (employee?: string) => {
   });
 };
 
-// Appreciate an employee (mutation)
-export const useAppreciateEmployee = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: {
-      employee: string;
-      recognition_type: string;
-      reason?: string;
-      award_name?: string;
-    }) => {
-      const response = await FrappeAPI.callMethod(
-        `${API_BASE}.award_recognition`,
-        data
-      );
-      return response as {
-        success: boolean;
-        message: string;
-        recognition: string;
-      };
-    },
-    onSuccess: () => {
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: ["recognition"] });
-    },
-  });
-};
-
-// Get my recognition activity (nominations, votes, etc.)
-export const useGetMyRecognitionActivity = () => {
-  return useQuery<MyRecognitionActivity>({
-    queryKey: ["recognition", "my-activity"],
-    queryFn: async () => {
-      const response = await FrappeAPI.callMethod(
-        `${API_BASE}.get_my_recognition_activity`
-      );
-      return response as MyRecognitionActivity;
-    },
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 2 * 60 * 1000, // 2 minutes
-  });
-};
-
 // Create a nomination (mutation)
 export const useCreateNomination = () => {
   const queryClient = useQueryClient();
@@ -499,18 +317,6 @@ export const useCreateNomination = () => {
   });
 };
 
-// Get form session ID for chatnext window (nomination forms)
-export const useGetFormSessionId = () => {
-  return useMutation({
-    mutationFn: async (data: { form_widget_name: string; award_name: string }) => {
-      const response = await FrappeAPI.callMethod(
-        "chatnext_work_connect.chatnext_work_connect.api.recognition_form.get_form_session_id",
-        data
-      );
-      return response as { success: boolean; session_id: string };
-    },
-  });
-};
 
 // Submit a vote on a nomination (mutation)
 export const useSubmitVote = () => {
@@ -550,6 +356,8 @@ export type AppreciationHistoryParams = {
   search?: string;
   persons?: string;
   direction?: "received" | "given";
+  /** Restrict to a single Employee Appreciation status (e.g. "Approved"). */
+  status?: string;
   start?: number;
   page_length?: number;
 };
@@ -608,11 +416,12 @@ export const useEligiblePrograms = (
   programType?: ProgramType,
 ) => {
   return useQuery<EligibleProgramsResponse>({
-    queryKey: ["recognition", "eligible-programs", employee, programType],
+    queryKey: ["recognition", "eligible-programs", employee, programType, "Approved"],
     queryFn: async () => {
       const response = await FrappeAPI.callMethod(
         "chatnext_work_connect.chatnext_work_connect.api.recognition_eligibility.get_eligible_programs",
-        // Only approved programs are eligible (Active Programs / profile Appreciate).
+        // Only surface Approved Recognition Programs (backend applies the
+        // `status` filter when provided).
         { employee, program_type: programType, status: "Approved" },
       );
       return response as EligibleProgramsResponse;

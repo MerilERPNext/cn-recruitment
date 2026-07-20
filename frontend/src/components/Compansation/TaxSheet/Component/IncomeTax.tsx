@@ -27,13 +27,8 @@ export default function IncomeComputationSheetContainer({ selectedPeriod }: { se
 
   return (
     <div className="mb-2">
-      <div className="py-2 rounded">
-        <div className="flex items-center justify-between w-full mb-3">
-          <span className="text-sm bg-success/20 text-success px-2 py-1 rounded w-fit font-semibold">
-            {taxsheetData?.current_tax_regime ?? "Regime not available"}
-          </span>
-        </div>
-      </div>
+      {/* The current-tax-regime badge now renders in the page header (only on
+          the Income Tax Computation tab); see TaxSheet.tsx. */}
       <div>
         <IncomeTaxComputationlist data={taxsheetData} />
       </div>
