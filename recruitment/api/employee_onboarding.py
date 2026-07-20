@@ -1,4 +1,5 @@
 import frappe
+import json
 import re
 from recruitment.api.candidate_portal import (
     _get_active_pre_release,
@@ -540,3 +541,628 @@ def get_employee_onboarding_list(
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Employee Onboarding List API Error")
         return _error_response("Unable to fetch Employee Onboarding list right now.", 500)
+
+
+# ---------------------------------------------------------------------------
+# HR-facing onboarding detail page
+# ---------------------------------------------------------------------------
+#
+# Backs the "Onboarding In Progress → <candidate>" screen: profile header,
+# Manager / Key People sidebar, and the three tabs (Onboarding Documents,
+# Workflow Tasks, Verification Reports). One call per page load.
+#
+# PERFORMANCE
+# -----------
+# Everything is assembled from a FIXED number of queries regardless of how many
+# people or tasks are involved — nothing is queried per row:
+#   * the onboarding is loaded field-by-field (see `_load_onboarding`) rather
+#     than via get_doc, which would pull all 11 child tables when 4 are needed;
+#   * every person across manager/SPOC/recruiter/buddies/teammates/notify is
+#     resolved together through `_people_directory` (4 batched queries total);
+#   * tasks are one query; header link labels are at most 4 indexed lookups on
+#     links that are actually set.
+# Both list-shaped inputs are bounded (`_MAX_TASKS`, `_MAX_PEOPLE`) so a
+# pathological record can't turn a page load into an unbounded payload.
+#
+# SECURITY
+# --------
+# Permission is checked at the DocType level BEFORE the record is looked up, so
+# an unauthorised caller gets 403 without learning whether a docname exists
+# (no enumeration oracle), then at the record level once loaded.
+#
+# `frappe.get_all` DELIBERATELY bypasses permission checks (see its docstring),
+# and is used for the User/Employee/Branch/Task lookups below. That is an
+# intentional, scoped privilege elevation: a recruiter who can read this
+# onboarding must be able to see who its SPOC/manager/buddies are and what tasks
+# it carries, even without blanket read access to the Employee or Task doctypes.
+# It is kept safe by *what* is selected — only the display columns enumerated in
+# `_PERSON_*_FIELDS` / `_TASK_FIELDS`, never `select *` — so widening the payload
+# is a deliberate edit here rather than an accident. Do not add salary, personal
+# contact, or identity-document columns to these lists.
+#
+# Reaching this code at all requires an authenticated session: `@frappe.whitelist()`
+# without `allow_guest=True` rejects Guest.
+
+# Hard bounds on the two list-shaped parts of the payload. Onboarding tasks and
+# key people are normally a handful; these exist so a corrupt or malicious record
+# degrades into a truncated response instead of an unbounded query and payload.
+_MAX_TASKS = 200
+_MAX_PEOPLE = 100
+
+# Link fields on the header that need a human-readable label alongside the ID.
+# {EO fieldname: (target doctype, title field on that doctype)}. A None title
+# field means the record's name IS the label, so no lookup is issued at all.
+_HEADER_LINK_TITLES = {
+    "custom_designation": ("Designation", "custom_designation_title"),
+    "custom_department": ("Department", "department_name"),
+    "custom_group_company": ("Company", "company_name"),
+    "custom_current_office_location": ("Branch", None),
+}
+
+# Scalar Employee Onboarding columns the page needs. Loading these explicitly —
+# instead of frappe.get_doc — avoids fetching the 7 child tables (education,
+# employment history, joining-form family/references, key contacts) that this
+# endpoint never reads.
+_ONBOARDING_FIELDS = (
+    "name",
+    "creation",
+    "modified",
+    "boarding_status",
+    "boarding_begins_on",
+    "job_applicant",
+    "employee",
+    "employee_name",
+    "project",
+    "custom_designation",
+    "custom_department",
+    "custom_group_company",
+    "custom_primary_contact_number",
+    "custom_email",
+    "custom_date_of_joining",
+    "custom_current_office_location",
+    "custom_onboarding_portal_form",
+    "custom_manager",
+    "custom_onboarding_spoc",
+    "custom_onboarding_recruiter",
+)
+
+# The only child tables this endpoint reads. {fieldname: (child doctype, columns)}
+_ONBOARDING_CHILD_TABLES = {
+    "activities": ("Employee Boarding Activity", ["user"]),
+    "custom_onboarding_buddy": ("Onboarding Buddy User", ["user"]),
+    "custom_joining_buddy": ("Onboarding Buddy User", ["user"]),
+    "custom_candidate_portal_fields": (
+        "Employee Onboarding Portal Field",
+        ["fieldname", "label", "fieldtype", "hidden", "approval_status"],
+    ),
+}
+
+# Display columns for people. Deliberately minimal — see the SECURITY note above.
+_PERSON_USER_FIELDS = ["name", "full_name", "email", "user_image"]
+_PERSON_EMPLOYEE_FIELDS = [
+    "name", "user_id", "employee_name", "image", "designation", "department", "branch",
+]
+
+# Task columns pulled for the Workflow Tasks tab. Filtered against Task's meta
+# before querying so a missing custom field degrades to an absent key rather
+# than a SQL error. `_assign` is a standard framework column on every table but
+# is absent from meta, hence it is appended separately.
+_TASK_FIELDS = (
+    "name",
+    "subject",
+    "status",
+    "priority",
+    "exp_start_date",
+    "exp_end_date",
+    "completed_on",
+    "completed_by",
+    "progress",
+    "custom_doj",
+    "custom_days_to_join",
+)
+
+
+def _load_onboarding(name):
+    """Load only the parts of an Employee Onboarding this page renders.
+
+    Returns a `frappe._dict` carrying the scalar fields plus the 4 child tables
+    in `_ONBOARDING_CHILD_TABLES`, or None when the record does not exist.
+
+    Why not `frappe.get_doc`: Employee Onboarding has 11 child tables (education,
+    external work history, joining-form education/employment/family/references,
+    key contacts, ...) and get_doc issues a query for every one of them. This page
+    reads 4, so the targeted load drops 7 queries per request.
+
+    The result is shaped to satisfy `_get_onboarding_portal_rows`, which needs
+    `.meta.get_field(...)` and `.get(...)` — `frappe._dict` provides attribute
+    access, so a `meta` key stands in for the real Document's `.meta`.
+    """
+    meta = frappe.get_meta(DOCTYPENAME)
+    fields = [f for f in _ONBOARDING_FIELDS if f == "name" or meta.get_field(f)]
+
+    row = frappe.db.get_value(DOCTYPENAME, name, fields, as_dict=True)
+    if not row:
+        return None
+
+    doc = frappe._dict(row)
+    doc.meta = meta
+    doc.doctype = DOCTYPENAME
+
+    for fieldname, (child_doctype, columns) in _ONBOARDING_CHILD_TABLES.items():
+        if not meta.get_field(fieldname):
+            doc[fieldname] = []
+            continue
+        doc[fieldname] = frappe.get_all(
+            child_doctype,
+            filters={"parent": name, "parenttype": DOCTYPENAME, "parentfield": fieldname},
+            fields=columns,
+            order_by="idx asc",
+            limit_page_length=0,
+        )
+    return doc
+
+
+def _days_since(value):
+    """Whole days between `value` (a datetime/date, typically `creation`) and now.
+    Returns None when there is no date, and never goes negative."""
+    if not value:
+        return None
+    try:
+        delta = frappe.utils.now_datetime() - frappe.utils.get_datetime(value)
+    except Exception:
+        return None
+    return max(delta.days, 0)
+
+
+def _initials(full_name):
+    """Avatar initials — first letter of the first and last name parts ("Gopal
+    Kumar" -> "GK"). Falls back to the first character, or "?" for a blank name.
+    Punctuation-only parts (e.g. the trailing "." in "Yashwant .") are ignored."""
+    parts = [p for p in (full_name or "").split() if p and p[0].isalnum()]
+    if not parts:
+        return "?"
+    if len(parts) == 1:
+        return parts[0][0].upper()
+    return (parts[0][0] + parts[-1][0]).upper()
+
+
+def _person_subtitle(department_label, office_location, city, state, location_type):
+    """The one-line descriptor under a person's name, e.g.
+
+        Human Resources | Corporate - KLJ Noida One - Noida - UP, Noida, Uttar Pradesh , ( Corporate - Remote )
+
+    Every segment is optional — a person with no employee record, no branch or
+    no location type just yields a shorter string (or "" when nothing is known),
+    so the UI never has to render stray separators.
+    """
+    place = ", ".join(p for p in (office_location, city, state) if p)
+    head = " | ".join(p for p in (department_label, place) if p)
+    if location_type:
+        return f"{head} , ( {location_type} )" if head else f"( {location_type} )"
+    return head
+
+
+def _people_directory(user_ids):
+    """Resolve every person the page shows — with their Employee context — in a
+    FIXED four queries, no matter how many people are involved.
+
+    Each person needs name/avatar (User) plus the descriptor line: department,
+    office location, city, state and location type. Those live across Employee ->
+    Department / Branch -> Location Type, so rather than walking links per person
+    (which would be ~5 queries EACH), every level is fetched in one batched pass
+    and joined in memory:
+
+        1. User      — all requested ids
+        2. Employee  — all of those users' employee records (user_id in ...)
+        3. Branch    — every branch those employees sit in
+           + Department — every department those employees sit in
+        4. Location Type — every location type those branches carry
+
+    Returns {user_id: <person dict>}; ids with no User row are simply absent.
+    """
+    # Only ever resolve strings, and never more than _MAX_PEOPLE of them — the
+    # ids reaching here include task assignees, which are DB-controlled.
+    ids = sorted({u for u in user_ids if u and isinstance(u, str)})[:_MAX_PEOPLE]
+    if not ids:
+        return {}
+
+    users = frappe.get_all(
+        "User",
+        filters={"name": ["in", ids]},
+        fields=_PERSON_USER_FIELDS,
+        limit_page_length=0,
+    )
+    if not users:
+        return {}
+
+    # Employee carries the org context. A user may have no employee record (an
+    # external recruiter, say) — such a person still renders, just without a
+    # descriptor line.
+    #
+    # NOTE: `Employee.user_id` carries no DB index, so this filter scans
+    # tabEmployee. Bounded by _MAX_PEOPLE and run once per request, but it is the
+    # dominant cost of this endpoint on a large Employee table — see the index
+    # recommendation in the module notes.
+    employees = frappe.get_all(
+        "Employee",
+        filters={"user_id": ["in", [u.name for u in users]]},
+        fields=_PERSON_EMPLOYEE_FIELDS,
+        limit_page_length=0,
+    )
+    emp_by_user = {e.user_id: e for e in employees}
+
+    dept_ids = {e.department for e in employees if e.department}
+    branch_ids = {e.branch for e in employees if e.branch}
+
+    dept_labels = (
+        {
+            r.name: r.department_name
+            for r in frappe.get_all(
+                "Department",
+                filters={"name": ["in", sorted(dept_ids)]},
+                fields=["name", "department_name"],
+                limit_page_length=0,
+            )
+        }
+        if dept_ids
+        else {}
+    )
+
+    branches = (
+        frappe.get_all(
+            "Branch",
+            filters={"name": ["in", sorted(branch_ids)]},
+            fields=["name", "branch", "custom_office_city", "custom_state", "custom_location_type"],
+            limit_page_length=0,
+        )
+        if branch_ids
+        else []
+    )
+    branch_by_id = {b.name: b for b in branches}
+
+    loctype_ids = {b.custom_location_type for b in branches if b.custom_location_type}
+    loctype_labels = (
+        {
+            r.name: r.location_type
+            for r in frappe.get_all(
+                "Location Type",
+                filters={"name": ["in", sorted(loctype_ids)]},
+                fields=["name", "location_type"],
+                limit_page_length=0,
+            )
+        }
+        if loctype_ids
+        else {}
+    )
+
+    directory = {}
+    for u in users:
+        emp = emp_by_user.get(u.name)
+        branch = branch_by_id.get(emp.branch) if emp and emp.branch else None
+
+        department = emp.department if emp else None
+        department_label = dept_labels.get(department) if department else None
+        # Department names often carry a trailing company abbr / whitespace.
+        if department_label:
+            department_label = department_label.strip()
+
+        office_location = branch.branch if branch else None
+        city = branch.custom_office_city if branch else None
+        state = branch.custom_state if branch else None
+        location_type = (
+            loctype_labels.get(branch.custom_location_type) if branch and branch.custom_location_type else None
+        )
+
+        full_name = (emp.employee_name if emp and emp.employee_name else None) or u.full_name or u.name
+        directory[u.name] = {
+            "user": u.name,
+            "employee": emp.name if emp else None,
+            "full_name": full_name,
+            "initials": _initials(full_name),
+            "email": u.email,
+            # Employee photo wins over the User avatar — HR keeps the former current.
+            "image": (emp.image if emp and emp.image else None) or u.user_image,
+            "designation": emp.designation if emp else None,
+            "department": department,
+            "department_label": department_label,
+            "office_location": office_location,
+            "city": city,
+            "state": state,
+            "location_type": location_type,
+            "subtitle": _person_subtitle(department_label, office_location, city, state, location_type),
+        }
+    return directory
+
+
+def _person(directory, user_id):
+    """One person entry, or None when unset/unresolvable — so the UI can render
+    its "not assigned yet" placeholder off a null rather than an empty object.
+
+    A user id with no User record still returns a usable (if bare) entry rather
+    than vanishing, so a stale assignment is visible on the page instead of
+    silently disappearing.
+    """
+    if not user_id:
+        return None
+    if user_id in directory:
+        return directory[user_id]
+    return {
+        "user": user_id,
+        "employee": None,
+        "full_name": user_id,
+        "initials": _initials(user_id),
+        "email": None,
+        "image": None,
+        "designation": None,
+        "department": None,
+        "department_label": None,
+        "office_location": None,
+        "city": None,
+        "state": None,
+        "location_type": None,
+        "subtitle": "",
+    }
+
+
+def _multiselect_users(doc, fieldname):
+    """User ids from a Table MultiSelect of Onboarding Buddy User rows, in order
+    and de-duplicated."""
+    out = []
+    for row in doc.get(fieldname) or []:
+        user_id = row.get("user") if hasattr(row, "get") else getattr(row, "user", None)
+        if user_id and user_id not in out:
+            out.append(user_id)
+    return out
+
+
+def _assigned_users(assign_json):
+    """Parse Frappe's `_assign` column (a JSON list of user ids) defensively."""
+    if not assign_json:
+        return []
+    try:
+        parsed = json.loads(assign_json)
+    except (TypeError, ValueError):
+        return []
+    return [u for u in parsed if u] if isinstance(parsed, list) else []
+
+
+def _onboarding_documents(doc):
+    """Rows for the Onboarding Documents tab.
+
+    One row per portal form resolved for this candidate (see
+    `_get_onboarding_portal_rows` for the pre-release → per-record → linked →
+    default precedence). `field_count` is the number of visible portal fields —
+    the "(9)" the UI shows beside the form name.
+
+    `status` is the document-level `boarding_status`, so every row reflects the
+    onboarding's overall state rather than a per-form state; there is no
+    per-form status stored today. `time_since_trigger_days` counts from the
+    onboarding's creation.
+    """
+    portal_rows, form_source = _get_onboarding_portal_rows(doc)
+    visible = [r for r in portal_rows if not (r.get("hidden") if hasattr(r, "get") else getattr(r, "hidden", 0))]
+    if not visible:
+        return []
+
+    form_name = doc.get("custom_onboarding_portal_form")
+    label = None
+    if form_name:
+        label = frappe.db.get_value("Onboarding Portal Forms", form_name, "onboarding_form_name")
+
+    status = doc.get("boarding_status") or "Pending"
+    return [
+        {
+            "form": form_name,
+            "form_name": label or form_name or "Onboarding Form",
+            "form_source": form_source,
+            "field_count": len(visible),
+            "status": status,
+            "triggered_on": str(doc.get("creation") or "") or None,
+            "time_since_trigger_days": _days_since(doc.get("creation")),
+            # Only a completed onboarding has a meaningful completion stamp;
+            # `modified` is the closest thing to "when it finished".
+            "completion_date": str(doc.get("modified") or "") if status == "Completed" else None,
+        }
+    ]
+
+
+def _workflow_tasks(doc):
+    """(rows, assignee_ids) for the Workflow Tasks tab.
+
+    Tasks hang off the onboarding's Project (see `create_onboarding_tasks` in
+    customizations/employee_onboarding/overide_class.py), which is the same join
+    the daily `refresh_onboarding_task_days_to_join` scheduler uses. Returns an
+    empty list when tasks have not been generated yet.
+    """
+    project = doc.get("project")
+    if not project:
+        return [], []
+
+    meta = frappe.get_meta("Task")
+    fields = [f for f in _TASK_FIELDS if meta.get_field(f) or f == "name"]
+    # `tabTask.project` is indexed, so this stays cheap as the task table grows.
+    rows = frappe.get_all(
+        "Task",
+        filters={"project": project},
+        fields=fields + ["_assign"],
+        order_by="exp_start_date asc, creation asc",
+        limit_page_length=_MAX_TASKS,
+    )
+
+    assignees = []
+    tasks = []
+    for row in rows:
+        users = _assigned_users(row.pop("_assign", None))
+        assignees.extend(users)
+        row["assigned_to"] = users
+        tasks.append(row)
+    return tasks, assignees
+
+
+@frappe.whitelist()
+def get_employee_onboarding_detail(name):
+    """Everything the onboarding detail page renders, in one response.
+
+    Args
+    ----
+    name : str (required)  Employee Onboarding docname.
+
+    Returns
+    -------
+    {"success": true, "message": "...", "data": {
+        "name", "boarding_status", "job_applicant", "employee",
+        "header": {employee_name, employee_id, designation, designation_label,
+                   department, department_label, company, company_label,
+                   phone, email, date_of_joining, current_office_location,
+                   current_office_location_label, boarding_begins_on},
+        "manager": <person|null>,
+        "key_people": {onboarding_spoc, recruiter, buddies[], teammates[],
+                       notify_users[]},
+        "onboarding_documents": [...],
+        "workflow_tasks": [...],
+        "verification_reports": []
+    }}
+
+    Notes for the frontend
+    ----------------------
+    - Every person carries `{user, employee, full_name, initials, email, image,
+      designation, department, department_label, office_location, city, state,
+      location_type, subtitle}`. `subtitle` is the ready-to-render descriptor
+      line ("Human Resources | PP - Noida, Noida, Uttar Pradesh , ( Corporate -
+      Remote )"); the individual parts are supplied too if you'd rather compose
+      it yourself. `initials` drives the avatar when `image` is null. Any
+      segment the person lacks is simply omitted from `subtitle`, so it never
+      contains stray separators — it is `""` when nothing is known.
+    - Single slots (manager / onboarding_spoc / recruiter) are **null** when
+      unassigned, which is the cue to show the "not assigned yet" placeholder.
+      List slots (buddies / teammates / notify_users) are always arrays,
+      possibly empty.
+    - `*_label` keys carry the human-readable name; the bare key carries the link
+      ID. Render the label, filter/navigate by the ID.
+    - `notify_users` is DERIVED — the distinct users assigned to this
+      onboarding's tasks (activity rows plus each Task's assignments). There is
+      no explicit notify list stored on the onboarding.
+    - `verification_reports` is ALWAYS `[]` today. The key is present so the tab
+      can be built against a stable contract, but no verification data is
+      captured yet — the `Onboarding Document Verification` doctype exists but
+      nothing populates it. Do not treat an empty array as "all verified".
+    - `onboarding_documents[].status` is the document-level `boarding_status`
+      (Pending / In Process / Submitted / Completed), so all rows share it.
+    """
+    try:
+        # `name` must be a plain string. Frappe treats a dict as a *filter set*
+        # in several lookup helpers, so accepting one would let a caller query by
+        # arbitrary criteria instead of by docname.
+        if not name or not isinstance(name, str):
+            return _error_response("`name` is required and must be a string.", 400)
+
+        # Permission BEFORE lookup: an unauthorised caller must not be able to
+        # tell an existing docname from a missing one, so the doctype-level check
+        # runs first and no query touches the record until it passes.
+        frappe.has_permission(DOCTYPENAME, "read", throw=True)
+
+        # Record-level access (user permissions, shares, if_owner) via get_list,
+        # which runs the standard permission layer in SQL.
+        #
+        # NOT `has_permission(doc=name)`: given a docname string that helper does
+        # `frappe.get_doc(...)` internally (frappe/permissions.py), reloading all
+        # 11 child tables purely to answer a yes/no question. This probe is one
+        # indexed query and doubles as the existence check.
+        #
+        # A record that is missing and one the caller may not see BOTH return 404
+        # — deliberately indistinguishable, so this endpoint is not an oracle for
+        # which onboardings exist.
+        permitted = frappe.get_list(
+            DOCTYPENAME,
+            filters={"name": name},
+            fields=["name"],
+            limit_page_length=1,
+            ignore_permissions=False,
+        )
+        if not permitted:
+            # Deliberately does not echo `name` back — no reflecting caller input
+            # into the response body.
+            return _error_response("Employee Onboarding record not found.", 404)
+
+        doc = _load_onboarding(name)
+        if not doc:
+            return _error_response("Employee Onboarding record not found.", 404)
+
+        # --- header link labels: only look up links that are actually set -----
+        labels = {}
+        for fieldname, (target_dt, title_field) in _HEADER_LINK_TITLES.items():
+            value = doc.get(fieldname)
+            if not value:
+                continue
+            labels[fieldname] = (
+                frappe.db.get_value(target_dt, value, title_field) or value
+                if title_field
+                else value
+            )
+
+        # --- people ----------------------------------------------------------
+        manager = doc.get("custom_manager")
+        spoc = doc.get("custom_onboarding_spoc")
+        recruiter = doc.get("custom_onboarding_recruiter")
+        buddies = _multiselect_users(doc, "custom_onboarding_buddy")
+        teammates = _multiselect_users(doc, "custom_joining_buddy")
+
+        tasks, task_assignees = _workflow_tasks(doc)
+
+        # "Notify Users" has no stored list — it is whoever the onboarding's work
+        # is actually assigned to: the users named on the activity rows plus the
+        # users assigned to the generated Tasks.
+        notify = []
+        for source in ([row.get("user") for row in (doc.get("activities") or [])], task_assignees):
+            for user_id in source:
+                if user_id and user_id not in notify:
+                    notify.append(user_id)
+
+        directory = _people_directory(
+            [manager, spoc, recruiter] + buddies + teammates + notify
+        )
+
+        data = {
+            "name": doc.name,
+            "boarding_status": doc.get("boarding_status"),
+            "job_applicant": doc.get("job_applicant"),
+            "employee": doc.get("employee"),
+            "header": {
+                "employee_name": doc.get("employee_name"),
+                "employee_id": doc.get("employee"),
+                "designation": doc.get("custom_designation"),
+                "designation_label": labels.get("custom_designation"),
+                "department": doc.get("custom_department"),
+                "department_label": labels.get("custom_department"),
+                "company": doc.get("custom_group_company"),
+                "company_label": labels.get("custom_group_company"),
+                "phone": doc.get("custom_primary_contact_number"),
+                "email": doc.get("custom_email"),
+                "date_of_joining": str(doc.get("custom_date_of_joining") or "") or None,
+                "boarding_begins_on": str(doc.get("boarding_begins_on") or "") or None,
+                "current_office_location": doc.get("custom_current_office_location"),
+                "current_office_location_label": labels.get("custom_current_office_location"),
+            },
+            "manager": _person(directory, manager),
+            "key_people": {
+                "onboarding_spoc": _person(directory, spoc),
+                "recruiter": _person(directory, recruiter),
+                "buddies": [_person(directory, u) for u in buddies],
+                "teammates": [_person(directory, u) for u in teammates],
+                "notify_users": [_person(directory, u) for u in notify],
+            },
+            "onboarding_documents": _onboarding_documents(doc),
+            "workflow_tasks": tasks,
+            # No verification data is captured yet — see the docstring.
+            "verification_reports": [],
+        }
+
+        return _success_response("Employee onboarding detail fetched successfully.", data)
+
+    except frappe.PermissionError:
+        return _error_response("You are not permitted to access this Employee Onboarding record.", 403)
+    except frappe.ValidationError as e:
+        return _error_response(str(e), 400)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Employee Onboarding Detail API Error")
+        return _error_response("Unable to fetch Employee Onboarding detail right now.", 500)
