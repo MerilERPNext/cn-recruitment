@@ -16,6 +16,19 @@ def after_migrate():
     ensure_performance_indexes()
     ensure_job_offer_salary_period()
     ensure_tpo_access()
+    ensure_offer_compensation()
+
+
+def ensure_offer_compensation():
+    """Set up the dynamic Offer Compensation + Clauses feature: custom fields on
+    Employee Grade / Job Offer, standard Salary Components, settings defaults,
+    grade rules, clause templates and the sample Location Allowance. Idempotent."""
+    try:
+        from recruitment.recruitment.offer_compensation import setup_offer_compensation
+
+        setup_offer_compensation()
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_offer_compensation: skipped")
 
 
 def ensure_tpo_access():

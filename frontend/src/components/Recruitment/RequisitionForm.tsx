@@ -5,6 +5,7 @@ import {
   requisitionSteps,
   requisitionFormSchemas,
   FormSchemaKeys,
+  jobDetailsPreviewFields,
 } from "./requisitionFormSchemas";
 import {
   applyDynamicConfig,
@@ -519,7 +520,7 @@ function applyPositionCounts(newData: any, changedKey: string) {
       repP = total;
       newP = 0;
     } else {
-      repP = Math.max(total - newP, 0);
+      newP = Math.max(total - repP, 0);
     }
   } else if (changedKey === "number_of_new_positions") {
     if (newP > total) {
@@ -776,6 +777,7 @@ const RequisitionForm = () => {
   // Live Form.io instance (via onFormReady) — used to set datagrid cell values
   // in place (fast) instead of re-feeding the whole submission (slow).
   const formInstanceRef = useRef<any>(null);
+  const prefilledJdKeyRef = useRef("");
   const resolveEmployeeId = useCallback(
     (fieldKey: string, rowIndex: number | null): string | undefined => {
       const data: any = formDataRef.current;
@@ -1265,6 +1267,7 @@ const RequisitionForm = () => {
       // A "default"/"match" JD still carries html even when matched === false —
       // only treat it as missing when source is "none" or there's no html.
       const noJd = jd?.source === "none" || !html;
+      const prefill = jd?.prefill || {};
 
       setJobDetailsPreview((prev) => ({
         ...prev,
@@ -1279,27 +1282,45 @@ const RequisitionForm = () => {
           : html,
       }));
 
-      // Persist the previewed JD into the form so the final submit/update sends
-      // the same html in `description` + `custom_job_description_template`.
-      // Do NOT overwrite `custom_skills` the user already filled — only seed it
-      // from the preview when the user hasn't entered any skills yet, so opening
-      // the Preview never resets the skills field.
-      if (!noJd) {
+      // Persist the previewed JD and prefill into the form so the final submit/update sends it
+      if (!noJd || Object.keys(prefill).length > 0) {
         setFormData((prev: any) => {
+          const updates: any = {};
+          
           const userHasSkills =
             prev.custom_skills !== undefined &&
             prev.custom_skills !== null &&
             prev.custom_skills !== "" &&
             !(Array.isArray(prev.custom_skills) && prev.custom_skills.length === 0);
-          return {
-            ...prev,
-            description: html,
-            job_description_template: html,
-            ...(skills && !userHasSkills ? { custom_skills: skills } : {}),
-          };
+
+          if (!noJd) {
+            updates.description = html;
+            updates.job_description_template = html;
+          }
+          if (skills && !userHasSkills) {
+            updates.custom_skills = skills;
+          }
+
+          // Build a map of backend keys to frontend keys so prefill correctly
+          // targets the form fields (e.g., custom_experience_range_from -> experience_from)
+          const reverseMap: Record<string, string> = {};
+          jobDetailsPreviewFields.forEach(f => {
+            reverseMap[f.backendKey] = f.key;
+          });
+
+          // Apply prefill only for fields the user hasn't explicitly filled
+          Object.entries(prefill).forEach(([k, v]) => {
+            const frontendKey = reverseMap[k] || k;
+            if (prev[frontendKey] === undefined || prev[frontendKey] === null || prev[frontendKey] === "") {
+               updates[frontendKey] = v;
+            }
+          });
+
+          if (Object.keys(updates).length > 0) {
+            return { ...prev, ...updates };
+          }
+          return prev;
         });
-        // Seeded skills/description into the form → push so the form.io fields
-        // (e.g. the Required Skills select) show the previewed values.
         pushFormSync();
       }
     } catch (err) {
@@ -1364,10 +1385,20 @@ const RequisitionForm = () => {
     | "number_of_new_positions"
     | "number_of_replacement_positions";
 
-  // While typing, just hold the raw text so the field can be emptied/edited
-  // freely without being coerced to a number on every keystroke.
+  // While typing, keep the raw text in a draft so the user can empty/edit the
+  // field freely without it jumping to '0' on every keystroke, but also apply
+  // the parsed value to the main form state immediately so dependent UI updates instantly.
   const handlePositionCountChange = (changedKey: CountKey, rawValue: string) => {
     setCountDrafts((prev) => ({ ...prev, [changedKey]: rawValue }));
+    
+    setFormData((prev: any) =>
+      applyPositionCounts({ ...prev, [changedKey]: rawValue }, changedKey)
+    );
+    pushFormSync();
+    
+    if (validationErrors.length > 0) {
+      setValidationErrors([]);
+    }
   };
 
   // On blur, normalize the typed value into formData and rebuild the positions
@@ -1782,6 +1813,91 @@ const RequisitionForm = () => {
     return payload;
   };
 
+  // Auto-fetch JD and prefill when landing on Job Details tab
+  useEffect(() => {
+    const activeKey = steps[currentStep]?.key;
+    if (activeKey !== "jobDetails") return;
+
+    const currentData = formDataRef.current as any;
+    const designationId = currentData.designation;
+    const departmentId = currentData.department;
+    if (!designationId || !departmentId) return;
+
+    const currentKey = `${designationId}-${departmentId}`;
+    if (prefilledJdKeyRef.current === currentKey) return;
+    
+    // Mark as fetched immediately to prevent duplicate concurrent requests
+    prefilledJdKeyRef.current = currentKey;
+
+    const fetchAndPrefill = async () => {
+      const designationTitle = currentData.designation_title || designationId;
+      const departmentTitle = currentData.department_title || departmentId;
+      const functional_area = currentData.functional_area_title || currentData.functional_area;
+      
+      const payload = buildPayload(currentData);
+      const requestBody = { designation: designationTitle, department: departmentTitle, functional_area, data: payload };
+      
+      try {
+        const res: any = await FrappeAPI.callMethod(
+          "recruitment.api.job_requisition.preview_job_description",
+          requestBody
+        );
+        const jd = res?.data ?? res ?? {};
+        const html = jd?.description_html || jd?.description || "";
+        const skills = Array.isArray(jd?.skills) ? jd.skills : undefined;
+        const prefill = jd?.prefill || {};
+        const noJd = jd?.source === "none" || !html;
+        
+        if (!noJd || Object.keys(prefill).length > 0) {
+          setFormData((prev: any) => {
+            const updates: any = {};
+            
+            const userHasSkills =
+              prev.custom_skills !== undefined &&
+              prev.custom_skills !== null &&
+              prev.custom_skills !== "" &&
+              !(Array.isArray(prev.custom_skills) && prev.custom_skills.length === 0);
+            
+            if (!noJd) {
+              updates.description = html;
+              updates.job_description_template = html;
+            }
+            if (skills && !userHasSkills) {
+              updates.custom_skills = skills;
+            }
+            
+            // Build a map of backend keys to frontend keys so prefill correctly
+            // targets the form fields (e.g., custom_experience_range_from -> experience_from)
+            const reverseMap: Record<string, string> = {};
+            jobDetailsPreviewFields.forEach(f => {
+              reverseMap[f.backendKey] = f.key;
+            });
+
+            // Apply prefill only for fields the user hasn't explicitly filled
+            Object.entries(prefill).forEach(([k, v]) => {
+              const frontendKey = reverseMap[k] || k;
+              if (prev[frontendKey] === undefined || prev[frontendKey] === null || prev[frontendKey] === "") {
+                 updates[frontendKey] = v;
+              }
+            });
+            
+            if (Object.keys(updates).length > 0) {
+               return { ...prev, ...updates };
+            }
+            return prev;
+          });
+          pushFormSync();
+        }
+      } catch(e) {
+        console.error("Failed to auto-fetch JD and prefill", e);
+        // Clear ref on failure so it can be retried if needed
+        prefilledJdKeyRef.current = "";
+      }
+    };
+    
+    fetchAndPrefill();
+  }, [currentStep, steps, pushFormSync]);
+
 
 
   const handleSubmit = async (submission: any) => {
@@ -2070,41 +2186,43 @@ const RequisitionForm = () => {
                     (Max Allowed Positions per Requisition is 100)
                   </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      New
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={positionCountValue("number_of_new_positions")}
-                      onChange={(e) =>
-                        handlePositionCountChange("number_of_new_positions", e.target.value)
-                      }
-                      onBlur={() => commitPositionCount("number_of_new_positions")}
-                      className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                    />
+                {Number((formData as any).number_of_positions) > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        New
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={positionCountValue("number_of_new_positions")}
+                        onChange={(e) =>
+                          handlePositionCountChange("number_of_new_positions", e.target.value)
+                        }
+                        onBlur={() => commitPositionCount("number_of_new_positions")}
+                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Replacement
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={positionCountValue("number_of_replacement_positions")}
+                        onChange={(e) =>
+                          handlePositionCountChange(
+                            "number_of_replacement_positions",
+                            e.target.value
+                          )
+                        }
+                        onBlur={() => commitPositionCount("number_of_replacement_positions")}
+                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Replacement
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={positionCountValue("number_of_replacement_positions")}
-                      onChange={(e) =>
-                        handlePositionCountChange(
-                          "number_of_replacement_positions",
-                          e.target.value
-                        )
-                      }
-                      onBlur={() => commitPositionCount("number_of_replacement_positions")}
-                      className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                    />
-                  </div>
-                </div>
+                )}
               </div>
             )}
 

@@ -8,7 +8,11 @@ import Button from "../../shared/atoms/Button";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
-import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
+import { useTargetUser } from "../../../context/ViewedUserContext";
+import {
+  useTaxSheetPayrollPriodsData,
+  useIncomeTaxComputationData,
+} from "../../../hooks/useTaxSheet";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CustomDropdown from "../../shared/CustomDropdown";
 
@@ -53,6 +57,22 @@ export default function IncomeTaxSheet() {
       label: p.name,
     })) || [];
 
+  // Current tax regime badge — shown in the header only on the Income Tax
+  // Computation tab. Fetched here with the SAME args the income-computation
+  // content uses, so it shares the react-query cache (no extra request).
+  const { targetEmployeeId } = useTargetUser();
+  const effectiveEmployee = targetEmployeeId || user?.employee;
+  const { data: incomeTaxData } = useIncomeTaxComputationData(
+    effectiveEmployee || null,
+    user?.company || null,
+    selectedPeriod || null,
+  ) as { data: { current_tax_regime?: string } | undefined };
+  const regimeBadge = (
+    <span className="text-sm bg-success/20 text-success px-2 py-1 rounded w-fit font-semibold whitespace-nowrap">
+      {incomeTaxData?.current_tax_regime ?? "Regime not available"}
+    </span>
+  );
+
   const canPreviewTDS = isActionEnabled(
     userUiPermission,
     "preview_tds",
@@ -90,6 +110,7 @@ export default function IncomeTaxSheet() {
                   Income Tax Computation
                 </Button>
               </div>
+              {activeTab === "income-computation" && regimeBadge}
             </div>
             <div className="flex items-center gap-3.5">
               {activeTab === "taxsheet" && canPreviewTDS && (
@@ -145,6 +166,9 @@ export default function IncomeTaxSheet() {
                 <TDSSlipHandler disabled={false} selectedPeriod={selectedPeriod} />
               )}
             </div>
+            {activeTab === "income-computation" && (
+              <div className="flex">{regimeBadge}</div>
+            )}
           </div>
         )}
       </div>

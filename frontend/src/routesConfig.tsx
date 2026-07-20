@@ -586,21 +586,9 @@ const ConfigureJobBoards = lazyWithRetry(
   () => import("./components/Recruitment/ConfigureJobBoards"),
   "ConfigureJobBoards",
 );
-const RecognitionPage = lazyWithRetry(
-  () => import("./components/Recognition/RecognitionPage"),
-  "RecognitionPage",
-);
 const RecognitionAdminDashboard = lazyWithRetry(
   () => import("./components/Recognition/Vibe/RecognitionAdminDashboard"),
   "RecognitionAdminDashboard",
-);
-const HallOfFamePage = lazyWithRetry(
-  () => import("./components/Recognition/HallOfFamePage"),
-  "HallOfFamePage",
-);
-const LeaderboardPage = lazyWithRetry(
-  () => import("./components/Recognition/LeaderboardPage"),
-  "LeaderboardPage",
 );
 const MyAppreciationsHistory = lazyWithRetry(
   () => import("./components/Recognition/MyAppreciationsHistory"),
@@ -1696,22 +1684,6 @@ export const routesConfig: AppRoute[] = [
     element: <ScheduledImportsPage />,
     permissionKey: "Scheduled Imports",
   },
-  {
-    path: "/webapp/recognition",
-    element: <RecognitionPage />,
-    permissionKey: "Recognition",
-  },
-  {
-    path: "/webapp/recognition/hall-of-fame",
-    element: <HallOfFamePage />,
-    permissionKey: "Hall Of Fame",
-  },
-  {
-    path: "/webapp/recognition/leaderboard",
-    element: <LeaderboardPage />,
-    permissionKey: "Leader Board",
-  },
-
   {
     path: "/webapp/recognition/vibe",
     element: <VibeApp />,

@@ -1421,7 +1421,7 @@
    "columns": 0,
    "creation": "2026-05-29 11:07:06.052684",
    "default": null,
-   "depends_on": null,
+   "depends_on": "eval:doc.custom_compensation_method!='Auto by Grade'",
    "description": null,
    "docstatus": 0,
    "dt": "Job Offer",
@@ -1440,7 +1440,7 @@
    "in_list_view": 0,
    "in_preview": 0,
    "in_standard_filter": 0,
-   "insert_after": "custom_offer_ctc",
+   "insert_after": "custom_ctc",
    "is_system_generated": 0,
    "is_virtual": 0,
    "label": null,
@@ -1632,7 +1632,7 @@
    "in_list_view": 0,
    "in_preview": 0,
    "in_standard_filter": 0,
-   "insert_after": "custom_base_salary",
+   "insert_after": "custom_total_fixed_pay",
    "is_system_generated": 0,
    "is_virtual": 0,
    "label": "Variable Incentive",
@@ -1928,7 +1928,7 @@
    "property": "field_order",
    "property_type": "Data",
    "row_name": null,
-   "value": "[\"job_applicant\", \"applicant_name\", \"applicant_email\", \"custom_shift\", \"custom_job_offer_id\", \"custom_employee_onboarding_completed\", \"custom_is_employee_onboarding_\", \"column_break_3\", \"status\", \"offer_date\", \"custom_jo_expiry_date\", \"designation\", \"company\", \"custom_expected_doj\", \"section_break_4\", \"job_offer_term_template\", \"offer_terms\", \"section_break_14\", \"select_terms\", \"terms\", \"printing_details\", \"letter_head\", \"column_break_16\", \"select_print_heading\", \"custom_offer_ctc\", \"custom_section_break_nwscs\", \"custom_employee_salary_structure\", \"custom_income_tax_slab\", \"custom_column_break_48wvf\", \"custom_base_salary\", \"custom_variable_incentive\", \"custom_section_break_vvxbn\", \"custom_earnings\", \"custom_column_break_vzzu7\", \"custom_deduction\", \"custom_salary_expectation\", \"custom_currency\", \"custom_current_salary\", \"custom_column_break_chqnu\", \"custom_minimum\", \"custom_maximum\", \"amended_from\"]"
+   "value": "[\"job_applicant\", \"applicant_name\", \"applicant_email\", \"custom_shift\", \"custom_job_offer_id\", \"custom_employee_onboarding_completed\", \"custom_is_employee_onboarding_\", \"column_break_3\", \"status\", \"offer_date\", \"custom_jo_expiry_date\", \"designation\", \"company\", \"custom_expected_doj\", \"section_break_4\", \"job_offer_term_template\", \"offer_terms\", \"section_break_14\", \"select_terms\", \"terms\", \"printing_details\", \"letter_head\", \"column_break_16\", \"select_print_heading\", \"custom_offer_ctc\", \"custom_comp_method_section\", \"custom_compensation_method\", \"custom_comp_input_section\", \"custom_compensation_level\", \"custom_total_fixed_pay\", \"custom_variable_incentive\", \"custom_comp_col_1\", \"custom_location\", \"custom_location_allowance\", \"custom_comp_col_2\", \"custom_ctc\", \"custom_section_break_nwscs\", \"custom_employee_salary_structure\", \"custom_income_tax_slab\", \"custom_column_break_48wvf\", \"custom_base_salary\", \"custom_section_break_vvxbn\", \"custom_earnings\", \"custom_column_break_vzzu7\", \"custom_deduction\", \"custom_salary_expectation\", \"custom_currency\", \"custom_current_salary\", \"custom_column_break_chqnu\", \"custom_minimum\", \"custom_maximum\", \"custom_clauses_section\", \"custom_offer_clauses\", \"custom_commitment_note\", \"amended_from\"]"
   }
  ],
  "sync_on_migrate": 1

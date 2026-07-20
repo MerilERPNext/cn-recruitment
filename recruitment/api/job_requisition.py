@@ -2407,7 +2407,13 @@ def preview_job_description(designation=None, department=None, data=None, functi
             "name": "JD-2026-001",
             "title": "Senior Engineer JD",
             "description_html": "<p>...</p>",
-            "skills": ["Python", "Django"]
+            "skills": ["Python", "Django"],
+            "prefill": {
+              "custom_experience_range_from": "3",
+              "custom_experience_range_to": "5",
+              "custom_functional_area": ["Engineering"],
+              "custom_skills": ["Python", "Django"]
+            }
           }
         }
 
@@ -2453,6 +2459,14 @@ def preview_job_description(designation=None, department=None, data=None, functi
     - `description_html` is Text Editor HTML; render via
       `dangerouslySetInnerHTML`. Sanitize if you do not trust authors.
     - `skills` is a flat list of Skill IDs — drop-in for chips/tags.
+    - `prefill` holds the matched JD's own field values, already keyed by
+      JOB REQUISITION fieldnames (see JD_TO_REQUISITION_PREFILL), so the form
+      can apply them directly — e.g. the JD's
+      min/max_preferred_work_experience_years arrive as
+      custom_experience_range_from / custom_experience_range_to.
+      Only fields the JD actually fills are present; a missing key means
+      "leave the current form value alone". Present (possibly empty) on every
+      source, including "none".
     """
     try:
         if not designation or not department:
@@ -2518,6 +2532,7 @@ def preview_job_description(designation=None, department=None, data=None, functi
                 "title": None,
                 "description_html": "",
                 "skills": [],
+                "prefill": {},
             },
             http=200,
         )
@@ -2687,7 +2702,94 @@ def _build_preview_payload(jd_name, source, filled_data=None):
         "title": doc.get("job_description_title") or doc.name,
         "description_html": description_html,
         "skills": skills,
+        "prefill": _jd_prefill_values(doc),
     }
+
+
+# ---------------------------------------------------------------------------
+# JD → Job Requisition prefill
+# ---------------------------------------------------------------------------
+
+# Maps a Job Description fieldname to the Job Requisition fieldname it should
+# populate on the React requisition form once designation + department resolve
+# a JD. Keyed by JD fieldname → (requisition fieldname, coercion).
+#
+# `coercion` normalises the JD value into the shape the requisition field
+# expects:
+#   "num"    → Float rendered for a Data field ("3.0" → "3", 2.5 → "2.5").
+#   "rows:X" → child rows flattened to the plain values under child key X.
+#   None     → passed through untouched.
+#
+# To surface another JD field on the requisition, add one line here — nothing
+# else in the flow needs to change.
+JD_TO_REQUISITION_PREFILL = {
+    # Experience
+    "min_preferred_work_experience_years": ("custom_experience_range_from", "num"),
+    "max_preferred_work_experience_years": ("custom_experience_range_to", "num"),
+    # Applicability
+    "company": ("company", None),
+    "functional_area": ("custom_functional_area", "rows:functional_area"),
+    # Skills — same child doctype on both sides (Job Requisition Skill).
+    "skills": ("custom_skills", "rows:skill"),
+}
+
+
+def _prefill_number(value):
+    """Render a JD Float for a Data-typed requisition field: 3.0 → "3",
+    2.5 → "2.5". Returns None when there is nothing to prefill (0 included —
+    a JD leaves these blank rather than meaning "zero years")."""
+    if value in (None, "", 0):
+        return None
+    try:
+        num = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not num:
+        return None
+    return str(int(num)) if num.is_integer() else str(num)
+
+
+def _prefill_rows(value, child_key):
+    """Flatten JD child rows to the plain values the requisition form binds to,
+    e.g. skills → ["Python", "Django"]. Accepts row objects, dicts, or values
+    already flattened to plain IDs."""
+    out = []
+    for row in value or []:
+        if isinstance(row, str):
+            item = row
+        elif isinstance(row, dict):
+            item = row.get(child_key)
+        else:
+            item = getattr(row, child_key, None)
+        if item and item not in out:
+            out.append(item)
+    return out
+
+
+def _jd_prefill_values(doc):
+    """Return the matched JD's values keyed by JOB REQUISITION fieldnames, so
+    the frontend can drop the dict straight onto the requisition form once
+    designation + department pick a JD.
+
+    Only fields the JD actually carries a value for are included — an absent
+    key means "JD says nothing, leave whatever the user typed". Never raises;
+    a bad mapping entry is skipped rather than failing the whole preview.
+    """
+    prefill = {}
+    for jd_field, (req_field, coercion) in JD_TO_REQUISITION_PREFILL.items():
+        try:
+            raw = doc.get(jd_field)
+            if coercion == "num":
+                value = _prefill_number(raw)
+            elif coercion and coercion.startswith("rows:"):
+                value = _prefill_rows(raw, coercion.split(":", 1)[1]) or None
+            else:
+                value = raw or None
+            if value is not None:
+                prefill[req_field] = value
+        except Exception:
+            continue
+    return prefill
 
 
 # ---------------------------------------------------------------------------
