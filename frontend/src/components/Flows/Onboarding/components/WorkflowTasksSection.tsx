@@ -33,12 +33,10 @@ const getTimeSinceTrigger = (creation: string | undefined): string => {
     const normalized = creation.replace(" ", "T");
     const createdAt = new Date(normalized);
 
-    if (isNaN(createdAt.getTime())) return "-";
+    if (isNaN(createdAt.getTime())) return "—";
 
     const now = new Date();
-    const diffMs = now.getTime() - createdAt.getTime();
-
-    if (diffMs < 0) return "-";
+    const diffMs = Math.max(0, now.getTime() - createdAt.getTime());
 
     const diffMins = Math.floor(diffMs / (1000 * 60));
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -105,7 +103,7 @@ const WorkflowTasksSection = ({
   );
 };
 
-const WorkflowDesktopRow = memo(({ task, idx, handleAction }: { task: WorkflowStage, idx: number, handleAction: any }) => {
+const useWorkflowStagePermission = (task: WorkflowStage) => {
   const { data: currentUser } = useCurrentUser();
 
   const stageForExtract = useMemo(
@@ -144,6 +142,12 @@ const WorkflowDesktopRow = memo(({ task, idx, handleAction }: { task: WorkflowSt
 
     return actionPermission;
   }, [currentUser, task.status, allocatedTo, task.can_act]);
+
+  return { stageForExtract, allocatedTo, canPerformActions };
+};
+
+const WorkflowDesktopRow = memo(({ task, idx, handleAction }: { task: WorkflowStage, idx: number, handleAction: any }) => {
+  const { stageForExtract, allocatedTo, canPerformActions } = useWorkflowStagePermission(task);
 
   return (
     <div
@@ -199,44 +203,7 @@ const WorkflowDesktopRow = memo(({ task, idx, handleAction }: { task: WorkflowSt
 });
 
 const WorkflowMobileRow = memo(({ task, idx, handleAction }: { task: WorkflowStage, idx: number, handleAction: any }) => {
-  const { data: currentUser } = useCurrentUser();
-
-  const stageForExtract = useMemo(
-    () => ({
-      ...task,
-      role:
-        task.todo?.custom_assigned_to_roles
-          ?.map((r: any) => r.role)
-          .join(",") ||
-        task.role ||
-        null,
-      role_assigned_users:
-        task.role_assigned_users ?? task.todo?.role_assigned_users ?? [],
-      allocated_to:
-        task.allocated_to ?? task.todo?.allocated_to_details ?? [],
-    }),
-    [task],
-  );
-
-  const allocatedTo = useMemo(
-    () => extractRolesAndUsers(stageForExtract),
-    [stageForExtract],
-  );
-
-  const canPerformActions = useMemo(() => {
-    if (task.status !== "Pending" || !task.can_act) return false;
-    let actionPermission = false;
-
-    if (allocatedTo?.users && currentUser?.name)
-      actionPermission = allocatedTo.users.includes(currentUser?.name);
-
-    if (currentUser?.roles && allocatedTo?.roles)
-      actionPermission ||= currentUser.roles.some((role: any) =>
-        allocatedTo.roles.includes(role.role),
-      );
-
-    return actionPermission;
-  }, [currentUser, task.status, allocatedTo, task.can_act]);
+  const { stageForExtract, allocatedTo, canPerformActions } = useWorkflowStagePermission(task);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 border-t-4 border-t-primary-500 shadow-sm p-4 sm:p-5 space-y-4 mb-4 transition-all">
