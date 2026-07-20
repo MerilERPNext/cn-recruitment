@@ -106,6 +106,7 @@ function set_field_options(frm, cdt, cdn, doctype_name, doctype_fields, filter_b
 frappe.ui.form.on('Recruitment Settings', {
     refresh: function(frm) {
         set_job_opening_column_options(frm);
+        set_job_requisition_column_options(frm);
     }
 });
 
@@ -133,6 +134,36 @@ function set_job_opening_column_options(frm) {
                     frm.refresh_field(tablefield);
                 }
             });
+        }
+    });
+}
+
+// ---- Job Requisition list column settings ----
+// The "Column" cell in the Requisition List column table is a dynamic dropdown
+// of Job Requisition fields (not a fixed list). Populate it on load. Mirrors
+// set_job_opening_column_options but sourced from the Job Requisition doctype.
+function set_job_requisition_column_options(frm) {
+    if (!frm.fields_dict['requisition_list_columns']) return;
+
+    frappe.call({
+        method: 'recruitment.recruitment.doctype.recruitment_settings.recruitment_settings.get_doctype_fields',
+        args: { doctype_name: 'Job Requisition' },
+        callback: function(r) {
+            if (!r.message) return;
+
+            const skip = ['Section Break', 'Column Break', 'Tab Break', 'HTML',
+                'Button', 'Heading', 'Fold', 'Image', 'Table', 'Table MultiSelect'];
+
+            // "name" is the Requisition ID — it isn't part of meta.fields, so add
+            // it explicitly as a selectable column.
+            const options = ['Requisition ID (name)'].concat(
+                r.message
+                    .filter(d => d.fieldname && d.label && !skip.includes(d.fieldtype))
+                    .map(d => `${d.label} (${d.fieldname})`)
+            ).join('\n');
+
+            frm.fields_dict['requisition_list_columns'].grid.update_docfield_property('column', 'options', options);
+            frm.refresh_field('requisition_list_columns');
         }
     });
 }

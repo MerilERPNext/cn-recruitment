@@ -2,6 +2,8 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from recruitment.recruitment.campus_helpers import validate_unique_job_openings
+
 # Round types that need an interview panel / GD grouping in the reference portal.
 PANEL_ROUND_TYPES = {"Group Discussion", "Technical", "HR"}
 GD_ROUND_TYPES = {"Group Discussion"}
@@ -12,6 +14,7 @@ class CampusDrive(Document):
 		self.drive_id = self.name
 		self._validate_drive_window()
 		self._sync_campus_invites()
+		validate_unique_job_openings(self, table_fieldname="linked_job_openings")
 		self._set_registration_defaults()
 		self._set_round_codes()
 
@@ -32,10 +35,12 @@ class CampusDrive(Document):
 				continue
 			invite = frappe.get_doc("Campus Invite", invite_row.campus_invite)
 
-			if invite.institute and invite.institute not in known_institutes:
-				self.append("participating_institutes", {"institute": invite.institute})
-				known_institutes.add(invite.institute)
-				added = True
+			# An invite can carry several institutes — bring them all in.
+			for institute_row in invite.institutes or []:
+				if institute_row.institute and institute_row.institute not in known_institutes:
+					self.append("participating_institutes", {"institute": institute_row.institute})
+					known_institutes.add(institute_row.institute)
+					added = True
 
 			for opening in invite.job_openings or []:
 				if opening.job_opening and opening.job_opening not in known_openings:
@@ -175,7 +180,7 @@ def _qr_png_bytes(data):
 
 @frappe.whitelist()
 def get_campus_invite_details(campus_invite):
-	"""Return the Institute and Job Openings of a Campus Invite so the client can
+	"""Return the Institutes and Job Openings of a Campus Invite so the client can
 	instantly fetch them into the Campus Drive's institute / opening tables."""
 	invite = frappe.get_doc("Campus Invite", campus_invite)
 	openings = []
@@ -187,6 +192,152 @@ def get_campus_invite_details(campus_invite):
 			"job_title": frappe.db.get_value("Job Opening", row.job_opening, "job_title"),
 		})
 	return {
-		"institute": invite.institute,
+		# An invite can carry several institutes.
+		"institutes": [row.institute for row in (invite.institutes or []) if row.institute],
 		"job_openings": openings,
 	}
+
+
+SHORTLISTED_STATUS = "Shortlisted"
+HOLD_STATUS = "Hold"
+
+
+@frappe.whitelist()
+def get_institute_breakdown(campus_drive):
+	"""Institute- and opening-wise candidate counts for a Campus Drive, scoped to the
+	campus invites selected on that drive.
+
+	An invite carries several institutes AND several job openings; a candidate at an
+	institute may apply to any (or several) of those openings. So for every selected
+	Campus Invite we list its institutes and, under each, a row per invite opening with
+	Applied / Shortlisted / On Hold counts. Applicants carry `custom_campus_invite` +
+	`custom_institute` + `job_title` (the opening), which is what pins each application
+	to one invite + institute + opening. Returns:
+	    {"summary": {...},
+	     "invites": [ {invite, institutes:[ {institute, openings:[{...counts}]} ]}, ...]}
+	"""
+	invite_names = frappe.get_all(
+		"Campus Drive Invite",
+		filters={"parenttype": "Campus Drive", "parent": campus_drive},
+		pluck="campus_invite",
+		order_by="idx asc",
+	)
+	invite_names = [i for i in dict.fromkeys(invite_names) if i]
+	summary = {"invites": 0, "institutes": 0, "openings": 0,
+	           "applied": 0, "shortlisted": 0, "hold": 0}
+	if not invite_names:
+		return {"summary": summary, "invites": []}
+
+	invites = frappe.get_all(
+		"Campus Invite",
+		filters={"name": ["in", invite_names]},
+		fields=["name", "campus_invite_name", "status", "region"],
+	)
+	invites.sort(key=lambda i: invite_names.index(i.name))
+
+	region_ids = list({i.region for i in invites if i.region})
+	region_label = {
+		r.name: r.location_region
+		for r in frappe.get_all("Region", filters={"name": ["in", region_ids]},
+		                        fields=["name", "location_region"])
+	} if region_ids else {}
+
+	# Institutes per invite
+	inst_map = {}
+	for row in frappe.get_all(
+		"Campus Invite Institute",
+		filters={"parenttype": "Campus Invite", "parent": ["in", invite_names]},
+		fields=["parent", "institute"],
+		order_by="idx asc",
+	):
+		bucket = inst_map.setdefault(row.parent, [])
+		if row.institute and row.institute not in bucket:
+			bucket.append(row.institute)
+
+	# Openings per invite
+	opening_map = {}
+	for row in frappe.get_all(
+		"Campus Invite Job Opening",
+		filters={"parenttype": "Campus Invite", "parent": ["in", invite_names]},
+		fields=["parent", "job_opening"],
+		order_by="idx asc",
+	):
+		bucket = opening_map.setdefault(row.parent, [])
+		if row.job_opening and row.job_opening not in bucket:
+			bucket.append(row.job_opening)
+
+	all_insts = list({i for lst in inst_map.values() for i in lst})
+	inst_name = {
+		r.name: r.institute_name
+		for r in frappe.get_all("Institute", filters={"name": ["in", all_insts]},
+		                        fields=["name", "institute_name"])
+	} if all_insts else {}
+
+	all_ops = list({o for lst in opening_map.values() for o in lst})
+	op_title = {
+		r.name: r.job_title
+		for r in frappe.get_all("Job Opening", filters={"name": ["in", all_ops]},
+		                        fields=["name", "job_title"])
+	} if all_ops else {}
+
+	# Counts by invite + institute + opening (job_title) + status
+	agg = {}
+	for c in frappe.get_all(
+		"Job Applicant",
+		filters={"custom_campus_invite": ["in", invite_names]},
+		fields=["custom_campus_invite as invite", "custom_institute as institute",
+		        "job_title as opening", "status", "count(name) as cnt"],
+		group_by="custom_campus_invite, custom_institute, job_title, status",
+	):
+		if not c.institute:
+			continue
+		d = (agg.setdefault(c.invite, {})
+		        .setdefault(c.institute, {})
+		        .setdefault(c.opening, {"applied": 0, "shortlisted": 0, "hold": 0}))
+		d["applied"] += c.cnt
+		if c.status == SHORTLISTED_STATUS:
+			d["shortlisted"] += c.cnt
+		elif c.status == HOLD_STATUS:
+			d["hold"] += c.cnt
+
+	out = []
+	for i in invites:
+		insts = inst_map.get(i.name, [])
+		ops = opening_map.get(i.name, [])
+		inst_cards, inv_app, inv_sl, inv_hold = [], 0, 0, 0
+		for inst in insts:
+			op_cards, t_app, t_sl, t_hold = [], 0, 0, 0
+			for op in ops:
+				d = agg.get(i.name, {}).get(inst, {}).get(
+					op, {"applied": 0, "shortlisted": 0, "hold": 0})
+				op_cards.append({
+					"job_opening": op,
+					"job_title": op_title.get(op, op),
+					"applied": d["applied"], "shortlisted": d["shortlisted"], "hold": d["hold"],
+				})
+				t_app += d["applied"]; t_sl += d["shortlisted"]; t_hold += d["hold"]
+			inst_cards.append({
+				"institute": inst,
+				"institute_name": inst_name.get(inst, inst),
+				"applied": t_app, "shortlisted": t_sl, "hold": t_hold,
+				"openings": op_cards,
+			})
+			inv_app += t_app; inv_sl += t_sl; inv_hold += t_hold
+		out.append({
+			"invite": i.name,
+			"invite_name": i.campus_invite_name or i.name,
+			"region_label": region_label.get(i.region, i.region or "—"),
+			"status": i.status or "—",
+			"total_institutes": len(insts),
+			"total_openings": len(ops),
+			"total_applied": inv_app, "total_shortlisted": inv_sl, "total_hold": inv_hold,
+			"institutes": inst_cards,
+		})
+		summary["institutes"] += len(insts)
+		summary["openings"] += len(ops)
+		summary["applied"] += inv_app
+		summary["shortlisted"] += inv_sl
+		summary["hold"] += inv_hold
+	summary["invites"] = len(invites)
+
+	return {"summary": summary, "invites": out}

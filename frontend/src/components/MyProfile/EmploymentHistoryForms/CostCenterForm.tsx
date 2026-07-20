@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
@@ -13,9 +13,82 @@ import Button from "../../shared/atoms/Button";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useCurrentEmployeeDetails, useUpdateEmployeeCostCentersMutation } from "../../../hooks/useEmployee";
 
+const isUsable = (v: unknown): v is string =>
+  typeof v === "string" && v.trim() !== "" && v.trim().toLowerCase() !== "null";
+
+const escapeHtml = (v: string) =>
+  v.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const costCenterItemTemplate = (data: any) => {
+  const item = data?.item ?? {};
+  const name = isUsable(item.cost_center_name) ? escapeHtml(item.cost_center_name) : "-";
+  const id = isUsable(item.name) ? escapeHtml(item.name) : "-";
+  return `<span>${name} (${id})</span>`;
+};
+
+const COST_CENTER_FIELDS = encodeURIComponent('["*"]');
+// Search text is folded straight into the `filters` array (like ChangeHrbpForm)
+// rather than sent as a separate query param, so it's the same request shape
+// as every other filter.
+const buildCostCenterUrl = (search?: string) => {
+  const filters = search
+    ? [["disabled", "=", 0], ["cost_center_name", "like", `%${search}%`]]
+    : [["disabled", "=", 0]];
+  return `/api/resource/Cost%20Center?fields=${COST_CENTER_FIELDS}&filters=${encodeURIComponent(JSON.stringify(filters))}&limit_page_length=20`;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const withCostCenterSearch = (schema: any): any => {
+  const walk = (components: any[]): void => {
+    for (const c of components) {
+      if (c?.key === "cost_center") {
+        c.data = { url: buildCostCenterUrl() };
+        c.template = costCenterItemTemplate;
+        c.selectValues = "data";
+        c.valueProperty = "name";
+        c.lazyLoad = true;
+        c.searchEnabled = true;
+      }
+      if (Array.isArray(c?.components)) {
+        walk(c.components);
+      }
+    }
+  };
+  if (Array.isArray(schema?.components)) {
+    walk(schema.components);
+  }
+  return schema;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const wireCostCenterSearchInputs = (instance: any) => {
+  instance.everyComponent((component: any) => {
+    if (component.key !== "cost_center" || component.__searchWired) {
+      return;
+    }
+    const searchInput =
+      component.element?.querySelector("input.choices__input--cloned") ??
+      component.element?.querySelector("input.choices__input");
+    if (!searchInput) {
+      return;
+    }
+    component.__searchWired = true;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    searchInput.addEventListener("input", (e: Event) => {
+      const search = (e.target as HTMLInputElement).value.trim();
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        component.loadItems(buildCostCenterUrl(search || undefined), "");
+      }, 300);
+    });
+  });
+};
+
 interface AllocationRow {
   cost_center_id: string;
   percentage: number;
+  row_name?: string;
 }
 
 interface InitialCostCenterData {
@@ -59,6 +132,7 @@ const CostCenterForm = ({
 }: CostCenterFormProps) => {
   const [instance, setInstance] = useState<any>(null);
   const initialDataApplied = useRef(false);
+  const initialAllocationsRef = useRef<AllocationRow[]>(initialEditData?.allocations || []);
   const { isDesktop } = useScreenSize();
 
   const { data: currentEmployee } = useCurrentEmployeeDetails({
@@ -67,16 +141,6 @@ const CostCenterForm = ({
   const { mutateAsync: updateCostCenters, isPending } =
     useUpdateEmployeeCostCentersMutation();
   const { wrap } = useLoadingOverlay();
-
-  useEffect(() => {
-    if (!instance || !currentEmployee?.company) return;
-    const currentData = instance.submission?.data || {};
-    if (currentData.company_filter === currentEmployee.company) return;
-    instance.setSubmission(
-      { data: { ...currentData, company_filter: currentEmployee.company } },
-      { pristine: true },
-    ).then(() => instance.redraw());
-  }, [instance, currentEmployee?.company]);
 
   useEffect(() => {
     if (!instance || initialDataApplied.current) return;
@@ -94,7 +158,9 @@ const CostCenterForm = ({
       newData.end_date = initialEditData.end_date;
       shouldUpdate = true;
     } else if (!isEdit) {
-      newData.allocations = [{ cost_center: "", percentage: "" }];
+      // Don't touch `allocations` here: the datagrid already auto-provisions
+      // a single empty row, so reassigning it would rebuild that row (and
+      // refetch its Cost Center options) a second time.
       newData.start_date = defaultStartDate || "";
       shouldUpdate = true;
     }
@@ -107,14 +173,25 @@ const CostCenterForm = ({
           instance.setPristine(true);
           instance.clearErrors();
           instance.checkConditions();
-          instance.redraw();
+          // Edit mode can populate multiple allocation rows at once; wire up
+          // debounced search on any rows that weren't present at mount.
+          setTimeout(() => wireCostCenterSearchInputs(instance), 0);
         });
     }
   }, [instance, isEdit, initialEditData, defaultStartDate]);
 
   // First slide for this section: render the start date read-only, locked to
   // the joining date. Baked into the schema (reliable for datetime widgets).
-  const formSchema = useMemo(() => {
+  //
+  // Computed once via a lazy useState initializer (NOT useMemo) and never
+  // recomputed: the date-bound props come from data that can still be
+  // loading on first render (e.g. joining date), so if this were a useMemo
+  // keyed on those props, the schema object would change identity once that
+  // data arrives. Formio treats a new schema reference as a brand new form
+  // and rebuilds every component — including re-running the Cost Center
+  // select's `dataSrc: url` fetch a second time. Freezing the schema at
+  // mount guarantees Formio only ever loads it once per modal open.
+  const [formSchema] = useState(() => {
     let s = withComponentDisabled(
       costCenterFormSchema,
       "start_date",
@@ -122,8 +199,9 @@ const CostCenterForm = ({
     );
     s = withDateBounds(s, "start_date", { minDate: startMinDate, maxDate: startMaxDate });
     s = withDateBounds(s, "end_date", { minDate: endMinDate, maxDate: endMaxDate });
+    s = withCostCenterSearch(s);
     return s;
-  }, [lockStartDate, isEdit, disableStartDate, startMinDate, startMaxDate, endMinDate, endMaxDate]);
+  });
 
   const validateForm = (allocations: any[], startDate: string): boolean => {
     if (!startDate) {
@@ -178,11 +256,12 @@ const CostCenterForm = ({
       await wrap(
         () => updateCostCenters({
           employee: currentEmployee?.employee,
-          allocations: allocations.map((a: any) => ({
+          allocations: allocations.map((a: any, idx: number) => ({
             cost_center: a.cost_center,
             percentage: Number(a.percentage),
             start_date: startDate,
             to_date: endDate,
+            record_name: initialAllocationsRef.current[idx]?.row_name,
           })),
           mode: isEdit ? "update" : "new",
         }),
@@ -278,6 +357,12 @@ const CostCenterForm = ({
             onFormReady={(form: any) => {
               setInstance(form);
               form.setPristine(true);
+              // Wait one tick for choices.js to finish rendering its input.
+              setTimeout(() => wireCostCenterSearchInputs(form), 0);
+              const allocations = form.getComponent("allocations");
+              allocations?.on("dataGridAddRow", () => {
+                setTimeout(() => wireCostCenterSearchInputs(form), 0);
+              });
             }}
             options={{
               builder: { styles: false },

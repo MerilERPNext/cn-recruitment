@@ -8,7 +8,6 @@
  "field_order": [
   "campus_invite",
   "campus_invite_name",
-  "institute",
   "status"
  ],
  "fields": [
@@ -32,16 +31,6 @@
   },
   {
    "columns": 3,
-   "fetch_from": "campus_invite.institute",
-   "fieldname": "institute",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "label": "Institute",
-   "options": "Institute",
-   "read_only": 1
-  },
-  {
-   "columns": 2,
    "fetch_from": "campus_invite.status",
    "fieldname": "status",
    "fieldtype": "Data",

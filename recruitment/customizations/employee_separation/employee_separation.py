@@ -55,7 +55,8 @@ def add_unpaid_expense_claims(doc, method=None):
         "Expense Claim",
         filters={
             "employee": doc.employee,
-            "approval_status": "Draft",
+            "approval_status": "Pending",
+            "status": "Draft",
             "docstatus": 0,
         },
         fields=["name", "total_claimed_amount"],

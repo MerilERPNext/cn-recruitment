@@ -1363,6 +1363,105 @@ def get_available_job_requisition_fields():
     }
 
 
+# ---------------------------------------------------------------------------
+# Job Requisition list columns — config-driven column settings for the
+# requisition LIST view. Mirrors the channel column settings
+# (recruitment.api.channels._common.get_configured_columns) but sourced from
+# Recruitment Settings → requisition_list_columns against Job Requisition.
+#
+# This is READ-ONLY config, exposed via its own endpoint. get_job_requisition
+# and the create/update flow are intentionally left untouched — the frontend
+# renders the list from get_requisition_list_columns (headers/order) plus the
+# existing get_job_requisition payload (rows).
+# ---------------------------------------------------------------------------
+
+# Used when nothing is configured, so the list view keeps its current behaviour
+# out of the box. Job Requisition fieldnames; "name" is the Requisition ID.
+_DEFAULT_REQUISITION_COLUMNS = [
+    "name", "designation", "department", "company",
+    "status", "no_of_positions", "posting_date", "expected_by",
+]
+
+# Column key already carries a friendlier label than the raw field for these.
+_REQUISITION_COLUMN_LABEL_OVERRIDES = {"name": "Requisition ID"}
+
+
+def _parse_requisition_column_fieldname(stored):
+    """Extract the fieldname from a stored 'Label (fieldname)' column value (the
+    Autocomplete format used by the settings table). Falls back to the trimmed
+    string when it isn't in that format."""
+    if not stored:
+        return None
+    stored = stored.strip()
+    if stored.endswith(")") and "(" in stored:
+        return stored[stored.rfind("(") + 1:-1].strip()
+    return stored
+
+
+def _requisition_column_label(jr_meta, fieldname):
+    if fieldname in _REQUISITION_COLUMN_LABEL_OVERRIDES:
+        return _REQUISITION_COLUMN_LABEL_OVERRIDES[fieldname]
+    df = jr_meta.get_field(fieldname)
+    if df and df.label:
+        return df.label
+    return fieldname.replace("_", " ").title()
+
+
+def get_configured_requisition_columns():
+    """Ordered, enabled list columns for the Job Requisition list view, from
+    Recruitment Settings → requisition_list_columns. Returns a list of
+    {"fieldname", "label", "value_key"}. Falls back to a default column set when
+    nothing is configured, so the list view keeps working out of the box.
+    Disabled rows, blanks, duplicates and fields that don't exist on Job
+    Requisition (except "name") are dropped."""
+    jr_meta = frappe.get_meta(JOB_REQUISITION)
+
+    fieldnames = []
+    settings = frappe.get_cached_doc("Recruitment Settings")
+    for row in settings.get("requisition_list_columns") or []:
+        if not row.get("enable"):
+            continue
+        fn = _parse_requisition_column_fieldname(row.get("column"))
+        if fn:
+            fieldnames.append(fn)
+
+    if not fieldnames:
+        fieldnames = list(_DEFAULT_REQUISITION_COLUMNS)
+
+    columns, seen = [], set()
+    for fn in fieldnames:
+        if fn in seen or (fn != "name" and not jr_meta.has_field(fn)):
+            continue
+        seen.add(fn)
+        columns.append({
+            "fieldname": fn,
+            "label": _requisition_column_label(jr_meta, fn),
+            "value_key": fn,
+        })
+    return columns
+
+
+@frappe.whitelist()
+def get_requisition_list_columns():
+    """OPTIONAL columns-only endpoint. The same `columns` payload is ALSO returned
+    inside get_job_requisition (list mode) under data.columns, so the frontend can
+    render the whole list from ONE call and does NOT need to hit this endpoint.
+
+    Kept only for callers that want the column config on its own (e.g. render the
+    header before the rows load, or a settings preview). Returns the standard
+    envelope with data = {"columns": [{"fieldname", "label", "value_key"}, ...]},
+    where `value_key` is the key the flat get_job_requisition payload carries the
+    display value under — no translation layer on the frontend.
+
+    Read-only: get_job_requisition and the requisition create/update flow are
+    unaffected."""
+    return _ok(
+        message=_("Requisition list columns fetched."),
+        data={"columns": get_configured_requisition_columns()},
+        http=200,
+    )
+
+
 # Explicit map of the live React "Raise a Requisition" form (the 5-step wizard:
 # Basic Details → Job Details → Position Selection → Other Details → Review).
 # Each section is (tab, section, [(applies_to, fieldname, label, mandatory), ...]).
@@ -1730,6 +1829,88 @@ def _vacancy_breakdown(doc):
     return {"total": new + replacement, "new": new, "replacement": replacement, "type": vtype}
 
 
+# ---------------------------------------------------------------------------
+# Approval allocation — "to whom is this requisition's approval currently
+# allocated". Surfaced on each requisition so the UI can show the pending
+# approver(s) on hover over the status. Mirrors the `allocated_to` object shape
+# of cn_leave_shift_managment.api.get_open_approval_todos:
+#     [{"name": <full name>, "employee": <employee id>, "designation_name": <designation>}]
+#
+# The data lives on the Nextai Approval Tracker created when an approval matrix
+# applies (doc_type="Job Requisition", doc_name=<req>). The current allocation is
+# the set of approvers on the tracker's Approval Log Entry rows whose status is
+# still "Pending". Requisitions without a matrix/tracker are unaffected ([]).
+# ---------------------------------------------------------------------------
+
+def _approval_users_from_log(row):
+    """User ids for one pending Approval Log Entry: the primary `user` plus any
+    `custom_allocated_to_users` (a comma-separated list of users)."""
+    users = []
+    if row.get("user"):
+        users.append(str(row["user"]).strip())
+    raw = row.get("custom_allocated_to_users")
+    if raw:
+        users.extend(u.strip() for u in str(raw).split(",") if u.strip())
+    return users
+
+
+def _approval_user_info(user_id):
+    """{name, employee, designation_name} for an approver user — same keys as the
+    leave/shift `allocated_to` object. `designation_name` is the approver's
+    Employee designation (None when they have no Employee record)."""
+    full_name = frappe.db.get_value("User", user_id, "full_name") or user_id
+    emp = frappe.db.get_value(
+        "Employee", {"user_id": user_id}, ["name", "designation"], as_dict=True
+    )
+    return {
+        "name": full_name,
+        "employee": emp.name if emp else None,
+        "designation_name": (emp.designation if emp else None) or None,
+    }
+
+
+def _get_requisition_approval_allocation(name):
+    """Current pending approvers for a Job Requisition, as a list of
+    {name, employee, designation_name} (the get_open_approval_todos `allocated_to`
+    shape). Anchored on the Approval Tracker for this requisition; returns [] when
+    there is no tracker, the tracker isn't Pending, or nothing is currently
+    allocated. Never raises — any lookup failure yields []."""
+    try:
+        tracker_name = frappe.db.get_value(
+            "Approval Tracker",
+            {"doc_type": JOB_REQUISITION, "doc_name": name, "status": "Pending"},
+            "name",
+            order_by="modified desc",
+        )
+        if not tracker_name:
+            return []
+
+        pending_logs = frappe.get_all(
+            "Approval Log Entry",
+            filters={
+                "parent": tracker_name,
+                "parenttype": "Approval Tracker",
+                "parentfield": "approval_logs",
+                "status": "Pending",
+            },
+            fields=["user", "custom_allocated_to_users"],
+        )
+
+        allocation, seen = [], set()
+        for log_row in pending_logs:
+            for user_id in _approval_users_from_log(log_row):
+                if user_id in seen:
+                    continue
+                seen.add(user_id)
+                allocation.append(_approval_user_info(user_id))
+        return allocation
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(), "get_requisition_approval_allocation failed"
+        )
+        return []
+
+
 def _serialise_requisition(doc):
     """Flat round-trip representation of a JR.
     All parent fields keep their DocType field names so the UI can bind
@@ -1744,6 +1925,11 @@ def _serialise_requisition(doc):
         "workflow_state": doc.get("workflow_state"),
         "creation": doc.get("creation"),
         "modified": doc.get("modified"),
+        # Pending approver(s) this requisition's approval is currently allocated
+        # to, for the status-hover UI. [] unless an approval matrix/tracker is
+        # active and Pending. Same object shape as the leave/shift
+        # get_open_approval_todos `allocated_to`.
+        "approval_allocation": _get_requisition_approval_allocation(doc.name),
     }
 
     for field in PARENT_WRITABLE_FIELDS:
@@ -1956,6 +2142,10 @@ def get_job_requisition(
             message=_("Fetched {0} requisition(s).").format(len(items)),
             data={
                 "requisitions": items,
+                # Configured list-view columns (headers + order), bundled here so
+                # the frontend renders the list from a single call. Same payload as
+                # the standalone get_requisition_list_columns endpoint.
+                "columns": get_configured_requisition_columns(),
                 "pagination": {
                     "total": total,
                     "limit": limit,
@@ -2217,7 +2407,13 @@ def preview_job_description(designation=None, department=None, data=None, functi
             "name": "JD-2026-001",
             "title": "Senior Engineer JD",
             "description_html": "<p>...</p>",
-            "skills": ["Python", "Django"]
+            "skills": ["Python", "Django"],
+            "prefill": {
+              "custom_experience_range_from": "3",
+              "custom_experience_range_to": "5",
+              "custom_functional_area": ["Engineering"],
+              "custom_skills": ["Python", "Django"]
+            }
           }
         }
 
@@ -2263,6 +2459,14 @@ def preview_job_description(designation=None, department=None, data=None, functi
     - `description_html` is Text Editor HTML; render via
       `dangerouslySetInnerHTML`. Sanitize if you do not trust authors.
     - `skills` is a flat list of Skill IDs — drop-in for chips/tags.
+    - `prefill` holds the matched JD's own field values, already keyed by
+      JOB REQUISITION fieldnames (see JD_TO_REQUISITION_PREFILL), so the form
+      can apply them directly — e.g. the JD's
+      min/max_preferred_work_experience_years arrive as
+      custom_experience_range_from / custom_experience_range_to.
+      Only fields the JD actually fills are present; a missing key means
+      "leave the current form value alone". Present (possibly empty) on every
+      source, including "none".
     """
     try:
         if not designation or not department:
@@ -2328,6 +2532,7 @@ def preview_job_description(designation=None, department=None, data=None, functi
                 "title": None,
                 "description_html": "",
                 "skills": [],
+                "prefill": {},
             },
             http=200,
         )
@@ -2441,7 +2646,7 @@ def _build_preview_payload(jd_name, source, filled_data=None):
     from recruitment.recruitment.doctype.job_description.job_description import (
         _render_preview,
         _jd_context_with_titles,
-        plain_text_to_html,
+        beautify_jd_html,
         render_with_context,
         substitute_field_tokens,
     )
@@ -2484,7 +2689,7 @@ def _build_preview_payload(jd_name, source, filled_data=None):
         _render_preview(doc)
         rendered = doc.get("preview") or ""
 
-    description_html = plain_text_to_html(rendered)
+    description_html = beautify_jd_html(rendered)
     skills = [
         row.get("skill")
         for row in (doc.get("skills") or [])
@@ -2497,7 +2702,94 @@ def _build_preview_payload(jd_name, source, filled_data=None):
         "title": doc.get("job_description_title") or doc.name,
         "description_html": description_html,
         "skills": skills,
+        "prefill": _jd_prefill_values(doc),
     }
+
+
+# ---------------------------------------------------------------------------
+# JD → Job Requisition prefill
+# ---------------------------------------------------------------------------
+
+# Maps a Job Description fieldname to the Job Requisition fieldname it should
+# populate on the React requisition form once designation + department resolve
+# a JD. Keyed by JD fieldname → (requisition fieldname, coercion).
+#
+# `coercion` normalises the JD value into the shape the requisition field
+# expects:
+#   "num"    → Float rendered for a Data field ("3.0" → "3", 2.5 → "2.5").
+#   "rows:X" → child rows flattened to the plain values under child key X.
+#   None     → passed through untouched.
+#
+# To surface another JD field on the requisition, add one line here — nothing
+# else in the flow needs to change.
+JD_TO_REQUISITION_PREFILL = {
+    # Experience
+    "min_preferred_work_experience_years": ("custom_experience_range_from", "num"),
+    "max_preferred_work_experience_years": ("custom_experience_range_to", "num"),
+    # Applicability
+    "company": ("company", None),
+    "functional_area": ("custom_functional_area", "rows:functional_area"),
+    # Skills — same child doctype on both sides (Job Requisition Skill).
+    "skills": ("custom_skills", "rows:skill"),
+}
+
+
+def _prefill_number(value):
+    """Render a JD Float for a Data-typed requisition field: 3.0 → "3",
+    2.5 → "2.5". Returns None when there is nothing to prefill (0 included —
+    a JD leaves these blank rather than meaning "zero years")."""
+    if value in (None, "", 0):
+        return None
+    try:
+        num = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not num:
+        return None
+    return str(int(num)) if num.is_integer() else str(num)
+
+
+def _prefill_rows(value, child_key):
+    """Flatten JD child rows to the plain values the requisition form binds to,
+    e.g. skills → ["Python", "Django"]. Accepts row objects, dicts, or values
+    already flattened to plain IDs."""
+    out = []
+    for row in value or []:
+        if isinstance(row, str):
+            item = row
+        elif isinstance(row, dict):
+            item = row.get(child_key)
+        else:
+            item = getattr(row, child_key, None)
+        if item and item not in out:
+            out.append(item)
+    return out
+
+
+def _jd_prefill_values(doc):
+    """Return the matched JD's values keyed by JOB REQUISITION fieldnames, so
+    the frontend can drop the dict straight onto the requisition form once
+    designation + department pick a JD.
+
+    Only fields the JD actually carries a value for are included — an absent
+    key means "JD says nothing, leave whatever the user typed". Never raises;
+    a bad mapping entry is skipped rather than failing the whole preview.
+    """
+    prefill = {}
+    for jd_field, (req_field, coercion) in JD_TO_REQUISITION_PREFILL.items():
+        try:
+            raw = doc.get(jd_field)
+            if coercion == "num":
+                value = _prefill_number(raw)
+            elif coercion and coercion.startswith("rows:"):
+                value = _prefill_rows(raw, coercion.split(":", 1)[1]) or None
+            else:
+                value = raw or None
+            if value is not None:
+                prefill[req_field] = value
+        except Exception:
+            continue
+    return prefill
 
 
 # ---------------------------------------------------------------------------

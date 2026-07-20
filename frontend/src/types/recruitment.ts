@@ -1,3 +1,5 @@
+import type { DocumentItem } from "./frappe";
+
 // Position Details Types
 export interface PositionDetail {
   position_number?: number;
@@ -138,7 +140,19 @@ export interface CreateJobRequisitionPayload {
 }
 
 // API Response Types
-export interface JobRequisition {
+export interface ApprovalAllocation {
+  name: string | null;
+  employee: string | null;
+  designation_name: string | null;
+}
+
+export interface RequisitionListColumn {
+  fieldname: string;
+  label: string;
+  value_key?: string;
+}
+
+export interface JobRequisition extends DocumentItem {
   name: string;
   creation: string;
   modified: string;
@@ -156,6 +170,24 @@ export interface JobRequisition {
   custom_functional_area?: string;
   custom_hiring_lead?: string;
   description?: string;
+  approval_allocation?: ApprovalAllocation[];
+}
+
+export interface JobRequisitionListResponse {
+  data?: {
+    requisitions?: JobRequisition[];
+    columns?: RequisitionListColumn[];
+    pagination?: {
+      total?: number;
+      returned?: number;
+    };
+    summary?: {
+      total_requisitions: number;
+      total_positions: number;
+      active_offer_positions: number;
+      closed_positions: number;
+    };
+  };
 }
 
 export interface CreateJobRequisitionResponse {

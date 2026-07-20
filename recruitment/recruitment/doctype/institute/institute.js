@@ -33,3 +33,32 @@ frappe.ui.form.on("Institute", {
 		}
 	},
 });
+
+frappe.ui.form.on("Institute TPO Contact", {
+	role: function (frm, cdt, cdn) {
+		// Only one Primary TPO per Institute — they are the single contact a Campus
+		// Invite provisions a portal user for. Mirrors the server-side check in
+		// Institute._validate_single_primary_tpo; caught here so the user is stopped
+		// at the moment they pick it rather than on save.
+		const row = locals[cdt][cdn];
+		if (row.role !== "Primary TPO") {
+			return;
+		}
+
+		const existing = (frm.doc.tpo_contacts || []).find(
+			(d) => d.name !== row.name && d.role === "Primary TPO"
+		);
+		if (!existing) {
+			return;
+		}
+
+		frappe.model.set_value(cdt, cdn, "role", "");
+		frappe.msgprint({
+			title: __("Duplicate Primary TPO"),
+			message: __("{0} is already the Primary TPO for this Institute. Only one is allowed.", [
+				existing.contact_name || __("Row {0}", [existing.idx]),
+			]),
+			indicator: "orange",
+		});
+	},
+});

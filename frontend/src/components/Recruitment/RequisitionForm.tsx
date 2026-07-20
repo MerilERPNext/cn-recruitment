@@ -2415,8 +2415,8 @@ const RequisitionForm = () => {
               <div>
                 <h3 className="text-lg font-semibold text-gray-800">Job Description Preview</h3>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {(formData as any).designation}
-                  {(formData as any).department ? ` · ${(formData as any).department}` : ""}
+                  {(formData as any).designation_title || (formData as any).designation}
+                  {(formData as any).department || (formData as any).department_title ? ` · ${(formData as any).department_title || (formData as any).department}` : ""}
                 </p>
               </div>
               <button
@@ -2473,8 +2473,8 @@ const RequisitionForm = () => {
                   {jobDetailsPreview.title || "Job Description Preview"}
                 </h3>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {(formData as any).designation}
-                  {(formData as any).department ? ` · ${(formData as any).department}` : ""}
+                  {(formData as any).designation_title || (formData as any).designation}
+                  {(formData as any).department || (formData as any).department_title ? ` · ${(formData as any).department_title || (formData as any).department}` : ""}
                   {jobDetailsPreview.source ? ` · ${jobDetailsPreview.source}` : ""}
                 </p>
               </div>

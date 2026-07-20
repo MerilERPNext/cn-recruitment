@@ -1,0 +1,159 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "creation": "2026-07-13 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "intro_html",
+  "basic_section",
+  "basic_minimum",
+  "basic_percent",
+  "column_break_basic",
+  "employer_pf_percent",
+  "multi_benefit_amount",
+  "hra_section",
+  "hra_band1_limit",
+  "hra_band1_percent",
+  "column_break_hra",
+  "hra_band2_limit",
+  "hra_band2_percent",
+  "conveyance_section",
+  "conveyance_slabs"
+ ],
+ "fields": [
+  {
+   "fieldname": "intro_html",
+   "fieldtype": "HTML",
+   "options": "<p>Company-wide rules used to auto-compute the Job Offer salary breakup from <b>Level</b> (Employee Grade) and <b>Total Fixed Pay</b>. Grade-specific values (HRA %, LTA, Multi-Benefit eligibility) live on each <b>Employee Grade</b>.</p>"
+  },
+  {
+   "fieldname": "basic_section",
+   "fieldtype": "Section Break",
+   "label": "Basic & Statutory"
+  },
+  {
+   "default": "180000",
+   "description": "Basic = higher of this floor or (Basic % of Total Fixed Pay).",
+   "fieldname": "basic_minimum",
+   "fieldtype": "Currency",
+   "label": "Basic Minimum (Floor)",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "default": "30",
+   "description": "Basic as a percentage of Total Fixed Pay (used when higher than the floor).",
+   "fieldname": "basic_percent",
+   "fieldtype": "Float",
+   "label": "Basic % of Total Fixed Pay",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_basic",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "12",
+   "description": "Employer's PF as a percentage of Basic.",
+   "fieldname": "employer_pf_percent",
+   "fieldtype": "Float",
+   "label": "Employer PF % of Basic",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "default": "67200",
+   "description": "Flat Multi Benefit Card / Allowance amount, applied to grades marked 'Multi-Benefit Eligible' (typically L2 & above).",
+   "fieldname": "multi_benefit_amount",
+   "fieldtype": "Currency",
+   "label": "Multi Benefit Card / Allowance Amount",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "hra_section",
+   "fieldtype": "Section Break",
+   "label": "HRA Bands (low Total Fixed Pay override the grade HRA %)"
+  },
+  {
+   "default": "300000",
+   "description": "If Total Fixed Pay is strictly below this, HRA = Band 1 % of Basic.",
+   "fieldname": "hra_band1_limit",
+   "fieldtype": "Currency",
+   "label": "HRA Band 1 Limit (below)",
+   "non_negative": 1
+  },
+  {
+   "default": "5",
+   "fieldname": "hra_band1_percent",
+   "fieldtype": "Float",
+   "label": "HRA Band 1 % of Basic",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_hra",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "390000",
+   "description": "If Total Fixed Pay is below this (and at/above Band 1 limit), HRA = Band 2 % of Basic. At/above this limit, the grade's HRA % applies.",
+   "fieldname": "hra_band2_limit",
+   "fieldtype": "Currency",
+   "label": "HRA Band 2 Limit (below)",
+   "non_negative": 1
+  },
+  {
+   "default": "10",
+   "fieldname": "hra_band2_percent",
+   "fieldtype": "Float",
+   "label": "HRA Band 2 % of Basic",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "conveyance_section",
+   "fieldtype": "Section Break",
+   "label": "Conveyance Slabs (by Total Fixed Pay)"
+  },
+  {
+   "fieldname": "conveyance_slabs",
+   "fieldtype": "Table",
+   "label": "Conveyance Slabs",
+   "options": "Offer Conveyance Slab"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-07-13 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Offer Compensation Structure Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -54,6 +54,8 @@
   "career_page_filter_columns",
   "career_page_filter_column_break",
   "career_page_search_filters",
+  "requisition_columns_section",
+  "requisition_list_columns",
   "hiring_lead_permission_section",
   "allow_hiring_lead_edit_external_recruiter",
   "allow_hiring_lead_edit_application_fields",
@@ -388,6 +390,18 @@
    "fieldtype": "Table",
    "label": "Career Page Search Filters",
    "options": "Job Opening Column Setting"
+  },
+  {
+   "fieldname": "requisition_columns_section",
+   "fieldtype": "Section Break",
+   "label": "Job Requisition List Columns"
+  },
+  {
+   "description": "Columns shown on the Job Requisition list view. Add any Job Requisition field, toggle Enable, and drag to reorder. The UI reads this via the get_requisition_list_columns API.",
+   "fieldname": "requisition_list_columns",
+   "fieldtype": "Table",
+   "label": "Requisition List Column Settings",
+   "options": "Job Requisition Column Setting"
   },
   {
    "fieldname": "hiring_lead_permission_section",

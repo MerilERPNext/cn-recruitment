@@ -119,49 +119,57 @@ def _get_default_onboarding_portal_form_name():
     )
 
 
-def resolve_onboarding_portal_form(department=None, designation=None):
-    """Pick the Onboarding Portal Form for a candidate by Department + Designation.
+def resolve_onboarding_portal_form(job_applicant=None):
+    """Pick the Onboarding Portal Form for a candidate by User Assignment.
 
-    This replaces the old 'default flag' selection as the primary mechanism. Match
-    priority (most specific first):
-      1. Department + Designation both match
-      2. Designation matches, Department blank on the form
-      3. Department matches, Designation blank on the form
-      4. Fallback: the form flagged Default (safety net so onboarding never hard-fails)
+    A form lists one or more Dynamic User Assignments (Target Type = Job
+    Applicant) and applies to whichever candidates any of them select. This
+    replaces the older Department + Designation matching, which forced HR to
+    express a candidate segment as a single dept/designation pair.
+
+    Each assignment's conditions are evaluated live against this candidate
+    rather than read from its Assigned Users table, which is only a snapshot
+    refreshed when the assignment is saved — so a candidate created since that
+    save is still matched correctly.
+
+    Where several forms match, the most recently modified wins. Falls back to the
+    form flagged Default, so onboarding never hard-fails.
 
     Returns the form name or None.
     """
-    blank = ("in", ["", None])
-
-    if department and designation:
-        f = frappe.db.get_value(
-            "Onboarding Portal Forms",
-            {"department": department, "designation": designation},
-            "name",
-            order_by="modified desc",
+    if job_applicant:
+        from nextai.nextai.doctype.dynamic_user_assignment.dynamic_user_assignment import (
+            check_target_matches_conditions,
         )
-        if f:
-            return f
 
-    if designation:
-        f = frappe.db.get_value(
-            "Onboarding Portal Forms",
-            {"designation": designation, "department": blank},
-            "name",
-            order_by="modified desc",
-        )
-        if f:
-            return f
+        # One pass over the child table, grouped by form, so a form with several
+        # assignments costs one query rather than one per assignment. Queried via
+        # the query builder because get_all drops the child Link column here.
+        child = frappe.qb.DocType("Onboarding Portal Form Assignment")
+        rows = (
+            frappe.qb.from_(child)
+            .select(child.parent, child.user_assignment)
+            .where(child.parenttype == "Onboarding Portal Forms")
+        ).run(as_dict=True)
+        duas_by_form = {}
+        for row in rows:
+            if row.user_assignment:
+                duas_by_form.setdefault(row.parent, []).append(row.user_assignment)
 
-    if department:
-        f = frappe.db.get_value(
-            "Onboarding Portal Forms",
-            {"department": department, "designation": blank},
-            "name",
-            order_by="modified desc",
-        )
-        if f:
-            return f
+        for form_name in frappe.get_all(
+            "Onboarding Portal Forms", pluck="name", order_by="modified desc"
+        ):
+            for dua in duas_by_form.get(form_name, []):
+                try:
+                    if check_target_matches_conditions(dua, job_applicant):
+                        return form_name
+                except Exception:
+                    # One misconfigured assignment (bad field name, deleted DUA)
+                    # shouldn't block the other assignments, forms, or fallback.
+                    frappe.log_error(
+                        frappe.get_traceback(),
+                        f"resolve_onboarding_portal_form: match failed for {form_name} / {dua}",
+                    )
 
     return _get_default_onboarding_portal_form_name()
 

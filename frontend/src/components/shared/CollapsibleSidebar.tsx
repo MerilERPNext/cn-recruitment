@@ -654,7 +654,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Earned Points Summary",
           icon: Coins,
           href: "/webapp/recognition/vibe/earned-points",
-          permissionKey: "Earned Points",
+          // Recognition resolves visibility by route via RECOGNITION_ROUTE_PAGES;
+          // this key mirrors the real gating page ("Earned Points Summary page")
+          // so the config is not misleading.
+          permissionKey: "Earned Points Summary page",
         },
         {
           name: "Admin Dashboard",

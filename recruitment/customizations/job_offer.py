@@ -79,7 +79,21 @@ def apply_percentage_components(self):
 
 @frappe.whitelist()
 def calculate_salary_structure(self, method=None):
-    # New model: components entered with a % of Basic/CTC directly on the offer.
+    from recruitment.recruitment import offer_compensation as oc
+
+    # Keep the auto contingency note in sync with the presence of clause rows.
+    # (Clauses are independent of the compensation method.)
+    oc.apply_commitment_note(self)
+
+    # Grade-based auto breakup runs ONLY when explicitly selected via the
+    # "Compensation Method" selector. Every other value — the default
+    # "Salary Structure" and the blank value on pre-existing / other-project
+    # offers — falls straight through to the untouched legacy flows below.
+    if (self.get("custom_compensation_method") or oc.METHOD_DEFAULT) == oc.METHOD_AUTO:
+        oc.compute_offer_compensation(self)
+        return
+
+    # Legacy model: components entered with a % of Basic/CTC directly on the offer.
     if apply_percentage_components(self):
         return
 

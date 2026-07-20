@@ -174,10 +174,10 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activeSectionList: any[] =
     editType === "work_location" ? workLocation
-    : editType === "employment_type" ? employmentTypes
-    : editType === "employee_role" ? employeeRoles
-    : editType === "cost_center" ? costCenters
-    : history;
+      : editType === "employment_type" ? employmentTypes
+        : editType === "employee_role" ? employeeRoles
+          : editType === "cost_center" ? costCenters
+            : history;
   const dateBounds = isEditing && editItem
     ? computeSlideDateBounds(activeSectionList, editItem, joiningDate)
     : { startMinDate: toDateOnly(joiningDate) };
@@ -280,7 +280,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         functionalArea={item?.functional_area?.name || ""}
                         is_promotion={item.is_promotion}
                         designation={item?.designation?.name || ""}
-                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ?() => handleEditCard(item) : undefined}
+                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item) : undefined}
                         onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => setPendingDelete({ type: "history", names: collectRowNames(item as unknown as Record<string, unknown>), subSection: "work_role" }) : undefined}
                       />
                     </div>
@@ -318,7 +318,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         country={item.country}
                         state={item.state}
                         city={item.city}
-                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ?() => handleEditCard(item, "work_location") : undefined}
+                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "work_location") : undefined}
                         onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
                           const names = [item.work_location?.row_name].filter(Boolean) as string[];
                           setPendingDelete({ type: "history", names, subSection: "work_location" });
@@ -357,7 +357,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         is_promotion={item.is_promotion}
                         employment_type={item.employment_type}
                         employee_subtype={item.employee_subtype}
-                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ?() => handleEditCard(item, "employment_type") : undefined}
+                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "employment_type") : undefined}
                         onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
                           const names = [item.employment_type?.row_name, item.employee_subtype?.row_name].filter(Boolean) as string[];
                           setPendingDelete({ type: "history", names, subSection: "employment_type" });
@@ -395,7 +395,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         is_current={item.is_current}
                         is_promotion={item.is_promotion}
                         employee_role={item.employee_role}
-                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ?() => handleEditCard(item, "employee_role") : undefined}
+                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "employee_role") : undefined}
                         onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
                           const names = [item.employee_role?.row_name].filter(Boolean) as string[];
                           setPendingDelete({ type: "history", names, subSection: "employee_role" });
@@ -432,7 +432,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                         from_date={item.from_date}
                         to_date={item.to_date}
                         is_current={item.is_current}
-                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ?() => handleEditCard(item, "cost_center") : undefined}
+                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "cost_center") : undefined}
                         onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
                           const names = item.allocations.map((a) => a.row_name).filter(Boolean) as string[];
                           setPendingDelete({ type: "cost_center", names, subSection: "cost_center" });
@@ -642,6 +642,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             allocations: (editItem as unknown as EmployeeCostCenter).allocations.map((a) => ({
               cost_center_id: a.cost_center.id,
               percentage: a.percentage,
+              row_name: a.row_name
             })),
             start_date: editItem.from_date,
             end_date: (editItem as unknown as EmployeeCostCenter).to_date,

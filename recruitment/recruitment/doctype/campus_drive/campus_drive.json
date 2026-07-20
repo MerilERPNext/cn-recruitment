@@ -183,12 +183,22 @@
    "fieldname": "column_break_batch_eligibility",
    "fieldtype": "Column Break"
   },
-   {
-    "fieldname": "eligible_streams",
-    "fieldtype": "Table MultiSelect",
-    "label": "Eligible Streams",
-    "options": "Campus Drive Eligible Stream"
-   },
+  {
+   "fieldname": "eligible_streams",
+   "fieldtype": "Table MultiSelect",
+   "label": "Eligible Streams",
+   "options": "Campus Drive Eligible Stream"
+  },
+  {
+   "fieldname": "candidates_tab",
+   "fieldtype": "Tab Break",
+   "label": "Candidates"
+  },
+  {
+   "fieldname": "institute_candidates_html",
+   "fieldtype": "HTML",
+   "label": "Institute-wise Candidates"
+  },
   {
    "fieldname": "registration_form_tab",
    "fieldtype": "Tab Break",
@@ -322,4 +332,3 @@
  "title_field": "drive_name",
  "track_changes": 1
 }
-

@@ -128,14 +128,6 @@ export const requisitionFormSchemas = {
   jobDetails: {
     components: [
       {
-        type: "htmlelement",
-        tag: "div",
-        className:
-          "alert bg-orange-500/10 border-orange-500/10 text-warning-600 mt-3 rounded-md",
-        content:
-          '<i class="fa fa-exclamation-triangle mr-2"></i> There is no job description tagged to this designation. Please configure the job description by contacting your recruiter.',
-      },
-      {
         type: "columns",
         customClass: "my-3",
         columns: [
@@ -414,7 +406,7 @@ export const requisitionFormSchemas = {
                 placeholder: "Select Employment Type",
                 dataSrc: "url",
                 data: {
-                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employment Type&custom_company={{ data.company }}",
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Employment Type&company={{ data.company }}",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message.results",
@@ -448,7 +440,7 @@ export const requisitionFormSchemas = {
                 placeholder: "Select Branch",
                 dataSrc: "url",
                 data: {
-                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch&custom_company={{ data.company }}",
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch&company={{ data.company }}",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 selectValues: "message.results",
@@ -644,7 +636,7 @@ export const requisitionFormSchemas = {
                 dataSrc: "url",
                 data: {
                   // Scoped to the requisition's company (top-level `data.company`).
-                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch&custom_company={{ data.company }}",
+                  url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Branch&company={{ data.company }}",
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
                 limit: 20,
@@ -739,15 +731,13 @@ export const requisitionFormSchemas = {
                       url: "/api/method/recruitment.api.job_requisition.get_link_field_options?doctype=Cost Center",
                       headers: [{ key: "Accept", value: "application/json" }],
                     },
-                    // Use the native HTML5 select instead of the default Choices.js
-                    // widget. Inside a nested datagrid, the Choices widget reuses
-                    // its instance/DOM state across rows during the grid redraw,
-                    // which makes a selected Cost Center replicate into the other
-                    // allocation rows (and across position rows). A native <select>
-                    // binds its value per element, so each row keeps its own value
-                    // and nothing is duplicated. It also avoids the Choices rebuild
-                    // flash on "Add Cost Center".
-                    widget: "html5",
+                    // Use Form.io's Choices widget so Cost Centers can be searched.
+                    // Keep the URL select lazy inside this nested datagrid: loading
+                    // every row during a grid redraw is expensive and can reset the
+                    // open dropdown while a new allocation row is being added.
+                    widget: "choicesjs",
+                    lazyLoad: true,
+                    searchEnabled: true,
                     limit: 20,
                     selectValues: "message.results",
                     valueProperty: "id",
