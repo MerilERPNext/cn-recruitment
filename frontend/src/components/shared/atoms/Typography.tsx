@@ -154,7 +154,7 @@ const COLOR_CLASSES: Record<TypographyColor, string> = {
    Helpers
 ====================================================== */
 
-const FALLBACK_TEXT = "--";
+const FALLBACK_TEXT = "—";
 
 /**
  * Returns `true` when `node` resolves to visible text content
