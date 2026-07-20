@@ -1,57 +1,26 @@
 import React from "react";
 import { Typography } from "../shared/atoms/Typography";
 import Modal from "../shared/Modal";
-
-interface ActivityDetail {
-    label: string;
-    value: string;
-}
-
-interface ActivityLogItem {
-    titlePrefix: string;
-    actor?: string;
-    timestamp: string;
-    details: ActivityDetail[];
-}
-
-const dummyActivityLogs: ActivityLogItem[] = [
-    {
-        titlePrefix: "Manager has been assigned by",
-        actor: "Ritu ( PW 23035 )",
-        timestamp: "15 : 14 pm , 12-05-2025",
-        details: [
-            { label: "Previous Manager", value: "Rahul Agarwal ( PW 20246 )" },
-            { label: "Updated Manager", value: "Rahul Agarwal ( PW 20246 )" }
-        ]
-    },
-    {
-        titlePrefix: "Email - Notification to the Admin and Onboarding Admin after BGV is completed has been sent",
-        timestamp: "15 : 14 pm , 12-05-2025",
-        details: [
-            {
-                label: "Recepients :",
-                value: "Ganesh Jadhav ( PW 11309 ) , Ganesh Jadhav ( PW 11309 ) , Ganesh Jadhav ( PW 11309 ) , Ganesh Jadhav ( PW 11309 ) , Ganesh Jadhav ( PW 11309 ) , Ganesh Jadhav ( PW 11309 ) , Ganesh Jadhav ( PW 11309 ) , Ganesh Jadhav ( PW 11309 ) , Ganesh Jadhav ( PW 11309 ) , Ganesh Jadhav ( PW 11309 ) , Ganesh Jadhav ( PW 11309 ) , Ganesh Yadav ( PW 11309 ) , Ganesh Jadhav ( PW 11309 )"
-            }
-        ]
-    },
-    {
-        titlePrefix: "Verification Partner has been assigned by",
-        actor: "Payal ( PW 24037 )",
-        timestamp: "15 : 14 pm , 12-05-2025",
-        details: [
-            { label: "Verification Partner", value: "OnGrid" },
-            { label: "Verification Package", value: "Default Package - OnGrid" }
-        ]
-    }
-];
+import TableSkeleton from "../shared/molecules/Skeletons/TableSkeleton";
+import { NoDataFound } from "../shared/atoms/NoDataFound";
+import type { FunnelActivityLogEntry } from "../../types/flows";
+import { formatToIndianDateWithTime } from "../../utils/formatToIndianDate";
 
 interface ActivityLogProps {
     show: boolean;
     setShowActivityLog: (show: boolean) => void;
+    entries?: FunnelActivityLogEntry[];
+    isLoading?: boolean;
+    isError?: boolean;
 }
 
-const ActivityLog: React.FC<ActivityLogProps> = ({ show, setShowActivityLog }) => {
-
+const ActivityLog: React.FC<ActivityLogProps> = ({
+    show,
+    setShowActivityLog,
+    entries,
+    isLoading = false,
+    isError = false,
+}) => {
     return (
         <Modal isOpen={show} onClose={() => { }} size="md">
             <div className="flex flex-col bg-white w-full">
@@ -71,39 +40,72 @@ const ActivityLog: React.FC<ActivityLogProps> = ({ show, setShowActivityLog }) =
                 </div>
 
                 {/* Body */}
-                <div className="p-6 flex flex-col gap-6">
-                    {dummyActivityLogs.map((log, index) => (
-                        <div key={index} className="flex flex-col gap-3">
-                            <div className="flex flex-col gap-0.5">
-                                <Typography variant="body" className="text-slate-800">
-                                    {log.titlePrefix}
-                                    {log.actor && (
-                                        <span className="text-blue-500 ml-1">
-                                            {log.actor}
-                                        </span>
-                                    )}
-                                </Typography>
-                                <Typography variant="bodySmall" className="text-slate-400">
-                                    {log.timestamp}
-                                </Typography>
-                            </div>
+                <div className="p-6 flex flex-col gap-6 max-h-[70vh] overflow-y-auto">
+                    {isLoading && (
+                        <TableSkeleton columns={2} rows={3} />
+                    )}
 
-                            <div className="bg-[#f8f9fc] p-5 rounded-xl flex flex-col gap-5">
-                                <div className={`grid gap-y-6 gap-x-4 ${log.details.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
-                                    {log.details.map((detail, idx) => (
-                                        <div key={idx} className="flex flex-col gap-1">
-                                            <Typography variant="bodySmall" className="font-semibold text-slate-800">
-                                                {detail.label}
-                                            </Typography>
-                                            <Typography variant="bodySmall" className="text-slate-500 leading-relaxed">
-                                                {detail.value}
-                                            </Typography>
-                                        </div>
-                                    ))}
-                                </div>
+                    {isError && !isLoading && (
+                        <div className="flex flex-col items-center justify-center py-8">
+                            <div className="text-red-500 mb-3">
+                                <svg className="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                </svg>
                             </div>
+                            <Typography variant="bodySmall" className="text-slate-500">
+                                Failed to load activity logs.
+                            </Typography>
                         </div>
-                    ))}
+                    )}
+
+                    {!isLoading && !isError && (!entries || entries.length === 0) && (
+                        <NoDataFound
+                            title="No Activity Logs"
+                            subtitle="There are no activity logs for this onboarding yet."
+                        />
+                    )}
+
+                    {!isLoading && !isError && entries && entries.length > 0 && (
+                        entries.map((log, index) => (
+                            <div key={index} className="flex flex-col gap-3">
+                                <div className="flex flex-col gap-0.5">
+                                    <Typography variant="body" className="text-slate-800">
+                                        {log.title}
+                                    </Typography>
+                                    <Typography variant="bodySmall" className="text-slate-400">
+                                        {log.timestamp ? formatToIndianDateWithTime(log.timestamp) : "-"}
+                                    </Typography>
+                                    {log.category && (
+                                        <Typography variant="caption" className="text-blue-500">
+                                            {log.category}
+                                        </Typography>
+                                    )}
+                                </div>
+
+                                {log.details && log.details.length > 0 && (
+                                    <div className="bg-[#f8f9fc] p-5 rounded-xl flex flex-col gap-5">
+                                        <div className={`grid gap-y-6 gap-x-4 ${log.details.length > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+                                            {log.details.map((detail, idx) => (
+                                                <div key={idx} className="flex flex-col gap-1">
+                                                    <Typography variant="bodySmall" className="font-semibold text-slate-800">
+                                                        {detail.label}
+                                                    </Typography>
+                                                    <Typography variant="bodySmall" className="text-slate-500 leading-relaxed">
+                                                        {detail.value}
+                                                    </Typography>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
         </Modal>
