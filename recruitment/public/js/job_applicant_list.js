@@ -478,6 +478,17 @@
 		});
 	}
 
+	// Active list filters EXCEPT status — the tabs count per status, so status must
+	// not pre-filter. Everything else (institute, campus invite, opening, …) must
+	// apply so the tab counts match the visible, filtered rows.
+	function countFilters() {
+		const raw =
+			(_listview && _listview.filter_area && _listview.filter_area.get()) || [];
+		return raw
+			.filter((f) => Array.isArray(f) && f[1] && f[1] !== "status")
+			.map((f) => [f[1], f[2], f[3]]);
+	}
+
 	let _auxToken = 0;
 	function fetchAux() {
 		const data = (_listview && _listview.data) || [];
@@ -485,7 +496,11 @@
 		const token = ++_auxToken;
 		frappe.call({
 			method: "recruitment.api.job_applicant_list.get_job_applicants_with_stats",
-			args: { job_opening: resolveJobOpening(), owners: JSON.stringify(owners) },
+			args: {
+				job_opening: resolveJobOpening(),
+				owners: JSON.stringify(owners),
+				filters: JSON.stringify(countFilters()),
+			},
 			callback: (r) => {
 				if (token !== _auxToken) return;
 				const msg = (r && r.message) || {};

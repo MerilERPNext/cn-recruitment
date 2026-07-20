@@ -86,6 +86,7 @@ doctype_js = {
     "TA Rehire Check Settings": ["public/js/applicant_field_picker.js"],
     "Job Description": ["public/js/job_description.js"],
     "Job Requisition": ["public/js/job_requisition.js"],
+    "Campus Drive": ["public/js/campus_drive.js"],
     "Interview": ["public/js/interview.js"],
     "User": ["public/js/user.js"],
     "Employee Onboarding": [

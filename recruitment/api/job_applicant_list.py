@@ -34,13 +34,47 @@ def _status_options():
 	return [s.strip() for s in (status_field.options or "").split("\n") if s and s.strip()]
 
 
+def _normalize_count_filters(filters):
+	"""Turn the list view's active filters into a get_list filter list, dropping any
+	`status` condition (the tabs count PER status, so status must not pre-filter) and
+	normalizing both [doctype, field, op, value] and [field, op, value] shapes."""
+	if isinstance(filters, str):
+		try:
+			filters = json.loads(filters)
+		except (ValueError, TypeError):
+			filters = []
+	out = []
+	for f in filters or []:
+		if not isinstance(f, (list, tuple)):
+			continue
+		if len(f) == 4:
+			field, op, val = f[1], f[2], f[3]
+		elif len(f) == 3:
+			field, op, val = f[0], f[1], f[2]
+		else:
+			continue
+		if not field or field == "status":
+			continue
+		out.append([field, op, val])
+	return out
+
+
 @frappe.whitelist()
-def get_job_applicants_with_stats(job_opening=None, owners=None):
-	"""Return tab counts + status options (+ opening header + owner display info)."""
+def get_job_applicants_with_stats(job_opening=None, owners=None, filters=None):
+	"""Return tab counts + status options (+ opening header + owner display info).
+
+	Tab counts honour ALL of the list view's active filters (institute, campus invite,
+	opening, …) EXCEPT status — so each status tab shows how many of the *currently
+	filtered* applicants sit in that status, and the numbers match the visible rows.
+	"""
 
 	status_options = _status_options()
 
-	scoped = {"job_title": job_opening} if job_opening else {}
+	# All active list filters except status, plus the scoped opening (back-compat when
+	# the opening arrives only as the job_opening arg and not as a live filter).
+	scoped = _normalize_count_filters(filters)
+	if job_opening and not any(f[0] == "job_title" for f in scoped):
+		scoped.append(["job_title", "=", job_opening])
 
 	# ONE permission-scoped query fetching just `status`, tallied in Python.
 	# Avoids both the ~11 unbounded per-status pulls of the original AND the
