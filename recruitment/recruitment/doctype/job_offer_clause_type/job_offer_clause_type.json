@@ -1,35 +1,25 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "format:CLT-{clause_type}-{#####}",
+ "autoname": "field:type_name",
  "creation": "2026-07-13 10:00:00.000000",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "clause_type",
-  "title",
+  "type_name",
   "is_active",
-  "clause_text"
+  "description"
  ],
  "fields": [
   {
-   "description": "Which offer-commitment this clause belongs to.",
-   "fieldname": "clause_type",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Clause Type",
-   "options": "Job Offer Clause Type",
-   "reqd": 1
-  },
-  {
-   "description": "Short label shown in the picker (e.g. Option 1 - Two tranches).",
-   "fieldname": "title",
+   "description": "Name of the offer-commitment clause type (e.g. ESOP, Joining Bonus).",
+   "fieldname": "type_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Title",
-   "reqd": 1
+   "label": "Clause Type",
+   "reqd": 1,
+   "unique": 1
   },
   {
    "default": "1",
@@ -39,11 +29,9 @@
    "label": "Active"
   },
   {
-   "description": "Clause body. Use placeholders like [XXXX], [XXXXX/-], [Month, Year], [_______] for values the recruiter fills per offer.",
-   "fieldname": "clause_text",
-   "fieldtype": "Text",
-   "label": "Clause Text",
-   "reqd": 1
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -51,7 +39,7 @@
  "modified": "2026-07-13 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "Recruitment",
- "name": "Job Offer Clause Template",
+ "name": "Job Offer Clause Type",
  "owner": "Administrator",
  "permissions": [
   {
@@ -90,6 +78,6 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "title_field": "title",
+ "title_field": "type_name",
  "track_changes": 1
 }

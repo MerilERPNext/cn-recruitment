@@ -321,6 +321,9 @@ function jobOfferComputeCompensation(frm) {
 
 frappe.ui.form.on("Job Offer", {
     refresh(frm) {
+        // Clause type picker → only active clause types.
+        frm.set_query("clause_type", "custom_offer_clauses", () => ({ filters: { is_active: 1 } }));
+
         // Clause template picker → only active templates of the row's type.
         frm.set_query("clause_template", "custom_offer_clauses", (doc, cdt, cdn) => {
             const row = locals[cdt][cdn];

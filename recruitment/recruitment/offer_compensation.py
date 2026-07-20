@@ -450,6 +450,14 @@ _GRADE_RULES = {
     "Management": (70, 120000, 1),
 }
 
+# Clause-type master records (name, description). Seeded before the templates so
+# the templates' clause_type Link resolves.
+_CLAUSE_TYPES = [
+    ("ESOP", "Employee Stock Options entitlement."),
+    ("Joining Bonus", "One-time joining bonus."),
+    ("Other Commitment", "Appraisal / compensation-revision and other commitments."),
+]
+
 _CLAUSE_TEMPLATES = [
     ("ESOP", "Option 1 - Specific options",
      "You will be entitled to [XXXX] options under our Stock Options Plan [ESOP 2021] "
@@ -533,6 +541,23 @@ def seed_grade_values():
             )
 
 
+def seed_clause_types():
+    """Create the Clause Type master records (idempotent)."""
+    for name, desc in _CLAUSE_TYPES:
+        if not frappe.db.exists("Job Offer Clause Type", name):
+            try:
+                frappe.get_doc(
+                    {
+                        "doctype": "Job Offer Clause Type",
+                        "type_name": name,
+                        "is_active": 1,
+                        "description": desc,
+                    }
+                ).insert(ignore_permissions=True)
+            except Exception:
+                frappe.logger("recruitment").warning(f"seed clause type skipped: {name}")
+
+
 def seed_clause_templates():
     for clause_type, title, text in _CLAUSE_TEMPLATES:
         if frappe.db.exists("Job Offer Clause Template", {"clause_type": clause_type, "title": title}):
@@ -577,6 +602,7 @@ def setup_offer_compensation():
         ensure_breakup_components()
         seed_settings_defaults()
         seed_grade_values()
+        seed_clause_types()
         seed_clause_templates()
         seed_location_allowance()
     except Exception:

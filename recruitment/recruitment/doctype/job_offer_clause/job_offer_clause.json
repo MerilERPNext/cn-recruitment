@@ -14,10 +14,10 @@
   {
    "columns": 2,
    "fieldname": "clause_type",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Clause Type",
-   "options": "ESOP\nJoining Bonus\nOther Commitment",
+   "options": "Job Offer Clause Type",
    "reqd": 1
   },
   {
