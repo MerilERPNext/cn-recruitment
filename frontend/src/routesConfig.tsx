@@ -586,21 +586,9 @@ const ConfigureJobBoards = lazyWithRetry(
   () => import("./components/Recruitment/ConfigureJobBoards"),
   "ConfigureJobBoards",
 );
-const RecognitionPage = lazyWithRetry(
-  () => import("./components/Recognition/RecognitionPage"),
-  "RecognitionPage",
-);
 const RecognitionAdminDashboard = lazyWithRetry(
   () => import("./components/Recognition/Vibe/RecognitionAdminDashboard"),
   "RecognitionAdminDashboard",
-);
-const HallOfFamePage = lazyWithRetry(
-  () => import("./components/Recognition/HallOfFamePage"),
-  "HallOfFamePage",
-);
-const LeaderboardPage = lazyWithRetry(
-  () => import("./components/Recognition/LeaderboardPage"),
-  "LeaderboardPage",
 );
 const MyAppreciationsHistory = lazyWithRetry(
   () => import("./components/Recognition/MyAppreciationsHistory"),
@@ -768,7 +756,10 @@ export interface AppRoute {
   path: string;
   element: ReactElement;
   children?: AppRoute[];
-  permissionKey: string;
+  // Usually a single Modular Ui page name. An array is allowed when a route
+  // aggregates several pages (e.g. Awards-Live covers individual + team award
+  // pages): the route guard grants access if ANY of the listed pages is enabled.
+  permissionKey: string | string[];
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -1694,22 +1685,6 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Scheduled Imports",
   },
   {
-    path: "/webapp/recognition",
-    element: <RecognitionPage />,
-    permissionKey: "Recognition",
-  },
-  {
-    path: "/webapp/recognition/hall-of-fame",
-    element: <HallOfFamePage />,
-    permissionKey: "Hall Of Fame",
-  },
-  {
-    path: "/webapp/recognition/leaderboard",
-    element: <LeaderboardPage />,
-    permissionKey: "Leader Board",
-  },
-
-  {
     path: "/webapp/recognition/vibe",
     element: <VibeApp />,
     permissionKey: "Recognition",
@@ -1744,7 +1719,16 @@ export const routesConfig: AppRoute[] = [
       {
         path: "awards-live",
         element: <AwardsLivePrograms />,
-        permissionKey: "Awards Live",
+        // Aggregate page: matches the sidebar's RECOGNITION_ROUTE_PAGES mapping.
+        // Access is granted if ANY individual/team award page is enabled. The
+        // old single "Awards Live" key matched no real page, so the route guard
+        // always denied access.
+        permissionKey: [
+          "Individual Award programs",
+          "Individual Award Winners",
+          "Team Award programs",
+          "Team Award Winners",
+        ],
       },
       {
         path: "awards-history",
@@ -1759,7 +1743,10 @@ export const routesConfig: AppRoute[] = [
       {
         path: "earned-points",
         element: <EarnedPointsSummary />,
-        permissionKey: "Earned Points",
+        // Must match the actual Modular Ui page name returned by the permission
+        // resolver ("Earned Points Summary page"); the old "Earned Points" key
+        // matched no page, so the route guard always denied access.
+        permissionKey: "Earned Points Summary page",
       },
       {
         path: "admin-dashboard",
