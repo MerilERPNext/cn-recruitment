@@ -128,7 +128,7 @@ const MyGoals: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 rounded-lg bg-slate-50 p-3 md:flex-row md:items-center md:justify-between lg:w-[400px] lg:bg-transparent lg:p-0">
+                  <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 rounded-lg bg-slate-50 p-3 md:flex-row md:items-center md:justify-between lg:max-w-[400px] lg:bg-transparent lg:p-0">
                     <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 lg:border-r lg:border-slate-100 lg:pr-5">
                       <div className="min-w-0">
                         <Typography variant="bodyMedium" className="block whitespace-nowrap font-bold text-slate-950">
@@ -152,7 +152,7 @@ const MyGoals: React.FC = () => {
                       <Badge label={goal.state} variant="info" size="sm" />
                     </div>
                     <ChevronRight 
-                      className={`h-5 w-5 bg-gray-100 rounded-full transition-transform duration-200 ${openGoalIndex === index ? 'rotate-90' : ''}`} 
+                      className={`h-5 w-5 border-gray-500 border rounded-full transition-transform duration-200 ${openGoalIndex === index ? 'rotate-90' : ''}`} 
                       onClick={(e) => {
                         e.stopPropagation();
                         setOpenGoalIndex(openGoalIndex === index ? null : index);
