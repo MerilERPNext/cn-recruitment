@@ -26,9 +26,11 @@ const ProfileCard = ({ header }: ProfileCardProps) => (
             {header?.employee_name || "Employee"}
           </Typography>
         </WrapperHoverCard>
-        <div className="flex justify-center">
-          <Badge label="On Probation" variant="success" size="sm" />
-        </div>
+        {header?.custom_employment_status && (
+          <div className="flex justify-center">
+            <Badge label={header.custom_employment_status} variant="success" size="sm" />
+          </div>
+        )}
       </div>
 
       <Typography
