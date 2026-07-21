@@ -28,7 +28,23 @@ const ProfileCard = ({ header }: ProfileCardProps) => (
         </WrapperHoverCard>
         {header?.custom_employment_status && (
           <div className="flex justify-center">
-            <Badge label={header.custom_employment_status} variant="success" size="sm" />
+            <Badge
+              label={header.custom_employment_status}
+              variant={
+                (
+                  {
+                    "Confirmed": "success",
+                    "On Probation": "info",
+                    "Probation Extended": "warning",
+                    "On Notice Period": "warning",
+                    "Terminated": "danger",
+                    "Separated": "danger",
+                    "Recommended for Separation": "danger",
+                  } as const
+                )[header.custom_employment_status] || "neutral"
+              }
+              size="sm"
+            />
           </div>
         )}
       </div>

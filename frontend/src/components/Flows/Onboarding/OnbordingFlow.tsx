@@ -141,7 +141,11 @@ const OnbordingFlow = memo(() => {
             </div>
           ) : (
             <>
-              <ProfileCard header={onboardingDetail?.header} />
+              {isFunnelLoading || isOnboardingDetailLoading ? (
+                <div className="animate-pulse bg-white rounded-2xl border border-slate-100 p-6 h-32" />
+              ) : (
+                <ProfileCard header={onboardingDetail?.header} />
+              )}
               <div className="min-w-0 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 space-y-5 md:space-y-6">
                 <NavigationTabs
                   tabs={ONBOARDING_TABS.map((tab: OnboardingTab) => ({ key: tab, label: tab }))}
