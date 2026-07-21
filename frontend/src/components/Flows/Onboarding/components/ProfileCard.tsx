@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Mail, Pencil, Phone } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 import Avatar from "../../../shared/Avatar";
 import Badge from "../../../shared/Badge";
 import { Typography } from "../../../shared/atoms/Typography";
@@ -16,11 +16,6 @@ const ProfileCard = ({ header }: ProfileCardProps) => (
       name={header?.employee_name || "Unknown"}
       src=""
       size="h-24 w-24"
-      indicatorNode={
-        <div className="bg-blue-500  h-10 w-10 text-white flex items-center justify-center rounded-full border-2 border-white cursor-pointer hover:bg-blue-600 transition-colors shadow -translate-x-3 -translate-y-3">
-          <Pencil size={12} className="stroke-[2.5] size-4" />
-        </div>
-      }
       indicatorPositionClass="absolute bottom-0 right-0"
     />
 
@@ -31,9 +26,27 @@ const ProfileCard = ({ header }: ProfileCardProps) => (
             {header?.employee_name || "Employee"}
           </Typography>
         </WrapperHoverCard>
-        <div className="flex justify-center">
-          <Badge label="On Probation" variant="success" size="sm" />
-        </div>
+        {header?.custom_employment_status && (
+          <div className="flex justify-center">
+            <Badge
+              label={header.custom_employment_status}
+              variant={
+                (
+                  {
+                    "Confirmed": "success",
+                    "On Probation": "info",
+                    "Probation Extended": "warning",
+                    "On Notice Period": "warning",
+                    "Terminated": "danger",
+                    "Separated": "danger",
+                    "Recommended for Separation": "danger",
+                  } as const
+                )[header.custom_employment_status] || "neutral"
+              }
+              size="sm"
+            />
+          </div>
+        )}
       </div>
 
       <Typography

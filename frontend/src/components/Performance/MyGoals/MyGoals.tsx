@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Filter, Plus, Target, Timer, Weight } from 'lucide-react';
+import { ArrowBigDown, ArrowDown, ChevronRight, Filter, Info, Plus, Target, Timer, Weight } from 'lucide-react';
 import { Typography } from '../../shared/atoms/Typography';
 import Badge, { type BadgeVariant } from '../../shared/Badge';
 import Button from '../../shared/atoms/Button';
@@ -19,7 +19,7 @@ const MyGoals: React.FC = () => {
   const navigate = useNavigate();
   const { isMobile, isTablet, isDesktop } = useScreenSize();
   const isCompact = isMobile || isTablet;
-
+  const [openGoalIndex, setOpenGoalIndex] = useState<number | null>(null);
   return (
     <div className="min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] px-3 py-4 font-sans sm:px-4 sm:py-5 lg:px-6 lg:py-6">
       <div className="mx-auto w-full  min-w-0 space-y-4 sm:space-y-5">
@@ -128,7 +128,7 @@ const MyGoals: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 rounded-lg bg-slate-50 p-3 md:flex-row md:items-center md:justify-between lg:w-[400px] lg:bg-transparent lg:p-0">
+                  <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 rounded-lg bg-slate-50 p-3 md:flex-row md:items-center md:justify-between lg:max-w-[400px] lg:bg-transparent lg:p-0">
                     <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 lg:border-r lg:border-slate-100 lg:pr-5">
                       <div className="min-w-0">
                         <Typography variant="bodyMedium" className="block whitespace-nowrap font-bold text-slate-950">
@@ -151,43 +151,61 @@ const MyGoals: React.FC = () => {
                       <Badge label={goal.status} variant={getStatusVariant(goal.status)} size="sm" pulse={{ show: true }} />
                       <Badge label={goal.state} variant="info" size="sm" />
                     </div>
+                    <ChevronRight 
+                      className={`h-5 w-5 border-gray-500 border rounded-full transition-transform duration-200 ${openGoalIndex === index ? 'rotate-90' : ''}`} 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenGoalIndex(openGoalIndex === index ? null : index);
+                      }} 
+                    />
                   </div>
                 </div>
 
-                {goal.krs && (
-                  <div className="relative z-10 border-t border-slate-100 bg-slate-50/70 p-3 sm:p-4">
-                    <div className="relative min-w-0 space-y-3 md:pl-8">
-                      {!isCompact && <div className="absolute bottom-4 left-[16px] top-[-16px] w-px bg-slate-200" />}
-                      {goal.krs.map((kr: GoalKeyResult, kIdx: number) => (
-                        <div key={kIdx} className="relative flex min-w-0 flex-col gap-2 rounded-lg border border-slate-100 bg-white p-3 lg:flex-row lg:items-center">
-                          {!isCompact && <div className="absolute left-[-16px] top-[18px] h-px w-[16px] bg-slate-200" />}
+                <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${openGoalIndex === index ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                  <div className="overflow-hidden">
+                    <div className="relative z-10 border-t border-slate-100 bg-slate-50/70 p-3 sm:p-4">
+                      {goal.krs && goal.krs.length > 0 ? (
+                        <div className="relative min-w-0 space-y-3 md:pl-8">
+                          {!isCompact && <div className="absolute bottom-4 left-[16px] top-[-16px] w-px bg-slate-200" />}
+                          {goal.krs.map((kr: GoalKeyResult, kIdx: number) => (
+                            <div key={kIdx} className="relative flex min-w-0 flex-col gap-2 rounded-lg border border-slate-100 bg-white p-3 lg:flex-row lg:items-center">
+                              {!isCompact && <div className="absolute left-[-16px] top-[18px] h-px w-[16px] bg-slate-200" />}
 
-                          <div className="flex min-w-0 flex-1 items-start gap-3 lg:items-center">
-                            <div className="mt-0.5 flex-shrink-0">
-                              <Badge label={kr.id} variant="purple-outline" size="sm" />
-                            </div>
-                            <Typography variant="caption" className="min-w-0 break-words leading-relaxed text-slate-600">
-                              {kr.title}
-                            </Typography>
-                          </div>
-
-                          <div className="flex w-full min-w-0 shrink-0 items-center justify-start lg:w-[240px] xl:w-[320px]">
-                            <div className="flex w-full min-w-0 flex-col gap-1">
-                              {!isDesktop && (
-                                <Typography variant="caption" className="text-right text-slate-500">
-                                  {kr.percentage}%
+                              <div className="flex min-w-0 flex-1 items-start gap-3 lg:items-center">
+                                <div className="mt-0.5 flex-shrink-0">
+                                  <Badge label={kr.id} variant="purple-outline" size="sm" />
+                                </div>
+                                <Typography variant="caption" className="min-w-0 break-words leading-relaxed text-slate-600">
+                                  {kr.title}
                                 </Typography>
-                              )}
-                              <div className="h-1.5 w-full overflow-hidden rounded-md bg-slate-200">
-                                <div className="h-1.5 rounded-md bg-blue-500" style={{ width: `${kr.percentage}%` }} />
+                              </div>
+
+                              <div className="flex w-full min-w-0 shrink-0 items-center justify-start lg:w-[240px] xl:w-[320px]">
+                                <div className="flex w-full min-w-0 flex-col gap-1">
+                                  {!isDesktop && (
+                                    <Typography variant="caption" className="text-right text-slate-500">
+                                      {kr.percentage}%
+                                    </Typography>
+                                  )}
+                                  <div className="h-1.5 w-full overflow-hidden rounded-md bg-slate-200">
+                                    <div className="h-1.5 rounded-md bg-blue-500" style={{ width: `${kr.percentage}%` }} />
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          ))}
                         </div>
-                      ))}
+                      ) : (
+                        <div className="flex items-center gap-2 justify-center py-4 px-4 text-center rounded-lg border border-dashed border-slate-200 bg-white shadow-sm">
+                          <Info className="h-4 w-4 text-blue-500 shrink-0" />
+                          <Typography variant="caption" className="text-slate-500 font-medium">
+                            No Key Results (KRs) linked to this goal.
+                          </Typography>
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </div>

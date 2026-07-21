@@ -112,7 +112,8 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
   return (
     <div
-      className="w-full"
+      className="w-full cursor-pointer"
+      style={{ touchAction: "manipulation" }}
       onClick={handleonClick(emp)}
       role="button"
       tabIndex={0}
