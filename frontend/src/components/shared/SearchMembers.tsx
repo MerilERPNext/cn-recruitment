@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Search } from "lucide-react";
 
@@ -126,9 +126,30 @@ const SearchMembers = () => {
 
   const [isFocused, setIsFocused] = useState(false);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutsideInteraction = (e: MouseEvent | TouchEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setIsFocused(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideInteraction);
+    document.addEventListener("touchstart", handleOutsideInteraction, { passive: true });
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideInteraction);
+      document.removeEventListener("touchstart", handleOutsideInteraction);
+    };
+  }, []);
+
   return (
     // <div className="w-full max-w-md flex flex-col">
-    <div className="w-full max-w-md min-w-0 flex flex-col">
+    <div className="w-full max-w-md min-w-0 flex flex-col" ref={containerRef}>
       <main className="flex-grow w-full">
         <div className="relative mx-auto max-w-3xl px-3 sm:px-6 lg:px-8 ">
           <div className="flex items-center gap-2">
@@ -140,7 +161,6 @@ const SearchMembers = () => {
                 value={searchQuery}
                 onChange={onSearchInputChange}
                 onFocus={() => setIsFocused(true)}
-                onBlur={() => setTimeout(() => setIsFocused(false), 200)}
                 placeholder="Search members…"
                 className="flex-1 min-w-0 bg-transparent text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:outline-none"
                 inputMode="search"
