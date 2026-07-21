@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { History } from "lucide-react";
 import { Typography } from "../../../shared/atoms/Typography";
 
 const PageHeader = ({ setShowActivityLog }: { setShowActivityLog: (show: boolean) => void }) => (
@@ -11,8 +12,12 @@ const PageHeader = ({ setShowActivityLog }: { setShowActivityLog: (show: boolean
         Manage and view your onboarding details
       </Typography>
     </div>
-    <button onClick={() => setShowActivityLog(true)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg shadow-sm text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-      View Detailed Activity Logs
+    <button 
+      onClick={() => setShowActivityLog(true)} 
+      className="w-full sm:w-auto flex justify-center items-center gap-2 px-4 py-2.5 sm:py-2 bg-white border border-slate-200 rounded-xl sm:rounded-lg shadow-sm text-sm font-medium text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-colors"
+    >
+      <History size={16} className="text-slate-500" />
+      View Activity Log
     </button>
   </div>
 );

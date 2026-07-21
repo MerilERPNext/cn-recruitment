@@ -3,12 +3,18 @@ import { Mail, Pencil, Phone } from "lucide-react";
 import Avatar from "../../../shared/Avatar";
 import Badge from "../../../shared/Badge";
 import { Typography } from "../../../shared/atoms/Typography";
+import { EmployeeOnboardingDetail } from "../../../../types/onboarding";
+import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 
-const ProfileCard = () => (
+interface ProfileCardProps {
+  header?: EmployeeOnboardingDetail["header"];
+}
+
+const ProfileCard = ({ header }: ProfileCardProps) => (
   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-6 flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6">
     <Avatar
-      name="Yogesh Vaidya"
-      src="https://api.dicebear.com/7.x/adventurer/svg?seed=Yogesh"
+      name={header?.employee_name || "Unknown"}
+      src=""
       size="h-24 w-24"
       indicatorNode={
         <div className="bg-blue-500  h-10 w-10 text-white flex items-center justify-center rounded-full border-2 border-white cursor-pointer hover:bg-blue-600 transition-colors shadow -translate-x-3 -translate-y-3">
@@ -20,9 +26,11 @@ const ProfileCard = () => (
 
     <div className="min-w-0 flex-1 text-center md:text-left space-y-2">
       <div className="flex flex-col sm:flex-row sm:items-center justify-center md:justify-start gap-2.5">
-        <Typography variant="h4" className="font-bold text-slate-800 break-words">
-          Yogesh Vaidya
-        </Typography>
+        <WrapperHoverCard employeeId={header?.employee_id ?? ""}>
+          <Typography variant="h4" className="font-bold text-slate-800 break-words hover:underline cursor-pointer">
+            {header?.employee_name || "Employee"}
+          </Typography>
+        </WrapperHoverCard>
         <div className="flex justify-center">
           <Badge label="On Probation" variant="success" size="sm" />
         </div>
@@ -32,16 +40,15 @@ const ProfileCard = () => (
         variant="bodySmall"
         className="text-slate-500 block leading-relaxed break-words"
       >
-        PW30946 <span className="mx-1 text-slate-300">|</span> Innovation{" "}
-        <span className="mx-1 text-slate-300">|</span> Corporate - KLJ Noida One
-        - Noida, Uttar Pradesh (201301)
+        {header?.employee_id || "-"} <span className="mx-1 text-slate-300">|</span> {header?.department_label || header?.department || "-"}
+        <span className="mx-1 text-slate-300">|</span> {header?.current_office_location_label || header?.current_office_location || "-"}
       </Typography>
 
       <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 sm:gap-6 pt-2">
         <div className="flex items-center gap-2 text-slate-600">
           <Phone size={15} className="text-blue-500" />
           <Typography variant="bodySmall" className="font-medium text-slate-600">
-            +91 83590 22958
+            {header?.phone || "-"}
           </Typography>
         </div>
 
@@ -51,7 +58,7 @@ const ProfileCard = () => (
             variant="bodySmall"
             className="font-medium text-slate-600 break-all"
           >
-            jhashruchu7@gmail.com
+            {header?.email || "-"}
           </Typography>
         </div>
       </div>

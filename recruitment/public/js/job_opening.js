@@ -614,10 +614,35 @@ frappe.ui.form.on("Job Opening", {
 	},
 });
 
-// Cascading selection: Company -> Department -> Designation.
+// Cascading selection: Company -> Department -> Designation -> Functional Area.
 // Department is scoped to the chosen Company (Department.company); Designation is
 // scoped to the chosen Department (Designation.custom_department). Changing a field
 // resets the ones below it so a stale child can't survive a new parent.
+//
+// Functional Area is defined ON the Designation (Designation.custom_functional_area,
+// a mandatory Link) — the opening just inherits it.
+//
+// add_fetch does BOTH halves of that with no added round trips: the value rides along
+// on the `frappe.client.validate_link` call the Designation link already fires on every
+// change (it just asks for one more column), and clearing the designation clears the
+// fetched field too. Hence no `designation` handler and no `refresh` lookup — a lookup
+// on refresh would re-hit the DB on every reload/save/tab switch for a value the doc
+// already carries.
+frappe.ui.form.on("Job Opening", {
+	setup(frm) {
+		frm.add_fetch("designation", "custom_functional_area", "custom_functional_area");
+
+		// Pin the picker to the designation's functional area. Reads the doc's own
+		// value (kept in sync by the fetch above) rather than re-querying the
+		// Designation, so opening the dropdown costs nothing extra. No designation
+		// chosen yet -> field is empty -> list stays unfiltered.
+		frm.set_query("custom_functional_area", () => {
+			const fa = frm.doc.custom_functional_area;
+			return fa ? { filters: { name: fa } } : {};
+		});
+	},
+});
+
 frappe.ui.form.on("Job Opening", {
 	setup(frm) {
 		// Department: enabled only, scoped to the chosen Company.

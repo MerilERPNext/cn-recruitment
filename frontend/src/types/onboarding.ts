@@ -92,26 +92,26 @@ export interface UseApprovalDataReturn {
 }
 
 export interface UseApprovalActionsReturn {
-    singleAction: (
-      fieldname: string,
-      status: ApprovalStatus,
-      comment?: string
-    ) => Promise<void>;
-  
-    bulkSelectedAction: (
-      fieldnames: string[],
-      status: ApprovalStatus,
-      comment?: string
-    ) => Promise<void>;
-  
-    sectionAction: (
-      sectionName: string,
-      status: ApprovalStatus,
-      comment?: string
-    ) => Promise<void>;
-  
-    bulkApproveAllPending: () => Promise<void>;
-  }
+  singleAction: (
+    fieldname: string,
+    status: ApprovalStatus,
+    comment?: string
+  ) => Promise<void>;
+
+  bulkSelectedAction: (
+    fieldnames: string[],
+    status: ApprovalStatus,
+    comment?: string
+  ) => Promise<void>;
+
+  sectionAction: (
+    sectionName: string,
+    status: ApprovalStatus,
+    comment?: string
+  ) => Promise<void>;
+
+  bulkApproveAllPending: () => Promise<void>;
+}
 
 export interface UseToastReturn {
   toast: Toast | null;
@@ -125,4 +125,72 @@ export interface UseSectionNavReturn {
   goToSection: (key: string) => void;
   goNext: () => void;
   goPrev: () => void;
+}
+
+export interface OnboardingPerson {
+  user: string | null;
+  employee: string | null;
+  full_name: string;
+  initials: string;
+  email: string | null;
+  image: string | null;
+  designation: string | null;
+  department: string | null;
+  department_label: string | null;
+  office_location: string | null;
+  city: string | null;
+  state: string | null;
+  location_type: string | null;
+  subtitle: string;
+}
+
+export interface OnboardingDocument {
+  form: string;
+  form_name: string;
+  form_source: string;
+  field_count: number;
+  status: string;
+  triggered_on: string | null;
+  time_since_trigger_days: number | null;
+  completion_date: string | null;
+}
+
+export interface EmployeeOnboardingDetail {
+  name: string;
+  boarding_status: string;
+  job_applicant: string | null;
+  employee: string | null;
+  header: {
+    employee_name: string | null;
+    employee_id: string | null;
+    designation: string | null;
+    designation_label: string | null;
+    department: string | null;
+    department_label: string | null;
+    company: string | null;
+    company_label: string | null;
+    phone: string | null;
+    email: string | null;
+    date_of_joining: string | null;
+    boarding_begins_on: string | null;
+    current_office_location: string | null;
+    current_office_location_label: string | null;
+  };
+  manager: OnboardingPerson | null;
+  key_people: {
+    onboarding_spoc: OnboardingPerson | null;
+    recruiter: OnboardingPerson | null;
+    buddies: OnboardingPerson[];
+    teammates: OnboardingPerson[];
+    notify_users: OnboardingPerson[];
+  };
+  onboarding_documents: OnboardingDocument[];
+  workflow_tasks: any[];
+  verification_reports: any[];
+}
+
+export interface EmployeeOnboardingDetailResponse {
+  success: boolean;
+  message: string;
+  data: EmployeeOnboardingDetail;
 }
