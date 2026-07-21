@@ -678,8 +678,8 @@ def _load_onboarding(name):
 
 
 _HEADER_EMPLOYEE_FIELDS = [
-    "name", "employee_name", "employee_number", "status", "image",
-    "designation", "department", "company", "branch",
+    "name", "employee_name", "employee_number", "status", "custom_employment_status",
+    "image", "designation", "department", "company", "branch",
     "cell_number", "company_email", "personal_email", "date_of_joining",
 ]
 
@@ -1032,7 +1032,8 @@ def get_employee_onboarding_detail(name):
     {"success": true, "message": "...", "data": {
         "name", "boarding_status", "job_applicant", "employee",
         "header": {employee_name, employee_id, employee_number, employee_status,
-                   image, initials, designation, designation_label,
+                   custom_employment_status, image, initials,
+                   designation, designation_label,
                    department, department_label, company, company_label,
                    phone, email, date_of_joining, boarding_begins_on,
                    current_office_location, current_office_location_label,
@@ -1060,8 +1061,11 @@ def get_employee_onboarding_detail(name):
     - Office location also has `current_office_location_display` (ready-to-render
       place line) and `current_office_location_detail` with the parts broken out.
     - Header values prefer the linked Employee and fall back to the onboarding's
-      own fields. `employee_number`, `employee_status` and `image` come only from
-      the Employee and are null until it exists. The shape never changes.
+      own fields. `employee_number`, `employee_status`, `custom_employment_status`
+      and `image` come only from the Employee and are null until it exists. The
+      shape never changes. `employee_status` is the record's lifecycle state
+      (Active / Left / ...); `custom_employment_status` is the HR state
+      (On Probation, Confirmed, On Notice Period, ...).
     - `onboarding_template` / `onboarding_template_label` are ALWAYS null — which
       flow was run is resolved on the flow side. The keys exist so the shape does
       not change when that is wired up.
@@ -1160,6 +1164,7 @@ def get_employee_onboarding_detail(name):
                 "employee_id": employee_id,
                 "employee_number": emp.get("employee_number") if emp else None,
                 "employee_status": emp.get("status") if emp else None,
+                "custom_employment_status": emp.get("custom_employment_status") if emp else None,
                 "image": emp.get("image") if emp else None,
                 "initials": _initials(employee_name),
                 # Owned by the flow side; kept here only so the shape is stable.
