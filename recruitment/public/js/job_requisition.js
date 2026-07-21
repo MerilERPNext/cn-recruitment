@@ -1,223 +1,401 @@
-// Job Requisition — auto-fetch Job Description on (designation + department).
-//
-// Flow:
-//  1. User picks designation and department.
-//  2. As soon as both are present, look up a Job Description whose
-//     designation/department tables include the chosen values.
-//  3. If found, set custom_job_description_template to it and copy
-//     description + skills into Job Requisition.
-//  4. If the user picks/clears custom_job_description_template
-//     manually, sync description + skills accordingly.
-//  5. The HTML `custom_preview` field renders the live `description`
-//     value as a styled card so the user can see the final JD layout
-//     without scrolling through raw Text Editor markup.
-
 frappe.ui.form.on("Job Requisition", {
-    onload(frm) {
-        // Gate: on a NEW requisition, check Raise Requisition Scope up front so a
-        // user who isn't permitted gets a clean popup and is bounced back instead
-        // of filling the form only to be blocked at save. The server-side
-        // before_insert hook remains the authoritative block.
-        if (!frm.is_new()) {
-            return;
-        }
-        frappe.call({
-            method: "recruitment.recruitment.doctype.raise_requisition_scope.raise_requisition_scope.check_can_raise_requisition",
-            callback(r) {
-                const res = r.message || {};
-                if (res.allowed) {
-                    return;
-                }
-                frappe.msgprint({
-                    title: __("Not Allowed to Raise Requisition"),
-                    indicator: "red",
-                    message: res.reason || __("You are not permitted to raise requisitions."),
-                });
-                // Send them somewhere harmless rather than leaving a form they
-                // cannot save open.
-                frappe.set_route("List", "Job Requisition");
+  setup: function (frm) {
+    frm.set_query("custom_assign_to_recruiter", function () {
+      return {
+        query:
+          "recruitment.customizations.job_requisition.job_requisition.get_job_recruiters",
+        filters: {
+          role: "Job Recruiter",
+        },
+      };
+    });
+  },
+  refresh: function (frm) {
+    // This render method checks if the JD is available. If it is, it will be added.
+    // This will add the custom notes section to the form.
+    if (!frm.is_new()) {
+      let crm_notes = `
+                  <div class="notes-section col-xs-12">
+                      <div class="new-btn pb-3">
+                          <button class="btn btn-sm small new-note-btn mr-1">
+                              <svg class="icon icon-sm">
+                                  <use href="#icon-add"></use>
+                                  
+                              </svg>
+                              Add Notes
+                          </button>
+                      </div>
+                      <div class="all-notes" id="all_notes_section">
+                          <!-- Existing notes will be displayed here -->
+                      </div>
+                  </div>
+                  <style>
+                      .comment-content {
+                          border: 1px solid var(--border-color);
+                          border-bottom: none;
+                      }
+                      .comment-content:last-child {
+                          border-bottom: 1px solid var(--border-color);
+                      }
+                      .new-btn {
+                          text-align: right;
+                      }
+                      .notes-section .no-activity {
+                          min-height: 100px;
+                          text-align: center;
+                      }
+                      .notes-section .btn {
+                          padding: 0.2rem 0.2rem;
+                      }
+                      .note-info {
+                          display: flex;
+                          justify-content: space-between;
+                      }
+                      .hide-name-column {
+                      display: none;
+                      }
+                  </style>`;
+
+      document.getElementById("ctc_preview").innerHTML = crm_notes;
+
+      let allNotesSection = document.getElementById("all_notes_section");
+      if (frm.doc.custom_crm_note && frm.doc.custom_crm_note.length > 0) {
+        frm.doc.custom_crm_note.forEach((note) => {
+          let noteDiv = document.createElement("div");
+          noteDiv.className = "comment-content p-3 row";
+          noteDiv.innerHTML = `
+                          <table style="width:100%">
+                              <tr>
+                              <td class="hide-name-column" >${note.name}</td>
+                              <td style="width:20%">${
+                                note.custom_comment_type
+                              }</td>
+                               
+                                  <td style="width:40%">${note.note}</td>
+                                  <td style="width:30%">${note.added_by}<br>
+                                  
+                                  ${frappe.datetime.global_date_format(
+                                    note.added_on
+                                  )}</td>
+      
+                                  
+                                  
+                                  <td style="width:5%"><button class="edit-note-btn btn btn-sm btn-primary" data-note="${
+                                    note.note
+                                  }"><svg class="icon icon-sm"><use xlink:href="#icon-edit"></use></svg></button></td>
+      
+                              </tr>
+      
+                          </table>`;
+          allNotesSection.appendChild(noteDiv);
+        });
+      }
+      // <td style="width:5%"><button class="delete-note-btn btn btn-sm btn-primary" data-note="${note.note}"><svg class="icon icon-sm"><use xlink:href="#icon-delete"></use></svg></button></td>
+
+      let newNoteBtn = frm
+        .get_field("custom_notes_html")
+        .wrapper.querySelector(".new-note-btn");
+      newNoteBtn.addEventListener("click", () => {
+        frappe.prompt(
+          [
+            {
+              fieldname: "comment_type",
+              fieldtype: "Select",
+              label: "Comment Type",
+              options: [
+                "Candidate Response",
+                "Call",
+                "CTC Confirmation",
+                "CTC approvals",
+                "Interview comments and approvals",
+                "Notice period buy out approval",
+                "Notice Period approval",
+                "Personal Interaction",
+                "Zoom call",
+                "Interview Schedule",
+                "CTC Discussion",
+                "Others",
+                "Interviewer Feedback",
+                "General Review",
+                "Management Approval",
+              ],
             },
+            {
+              fieldname: "notes",
+              fieldtype: "Text",
+              label: "Notes",
+              reqd: true,
+            },
+          ],
+          (values) => {
+            var child = frm.add_child("custom_crm_note");
+
+            frappe.model.set_value(
+              child.doctype,
+              child.name,
+              "note",
+              values.notes
+            );
+            frappe.model.set_value(
+              child.doctype,
+              child.name,
+              "added_by",
+              frappe.session.user
+            );
+            frappe.model.set_value(
+              child.doctype,
+              child.name,
+              "added_on",
+              frappe.datetime.now_datetime()
+            );
+            frappe.model.set_value(
+              child.doctype,
+              child.name,
+              "custom_comment_type",
+              values.comment_type
+            );
+            frm.refresh_field("custom_crm_note");
+            frm.save();
+          },
+          "Add Notes",
+          "Submit"
+        );
+      });
+
+      allNotesSection.querySelectorAll(".edit-note-btn").forEach((btn, idx) => {
+        btn.addEventListener("click", (event) => {
+          let noteValue = event.target.getAttribute("data-note");
+          let nameValue = event.target
+            .closest("tr")
+            .querySelector("td:nth-child(1)").innerText;
+          // console.log("Name:", nameValue);
+
+          $.each(frm.doc.custom_crm_note, function (i, v) {
+            if (v.name == nameValue) {
+              frappe.prompt(
+                [
+                  {
+                    fieldname: "notes",
+                    fieldtype: "Text",
+                    label: "Notes",
+                    reqd: true,
+                    default: v.note,
+                  },
+                ],
+                (values) => {
+                  let childDoc = frm.doc.custom_crm_note.find(
+                    (child) => child.name == nameValue
+                  );
+
+                  if (childDoc) {
+                    childDoc.note = values.notes;
+                    frm.refresh_field("custom_crm_note");
+                  }
+
+                  if (frm.doc.custom_check == 0) {
+                    frm.set_value("custom_check", 1);
+                  } else {
+                    frm.set_value("custom_check", 0);
+                  }
+
+                  frm.save();
+                },
+                "Edit Note",
+                "Submit"
+              );
+            }
+          });
         });
-    },
+      });
 
-    refresh(frm) {
-        render_description_preview(frm);
-    },
+      allNotesSection
+        .querySelectorAll(".delete-note-btn")
+        .forEach((btn, idx) => {
+          btn.addEventListener("click", (event) => {
+            let noteValue = event.target.getAttribute("data-note");
+            let nameValue = event.target
+              .closest("tr")
+              .querySelector("td:nth-child(1)").innerText;
+            // console.log("Name:", nameValue);
 
-    description(frm) {
-        render_description_preview(frm);
-    },
+            $.each(frm.doc.custom_crm_note, function (i, v) {
+              if (v.name == nameValue) {
+                // console.log(v.note)
 
-    designation(frm) {
-        try_autofetch_jd(frm);
-    },
+                frm.doc.custom_crm_note.splice(i, 1);
 
-    department(frm) {
-        try_autofetch_jd(frm);
-    },
+                frm.refresh_field("custom_crm_note");
 
-    custom_job_description_template(frm) {
-        const jd = frm.doc.custom_job_description_template;
-        if (!jd) {
-            return;
-        }
-        hydrate_from_job_description(frm, jd);
-    },
-});
+                if (frm.doc.custom_check == 0) {
+                  frm.set_value("custom_check", 1);
+                } else {
+                  frm.set_value("custom_check", 0);
+                }
 
-// Hiring Lead Configuration — restrict the Hiring lead (Employee) and Assign to
-// Recruiter (User) dropdowns to the configured users when a config matches:
-// "Company Wise" by the requisition's company, or "Assignment Framework" by the
-// Hiring Manager (Requested By) via its Dynamic User Assignments. No matching
-// config → no filter (full lists), so the flow is never blocked.
-frappe.ui.form.on("Job Requisition", {
-    refresh(frm) {
-        apply_hiring_lead_config_filters(frm);
-    },
-    company(frm) {
-        apply_hiring_lead_config_filters(frm);
-    },
-    requested_by(frm) {
-        apply_hiring_lead_config_filters(frm);
-    },
-});
+                frm.save();
 
-// Recruitment Settings — post-creation edit locks (Desk UX; the server enforces
-// the same rules in validate_requisition_settings so the API/UI path is covered too):
-//  * "Disable Editing of Requisition Initiation Form": once the requisition is
-//    saved, lock the whole form (workflow actions still work).
-//  * "Allow Hiring Manager Override": when OFF, "Requested By" is read-only after
-//    creation; when ON it stays editable.
-// Both default to the editable behaviour, so nothing changes unless enabled.
-frappe.ui.form.on("Job Requisition", {
-    refresh(frm) {
-        apply_requisition_edit_locks(frm);
-    },
-});
-
-function apply_requisition_edit_locks(frm) {
-    if (frm.is_new()) {
-        return; // a brand-new requisition is always fully editable
-    }
-    frappe.db
-        .get_value("Recruitment Settings", "Recruitment Settings", [
-            "disable_editing_requisition_initiation_form",
-            "allow_hiring_manager_override",
-        ])
-        .then((r) => {
-            const s = (r && r.message) || {};
-
-            // 1) Whole-form lock once the requisition exists.
-            if (cint(s.disable_editing_requisition_initiation_form)) {
-                frm.set_read_only();
-                frm.disable_save();
-                return; // everything is read-only; nothing else to toggle
-            }
-
-            // 2) "Requested By" is locked unless hiring-manager override is allowed.
-            frm.set_df_property(
-                "requested_by",
-                "read_only",
-                cint(s.allow_hiring_manager_override) ? 0 : 1
-            );
-        });
-}
-
-function apply_hiring_lead_config_filters(frm) {
-    frappe.call({
-        method: "recruitment.recruitment.doctype.hiring_lead_configuration.hiring_lead_configuration.get_hiring_lead_config_users",
-        args: { company: frm.doc.company, employee: frm.doc.requested_by },
-        callback: (r) => {
-            const data = (r && r.message) || { hiring_leads: [], recruiters: [] };
-            const leads = data.hiring_leads || [];
-            const recruiters = data.recruiters || [];
-
-            // Hiring lead links to Employee → filter by the employee's linked User.
-            frm.set_query("custom_hiring_lead", () =>
-                leads.length ? { filters: { user_id: ["in", leads] } } : {}
-            );
-            // Recruiter links to User directly.
-            frm.set_query("custom_assign_to_recruiter", () =>
-                recruiters.length ? { filters: { name: ["in", recruiters] } } : {}
-            );
-        },
-    });
-}
-
-function try_autofetch_jd(frm) {
-    const { designation, department } = frm.doc;
-    if (!designation || !department) {
-        return;
-    }
-
-    frappe.call({
-        method: "recruitment.api.job_description.find_matching_job_description",
-        args: { designation, department },
-        callback: (r) => {
-            const data = r && r.message;
-            if (!data || !data.name) {
-                return;
-            }
-            if (frm.doc.custom_job_description_template === data.name) {
-                apply_jd_payload(frm, data);
-                return;
-            }
-            frm.set_value("custom_job_description_template", data.name).then(() => {
-                apply_jd_payload(frm, data);
+                return false;
+              }
             });
+          });
+        });
+    }
+    // This function checks user permissions and toggles visibility of 'custom_assign_to_recruiter' based on role.
+    if (frappe.user.has_role("Recruiter Admin")) {
+      console.log("Recruiter Admin");
+      frm.set_df_property("custom_assign_to_recruiter", "hidden", 0);
+      frm.set_df_property("status", "hidden", 0);
+    } else {
+      console.log("Not a Recruiter Admin");
+      frm.set_df_property("custom_assign_to_recruiter", "hidden", 1);
+      frm.set_df_property("status", "hidden", 1);
+    }
+    // This will set the default value of the requested_by field to the current user.
+    if (frm.is_new()) {
+      frappe.db
+        .get_value("Employee", { user_id: frappe.session.user }, "name")
+        .then((r) => {
+          let values = r.message;
+          cur_frm.set_value("requested_by", values.name);
+        });
+    }
+    // this will filter the custom_salary field to show only enabled salary structures.
+    frm.set_query("custom_salary", function () {
+      return {
+        filters: {
+          disabled: 0,
         },
+      };
     });
-}
-
-function hydrate_from_job_description(frm, jd_name) {
-    frappe.call({
-        method: "recruitment.api.job_description.get_job_description_payload",
-        args: { name: jd_name },
-        callback: (r) => {
-            const data = r && r.message;
-            if (!data || !data.name) {
-                return;
-            }
-            apply_jd_payload(frm, data);
+    // this will filter the custom_division field to show only groups.
+    frm.set_query("custom_division", function () {
+      return {
+        filters: {
+          is_group: 1,
         },
+      };
     });
-}
+    // this will filter the department field to show only non-group departments.
+    frm.set_query("department", function () {
+      return {
+        filters: {
+          is_group: 0,
+          parent_department: frm.doc.custom_division,
+        },
+      };
+    });
+  },
 
-function apply_jd_payload(frm, data) {
-    if (data.description != null) {
-        frm.set_value("description", data.description);
+  // This will assign a task to the recruiter if the custom_assign_to_recruiter field is set.
+  after_save: function (frm) {
+    if (frm.doc.custom_assign_to_recruiter) {
+      frappe.call({
+        method:
+          "recruitment.customizations.job_requisition.job_requisition.assign_task",
+        args: {
+          reference_doctype: "Job Requisition",
+          reference_name: frm.doc.name,
+          assign_to: frm.doc.custom_assign_to_recruiter,
+          description: "Please Do The Needful",
+        },
+        callback: function (r) {},
+      });
+    }
+  },
+  // based on the selected designation, this will fetch the skills from the Designation doctype.
+  designation(frm) {
+    if (frm.doc.designation) {
+      frappe.call({
+        method: "frappe.client.get",
+        args: {
+          doctype: "Designation",
+          name: frm.doc.designation,
+          async: true,
+        },
+        callback: (rs) => {
+          let res = rs.message.skills;
+          let crops = [];
+
+          for (var index in res) {
+            crops.push(res[index]);
+          }
+
+          frm.set_value("custom_skills", crops);
+          refresh_field("custom_skills");
+        },
+      });
+    }
+  },
+  // This will set the custom_job_description_template and skills field to the selected template.
+  custom_job_description_template: function (frm) {
+    if (!frm.doc.custom_job_description_template) {
+      frm.set_value("custom_jd_details", []);
+      update_description_field(frm)
+      return;
     }
 
-    frm.clear_table("custom_skills");
-    (data.skills || []).forEach((skill) => {
-        if (!skill) return;
-        const row = frm.add_child("custom_skills");
-        row.skill = skill;
-    });
-    frm.refresh_field("custom_skills");
+    frappe.db
+      .get_doc(
+        "Job Description Template",
+        frm.doc.custom_job_description_template
+      )
+      .then((template) => {
+        if (!template || !template.jd_details) return;
 
-    render_description_preview(frm);
-}
+        frm.set_value("custom_jd_details", []);
 
-function render_description_preview(frm) {
-    const wrapper = frm.fields_dict.custom_preview && frm.fields_dict.custom_preview.$wrapper;
-    if (!wrapper) {
+        if (template.skills && template.skills.length > 0) {
+          frm.set_value("custom_skills", []);
+
+          template.skills.forEach((row) => {
+            if (row.skill) {
+              let child = frm.add_child("custom_skills");
+              child.skill = row.skill;
+            }
+          });
+
+          frm.refresh_field("custom_skills");
+        }
+
+        template.jd_details.forEach((row) => {
+          const new_row = frm.add_child("custom_jd_details");
+          new_row.label = row.label;
+          new_row.description = row.description;
+        });
+
+        frm.refresh_field("custom_jd_details");
+        frm.refresh_field("custom_skills");
+
+        setTimeout(() => {
+          update_description_field(frm)
+        }, 200);
+      });
+  },
+});
+
+function update_description_field(frm) {
+    const rows = frm.doc.custom_jd_details || [];
+    if (!rows.length) {
+        frm.set_value("description", "");
         return;
     }
-    const html = frm.doc.description || "";
-    wrapper.empty();
-    wrapper.append(`
-        <div class="custom-jd-preview" style="
-            border: 1px solid var(--border-color, #d1d8dd);
-            border-radius: 6px;
-            padding: 14px 18px;
-            background: var(--bg-color, #fff);
-            min-height: 60px;
-            line-height: 1.55;
-            font-size: 14px;
-            color: var(--text-color, #1F272E);
-        ">
-            ${html || `<span style="color: var(--text-muted, #6c7680);">${__("Job description preview will appear here once a description is filled in.")}</span>`}
-        </div>
-    `);
+
+    let html = "";
+
+    rows.forEach(row => {
+        if (row.label) {
+            html += `<p><strong>${frappe.utils.escape_html(row.label.trim())}</strong></p>`;
+        }
+        if (row.description) {
+            const lines = row.description.trim().split("\n");
+            lines.forEach(line => {
+                if (line.trim()) {
+                    html += `<p>${frappe.utils.escape_html(line.trim())}</p>`;
+                }
+            });
+        }
+        html += `<p><br></p>`;  // Spacer between sections
+    });
+
+    frm.set_value("description", html);
 }

@@ -1,2 +1,0 @@
-[     976ms] [WARNING] API returned undefined/null for current employee. User may not have an employee record. @ https://dev.pwhr.in/assets/recruitment/webapp/index.Dj45P7t0.js:4702
-[    2164ms] [WARNING] ⚠️ [WARN] No employee found for user_id {user_id: Administrator} @ https://dev.pwhr.in/assets/recruitment/webapp/index.Dj45P7t0.js:4702

@@ -10,73 +10,7 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
     def validate(self):
         super().validate()
         self.set_employee()
-        self.initialize_candidate_portal_fields()
         self.validate_duplicate_employee_onboarding()
-
-    def initialize_candidate_portal_fields(self):
-        """
-        One-time snapshot of default candidate portal fields from
-        Onboarding Portal Forms into this onboarding record.
-        """
-        if not self.is_new():
-            return
-        if self.docstatus != 0:
-            return
-        if not self.meta.get_field("custom_candidate_portal_fields"):
-            return
-        if self.get("custom_candidate_portal_fields"):
-            return
-
-        try:
-            settings_name = self.get_selected_onboarding_portal_form()
-            if settings_name and self.meta.get_field("custom_onboarding_portal_form") and not self.custom_onboarding_portal_form:
-                self.custom_onboarding_portal_form = settings_name
-            default_rows = (
-                frappe.get_doc("Onboarding Portal Forms", settings_name).portal_fields or []
-                if settings_name
-                else []
-            )
-        except Exception:
-            default_rows = []
-
-        if not default_rows:
-            return
-
-        self.set("custom_candidate_portal_fields", [])
-        for row in default_rows:
-            self.append("custom_candidate_portal_fields", {
-                "fieldname": row.fieldname,
-                "label": row.label,
-                "fieldtype": row.fieldtype,
-                "tab_label": row.tab_label,
-                "section_label": row.section_label,
-                "is_mandatory": row.is_mandatory,
-                "read_only": row.read_only,
-                "hidden": row.hidden,
-                "options": row.options,
-            })
-
-    def get_selected_onboarding_portal_form(self):
-        if self.meta.get_field("custom_onboarding_portal_form") and self.custom_onboarding_portal_form:
-            return self.custom_onboarding_portal_form
-
-        # Match on User Assignment (which falls back to the Default form), so an
-        # Employee Onboarding created directly — rather than through
-        # initiate_onboarding — still picks the form the candidate qualifies for
-        # instead of silently landing on the Default.
-        from recruitment.api.candidate_portal import resolve_onboarding_portal_form
-
-        form = resolve_onboarding_portal_form(self.job_applicant)
-        if form:
-            return form
-
-        # Last resort: any form at all, rather than rendering an empty portal.
-        return frappe.db.get_value(
-            "Onboarding Portal Forms",
-            {},
-            "name",
-            order_by="modified desc",
-        )
 
     def set_employee(self):
         if not self.employee:
@@ -108,52 +42,13 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
                     )
 
     def on_submit(self):
-        # Project and Tasks are intentionally NOT created on submit.
-        # They are created on demand via the "Create Onboarding Tasks"
-        # button (-> create_onboarding_tasks()). We deliberately bypass
-        # EmployeeBoardingController.on_submit(), which would create them.
-        pass
+        super().on_submit()
 
     def on_update_after_submit(self):
-        # HRMS re-creates tasks on every post-submit save; suppress that.
-        # Task metadata refresh is handled by the populate_onboarding_task_meta
-        # doc_event hook instead.
         pass
 
     def on_cancel(self):
         super().on_cancel()
-
-    def create_onboarding_tasks(self):
-        """Create the Project and Tasks for this onboarding on demand.
-
-        Mirrors HRMS EmployeeBoardingController.on_submit's project/task
-        creation, but is invoked explicitly from the "Create Onboarding
-        Tasks" button instead of automatically at submit time. Idempotent:
-        the Project is created only once, and create_task_and_notify_user()
-        skips activity rows that already have a linked Task.
-        """
-        if not self.project:
-            project_name = _(self.doctype) + " : " + (
-                self.job_applicant or self.employee_name or self.name
-            )
-            project = frappe.get_doc({
-                "doctype": "Project",
-                "project_name": project_name,
-                "expected_start_date": self.date_of_joining,
-                "department": self.department,
-                "company": self.company,
-            }).insert(ignore_permissions=True, ignore_mandatory=True)
-            self.db_set("project", project.name)
-            self.db_set("boarding_status", "Pending")
-            self.reload()
-
-        # HRMS helper: one Task per activity (skips already-linked rows) and
-        # assigns the configured users/roles.
-        self.create_task_and_notify_user()
-
-        # Stamp DOJ / days-to-join / priority on the freshly created Tasks.
-        from recruitment.recruitment.onboarding_extras import populate_onboarding_task_meta
-        populate_onboarding_task_meta(self)
 
     @frappe.whitelist()
     def mark_onboarding_as_completed(self):
@@ -166,7 +61,7 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
 @frappe.whitelist()
 def manually_create_onboarding_tasks(onboarding_name):
     doc = frappe.get_doc("Employee Onboarding", onboarding_name)
-    doc.create_onboarding_tasks()
+    doc.on_submit()
     return "Tasks created successfully"
 
 

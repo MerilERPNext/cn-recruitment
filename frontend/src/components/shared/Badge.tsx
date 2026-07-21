@@ -1,67 +1,13 @@
-import { Typography } from "./atoms/Typography";
+// Badge.jsx
 
-export type BadgeVariant = "success" | "warning" | "danger" | "info" | "purple" | "purple-outline" | "blue" | "white" | "default";
+interface BadgeProps { label: string, backgroundColor?: string, textColor?: string }
 
-interface BadgeProps {
-  label: string;
-  variant?: BadgeVariant;
-  backgroundColor?: string;
-  textColor?: string;
-  pulse?: {
-    show: boolean,
-    color?: string
-  }
-  size?: "sm" | "md" | "lg";
-  icon?: React.ReactNode;
-}
-
-const VARIANT_STYLES: Record<BadgeVariant, { bg: string; text: string; pulse?: string }> = {
-  success: { bg: "bg-green-100", text: "text-green-700", pulse: "bg-green-700" },
-  warning: { bg: "bg-yellow-100", text: "text-yellow-700", pulse: "bg-yellow-700" },
-  danger: { bg: "bg-red-100", text: "text-red-700", pulse: "bg-red-700" },
-  info: { bg: "bg-blue-100", text: "text-blue-700" },
-  purple: { bg: "bg-purple-100", text: "text-purple-700" },
-  "purple-outline": { bg: "bg-purple-100 ring-1 ring-inset ring-purple-300", text: "text-purple-700" },
-  blue: { bg: "bg-blue-500", text: "text-white" },
-  white: { bg: "bg-white", text: "text-blue-600" },
-  default: { bg: "bg-gray-200", text: "text-black" },
-};
-
-const Badge = ({
-  label,
-  variant,
-  backgroundColor,
-  textColor,
-  pulse,
-  size = "md",
-  icon,
-}: BadgeProps) => {
-  const sizeClasses = {
-    sm: "py-0.5 px-2 text-xs",
-    md: "py-1 px-3 text-sm",
-    lg: "py-2 px-4 text-base",
-  };
-
-  const styles = variant ? VARIANT_STYLES[variant] : {
-    bg: backgroundColor || "bg-gray-200",
-    text: textColor || "text-black",
-    pulse: pulse?.color
-  };
-
-  const showPulse = pulse?.show !== undefined ? pulse.show : !!(variant && styles.pulse);
-
-  return (
-    <div className={`w-fit rounded-xl ${styles.bg} ${styles.text} ${sizeClasses[size]} flex justify-center items-center gap-1.5`}>
-      {showPulse && <span
-        className={`w-2 h-2 rounded-full animate-pulse ${styles.pulse || pulse?.color}`}
-      />}
-      {icon && <span className="flex items-center justify-center shrink-0">{icon}</span>}
-      <Typography variant="label" className={styles.text}>
-        {label}
-      </Typography>
-    </div>
-  );
+const Badge = ({ label, backgroundColor = 'bg-gray-200', textColor = 'text-black' }: BadgeProps) => {
+    return (
+        <span className={`flex items-center justify-center py-1 px-3 rounded-xl text-sm font-medium ${backgroundColor} ${textColor}`}>
+            {label}
+        </span>
+    );
 };
 
 export default Badge;
-

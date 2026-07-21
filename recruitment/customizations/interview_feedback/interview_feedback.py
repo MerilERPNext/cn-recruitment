@@ -38,14 +38,6 @@ def on_submit_feedback(doc, method):
     check_feedback_and_update_result(doc)
 
 
-def auto_advance_stage(doc, method):
-    """After feedback updates the Interview's verdict, let the Hiring Workflow
-    auto-advance / reject the candidate (only for stages flagged ``auto``)."""
-    from recruitment.api.hiring_stage import advance_on_interview_result
-
-    advance_on_interview_result(doc.interview)
-
-
 @frappe.whitelist()
 def create_interview_feedback(data, interview_name, interviewer, job_applicant):
     import json

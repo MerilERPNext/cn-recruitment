@@ -1,11 +1,11 @@
 __version__ = "0.0.1"
 
 from frappe.utils import add_days, flt, unique
-from frappe.www import login
 from hrms.controllers.employee_boarding_controller import EmployeeBoardingController
 from frappe import _
 from frappe.model.document import Document
 import frappe
+
 class CustomEmployeeBoardingController(Document):
 
     def on_submit(self):

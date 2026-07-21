@@ -1,302 +1,106 @@
-import { useMemo, useState } from "react";
-import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
-import {
-  useGetButtonsStatus,
-  useGetLeaveBalance,
-  useReplaceLeave,
-  useRevokeApprovedLeave,
-} from "../../hooks/useLeaves";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import { MyLeaveRequestType } from "../../types/leaves";
-import DataListView, { FilterField } from "../DataListView";
-import { Typography } from "../shared/atoms/Typography";
-import CardTable from "../shared/CardTable";
-import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
-import EmpLeaveRequestCard from "./EmpLeaveRequestCard";
-import ReplaceLeaveModal from "./ReplaceLeaveModal";
-import { COLUMN_SORT_CONFIG_MY_LEAVE_REQUEST } from "../../utils/tableSortConfig";
+import React from "react";
+import { useMyLeaveRequests } from "../../hooks/useLeaves";
+import { LeaveRequest } from "../../types/leaves";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { useEmployeeByUserId } from "../../hooks/useEmployee";
 
-
-const MyLeaveRequests = ({
-  pageSize = 10,
-}: {
-  pageSize?: number;
-  showLeaveRequest?: boolean;
-}) => {
-  const replaceLeave = useReplaceLeave();
-  const { isDesktop } = useScreenSize();
-  const [activeStatus, setActiveStatus] = useState("Open");
-
-  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const { data: currentEmployee, isLoading: isEmployeeLoading } =
-    useCurrentEmployeeDetails({ logged_in_employee_details: true });
-
-  const today = new Date().toISOString().split("T")[0];
-  const { data: leaveBalanceData } = useGetLeaveBalance(
-    currentEmployee?.name,
-    today,
-  );
-
-  // Build filter fields dynamically to include leave type options from balance API
-  const dynamicFilterFields: FilterField[] = useMemo(() => {
-    const leaveTypeOptions =
-      leaveBalanceData?.leave_balance
-        ?.filter((l) => l.dont_show_in_frontend !== 1)
-        .map((l) => ({
-          label: l.type,
-          value: l.leave_id,
-        })) ?? [];
-
-    return [
-      {
-        fieldname: "status",
-        label: "Status",
-        fieldtype: "Select" as const,
-        options: [
-          {
-            label: "Pending", key: "Open", value: "Open",
-            customAPIParams: { todo_status: ["in", ["Open", "Closed"]] },
-
-          },
-          { label: "Approved", value: "Approved" },
-          { label: "Rejected", value: "Rejected" },
-          {
-            label: "Revoked",
-            value: "Revoked",
-            excludeFieldFromFilters: true,
-            customAPIParams: {
-              todo_status: "Cancelled",
-            },
-            additionalFilters: {
-              docstatus: 2,
-              custom_allow_revoke: 1,
-            },
-          },
-        ],
-      },
-      {
-        fieldname: "leave_type",
-        label: "Leave Type",
-        fieldtype: "Select" as const,
-        options: leaveTypeOptions,
-      },
-      {
-        fieldname: "from_date_start",
-        label: "Start Date",
-        fieldtype: "Date",
-      },
-      {
-        fieldname: "from_date_end",
-        label: "End Date",
-        fieldtype: "Date",
-      },
-    ];
-  }, [leaveBalanceData]);
-
-  const [replaceModalData, setReplaceModalData] = useState<{
-    isOpen: boolean;
-    leaveType?: string;
-    leaveData?: string;
-    LeaveDays?: number;
-    fromDate?: string;
-    toDate?: string;
-  }>({
-    isOpen: false,
-    leaveType: undefined,
-    leaveData: undefined,
-    LeaveDays: undefined,
-    fromDate: undefined,
-    toDate: undefined,
-  });
-  const { mutate: revokeLeave } = useRevokeApprovedLeave();
-  const { data: buttonStatus } = useGetButtonsStatus(
-    currentEmployee?.name || "",
-  );
-
-  const handleOpenReplaceModal = (leaveData: MyLeaveRequestType) => {
-    setReplaceModalData({
-      isOpen: true,
-      leaveType: leaveData?.reference_document?.leave_type,
-      leaveData: leaveData?.reference_document?.name,
-      LeaveDays: leaveData?.reference_document?.total_leave_days,
-      fromDate: leaveData?.reference_document?.from_date,
-      toDate: leaveData?.reference_document?.to_date,
-    });
+const formatDateRange = (fromDate: string, toDate: string) => {
+  const format = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date);
   };
 
-  const handleCloseReplaceModal = () => {
-    setReplaceModalData({
-      isOpen: false,
-      leaveType: undefined,
-      leaveData: undefined,
-      LeaveDays: undefined,
-      fromDate: undefined,
-      toDate: undefined,
-    });
+  const from = format(fromDate);
+  const to = format(toDate);
+
+  return from === to ? from : `${from} - ${to}`;
+};
+
+const LeaveRequestCard: React.FC<{ request: LeaveRequest }> = ({ request }) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Approved':
+        return 'bg-green-100 text-green-800';
+      case 'Open':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Rejected':
+      case 'Cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const handleReplace = (data: {
-    newLeaveType?: string;
-    firstHalfType?: string;
-    secondHalfType?: string;
-    replaceBoth?: boolean;
-    description?: string;
-    custom_reason?: string;
-    attachment?: unknown;
-  }) => {
-    const replaceBoth = data.replaceBoth === true;
-    replaceLeave.mutate(
-      {
-        leave_application: replaceModalData.leaveData ?? "",
-        ...(replaceBoth
-          ? {
-              first_half_leave_type: data.firstHalfType,
-              second_half_leave_type: data.secondHalfType,
-              replaceBoth: true,
-            }
-          : { new_leave_type: data.newLeaveType }),
-        reason: data.custom_reason,
-        description: data.description,
-        attachment: data.attachment,
-      },
-      {
-        onSuccess: () => {
-          handleCloseReplaceModal();
-          setTimeout(() => {
-            setRefetchAttendance(true);
-          }, 2000);
-        },
-      },
-    );
+  const getBlockColor = (status: string) => {
+    switch (status) {
+      case 'Approved':
+        return 'bg-green-700';
+      case 'Open':
+        return 'bg-yellow-700';
+      case 'Rejected':
+      case 'Cancelled':
+        return 'bg-red-700';
+      default:
+        return 'bg-gray-700';
+    }
   };
+
+  const displayStatus = request.status === 'Open' ? 'Pending' : request.status;
+  const dateRange = formatDateRange(request.from_date, request.to_date);
 
   return (
-    <div className="flex flex-col h-full">
-      {isDesktop && (
-        <div className="flex-shrink-0">
-          <div className="px-6 py-1 md:py-4">
-            <Typography variant="h4">My Leave Requests</Typography>
-            <Typography variant="bodySmall" color="body2">
-              Track and manage your leave requests
-            </Typography>
+    <div className="bg-white rounded-lg border border-gray-200 p-4 mb-3 shadow-sm">
+      <div className="flex items-start justify-between">
+        <div className="flex items-start space-x-3">
+          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-900 text-sm">{request.leave_type}</h3>
+            <p className="text-xs text-gray-500 mt-1">{dateRange}</p>
+            {request.description && (
+              <p className="text-xs text-gray-600 mt-2">{request.description}</p>
+            )}
           </div>
         </div>
-      )}
-
-      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        {isEmployeeLoading ? (
-          <CardSkeleton />
-        ) : (
-          <CardTable
-            titles={
-              activeStatus === "Rejected"
-                ? [
-                    "Request Id",
-                    "Assigned To",
-                    "Leave Type",
-                    "From Date",
-                    "To Date",
-                    "Created At",
-                    "Description",
-                    "Reason",
-                    "Leave Days",
-                    "Status",
-                    "Reject Reason",
-                    "Sendback Comment",
-                    "Actions",
-                  ]
-                : [
-                    "Request Id",
-                    "Assigned To",
-                    "Leave Type",
-                    "From Date",
-                    "To Date",
-                    "Created At",
-                    "Description",
-                    "Reason",
-                    "Leave Days",
-                    "Status",
-                    "Sendback Comment",
-                    "Actions",
-                  ]
-            }
-            columnWidths={
-              activeStatus === "Rejected"
-                ? ["1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1.5fr 1fr"]
-                : ["1fr 1.5fr 1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr"]
-            }
-            columnSortConfig={COLUMN_SORT_CONFIG_MY_LEAVE_REQUEST}
-          >
-            {/* Always render DataListView for UI consistency (filter bar + empty state). 
-                If no employee is linked, use a mock fetchFunction to safely return empty data. */}
-            <DataListView
-              queryKey="leave-requests"
-              customAPI={
-                currentEmployee?.name
-                  ? {
-                      method:
-                        "cn_leave_shift_managment.api.get_open_approval_todos",
-                      params: {
-                        doctype: "Leave Application",
-                        employee: currentEmployee?.name,
-                      },
-                    }
-                  : undefined
-              }
-              fetchFunction={
-                !currentEmployee?.name
-                  ? async () => ({ message: [], data: [] } as any)
-                  : undefined
-              }
-                ItemComponent={(props: { item: MyLeaveRequestType }) => (
-                  <EmpLeaveRequestCard
-                    data={props.item}
-                    buttonStatus={buttonStatus}
-                    onOpenReplaceModal={() =>
-                      handleOpenReplaceModal(props.item)
-                    }
-                    onRevokeApproved={() =>
-                      revokeLeave(props.item.reference_document?.name ?? "")
-                    }
-                    showRejectReason={activeStatus === "Rejected"}
-                  />
-                )}
-                onFiltersChange={(filters) => {
-                  setActiveStatus(
-                    typeof filters.status === "string" ? filters.status : "All",
-                  );
-                }}
-                isSearch={true}
-                isFilter={true}
-                defaultFilters={{ status: "Open" }}
-                filterFields={dynamicFilterFields}
-                SkeletonComponent={CardSkeleton}
-                onRefetchComplete={() => setRefetchAttendance(false)}
-                refetchTrigger={refetchAttendance}
-                pageSize={pageSize}
-                showRefreshButton={false}
-                infiniteScroll={false}
-                loadMorePagination={false}
-                showPagination={true}
-              />
-          </CardTable>
-        )}
+        <span className={`px-2 py-1 flex items-center rounded-[20px] text-xs font-medium ${getStatusColor(request.status)}`}>
+          <span
+            className={`inline-block w-1.5 h-1.5 rounded-full mr-2 ${getBlockColor(request.status)}`}
+          ></span>
+          {displayStatus}
+        </span>
       </div>
-      {replaceModalData.isOpen && (
-        <ReplaceLeaveModal
-          isOpen={replaceModalData.isOpen}
-          onClose={handleCloseReplaceModal}
-          onReplace={handleReplace}
-          currentLeaveType={replaceModalData.leaveType}
-          currentLeaveName={replaceModalData.leaveData}
-          currentLeaveDays={replaceModalData.LeaveDays}
-          fromDate={replaceModalData.fromDate}
-          toDate={replaceModalData.toDate}
-        />
-      )}
     </div>
   );
 };
 
-export default MyLeaveRequests;
+const MyLeaveRequest: React.FC = () => {
+
+  const { data: userId } = useLoggedInUser();
+  const { data: currentEmployee } = useEmployeeByUserId(userId);
+  const { data: leaveRequests = [], isLoading, isError } = useMyLeaveRequests(currentEmployee?.name);
+
+  if (isLoading) return <div className="p-4 text-center text-gray-500">Loading leave requests...</div>;
+  if (isError) return <div className="p-4 text-center text-red-500">Error loading leave requests. Please try again later.</div>;
+  if (!leaveRequests.length) return <div className="p-4 text-center text-gray-500">No leave requests found.</div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-3">
+        {leaveRequests.map((request) => (
+          <LeaveRequestCard key={request.name} request={request} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default MyLeaveRequest;
+
+

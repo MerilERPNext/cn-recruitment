@@ -1,4 +1,0 @@
-[    2407ms] [ERROR] Failed to load resource: the server responded with a status of 404 (NOT FOUND) @ https://dev.pwhr.in/files/website_theme/frappe/public/css/fonts/inter/inter.css:0
-[   12112ms] [WARNING] API returned undefined/null for current employee. User may not have an employee record. @ https://dev.pwhr.in/assets/recruitment/webapp/index.BH5JuAAf.js:4702
-[   13040ms] [WARNING] ⚠️ [WARN] No employee found for user_id {user_id: Administrator} @ https://dev.pwhr.in/assets/recruitment/webapp/index.BH5JuAAf.js:4702
-[   13527ms] [ERROR] Failed to load resource: the server responded with a status of 404 (NOT FOUND) @ https://dev.pwhr.in/logo%20not%20found:0

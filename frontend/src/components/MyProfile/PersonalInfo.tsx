@@ -1,31 +1,21 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useMemo, useRef } from "react";
+import React, { useMemo } from "react";
+// @ts-expect-error ignore
 import { Form } from "@tsed/react-formio";
 import { PersonalInfoProps } from "./MyProfile";
-import {
-  useGenderTypes,
-  useUpdateCurrentEmployeeProfile,
-} from "../../hooks/useEmployee";
-import { useScreenSize } from "../../hooks/useScreenSize";
 
 export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
-  const { updateEmployeeMutation } = useUpdateCurrentEmployeeProfile();
-  const formPersonalInfoInstance = useRef<any>(null);
-
-  const { data: genderTypes } = useGenderTypes();
-  const { isDesktop } = useScreenSize();
-
   const personalInfoForm = useMemo(() => {
+    const fullName = [user?.first_name, user?.middle_name, user?.last_name]
+      .filter(Boolean)
+      .join(" ");
+
     return {
-      type: "form",
-      display: "form",
       components: [
         {
           type: "panel",
           key: "personalPanel",
           title: "Personal Info",
           hideLabel: true,
-          customClass: "bg-white rounded-lg shadow-md mb-6",
           components: [
             {
               type: "fieldset",
@@ -34,13 +24,12 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
               components: [
                 {
                   type: "textfield",
-                  key: "employee_name",
+                  key: "fullName",
                   label: "Full Name",
                   input: true,
-                  disabled: true,
                   validate: { required: true },
                   customClass: "px-2",
-                  defaultValue: user?.employee_name ?? "",
+                  defaultValue: fullName ?? "",
                   placeholder: "John Doe",
                   autofocus: false,
                 },
@@ -49,24 +38,24 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                   customClass: "px-2",
                   columns: [
                     {
+                      width: 6,
                       components: [
                         {
                           type: "datetime",
                           key: "date_of_birth",
                           label: "Date of Birth",
-                          disabled: true,
                           enableTime: false,
                           input: true,
                           defaultValue: user?.date_of_birth ?? "",
                           validate: { required: true },
-                          placeholder: "1990-08-15",
-                          dateFormate: "dd-MM-yyyy",
-                          flatpickr: { appendTo: "" },
+                          placeholder: "15-08-1990",
+                          flatpickr: { appendTo: ".address-form-container" },
                           autofocus: false,
                         },
                       ],
                     },
                     {
+                      width: 6,
                       components: [
                         {
                           type: "select",
@@ -74,13 +63,14 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                           label: "Gender",
                           input: true,
                           validate: { required: true },
-                          placeholder: "Eg.. Male",
+                          placeholder: "Male",
                           defaultValue: user?.gender ?? "",
                           data: {
-                            values: genderTypes?.data.map((s) => ({
-                              label: s?.name,
-                              value: s?.name,
-                            })),
+                            values: [
+                              { value: "male", label: "Male" },
+                              { value: "female", label: "Female" },
+                              { value: "other", label: "Other" },
+                            ],
                           },
                           customClass: "appearance-none",
                           autofocus: false,
@@ -94,6 +84,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                   customClass: "px-2",
                   columns: [
                     {
+                      width: 6,
                       components: [
                         {
                           type: "select",
@@ -117,6 +108,7 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                       ],
                     },
                     {
+                      width: 6,
                       components: [
                         {
                           type: "select",
@@ -143,6 +135,15 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                       ],
                     },
                   ],
+                },
+                {
+                  type: "textfield",
+                  key: "nationality",
+                  label: "Nationality",
+                  input: true,
+                  validate: { required: true },
+                  customClass: "px-2 pb-2",
+                  placeholder: "India",
                 },
               ],
               customClass: "rounded-lg mb-6",
@@ -178,87 +179,41 @@ export const PersonalInfo: React.FC<PersonalInfoProps> = ({ user }) => {
                 },
               ],
             },
+            {
+              type: "button",
+              action: "submit",
+              label: "Save Changes",
+              theme: "primary",
+              customClass: "my-6 w-full black",
+            },
           ],
         },
       ],
     };
-  }, [user, genderTypes]);
-
-  const handleSubmit = useCallback(async () => {
-    try {
-      const basicSubmission = await formPersonalInfoInstance.current.submit();
-      const formData = basicSubmission.data as Record<string, any>;
-      const jsonData = Object.entries(formData).map(([field, value]) => ({
-        field,
-        new: value,
-      }));
-
-      const payload = {
-        employee_code: user?.employee ?? "",
-        json_data: jsonData,
-      };
-      await updateEmployeeMutation.mutateAsync(payload);
-    } catch (error) {
-      console.error("Form submission error:", error);
-    }
   }, [user]);
 
   return (
-    <div className="h-full">
-      <div className="p-4 md:p-8">
-        {isDesktop && (
-          <div className="border-b border-gray-200 pb-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Personal Information
-            </h2>
-            <p className="text-gray-600">
-              Update your personal details and emergency contact information
-            </p>
-          </div>
-        )}
-        <div className="max-w-full pb-16 md:pb-0 md:max-w-4xl md:mx-auto">
-          <Form
-            key={user?.employee || "loading"}
-            form={personalInfoForm}
-            onFormReady={(instance: any) =>
-              (formPersonalInfoInstance.current = instance)
-            }
-            options={{
-              submitButton: false,
-            }}
-          />
-        </div>
-        {/* CHANGED: Mobile button container now matches the sticky style of the AttendanceRequest component. */}
-        {/* CHANGED: Desktop button positioning is now correct. */}
-        <div className="md:mt-8 md:flex md:justify-end">
-          <div className="fixed bottom-0 left-0 w-full bg-white py-2 md:relative md:w-auto md:p-0 md:border-t-0">
-            <div className="max-w-7xl mx-auto px-3 md:p-0">
-              <button
-                onClick={handleSubmit}
-                disabled={updateEmployeeMutation.isPending}
-                className={`
-                  flex justify-center w-full py-3 rounded-lg font-medium transition-colors
-                  
-                  /* Mobile-first styling */
-                  bg-black text-white hover:bg-gray-800
-                  
-                  /* Desktop overrides */
-                  md:w-auto md:px-8 md:bg-blue-600 md:text-white md:hover:bg-blue-700
-                `}
-              >
-                {updateEmployeeMutation.isPending ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="address-form-container max-w-md mx-auto rounded-lg bg-gray-100 shadow-md">
+      <Form
+        key={user?.employee || "loading"}
+        form={personalInfoForm}
+        options={{
+          builder: { styles: false },
+          submitButton: false,
+          formClass: "space-y-6",
+          rowClass: "flex flex-col",
+          labelClass: "mb-1 font-medium text-gray-700",
+          inputClass:
+            "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200",
+          validateOnInit: false,
+          validateOnBlur: false,
+          validateOnChange: false,
+        }}
+        className="space-y-6"
+        onSubmit={(submission: { data: never }) =>
+          console.log("Form data:", submission?.data)
+        }
+      />
     </div>
   );
 };

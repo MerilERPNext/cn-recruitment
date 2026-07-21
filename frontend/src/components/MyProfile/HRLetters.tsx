@@ -20,7 +20,7 @@ const letters = [
 
 const HRLetters: React.FC = () => {
   return (
-    <div className="max-w-md m-4 bg-white rounded-xl shadow-md p-4 space-y-4">
+    <div className="max-w-md mx-auto bg-white rounded-xl shadow-md p-4 space-y-4">
       {letters.map((letter) => (
         <div
           key={letter.title}
