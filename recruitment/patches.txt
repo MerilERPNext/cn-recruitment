@@ -8,3 +8,13 @@
 # Patches added in this section will be executed after doctypes are migrated
 recruitment.patches.interviewfeedback_funnel
 recruitment.patches.add_client_script
+recruitment.patches.candidate_portal_auth_defaults
+recruitment.patches.candidate_portal_feature_flag_defaults
+recruitment.patches.delete_onboarding_custom_fields
+recruitment.patches.setup_external_recruiter_access
+recruitment.patches.delete_posting_channel_custom_fields
+recruitment.patches.hide_posting_channels_tab
+recruitment.patches.delete_posting_channels_tab
+recruitment.patches.add_eligibility_hold_substatus
+recruitment.patches.delete_ta_job_applicant_field
+recruitment.patches.migrate_campus_invite_institutes

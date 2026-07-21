@@ -1,19 +1,43 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/assets/recruitment/webapp/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
-    <script type="module" crossorigin src="/assets/recruitment/webapp/index.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/recruitment/webapp/index.css">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script>
-      if (!window.csrf_token) {
-        window.csrf_token = "{{ csrf_token }}";
-      }
-    </script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- <link rel="icon" type="image/svg+xml" href="/logo.png" /> -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- <title>physics wallah</title> -->
+  <style>
+    /* Do Not Add In Any CSS file/ */
+    body>chatnext-app>div:first-child {
+      display: none !important;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/recruitment/webapp/index.bkW5PxHz.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-react.Bq_Y4AHp.js">
+  <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-pdf.C430cciU.js">
+  <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-mui.CA0Zk6Sp.js">
+  <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-utils.Du44a2rm.js">
+  <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-charts.BGS-ODkJ.js">
+  <link rel="stylesheet" crossorigin href="/assets/recruitment/webapp/index.jvAXrGbi.css">
+</head>
+
+<body>
+  <div id="root"></div>
+  <chatnext-app id="chatnext-app-id" />
+  <script>
+    //  disblaed shoftcut ctrl +g for chatnext assistant
+    const chatnextApp = document.getElementById('chatnext-app-id');
+    chatnextApp.disableCtrlG = true;
+  </script>
+
+
+  <script>
+    if (!window.csrf_token) {
+      window.csrf_token = "{{ csrf_token }}";
+      window.frappe = window.frappe || {};
+      window.frappe.csrf_token = window.csrf_token;
+    }
+  </script>
+</body>
+
 </html>

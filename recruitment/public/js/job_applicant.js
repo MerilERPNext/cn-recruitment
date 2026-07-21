@@ -1,280 +1,283 @@
 frappe.ui.form.on("Job Applicant", {
-  refresh: function (frm) {
-    // frm.events.create_custom_buttons(frm);
-    // frm.remove_custom_button('Interview', 'Create');
-    // if (!frm.doc.__islocal && frm.doc.status !== "Rejected" && frm.doc.status !== "Accepted") {
-    //   frm.add_custom_button(
-    //     __("Interview"),
-    //     function () {
-    //       frappe.call({
-    //         method:"recruitment.customizations.job_applicant.validate_applicant",
-    //         args:{
-    //           "job_applicant":frm.doc.name
-    //         },
-    //         callback:function(r){ 
-    //           console.log("message:",r.message)
-    //           if(r.message){
-    //             let links_text = "";
-    //           links_text=`<a href="/app/job-applicant/${r.message[0]}">${r.message[0]}</a>`
+//   refresh: function (frm) {
+//     // frm.events.create_custom_buttons(frm);
+//     // frm.remove_custom_button('Interview', 'Create');
+//     // if (!frm.doc.__islocal && frm.doc.status !== "Rejected" && frm.doc.status !== "Accepted") {
+//     //   frm.add_custom_button(
+//     //     __("Interview"),
+//     //     function () {
+//     //       frappe.call({
+//     //         method:"recruitment.customizations.job_applicant.validate_applicant",
+//     //         args:{
+//     //           "job_applicant":frm.doc.name
+//     //         },
+//     //         callback:function(r){ 
+//     //           console.log("message:",r.message)
+//     //           if(r.message){
+//     //             let links_text = "";
+//     //           links_text=`<a href="/app/job-applicant/${r.message[0]}">${r.message[0]}</a>`
                 
-    //             links_text = `<ul>${links_text}</ul>`;
-    //             let confirm_message = __("Duplicate {0} {1} is Present. You Want To Continue?", [
-    //               __("Job Applicant").bold(),
-    //              links_text
-    //             ]);
-    //             frappe.confirm(__(confirm_message), () => {
-    //               frm.events.create_dialog(frm);
-    //             },() => {
+//     //             links_text = `<ul>${links_text}</ul>`;
+//     //             let confirm_message = __("Duplicate {0} {1} is Present. You Want To Continue?", [
+//     //               __("Job Applicant").bold(),
+//     //              links_text
+//     //             ]);
+//     //             frappe.confirm(__(confirm_message), () => {
+//     //               frm.events.create_dialog(frm);
+//     //             },() => {
                   
-    //             })
-    //           }else{
-    //             frm.events.create_dialog(frm);
-    //           }
-    //         }
-    //       })
+//     //             })
+//     //           }else{
+//     //             frm.events.create_dialog(frm);
+//     //           }
+//     //         }
+//     //       })
           
-    //     },
-    //     __("Create"),
-    //   );
-    // }
-    frm.events.make_dashboard(frm);
-    if (!frm.is_new()) {
-      if (frappe.user.has_role("Hr Group Admin")) {
-        // frm.add_custom_button(__("Request For Offer"), function(){
-        //     frappe.call('recruitment.job_offer_utils.request_for_offer', {
-        //         jo_id:frm.doc.name
-        //     }).then(r => {
-        //         console.log(r.message)
-        //     })
-        // });
-      }
-      let crm_notes = `
-            <div class="notes-section col-xs-12">
-                <div class="new-btn pb-3">
-                    <button class="btn btn-sm small new-note-btn mr-1">
-                        <svg class="icon icon-sm">
-                            <use href="#icon-add"></use>
+//     //     },
+//     //     __("Create"),
+//     //   );
+//     // }
+//     frm.events.make_dashboard(frm);
+//     if (!frm.is_new()) {
+//       if (frappe.user.has_role("Hr Group Admin")) {
+//         // frm.add_custom_button(__("Request For Offer"), function(){
+//         //     frappe.call('recruitment.job_offer_utils.request_for_offer', {
+//         //         jo_id:frm.doc.name
+//         //     }).then(r => {
+//         //         console.log(r.message)
+//         //     })
+//         // });
+//       }
+//       let crm_notes = `
+//             <div class="notes-section col-xs-12">
+//                 <div class="new-btn pb-3">
+//                     <button class="btn btn-sm small new-note-btn mr-1">
+//                         <svg class="icon icon-sm">
+//                             <use href="#icon-add"></use>
                             
-                        </svg>
-                        Add Notes
-                    </button>
-                </div>
-                <div class="all-notes" id="all_notes_section">
-                    <!-- Existing notes will be displayed here -->
-                </div>
-            </div>
-            <style>
-                .comment-content {
-                    border: 1px solid var(--border-color);
-                    border-bottom: none;
-                }
-                .comment-content:last-child {
-                    border-bottom: 1px solid var(--border-color);
-                }
-                .new-btn {
-                    text-align: right;
-                }
-                .notes-section .no-activity {
-                    min-height: 100px;
-                    text-align: center;
-                }
-                .notes-section .btn {
-                    padding: 0.2rem 0.2rem;
-                }
-                .note-info {
-                    display: flex;
-                    justify-content: space-between;
-                }
-                .hide-name-column {
-                display: none;
-                }
-            </style>`;
+//                         </svg>
+//                         Add Notes
+//                     </button>
+//                 </div>
+//                 <div class="all-notes" id="all_notes_section">
+//                     <!-- Existing notes will be displayed here -->
+//                 </div>
+//             </div>
+//             <style>
+//                 .comment-content {
+//                     border: 1px solid var(--border-color);
+//                     border-bottom: none;
+//                 }
+//                 .comment-content:last-child {
+//                     border-bottom: 1px solid var(--border-color);
+//                 }
+//                 .new-btn {
+//                     text-align: right;
+//                 }
+//                 .notes-section .no-activity {
+//                     min-height: 100px;
+//                     text-align: center;
+//                 }
+//                 .notes-section .btn {
+//                     padding: 0.2rem 0.2rem;
+//                 }
+//                 .note-info {
+//                     display: flex;
+//                     justify-content: space-between;
+//                 }
+//                 .hide-name-column {
+//                 display: none;
+//                 }
+//             </style>`;
 
-      document.getElementById("ctc_preview").innerHTML = crm_notes;
+//       document.getElementById("ctc_preview").innerHTML = crm_notes;
 
-      let allNotesSection = document.getElementById("all_notes_section");
-      if (frm.doc.custom_crm_note && frm.doc.custom_crm_note.length > 0) {
-        frm.doc.custom_crm_note.forEach((note) => {
-          let noteDiv = document.createElement("div");
-          noteDiv.className = "comment-content p-3 row";
-          noteDiv.innerHTML = `
-                    <table style="width:100%">
-                        <tr>
-                        <td class="hide-name-column" >${note.name}</td>
-                        <td style="width:20%">${note.custom_comment_type}</td>
+//       let allNotesSection = document.getElementById("all_notes_section");
+//       if (frm.doc.custom_crm_note && frm.doc.custom_crm_note.length > 0) {
+//         frm.doc.custom_crm_note.forEach((note) => {
+//           let noteDiv = document.createElement("div");
+//           noteDiv.className = "comment-content p-3 row";
+//           noteDiv.innerHTML = `
+//                     <table style="width:100%">
+//                         <tr>
+//                         <td class="hide-name-column" >${note.name}</td>
+//                         <td style="width:20%">${note.custom_comment_type}</td>
                          
-                            <td style="width:40%">${note.note}</td>
-                            <td style="width:30%">${note.added_by}<br>
+//                             <td style="width:40%">${note.note}</td>
+//                             <td style="width:30%">${note.added_by}<br>
                             
-                            ${frappe.datetime.global_date_format(
-                              note.added_on
-                            )}</td>
+//                             ${frappe.datetime.global_date_format(
+//                               note.added_on
+//                             )}</td>
 
                             
                             
-                            <td style="width:5%"><button class="edit-note-btn btn btn-sm btn-primary" data-note="${
-                              note.note
-                            }"><svg class="icon icon-sm"><use xlink:href="#icon-edit"></use></svg></button></td>
+//                             <td style="width:5%"><button class="edit-note-btn btn btn-sm btn-primary" data-note="${
+//                               note.note
+//                             }"><svg class="icon icon-sm"><use xlink:href="#icon-edit"></use></svg></button></td>
 
-                        </tr>
+//                         </tr>
 
-                    </table>`;
-          allNotesSection.appendChild(noteDiv);
-        });
-      }
-      // <td style="width:5%"><button class="delete-note-btn btn btn-sm btn-primary" data-note="${note.note}"><svg class="icon icon-sm"><use xlink:href="#icon-delete"></use></svg></button></td>
+//                     </table>`;
+//           allNotesSection.appendChild(noteDiv);
+//         });
+//       }
+//       // <td style="width:5%"><button class="delete-note-btn btn btn-sm btn-primary" data-note="${note.note}"><svg class="icon icon-sm"><use xlink:href="#icon-delete"></use></svg></button></td>
 
-      let newNoteBtn = frm
-        .get_field("custom_notes_html")
-        .wrapper.querySelector(".new-note-btn");
-      newNoteBtn.addEventListener("click", () => {
-        frappe.prompt(
-          [
-            {
-              fieldname: "comment_type",
-              fieldtype: "Select",
-              label: "Comment Type",
-              options: [
-                "Candidate Response",
-                "Call",
-                "CTC Confirmation",
-                "CTC approvals",
-                "Interview comments and approvals",
-                "Notice period buy out approval",
-                "Notice Period approval",
-                "Personal Interaction",
-                "Zoom call",
-                "Interview Schedule",
-                "CTC Discussion",
-                "Others",
-                "Interviewer Feedback",
-                "General Review",
-                "Management Approval",
-              ],
-            },
-            {
-              fieldname: "notes",
-              fieldtype: "Text",
-              label: "Notes",
-              reqd: true,
-            },
-          ],
-          (values) => {
-            var child = frm.add_child("custom_crm_note");
+//       let notesField = frm.get_field("custom_notes_html");
+//       if (notesField && notesField.wrapper) {
+//       let newNoteBtn = notesField.wrapper.querySelector(".new-note-btn");
+//       if (newNoteBtn) {
+//       newNoteBtn.addEventListener("click", () => {
+//         frappe.prompt(
+//           [
+//             {
+//               fieldname: "comment_type",
+//               fieldtype: "Select",
+//               label: "Comment Type",
+//               options: [
+//                 "Candidate Response",
+//                 "Call",
+//                 "CTC Confirmation",
+//                 "CTC approvals",
+//                 "Interview comments and approvals",
+//                 "Notice period buy out approval",
+//                 "Notice Period approval",
+//                 "Personal Interaction",
+//                 "Zoom call",
+//                 "Interview Schedule",
+//                 "CTC Discussion",
+//                 "Others",
+//                 "Interviewer Feedback",
+//                 "General Review",
+//                 "Management Approval",
+//               ],
+//             },
+//             {
+//               fieldname: "notes",
+//               fieldtype: "Text",
+//               label: "Notes",
+//               reqd: true,
+//             },
+//           ],
+//           (values) => {
+//             var child = frm.add_child("custom_crm_note");
 
-            frappe.model.set_value(
-              child.doctype,
-              child.name,
-              "note",
-              values.notes
-            );
-            frappe.model.set_value(
-              child.doctype,
-              child.name,
-              "added_by",
-              frappe.session.user
-            );
-            frappe.model.set_value(
-              child.doctype,
-              child.name,
-              "added_on",
-              frappe.datetime.now_datetime()
-            );
-            frappe.model.set_value(
-              child.doctype,
-              child.name,
-              "custom_comment_type",
-              values.comment_type
-            );
-            frm.refresh_field("custom_crm_note");
-            frm.save();
-          },
-          "Add Notes",
-          "Submit"
-        );
-      });
+//             frappe.model.set_value(
+//               child.doctype,
+//               child.name,
+//               "note",
+//               values.notes
+//             );
+//             frappe.model.set_value(
+//               child.doctype,
+//               child.name,
+//               "added_by",
+//               frappe.session.user
+//             );
+//             frappe.model.set_value(
+//               child.doctype,
+//               child.name,
+//               "added_on",
+//               frappe.datetime.now_datetime()
+//             );
+//             frappe.model.set_value(
+//               child.doctype,
+//               child.name,
+//               "custom_comment_type",
+//               values.comment_type
+//             );
+//             frm.refresh_field("custom_crm_note");
+//             frm.save();
+//           },
+//           "Add Notes",
+//           "Submit"
+//         );
+//       });
+//       }
+//       }
 
-      allNotesSection.querySelectorAll(".edit-note-btn").forEach((btn, idx) => {
-        btn.addEventListener("click", (event) => {
-          let noteValue = event.target.getAttribute("data-note");
-          let nameValue = event.target
-            .closest("tr")
-            .querySelector("td:nth-child(1)").innerText;
-          // console.log("Name:", nameValue);
+//       allNotesSection.querySelectorAll(".edit-note-btn").forEach((btn, idx) => {
+//         btn.addEventListener("click", (event) => {
+//           let noteValue = event.target.getAttribute("data-note");
+//           let nameValue = event.target
+//             .closest("tr")
+//             .querySelector("td:nth-child(1)").innerText;
+//           // console.log("Name:", nameValue);
 
-          $.each(frm.doc.custom_crm_note, function (i, v) {
-            if (v.name == nameValue) {
-              frappe.prompt(
-                [
-                  {
-                    fieldname: "notes",
-                    fieldtype: "Text",
-                    label: "Notes",
-                    reqd: true,
-                    default: v.note,
-                  },
-                ],
-                (values) => {
-                  let childDoc = frm.doc.custom_crm_note.find(
-                    (child) => child.name == nameValue
-                  );
+//           $.each(frm.doc.custom_crm_note, function (i, v) {
+//             if (v.name == nameValue) {
+//               frappe.prompt(
+//                 [
+//                   {
+//                     fieldname: "notes",
+//                     fieldtype: "Text",
+//                     label: "Notes",
+//                     reqd: true,
+//                     default: v.note,
+//                   },
+//                 ],
+//                 (values) => {
+//                   let childDoc = frm.doc.custom_crm_note.find(
+//                     (child) => child.name == nameValue
+//                   );
 
-                  if (childDoc) {
-                    childDoc.note = values.notes;
-                    frm.refresh_field("custom_crm_note");
-                  }
+//                   if (childDoc) {
+//                     childDoc.note = values.notes;
+//                     frm.refresh_field("custom_crm_note");
+//                   }
 
-                  if (frm.doc.custom_check == 0) {
-                    frm.set_value("custom_check", 1);
-                  } else {
-                    frm.set_value("custom_check", 0);
-                  }
+//                   if (frm.doc.custom_check == 0) {
+//                     frm.set_value("custom_check", 1);
+//                   } else {
+//                     frm.set_value("custom_check", 0);
+//                   }
 
-                  frm.save();
-                },
-                "Edit Note",
-                "Submit"
-              );
-            }
-          });
-        });
-      });
+//                   frm.save();
+//                 },
+//                 "Edit Note",
+//                 "Submit"
+//               );
+//             }
+//           });
+//         });
+//       });
 
-      allNotesSection
-        .querySelectorAll(".delete-note-btn")
-        .forEach((btn, idx) => {
-          btn.addEventListener("click", (event) => {
-            let noteValue = event.target.getAttribute("data-note");
-            let nameValue = event.target
-              .closest("tr")
-              .querySelector("td:nth-child(1)").innerText;
-            // console.log("Name:", nameValue);
+//       allNotesSection
+//         .querySelectorAll(".delete-note-btn")
+//         .forEach((btn, idx) => {
+//           btn.addEventListener("click", (event) => {
+//             let noteValue = event.target.getAttribute("data-note");
+//             let nameValue = event.target
+//               .closest("tr")
+//               .querySelector("td:nth-child(1)").innerText;
+//             // console.log("Name:", nameValue);
 
-            $.each(frm.doc.custom_crm_note, function (i, v) {
-              if (v.name == nameValue) {
-                // console.log(v.note)
+//             $.each(frm.doc.custom_crm_note, function (i, v) {
+//               if (v.name == nameValue) {
+//                 // console.log(v.note)
 
-                frm.doc.custom_crm_note.splice(i, 1);
+//                 frm.doc.custom_crm_note.splice(i, 1);
 
-                frm.refresh_field("custom_crm_note");
+//                 frm.refresh_field("custom_crm_note");
 
-                if (frm.doc.custom_check == 0) {
-                  frm.set_value("custom_check", 1);
-                } else {
-                  frm.set_value("custom_check", 0);
-                }
+//                 if (frm.doc.custom_check == 0) {
+//                   frm.set_value("custom_check", 1);
+//                 } else {
+//                   frm.set_value("custom_check", 0);
+//                 }
 
-                frm.save();
+//                 frm.save();
 
-                return false;
-              }
-            });
-          });
-        });
-    }
-    applicant_details(frm);
-    // frm.events.applicant_datails(frm);
-  },
+//                 return false;
+//               }
+//             });
+//           });
+//         });
+//     }
+//     applicant_details(frm);
+//     // frm.events.applicant_datails(frm);
+//   },
 
   make_dashboard: function (frm) {
     frappe.call({
@@ -342,16 +345,20 @@ frappe.ui.form.on("Job Applicant", {
                         </table>
                     `;
 
-                    $(frm.fields_dict.custom_interview_feedback.wrapper).html(table);
+                    if (frm.fields_dict.custom_interview_feedback) {
+                        $(frm.fields_dict.custom_interview_feedback.wrapper).html(table);
 
-                    // Attach click event to buttons
-                    $(frm.fields_dict.custom_interview_feedback.wrapper).find('button').on('click', function () {
-                        let interview_id = $(this).data('interview');
-                        show_feedback(interview_id);
-                    });
+                        // Attach click event to buttons
+                        $(frm.fields_dict.custom_interview_feedback.wrapper).find('button').on('click', function () {
+                            let interview_id = $(this).data('interview');
+                            show_feedback(interview_id);
+                        });
+                    }
 
                 } else {
-                    $(frm.fields_dict.custom_interview_feedback.wrapper).html('<p style="margin-top: 30px;">No Interview has been scheduled.</p>');
+                    if (frm.fields_dict.custom_interview_feedback) {
+                        $(frm.fields_dict.custom_interview_feedback.wrapper).html('<p style="margin-top: 30px;">No Interview has been scheduled.</p>');
+                    }
                 }
             }
         },
@@ -935,7 +942,9 @@ function applicant_details(frm) {
                   `;
 
                   // Finally set the HTML content
-                  frm.fields_dict.custom_custom_table.$wrapper.html(job_applicant_html);
+                  if (frm.fields_dict.custom_custom_table) {
+                      frm.fields_dict.custom_custom_table.$wrapper.html(job_applicant_html);
+                  }
               }
           });
       }
@@ -1009,3 +1018,204 @@ frappe.ui.form.on('Job Applicant', {
     }
 });
 
+
+// NOTE: The "Send Pre Offer Form" action now lives inline on the Offer stage of
+// the visual hiring-workflow flow (hiring_workflow_flow.js → sendPreOffer), so the
+// standalone top button was removed to avoid a duplicate control.
+
+
+frappe.ui.form.on('Job Applicant', {
+    refresh(frm) {
+        if (frm.doc.__islocal || frm.doc.status !== 'Accepted') return;
+
+        // Gated by Recruitment Settings -> Enable Pre Onboarding Form Button.
+        frappe.db.get_single_value('Recruitment Settings', 'enable_pre_onboarding_form').then((enabled) => {
+            if (!enabled) return;
+            const label = frm.doc.custom_pre_onboarding_status === 'Released'
+                ? __('Update Pre Onboarding Release')
+                : __('Send Pre Onboarding Form');
+
+            frm.add_custom_button(label, () => {
+                recruitment.open_pre_onboarding_dialog(frm.doc.name, frm.doc, () => frm.reload_doc());
+            }, __('Actions'));
+        });
+    }
+});
+
+
+frappe.ui.form.on('Job Applicant', {
+    refresh(frm) {
+        if (frm.doc.__islocal || frm.doc.status !== 'Accepted') return;
+
+        // Gated by Recruitment Settings -> Enable Initiate Onboarding Button.
+        frappe.db.get_single_value('Recruitment Settings', 'enable_initiate_onboarding').then((enabled) => {
+            if (!enabled) return;
+
+            frm.add_custom_button(__('Initiate Onboarding'), () => {
+                frappe.confirm(
+                    __('Create the Employee Onboarding for this candidate? Buddies, Recruiter, Onboarding SPOC and the default Onboarding Portal Form will be auto-filled.'),
+                    () => {
+                        frappe.call({
+                            method: 'recruitment.api.action_center.initiate_onboarding',
+                            args: { job_applicant: frm.doc.name },
+                            freeze: true,
+                            freeze_message: __('Initiating onboarding...'),
+                            callback(r) {
+                                const eo = r.message && r.message.employee_onboarding;
+                                if (!eo) return;
+                                const msg = r.message.already_existed
+                                    ? __('Employee Onboarding already exists — opening it.')
+                                    : __('Employee Onboarding created.');
+                                frappe.show_alert({ message: msg, indicator: 'green' });
+                                frappe.set_route('Form', 'Employee Onboarding', eo);
+                            },
+                        });
+                    }
+                );
+            }, __('Actions'));
+        });
+    }
+});
+
+
+window.recruitment = window.recruitment || {};
+
+recruitment.open_pre_onboarding_dialog = function (job_applicant_id, prefill_doc, on_success) {
+    const prefill = prefill_doc || {};
+    const dlg = new frappe.ui.Dialog({
+        title: __('Send Pre Onboarding Form'),
+        fields: [
+            {
+                fieldname: 'onboarding_portal_form',
+                fieldtype: 'Link',
+                label: __('Onboarding Portal Form'),
+                options: 'Onboarding Portal Forms',
+                reqd: 1,
+                default: prefill.custom_onboarding_portal_form || ''
+            },
+            {
+                fieldname: 'bgv_vendor',
+                fieldtype: 'Link',
+                label: __('BGV Vendor'),
+                options: 'Supplier',
+                default: prefill.custom_bgv_vendor || ''
+            },
+            { fieldtype: 'Section Break', label: __('Contacts') },
+            {
+                fieldname: 'onboarding_buddy',
+                fieldtype: 'Link',
+                label: __('Onboarding Buddy'),
+                options: 'User',
+                default: prefill.custom_onboarding_buddy || ''
+            },
+            {
+                fieldname: 'joining_buddy',
+                fieldtype: 'Link',
+                label: __('Joining Buddy'),
+                options: 'User',
+                default: prefill.custom_joining_buddy || ''
+            },
+            { fieldtype: 'Column Break' },
+            {
+                fieldname: 'manager',
+                fieldtype: 'Link',
+                label: __('Manager'),
+                options: 'User',
+                default: prefill.custom_manager || ''
+            }
+        ],
+        primary_action_label: __('Release'),
+        primary_action(values) {
+            frappe.call({
+                method: 'recruitment.api.action_center.release_pre_onboarding',
+                args: { job_applicant_id, data: values },
+                freeze: true,
+                freeze_message: __('Releasing pre onboarding...'),
+                callback: (r) => {
+                    if (r.message && r.message.status === 'success') {
+                        frappe.show_alert({ message: r.message.message || __('Released.'), indicator: 'green' });
+                        dlg.hide();
+                        if (typeof on_success === 'function') on_success();
+                    }
+                }
+            });
+        }
+    });
+
+    if (!prefill.custom_onboarding_buddy && !prefill.custom_joining_buddy && !prefill.custom_manager) {
+        frappe.call({
+            method: 'recruitment.api.action_center.get_pre_onboarding_buddy_suggestions',
+            args: { job_applicant_id },
+            callback: (r) => {
+                const s = (r.message && r.message.suggestions) || {};
+                if (s.onboarding_buddy) dlg.set_value('onboarding_buddy', s.onboarding_buddy);
+                if (s.joining_buddy) dlg.set_value('joining_buddy', s.joining_buddy);
+                if (s.manager) dlg.set_value('manager', s.manager);
+            }
+        });
+    }
+
+    dlg.show();
+};
+
+// --- Auto-screening: manual "Run Screening" trigger -------------------------
+frappe.ui.form.on("Job Applicant", {
+    refresh(frm) {
+        if (frm.is_new()) return;
+
+        frm.add_custom_button(__("Run Screening"), () => {
+            frappe.call({
+                method: "recruitment.recruitment.screening_engine.run_screening",
+                args: { applicant: frm.doc.name },
+                freeze: true,
+                freeze_message: __("Queuing screening…"),
+                callback: (r) => {
+                    const msg = r.message || {};
+                    if (msg.enqueued) {
+                        frappe.show_alert({
+                            message: __("Screening started — the result will update shortly."),
+                            indicator: "blue",
+                        });
+                    } else {
+                        frappe.msgprint(__("This opening has no screening conditions configured."));
+                    }
+                },
+            });
+        }, __("Actions"));
+    },
+});
+
+// Live-refresh the form when the background worker finishes.
+frappe.realtime.on("screening_done", (data) => {
+    const frm = cur_frm;
+    if (frm && frm.doc && frm.doctype === "Job Applicant" && frm.doc.name === data.applicant) {
+        frm.reload_doc();
+    }
+});
+
+/* ------------------------------------------------------------------ *
+ * Hiring Workflow — drive a candidate through the Job Opening's
+ * hiring stages (custom_hiring_stages). Server: recruitment.api.hiring_stage
+ * ------------------------------------------------------------------ */
+(function () {
+    // The stage controls (Move / Jump / Schedule Interview / Reject) now live in
+    // the visual hiring-workflow flow (hiring_workflow_flow.js). Here we only keep
+    // a lightweight dashboard indicator showing the current stage at a glance.
+    const API = "recruitment.api.hiring_stage";
+
+    frappe.ui.form.on("Job Applicant", {
+        refresh(frm) {
+            if (frm.is_new()) return;
+            frappe.call({
+                method: API + ".get_stage_options",
+                args: { job_applicant: frm.doc.name },
+                callback: (r) => {
+                    const info = r && r.message;
+                    if (!(info && info.enabled && info.current_stage)) return;
+                    const closed = ["Rejected", "Accepted"].includes(frm.doc.status);
+                    frm.dashboard.add_indicator(__("Stage: {0}", [info.current_stage]), closed ? "gray" : "blue");
+                },
+            });
+        },
+    });
+})();

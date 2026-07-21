@@ -1,0 +1,106 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "TP.#####",
+ "creation": "2025-11-13 16:42:46.123402",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "basic_details_tab",
+  "policy_title",
+  "description",
+  "termination_form",
+  "applicability_section",
+  "applicable_to",
+  "process_details_tab",
+  "restrict_last_working_day_on_section",
+  "weekly_off",
+  "holiday"
+ ],
+ "fields": [
+  {
+   "fieldname": "basic_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Basic Details"
+  },
+  {
+   "fieldname": "policy_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Policy Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "applicability_section",
+   "fieldtype": "Section Break",
+   "label": "Applicability"
+  },
+  {
+   "fieldname": "applicable_to",
+   "fieldtype": "Table MultiSelect",
+   "label": "Applicable to",
+   "options": "User Assignment Table"
+  },
+  {
+   "fieldname": "process_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Process Details"
+  },
+  {
+   "fieldname": "restrict_last_working_day_on_section",
+   "fieldtype": "Section Break",
+   "label": "Restrict Last Working Day On"
+  },
+  {
+   "default": "0",
+   "fieldname": "weekly_off",
+   "fieldtype": "Check",
+   "label": "Weekly Off"
+  },
+  {
+   "default": "0",
+   "fieldname": "holiday",
+   "fieldtype": "Check",
+   "label": "Holiday"
+  },
+  {
+   "fieldname": "termination_form",
+   "fieldtype": "Link",
+   "label": "Termination Form",
+   "options": "Microapp Form Widget"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-05-21 15:55:48.725033",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Termination Policy",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "read_only": 1,
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

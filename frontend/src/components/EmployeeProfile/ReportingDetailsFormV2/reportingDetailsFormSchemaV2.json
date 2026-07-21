@@ -1,0 +1,59 @@
+{
+    "title": "Reporting Details",
+    "name": "reportingDetails",
+    "path": "reporting-details",
+    "display": "form",
+    "components": [
+        {
+            "type": "panel",
+            "key": "reportingDetailsPanel",
+            "label": "Reporting Details",
+            "title": "Reporting Details",
+            "hideLabel": true,
+            "customClass": "bg-white rounded-lg",
+            "components": [
+                {
+                    "label": "Select Value",
+                    "errorLabel": "Select Value",
+                    "key": "reports_to",
+                    "type": "select",
+                    "input": true,
+                    "placeholder": "Select Value",
+                    "customClass": "mb-4",
+                    "dataSrc": "url",
+                    "data": {
+                        "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.employee_search.search_employees?status=Active"
+                    },
+                    "template": "<span><div>{{ item.employee_name || '-' }} ({{ item.employee_id || '-' }})</div><div style=\"font-size:0.85em;color:#6b7280;\"> {{ item.department_display ||'' }}, {{item.branch_display || ''}}</div></span>",
+                    "selectValues": "message",
+                    "refreshOn": "isForOthers",
+                    "clearOnRefresh": false,
+                    "lazyLoad": false,
+                    "searchEnabled": true,
+                    "searchField": "query",
+                    "customOptions": {
+                        "noChoicesText": " "
+                    }
+                },
+                {
+                    "type": "datetime",
+                    "key": "start_date",
+                    "label": "Start Date",
+                    "errorLabel": "Start Date",
+                    "format": "dd-MM-yyyy",
+                    "enableTime": false,
+                    "input": true
+                },
+                {
+                    "type": "datetime",
+                    "key": "end_date",
+                    "label": "End Date",
+                    "errorLabel": "End Date",
+                    "format": "dd-MM-yyyy",
+                    "enableTime": false,
+                    "input": true
+                }
+            ]
+        }
+    ]
+}

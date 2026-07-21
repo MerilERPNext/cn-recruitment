@@ -1,0 +1,46 @@
+import React, { useMemo } from "react";
+import { Outlet, useLocation } from "react-router";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import HeaderBar from "../HeaderBar";
+
+const PoliciesApp: React.FC = () => {
+  const { isDesktop } = useScreenSize();
+  const location = useLocation();
+
+  const isViewPolicy = location.pathname.startsWith(
+    "/webapp/policies-app/view-policy",
+  );
+
+  const title = useMemo(() => {
+    const path = location.pathname;
+
+    const routeTitles: Record<string, string> = {
+      "/webapp/policies-app": "Policy Category",
+      "/webapp/policies-app/policies-list": "Policies",
+    };
+
+    return routeTitles[path] || "Policies";
+  }, [location.pathname]);
+
+  const mobileLayout = (
+    <div className={`flex flex-col ${isViewPolicy ? "h-screen overflow-hidden" : "min-h-screen"}`}>
+      {!isViewPolicy && <HeaderBar title={title} />}
+      <main className={`flex-grow z-100 ${isViewPolicy ? "overflow-hidden" : "overflow-y-auto md:p-4"}`}>
+        <Outlet />
+      </main>
+    </div>
+  );
+
+  const desktopLayout = (
+    <DesktopLayoutWrapper title="Policies">
+      <div className="p-8 md:p-0 overflow-y-auto h-full">
+        <Outlet />
+      </div>
+    </DesktopLayoutWrapper>
+  );
+
+  return isDesktop ? desktopLayout : mobileLayout;
+};
+
+export default PoliciesApp;

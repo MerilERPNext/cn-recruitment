@@ -1,0 +1,1581 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { Form } from "@tsed/react-formio";
+import "formiojs/dist/formio.full.css";
+import {
+  useAttendanceRequestAttachments,
+  useCreateNewAttendanceRequest,
+  useGetEmployeeShift,
+  useGetUserRoles,
+  useReqValidationsForAttendanceRequest,
+  useUpdateAttendanceRequest,
+  useAllEmployeeCheckIns,
+} from "../../../hooks/useAttendance";
+import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
+import { endOfDay, format, isValid, startOfDay } from "date-fns";
+import { useAttendanceFieldReasonAndMessagePermissions, useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { toast } from "react-hot-toast";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { X } from "lucide-react";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { MyAttendanceRequest } from "../../../types/attendance";
+// Import the JSON schema
+import defaultFormSchema from "./attendanceRequestFormSchema.json";
+import Button from "../../shared/atoms/Button";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import { useFileUploader } from "../../../hooks/useFileUploader";
+import { useRequiredFields } from "../../../hooks/useRequiredFields";
+import {
+  GenericFormSchema,
+  transformSchemaWithRequired,
+} from "../../../utils/transformSchemaWithRequired";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useQueryClient } from "@tanstack/react-query";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import { FormioPreviewItem, FormioPreviewPortal } from "../../shared/molecules/FormioPreview";
+import "../../../utils/FormioConfig";
+
+interface AttendanceFormData {
+  request_type?: string;
+  company?: string;
+  employee?: {
+    name: string;
+    employee_name: string;
+    company: string;
+  };
+  explanation?: string;
+  custom__request_reason?: string;
+  from_date?: string | Date;
+  to_date?: string | Date;
+  select_shift?: string;
+  overnight_out_duty?: boolean;
+  attachments?: { url: string }[];
+  custom_attachment?: string;
+  custom_location?: string;
+  isForOthers?: boolean;
+  currentEmployeeId?: string;
+  currentUserId?: string;
+  checkin_time?: string | Date;
+  checkout_time?: string | Date;
+}
+
+interface FormioComponent {
+  disabled: boolean;
+  component: FormioComponent | null;
+  hidden: boolean;
+  setValue: (
+    value: string | boolean,
+    options?: { noUpdateEvent?: boolean },
+  ) => void;
+  redraw: () => void;
+}
+
+interface FormioFormInstance {
+  submit: () => void;
+  getValue: () => { data: AttendanceFormData };
+  setValue: (value: { data: AttendanceFormData }) => void;
+  redraw: () => void;
+  getComponent: (key: string) => FormioComponent | null;
+  element?: HTMLElement;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  submission?: any;
+}
+
+export interface FormSchema {
+  title: string;
+  name: string;
+  path: string;
+  display: string;
+  components: SchemaComponent[];
+}
+
+export interface SchemaComponent {
+  type: string;
+  key: string;
+  label?: string;
+  components?: SchemaComponent[];
+  data?: {
+    values?: RequestTypeOption[];
+    url?: string;
+  };
+  dataSrc?: string;
+  valueProperty?: string;
+  selectValues?: string;
+  refreshOn?: string;
+  // allow other unknown properties like validate
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
+}
+
+interface RequestTypeOption {
+  label: string;
+  value: string;
+}
+
+interface FormChangeSubmission {
+  changed?: {
+    component?: {
+      key?: string;
+    };
+    value: string | Date | boolean | number;
+  };
+  data?: AttendanceFormData;
+}
+
+// Extend HTMLInputElement to include flatpickr properties
+interface FlatpickrInput extends HTMLInputElement {
+  _flatpickr?: {
+    close: () => void;
+  };
+  __closeOtherFPHandler?: () => void;
+}
+
+// Normalize any date representation to a stable local day-start key so that
+// state (and the react-query keys derived from it) doesn't churn when formio
+// flips between Date objects and ISO strings for the same calendar day.
+const toLocalDayKey = (value: string | Date): string => {
+  const d = value instanceof Date ? value : new Date(value);
+  return isValid(d) ? format(startOfDay(d), "yyyy-MM-dd'T'HH:mm:ss") : String(value);
+};
+
+interface AttendanceRequestFormV2Props {
+  onClose: () => void;
+  selectedDate?: Date | string;
+  schema?: FormSchema;
+  schemaUrl?: string;
+  defaultAttendanceData?: MyAttendanceRequest | null;
+  forActionType?: "create" | "edit";
+  latestInAndOutTime?: {
+    in_time: string;
+    out_time: string;
+  };
+  isFromCalView?: boolean;
+}
+
+const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
+  onClose,
+  selectedDate: propSelectedDate,
+  schema: propSchema,
+  schemaUrl,
+  defaultAttendanceData,
+  forActionType = "create",
+  latestInAndOutTime,
+  isFromCalView = false
+}) => {
+  const selectedDate = useMemo(() => {
+    if (!propSelectedDate) return new Date();
+    return propSelectedDate instanceof Date
+      ? propSelectedDate
+      : new Date(propSelectedDate);
+  }, [propSelectedDate]);
+
+  const { setRefetchAttendance } = useGlobalStore();
+  const { isDesktop } = useScreenSize();
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+
+  const canCreateAttendanceRequestForOthers = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request_for_others",
+    "Attendance Summary",
+  );
+  const formAddressInstance = useRef<FormioFormInstance | null>(null);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [fromDateChanged, setFromDateChanged] = useState<string>("");
+  const [toDateChanged, setToDateChanged] = useState<string>("");
+  const [requestTypeChanged, setRequestTypeChanged] = useState<string>("Attendance Adjustment");
+  const [currentlySelectedEmployee, setCurrentlySelectedEmployee] =
+    useState<any>(null);
+  const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
+
+  const [isForOthers, setIsForOthers] = useState(false);
+  const [formSchema, setFormSchema] = useState<FormSchema>(
+    (propSchema || defaultFormSchema) as FormSchema,
+  );
+  const [isSchemaLoading, setIsSchemaLoading] = useState(false);
+  const [isFormReady, setIsFormReady] = useState(false);
+  const { data: currentUser } = useCurrentUser();
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: attendanceFieldReasonAndMessagePermissions } = useAttendanceFieldReasonAndMessagePermissions();
+  const { data: userRoles } = useGetUserRoles();
+
+  const shiftFilters = useMemo(
+    () => ({
+      date: selectedDate,
+    }),
+    [selectedDate],
+  );
+
+  const shiftEmployeeId = isForOthers
+    ? typeof currentlySelectedEmployee === "string"
+      ? currentlySelectedEmployee
+      : currentlySelectedEmployee?.user_id || currentlySelectedEmployee?.name
+    : currentEmployee?.user_id || currentUser?.name;
+
+  const { data: shiftData } = useGetEmployeeShift(
+    shiftEmployeeId || "",
+    shiftFilters,
+  );
+
+  const queryClient = useQueryClient();
+
+  // Memoize activeEmployeeId to prevent unnecessary refetches
+  const activeEmployeeId = useMemo(
+    () => currentlySelectedEmployee?.name || currentEmployee?.employee || "",
+    [currentlySelectedEmployee?.name, currentEmployee?.employee]
+  );
+
+  const reqValidationmutation =
+    useReqValidationsForAttendanceRequest(activeEmployeeId);
+
+  // Memoize the date parameter to prevent unnecessary refetches
+  const attachmentQueryDate = useMemo(
+    () => format(new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX"),
+    [] // Only compute once on mount
+  );
+
+  const { data: attendanceRequestAttachmentsMandatory } =
+    useAttendanceRequestAttachments(
+      activeEmployeeId,
+      attachmentQueryDate,
+      requestTypeChanged,
+    );
+  const mutation = useCreateNewAttendanceRequest();
+  const { mutate: updateAttendanceRequest } = useUpdateAttendanceRequest();
+
+  const { data: requiredFields } = useRequiredFields("Attendance Request");
+  const requiredFieldMap = useMemo(() => {
+    if (!requiredFields?.fields) return {};
+    const map: Record<string, boolean> = {};
+    requiredFields.fields.forEach((f) => {
+      if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+    });
+
+    if (attendanceFieldReasonAndMessagePermissions) {
+      if (
+        attendanceFieldReasonAndMessagePermissions.make_attendance_message_optional ===
+        false
+      ) {
+        map["explanation"] = true;
+      }
+      if (
+        attendanceFieldReasonAndMessagePermissions.make_reason_non_mandate ===
+        false
+      ) {
+        map["custom__request_reason"] = true;
+      }
+    }
+
+    return map;
+  }, [requiredFields, attendanceFieldReasonAndMessagePermissions]);
+
+  // Fetch schema from backend if schemaUrl is provided
+  useEffect(() => {
+    if (schemaUrl && !propSchema) {
+      setIsSchemaLoading(true);
+      fetch(schemaUrl)
+        .then((res) => res.json())
+        .then((data) => {
+          const src = data.message || data;
+          try {
+            const transformed = transformSchemaWithRequired(
+              src,
+              requiredFieldMap,
+            ) as FormSchema;
+            setFormSchema(transformed);
+          } catch (e) {
+            console.error(e);
+            setFormSchema(src);
+          } finally {
+            setIsSchemaLoading(false);
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to fetch schema:", error);
+          toast.error("Failed to load form schema");
+          setIsSchemaLoading(false);
+        });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [schemaUrl, propSchema, requiredFieldMap]);
+
+  // Update schema when propSchema changes
+  useEffect(() => {
+    if (propSchema) {
+      try {
+        setFormSchema(
+          transformSchemaWithRequired(
+            propSchema as GenericFormSchema,
+            requiredFieldMap,
+          ) as FormSchema,
+        );
+      } catch {
+        setFormSchema(propSchema);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propSchema, requiredFieldMap]);
+
+  // If requiredFieldMap changes and we already have a formSchema in state, re-apply required flags
+  useEffect(() => {
+    try {
+      setFormSchema((prev) => {
+        if (!prev) return prev;
+        return transformSchemaWithRequired(
+          prev as GenericFormSchema,
+          requiredFieldMap,
+        ) as FormSchema;
+      });
+    } catch (e) {
+      // ignore transform errors
+      console.warn("Failed to reapply required fields to existing schema", e);
+    }
+  }, [requiredFieldMap]);
+
+  // Filter request types based on API conditions and remove dataSrc from company field
+  useEffect(() => {
+    if (reqValidationmutation?.data) {
+      const baseSchema = propSchema || defaultFormSchema;
+      const filteredSchema = JSON.parse(
+        JSON.stringify(baseSchema),
+      ) as FormSchema; // Deep clone
+      // Find the request_type field in the schema
+      const panel = filteredSchema.components?.[0];
+      if (panel?.components) {
+        const requestTypeField = panel.components.find(
+          (comp: SchemaComponent) => comp.key === "request_type",
+        );
+
+        if (requestTypeField?.data?.values) {
+          // Filter options based on API conditions
+          const filteredValues = requestTypeField.data.values.filter(
+            (option: RequestTypeOption) => {
+              switch (option.value) {
+                case "Clockin":
+                  return reqValidationmutation.data.clockin_requests;
+                case "Out Duty":
+                  return reqValidationmutation.data.out_duty_requests;
+                case "Short Attendance Request":
+                  return reqValidationmutation.data.short_leave_requests;
+                case "Attendance Adjustment":
+                  return reqValidationmutation.data
+                    .attendance_adjustment_requests;
+                default:
+                  return false;
+              }
+            },
+          );
+
+          requestTypeField.data.values = filteredValues;
+        }
+
+        // Remove dataSrc from company field to allow manual control
+        const companyField = panel.components.find(
+          (comp: SchemaComponent) => comp.key === "company",
+        );
+        if (companyField && companyField.dataSrc) {
+          delete companyField.dataSrc;
+          delete companyField.data;
+          delete companyField.valueProperty;
+          delete companyField.selectValues;
+          delete companyField.refreshOn;
+        }
+
+        // Inject allowed date boundaries so this rebuild never overwrites them.
+        // This effect clones from baseSchema (original JSON) every time it runs,
+        // which would erase any date constraints set by the separate attachment
+        // effect if that one happened to run first.
+        if (attendanceRequestAttachmentsMandatory) {
+          const parseDateLocal = (d: string | undefined) => {
+            if (!d) return undefined;
+            const p = new Date(d);
+            return isNaN(p.getTime()) ? undefined : p;
+          };
+          const minD = parseDateLocal(attendanceRequestAttachmentsMandatory.allowed_from_date);
+          const maxD = parseDateLocal(attendanceRequestAttachmentsMandatory.allowed_to_date);
+
+          (["from_date", "to_date"] as const).forEach((key) => {
+            const comp = panel?.components?.find((c: SchemaComponent) => c.key === key);
+            if (!comp) return;
+            if (!comp.datePicker) comp.datePicker = {};
+            if (!comp.widget) comp.widget = {};
+            if (minD) { comp.datePicker.minDate = minD; comp.widget.minDate = minD; }
+            if (maxD) { comp.datePicker.maxDate = maxD; comp.widget.maxDate = maxD; }
+          });
+        }
+
+        // Same reasoning as above, for the freeze-driven disabled state:
+        // this rebuild starts from the original JSON (no disabled flag), so
+        // re-inject it here or a reqValidationmutation-triggered rebuild
+        // would silently re-enable checkin/checkout while frozen.
+        const freezeActive =
+          requestTypeChanged === "Attendance Adjustment" &&
+          !!(attendanceRequestAttachmentsMandatory as any)
+            ?.freeze_in_out_time_to_shift_timings;
+        (["checkin_time", "checkout_time"] as const).forEach((key) => {
+          const comp = panel?.components?.find((c: SchemaComponent) => c.key === key);
+          if (comp) comp.disabled = freezeActive;
+        });
+      }
+
+      try {
+        const transformed = transformSchemaWithRequired(
+          filteredSchema as GenericFormSchema,
+          requiredFieldMap,
+        ) as FormSchema;
+        setFormSchema(transformed);
+      } catch {
+        setFormSchema(filteredSchema);
+      }
+    }
+    // include requiredFieldMap so required flags are respected after filtering
+    // include attendanceRequestAttachmentsMandatory so date constraints survive
+    // schema rebuilds triggered by reqValidationmutation arriving after attachment data
+    // include requestTypeChanged so the freeze-driven disabled state above is correct
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reqValidationmutation?.data, propSchema, requiredFieldMap, attendanceRequestAttachmentsMandatory, requestTypeChanged]);
+
+  const start = useMemo(() => {
+    const d = fromDateChanged ? new Date(fromDateChanged) : selectedDate;
+    const validDate = isValid(d) ? d : new Date();
+    return format(startOfDay(validDate), "yyyy-MM-dd HH:mm:ss");
+  }, [fromDateChanged, selectedDate]);
+
+  const end = useMemo(() => {
+    let rawDate = toDateChanged;
+    if (!rawDate && fromDateChanged) rawDate = fromDateChanged;
+
+    const d = rawDate ? new Date(rawDate) : selectedDate;
+    const validDate = isValid(d) ? d : new Date();
+    return format(endOfDay(validDate), "yyyy-MM-dd HH:mm:ss");
+  }, [toDateChanged, fromDateChanged, selectedDate]);
+
+  const checkinFilters = useMemo(() => {
+    if (!activeEmployeeId) return [];
+    return [
+      ["time", "between", [start, end]],
+      ["employee", "=", activeEmployeeId],
+    ];
+  }, [start, end, activeEmployeeId]);
+
+  const {
+    data: homeSummary,
+    isLoading: isHomeSummaryLoading,
+    isFetching: isHomeSummaryFetching,
+  } = useAllEmployeeCheckIns(checkinFilters as any, {
+    enabled: !!activeEmployeeId,
+  });
+
+  const sortedLogs = useMemo(() => {
+    const rawLogs = homeSummary || [];
+    return [...rawLogs].sort((a, b) => {
+      const timeA = new Date(a.time.replace(" ", "T")).getTime();
+      const timeB = new Date(b.time.replace(" ", "T")).getTime();
+      return timeA - timeB;
+    });
+  }, [homeSummary]);
+
+  const latestCheckin =
+    sortedLogs.find((c) => c.log_type === "IN")?.time || null;
+
+  const latestCheckout =
+    [...sortedLogs].reverse().find((c) => c.log_type === "OUT")?.time || null;
+
+  const normalizeTime = (timeStr?: string) => {
+    if (!timeStr) return null;
+    try {
+      // If it's a datetime string (contains space), extract time portion
+      let timePart = timeStr;
+      if (timeStr.includes(" ")) {
+        timePart = timeStr.split(" ")[1];
+      }
+
+      // Parse and format to HH:mm:ss
+      const [h, m, s] = timePart.split(":");
+      const seconds = s ? s.split(".")[0].padStart(2, "0") : "00";
+      return `${h.padStart(2, "0")}:${m.padStart(2, "0")}:${seconds}`;
+    } catch {
+      return null;
+    }
+  };
+  const initialSubmissionSet = useRef(false);
+  // Once the user manually edits a time field it belongs to them: the prefill
+  // effect must not overwrite it. Flags reset when the date/employee changes,
+  // because that legitimately triggers a fresh prefill.
+  const userEditedTimes = useRef({ checkin: false, checkout: false });
+  // Last value the prefill effect wrote, so re-runs of the effect (query
+  // refetches, isFetching toggles, request-type changes) are no-ops unless the
+  // underlying data actually changed.
+  const lastPrefilledTimes = useRef<{
+    checkin: string | null;
+    checkout: string | null;
+  }>({ checkin: null, checkout: null });
+  const initialSubmission = useMemo(
+    () => ({
+      data: {
+        from_date:
+          defaultAttendanceData?.reference_document?.from_date || selectedDate,
+        to_date:
+          defaultAttendanceData?.reference_document?.to_date || selectedDate,
+        request_type:
+          defaultAttendanceData?.reference_document?.custom_request_type,
+        employee: defaultAttendanceData?.reference_document?.employee,
+        company: "",
+        // formio time components store values as "HH:mm:ss" strings
+        // (dataFormat); feeding them Date objects makes every reformat cycle
+        // re-parse the value with the wrong format and drift/mangle it.
+        checkin_time:
+          normalizeTime(
+            defaultAttendanceData?.reference_document?.custom_from_time,
+          ) || undefined,
+        checkout_time:
+          normalizeTime(
+            defaultAttendanceData?.reference_document?.custom_to_time,
+          ) || undefined,
+        custom__request_reason:
+          defaultAttendanceData?.reference_document?.custom__request_reason ||
+          "",
+        custom_location:
+          defaultAttendanceData?.reference_document?.custom_location,
+        select_shift: defaultAttendanceData?.reference_document?.shift || "",
+        overnight_out_duty: false,
+        message: defaultAttendanceData?.reference_document?.explanation || "",
+        show_attachment: attendanceRequestAttachmentsMandatory?.is_mandatory,
+        allowed_from_date:
+          attendanceRequestAttachmentsMandatory?.allowed_from_date,
+        allowed_to_date: attendanceRequestAttachmentsMandatory?.allowed_to_date,
+        attachments:
+          defaultAttendanceData?.attachments &&
+            defaultAttendanceData?.attachments?.length > 0
+            ? defaultAttendanceData?.attachments?.map((item) => {
+              return {
+                name: item?.file_url?.split("/").pop(),
+                url: item?.file_url,
+              };
+            })
+            : [],
+        isForOthers: isForOthers,
+        currentEmployeeId: currentEmployee?.employee || "",
+        currentUserId: currentEmployee?.user_id || "",
+      },
+    }),
+    // only recompute if these meaningful inputs change:
+    [
+      defaultAttendanceData,
+      selectedDate,
+      currentEmployee?.employee,
+      currentEmployee?.user_id,
+      isForOthers,
+      attendanceRequestAttachmentsMandatory,
+    ],
+  );
+  // Update hidden fields when isForOthers or currentEmployee changes
+  useEffect(() => {
+    if (formAddressInstance.current) {
+      const isForOthersComponent =
+        formAddressInstance.current.getComponent("isForOthers");
+      const currentEmployeeIdComponent =
+        formAddressInstance.current.getComponent("currentEmployeeId");
+      const currentUserIdComponent =
+        formAddressInstance.current.getComponent("currentUserId");
+
+      if (isForOthersComponent) {
+        isForOthersComponent.setValue(isForOthers);
+      }
+      if (currentEmployeeIdComponent && currentEmployee?.employee) {
+        currentEmployeeIdComponent.setValue(currentEmployee.employee, {
+          noUpdateEvent: true,
+        });
+      }
+      if (currentUserIdComponent && currentEmployee?.user_id) {
+        currentUserIdComponent.setValue(currentEmployee.user_id, {
+          noUpdateEvent: true,
+        });
+      }
+
+      if (formAddressInstance.current) {
+        formAddressInstance.current.redraw();
+      }
+    }
+  }, [isForOthers, currentEmployee]);
+
+  // Inject allowed date boundaries into the React-level formSchema so that
+  // flatpickr is initialized with the correct min/max on every form rebuild —
+  // including the very first render when data arrives after the form mounts.
+  useEffect(() => {
+    if (!attendanceRequestAttachmentsMandatory) return;
+
+    const parseDate = (d: string | undefined) => {
+      if (!d) return undefined;
+      const parsed = new Date(d);
+      return isNaN(parsed.getTime()) ? undefined : parsed;
+    };
+    const minD = parseDate(attendanceRequestAttachmentsMandatory.allowed_from_date);
+    const maxD = parseDate(attendanceRequestAttachmentsMandatory.allowed_to_date);
+
+    if (!minD && !maxD) return;
+
+    // Update the React schema state so formio rebuilds from_date / to_date with
+    // actual Date objects instead of the "allowed_from_date" string references.
+    // JSON.parse/stringify clones the schema; we then overwrite with the live
+    // Date objects from the closure (they survive serialisation-free).
+    setFormSchema((prev) => {
+      const updated = JSON.parse(JSON.stringify(prev)) as FormSchema;
+      const panel = updated.components?.[0];
+      if (!panel?.components) return prev;
+
+      (["from_date", "to_date"] as const).forEach((key) => {
+        const comp = panel?.components?.find((c: SchemaComponent) => c.key === key);
+        if (!comp) return;
+        if (!comp.datePicker) comp.datePicker = {};
+        if (!comp.widget) comp.widget = {};
+        if (minD) {
+          comp.datePicker.minDate = minD;
+          comp.widget.minDate = minD;
+        }
+        if (maxD) {
+          comp.datePicker.maxDate = maxD;
+          comp.widget.maxDate = maxD;
+        }
+      });
+
+      return updated;
+    });
+  }, [attendanceRequestAttachmentsMandatory]);
+
+  // Persist the freeze-driven disabled state directly into the schema, not
+  // just the live formio instance. Whenever attendanceRequestAttachmentsMandatory
+  // (or reqValidationmutation/requiredFieldMap) changes, the schema-filtering
+  // effects above call setFormSchema with a schema cloned from the *original*
+  // JSON — formio's Form.setForm() then sees a schema it hasn't seen before
+  // and calls rebuild(), recreating checkin_time/checkout_time as brand-new
+  // component instances from that schema. A `.disabled` flag set directly on
+  // the old instance doesn't survive that; baking it into the schema here
+  // means every rebuild already has the right value.
+  useEffect(() => {
+    const freezeActive =
+      requestTypeChanged === "Attendance Adjustment" &&
+      !!(attendanceRequestAttachmentsMandatory as any)
+        ?.freeze_in_out_time_to_shift_timings;
+
+    setFormSchema((prev) => {
+      const panel = prev.components?.[0];
+      const alreadyCorrect = ["checkin_time", "checkout_time"].every(
+        (key) =>
+          !!panel?.components?.find((c: SchemaComponent) => c.key === key)
+            ?.disabled === freezeActive,
+      );
+      if (alreadyCorrect) return prev;
+
+      const updated = JSON.parse(JSON.stringify(prev)) as FormSchema;
+      const updatedPanel = updated.components?.[0];
+      (["checkin_time", "checkout_time"] as const).forEach((key) => {
+        const comp = updatedPanel?.components?.find(
+          (c: SchemaComponent) => c.key === key,
+        );
+        if (comp) comp.disabled = freezeActive;
+      });
+      return updated;
+    });
+  }, [attendanceRequestAttachmentsMandatory, requestTypeChanged]);
+
+  // Sync attachment mandatory status and date limits onto the live formio instance.
+  // This runs after the form is ready and keeps hidden fields + flatpickr in sync
+  // with the API response (handles both first-load and request-type changes).
+  useEffect(() => {
+    if (!formAddressInstance.current || !attendanceRequestAttachmentsMandatory) return;
+
+    const instance = formAddressInstance.current;
+
+    // Fire change event (no noUpdateEvent) so formio re-evaluates the
+    // attachments field conditional ("when": "show_attachment") automatically.
+    const showAttachmentComp = instance.getComponent("show_attachment");
+    if (showAttachmentComp) {
+      showAttachmentComp.setValue(
+        String(!!attendanceRequestAttachmentsMandatory.is_mandatory),
+      );
+    }
+
+    // Keep hidden boundary fields in sync with form data.
+    const allowedFromDateComp = instance.getComponent("allowed_from_date");
+    const allowedToDateComp = instance.getComponent("allowed_to_date");
+    if (allowedFromDateComp && attendanceRequestAttachmentsMandatory.allowed_from_date) {
+      allowedFromDateComp.setValue(
+        attendanceRequestAttachmentsMandatory.allowed_from_date,
+        { noUpdateEvent: true },
+      );
+    }
+    if (allowedToDateComp && attendanceRequestAttachmentsMandatory.allowed_to_date) {
+      allowedToDateComp.setValue(
+        attendanceRequestAttachmentsMandatory.allowed_to_date,
+        { noUpdateEvent: true },
+      );
+    }
+
+    const toDateComp = instance.getComponent("to_date") as any;
+    if (toDateComp?.component) {
+      toDateComp.component.disabled =
+        !!(attendanceRequestAttachmentsMandatory as any)?.to_date_read_only;
+    }
+
+    // Push the Attendance Adjustment specific config flags into the hidden
+    // fields so customConditional/validate expressions (which read off `data`)
+    // can react to them.
+    const enableTimeTypeSelectionComp = instance.getComponent(
+      "enable_time_type_selection",
+    );
+    if (enableTimeTypeSelectionComp) {
+      enableTimeTypeSelectionComp.setValue(
+        !!(attendanceRequestAttachmentsMandatory as any)
+          ?.enable_time_type_selection,
+      );
+    }
+    const showOnlySingleDateFieldComp = instance.getComponent(
+      "show_only_single_date_field",
+    );
+    if (showOnlySingleDateFieldComp) {
+      showOnlySingleDateFieldComp.setValue(
+        !!(attendanceRequestAttachmentsMandatory as any)
+          ?.show_only_single_date_field,
+        { noUpdateEvent: true },
+      );
+    }
+    const freezeInOutTimeComp = instance.getComponent(
+      "freeze_in_out_time_to_shift_timings",
+    );
+    if (freezeInOutTimeComp) {
+      freezeInOutTimeComp.setValue(
+        !!(attendanceRequestAttachmentsMandatory as any)
+          ?.freeze_in_out_time_to_shift_timings,
+        { noUpdateEvent: true },
+      );
+    }
+    const shiftStartTimeComp = instance.getComponent("shift_start_time");
+    const shiftStartTimeRaw = (attendanceRequestAttachmentsMandatory as any)
+      ?.shift_start_time;
+    if (shiftStartTimeComp && shiftStartTimeRaw) {
+      shiftStartTimeComp.setValue(shiftStartTimeRaw, { noUpdateEvent: true });
+    }
+    const shiftEndTimeComp = instance.getComponent("shift_end_time");
+    const shiftEndTimeRaw = (attendanceRequestAttachmentsMandatory as any)
+      ?.shift_end_time;
+    if (shiftEndTimeComp && shiftEndTimeRaw) {
+      shiftEndTimeComp.setValue(shiftEndTimeRaw, { noUpdateEvent: true });
+    }
+
+    // Freeze check-in/out times to shift timings, but only for Attendance
+    // Adjustment requests.
+    const freezeActive =
+      requestTypeChanged === "Attendance Adjustment" &&
+      !!(attendanceRequestAttachmentsMandatory as any)
+        ?.freeze_in_out_time_to_shift_timings;
+    const checkinTimeComp = instance.getComponent("checkin_time") as any;
+    const checkoutTimeComp = instance.getComponent("checkout_time") as any;
+    // Form.io's renderer reads the component *instance's* `disabled` flag
+    // (Component.js elementInfo() -> `this.disabled`), not the static schema
+    // config at `.component.disabled` — mutating only the schema object never
+    // reaches the rendered <input>'s disabled attribute. Set both so the
+    // schema stays consistent for any future rebuild too.
+    if (checkinTimeComp) {
+      checkinTimeComp.disabled = freezeActive;
+      if (checkinTimeComp.component) {
+        checkinTimeComp.component.disabled = freezeActive;
+      }
+    }
+    if (checkoutTimeComp) {
+      checkoutTimeComp.disabled = freezeActive;
+      if (checkoutTimeComp.component) {
+        checkoutTimeComp.component.disabled = freezeActive;
+      }
+    }
+    if (freezeActive) {
+      // freeze_in_out_time_to_shift_timings === true means the shift's own
+      // start/end always win — no check-in/out log data, ever. The fields
+      // are disabled above, so this is the only value the user can see.
+      if (checkinTimeComp && shiftStartTimeRaw) {
+        const normalized = normalizeTime(shiftStartTimeRaw);
+        if (normalized) {
+          checkinTimeComp.setValue(normalized, { noUpdateEvent: true });
+        }
+      }
+      if (checkoutTimeComp && shiftEndTimeRaw) {
+        const normalized = normalizeTime(shiftEndTimeRaw);
+        if (normalized) {
+          checkoutTimeComp.setValue(normalized, { noUpdateEvent: true });
+        }
+      }
+    }
+
+    const parseDate = (d: string | undefined) => {
+      if (!d) return undefined;
+      const parsed = new Date(d);
+      return isNaN(parsed.getTime()) ? undefined : parsed;
+    };
+    const minD = parseDate(attendanceRequestAttachmentsMandatory.allowed_from_date);
+    const maxD = parseDate(attendanceRequestAttachmentsMandatory.allowed_to_date);
+
+    // Patch the runtime component schema so any future component-level redraw
+    // triggered by redrawOn also picks up the correct constraints.
+    const patchRuntimeSchema = (comp: any) => {
+      if (!comp?.component) return;
+      if (!comp.component.datePicker) comp.component.datePicker = {};
+      if (!comp.component.widget) comp.component.widget = {};
+      if (minD) {
+        comp.component.datePicker.minDate = minD;
+        comp.component.widget.minDate = minD;
+        comp.component.minDate = minD;
+      } else {
+        delete comp.component.datePicker.minDate;
+        delete comp.component.widget.minDate;
+        delete comp.component.minDate;
+      }
+      if (maxD) {
+        comp.component.datePicker.maxDate = maxD;
+        comp.component.widget.maxDate = maxD;
+        comp.component.maxDate = maxD;
+      } else {
+        delete comp.component.datePicker.maxDate;
+        delete comp.component.widget.maxDate;
+        delete comp.component.maxDate;
+      }
+    };
+
+    const fromDateComp = instance.getComponent("from_date") as any;
+    patchRuntimeSchema(fromDateComp);
+    patchRuntimeSchema(toDateComp);
+
+    // Best-effort: directly update already-initialised flatpickr instances so
+    // constraints are visible without waiting for the next rebuild.
+    const applyFP = (comp: any) => {
+      try {
+        const el: HTMLElement | undefined = comp?.element ?? comp?.refs?.container;
+        const input = el?.querySelector?.("input.flatpickr-input") as FlatpickrInput | null;
+        const fp = input?._flatpickr as any;
+        if (!fp) return;
+        if (minD) fp.set("minDate", minD);
+        if (maxD) fp.set("maxDate", maxD);
+      } catch {
+        // non-fatal
+      }
+    };
+
+    applyFP(fromDateComp);
+    applyFP(toDateComp);
+
+    // Re-evaluate all customConditionals (e.g. time_type_selection visibility)
+    // after hidden config fields are synced with noUpdateEvent:true.
+    instance.redraw();
+  }, [
+    attendanceRequestAttachmentsMandatory,
+    isFormReady,
+    forActionType,
+    requestTypeChanged,
+  ]);
+
+  // const formatTime = (date: Date | string | undefined): string | undefined => {
+  //   if (!date) return undefined;
+  //   const d = new Date(date);
+  //   return d.toLocaleTimeString("en-GB");
+  // };
+
+  type CustomError = Error & {
+    response?: { data?: { exception?: string } };
+  };
+
+  const removeFormioFile = (index: number) => {
+    try {
+      const attachmentComp = formAddressInstance.current?.getComponent("attachments");
+      if (attachmentComp) {
+        const current: any[] = (attachmentComp as any).dataValue || [];
+        (attachmentComp as any).setValue(current.filter((_: any, i: number) => i !== index));
+      }
+    } catch (err) {
+      console.error("Failed to remove file", err);
+    }
+    // Always update local state directly — don't rely solely on onChange firing after setValue
+    setAttachments((prev: any[]) => prev.filter((_: any, i: number) => i !== index));
+  };
+
+  const loading = useLoadingOverlay();
+
+  const handleSubmit = useCallback(
+    async (submission: { data: AttendanceFormData }) => {
+      await loading?.wrap(() => {
+        return new Promise<void>((resolve, reject) => {
+          // Logic to determine employee: Use selected from form (if any) or fallback to current
+          const selectedEmpId =
+            submission.data.employee?.name || currentEmployee?.employee;
+
+          const baseBody = {
+            custom_request_type: submission.data.request_type,
+            // If employee is selected (i.e. for others), use form company? Or always use current employee company?
+            // Usually if applying for someone else, might want their company.
+            // But let's stick to safe defaults or existing logic.
+            // Existing: company: isForOthers ? submission.data.company : currentEmployee?.company
+            // Let's keep existing logic for company or maybe infer from employee if we had that data.
+            company: isForOthers
+              ? submission.data.company
+              : currentEmployee?.company,
+            employee: selectedEmpId,
+            explanation: submission.data.explanation,
+            ...(submission.data.from_date && {
+              from_date: formatDateToYYYYMMDD(
+                new Date(submission.data.from_date),
+              ),
+            }),
+            ...((submission.data.to_date ||
+              (submission.data.request_type === "Out Duty" &&
+                submission.data.from_date)) && {
+              to_date:
+                submission.data.request_type === "Out Duty" &&
+                  submission.data.from_date
+                  ? formatDateToYYYYMMDD(new Date(submission.data.from_date))
+                  : formatDateToYYYYMMDD(
+                    new Date(submission.data.to_date as string),
+                  ),
+            }),
+          };
+
+          let requestBody: Record<string, unknown> = { ...baseBody };
+
+          const formatForPayload = (val: string | Date | undefined) => {
+            if (!val) return undefined;
+            if (val instanceof Date) {
+              const h = val.getHours().toString().padStart(2, "0");
+              const m = val.getMinutes().toString().padStart(2, "0");
+              const s = val.getSeconds().toString().padStart(2, "0");
+              return `${h}:${m}:${s}`;
+            }
+            if (typeof val === "string" && val.includes("T")) {
+              const d = new Date(val);
+              if (!isNaN(d.getTime())) {
+                const h = d.getHours().toString().padStart(2, "0");
+                const m = d.getMinutes().toString().padStart(2, "0");
+                const s = d.getSeconds().toString().padStart(2, "0");
+                return `${h}:${m}:${s}`;
+              }
+            }
+            return val;
+          };
+
+          switch (submission.data.request_type) {
+            case "Clockin":
+              requestBody = {
+                ...baseBody,
+                to_date: baseBody.from_date,
+                custom_from_time: formatForPayload(submission.data.checkin_time),
+                custom__request_reason: submission.data.custom__request_reason,
+                custom_location: submission?.data?.custom_location,
+              };
+              break;
+            case "Out Duty":
+              requestBody = {
+                ...baseBody,
+                to_date: baseBody.to_date,
+                custom_from_time: formatForPayload(submission.data.checkin_time),
+                custom_to_time: formatForPayload(submission.data.checkout_time),
+                custom__request_reason: submission.data.custom__request_reason,
+                overnight_out_duty: submission.data.overnight_out_duty || false,
+              };
+              break;
+
+            case "Short Attendance Request":
+              requestBody = {
+                ...baseBody,
+                from_date: formatDateToYYYYMMDD(
+                  new Date(submission.data.from_date || ""),
+                ),
+                to_date: formatDateToYYYYMMDD(
+                  new Date(submission.data.to_date || ""),
+                ),
+                custom_from_time: formatForPayload(submission.data.checkin_time),
+                custom_to_time: formatForPayload(submission.data.checkout_time),
+                custom__request_reason: submission.data.custom__request_reason,
+              };
+              break;
+
+            case "Attendance Adjustment": {
+              const isSingleDateMode = !!(
+                attendanceRequestAttachmentsMandatory as any
+              )?.show_only_single_date_field;
+              const singleDateValue = (submission.data as any).date;
+              const adjustmentFromDate =
+                isSingleDateMode && singleDateValue
+                  ? singleDateValue
+                  : submission.data.from_date;
+              const adjustmentToDate =
+                isSingleDateMode && singleDateValue
+                  ? singleDateValue
+                  : submission.data.to_date;
+
+              requestBody = {
+                ...baseBody,
+                from_date: formatDateToYYYYMMDD(
+                  new Date(adjustmentFromDate || new Date()),
+                ),
+                to_date: formatDateToYYYYMMDD(
+                  new Date(adjustmentToDate || new Date()),
+                ),
+                custom_from_time: formatForPayload(submission.data.checkin_time),
+                custom_to_time: formatForPayload(submission.data.checkout_time),
+                custom__request_reason: submission.data.custom__request_reason,
+                custom_location: submission?.data?.custom_location,
+                custom_time_type: (submission.data as any).time_type_selection,
+              };
+              break;
+            }
+
+            case "Shift Change":
+              requestBody = {
+                ...baseBody,
+                select_shift: submission.data.select_shift,
+              };
+              break;
+          }
+
+          if (
+            submission.data.attachments?.[0] &&
+            submission?.data?.attachments?.length > 0
+          ) {
+            requestBody.custom_attachment =
+              submission.data?.attachments?.[0]?.url;
+          }
+
+          const handleSuccess = (message: string) => {
+            resolve();
+            onClose();
+            setTimeout(() => {
+              queryClient.invalidateQueries({
+                queryKey: [`attendance-requests-${activeEmployeeId}`],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ["attendance-calendar-details"],
+              });
+              setRefetchAttendance(true);
+            }, 4000);
+            toast.success(message);
+          };
+
+          const handleError = (error: CustomError) => {
+            errorResponseFormater(
+              error,
+              "Submission failed. Please try again.",
+              { showToast: true },
+            );
+            reject(error);
+            // toast.error(formatedError);
+            console.error(error);
+          };
+
+          if (
+            forActionType &&
+            forActionType === "edit" &&
+            defaultAttendanceData
+          ) {
+            updateAttendanceRequest(
+              {
+                doctype: "Attendance Request",
+                name: defaultAttendanceData?.reference_document.name,
+                data: requestBody as Record<string, unknown>,
+              },
+              {
+                onSuccess: async (data: any) => {
+                  if (attachments?.length > 0) {
+                    await uploadFiles(attachments, data.doctype, data.name);
+                  }
+                  handleSuccess("Updated Attendance Request successfully!");
+                },
+                onError: handleError,
+              },
+            );
+          } else {
+            mutation.mutate(requestBody as Record<string, unknown>, {
+              onSuccess: async (data: any) => {
+                if (attachments?.length > 0) {
+                  await uploadFiles(attachments, data.doctype, data.name);
+                }
+                handleSuccess("Added Attendance Request successfully!");
+              },
+              onError: handleError,
+            });
+          }
+        });
+      }, "Submitting Attendance Request…");
+    },
+    [
+      loading,
+      currentEmployee,
+      isForOthers,
+      onClose,
+      queryClient,
+      activeEmployeeId,
+      setRefetchAttendance,
+      forActionType,
+      defaultAttendanceData,
+      attachments,
+      uploadFiles,
+      updateAttendanceRequest,
+      mutation,
+      attendanceRequestAttachmentsMandatory,
+    ],
+  );
+
+  // Handle form change
+  const handleFormChange = useCallback(
+    (submission: FormChangeSubmission) => {
+      if (
+        submission?.changed?.component?.key === "from_date" ||
+        submission?.changed?.component?.key === "request_type"
+      ) {
+        const formInstance = formAddressInstance.current;
+
+        if (formInstance) {
+          const showAttachmentsComponent =
+            formInstance.getComponent("show_attachment");
+          if (
+            showAttachmentsComponent &&
+            attendanceRequestAttachmentsMandatory?.is_mandatory
+          ) {
+            showAttachmentsComponent.setValue(
+              String(!!attendanceRequestAttachmentsMandatory?.is_mandatory),
+              {
+                noUpdateEvent: true,
+              },
+            );
+            showAttachmentsComponent.redraw();
+          }
+        }
+      }
+
+      // A new date/employee means a fresh check-in fetch: release ownership
+      // (tracked via native DOM listeners in onFormReady) so the incoming
+      // data can prefill the time fields again.
+      const changedKey = submission?.changed?.component?.key;
+      if (
+        changedKey === "from_date" ||
+        changedKey === "to_date" ||
+        changedKey === "date" ||
+        changedKey === "employee"
+      ) {
+        userEditedTimes.current = { checkin: false, checkout: false };
+        lastPrefilledTimes.current = { checkin: null, checkout: null };
+      }
+
+      // Only re-derive our own date-tracking state when the date field
+      // itself was the one that changed. Reading these off the ambient
+      // submission.data on *every* keystroke (regardless of which field
+      // changed) let unrelated edits (message, reason, etc.) recompute
+      // fromDateChanged/toDateChanged on each change event; formio doesn't
+      // guarantee the same Date reference/precision across change events, so
+      // that recompute could reshape the check-in query filters and cascade
+      // into refetches that overwrote the check-in/out time fields while the
+      // user was typing somewhere else entirely.
+      if (changedKey === "from_date" && submission?.data?.from_date) {
+        const newFrom = toLocalDayKey(submission.data.from_date);
+        if (newFrom !== fromDateChanged) setFromDateChanged(newFrom);
+      }
+      if (changedKey === "to_date" && submission?.data?.to_date) {
+        const newTo = toLocalDayKey(submission.data.to_date);
+        if (newTo !== toDateChanged) setToDateChanged(newTo);
+      }
+      // Single-date mode (Attendance Adjustment) drives both from/to date.
+      if (changedKey === "date") {
+        const singleDateValue = (submission?.data as any)?.date;
+        if (singleDateValue) {
+          const newDate = toLocalDayKey(singleDateValue);
+          if (newDate !== fromDateChanged) setFromDateChanged(newDate);
+          if (newDate !== toDateChanged) setToDateChanged(newDate);
+        }
+      }
+      if (submission?.changed?.component?.key === "employee") {
+        setCurrentlySelectedEmployee(submission.changed.value as any);
+      }
+      if (submission?.changed?.component?.key === "request_type") {
+        setRequestTypeChanged(submission.changed.value?.toString() || "");
+      }
+      if (submission?.changed?.component?.key === "isForOthers") {
+        setIsForOthers(!!submission.changed.value);
+      }
+      // Also sync from submission.data just in case
+      if (
+        submission?.data?.isForOthers !== undefined &&
+        !!submission.data.isForOthers !== isForOthers
+      ) {
+        setIsForOthers(!!submission.data.isForOthers);
+      }
+
+      // Sync attachments from full submission data on every change.
+      // We can't rely on changed.component.key for file components with customfiles
+      // storage — Form.io does not always populate `changed` for file fields.
+      // Guarded with setAttachments((prev) => ...) so an unrelated field edit
+      // (attachments always absent/empty) doesn't create a new [] reference
+      // and force a re-render on every keystroke.
+      const submissionAttachments = submission?.data?.attachments;
+      if (Array.isArray(submissionAttachments)) {
+        setAttachments((prev) => {
+          const prevAny = prev as unknown as unknown[];
+          return prevAny.length === submissionAttachments.length &&
+            prevAny.every((f, i) => f === submissionAttachments[i])
+            ? prev
+            : (submissionAttachments as any);
+        });
+      } else if (!submissionAttachments) {
+        setAttachments((prev) => (prev.length === 0 ? prev : []));
+      }
+    },
+    [
+      attendanceRequestAttachmentsMandatory,
+      fromDateChanged,
+      toDateChanged,
+      isForOthers,
+      setFromDateChanged,
+      setToDateChanged,
+      setCurrentlySelectedEmployee,
+      setRequestTypeChanged,
+      setIsForOthers,
+      setAttachments,
+    ],
+  );
+
+  // 3️⃣ Sync times whenever data or form instance is ready
+  useEffect(() => {
+    const instance = formAddressInstance.current;
+    if (
+      !instance ||
+      !isFormReady ||
+      isHomeSummaryLoading ||
+      isHomeSummaryFetching
+    )
+      return;
+
+    // In edit mode, we want to keep the values from the existing record initialized in onFormReady
+    if (forActionType === "edit" && defaultAttendanceData) return;
+
+    // Frozen check-in/out times (Attendance Adjustment) are managed by the
+    // mandatory-config sync effect above — don't fight it for control here.
+    if (
+      requestTypeChanged === "Attendance Adjustment" &&
+      (attendanceRequestAttachmentsMandatory as any)
+        ?.freeze_in_out_time_to_shift_timings
+    ) {
+      return;
+    }
+
+    const checkinComp = instance.getComponent("checkin_time");
+    const checkoutComp = instance.getComponent("checkout_time");
+
+    const shiftStart = (shiftData as any)?.start_time;
+    const shiftEnd = (shiftData as any)?.end_time;
+
+    // Prioritize checkins from useHomeSummaryDetails over latestInAndOutTime and fallback to shift timings
+    const normalizedCheckin = latestCheckin
+      ? normalizeTime(latestCheckin)
+      : normalizeTime(latestInAndOutTime?.in_time);
+
+    const normalizedCheckout = latestCheckout
+      ? normalizeTime(latestCheckout)
+      : normalizeTime(latestInAndOutTime?.out_time);
+
+    const finalCheckin = normalizedCheckin || normalizeTime(shiftStart);
+    const finalCheckout = normalizedCheckout || normalizeTime(shiftEnd);
+
+    // Prefill as "HH:mm:ss" strings (the time component's dataFormat — Date
+    // objects get mangled on reformat cycles). Skip fields the user has edited,
+    // and only write when the prefill value itself changed, so effect re-runs
+    // caused by refetches/isFetching toggles never clobber what's on screen.
+    // setValue updates the DOM input directly, so no full-form redraw is
+    // needed — redrawing here rebuilt every input while the user was typing.
+    const applyPrefill = (
+      comp: FormioComponent | null,
+      value: string | null,
+      key: "checkin" | "checkout",
+    ) => {
+      if (!comp || !value) return;
+      if (userEditedTimes.current[key]) return;
+      if (lastPrefilledTimes.current[key] === value) return;
+      comp.setValue(value, { noUpdateEvent: true });
+      lastPrefilledTimes.current[key] = value;
+    };
+
+    applyPrefill(checkinComp, finalCheckin, "checkin");
+    applyPrefill(checkoutComp, finalCheckout, "checkout");
+  }, [
+    latestCheckin,
+    latestCheckout,
+    shiftData,
+    isFormReady,
+    isHomeSummaryLoading,
+    isHomeSummaryFetching,
+    forActionType,
+    defaultAttendanceData,
+    latestInAndOutTime,
+    requestTypeChanged,
+    attendanceRequestAttachmentsMandatory,
+  ]);
+
+  const onFormReady = useCallback(
+    (instance: FormioFormInstance) => {
+      formAddressInstance.current = instance;
+      if (!initialSubmissionSet.current) {
+        try {
+          // use setSubmission to initialize the form once
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (instance as any).setSubmission?.(initialSubmission);
+          initialSubmissionSet.current = true;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (err) {
+          // fallback if setSubmission not available
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (instance as any).submission = initialSubmission;
+            initialSubmissionSet.current = true;
+          } catch (e) {
+            console.warn(
+              "Could not set initial submission on form instance",
+              e,
+            );
+          }
+        }
+      }
+
+      // 5️⃣ Redraw once (initial)
+      instance.redraw();
+
+      // Signal that form is ready
+      setIsFormReady(true);
+
+      // Improve initial state detection
+      const data = initialSubmission?.data as any;
+      if (
+        data?.isForOthers === true ||
+        data?.isForOthers === "1" ||
+        data?.isForOthers === 1
+      ) {
+        setIsForOthers(true);
+      }
+      if (data?.employee) {
+        setCurrentlySelectedEmployee(data.employee);
+      }
+      if (data?.request_type) {
+        setRequestTypeChanged(data.request_type.toString() || "");
+      }
+      // Disable dataSrc behavior on company field
+      const companyComponent = instance.getComponent("company");
+      if (companyComponent) {
+        // Override the component's data source to prevent auto-fetching
+        const comp = companyComponent as any;
+        if (comp.component) {
+          delete comp.component.dataSrc;
+          delete comp.component.data;
+          delete comp.component.valueProperty;
+          delete comp.component.selectValues;
+          delete comp.component.refreshOn;
+        }
+      }
+
+      // Track manual edits to the time fields via real native DOM events,
+      // delegated on the form's root container so it survives formio redraws
+      // (which recreate the input elements but not the container). We can't
+      // rely on the top-level onChange's `changed.component.key` for this:
+      // formio's own noUpdateEvent:true writes still surface as data present
+      // in the submission, and setSubmission()/setValue() calls during setup
+      // do not fire native input/change events, so this only fires on genuine
+      // user interaction.
+      try {
+        const rootEl: HTMLElement | Document =
+          (instance && instance.element) || document;
+        if (rootEl && !(rootEl as any).__timeOwnershipHandlerAttached) {
+          const markOwned = (e: Event) => {
+            const target = e.target as HTMLElement | null;
+            if (!target) return;
+            if (target.closest(".formio-component-checkin_time")) {
+              userEditedTimes.current.checkin = true;
+            } else if (target.closest(".formio-component-checkout_time")) {
+              userEditedTimes.current.checkout = true;
+            }
+          };
+          rootEl.addEventListener("input", markOwned, true);
+          rootEl.addEventListener("change", markOwned, true);
+          (rootEl as any).__timeOwnershipHandlerAttached = true;
+        }
+      } catch (err) {
+        console.warn("time ownership listener bind failed", err);
+      }
+
+      try {
+        const rootEl: HTMLElement | Document =
+          (instance && instance.element) || document;
+
+        const flatInputs: NodeListOf<FlatpickrInput> = (
+          rootEl as HTMLElement
+        ).querySelectorAll
+          ? (rootEl as HTMLElement).querySelectorAll<FlatpickrInput>(
+            "input.flatpickr-input",
+          )
+          : document.querySelectorAll<FlatpickrInput>("input.flatpickr-input");
+
+        flatInputs.forEach((input) => {
+          const handler = () => {
+            flatInputs.forEach((other) => {
+              if (other !== input && other._flatpickr) {
+                try {
+                  other._flatpickr.close();
+                } catch (err) {
+                  console.error("flatpickr close failed", err);
+                }
+              }
+            });
+          };
+
+          // avoid adding duplicate listeners
+          if (!input.__closeOtherFPHandler) {
+            input.addEventListener("focus", handler);
+            input.__closeOtherFPHandler = handler;
+          }
+        });
+      } catch (err) {
+        // non-fatal: attach failed, but app continues
+        console.warn("flatpickr focus bind failed", err);
+      }
+    },
+    [
+      initialSubmission,
+      setIsForOthers,
+      setCurrentlySelectedEmployee,
+      setRequestTypeChanged,
+      setIsFormReady,
+    ],
+  );
+
+  const formOptions = useMemo(
+    () => ({
+      builder: { styles: false },
+      submitButton: false,
+      noAlerts: true,
+      clearOnSubmit: false,
+      keepAlive: true,
+      shiftData: shiftData,
+      shiftRedraw: shiftData?.shift,
+    }),
+    [shiftData],
+  );
+
+  if (isSchemaLoading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="bg-white p-6 rounded-lg">
+          <div className="w-8 h-8 border-4 border-t-transparent border-black rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="fixed inset-0  z-50 flex items-center justify-center bg-black bg-opacity-50"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      {/* Modal Container */}
+      <div className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+          <h2 className="text-lg font-semibold text-gray-800">
+            {forActionType === "edit" ? "Edit" : ""} Attendance Request
+          </h2>
+          {isDesktop && (
+            <Button
+              variant="subtle"
+              onClick={onClose}
+              className="rounded-md hover:bg-gray-100"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </Button>
+          )}
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-4 pb-32 md:pb-6">
+          {userRoles?.roles["Employee Direct Manager"] && canCreateAttendanceRequestForOthers && !isFromCalView ? (
+            <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
+              <Button
+                size="md"
+                fullWidth
+                variant={isForOthers ? "subtle" : "contain"}
+                onClick={() => setIsForOthers(false)}
+              >
+                Self
+              </Button>
+              {<Button
+                size="md"
+                fullWidth
+                variant={!isForOthers ? "subtle" : "contain"}
+                onClick={() => setIsForOthers(true)}
+              >
+                For Others
+              </Button>}
+            </div>
+          ) : null}
+          <style>{`.formio-component-attachments .list-group { display: none !important; }`}</style>
+          <Form
+            form={formSchema}
+            onSubmit={handleSubmit}
+            options={formOptions}
+            onChange={handleFormChange}
+            onFormReady={onFormReady}
+            className="formio-no-border address-form-container mt-4"
+          />
+          <FormioPreviewPortal compKey="attachments">
+            {(attachments as any[]).length > 0 && (
+              <div className="mt-2 space-y-2">
+                {(attachments as any[]).map((fileObj: any, idx: number) => (
+                  <FormioPreviewItem
+                    key={idx}
+                    fileObj={fileObj}
+                    onRemove={() => removeFormioFile(idx)}
+                  />
+                ))}
+              </div>
+            )}
+          </FormioPreviewPortal>
+        </div>
+
+        {/* Submit Bar */}
+        <div className="fixed md:static bottom-0 w-full border-gray-200 bg-white border-t shadow-md p-4 z-20">
+          <div className="max-w-4xl mx-auto flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
+            {!isDesktop && (
+              <Button
+                onClick={onClose}
+                size="md"
+                variant="outline"
+                className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 rounded-md font-brand"
+              >
+                Cancel
+              </Button>
+            )}
+
+            <Button
+              onClick={() => formAddressInstance.current?.submit()}
+              size="md"
+              variant="contain"
+              bgColor="primary"
+              className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 rounded-md font-brand"
+            >
+              {mutation.isPending || uploadFileLoading ? (
+                <span className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin" />
+              ) : (
+                "Submit"
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default React.memo(AttendanceRequestFormV2);

@@ -1,261 +1,503 @@
-import { useMemo, useState } from "react"
-import LayoutHeader from "../../shared/LayoutHeader"
-import DatePicker from "react-datepicker"
-import { ArrowLeft, Plus, XCircle } from "lucide-react"
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser"
-import { useAttendance } from "../../../hooks/useAttendance"
-import FrappeListView from "../../ListView"
-import { Attendance } from "../../../types/attendance"
-import { useNavigate } from "react-router"
-import EmpAttendanceRequestCard from "./EmpAttendanceRequestCard"
-import AttndanceRequestForm from "../AttendanceRequest/AttendanceRequestForm"
-import RequestCompOff from "./RequestCompOff"
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import { differenceInCalendarDays, eachDayOfInterval, endOfMonth, format, parse, startOfMonth } from "date-fns";
+import { useNavigate } from "react-router";
+import {
+  useGetAllEventsAndAttendance,
+  usePlannedOvertimeAllowed,
+} from "../../../hooks/useAttendance";
+import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { AttendanceRecord, MyAttendanceRequest } from "../../../types/attendance";
+
+import LeaveRequest from "../LeaveRequest";
+
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import Modal from "../../shared/Modal";
+import CreateOvertimeRequest from "../OvertimeRequests/CreateOvertimeRequest";
+import { useSidebar } from "../SidebarContext";
+import EmployeeAttendanceDetails from "./EmployeeAttendanceDetails";
+
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
+import AttendanceError from "./EmployeeAttendence/AttendanceError";
+import AttendanceLegend from "./EmployeeAttendence/AttendanceLegend";
+import ListView from "./EmployeeAttendence/ListView";
+
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import Button from "../../shared/atoms/Button";
+import { Card } from "../../shared/atoms/Card";
+import { Typography } from "../../shared/atoms/Typography";
+import { ViewAll } from "../../shared/atoms/ViewAll";
+import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
+import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
+import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
+import AttendanceCardList, { AttendanceCardItem } from "./EmployeeAttendence/AttendanceCardList";
+import Cardtable from "./EmployeeAttendence/CardTable";
+import DesktopAttendanceCalendar from "./EmployeeAttendence/DesktopAttendanceCalendar";
+
+const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: true,
+    type: "string",
+    field: "custom_request_type",
+    getValue: (item: MyAttendanceRequest) =>
+      item.reference_document?.custom_request_type ?? "",
+  },
+  { sortable: false },
+  {
+    sortable: true,
+    type: "date",
+    field: "from_date",
+    getValue: (item: MyAttendanceRequest) =>
+      item.reference_document?.from_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "to_date",
+    getValue: (item: MyAttendanceRequest) =>
+      item.reference_document?.to_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "due_date",
+    getValue: (item: MyAttendanceRequest) => item.due_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "number",
+    field: "duration",
+    getValue: (item: MyAttendanceRequest) => {
+      const from = item.reference_document?.from_date;
+      const to = item.reference_document?.to_date;
+      if (!from || !to) return 0;
+      return differenceInCalendarDays(new Date(to), new Date(from)) + 1;
+    },
+  },
+  {
+    sortable: false,
+  },
+  { sortable: false },
+];
+
 
 const EmployeeAttendance = () => {
-    const navigate = useNavigate()
-    const { data: userId } = useLoggedInUser();
-    const filters = userId ? [["owner", "=", userId]] : [];
-    const { data: allAttendance, isError, error } = useAttendance(filters as any, {
-        enabled: !!userId,
-    });
-    const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
-    const todayAttendance = allAttendance?.filter((record) => record.attendance_date === today)?.[0];
-    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date(2025, 6, 17))
-    const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] = useState<boolean>(false)
-    const [showReqCompOff, setShowReqCompOff] = useState<boolean>(false)
-    type Status = | "present"
-        | "absent"
-        | "on-leave"
-        | "half-day"
-        | "work-from-home"
-        | "default";
+  const navigate = useNavigate();
+  const { isDesktop } = useScreenSize();
+  const { setSidebarOpen } = useSidebar();
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const canRequestAttendance = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request",
+    "Attendance Summary",
+  );
 
-    const createAttendanceStatusGetter = (attendances: Attendance[] = []) => {
-        const statusMap: Record<string, Status> = {};
+  const [showDetailsFor, setShowDetailsFor] = useState<{
+    date: Date;
+    status: string;
+    data: AttendanceRecord;
+    events?: AttendanceRecord[];
+    isWeeklyOff?: boolean;
+  } | null>(null);
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
-        attendances.forEach((record) => {
-            const dateKey = new Date(record.attendance_date).toISOString().split("T")[0];
-            const rawStatus = record.status?.toLowerCase().trim();
+  // Update sidebar context when showDetailsFor changes
+  useEffect(() => {
+    setSidebarOpen(!!showDetailsFor && isDesktop);
+  }, [showDetailsFor, isDesktop, setSidebarOpen]);
 
-            let status: Status = "default";
-            switch (rawStatus) {
-                case "present":
-                    status = "present";
-                    break;
-                case "absent":
-                    status = "absent";
-                    break;
-                case "on leave":
-                case "leave":
-                    status = "on-leave";
-                    break;
-                case "half day":
-                case "half-day":
-                    status = "half-day";
-                    break;
-                case "work from home":
-                case "wfh":
-                    status = "work-from-home";
-                    break;
-                default:
-                    status = "default";
-            }
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const start = format(startOfMonth(selectedDate as Date), "yyyy-MM-dd");
+  const end = format(endOfMonth(selectedDate as Date), "yyyy-MM-dd");
 
-            statusMap[dateKey] = status;
-        });
+  const {
+    data: allAttendance,
+    isError,
+    error,
+  } = useGetAllEventsAndAttendance({ start: start, end: end });
 
-        return (date: Date): Status => {
-            const key = date.toISOString().split("T")[0];
-            return statusMap[key] || "default";
-        };
+  const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
+    currentEmployee?.employee || "",
+  );
+  const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
+    useState<boolean>(false);
+
+  const [showOvertimeRequest, setShowOvertimeRequest] =
+    useState<boolean>(false);
+  const [showLeaveRequest, setShowLeaveRequest] = useState<boolean>(false);
+
+  const [openDrawer, setOpenDrawer] = useState<boolean>(false);
+
+  const handleCloseAttendanceRequest = useCallback(() => {
+    setShowReqAttendanceCorrection(false);
+  }, []);
+
+  const handleCancelLeaveRequest = useCallback(() => {
+    setShowLeaveRequest(false);
+  }, []);
+
+  const handleCancelOvertimeRequest = useCallback(() => {
+    setShowOvertimeRequest(false);
+  }, []);
+
+  const handleCloseDetails = useCallback(() => {
+    setShowDetailsFor(null);
+  }, []);
+
+  type Status =
+    | "present"
+    | "absent"
+    | "on-leave"
+    | "half-day"
+    | "half-day-first-half"
+    | "half-day-second-half"
+    | "work-from-home"
+    | "default"
+    | "holiday"
+    | "unpaid"
+    | "week-off";
+
+  type AttendanceStatusInfo = {
+    status: Status;
+    firstHalf?: string;
+    secondHalf?: string;
+    events: AttendanceRecord[]; // all non-attendance-type records on the same day
+    record?: AttendanceRecord; // the attendance record whose status is being used
+    isWeeklyOff?: boolean;
+  };
+
+  const parseLocalDate = (dateStr: string): Date =>
+    parse(dateStr, "yyyy-MM-dd", new Date());
+
+  const formatDateKey = (date: Date): string => format(date, "yyyy-MM-dd");
+
+  const createAttendanceStatusGetter = (
+    attendances: AttendanceRecord[] = [],
+  ) => {
+    const statusMap: Record<string, AttendanceStatusInfo> = {};
+    const groupedByDate: Record<string, AttendanceRecord[]> = {};
+
+    // Helper: expand a start-end date range into all dates
+    const expandDateRange = (start: string, end: string): string[] => {
+      const days: string[] = [];
+      const current = new Date(start);
+      const last = new Date(end);
+
+      while (current <= last) {
+        days.push(formatDateKey(current));
+        current.setDate(current.getDate() + 1);
+      }
+
+      return days;
     };
 
+    // First pass → group attendance + range events by date
+    attendances.forEach((record) => {
+      const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
+        record.doctype,
+      );
 
-    const getAttendanceStatus = useMemo(() => {
-        return createAttendanceStatusGetter(allAttendance ?? []);
-    }, [allAttendance]);
+      const hasRange = record.start && record.end;
 
+      // --- If it's an EVENT (not attendance) and has range, expand ---
+      if (!isAttendanceType && hasRange) {
+        const rangeKeys = expandDateRange(record.start, record.end);
 
+        rangeKeys.forEach((dateKey) => {
+          if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+          groupedByDate[dateKey].push(record);
+        });
 
-    if (isError) {
-        return (
-            <div className="min-h-screen bg-white flex items-center justify-center p-4">
-                <div className="max-w-md w-full text-center space-y-4">
-                    <XCircle className="w-12 h-12 text-black mx-auto" />
-                    <h2 className="text-xl font-semibold text-black">Error Loading Attendances</h2>
-                    <p className="text-gray-600">{error?.message}</p>
-                    <button
-                        onClick={() => {
-                            navigate(-1)
-                        }}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Go Back
-                    </button>
-                </div>
-            </div>
-        )
-    }
-    const defaultFilters = useMemo(() => {
-        if (!userId) return undefined;
-        return { owner: userId };
-    }, [userId]);
+        return;
+      }
 
-    return <div>
-        <LayoutHeader tab="Attendance" />
-        <div className="flex flex-col gap-4 mt-2 px-4 pb-4">
+      // --- Default: single-day add ---
+      const dateKey = formatDateKey(parseLocalDate(record.start));
+      if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+      groupedByDate[dateKey].push(record);
+    });
 
-            {/* ------------------------------------------------- Info Card Start---------------------------------------------- */}
+    // Second pass → build final statusMap
+    Object.entries(groupedByDate).forEach(([dateKey, records]) => {
+      let status: Status = "default";
+      let firstHalf = "";
+      let secondHalf = "";
+      const events: AttendanceRecord[] = [];
+      let attendanceRecord: AttendanceRecord | undefined = undefined;
+      let isWeeklyOff = false;
 
-            <div className="p-4 border-2 border-gray-200 rounded-xl bg-white">
-                <h1 className="text-lg font-semibold text-gray-900 mb-4">Today's Attendance</h1>
+      records.forEach((record) => {
+        const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
+          record.doctype,
+        );
+        const isHoliday = ["Holiday", "Holidays"].includes(record.doctype);
 
-                <div className="flex items-center justify-between gap-1">
-                    <div>
-                        <div className="text-sm text-gray-600">Check-In</div>
-                        <div className="text-lg font-semibold text-gray-900">{todayAttendance?.in_time || "-- --"}</div>
-                    </div>
+        if (isHoliday && record.weekly_off === 1) {
+          isWeeklyOff = true;
+        }
 
-                    <div>
-                        <div className="text-sm text-gray-600">Work Hours</div>
-                        <div className="text-lg font-semibold text-gray-900">{todayAttendance?.working_hours || "-- --"}</div>
-                    </div>
+        if (isAttendanceType) {
+          // Actual Attendance record takes priority over Holiday (e.g. working on a week-off)
+          if (isHoliday && attendanceRecord?.doctype === "Attendance") return;
+          attendanceRecord = record;
+          const rawStatus = record.status?.toLowerCase().trim();
 
-                    <button className="bg-blue-100 hover:bg-blue-200 px-6 py-2">Check Out</button>
-                </div>
-            </div>
-            {/* ------------------------------------------------- Info Card End---------------------------------------------- */}
-            {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
+          switch (rawStatus) {
+            case "present":
+              status = "present";
+              break;
+            case "absent":
+              status = "absent";
+              break;
+            case "on leave":
+            case "leave":
+              status = "on-leave";
+              break;
+            case "holiday":
+              status = "holiday";
+              break;
+            case "weekly off":
+              status = "week-off";
+              break;
+            case "work from home":
+              status = "work-from-home";
+              break;
+            case "half day":
+              status = "half-day";
+              firstHalf = record.half_day_status_first_half || "";
+              secondHalf = record.half_day_status_second_half || "";
+              break;
+            default:
+              status = "default";
+          }
+          // if custom_auto_created is 1 that means its a Unpaid Leave and we treat it like a leave on UI in yellow color
+          if (record?.custom_auto_created === 1) {
+            status = "unpaid";
+          }
+        } else {
+          // Range-expanded events land here automatically
+          events.push(record);
+        }
+      });
 
-            <div className="mb-2 w-full  pb-2 border-2 border-gray-200 rounded-xl">
-                <DatePicker
-                    selected={selectedDate}
-                    onChange={(date) => setSelectedDate(date)}
-                    inline
-                    dayClassName={(date) => {
-                        const status = getAttendanceStatus(date);
-                        const isSelected =
-                            selectedDate?.toDateString() === date.toDateString(); // check selection
-                        const baseClasses = "transition-colors duration-200";
+      // Build final object
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      if (status === "half-day") {
+        statusMap[dateKey] = {
+          status,
+          firstHalf,
+          secondHalf,
+          events,
+          record: attendanceRecord,
+          isWeeklyOff,
+        };
+      } else {
+        statusMap[dateKey] = { status, events, record: attendanceRecord, isWeeklyOff };
+      }
+    });
 
-                        const highlightClass = (() => {
-                            switch (status) {
-                                case "present":
-                                    return "!bg-green-100 !text-green-800 border border-green-200";
-                                case "absent":
-                                    return "!bg-red-100 !text-red-800 border border-red-200";
-                                case "on-leave":
-                                    return "!bg-orange-100 !text-orange-800 border border-orange-200";
-                                case "half-day":
-                                    return "!bg-yellow-100 !text-yellow-800 border border-yellow-200";
-                                case "work-from-home":
-                                    return "!bg-purple-100 !text-purple-800 border border-purple-200";
-                                default:
-                                    return "hover:!bg-gray-100 !text-gray-700";
-                            }
-                        })();
+    // Getter
+    return (date: Date): AttendanceStatusInfo => {
+      const key = formatDateKey(date);
+      return statusMap[key] || { status: "default", events: [] };
+    };
+  };
 
-                        // Ignore default "selected" styles
-                        return `${baseClasses} ${highlightClass} ${isSelected ? "!bg-inherit !text-inherit border-none" : ""}`;
-                    }}
-                />
-                <div className="flex flex-wrap gap-4 text-xs text-gray-600 justify-end px-4">
-                    <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-full bg-green-100 border border-green-200"></div>
-                        <span>Present</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-full bg-red-100 border border-red-200"></div>
-                        <span>Absent</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-full bg-orange-100 border border-orange-200"></div>
-                        <span>On Leave</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-200"></div>
-                        <span>Half Day</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-full bg-purple-100 border border-purple-200"></div>
-                        <span>Work From Home</span>
-                    </div>
-                </div>
+  const getAttendanceStatus = useMemo(() => {
+    return createAttendanceStatusGetter(allAttendance ?? []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allAttendance]);
 
-            </div>
-            {/* Legend */}
+  const completeMonthData = useMemo(() => {
+    const allDates = eachDayOfInterval({
+      start: startOfMonth(selectedDate as Date),
+      end: endOfMonth(selectedDate as Date),
+    });
 
+    return allDates.map((date) => ({
+      date,
+      statusInfo: getAttendanceStatus(date),
+    }));
+  }, [getAttendanceStatus, selectedDate]);
 
-            {/* ------------------------------------------------- Calendar End---------------------------------------------- */}
+  const handleCardClick = useCallback((item: AttendanceCardItem) => {
+    const { date, statusInfo } = item;
+    const dateKey = formatDateKey(date);
+    setShowDetailsFor({
+      date,
+      data:
+        statusInfo.record ||
+        ({
+          name: `placeholder-${dateKey}`,
+          doctype: "Attendance",
+          start: dateKey,
+          end: dateKey,
+          title: "No Data",
+          status: statusInfo.status,
+          docstatus: "",
+          employee: "",
+        } as AttendanceRecord),
+      status: statusInfo.status.replace(/-/g, " "),
+      events: statusInfo.events,
+      isWeeklyOff: statusInfo.isWeeklyOff,
+    });
+  }, []);
 
-            {/* Request Attendance Correction */}
-            <button className="w-full text-gray-700 font-bold border-gray-300 bg-transparent flex justify-center items-center p-2"
+  if (isError) {
+    return <AttendanceError error={error?.message} />;
+  }
+
+  return (
+    <div className={`flex h-full overflow-y-auto min-h-0`}>
+      <div
+        className={`flex p-0 md:p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+          }`}
+      >
+        {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
+
+        <ListView />
+        <Card className="pb-2 rounded-tl-lg rounded-tr-lg sm:rounded-lg lg:rounded-lg mt-0 pt-0">
+          {
+            isDesktop ? <DesktopAttendanceCalendar
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              getAttendanceStatus={getAttendanceStatus}
+              setShowDetailsFor={setShowDetailsFor}
+            /> :
+              <AttendanceCalendar
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                getAttendanceStatus={getAttendanceStatus}
+                setShowDetailsFor={setShowDetailsFor}
+              />
+          }
+
+          {/* Legends - Only show for mobile since desktop shows at top */}
+          {!isDesktop && <AttendanceLegend isCompact={true} />}
+        </Card>
+
+        {/* Legend */}
+
+        {/* ------------------------------------------------- Calendar End---------------------------------------------- */}
+
+        {/* Request Attendance Correction - Only show for mobile */}
+        {!isDesktop && canRequestAttendance && (
+          <div className="bg-white p-4 border-b-1 border-gray-200 rounded-bl-lg rounded-br-lg">
+            <div className="flex gap-2">
+              <Button
+                size="lg"
+                fullWidth
                 onClick={() => {
-                    setShowReqAttendanceCorrection(!showReqAttendanceCorrection)
-                }}>
-                <Plus className="w-5 h-5 mr-2 font-bold" />
-                Request Attendance Correction
-            </button>
-            {/* Request Attendance Correction */}
-
-
-
-            {/* Work Hour Exceptions */}
-            <h3 className="text-lg font-semibold text-gray-900">Work Hour Exceptions</h3>
-            <div className="flex gap-3">
-                <button onClick={() => { setShowReqCompOff(!showReqCompOff) }} className="flex-1 text-gray-700 font-bold border-gray-300 bg-transparent flex justify-center items-center p-2">
-                    <Plus className="w-4 h-4 mr-2 font-bold" />
-                    Request Comp Off
-                </button>
-                <button className="flex-1 text-gray-700 font-bold border-gray-300 bg-transparent flex justify-center items-center p-2">
-                    <Plus className="w-4 h-4 mr-2 font-bold" />
-                    Request Overtime
-                </button>
+                  // setOpenDrawer(!openDrawer);
+                  setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
+                }}
+              >
+                + Attendance Request
+              </Button>
             </div>
-            {/* Work Hour Exceptions */}
+          </div>
+        )}
 
-            {/* My Attendance Requests */}
-            <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">My Attendance Requests</h3>
-                <FrappeListView
-                    doctype="Attendance Request"
-                    isSearch={false}
-                    ItemComponent={(props: { item: any }) => {
-                        return (
-                            <EmpAttendanceRequestCard
-                                data={props?.item}
-                            />
-                        );
-                    }}
-                    defaultFilters={defaultFilters}
-                    showRefereshButton={false}
-                    onItemClick={() => { }}
-                    infiniteScroll={true}
-                    isFilter={false}
-                    pageSize={5}
-                    defaultFields={[
-                        // '*',
-                        "reason",
-                        // "label",
-                        "modified",
-                        "creation",
-                        "docstatus"
-                    ]}
-                />
+        {/* Attendance card list - Only show for mobile */}
+        {!isDesktop && (
+          <Card padding="sm" className="p-2 mt-2">
+            <AttendanceCardList
+              completeMonthData={completeMonthData}
+              onCardClick={handleCardClick}
+            />
+          </Card>
+        )}
 
+        {/* My Attendance Requests - Hidden on mobile */}
+        {isDesktop && (
+          <Card padding="sm" className="p-0 md:pb-20 mt-2 md:mt-4">
+            <div className="flex justify-between items-center w-full pb-2">
+              <Typography variant="subheading">My Attendance Requests</Typography>
 
+              <ViewAll
+                title="View All"
+                onClick={() => navigate("/webapp/attendance/attendance-request")}
+              />
             </div>
-            {showReqAttendanceCorrection &&
-                <AttndanceRequestForm onClose={() => { setShowReqAttendanceCorrection(false) }} />
-            }
-            {
-                showReqCompOff && <RequestCompOff onClose={() => setShowReqCompOff(false)} />
-            }
-            {/* My Attendance Requests */}
+            <CardTable
+              columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "0.8fr", "1fr", "1fr", "1fr"]}
+              titles={[
+                "Request Type",
+                "Assigned To",
+                "From Date",
+                "To Date",
+                "Due Date",
+                "Created At",
+                "Duration",
+                "Status",
+                "Actions",
+              ]}
+              columnSortConfig={COLUMN_SORT_CONFIG}
+            >
+              <Cardtable
+                currentEmployee={
+                  currentEmployee
+                    ? { employee: currentEmployee.employee }
+                    : undefined
+                }
+                refetchAttendance={refetchAttendance}
+                setRefetchAttendance={setRefetchAttendance}
+              />
+            </CardTable>
+          </Card>
+        )}
+        {showReqAttendanceCorrection && (
+          <AttendanceRequestFormV2 onClose={handleCloseAttendanceRequest} />
+        )}
+        {showLeaveRequest && (
+          <LeaveRequest onCancel={handleCancelLeaveRequest} />
+        )}
+        {showOvertimeRequest && (
+          <CreateOvertimeRequest onCancel={handleCancelOvertimeRequest} />
+        )}
+        <BottomDrowerForAttendance
+          setShowLeaveRequest={setShowLeaveRequest}
+          setOpenDrawer={setOpenDrawer}
+          setShowReqAttendanceCorrection={setShowReqAttendanceCorrection}
+          setShowOvertimeRequest={setShowOvertimeRequest}
+          plannedOvertimAllowed={plannedOvertimAllowed}
+          openDrawer={openDrawer}
+        />
+      </div>
+
+      {/* Conditionally render the details component */}
+      {showDetailsFor && isDesktop && (
+        <div className="w-1/3 h-screen sticky top-2">
+          <EmployeeAttendanceDetails
+            data={showDetailsFor?.data}
+            events={showDetailsFor?.events}
+            date={showDetailsFor.date}
+            status={showDetailsFor.status}
+            isWeeklyOff={showDetailsFor.isWeeklyOff}
+            onClose={handleCloseDetails}
+          />
         </div>
-    </div >
+      )}
 
-}
+      {/* Modal for mobile devices */}
+      {showDetailsFor && !isDesktop && (
+        <Modal isOpen={true} onClose={handleCloseDetails} size="full">
+          <EmployeeAttendanceDetails
+            data={showDetailsFor?.data}
+            events={showDetailsFor?.events}
+            date={showDetailsFor.date}
+            status={showDetailsFor.status}
+            isWeeklyOff={showDetailsFor.isWeeklyOff}
+            onClose={handleCloseDetails}
+          />
+        </Modal>
+      )}
+    </div>
+  );
+};
 
-export default EmployeeAttendance
+export default EmployeeAttendance;

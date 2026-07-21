@@ -1,0 +1,55 @@
+{
+    "title": "Work Location",
+    "name": "workLocation",
+    "path": "work-location",
+    "display": "form",
+    "components": [
+        {
+            "type": "panel",
+            "key": "workLocationPanel",
+            "label": "Work Location Details",
+            "title": "Work Location Details",
+            "hideLabel": true,
+            "customClass": "bg-white rounded-lg",
+            "components": [
+                {
+                    "label": "Work Location",
+                    "errorLabel": "Work Location",
+                    "key": "work_location",
+                    "type": "select",
+                    "input": true,
+                    "placeholder": "Select Work Location",
+                    "customClass": "mb-4",
+                    "dataSrc": "url",
+                    "data": {
+                        "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=[%22*%22]&doctype=Branch"
+                    },
+                    "valueProperty": "name",
+                    "template": "<span>{{ item.branch}}({{item.name}})</span>",
+                    "selectValues": "message",
+                    "lazyLoad": false,
+                    "searchField": "q",
+                    "searchEnabled": true
+                },
+                {
+                    "type": "datetime",
+                    "key": "startDate",
+                    "label": "Start Date",
+                    "errorLabel": "Start Date",
+                    "format": "dd-MM-yyyy",
+                    "enableTime": false,
+                    "input": true
+                },
+                {
+                    "type": "datetime",
+                    "key": "endDate",
+                    "label": "End Date",
+                    "errorLabel": "End Date",
+                    "format": "dd-MM-yyyy",
+                    "enableTime": false,
+                    "input": true
+                }
+            ]
+        }
+    ]
+}

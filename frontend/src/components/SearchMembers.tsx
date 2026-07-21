@@ -1,114 +1,174 @@
-import { useNavigate } from 'react-router-dom';
-import FrappeListView from './ListView';
+import HeaderBar from "./HeaderBar";
+import SearchCard from "./Employee/SearchCard";
+import { useNavigate } from "react-router-dom";
+import { useEmployees } from "../hooks/useEmployee";
+import { useEffect, useState } from "react";
+import useDebounce from "../hooks/useDebounce";
+import { Employee } from "../types/employee";
+import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
+import { Search } from "lucide-react";
+import { useScreenSize } from "../hooks/useScreenSize";
+import { IoChevronBackOutline } from "react-icons/io5";
 
-const ChevronRightIcon = () => (
-  <svg fill="currentColor" height="24" viewBox="0 0 256 256" width="24" xmlns="http://www.w3.org/2000/svg">
-    <path d="m181.66,133.66-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path>
-  </svg>
-);
-interface MemberAvatarProps {
-  src?: string;
-  alt?: string;
-  size?: string; // e.g., "h-14 w-14"
-  fallback?: React.ReactNode; // Could be a fallback icon, initials, etc.
-}
-// Member Avatar Component
-const MemberAvatar = ({ src, alt, size = "h-14 w-14", fallback }: MemberAvatarProps) => {
-  if (src) {
-    return (
-      <img
-        alt={alt}
-        className={`aspect-square rounded-full ${size} object-cover border border-gray-200 bg-white`}
-        src={src}
-      />
-    );
-  }
-  // Fallback: initials
+const EmployeeCardSkeleton = () => {
   return (
-    <div className={`flex items-center justify-center rounded-full bg-gray-200 text-gray-600 font-bold text-lg uppercase ${size}`}
-      style={{ minWidth: '3.5rem', minHeight: '3.5rem' }}
-    >
-      {fallback}
-    </div>
-  );
-};
-
-// Member Card Component
-const MemberCard = ({ item, onClick }: any) => {
-  const member = item;
-  // Prefer full name, fallback to first+last or name
-  const fullName = member.employee_name || [member.first_name, member.last_name].filter(Boolean).join(' ') || member.name;
-  const initials = fullName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
-  const designation = member.designation || '';
-  const department = member.department || '';
-  const status = member.status || '';
-  const phone = member.cell_number || '';
-  const email = member.company_email || member.personal_email || '';
-  // Status color
-  const statusColor = status === 'Active' ? 'bg-green-100 text-green-700' :
-    status === 'Inactive' ? 'bg-gray-100 text-gray-500' :
-    status === 'Suspended' ? 'bg-yellow-100 text-yellow-700' :
-    status === 'Left' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500';
-
-  return (
-    <div
-      className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-colors"
-      onClick={() => onClick(member)}
-    >
-      <MemberAvatar
-        src={member.image}
-        alt={fullName}
-        fallback={initials}
-      />
-      <div className="flex-grow min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-gray-900 text-base font-semibold truncate">{fullName}</p>
-          {status && (
-            <span className={`ml-2 px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>{status}</span>
-          )}
+    <div className="w-full animate-pulse">
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 sm:px-5 sm:py-4 shadow-sm">
+        <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-gray-200 flex-shrink-0" />
+        <div className="flex flex-col min-w-0 w-full gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <div className="h-4 sm:h-5 bg-gray-200 rounded w-3/4 sm:w-1/2" />
+            <div className="h-4 sm:h-5 bg-gray-200 rounded w-16 sm:w-20" />
+          </div>
+          <div className="flex flex-wrap items-center gap-x-2 text-sm text-gray-600 mt-1">
+            <div className="h-3 sm:h-4 bg-gray-200 rounded w-32 sm:w-40" />
+            <span className="sm:mx-3 mx-1 hidden sm:block text-gray-300">
+              •
+            </span>
+            <div className="h-3 sm:h-4 bg-gray-200 rounded w-24 sm:w-32" />
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600 mt-0.5">
-          {designation && <span>{designation}</span>}
-          {designation && department && <span className="mx-1">·</span>}
-          {department && <span>{department}</span>}
-        </div>
-        <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-          {phone && <span>📞 {phone}</span>}
-          {email && <span>✉️ {email}</span>}
-        </div>
+        <div className="h-6 w-6 sm:h-7 sm:w-7 bg-gray-200 rounded-full" />
       </div>
-      <button className="text-blue-500 flex size-9 shrink-0 items-center justify-center rounded-full hover:bg-blue-50 active:bg-blue-100 transition-colors">
-        <ChevronRightIcon />
-      </button>
     </div>
   );
 };
 
-// Results Section Component
-
-// Main App Component
 const SearchMembersApp = () => {
+  const [recentSearches, setRecentSearches] = useState<Employee[]>([]);
+  const { isDesktop } = useScreenSize();
+  const [searchQuery, setSearchQuery] = useState("");
+  const query = useDebounce(searchQuery, 350);
+
+  const {
+    data: employees,
+    isLoading,
+    error,
+  } = useEmployees(
+    ["employee_name", "image", "status", "department", "designation", "name"],
+    [],
+    [
+      ["name", "like", `%${query}%`],
+      ["employee_name", "like", `%${query}%`],
+      ["status", "like", `%${query}%`],
+      ["department", "like", `%${query}%`],
+      ["designation", "like", `%${query}%`],
+      ["name", "like", `%${query}%`],
+    ]
+  );
+
   const navigate = useNavigate();
 
-  const handleMemberClick = (member: any) => {
-    navigate(`/webapp/id-card/${member.name}`);
-    // Handle member selection/navigation
+
+  // Load recent searches
+  useEffect(() => {
+    let stored: Employee[] = [];
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem("recentSearches") || "[]");
+      if (Array.isArray(parsed)) {
+        stored = parsed;
+      }
+    } catch (e) {
+      console.error("Failed to parse recentSearches from sessionStorage", e);
+    }
+
+    if (!searchQuery) {
+      setRecentSearches(stored);
+    } else {
+      const filtered = stored.filter((emp) =>
+        emp.employee_name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setRecentSearches(filtered);
+    }
+  }, [searchQuery]);
+
+  const onSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const removeItemsFromLocal = (idx: number) => {
+    const updated = [...recentSearches];
+    updated.splice(idx, 1);
+    sessionStorage.setItem("recentSearches", JSON.stringify(updated));
+    setRecentSearches(updated);
+  };
+
+  const employeeList = () => {
+    if (isLoading)
+      return (
+        <div className="flex flex-col gap-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <EmployeeCardSkeleton key={i} />
+          ))}
+        </div>
+      );
+
+    if (error)
+      return (
+        <div className="text-center text-red-600 py-6" role="alert">
+          {error.message.toString()}
+        </div>
+      );
+
+    if (!searchQuery.trim()) {
+      return recentSearches.length > 0 ? (
+        <SearchCard
+          employees={recentSearches}
+          onRemove={removeItemsFromLocal}
+          showRemove
+        />
+      ) : (
+        <div className="text-center text-gray-500 py-6">No recent searches</div>
+      );
+    }
+
+    return employees && employees.length > 0 ? (
+      <SearchCard employees={employees} onRemove={removeItemsFromLocal} />
+    ) : (
+      <div className="text-center text-gray-500 py-6">No employees found</div>
+    );
   };
 
   return (
-    <div className="flex-grow h-full w-full bg-white overflow-y-auto p-4">
+    <DesktopLayoutWrapper title="Search Members">
+      <div className="min-h-screen bg-white flex flex-col">
+        {!isDesktop && (
+          <HeaderBar title="Search Members" />
+        )}
 
-      <FrappeListView
-        doctype="Employee"
-        ItemComponent={MemberCard}
-        onItemClick={handleMemberClick}
-        infiniteScroll={true}
-        isSearch={true}
-        // isFilter={true}
-        defaultFields={['name', "first_name", "last_name", "department", "designation", "status", "image"]}
-        searchFields={['name', "first_name", "last_name", "department", "designation", "status"]}
-      />
-    </div>
+        <main className="flex-grow w-full">
+          <div className="mx-auto max-w-3xl px-3 py-4 sm:px-6 lg:px-8 sm:py-6">
+            <div className="flex items-center gap-2">
+              {isDesktop && (
+                <button
+                  onClick={() => navigate(-1)}
+                  className="flex items-center justify-center h-11 sm:h-12 w-11 sm:w-12 rounded-xl border border-gray-300 bg-gray-50 hover:bg-gray-100 "
+                  aria-label="Go back"
+                >
+                  <IoChevronBackOutline className="w-6 h-6 text-gray-700" />
+                </button>
+              )}
+
+              <div className="flex-1 flex bg-gray-50 items-center gap-2 rounded-xl border border-gray-300 px-3 sm:px-4 h-11 sm:h-12 shadow-sm focus-within:ring-2 focus-within:ring-blue-400 transition">
+                <Search className="text-gray-600 w-5 h-5" aria-hidden="true" />
+                <input
+                  id="member-search"
+                  type="search"
+                  value={searchQuery}
+                  onChange={onSearchInputChange}
+                  autoFocus
+                  placeholder="Search members…"
+                  className="flex-1 bg-transparent text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:outline-none"
+                  inputMode="search"
+                  autoComplete="off"
+                />
+              </div>
+            </div>
+            <div className="mt-4 sm:mt-6">{employeeList()}</div>
+          </div>
+        </main>
+      </div>
+    </DesktopLayoutWrapper>
   );
 };
 

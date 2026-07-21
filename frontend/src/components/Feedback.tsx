@@ -387,7 +387,7 @@ export default function InterviewFeedbackForm() {
   // Helper function to render interviewer display
   const renderInterviewer = useCallback(() => {
     return formData.interviewer.map((email, index) => (
-      <span key={index} className="block bg-gray-50 mt-2 rounded-lg p-3 border">
+      <span key={`interviewer-${email}-${index}`} className="block bg-gray-50 mt-2 rounded-lg p-3 border">
         {email}
       </span>
     ))

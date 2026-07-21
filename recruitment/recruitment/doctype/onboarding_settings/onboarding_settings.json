@@ -1,0 +1,125 @@
+{
+ "actions": [],
+ "creation": "2026-05-14 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "statutory_section",
+  "enable_statutory_forms_button",
+  "automation_section",
+  "enable_auto_manager_mapping",
+  "enable_doj_outcome_automation",
+  "review_section",
+  "enable_onboarding_review_actions",
+  "candidate_journey_section",
+  "onboarding_journey_title",
+  "onboarding_journey_subtitle",
+  "onboarding_journey"
+ ],
+ "fields": [
+  {
+   "fieldname": "statutory_section",
+   "fieldtype": "Section Break",
+   "label": "Statutory Forms"
+  },
+  {
+   "default": "1",
+   "description": "When enabled, HR will see a \"Statutory Forms\" button group on the Employee Onboarding form to generate / regenerate the PF Form 11 and Gratuity Nomination PDFs.",
+   "fieldname": "enable_statutory_forms_button",
+   "fieldtype": "Check",
+   "label": "Enable Statutory Forms Button on Employee Onboarding"
+  },
+  {
+   "fieldname": "automation_section",
+   "fieldtype": "Section Break",
+   "label": "Onboarding Automation"
+  },
+  {
+   "default": "1",
+   "description": "When enabled, on saving an Employee Onboarding the Reporting Manager (Reports To) is auto-filled from the Branch Head of the candidate's Work Location, if it is empty. Manual values are always preserved.",
+   "fieldname": "enable_auto_manager_mapping",
+   "fieldtype": "Check",
+   "label": "Auto-map Reporting Manager from Branch Head"
+  },
+  {
+   "default": "1",
+   "description": "When enabled, changing the DOJ Outcome on an Employee Onboarding runs the automated flow: Joined creates/activates the Employee, Not Joined cancels the Job Offer and reopens the Requisition, Postponed reschedules the onboarding to the new date. When disabled, the DOJ Outcome field is just stored with no side effects.",
+   "fieldname": "enable_doj_outcome_automation",
+   "fieldtype": "Check",
+   "label": "Automate DOJ Outcome (Joined / Not Joined / Postponed)"
+  },
+  {
+   "fieldname": "review_section",
+   "fieldtype": "Section Break",
+   "label": "Onboarding Review Actions"
+  },
+  {
+   "default": "0",
+   "description": "When enabled, HR can Approve the onboarding form or Send Back rejected fields to the candidate — from the Employee Onboarding desk form AND the portal UI. These actions drive the Flow Config emails (Form Approved / Updates Needed). Leave OFF for projects that don't use this review flow. Per-site setting, so enable only on the one project's site.",
+   "fieldname": "enable_onboarding_review_actions",
+   "fieldtype": "Check",
+   "label": "Enable Onboarding Review Actions (Approve / Send Back)"
+  },
+  {
+   "fieldname": "candidate_journey_section",
+   "fieldtype": "Section Break",
+   "label": "Candidate Portal — \"After you're onboarded\""
+  },
+  {
+   "default": "After you're onboarded",
+   "description": "Heading shown above the onboarding journey on the candidate portal.",
+   "fieldname": "onboarding_journey_title",
+   "fieldtype": "Data",
+   "label": "Journey Heading"
+  },
+  {
+   "description": "Sub-heading shown under the journey heading (e.g. \"Your first two weeks — at a glance.\").",
+   "fieldname": "onboarding_journey_subtitle",
+   "fieldtype": "Small Text",
+   "label": "Journey Sub-heading"
+  },
+  {
+   "description": "Define the post-joining journey steps once here; they surface on every candidate portal via get_candidate_portal_form.",
+   "fieldname": "onboarding_journey",
+   "fieldtype": "Table",
+   "label": "Onboarding Journey Steps",
+   "options": "Onboarding Journey Step"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-05-14 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Onboarding Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

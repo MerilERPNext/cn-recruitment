@@ -1,0 +1,44 @@
+{
+    "title": "Change HRBP",
+    "name": "changeHrbpForm",
+    "path": "change-hrbp-form",
+    "display": "form",
+    "components": [
+        {
+            "label": "",
+            "key": "hrbp",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select HRBP",
+            "customClass": "mb-4",
+            "refreshOn": "doctype",
+            "dataSrc": "url",
+            "data": {
+                "url": "/api/resource/Employee?fields=[\"*\"]"
+            },
+            "validate": {
+                "required": true
+            },
+            "valueProperty": "name",
+            "template": "<span><div>{{ item.employee_name || '-' }} ({{ item.name || '-' }})</div><div style=\"font-size:0.85em;color:#6b7280;\">{{ item.department ||'' }}, {{item.branch || ''}}</div></span>",
+            "selectValues": "data",
+            "lazyLoad": false
+        },
+        {
+            "label": "Effective From",
+            "key": "effective_from",
+            "type": "datetime",
+            "input": true,
+            "widget": {
+                "type": "calendar"
+            },
+            "validate": {
+                "required": true
+            },
+            "format": "dd-MM-yyyy",
+            "placeholder": "dd-mm-yyyy",
+            "customClass": "mb-4",
+            "enableTime": false
+        }
+    ]
+}

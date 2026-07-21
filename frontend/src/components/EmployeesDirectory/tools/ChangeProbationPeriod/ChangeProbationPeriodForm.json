@@ -1,0 +1,28 @@
+{
+    "title": "Change Probation Period",
+    "name": "changeProbationPeriodForm",
+    "path": "change-probation-period-form",
+    "display": "form",
+    "components": [
+        {
+            "label": "Probation Period",
+            "key": "probation_period",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Probation Period",
+            "customClass": "mb-4",
+            "refreshOn": "doctype",
+            "dataSrc": "url",
+            "data": {
+                "url": "/api/resource/Probation Period?fields=[\"*\"]"
+            },
+            "valueProperty": "name",
+            "template": "<span>{{item.probation_name}} ({{ item.name }})</span>",
+            "selectValues": "data",
+            "lazyLoad": false,
+            "validate": {
+                "required": true
+            }
+        }
+    ]
+}

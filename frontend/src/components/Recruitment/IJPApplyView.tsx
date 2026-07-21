@@ -1,0 +1,1026 @@
+import { useState, useRef, useMemo, useEffect } from "react";
+import {
+  propscomponent,
+  IJPTableField,
+  IJPApplicationSubmitPayload,
+} from "./IJPTypes";
+import IJPReviewStep from "./IJPReviewStep";
+import IJPSidebar from "./IJPSidebar";
+import IJPValidationBanner from "./IJPValidationBanner";
+import formatToIndianDate from "../../utils/formatToIndianDate";
+import {
+  useIJPApplicationFields,
+  useSubmitIJPApplication,
+} from "../../hooks/useRecruitment";
+import { Form } from "@tsed/react-formio";
+import "formiojs/dist/formio.form.css";
+import Button from "../shared/atoms/Button";
+import { Loader2 } from "lucide-react";
+
+interface FormioInstance {
+  submit: () => void;
+  [key: string]: unknown;
+}
+
+type FormValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | unknown[]
+  | Record<string, unknown>;
+
+interface FormioSelectOption {
+  label?: string;
+  name?: string;
+  title?: string;
+  [key: string]: unknown;
+}
+
+interface FormioChangeEvent {
+  data?: Record<string, FormValue>;
+  metadata?: {
+    selectData?: Record<string, FormioSelectOption | string | number | boolean | null | undefined>;
+  };
+  [key: string]: unknown;
+}
+
+interface FormioSubmissionEvent {
+  data: Record<string, FormValue>;
+  [key: string]: unknown;
+}
+
+export default function ApplyView({
+  job,
+  onCancel,
+  onSubmitDone,
+}: propscomponent) {
+  const { data: fields, isLoading, error } = useIJPApplicationFields(job.name);
+  const submitMutation = useSubmitIJPApplication();
+
+  const [currentStep, setCurrentStep] = useState(0);
+  const [formData, setFormData] = useState<Record<string, FormValue>>({});
+  const [rowCounts, setRowCounts] = useState<Record<string, number>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [acknowledged, setAcknowledged] = useState(false);
+  const formRef = useRef<FormioInstance | null>(null);
+  const initializedRef = useRef(false);
+  const [stepValidationErrors, setStepValidationErrors] = useState<string[]>(
+    [],
+  );
+
+  useEffect(() => {
+    initializedRef.current = false;
+    setFormData({});
+    setRowCounts({});
+    setCurrentStep(0);
+  }, [job.name]);
+
+  useEffect(() => {
+    setStepValidationErrors([]);
+  }, [currentStep]);
+
+  useEffect(() => {
+    if (fields && fields.length > 0 && !initializedRef.current) {
+      const initialData: Record<string, FormValue> = {};
+      const initialRowCounts: Record<string, number> = {};
+
+      fields.forEach((field) => {
+        if (field.value !== undefined && field.value !== null) {
+          if (field.fieldtype === "Table" && Array.isArray(field.value)) {
+            const rows = field.value as unknown[];
+            initialRowCounts[field.reference_name] = Math.max(
+              rows.length,
+              field.reqd === 1 ? 1 : 0
+            );
+            rows.forEach((rowVal, i: number) => {
+              const row = rowVal as Record<string, unknown>;
+              if (field.table_fields && row && typeof row === "object") {
+                field.table_fields.forEach((subField) => {
+                  const key = `${field.reference_name}_${i}_${subField.fieldname}`;
+                  const subVal = row[subField.fieldname];
+                  if (subVal !== undefined && subVal !== null) {
+                    if (
+                      typeof subVal === "string" &&
+                      (subField.fieldtype === "Attach" ||
+                        subField.fieldtype === "Attach Image")
+                    ) {
+                      initialData[key] = [
+                        {
+                          name:
+                            subVal.substring(subVal.lastIndexOf("/") + 1) ||
+                            "Attached File",
+                          url: subVal,
+                          size: 0,
+                        },
+                      ];
+                    } else {
+                      initialData[key] = subVal as FormValue;
+                    }
+                  }
+                });
+              }
+            });
+          } else {
+            if (
+              typeof field.value === "string" &&
+              (field.fieldtype === "Attach" ||
+                field.fieldtype === "Attach Image")
+            ) {
+              initialData[field.reference_name] = [
+                {
+                  name:
+                    field.value.substring(field.value.lastIndexOf("/") + 1) ||
+                    "Attached File",
+                  url: field.value,
+                  size: 0,
+                },
+              ];
+            } else {
+              initialData[field.reference_name] = field.value as FormValue;
+            }
+          }
+        }
+      });
+
+      setFormData((prev) => ({ ...initialData, ...prev }));
+      setRowCounts((prev) => ({ ...initialRowCounts, ...prev }));
+      initializedRef.current = true;
+    }
+  }, [fields]);
+
+  // Group unique sections in order of appearance
+  const sections = useMemo(() => {
+    if (!fields) return [];
+    const unique = new Set<string>();
+    fields.forEach((f) => {
+      if (f.section) {
+        unique.add(f.section);
+      }
+    });
+    const sectList = Array.from(unique);
+    if (!unique.has("Review")) {
+      sectList.push("Review");
+    }
+    return sectList;
+  }, [fields]);
+
+  const activeSection = sections[currentStep];
+
+  const fieldsInActiveSection = useMemo(() => {
+    if (!fields || !activeSection) return [];
+    return fields.filter(
+      (f) => f.section === activeSection && f.visibility !== "Hidden",
+    );
+  }, [fields, activeSection]);
+
+  // Generate Form.io schema dynamically
+  const dynamicSchema = useMemo(() => {
+    if (!activeSection || !fieldsInActiveSection) {
+      return { display: "form", components: [] };
+    }
+
+    const components: Record<string, unknown>[] = [];
+
+    fieldsInActiveSection.forEach((field) => {
+      const required = field.reqd === 1;
+      const label = field.display_name;
+      const key = field.reference_name;
+      const isReadOnly = field.editability === "Read Only";
+
+      const base = {
+        key,
+        label,
+        input: true,
+        disabled: isReadOnly,
+        validate: {
+          required,
+          customMessage: `${label} is required`,
+        },
+      };
+
+      // ─── Table Fieldtype (Stacked Panels instead of Datagrid) ───
+      if (field.fieldtype === "Table" && Array.isArray(field.table_fields)) {
+        const rowCount =
+          rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
+        if (rowCount === 0) {
+          return;
+        }
+        const panels: Record<string, unknown>[] = [];
+
+        for (let i = 0; i < rowCount; i++) {
+          const rowComponents = field.table_fields.map(
+            (subField: IJPTableField) => {
+              const subRequired = subField.reqd === 1;
+              const subLabel = subField.label;
+              const subKey = `${field.reference_name}_${i}_${subField.fieldname}`;
+              const subReadOnly = subField.read_only === 1;
+              const subBase = {
+                key: subKey,
+                label: subLabel,
+                input: true,
+                disabled: isReadOnly || subReadOnly,
+                validate: {
+                  required: subRequired,
+                  customMessage: `${subLabel} is required`,
+                },
+              };
+
+              if (subField.fieldtype === "Select") {
+                const selectOptions = subField.options
+                  ? subField.options
+                      .split(/[\n,]/)
+                      .map((opt: string) => opt.trim())
+                      .filter(Boolean)
+                  : [];
+                return {
+                  ...subBase,
+                  type: "select",
+                  dataSrc: "values",
+                  data: {
+                    values: selectOptions.map((opt: string) => ({
+                      label: opt,
+                      value: opt,
+                    })),
+                  },
+                  template: "<span>{{ item.label }}</span>",
+                };
+              }
+
+              if (
+                subField.fieldtype === "Text" ||
+                subField.fieldtype === "Long Text" ||
+                subField.fieldtype === "Small Text"
+              ) {
+                return {
+                  ...subBase,
+                  type: "textarea",
+                  rows: 2,
+                  customClass: "col-span-2",
+                };
+              }
+
+              if (
+                subField.fieldtype === "Attach" ||
+                subField.fieldtype === "Attach Image"
+              ) {
+                return {
+                  ...subBase,
+                  type: "file",
+                  multiple: false,
+                  storage: "customBase64",
+                  filePattern: "*/*",
+                };
+              }
+
+              if (subField.fieldtype === "Check") {
+                return {
+                  ...subBase,
+                  type: "checkbox",
+                };
+              }
+
+              if (subField.fieldtype === "Date") {
+                return {
+                  ...subBase,
+                  type: "datetime",
+                  enableDate: true,
+                  enableTime: false,
+                  format: "yyyy-MM-dd",
+                };
+              }
+
+              if (
+                subField.fieldtype === "Int" ||
+                subField.fieldtype === "Float" ||
+                subField.fieldtype === "Currency"
+              ) {
+                return {
+                  ...subBase,
+                  type: "number",
+                };
+              }
+
+              return {
+                ...subBase,
+                type: "textfield",
+              };
+            },
+          );
+
+          panels.push({
+            type: "panel",
+            key: `${field.reference_name}_panel_${i}`,
+            title: `${field.display_name} - Entry #${i + 1}`,
+            collapsible: true,
+            collapsed: i !== rowCount - 1,
+            components: rowComponents,
+            customClass:
+              "col-span-2 py-4 px-6 bg-slate-50 border border-slate-200 rounded-xl mb-4 formio-section-panel",
+          });
+        }
+
+        components.push({
+          type: "well",
+          key: field.reference_name,
+          label: field.display_name,
+          components: panels,
+          customClass: "col-span-2 mb-2",
+        });
+        return;
+      }
+
+      // ─── Pre-defined Fields mapping ───
+      if (field.fieldtype === "Select") {
+        const selectOptions = field.options
+          ? field.options
+              .split(/[\n,]/)
+              .map((opt) => opt.trim())
+              .filter(Boolean)
+          : [];
+        components.push({
+          ...base,
+          type: "select",
+          dataSrc: "values",
+          data: {
+            values: selectOptions.map((opt) => ({ label: opt, value: opt })),
+          },
+          template: "<span>{{ item.label }}</span>",
+        });
+        return;
+      }
+
+      if (
+        field.fieldtype === "Text" ||
+        field.fieldtype === "Long Text" ||
+        field.fieldtype === "Small Text"
+      ) {
+        components.push({
+          ...base,
+          type: "textarea",
+          rows: 3,
+          customClass: "col-span-2",
+        });
+        return;
+      }
+
+      if (field.fieldtype === "Attach" || field.fieldtype === "Attach Image") {
+        components.push({
+          ...base,
+          type: "file",
+          multiple: false,
+          storage: "customBase64",
+          filePattern: "*/*",
+        });
+        return;
+      }
+
+      if (field.fieldtype === "Check") {
+        components.push({
+          ...base,
+          type: "checkbox",
+        });
+        return;
+      }
+
+      if (field.fieldtype === "Date") {
+        components.push({
+          ...base,
+          type: "datetime",
+          enableDate: true,
+          enableTime: false,
+          format: "yyyy-MM-dd",
+        });
+        return;
+      }
+
+      if (field.fieldtype === "Datetime") {
+        components.push({
+          ...base,
+          type: "datetime",
+          enableDate: true,
+          enableTime: true,
+          format: "yyyy-MM-dd HH:mm:ss",
+        });
+        return;
+      }
+
+      if (
+        field.fieldtype === "Int" ||
+        field.fieldtype === "Float" ||
+        field.fieldtype === "Currency"
+      ) {
+        components.push({
+          ...base,
+          type: "number",
+        });
+        return;
+      }
+
+      components.push({
+        ...base,
+        type: "textfield",
+      });
+    });
+
+    return {
+      display: "form",
+      components,
+    };
+  }, [activeSection, fieldsInActiveSection, rowCounts]);
+
+  const handleFormChange = (changed: FormioChangeEvent) => {
+    if (changed.data) {
+      setFormData((prev) => {
+        const next = { ...prev, ...changed.data };
+        const metadata = changed.metadata;
+        const selectData = metadata?.selectData;
+        if (selectData) {
+          const labelOf = (
+            v: FormioSelectOption | string | number | boolean | null | undefined
+          ): string | number | boolean | null | undefined =>
+            v && typeof v === "object"
+              ? (v.label ?? v.name ?? v.title)
+              : v;
+          Object.keys(selectData).forEach((k) => {
+            const lbl = labelOf(selectData[k]);
+            if (lbl) {
+              next[`${k}_title`] = lbl;
+            }
+          });
+        }
+        return next;
+      });
+    }
+  };
+
+  const handleNextClick = () => {
+    const missing = getMissingRequiredInSection(activeSection);
+    if (missing.length > 0) {
+      setStepValidationErrors(missing);
+      setTimeout(() => {
+        document
+          .getElementById("validation-banner")
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+      return;
+    }
+    setStepValidationErrors([]);
+
+    if (formRef.current) {
+      formRef.current.submit();
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep((s) => Math.max(s - 1, 0));
+  };
+
+  // Transform flat fields back into Child Table Array for backend submission
+  const transformFormDataForSubmit = (
+    data: Record<string, FormValue>,
+  ): IJPApplicationSubmitPayload => {
+    const transformed: IJPApplicationSubmitPayload = {};
+
+    const attachmentFields = new Set<string>();
+    const dateFields = new Set<string>();
+    const datetimeFields = new Set<string>();
+    const tableAttachmentFields: Record<string, Set<string>> = {};
+    const tableDateFields: Record<string, Set<string>> = {};
+    const tableDatetimeFields: Record<string, Set<string>> = {};
+
+    if (fields) {
+      fields.forEach((field) => {
+        if (
+          field.fieldtype === "Attach" ||
+          field.fieldtype === "Attach Image"
+        ) {
+          attachmentFields.add(field.reference_name);
+        } else if (field.fieldtype === "Date") {
+          dateFields.add(field.reference_name);
+        } else if (field.fieldtype === "Datetime") {
+          datetimeFields.add(field.reference_name);
+        }
+
+        if (field.fieldtype === "Table" && field.table_fields) {
+          const attachSubSet = new Set<string>();
+          const dateSubSet = new Set<string>();
+          const datetimeSubSet = new Set<string>();
+
+          field.table_fields.forEach((sub) => {
+            if (
+              sub.fieldtype === "Attach" ||
+              sub.fieldtype === "Attach Image"
+            ) {
+              attachSubSet.add(sub.fieldname);
+            } else if (sub.fieldtype === "Date") {
+              dateSubSet.add(sub.fieldname);
+            } else if (sub.fieldtype === "Datetime") {
+              datetimeSubSet.add(sub.fieldname);
+            }
+          });
+          tableAttachmentFields[field.reference_name] = attachSubSet;
+          tableDateFields[field.reference_name] = dateSubSet;
+          tableDatetimeFields[field.reference_name] = datetimeSubSet;
+        }
+      });
+    }
+
+    const extractFileUrl = (val: unknown): FormValue => {
+      if (Array.isArray(val) && val.length > 0) {
+        const first = val[0];
+        if (first && typeof first === "object") {
+          const obj = first as Record<string, unknown>;
+          const res = obj.url || obj.file_url || obj.name || "";
+          return typeof res === "string" ? res : "";
+        }
+      }
+      if (val && typeof val === "object" && !Array.isArray(val)) {
+        const obj = val as Record<string, unknown>;
+        const res = obj.url || obj.file_url || obj.name || "";
+        return typeof res === "string" ? res : "";
+      }
+      if (typeof val === "string") {
+        return val;
+      }
+      return "";
+    };
+
+    const formatDate = (val: unknown): string => {
+      if (typeof val === "string") {
+        if (/^\d{4}-\d{2}-\d{2}/.test(val)) {
+          return val.split("T")[0];
+        }
+      }
+      return val ? String(val) : "";
+    };
+
+    const formatDatetime = (val: unknown): string => {
+      if (typeof val === "string") {
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
+          return val.replace("T", " ").split(".")[0].split("+")[0];
+        }
+      }
+      return val ? String(val) : "";
+    };
+
+    const allowedFields = new Set((fields || []).map((f) => f.reference_name));
+
+    // Copy non-table fields first
+    Object.keys(data).forEach((key) => {
+      if (key.endsWith("_title")) {
+        const baseKey = key.slice(0, -6);
+        if (allowedFields.has(baseKey)) return;
+      }
+      const match = key.match(/^(.+)_(\d+)_(.+)$/);
+      if (!match) {
+        if (allowedFields.has(key)) {
+          if (attachmentFields.has(key)) {
+            transformed[key] = extractFileUrl(data[key]);
+          } else if (dateFields.has(key)) {
+            transformed[key] = formatDate(data[key]);
+          } else if (datetimeFields.has(key)) {
+            transformed[key] = formatDatetime(data[key]);
+          } else {
+            transformed[key] = data[key];
+          }
+        }
+      }
+    });
+
+    // Translate flat mapped row keys to arrays of objects
+    if (fields) {
+      fields.forEach((field) => {
+        if (field.fieldtype === "Table") {
+          const rowCount =
+            rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
+          const rows: Record<string, FormValue>[] = [];
+
+          for (let i = 0; i < rowCount; i++) {
+            const rowData: Record<string, FormValue> = {};
+            let hasValue = false;
+
+            if (field.table_fields) {
+              field.table_fields.forEach((subField) => {
+                const key = `${field.reference_name}_${i}_${subField.fieldname}`;
+                if (
+                  data[key] !== undefined &&
+                  data[key] !== null &&
+                  data[key] !== ""
+                ) {
+                  const subAttachments =
+                    tableAttachmentFields[field.reference_name];
+                  const subDates = tableDateFields[field.reference_name];
+                  const subDatetimes = tableDatetimeFields[field.reference_name];
+
+                  if (
+                    subAttachments &&
+                    subAttachments.has(subField.fieldname)
+                  ) {
+                    rowData[subField.fieldname] = extractFileUrl(data[key]);
+                  } else if (
+                    subDates &&
+                    subDates.has(subField.fieldname)
+                  ) {
+                    rowData[subField.fieldname] = formatDate(data[key]);
+                  } else if (
+                    subDatetimes &&
+                    subDatetimes.has(subField.fieldname)
+                  ) {
+                    rowData[subField.fieldname] = formatDatetime(data[key]);
+                  } else {
+                    rowData[subField.fieldname] = data[key];
+                  }
+                  hasValue = true;
+                }
+              });
+            }
+
+            if (hasValue) {
+              rows.push(rowData);
+            }
+          }
+
+          transformed[field.reference_name] = rows;
+        }
+      });
+    }
+
+    return transformed;
+  };
+
+  const handleFormSubmit = (submission: FormioSubmissionEvent) => {
+    const nextData = { ...formData, ...submission.data };
+    setFormData(nextData);
+
+    if (currentStep < sections.length - 1) {
+      setCurrentStep((s) => s + 1);
+    } else {
+      const transformedPayload = transformFormDataForSubmit(nextData);
+      submitMutation.mutate(
+        {
+          opening: job.name,
+          data: transformedPayload,
+        },
+        {
+          onSuccess: () => {
+            setSubmitted(true);
+            onSubmitDone(job.name);
+          },
+        },
+      );
+    }
+  };
+
+  const missingRequiredFields = useMemo(() => {
+    if (!fields) return [];
+    const missing: string[] = [];
+
+    fields.forEach((field) => {
+      if (field.visibility === "Hidden") return;
+
+      if (field.fieldtype === "Table") {
+        const rowCount =
+          rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
+        if (field.reqd === 1 && rowCount === 0) {
+          missing.push(field.display_name);
+        } else if (field.table_fields) {
+          for (let i = 0; i < rowCount; i++) {
+            field.table_fields.forEach((subField) => {
+              if (subField.reqd === 1) {
+                const key = `${field.reference_name}_${i}_${subField.fieldname}`;
+                const val = formData[key];
+                if (val === undefined || val === null || val === "") {
+                  missing.push(
+                    `${field.display_name} (Row ${i + 1}): ${subField.label}`,
+                  );
+                }
+              }
+            });
+          }
+        }
+      } else {
+        if (field.reqd === 1) {
+          const val = formData[field.reference_name];
+          if (val === undefined || val === null || val === "") {
+            missing.push(field.display_name);
+          }
+        }
+      }
+    });
+
+    return missing;
+  }, [fields, formData, rowCounts]);
+
+  const hasMissingRequiredFields = missingRequiredFields.length > 0;
+
+  const handleSubmitApplication = () => {
+    if (hasMissingRequiredFields || !acknowledged) return;
+
+    const transformedPayload = transformFormDataForSubmit(formData);
+    submitMutation.mutate(
+      {
+        opening: job.name,
+        data: transformedPayload,
+      },
+      {
+        onSuccess: () => {
+          setSubmitted(true);
+          onSubmitDone(job.name);
+        },
+      },
+    );
+  };
+
+  const getMissingRequiredInSection = (sectionName: string): string[] => {
+    if (!fields) return [];
+    const missing: string[] = [];
+
+    fields.forEach((field) => {
+      if (field.section !== sectionName || field.visibility === "Hidden")
+        return;
+
+      if (field.fieldtype === "Table") {
+        const rowCount =
+          rowCounts[field.reference_name] ?? (field.reqd === 1 ? 1 : 0);
+        if (field.reqd === 1 && rowCount === 0) {
+          missing.push(field.display_name);
+        } else if (field.table_fields) {
+          for (let i = 0; i < rowCount; i++) {
+            field.table_fields.forEach((subField) => {
+              if (subField.reqd === 1) {
+                const key = `${field.reference_name}_${i}_${subField.fieldname}`;
+                const val = formData[key];
+                if (val === undefined || val === null || val === "") {
+                  missing.push(
+                    `${field.display_name} (Row ${i + 1}): ${subField.label}`,
+                  );
+                }
+              }
+            });
+          }
+        }
+      } else {
+        if (field.reqd === 1) {
+          const val = formData[field.reference_name];
+          if (val === undefined || val === null || val === "") {
+            missing.push(field.display_name);
+          }
+        }
+      }
+    });
+
+    return missing;
+  };
+
+  const handleStepClick = (targetStep: number) => {
+    if (targetStep === currentStep) return;
+
+    if (targetStep < currentStep) {
+      setStepValidationErrors([]);
+      setCurrentStep(targetStep);
+      return;
+    }
+
+    // Moving forward: validate every step from currentStep up to targetStep - 1
+    let canJump = true;
+    for (let s = currentStep; s < targetStep; s++) {
+      const missing = getMissingRequiredInSection(sections[s]);
+      if (missing.length > 0) {
+        setStepValidationErrors(missing);
+        setTimeout(() => {
+          document
+            .getElementById("validation-banner")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 50);
+        canJump = false;
+        break;
+      }
+    }
+
+    if (canJump) {
+      setStepValidationErrors([]);
+      setCurrentStep(targetStep);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 gap-3">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <span className="text-sm text-gray-500 font-medium">
+          Loading form details...
+        </span>
+      </div>
+    );
+  }
+
+  if (error || !fields || fields.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 gap-3 text-center">
+        <span className="text-sm text-rose-500 font-medium">
+          {error ? error.message : "Failed to load IJP form fields."}
+        </span>
+        <Button onClick={onCancel}>Back to Opening</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-full overflow-hidden text-sm text-[#1a1a2e] px-2 ijp-apply-form-wrapper">
+      <style>{`
+        .ijp-apply-form-wrapper .field-required::after {
+          content: " *" !important;
+          color: #ef4444 !important;
+          font-weight: 600 !important;
+          display: inline-block !important;
+          margin-left: 2px !important;
+        }
+      `}</style>
+      {/* Breadcrumbs */}
+      <div className="text-xs text-gray-500 mb-5">
+        <span
+          className="text-gray-500 cursor-pointer no-underline hover:underline"
+          onClick={onCancel}
+        >
+          Internal Job Movement
+        </span>
+        <span className="mx-1.5 opacity-50">/</span>
+        <strong>
+          {job.job_title} ({job.opening_code || job.name})
+        </strong>
+      </div>
+
+      {/* Header Panel */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-wrap items-center justify-between gap-3 mb-4 w-full max-w-full">
+        <div className="min-w-0 flex-1 pr-2">
+          <span className="text-lg font-semibold text-[#1a1a2e] block md:inline truncate">
+            {job.job_title} ({job.opening_code || job.name})
+          </span>
+          <span className="text-xs text-gray-500 md:ml-2.5 block md:inline mt-1 md:mt-0">
+            (Open since {job.posted_on ? formatToIndianDate(job.posted_on) : ""}
+            )
+          </span>
+        </div>
+      </div>
+
+      {/* Main Grid */}
+      <div className="flex flex-col md:flex-row gap-4 w-full max-w-full">
+        {!submitted && (
+          <IJPSidebar
+            sections={sections}
+            currentStep={currentStep}
+            fields={fields}
+            formData={formData}
+            rowCounts={rowCounts}
+            stepValidationErrors={stepValidationErrors}
+            onStepClick={handleStepClick}
+            getMissingRequiredInSection={getMissingRequiredInSection}
+          />
+        )}
+
+        {/* Content Box */}
+        <div className="flex-1 bg-white border border-gray-200 rounded-xl p-6 min-w-0">
+          {submitted ? (
+            <div className="flex flex-col items-center justify-center p-12 text-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-emerald-100 text-green-600 flex items-center justify-center text-3xl font-semibold">
+                ✓
+              </div>
+              <div className="text-lg font-semibold text-[#1a1a2e]">
+                Congratulations!
+              </div>
+              <p className="text-xs text-gray-500 max-w-[360px] leading-relaxed">
+                Your application for <strong>{job.job_title}</strong> has been
+                successfully submitted. You can track its live status in the{" "}
+                <strong>IJP Jobs Applied</strong> portal.
+              </p>
+              <Button onClick={onCancel}>Back to IJP Openings</Button>
+            </div>
+          ) : (
+            <div>
+              {activeSection === "Review" ? (
+                <IJPReviewStep
+                  sections={sections}
+                  fields={fields}
+                  rowCounts={rowCounts}
+                  formData={formData}
+                  acknowledged={acknowledged}
+                  setAcknowledged={setAcknowledged}
+                  missingRequiredFields={missingRequiredFields}
+                  hasMissingRequiredFields={hasMissingRequiredFields}
+                  onSubmit={handleSubmitApplication}
+                  onBack={handleBack}
+                  submitPending={submitMutation.isPending}
+                />
+              ) : (
+                <div>
+                  <div className="text-sm font-semibold mb-5 pb-2.5 border-b border-gray-100 text-[#1a1a2e]">
+                    {activeSection}
+                  </div>
+
+                  {stepValidationErrors.length > 0 && (
+                    <div id="validation-banner" className="mb-5 animate-shake">
+                      <IJPValidationBanner
+                        fields={stepValidationErrors}
+                        onDismiss={() => setStepValidationErrors([])}
+                      />
+                    </div>
+                  )}
+
+                  <Form
+                    key={`${activeSection}-${currentStep}-${JSON.stringify(rowCounts)}`}
+                    form={dynamicSchema}
+                    submission={{ data: formData }}
+                    onChange={handleFormChange}
+                    onSubmit={handleFormSubmit}
+                    onFormReady={(instance: FormioInstance) => {
+                      formRef.current = instance;
+                    }}
+                    options={{
+                      builder: { styles: false },
+                      submitButton: false,
+                      alerts: false,
+                      validateOnInit: false,
+                      validateOnBlur: true,
+                      validateOnChange: false,
+                      formClass: "space-y-4",
+                      rowClass: "grid grid-cols-2 gap-4",
+                      labelClass: "mb-1 text-xs text-slate-500 font-medium",
+                      inputClass:
+                        "w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white text-slate-900 font-semibold outline-none focus:border-blue-400",
+                    }}
+                  />
+
+                  {/* Add More button for Table fields */}
+                  {fieldsInActiveSection.map((field) => {
+                    if (field.fieldtype === "Table") {
+                      if (field.editability === "Read Only") {
+                        return null;
+                      }
+                      const rowCount =
+                        rowCounts[field.reference_name] ??
+                        (field.reqd === 1 ? 1 : 0);
+                      const buttonLabel =
+                        rowCount === 0
+                          ? `+ Add ${field.display_name}`
+                          : `+ Add More ${field.display_name}`;
+                      return (
+                        <div
+                          key={`add-more-${field.reference_name}`}
+                          className="mt-4 mb-6 flex justify-start"
+                        >
+                          <Button
+                            variant="outline"
+                            bgColor="primary"
+                            onClick={() => {
+                              setRowCounts((prev) => ({
+                                ...prev,
+                                [field.reference_name]:
+                                  (prev[field.reference_name] ??
+                                    (field.reqd === 1 ? 1 : 0)) + 1,
+                              }));
+                            }}
+                          >
+                            {buttonLabel}
+                          </Button>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+
+                  {/* Navigation Buttons */}
+                  <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-100">
+                    {currentStep > 0 && (
+                      <Button
+                        variant="outline"
+                        bgColor="secondary"
+                        onClick={handleBack}
+                      >
+                        Back
+                      </Button>
+                    )}
+                    {currentStep < sections.length - 1 ? (
+                      <Button bgColor="primary" onClick={handleNextClick}>
+                        Save &amp; Next
+                      </Button>
+                    ) : (
+                      <Button
+                        bgColor="primary"
+                        onClick={handleNextClick}
+                        loading={submitMutation.isPending}
+                      >
+                        Submit Application
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

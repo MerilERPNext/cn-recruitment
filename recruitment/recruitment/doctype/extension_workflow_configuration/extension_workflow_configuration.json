@@ -1,0 +1,87 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-01-16 15:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "extension_number",
+  "column_break_1",
+  "trigger_days_before_extension",
+  "section_break_workflow",
+  "extension_workflow",
+  "column_break_2",
+  "extension_form",
+  "section_break_probation",
+  "extension_probation_period"
+ ],
+ "fields": [
+  {
+   "fieldname": "extension_number",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Extension Number",
+   "non_negative": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "trigger_days_before_extension",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Trigger Days Before Extension",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "section_break_workflow",
+   "fieldtype": "Section Break",
+   "label": "Workflow Configuration"
+  },
+  {
+   "fieldname": "extension_workflow",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Extension Workflow",
+   "options": "Approval Policy Matrix"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "extension_form",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Extension Form",
+   "options": "Microapp Form Widget"
+  },
+  {
+   "fieldname": "section_break_probation",
+   "fieldtype": "Section Break",
+   "label": "Probation Configuration"
+  },
+  {
+   "fieldname": "extension_probation_period",
+   "fieldtype": "Link",
+   "label": "Extension Probation Period",
+   "options": "Probation Period"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-01-16 15:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Extension Workflow Configuration",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "extension_number",
+ "sort_order": "ASC",
+ "states": []
+}

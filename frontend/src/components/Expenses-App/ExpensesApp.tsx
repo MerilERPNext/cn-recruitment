@@ -1,109 +1,230 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import { isActionEnabled } from "../../utils/uiPermission";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import HeaderBar from "../HeaderBar";
+import NavigationTabs, { Tab } from "../NavigationTab";
+import Button from "../shared/atoms/Button";
+import ExpenseAdvanceForm from "./ExpenseAdvance/ExpenseAdvanceForm";
+import ExpenseFormModal from "./ExpenseFormModal";
+import { useCurrentEmployeeDetails } from "../../hooks/useEmployee";
+import { useCheckAdvancePolicy } from "../../hooks/useEmployeeAdvances";
 
-type TabName = "Expenses";
+type TabName = "Expenses" | "Team" | "My Advances" | "Team Advances" | "Summary";
 
 const tabRoutes: Record<TabName, string> = {
   Expenses: "/webapp/expenses-app/expenses-list",
+  Team: "/webapp/expenses-app/team-requests",
+  "My Advances": "/webapp/expenses-app/my-advance-expense",
+  "Team Advances": "/webapp/expenses-app/team-advance-expense",
+  Summary: "/webapp/expenses-app/expense-summary",
 };
 
 const ExpensesApp: React.FC = () => {
+  const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabName>("Expenses");
+  const [currentExpenseForm, setCurrentExpenseForm] = useState<string | null>(
+    null,
+  );
 
-  // Detect tab based on current route
+  const { data: userUiPermission } = useGetUiPermission("Expenses");
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const { data: hasAdvancePolicy } = useCheckAdvancePolicy(
+    currentEmployee?.name || null,
+  );
+
+  const canAddExpense = isActionEnabled(
+    userUiPermission,
+    "expense_claim_request",
+    "Expense Claims",
+  );
+
+  const canAddAdvance = isActionEnabled(
+    userUiPermission,
+    "request_expense_advance",
+    "My Advances",
+  );
+
+  const [activeTab, setActiveTab] = useState<TabName>("Summary");
+
+  const tabs: Tab[] = useMemo(() => {
+    const allTabs: { key: TabName; label: string; permissionKey: string }[] = [
+      {
+        key: "Summary",
+        label: "Expense Summary",
+        permissionKey: "ExpenseSummary",
+      },
+      { key: "Expenses", label: "My Expenses", permissionKey: "Expense Claims" },
+      { key: "Team", label: "Team Expenses", permissionKey: "Team Requests" },
+      {
+        key: "My Advances",
+        label: "My Advances",
+        permissionKey: "My Advances",
+      },
+      {
+        key: "Team Advances",
+        label: "Team Advances",
+        permissionKey: "Team Advances",
+      },
+    ];
+
+    if (!userUiPermission || userUiPermission.length === 0) {
+      return allTabs.map(({ key, label }) => ({ key, label }));
+    }
+
+    const expensesPermission = userUiPermission.find(
+      (perm) => perm.app_name === "Expenses",
+    );
+
+    if (!expensesPermission || !expensesPermission.enabled) {
+      return [];
+    }
+
+    return allTabs
+      .filter((tab) => {
+        const pagePermission = expensesPermission.pages?.find(
+          (page) => page.page_name === tab.permissionKey,
+        );
+        return pagePermission && pagePermission.enabled;
+      })
+      .map(({ key, label }) => ({ key, label }));
+  }, [userUiPermission]);
+
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
-      location.pathname.startsWith(tabRoutes[tab])
+      location.pathname.startsWith(tabRoutes[tab]),
     );
 
     if (matchedTab) {
       setActiveTab(matchedTab);
-      sessionStorage.setItem("activeTab", matchedTab);
     }
   }, [location.pathname]);
 
-  const handleAddNew = () => {
-    if (activeTab === 'Expenses') navigate('/webapp/expenses-app/expenses-list/new-expense-type');
-  }
-
   useEffect(() => {
-    if (location.pathname === "/webapp/expenses-app") {
-      const savedTab = sessionStorage.getItem("activeTab") as TabName | null;
-      const fallback = "Expenses";
-
-      const redirectTab = savedTab && tabRoutes[savedTab] ? savedTab : fallback;
-      navigate(tabRoutes[redirectTab], { replace: true });
+    if (location.pathname === "/webapp/expenses-app" && tabs.length > 0) {
+      const firstTab = tabs[0].key as TabName;
+      navigate(tabRoutes[firstTab], { replace: true });
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, tabs]);
 
-  const handleTabChange = (tab: TabName) => {
+  const handleTabChange = (tabKey: string) => {
+    const tab = tabKey as TabName;
     setActiveTab(tab);
-    sessionStorage.setItem("activeTab", tab);
     navigate(tabRoutes[tab]);
   };
 
-  return (
-    <div className="flex flex-col min-h-screen bg-white">
-      <style>{`
-        :root {
-          --primary-color: #0c7ff2;
-          --secondary-color: #60758a;
-          --text-primary: #111418;
-          --text-secondary: #60758a;
-          --background-light: #ffffff;
-          --background-medium: #f0f2f5;
-          --border-light: #dbe0e6;
-        }
-        .scrollbar-hidden {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-        .scrollbar-hidden::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
+  const isFormActive = location.pathname === "/webapp/expenses-app/add-expense";
+  const isTeamRequests =
+    location.pathname === "/webapp/expenses-app/team-requests";
+  const isTeamRequestsAll =
+    location.pathname === "/webapp/expenses-app/team-requests/all";
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <div className="flex items-center justify-center p-2">
-          <h1 className="text-xl font-semibold text-slate-900">{activeTab}</h1>
+  const shouldShowActionButton = () => {
+    if (activeTab === "Expenses" && !canAddExpense) return false;
+    if (activeTab === "My Advances" && !canAddAdvance) return false;
+
+    if (isFormActive || isTeamRequests || isTeamRequestsAll) return false;
+
+    if (activeTab === "My Advances" && hasAdvancePolicy === false) {
+      return false;
+    }
+
+    return activeTab === "Expenses" || activeTab === "My Advances";
+  };
+
+  const handleAddNew = () => {
+    if (activeTab === "Expenses") {
+      navigate("/webapp/expenses-app/add-expense");
+    } else if (activeTab === "My Advances") {
+      navigate("/webapp/expenses-app/new-expense-advance");
+    }
+  };
+
+  const handleCloseExpenseForm = () => {
+    setCurrentExpenseForm(null);
+  };
+
+  const renderExpenseFormModal = () => {
+    if (!currentExpenseForm) return null;
+
+    let title = "";
+    let FormComponent = null;
+
+    switch (currentExpenseForm) {
+      case "Advance":
+        title = "New Expense Advance";
+        FormComponent = ExpenseAdvanceForm;
+        break;
+      default:
+        return null;
+    }
+
+    return (
+      <ExpenseFormModal
+        isOpen={!!currentExpenseForm}
+        onClose={handleCloseExpenseForm}
+        title={title}
+      >
+        <FormComponent onClose={handleCloseExpenseForm} />
+      </ExpenseFormModal>
+    );
+  };
+
+  const isSharedExpenses = location.pathname.includes("shared-expenses");
+
+  const mobileLayout = (
+    <div className="flex flex-col min-h-screen">
+      {!isSharedExpenses && (
+        <div className="sticky top-0 z-50 bg-white border-b">
+          <HeaderBar title={activeTab} />
+          <NavigationTabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
         </div>
+      )}
 
-        {/* Tabs */}
-        <nav className="px-2 flex overflow-x-auto scrollbar-hidden">
-          {(Object.keys(tabRoutes) as TabName[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => handleTabChange(tab)}
-              className={`px-4 py-3 border-b-2 border-t-0 border-l-0 border-r-0 bg-transparent text-sm font-medium rounded-none outline-none focus:outline-none focus:ring-0 ${
-                activeTab === tab
-                  ? "border-b-[3px] border-b-[var(--primary-color)] text-[var(--primary-color)]"
-                  : "border-b-transparent text-[var(--text-secondary)]"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </nav>
-      </header>
-
-      {/* Tab Content */}
-      <main className="p-4 z-100 flex-grow overflow-y-auto">
+      <main
+        className={`z-100 flex-grow ${isSharedExpenses ? "h-full overflow-hidden" : "overflow-y-auto p-2"}`}
+      >
         <Outlet />
       </main>
-
-      {(activeTab === 'Expenses') && (
-        <button
-          onClick={handleAddNew}
-          className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-full hover:bg-blue-700 fixed bottom-20 right-4 z-50"
-        >
-          +
-        </button>
+      {!isSharedExpenses && shouldShowActionButton() && (
+        <div className="sticky mt-auto bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
+          <div className="max-w-4xl mx-auto flex space-x-4">
+            <Button
+              size="lg"
+              onClick={handleAddNew}
+              className="hover:bg-blue-700 flex-1"
+            >
+              {activeTab === "Expenses" && "+ Add Expense"}
+              {activeTab === "My Advances" && "+ Request Advances"}
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
+
+  const actionButton = shouldShowActionButton() ? (
+    <Button size="lg" onClick={handleAddNew} className="hover:bg-blue-700">
+      {activeTab === "Expenses" && "+ Add Expense"}
+      {activeTab === "My Advances" && "+ Request Advances"}
+    </Button>
+  ) : null;
+
+  const desktopLayout = (
+    <DesktopLayoutWrapper title="Expenses" actionButton={actionButton}>
+      <Outlet />
+      {renderExpenseFormModal()}
+    </DesktopLayoutWrapper>
+  );
+
+  return isDesktop ? desktopLayout : mobileLayout;
 };
 
 export default ExpensesApp;

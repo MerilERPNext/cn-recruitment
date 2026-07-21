@@ -9,7 +9,6 @@ const InterviewPage = () => {
 
   console.log(`🎯 InterviewPage initialized with ID: ${interviewId}`)
 
-  // Use React Query hook
   const {
     data: interviewResponse,
     isLoading,
@@ -18,11 +17,10 @@ const InterviewPage = () => {
   } = useInterviewAndRounds(
     { interview_id: interviewId || "" },
     {
-      enabled: !!interviewId, // Only fetch if interviewId exists
+      enabled: !!interviewId,
     },
   )
 
-  // Extract data from response
   const interviewData = useMemo(() => {
     const data = interviewResponse?.interview
     console.log(`📋 Interview data processed:`, data)
@@ -45,7 +43,6 @@ const InterviewPage = () => {
     toDate.setHours(toHours, toMinutes, 0)
     let diffMs = toDate.getTime() - fromDate.getTime()
     if (diffMs < 0) {
-      // handle if to_time is past midnight
       diffMs += 24 * 60 * 60 * 1000
     }
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
@@ -56,28 +53,23 @@ const InterviewPage = () => {
   const getFieldValue = (field: string) => field || "NA"
 
   const handleBackInterview = () => {
-    console.log(`🔙 Navigating back from interview ${interviewId}`)
     navigate(-1)
   }
 
   const handleRedirect = () => {
     if (interviewData?.custom_resume_attachment) {
-      console.log(`📄 Opening resume: ${interviewData.custom_resume_attachment}`)
-      window.open(interviewData.custom_resume_attachment, "_blank")
+      window.open(window.location.origin + interviewData.custom_resume_attachment, "_blank")
     }
   }
 
   const handleButtonClick = () => {
-    console.log(`📝 Navigating to feedback for interview ${interviewId}`)
     navigate(`/webapp/recruitment-app/interviews/interview-feedback/${interviewId}`)
   }
 
   const handleRetry = () => {
-    console.log(`🔄 Retrying data fetch for interview ${interviewId}`)
     refetch()
   }
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="relative flex size-full min-h-screen flex-col bg-[var(--background-light)]">
@@ -287,7 +279,7 @@ const InterviewPage = () => {
           <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Assigned Interviewers</h2>
           {interviewData?.interview_details?.length > 0 ? (
             interviewData.interview_details.map((int, index: number) => (
-              <div key={index} className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
+              <div key={`interviewer-${getFieldValue(int.custom_full_name)}-${index}`} className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
                 <p className="text-slate-900 text-base font-medium flex-1">{getFieldValue(int.custom_full_name)}</p>
               </div>
             ))
@@ -313,9 +305,10 @@ const InterviewPage = () => {
         {/* Preparation Materials */}
         <section>
           <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Preparation Materials</h2>
-          <div className="flex items-center gap-4 bg-white px-4 py-3">
+          <div 
+           onClick={handleRedirect}
+          className="flex items-center gap-4 bg-white px-4 py-3">
             <div
-              onClick={handleRedirect}
               className="flex items-center justify-center rounded-xl bg-slate-100 w-10 h-10 text-slate-900 cursor-pointer hover:bg-slate-200"
             >
               <FileText className="h-5 w-5" />
@@ -329,7 +322,7 @@ const InterviewPage = () => {
           <section>
             <h2 className="text-xl font-semibold px-4 pb-3 pt-6 text-slate-900">Interview Rounds</h2>
             {rounds.map((round, index: number) => (
-              <div key={index} className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
+              <div key={`round-${getFieldValue(round.round_name)}-${index}`} className="flex items-center gap-4 bg-white px-4 py-3 border-b border-slate-100">
                 <div className="flex flex-col justify-center flex-1">
                   <p className="text-slate-900 text-base font-medium">{getFieldValue(round.round_name)}</p>
                   <p className="text-slate-600 text-sm">{getFieldValue(round.status)}</p>

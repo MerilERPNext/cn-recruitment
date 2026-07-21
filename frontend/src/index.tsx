@@ -1,11 +1,16 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import './index.css';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./index.css";
 
 declare global {
   interface Window {
+    frappe: any;
     csrf_token: string;
+    isApp: boolean;
+    trigger_chatnext_assistant?: (enabled: boolean, session?: string) => void;
+
     nativeInterface: {
       execute: (method: string, params?: any) => Promise<any>;
       logToNative: (params: any) => Promise<void>;
@@ -14,12 +19,11 @@ declare global {
 }
 
 const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
+  document.getElementById("root") as HTMLElement
 );
 
 root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
-); 
-
+);

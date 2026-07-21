@@ -2,10 +2,13 @@ import frappe
 import json
 from frappe import _
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_interview_and_round(interview_id=None):
     if not interview_id:
         return {"status": "error", "message": "Interview ID is required"}
+
+    if not frappe.has_permission("Interview", "read", doc=interview_id):
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
 
     try:
         interview = frappe.get_doc("Interview", interview_id)
@@ -33,10 +36,12 @@ def get_interview_and_round(interview_id=None):
 
 import frappe
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_custom_interviews():
+    if not frappe.has_permission("Interview", "read"):
+        frappe.throw(_("Not permitted."), frappe.PermissionError)
     interview_names = frappe.get_all("Interview", fields=["name", "from_time", "to_time","status"])
-    
+
     results = []
     for row in interview_names:
         doc = frappe.get_doc("Interview", row.name)
@@ -55,7 +60,7 @@ def get_custom_interviews():
 # recruitment/api/skill.py
 import frappe
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def get_skill_names():
     skills = frappe.get_all("Skill", fields=["skill_name", "description"])
 
@@ -70,10 +75,15 @@ def get_skill_names():
 
 
 
-@frappe.whitelist(allow_guest=True)  
+@frappe.whitelist()
 def create_interview_feedback():
     if frappe.request.method != "POST":
         frappe.throw(_("Only POST requests are allowed"))
+
+    # Must be a logged-in user (was previously guest-accessible — anyone could
+    # submit binding feedback for any interview).
+    if frappe.session.user == "Guest":
+        frappe.throw(_("Authentication required."), frappe.AuthenticationError)
 
     try:
         raw_data = frappe.request.data

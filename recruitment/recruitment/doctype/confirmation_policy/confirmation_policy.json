@@ -1,0 +1,334 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "CONFFLOW-.#####",
+ "creation": "2025-10-16 14:50:53.021360",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "basic_details_tab",
+  "status",
+  "policy_title",
+  "description",
+  "applicability_section",
+  "applicable_to",
+  "policy_details_tab",
+  "initiation_configuration_section",
+  "triggered_number_of_days_before_confirmation",
+  "column_break_pdmn",
+  "post_confirmation_section",
+  "employee_type",
+  "column_break_ovsj",
+  "employee_sub_type",
+  "probation_configuration_section",
+  "auto_assign_probation_period_on_addition",
+  "maximum_number_of_extensions_to_probation_period",
+  "number_of_days_to_hold_confirmation_from_probation_end",
+  "column_break_rgnl",
+  "restrict_these_probation_periods_for_extensions",
+  "show_hold_days_only_to_admin",
+  "show_employees_as_probation_when_recommended_for_separation",
+  "process_details_tab",
+  "section_break_udsn",
+  "confirmation_workflow",
+  "confirmation_extension_workflow",
+  "column_break_qbus",
+  "confirmation_form",
+  "configure_initiator",
+  "initiator",
+  "confirmation_extension_form",
+  "extension_workflow_section",
+  "extension_workflow_configurations",
+  "separation_workflow_configurations_section",
+  "enable_separation_initiation",
+  "configure_separation_initiators",
+  "separation_initiators",
+  "separation_form",
+  "separation_workflow",
+  "notification_and_advanced_settings_tab",
+  "letter_configuration",
+  "section_break_lgfk",
+  "notification_configuration"
+ ],
+ "fields": [
+  {
+   "fieldname": "policy_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Policy Title",
+   "reqd": 1
+  },
+  {
+   "fieldname": "basic_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Basic Details"
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  },
+  {
+   "fieldname": "applicability_section",
+   "fieldtype": "Section Break",
+   "label": "Applicability"
+  },
+  {
+   "fieldname": "applicable_to",
+   "fieldtype": "Table MultiSelect",
+   "label": "Applicable To",
+   "options": "User Assignment Table"
+  },
+  {
+   "fieldname": "policy_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Policy Details"
+  },
+  {
+   "fieldname": "initiation_configuration_section",
+   "fieldtype": "Section Break",
+   "label": "Initiation Configuration"
+  },
+  {
+   "fieldname": "triggered_number_of_days_before_confirmation",
+   "fieldtype": "Int",
+   "label": "Triggered number of days before Confirmation",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "post_confirmation_section",
+   "fieldtype": "Section Break",
+   "label": "Post Confirmation"
+  },
+  {
+   "fieldname": "employee_type",
+   "fieldtype": "Link",
+   "label": "Employee Type",
+   "options": "Employment Type"
+  },
+  {
+   "fieldname": "column_break_ovsj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "employee_sub_type",
+   "fieldtype": "Select",
+   "label": "Employee Sub Type"
+  },
+  {
+   "fieldname": "probation_configuration_section",
+   "fieldtype": "Section Break",
+   "label": "Probation Configuration"
+  },
+  {
+   "fieldname": "auto_assign_probation_period_on_addition",
+   "fieldtype": "Link",
+   "label": "Auto assign Probation period on addition",
+   "options": "Probation Period"
+  },
+  {
+   "default": "0",
+   "fieldname": "maximum_number_of_extensions_to_probation_period",
+   "fieldtype": "Select",
+   "label": "Maximum number of extensions to Probation period",
+   "options": "0\n1\n2\n3"
+  },
+  {
+   "fieldname": "column_break_rgnl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.maximum_number_of_extensions_to_probation_period != '0'",
+   "fieldname": "restrict_these_probation_periods_for_extensions",
+   "fieldtype": "Table MultiSelect",
+   "hidden": 1,
+   "label": "Restrict these Probation periods for extensions",
+   "options": "Probation Period Table"
+  },
+  {
+   "fieldname": "number_of_days_to_hold_confirmation_from_probation_end",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Number of days to hold Confirmation from Probation end",
+   "non_negative": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "show_hold_days_only_to_admin",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Show Hold Days only to admin"
+  },
+  {
+   "default": "0",
+   "fieldname": "show_employees_as_probation_when_recommended_for_separation",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Show employees as Probation when recommended for separation"
+  },
+  {
+   "fieldname": "process_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Process Details"
+  },
+  {
+   "fieldname": "notification_and_advanced_settings_tab",
+   "fieldtype": "Tab Break",
+   "label": "Notification and Advanced Settings"
+  },
+  {
+   "fieldname": "letter_configuration",
+   "fieldtype": "Table",
+   "label": "Letter Configuration",
+   "options": "Letter Configuration Table"
+  },
+  {
+   "fieldname": "section_break_lgfk",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "notification_configuration",
+   "fieldtype": "Table",
+   "label": "Notification Configuration",
+   "options": "Notification Configuration Table"
+  },
+  {
+   "fieldname": "confirmation_workflow",
+   "fieldtype": "Link",
+   "label": "Confirmation Workflow",
+   "options": "Approval Policy Matrix"
+  },
+  {
+   "depends_on": "eval:doc.maximum_number_of_extensions_to_probation_period != '0'",
+   "fieldname": "confirmation_extension_workflow",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Confirmation Extension Workflow (Default)",
+   "options": "Approval Policy Matrix"
+  },
+  {
+   "fieldname": "section_break_udsn",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_qbus",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "confirmation_form",
+   "fieldtype": "Link",
+   "label": "Confirmation Form",
+   "options": "Microapp Form Widget"
+  },
+  {
+   "depends_on": "eval:doc.maximum_number_of_extensions_to_probation_period != '0'",
+   "fieldname": "confirmation_extension_form",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Confirmation Extension Form (Default)",
+   "options": "Microapp Form Widget"
+  },
+  {
+   "fieldname": "column_break_pdmn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "initiator",
+   "fieldtype": "Small Text",
+   "label": "Initiator",
+   "read_only": 1
+  },
+  {
+   "fieldname": "configure_initiator",
+   "fieldtype": "Button",
+   "label": "Configure Initiator"
+  },
+  {
+   "depends_on": "eval:doc.maximum_number_of_extensions_to_probation_period != '0'",
+   "fieldname": "extension_workflow_section",
+   "fieldtype": "Section Break",
+   "label": "Extension Workflow Configurations"
+  },
+  {
+   "depends_on": "eval:doc.maximum_number_of_extensions_to_probation_period != '0'",
+   "fieldname": "extension_workflow_configurations",
+   "fieldtype": "Table",
+   "label": "Extension Workflow Configurations",
+   "options": "Extension Workflow Configuration"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nActive\nInactive"
+  },
+  {
+   "fieldname": "separation_workflow_configurations_section",
+   "fieldtype": "Section Break",
+   "label": "Separation Workflow Configurations"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_separation_initiation",
+   "fieldtype": "Check",
+   "label": "Enable Separation Initiation"
+  },
+  {
+   "depends_on": "eval:doc.enable_separation_initiation",
+   "fieldname": "configure_separation_initiators",
+   "fieldtype": "Button",
+   "label": "Configure Separation Initiators"
+  },
+  {
+   "depends_on": "eval:doc.enable_separation_initiation",
+   "fieldname": "separation_initiators",
+   "fieldtype": "Small Text",
+   "label": "Separation Initiators",
+   "read_only": 1
+  },
+  {
+   "fieldname": "separation_form",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Separation Form",
+   "options": "Microapp Form Widget"
+  },
+  {
+   "fieldname": "separation_workflow",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Separation Workflow",
+   "options": "Approval Policy Matrix"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-06-05 13:01:47.259106",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Confirmation Policy",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "policy_title",
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "policy_title"
+}

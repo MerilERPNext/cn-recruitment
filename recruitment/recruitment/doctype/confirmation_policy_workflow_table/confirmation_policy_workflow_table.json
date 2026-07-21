@@ -1,0 +1,51 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-10-16 15:32:52.172002",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "confirmation_workflow",
+  "confirmation_extension_workflow",
+  "confirmation_separation_workflow"
+ ],
+ "fields": [
+  {
+   "fieldname": "confirmation_workflow",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Confirmation Workflow",
+   "options": "Approval Policy Matrix",
+   "reqd": 1
+  },
+  {
+   "fieldname": "confirmation_extension_workflow",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Confirmation Extension Workflow",
+   "options": "Approval Policy Matrix"
+  },
+  {
+   "fieldname": "confirmation_separation_workflow",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Confirmation Separation Workflow",
+   "options": "Approval Policy Matrix"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-10-17 12:34:46.109362",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Confirmation Policy Workflow Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,110 @@
+import { Download, Eye } from "lucide-react";
+import { useState } from "react";
+import {
+  FileTypeIcon,
+  getFileName,
+  getFileTypeInfo,
+} from "../../../utils/fileUtils";
+import Button from "../atoms/Button";
+import Tooltip from "../Tooltip";
+import { FilePreviewModal } from "./FilePreviewModal";
+
+export function AttachmentCard({
+  fileUrl,
+  fileName: customFileName,
+  compact = false,
+  showFileNameWithEye = false,
+}: {
+  fileUrl: string;
+  fileName?: string;
+  compact?: boolean;
+  showFileNameWithEye?: boolean;
+}) {
+  const fileName = customFileName || getFileName(fileUrl);
+  const [showPreview, setShowPreview] = useState(false);
+  const { category, label, iconColor, bgColor } = getFileTypeInfo(fileName);
+
+  // Blob URLs are not downloadable inside a React Native WebView
+  const hideDownload = window.isApp && fileUrl.startsWith("blob:");
+
+  const ActionButtons = (
+    <div className="flex gap-2 items-center">
+      <Tooltip content={"View"}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowPreview(true)}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      </Tooltip>
+
+      {!hideDownload && (
+        <Tooltip content={"Download"}>
+          <a href={fileUrl} download={fileName}>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4" />
+            </Button>
+          </a>
+        </Tooltip>
+      )}
+    </div>
+  );
+
+  return (
+    <>
+      {showFileNameWithEye ? (
+        <button
+          type="button"
+          className="text-sm text-gray-700 truncate flex-1 cursor-pointer hover:text-blue-600 hover:underline text-left bg-transparent border-none p-0"
+          onClick={() => setShowPreview(true)}
+          title="Click to preview"
+        >
+          {fileName}
+        </button>
+      ) : compact ? (
+        ActionButtons
+      ) : (
+        <div className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50 min-w-0 w-full">
+          {/* Thumbnail — image preview for images, icon for everything else */}
+          <div
+            className={`w-12 h-12 rounded-md overflow-hidden border flex items-center justify-center flex-shrink-0 ${category === "image" ? "bg-white" : bgColor
+              }`}
+          >
+            {category === "image" ? (
+              <img
+                src={fileUrl}
+                alt={fileName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <FileTypeIcon
+                category={category}
+                className={`w-6 h-6 ${iconColor}`}
+              />
+            )}
+          </div>
+
+          {/* Info */}
+          <div className="flex-1 overflow-hidden min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {fileName}
+            </p>
+            <p className="text-xs text-gray-500">{label}</p>
+          </div>
+
+          {/* Actions */}
+          {ActionButtons}
+        </div>
+      )}
+
+      {showPreview && (
+        <FilePreviewModal
+          fileUrl={fileUrl}
+          fileName={fileName}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
+    </>
+  );
+}

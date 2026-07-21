@@ -1,0 +1,150 @@
+{
+    "title": "Employment History",
+    "name": "employmentHistory",
+    "path": "employment-history",
+    "display": "form",
+    "components": [
+        {
+            "type": "panel",
+            "key": "employmentHistoryPanel",
+            "label": "Employment History Details",
+            "title": "Employment History Details",
+            "hideLabel": true,
+            "customClass": "bg-white rounded-lg",
+            "components": [
+                {
+                    "type": "hidden",
+                    "key": "companies",
+                    "input": true
+                },
+                {
+                    "type": "hidden",
+                    "key": "departments",
+                    "input": true
+                },
+                {
+                    "type": "hidden",
+                    "key": "designations",
+                    "input": true
+                },
+                {
+                    "type": "hidden",
+                    "key": "functional_areas",
+                    "input": true
+                },
+                {
+                    "type": "select",
+                    "key": "company",
+                    "label": "Company",
+                    "errorLabel": "Company",
+                    "placeholder": "Select Company",
+                    "input": true,
+                    "dataSrc": "custom",
+                    "data": {
+                        "custom": "values = data.companies"
+                    },
+                    "valueProperty": "name",
+                    "template": "<span>{{item.company_name}} ({{ item.name }})</span>",
+                    "validateWhenHidden": false,
+                    "customClass": "w-full",
+                    "searchEnabled": true,
+                    "searchResultLimit": 100,
+                    "customOptions": {
+                        "searchResultLimit": 100
+                    }
+                },
+                {
+                    "type": "select",
+                    "key": "department",
+                    "label": "Department",
+                    "errorLabel": "Department",
+                    "placeholder": "Select Department",
+                    "customConditional": "show = !!data.company",
+                    "input": true,
+                    "dataSrc": "custom",
+                    "data": {
+                        "custom": "values = data.departments"
+                    },
+                    "valueProperty": "name",
+                    "template": "<span>{{item.department_name}} ({{ item.name }})</span>",
+                    "validateWhenHidden": false,
+                    "customClass": "w-full",
+                    "searchEnabled": true,
+                    "searchResultLimit": 100,
+                    "customOptions": {
+                        "searchResultLimit": 100
+                    }
+                },
+                {
+                    "type": "select",
+                    "key": "designation",
+                    "label": "Designation",
+                    "errorLabel": "Designation",
+                    "placeholder": "Select Designation",
+                    "customConditional": "show = !!data.department",
+                    "input": true,
+                    "dataSrc": "custom",
+                    "data": {
+                        "custom": "values = data.designations"
+                    },
+                    "valueProperty": "name",
+                    "template": "<span>{{item.designation_name}} ({{ item.name }})</span>",
+                    "validateWhenHidden": false,
+                    "customClass": "w-full",
+                    "searchEnabled": true,
+                    "searchResultLimit": 100,
+                    "customOptions": {
+                        "searchResultLimit": 100
+                    }
+                },
+                {
+                    "type": "select",
+                    "key": "functional_area",
+                    "label": "Functional Area",
+                    "errorLabel": "Functional Area",
+                    "placeholder": "Select Functional Area",
+                    "customConditional": "show = !!data.designation",
+                    "input": true,
+                    "dataSrc": "custom",
+                    "data": {
+                        "custom": "values = data.functional_areas"
+                    },
+                    "valueProperty": "name",
+                    "template": "<span>{{item.functional_area_name}} ({{ item.name }})</span>",
+                    "validateWhenHidden": false,
+                    "customClass": "w-full",
+                    "searchEnabled": true,
+                    "searchResultLimit": 100,
+                    "customOptions": {
+                        "searchResultLimit": 100
+                    }
+                },
+                {
+                    "type": "checkbox",
+                    "key": "is_promotion",
+                    "label": "Is Promotion",
+                    "input": false,
+                    "customConditional": "show = !!data.designation"
+                },
+                {
+                    "type": "datetime",
+                    "key": "startDate",
+                    "label": "Start Date",
+                    "errorLabel": "Start Date",
+                    "format": "dd-MM-yyyy",
+                    "enableTime": false,
+                    "input": true
+                },
+                {
+                    "type": "datetime",
+                    "key": "endDate",
+                    "label": "End Date",
+                    "errorLabel": "End Date",
+                    "format": "dd-MM-yyyy",
+                    "enableTime": false,
+                    "input": true
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,119 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-10-16 15:40:49.592053",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "event",
+  "template",
+  "hr_letter_field",
+  "cc_recipients",
+  "cc_users",
+  "cc_selected_users",
+  "cc_type",
+  "cc_employee_field",
+  "cc_user_field",
+  "cc_level",
+  "cc_roles",
+  "select_cc"
+ ],
+ "fields": [
+  {
+   "fieldname": "event",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Event",
+   "options": "Employee's Confirmation is Approved\nEmployee's Probation is Extended"
+  },
+  {
+   "fieldname": "template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Template",
+   "options": "Document Template"
+  },
+  {
+   "fieldname": "hr_letter_field",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "HR Letter Field",
+   "options": "Employment Related"
+  },
+  {
+   "fieldname": "cc_recipients",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "CC Recipients",
+   "options": "Role Configuration"
+  },
+  {
+   "fieldname": "cc_users",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "CC User Group",
+   "options": "User Group"
+  },
+  {
+   "fieldname": "cc_selected_users",
+   "fieldtype": "Small Text",
+   "label": "CC Users",
+   "read_only": 1
+  },
+  {
+   "default": "Manual",
+   "fieldname": "cc_type",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "CC Type",
+   "options": "Manual\nFrom Document\nLevel"
+  },
+  {
+   "fieldname": "cc_employee_field",
+   "fieldtype": "Small Text",
+   "label": "CC Employee Field",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cc_user_field",
+   "fieldtype": "Small Text",
+   "label": "CC User Field",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cc_level",
+   "fieldtype": "Small Text",
+   "label": "CC Level",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cc_roles",
+   "fieldtype": "Small Text",
+   "label": "CC Roles",
+   "read_only": 1
+  },
+  {
+   "fieldname": "select_cc",
+   "fieldtype": "Button",
+   "label": "Select CC"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-21 12:30:16.012996",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Letter Configuration Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

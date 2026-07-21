@@ -1,0 +1,439 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
+import { RiDeleteBinLine } from "react-icons/ri";
+import { Typography } from "../../../shared/atoms/Typography";
+import { useFileUpload } from "../../../../hooks/useEmployee";
+import { useDeleteDocument } from "../../../../hooks/payroll/UseDeleteDocuemt";
+import { formatCurrency } from "../../../../utils/currency";
+import toast from "react-hot-toast";
+type Item = {
+  custom_note: import("react/jsx-runtime").JSX.Element;
+  custom_proof_status: string;
+  attach_link: string | null;
+  approval_needed: string;
+  idx: string;
+  proof_file?: File | string;
+  attach_proof: string | null;
+  attach_reqd: number;
+  exemption_sub_category: string;
+  description: string | null;
+  max_amount: number;
+  editable: number;
+  amount?: number | "";
+  proof_comment?: string;
+  is_selected?: boolean;
+  id?: string | number;
+};
+type Props = {
+  categoryName: string;
+  max_amount: number;
+  lockingDate: string;
+  items: Item[];
+  onChange: (updatedItems: Item[]) => void;
+  showProofFields?: boolean;
+  selectable?: string;
+  custom_80d_variable?: string | null;
+  locked80DVariable?: Map<string, any> | undefined;
+  categoryVaribale?: string | null;
+  itemId: number;
+  setLocked80DVariable?: Dispatch<SetStateAction<Map<string, any> | undefined>>;
+};
+import StatusBadge from "../../ui/StatusBadge";
+import { IoMdCloudUpload } from "react-icons/io";
+const CategoryDeclarationSelectable = ({
+  categoryName,
+  max_amount,
+  lockingDate,
+  items,
+  onChange,
+  showProofFields,
+  selectable,
+  itemId,
+  categoryVaribale,
+  locked80DVariable,
+  setLocked80DVariable,
+}: Props) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const uploadMutation = useFileUpload();
+  const isMultipleSelect = selectable === "Select Multiple";
+  const { mutateAsync: deleteDoc } = useDeleteDocument();
+  const [fileName, setFileName] = useState("");
+  /* ---------------- Dropdown Options ---------------- */
+  const dropdownOptions = useMemo(() => {
+    const normalized = items.map((item) => ({
+      ...item,
+      is_effectively_selected:
+        item.is_selected === true || Number(item.amount ?? 0) > 0,
+    }));
+    const hasAnySelected = normalized.some((i) => i.is_effectively_selected);
+    return normalized.map((item) => ({
+      label: item.exemption_sub_category,
+      value: item.exemption_sub_category,
+      disabled:
+        isMultipleSelect
+          ? item.is_effectively_selected 
+          : hasAnySelected,               
+    }));
+  }, [items, isMultipleSelect]);
+  const isDisabled = useMemo(() => {
+    if (!locked80DVariable || !categoryVaribale) return false;
+    const group = locked80DVariable.get(categoryVaribale);
+    if (!group) return false;
+    if(group?.indexes?.includes(itemId) && group.parent !== null){
+      if(group.parent === itemId) return false;
+      return true;
+    } 
+    return false;  
+  }, [locked80DVariable, categoryVaribale, itemId]);
+
+  useEffect(() => {
+    if (!categoryVaribale || !locked80DVariable || !setLocked80DVariable) return;
+  
+    const selectedFromAPI = items.some(
+      (item) => item.is_selected === true || Number(item.amount ?? 0) > 0
+    );
+  
+    if (!selectedFromAPI) return;
+  
+    const updatedMap = new Map(locked80DVariable);
+    const group = updatedMap.get(categoryVaribale);
+  
+    if (group && (group.parent === null || group.parent === undefined)) {
+      updatedMap.set(categoryVaribale, {
+        ...group,
+        parent: itemId,
+      });
+  
+      setLocked80DVariable(updatedMap);
+    }
+  }, [items, categoryVaribale, locked80DVariable, itemId, setLocked80DVariable]);
+
+  const handleProofFileUpload = (key: string, file: File | null) => {
+    if (!file) return;
+    uploadMutation.mutate(file, {
+      onSuccess(data) {
+        const updated = items.map((item) =>
+          item.exemption_sub_category === key
+            ? { ...item, proof_file: data?.file_url }
+            : item
+        );
+        onChange(updated);
+      },
+      onError(err) {
+        console.error("Proof upload failed", err);
+      },
+    });
+  };
+  const handleRemoveProof = async (
+    itemIdx: number,
+    proofFile?: string | File
+  ) => {
+    if (!proofFile) return;
+  
+    if (!window.confirm("Delete this file?")) return;
+  
+    try {
+      if (typeof proofFile === "string") {
+        const parts = proofFile.split("/");
+        let fileName = parts[parts.length - 1];
+        fileName = decodeURIComponent(fileName);
+  
+        await deleteDoc({
+          doctype: "File",
+          name: fileName,
+        });
+      }
+  
+      const updated = [...items];
+  
+      updated[itemIdx] = {
+        ...updated[itemIdx],
+        proof_file: undefined,
+        proof_comment: "",
+      };
+  
+      onChange(updated);
+  
+      setFileName(""); // optional
+    } catch (err) {
+      console.error(err);
+      toast.error("Delete failed");
+    }
+  };
+  /* ---------------- Select Item ---------------- */
+  const handleSelectItem = (value: string) => {
+    if (!value) return;
+    const updated = items.map((item) => {
+      if (item.exemption_sub_category === value) {
+        return {
+          ...item,
+          is_selected: true,
+          amount: isMultipleSelect
+            ? item.amount ?? 0
+            : item.max_amount,
+        };
+      }
+      if (!isMultipleSelect) {
+        return {
+          ...item,
+          is_selected: false,
+          amount: undefined,
+        };
+      }
+      return item;
+    });
+    if (categoryVaribale && locked80DVariable) {
+      const updatedMap = new Map(locked80DVariable);
+      const group = updatedMap.get(categoryVaribale); 
+      if (group && (group.parent === null || group.parent === undefined)) {
+        updatedMap.set(categoryVaribale, {
+          ...group,
+          parent:  itemId, 
+        });
+        setLocked80DVariable?.(updatedMap);
+      }  
+    }
+    onChange(updated);
+  };
+  /* ---------------- Amount Change ---------------- */
+  const handleAmountChange = (key: string, value: number) => {
+    const updated: Item[] = items.map((item) => {
+      if (item.exemption_sub_category !== key) return item;
+      if (item.editable === 0) return item;
+      return {
+        ...item,
+        amount: Math.min(value),
+      };
+    });
+    onChange(updated);
+  };
+  /* ---------------- Remove Selected Item ---------------- */
+  const handleRemoveItem = (key: string) => {
+    const updated = items.map((item) =>
+      item.exemption_sub_category === key
+        ? {
+          ...item,
+          is_selected: false,
+          amount: undefined,
+        }
+        : item
+    );
+    const selectedItems = items.filter(
+      (item) =>
+        item?.is_selected === true ||
+        item?.editable === 0 ||
+        Number(item?.amount ?? 0) > 0
+    );
+    if (categoryVaribale && locked80DVariable) {
+      const updatedMap = new Map(locked80DVariable);
+      const group = updatedMap.get(categoryVaribale);
+      if (group && selectedItems.length === 1) {
+        updatedMap.set(categoryVaribale, {
+          ...group,
+          parent:  null ,
+        });
+      }
+      setLocked80DVariable?.(updatedMap);
+    }
+    onChange(updated);
+  };
+  /* ---------------- Selected Items ---------------- */
+  const selectedItems = items.filter(
+    (item) =>
+      item?.is_selected === true ||
+      item?.editable === 0 ||
+      Number(item?.amount ?? 0) > 0
+  );
+  return (
+    <div className="bg-white px-3 md:px-6 py-4 rounded-lg border border-gray-200 space-y-4">
+      <div className="border-b pb-2">
+        <Typography variant="bodySmall" color="body2" className="text-xs font-bold">
+          {categoryName} | Max Amount:{" "}
+          <span className="text-primary text-xs font-bold">
+            {formatCurrency(max_amount)}
+          </span>
+        </Typography>
+      </div>
+      <div className="space-y-3 ">
+        {selectedItems.map((item) => (
+          <div
+            key={item.exemption_sub_category}
+            className="flex flex-col sm:flex-row sm:justify-between sm:items-center rounded-lg border border-gray-200 p-3 md:p-4 gap-3">
+            <div className="flex flex-col gap-1 w-full sm:max-w-xs">
+              <div>
+                <Typography variant="bodySmall"color="body1"className="text-xs font-medium">
+                  {item.exemption_sub_category}
+                </Typography>
+                {item.description && (
+                  <p className="text-[11px] text-gray-500">
+                    {item.description}
+                  </p>
+                )}
+              </div>
+
+              {((showProofFields && item?.attach_reqd === 1 )  || item?.approval_needed === "Yes") && (
+                  <div className="flex flex-col sm:flex-row gap-2 pb-1 bg-white w-full">
+                    <div className="flex flex-col gap-1 w-full min-w-0">
+                      <label className="text-xs text-gray-700 font-medium">
+                        Attachment
+                      </label>
+                      <div className="w-full">
+      <label className="flex items-center gap-2 border-2 border-dashed border-gray-300 px-3 py-2 w-full">
+      <span className="text-gray-500 text-xl">
+    <IoMdCloudUpload />
+  </span>
+        <span
+    title={fileName}
+    className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-sm text-gray-800"
+  >
+    {fileName || "Upload PDF file or Browse "}
+  </span>
+
+        <input
+          type="file"
+          accept="application/pdf"
+          required={
+            item.attach_reqd === 1 ||
+            item.approval_needed === "Yes"
+          }
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0] || null;
+
+            if (file && file.type !== "application/pdf") {
+              toast.error("Please upload only PDF file");
+              e.target.value = "";
+              return;
+            }
+
+            setFileName(file?.name || "");
+            handleProofFileUpload(
+              item.exemption_sub_category,
+              file
+            );
+          }}
+        />
+      </label>
+    </div>
+
+                      {(item?.proof_file || item?.attach_reqd === 1 || item?.approval_needed === "Yes") && (
+                        <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded w-full bg-gray-50 overflow-hidden">
+                          <span className="text-sm text-gray-700 truncate min-w-0 flex-1">
+                            {typeof item?.proof_file === "string"
+                              ? item.proof_file
+                              : item?.proof_file?.name ||
+                              item?.attach_proof ||
+                              item?.attach_link ||
+                              "-"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                            handleRemoveProof(Number(item.idx), item.proof_file)}
+                            className="text-gray-500 hover:text-red-600 transition disabled:opacity-50 shrink-0"
+                            title="Remove file"
+                          >
+                            {/* <RiDeleteBinLine size={16} /> */}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {item?.custom_note && (
+                      <div className="flex flex-col gap-1 w-full min-w-0">
+                        <label className="text-xs text-gray-700 font-medium">
+                          Note / Comment
+                        </label>
+                        <textarea
+                          rows={1}
+                          value={item.custom_note as unknown as string}
+                          readOnly
+                          placeholder="Enter your comment..."
+                          className="border border-gray-300 rounded-lg px-3 py-1.5 text-xs w-full resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"/>
+                      </div>
+                    )}
+                  </div>
+                )}
+            </div>
+            <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
+              {item?.custom_proof_status && (
+                <StatusBadge status={item.custom_proof_status} className="px-3 py-1" />
+              )}
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="text-left sm:text-right flex-1 sm:flex-none">
+                  <p className="text-[10px] font-semibold text-gray-500">
+                    Max {formatCurrency(item.max_amount)}
+                  </p>
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    readOnly={!isMultipleSelect}   
+                    disabled={item.editable === 0 || lockingDate === "failed"}
+                    value={item.amount === 0 ? "" : item.amount ?? ""}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === "") {
+                        handleAmountChange(item.exemption_sub_category, 0);
+                        return;
+                      }
+                      handleAmountChange(
+                        item.exemption_sub_category,
+                        Number(raw)
+                      );
+                    }}
+                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-xs w-full sm:w-32 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
+                  />
+                </div>
+                <div className="pt-3">
+                  {item.editable !== 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleRemoveItem(item.exemption_sub_category)
+                      }
+                      className="text-error/80 p-2 rounded bg-error-50 text-xs hover:underline"
+                    >
+                      <RiDeleteBinLine size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+        {selectedItems.length === 0 && ( <p className="text-xs text-gray-400">No items selected</p>)}
+      </div>
+      <div className="relative w-full sm:w-64">
+      <button
+  disabled={isDisabled}
+  onClick={() => setIsOpen((prev) => !prev)}
+  className="w-full flex justify-between items-center border-1 rounded-md border-gray-300 px-3 py-1.5 text-xs bg-white 
+  focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all
+  disabled:bg-gray-50 disabled:border-gray-200 disabled:text-gray-200 disabled:cursor-not-allowed">
+  <span className="text-gray-400">Select Items</span>
+  <span className="text-gray-400">▼</span>
+</button>
+        {isOpen && (
+          <div className="absolute z-10  w-full bg-white border-2 border-gray-200  shadow-lg max-h-48 overflow-auto">
+            {dropdownOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                disabled={opt.disabled}
+                onClick={() => {
+                  if (opt.disabled) return;
+                  handleSelectItem(opt.value);
+                  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                  -setIsOpen(false);}}
+                className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-100
+                  ${opt.disabled ? "text-gray-400 cursor-not-allowed" : ""}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default CategoryDeclarationSelectable;

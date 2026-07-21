@@ -1,0 +1,163 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:configuration_name",
+ "creation": "2026-07-02 10:00:00.000000",
+ "description": "Specify the groups of Employees (via User Assignments) who can raise Requisitions, and optionally restrict raising Requisitions to a scope (User Assignment / Department / Designation / Company). Create one record per Employees+Scope pairing.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "configuration_name",
+  "intro_html",
+  "employees_section",
+  "employees_allowed_to_raise_requisitions",
+  "scope_section",
+  "scope_by_help",
+  "scope_by_user_assignment",
+  "scope_by_department",
+  "scope_by_designation",
+  "scope_by_company",
+  "scope_selectors_section",
+  "scope_of_raising_requisitions",
+  "scope_departments",
+  "scope_designations",
+  "scope_companies"
+ ],
+ "fields": [
+  {
+   "description": "A label for this configuration (e.g. \"Org-wide Hiring Managers\", \"Sales Dept Leads\").",
+   "fieldname": "configuration_name",
+   "fieldtype": "Data",
+   "label": "Configuration Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "intro_html",
+   "fieldtype": "HTML",
+   "options": "<div class=\"text-muted\" style=\"padding:8px 0\">Each record pairs a group of Employees (who may raise requisitions) with the scope within which they may raise. Add more records for different Employees+Scope combinations. When <b>no</b> record configures any Employees, every user may raise requisitions.</div>"
+  },
+  {
+   "fieldname": "employees_section",
+   "fieldtype": "Section Break",
+   "label": "Employees Allowed to Raise Requisitions"
+  },
+  {
+   "description": "Configure which employees are allowed to raise requisitions using User Assignment attributes.",
+   "fieldname": "employees_allowed_to_raise_requisitions",
+   "fieldtype": "Table MultiSelect",
+   "label": "Employees Allowed to Raise Requisitions",
+   "options": "Raise Requisition Allowed Assignment"
+  },
+  {
+   "fieldname": "scope_section",
+   "fieldtype": "Section Break",
+   "label": "Scope for Raising Requisitions"
+  },
+  {
+   "fieldname": "scope_by_help",
+   "fieldtype": "HTML",
+   "options": "<div class=\"text-muted\" style=\"padding:4px 0 8px\"><b>Scope By</b> — tick one or more bases below; each selected basis reveals its selector. A requisition must satisfy <b>all</b> selected bases (an empty selector means no restriction for that basis). Tick nothing for organization-wide scope.</div>"
+  },
+  {
+   "default": "1",
+   "description": "Restrict by the User Assignment population.",
+   "fieldname": "scope_by_user_assignment",
+   "fieldtype": "Check",
+   "label": "Scope by User Assignment"
+  },
+  {
+   "description": "Restrict by the requisition's Department.",
+   "fieldname": "scope_by_department",
+   "fieldtype": "Check",
+   "label": "Scope by Department"
+  },
+  {
+   "description": "Restrict by the requisition's Designation.",
+   "fieldname": "scope_by_designation",
+   "fieldtype": "Check",
+   "label": "Scope by Designation"
+  },
+  {
+   "description": "Restrict by the requisition's Company.",
+   "fieldname": "scope_by_company",
+   "fieldtype": "Check",
+   "label": "Scope by Company"
+  },
+  {
+   "fieldname": "scope_selectors_section",
+   "fieldtype": "Section Break",
+   "label": "Scope Selectors"
+  },
+  {
+   "depends_on": "eval:doc.scope_by_user_assignment",
+   "description": "User Assignments defining the population within which the selected users can raise requisitions. Leave empty for organization-wide scope.",
+   "fieldname": "scope_of_raising_requisitions",
+   "fieldtype": "Table MultiSelect",
+   "label": "Scope of Raising Requisitions (User Assignments)",
+   "options": "Raise Requisition Scope Assignment"
+  },
+  {
+   "depends_on": "eval:doc.scope_by_department",
+   "description": "Departments the selected users may raise requisitions for. A requisition whose Department is in this list is within scope. Leave empty for all departments.",
+   "fieldname": "scope_departments",
+   "fieldtype": "Table MultiSelect",
+   "label": "Departments in Scope",
+   "options": "Raise Requisition Scope Department"
+  },
+  {
+   "depends_on": "eval:doc.scope_by_designation",
+   "description": "Designations the selected users may raise requisitions for. A requisition whose Designation is in this list is within scope. Leave empty for all designations.",
+   "fieldname": "scope_designations",
+   "fieldtype": "Table MultiSelect",
+   "label": "Designations in Scope",
+   "options": "Raise Requisition Scope Designation"
+  },
+  {
+   "depends_on": "eval:doc.scope_by_company",
+   "description": "Companies the selected users may raise requisitions for. A requisition whose Company is in this list is within scope. Leave empty for all companies.",
+   "fieldname": "scope_companies",
+   "fieldtype": "Table MultiSelect",
+   "label": "Companies in Scope",
+   "options": "Raise Requisition Scope Company"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-07-03 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Raise Requisition Scope",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "HR User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "configuration_name"
+}

@@ -1,12 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Reddit+Sans:ital,wght@0,200..900;1,200..900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ================================================== */
+/* ===== START: Add your new component classes here ===== */
+/* ================================================== */
+
+@layer base {
+
+  /* Set the default font for the entire application based on your tailwind.config.js */
+  body {
+    @apply font-sans;
+  }
+}
+
+@layer components {
+
+  /* A standard button using your PRIMARY color */
+  .my-btn-primary {
+    @apply bg-blue-600 border border-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-md transition-colors;
+  }
+
+  /* Table Header using your fonts and colors */
+  .my-table-header {
+    @apply bg-gray-50 border-b border-gray-200;
+  }
+
+  .my-table-header-text {
+    @apply px-6 py-3 text-xs text-gray-500 font-semibold tracking-wider;
+  }
+
+  /* Table Row */
+  .my-data-row {
+    @apply bg-white border-b border-gray-200 hover:bg-gray-50 transition-colors;
+  }
+
+  .my-data-cell {
+    @apply px-6 py-4 text-sm text-gray-darker;
+  }
+
+  .my-btn-secondary {
+    @apply flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 bg-white hover:bg-primary/10 transition-colors duration-200 whitespace-nowrap;
+  }
+
+  .my-content-card {
+    @apply bg-white rounded-xl border border-gray-200 p-4 shadow-sm;
+  }
+
+  .my-info-card {
+    @apply bg-blue-50 border border-blue-200 rounded-lg p-4;
+  }
+
+  .my-form-input {
+    @apply w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary;
+  }
+
+  .my-btn-icon {
+    @apply flex items-center justify-center p-2 border border-gray-300 rounded-lg text-primary hover:bg-primary-50 transition-colors duration-200 disabled:opacity-50;
+  }
+
+  .my-btn-subtle {
+    @apply px-2 py-1 text-xs text-primary bg-primary-100 border border-primary-200 rounded hover:bg-primary-200 transition-colors font-medium;
+  }
+
+  .my-empty-state-card {
+    @apply text-center py-12 bg-white border border-gray-200 rounded-lg;
+  }
+
+  .my-dashboard-card {
+    @apply bg-white border border-gray-200 rounded-lg p-6;
+  }
+
+  .my-card-header-title {
+    @apply font-semibold text-gray-800;
+  }
+
+  .my-card-header-action {
+    @apply flex items-center gap-2 text-sm text-gray-500 hover:text-primary transition-colors;
+  }
+
+  .my-list-item-card {
+    @apply flex justify-between items-center gap-3 bg-gray-50 p-3 mb-2 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors;
+  }
+}
+
+/* ================================================ */
+/* ===== END: Your new component classes ====== */
+/* ================================================ */
+
+/* Your existing styles below */
 #root {
   @apply h-full;
   @apply w-full;
 }
-
 
 /* styles form io */
 .formio-component .border {
@@ -15,21 +102,224 @@
   padding: 0 !important;
   background: transparent !important;
 }
-
+.scrollbar-visible::-webkit-scrollbar {
+  height: 2px;
+}
+.scrollbar-visible::-webkit-scrollbar-track {
+  background: #e5e7eb;
+}
+.scrollbar-visible::-webkit-scrollbar-thumb {
+  background: #474747;
+  border-radius: 4px;
+}
 .address-form-container .row {
   /* increase specificity and force no-wrap */
   display: flex !important;
   flex-wrap: nowrap !important;
 }
 
-.flatpickr-calendar {
-  left: 50% !important;
-  transform: translateX(-50%) !important;
+.formio-component-select label {
+  pointer-events: none;
 }
-.custom-w-fill-available{
+
+.custom-w-fill-available {
   width: stretch;
 }
 
 .address-form-container .choices__inner::after {
   display: none !important;
 }
+
+/* Removes scrollbar from the profile form */
+
+/* Ensure profile form doesn't overflow */
+.profile-form {
+  max-width: 100%;
+  width: 100%;
+}
+
+/* Hide scrollbar for horizontal tab navigation */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Formio form constraints to prevent overflow */
+.profile-form .formio-form {
+  max-width: 100%;
+  width: 100%;
+}
+
+.profile-form .formio-form .card {
+  border-radius: 6px;
+  border: none;
+  max-width: 100%;
+}
+
+.profile-form .formio-form .card-header {
+  background-color: white;
+  box-shadow: none;
+  border: none;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.319) !important;
+}
+
+.profile-form .formio-form .card-body {
+  max-width: 100%;
+}
+
+/* Ensure all form components are responsive */
+.profile-form .formio-component,
+.profile-form .form-group {
+  max-width: 100%;
+}
+
+.profile-form .row,
+.profile-form .col,
+.profile-form [class*="col-"] {
+  max-width: 100%;
+}
+
+/* Fix Bootstrap grid margins that cause overflow */
+.profile-form .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.profile-form .col,
+.profile-form [class*="col-"] {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+/* Ensure inputs don't overflow */
+/* .profile-form input,
+.profile-form select,
+.profile-form textarea,
+.profile-form .form-control {
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+} */
+
+/* Force any containers to be responsive - but don't hide overflow for dropdowns */
+.profile-form .panel,
+.profile-form .panel-body,
+.profile-form .tab-content,
+.profile-form .tab-pane {
+  max-width: 100%;
+}
+
+/* Removes scrollbar from the profile form */
+
+/* styles accross app */
+.section-title {
+  font-size: 1rem;
+  /* 16px */
+  font-weight: 500;
+  /* Medium */
+  color: #1f2937;
+  /* Tailwind's gray-800 */
+  text-transform: capitalize;
+}
+
+.module-title {
+  font-size: 1.125rem;
+  /* font-size: 2.125rem; */
+  font-weight: 600;
+  color: #111827;
+  text-transform: capitalize;
+}
+
+.base-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.card-title {
+  font-size: 0.935rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.card-subtitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.card-subtitle-sm {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+body {
+  font-family: "Reddit Sans", sans-serif;
+}
+
+.formio-hide-attachment .formio-component-file .list-group {
+  display: none !important;
+}
+
+
+.docx-preview-wrapper-white .docx-preview-wrapper,
+.docx-preview-wrapper-white .docx-preview {
+  background: white !important;
+  box-shadow: none !important;
+}
+
+.simplified-chat-view-quoted-message-a li a:hover {
+  color: white !important;
+  font-weight: 400;
+}
+
+
+/* Toast custom styles */
+.custom-toast-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-toast-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-toast-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.custom-toast-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.custom-toast-scrollbar {
+  max-height: 220px;
+  /* Highly compact height limit on mobile */
+}
+
+@media (min-width: 768px) {
+  .custom-toast-scrollbar {
+    max-height: 280px;
+    /* Highly compact height limit on desktop */
+  }
+}
+
+.formio-component .control-label.field-required::after,
+.formio-component .col-form-label.field-required::after {
+  content: " *";
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* Hide mandatory red asterisk on select fields, showing only label (unless explicitly requested via show-req-astrik) */
+/* .formio-component-select:not(.show-req-astrik) .control-label.field-required::after,
+.formio-component-select:not(.show-req-astrik) .col-form-label.field-required::after {
+  content: "" !important;
+  display: none !important;
+} */
