@@ -11,19 +11,6 @@ def make_employee(source_name, target_doc=None):
         target.personal_email = frappe.db.get_value("Job Applicant", source.job_applicant, "email_id")
         target.status = "Active"
 
-        # Structural link, not a configurable mapping: HRMS resolves
-        # Employee Onboarding.employee by matching Employee.job_applicant (see
-        # EmployeeOnboarding.set_employee). Without it the onboarding never learns
-        # which Employee it produced. Set here rather than in Recruitment Settings
-        # so a missing config row cannot break the chain.
-        target.job_applicant = source.job_applicant
-
-        # Connector for the Field Flow chain: setting it before insert lets the
-        # managed fetch_from fields auto-populate from Onboarding -> Employee.
-        from recruitment.recruitment.field_flow_sync import populate_employee_connector
-
-        populate_employee_connector(target, source.name)
-
     field_map = {}
     for fieldrow in settings.mapping_fields:
         field_map[fieldrow.employee_onboarding] = fieldrow.employee

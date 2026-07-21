@@ -1,3 +1,0 @@
-[    1431ms] [WARNING] API returned undefined/null for current employee. User may not have an employee record. @ https://dev.pwhr.in/assets/recruitment/webapp/index.Dj45P7t0.js:4702
-[    2380ms] [WARNING] ⚠️ [WARN] No employee found for user_id {user_id: Administrator} @ https://dev.pwhr.in/assets/recruitment/webapp/index.Dj45P7t0.js:4702
-[    2804ms] [ERROR] Failed to load resource: the server responded with a status of 404 (NOT FOUND) @ https://dev.pwhr.in/logo%20not%20found:0

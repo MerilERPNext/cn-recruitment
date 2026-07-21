@@ -137,7 +137,7 @@ const ReferralDetails: React.FC = () => {
               ["Referral ID", referral.referral_id],
             ].map(([label, value], i) => (
               <div
-                key={`detail-${label}-${i}`}
+                key={i}
                 className={`flex items-center gap-2 justify-between px-4 py-4 ${i !== 0 ? "border-t border-gray-200" : ""
                   }`}
               >

@@ -16,6 +16,7 @@ const RecruitmentApp: React.FC = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabName>('Referrals');
 
+  // Detect tab based on current route
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
       location.pathname.startsWith(tabRoutes[tab])
@@ -28,9 +29,9 @@ const RecruitmentApp: React.FC = () => {
   }, [location.pathname]);
   const handleAddNew = () => {
     if (activeTab === 'Referrals') navigate('/webapp/recruitment-app/referrals/add-new-referral');
-    if (activeTab === 'Requisitions') window.open(`${window.location.origin}/app/job-requisition/new`);
+    if (activeTab === 'Requisitions') window.open('/app/job-requisition/new');
   }
-  
+  // On initial load, redirect to saved tab if user comes to /webapp/recruitment-app
   useEffect(() => {
     if (location.pathname === '/webapp/recruitment-app') {
       const savedTab = sessionStorage.getItem('activeTab') as TabName | null;
@@ -80,7 +81,7 @@ const RecruitmentApp: React.FC = () => {
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`inline-block whitespace-nowrap px-4 py-3 border-b-2 border-t-0 border-l-0 border-r-0 bg-transparent text-sm font-medium rounded-none outline-none focus:outline-none focus:ring-0 ${activeTab === tab
+              className={`px-4 py-3 border-b-2 border-t-0 border-l-0 border-r-0 bg-transparent text-sm font-medium rounded-none outline-none focus:outline-none focus:ring-0 ${activeTab === tab
                 ? 'border-b-[3px] border-b-[var(--primary-color)] text-[var(--primary-color)]'
                 : 'border-b-transparent text-[var(--text-secondary)]'
                 }`}

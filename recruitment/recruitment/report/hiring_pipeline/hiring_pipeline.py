@@ -14,16 +14,11 @@ def execute(filters=None):
 def get_report_data():
 	column_array = ["POSTING TITLE:DATA:180","TOTAL CANDIDATES:INT:100"]
 
-	# Count applicants per (job_title, status). Raw SQL keeps DB-side aggregation
-	# and is v16-safe — Frappe v16 rejects SQL functions passed as strings in the
-	# get_list/get_all `fields` param ("SQL functions are not allowed as strings").
-	job_applicants = frappe.db.sql(
-		"""
-		SELECT job_title, status, COUNT(name) AS count
-		FROM `tabJob Applicant`
-		GROUP BY status, job_title
-		""",
-		as_dict=True,
+	# SQL equivalent Frappe ORM to fetch the job title, status, and count of job applicants
+	job_applicants = frappe.db.get_list('Job Applicant', 
+		fields=['job_title', 'status', 'count(name) as count'],
+		filters={},
+		group_by='status, job_title',
 	)
 
 	# Fetch the status options from Property Setter

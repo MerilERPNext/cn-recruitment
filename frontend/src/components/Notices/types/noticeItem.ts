@@ -19,7 +19,7 @@ export interface Notice {
   name: string;
   id?: string;
   title: string;
-  content?: string;
+  message?: string;
   priority?: 'low' | 'medium' | 'high';
   status?: 'active' | 'archived' | 'dismissed';
   category?: string;
@@ -27,6 +27,5 @@ export interface Notice {
   createdAt?: string;
   updatedAt?: string;
   isUnread?: boolean;
-  attachments?: string;
   action?: NoticeAction;
 }

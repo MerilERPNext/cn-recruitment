@@ -54,8 +54,8 @@ const NoticeCard: React.FC<NoticeCardProps> = ({ item, onActionClick, isLoading 
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColor}`}>{notice.status}</span>
                     )}
                 </div>
-                {notice.content && (
-                    <div className="text-gray-600 text-sm leading-relaxed line-clamp-2 mb-2">{notice.content}</div>
+                {notice.message && (
+                    <div className="text-gray-600 text-sm leading-relaxed line-clamp-2 mb-2">{notice.message}</div>
                 )}
                 <div className="flex flex-wrap gap-4 text-xs text-gray-500 mb-2">
                     {notice.createdAt && <span>Published: {formatDate(notice.createdAt)}</span>}

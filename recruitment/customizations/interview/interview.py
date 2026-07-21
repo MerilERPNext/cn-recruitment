@@ -9,9 +9,6 @@ import jwt
 import pytz
 from frappe.utils.password import get_decrypted_password
 from frappe.utils import get_url_to_form
-from recruitment.recruitment.link_token import make_token, verify_token
-
-_TEAMS_OAUTH_SCOPE = "teams_oauth_state"
 
 @frappe.whitelist()
 def generate_travel_request(interview_id):
@@ -126,9 +123,6 @@ def get_teams_auth_url(interview_id=None, user_id=None, doctype=None, docname=No
         state = user_id
     else:
         state = frappe.session.user
-    # Sign the state so the callback can't be forged to bind a Microsoft token to
-    # another user (state is otherwise attacker-controllable in the redirect).
-    state = f"{state}~{make_token(_TEAMS_OAUTH_SCOPE, state)}"
     params = {
         "client_id": settings.client_id,
         "response_type": "code",
@@ -147,14 +141,7 @@ def teams_oauth_callback(code=None, state=None):
     doctype = None
     docname = None
 
-    # Verify the HMAC signature appended in get_teams_auth_url before trusting
-    # the encoded user identity. Rejects forged/unsigned states.
-    base_state, _, signature = (state or "").rpartition("~")
-    if not base_state or not verify_token(_TEAMS_OAUTH_SCOPE, base_state, signature):
-        frappe.local.response["http_status_code"] = 400
-        frappe.throw(_("Invalid OAuth state."), frappe.PermissionError)
-
-    parts = base_state.split("|")
+    parts = state.split("|")
 
     if len(parts) == 3:
         user, doctype, docname = parts

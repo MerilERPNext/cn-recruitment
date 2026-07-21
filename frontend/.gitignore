@@ -11,8 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
-.playwright-mcp/
-*.log
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -24,5 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 ../recruitment/public/webapp
-
-.env

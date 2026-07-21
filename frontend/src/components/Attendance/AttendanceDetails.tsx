@@ -1,476 +1,98 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Pencil, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { useLoadingOverlay } from "../../context/OverlayContext";
-import {
-  useGetToDoWithReferenceDoc,
-  useUpdateAttendanceRequest,
-} from "../../hooks/useAttendance";
-import { useCreateApprovalComment } from "../../hooks/useCreateApprovalComment";
-import useCurrentUser from "../../hooks/useCurrentUser";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
-import { useApprovalListActions } from "../../hooks/userApprovalList";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import { errorResponseFormater } from "../../utils/errorResponseFormater";
-import formatToIndianDate from "../../utils/formatToIndianDate";
-import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
-import Button from "../shared/atoms/Button";
-import StatusBadge from "../shared/atoms/statusBadge";
-import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
-import { Typography } from "../shared/atoms/Typography";
-import {
-  ErrorView,
-  LoadingView,
-} from "../shared/DetailViewErrorLoadingWrapper";
-import { AttachmentCard } from "../shared/molecules/AttachmentCard";
-import RejectionReasonModal from "../shared/RejectionReasonModal";
-import WrapperHoverCard from "../shared/WrapperHoverCard";
 
-export function AttendanceDetailView({
-  data: propData,
-  documentName,
-  referenceName,
-  onClose,
-  onAction,
-  label = "Attendance Request",
-}: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data?: any;
-  documentName?: string;
-  referenceName?: string;
-  onClose: () => void;
-  onAction?: () => void;
-  label?: string;
-}) {
-  // Fetch data if documentName is provided
-  const {
-    data: fetchedData,
-    isLoading,
-    error,
-  } = useGetToDoWithReferenceDoc(documentName || "", referenceName || "");
-
-  // Use fetched data if documentName is provided, otherwise use prop data
-  const data = documentName || referenceName ? fetchedData : propData;
-  const mutation = useApprovalListActions();
-  const { setRefetchAttendance } = useGlobalStore();
-  const { isDesktop } = useScreenSize();
-
-  // Don't render anything if neither documentName nor data is provided
-  // When documentName is provided, we should render even if data isn't loaded yet
-  const shouldRender = !!documentName || !!data?.todo_id || !!referenceName;
-
-  const cleanDescription = sanitizeToPlainText(data?.description || "");
-  const cleanExplaination = sanitizeToPlainText(
-    data?.reference_document?.explanation || "",
-  );
-
-  const [currentAction, setCurrentAction] = useState<string | null>(null);
-  const [isActed, setIsActed] = useState(false);
-  const [showCommentModal, setShowCommentModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const isAttendanceAdjustmentPending =
-    data?.reference_document?.custom_request_type === "Attendance Adjustment" &&
-    data?.reference_document?.custom_status === "Pending";
-
-  const [isEditingTimes, setIsEditingTimes] = useState(false);
-  const [fromTime, setFromTime] = useState<string>("");
-  const [toTime, setToTime] = useState<string>("");
-
-  useEffect(() => {
-    if (data?.reference_document?.custom_from_time) {
-      setFromTime(data.reference_document.custom_from_time);
-    }
-    if (data?.reference_document?.custom_to_time) {
-      setToTime(data.reference_document.custom_to_time);
-    }
-  }, [data]);
-
-  const handleTimeSubmit = () => {
-    updateAttendanceRequest(
-      {
-        doctype: "Attendance Request",
-        name: data?.reference_document?.name,
-        data: {
-          custom_from_time: fromTime,
-          custom_to_time: toTime,
-        },
-      },
-      {
-        onSuccess: () => {
-          toast.success("Times updated successfully!");
-          setIsEditingTimes(false);
-        },
-        onError: (error) => {
-          toast.error(errorResponseFormater(error));
-        },
-      },
-    );
-  };
-  const updateRejectionReasonMutation = useCreateApprovalComment();
-  const { data: user } = useCurrentUser();
-  const { mutate: updateAttendanceRequest } = useUpdateAttendanceRequest();
-
-  const loading = useLoadingOverlay();
-  const handleAction = useCallback(
-    async (action: string) => {
-      await loading?.wrap(async () => {
-        // ⬇️⬇️ EXISTING CODE (UNCHANGED) ⬇️⬇️
-
-        setCurrentAction(action);
-
-        try {
-          if (mutation?.isPending) return;
-          const response = await mutation?.mutateAsync({
-            action,
-            name: data?.todo_id || "",
-          });
-
-          console.log("Action response:", response);
-          const responseWithSession = response as unknown as { session?: any };
-          console.log("Session data:", responseWithSession?.session);
-          console.log(
-            "Assistant trigger enabled:",
-            data?.custom_open_chatnext_assistant_on_action,
-          );
-
-          if (
-            (data?.custom_approval_type === "Approval Matrix" &&
-              responseWithSession?.session) ||
-            (data?.custom_approval_type === "Multi Actions" &&
-              data?.custom_open_chatnext_assistant_on_action)
-          ) {
-            console.log(
-              "Opening assistant with session:",
-              responseWithSession?.session,
-            );
-            if (window.trigger_chatnext_assistant) {
-              window.trigger_chatnext_assistant(
-                true,
-                responseWithSession?.session,
-              );
-            }
-          } else {
-            setTimeout(() => {
-              setRefetchAttendance(true);
-            }, 2000);
-          }
-          setIsActed(true);
-          document.dispatchEvent(
-            new CustomEvent("approval:acted", { detail: { id: data?.todo_id } }),
-          );
-          if (onAction) {
-            onAction();
-          }
-          setCurrentAction(null);
-        } catch (error) {
-          setCurrentAction(null);
-          const formattedError = errorResponseFormater(error);
-          toast.error(formattedError);
-          console.error("Action failed", error);
-        }
-
-        // ⬆️⬆️ EXISTING CODE (UNCHANGED) ⬆️⬆️
-      }, "Processing action...");
-    },
-
-    [
-      data?.custom_approval_type,
-      data?.custom_open_chatnext_assistant_on_action,
-      data?.todo_id,
-      onAction,
-      loading,
-      mutation,
-      setRefetchAttendance,
-    ],
-  );
-
-  const handleActionClick = (action: string) => {
-    if (["approve", "reject"].includes(action.toLowerCase())) {
-      setPendingAction(action);
-      setShowCommentModal(true);
-      return;
-    }
-    handleAction(action);
-  };
-
-  const handleSaveComment = async (reason: string) => {
-    try {
-      if (pendingAction) {
-        await updateRejectionReasonMutation.mutateAsync({
-          comment_type: pendingAction.toLowerCase() === "approve" ? "Submitted" : "Cancelled",
-          reference_doctype: "Attendance Request",
-          reference_name: data?.reference_document?.name || "",
-          comment_email: user?.name || "",
-          comment_by: user?.name || "",
-          content: reason,
-          subject: pendingAction.toLowerCase() === "approve" ? "Request Approved" : "Request Rejected",
-        });
-        setShowCommentModal(false);
-        handleAction(pendingAction);
-        setPendingAction(null);
-      }
-    } catch (error) {
-      console.error("Failed to save comment", error);
-    }
-  };
-
-  const handleCancelComment = () => {
-    setShowCommentModal(false);
-    setPendingAction(null);
-  };
-
-  const actions = data?.custom_doctype_actions
-    ? JSON.parse(data?.custom_doctype_actions)
-    : [];
-
-  // Loading state
-  if (isLoading && documentName) {
-    return <LoadingView onClose={onClose} label={label} />;
-  }
-
-  // Error state
-  if (error && documentName) {
-    return <ErrorView onClose={onClose} label={label} error={error} />;
-  }
-  // Only render if we have documentName or data
-  if (!shouldRender) return null;
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-      onMouseDown={onClose}
-    >
-      <div
-        className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
-          <div className="flex gap-2 justify-center items-center">
-            <Typography variant="h4" className="font-semibold text-gray-800">
-              {label}
-            </Typography>
-          </div>
-          <Button
-            variant="subtle"
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5 text-gray-600" />
-          </Button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-32 md:pb-6">
-          {/* Header Info */}
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col gap-1">
-
-              <Typography variant="mobileCardLabel">
-                {data?.reference_document?.employee_name
-                  ? "Employee Name"
-                  : "Employee ID"}
-              </Typography>
+import { Check, X } from "lucide-react"
+import Avatar from "../shared/Avatar"
+import LayoutHeader from "../shared/LayoutHeader"
+import { formatDateString } from "../../utils/helperUtils"
+import { AttendanceRequest } from "../../types/attendance"
 
 
-              <Typography variant="mobileCardValue" className="hover:text-primary cursor-pointer">
-                <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-                  {data?.reference_document?.employee_name ||
-                    data?.reference_document?.employee}
-                </WrapperHoverCard>
-              </Typography>
-            </div>
 
-          </div>
-          <div className="flex w-full justify-between items-start">
-            <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel">Request Type</Typography>
-              <Typography variant="mobileCardValue">
-                {data?.reference_document?.custom_request_type}
-              </Typography>
-            </div>
-            <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
-          </div>
+export function AttendanceDetailView({ data, onClose }: { data: AttendanceRequest, onClose: () => void }) {
 
-          {/* Dates Section */}
-          <div className="flex flex-col gap-3">
-            <div className="flex justify-between w-full">
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel">From Date</Typography>
-                <Typography variant="mobileCardValue">
-                  {formatToIndianDate(data?.reference_document?.from_date)}
-                </Typography>
-              </div>
 
-              <div className="flex flex-col gap-1 text-right">
-                <Typography variant="mobileCardLabel">To Date</Typography>
-                <Typography variant="mobileCardValue">
-                  {formatToIndianDate(data?.reference_document?.to_date)}
-                </Typography>
-              </div>
-            </div>
-            {((data?.reference_document?.custom_from_time ||
-              data?.reference_document?.custom_to_time) &&
-              isAttendanceAdjustmentPending) && (
-                <div className="flex flex-col gap-2 w-full">
-                  <div className="flex justify-between w-full">
-                    <div className="flex flex-col gap-1">
-                      <Typography variant="mobileCardLabel">From Time</Typography>
-                      {isEditingTimes ? (
-                        <input
-                          type="time"
-                          value={fromTime}
-                          onChange={(e) => setFromTime(e.target.value)}
-                          className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <Typography variant="mobileCardValue">
-                            {fromTime || "—"}
-                          </Typography>
-                          {isAttendanceAdjustmentPending && (
-                            <button onClick={() => setIsEditingTimes(true)}>
-                              <Pencil className="h-3.5 w-3.5 text-blue-400 hover:text-gray-600" />
-                            </button>
-                          )}
-                        </div>
-                      )}
+    return data?.name ? <div className="fixed top-0 z-20 w-full mx-auto left-0 h-screen bg-white">
+        <LayoutHeader tab="Attendance Request"
+            onBack={() => {
+                onClose()
+            }}
+            icon="x"
+        />
+        <div className="m-4 p-2 bg-white rounded-lg shadow-md">
+
+            {/* Employee Info */}
+            <div className="p-4 border-b">
+                <div className="flex items-center space-x-3">
+                    <Avatar name={data?.employee_name} />
+                    <div>
+                        <h2 className="font-semibold text-gray-900">{data?.employee_name}</h2>
+                        <p className="text-sm text-gray-500">{data?.department}</p>
                     </div>
-
-                    <div className="flex flex-col gap-1 text-right">
-                      <Typography variant="mobileCardLabel">To Time</Typography>
-                      {isEditingTimes ? (
-                        <input
-                          type="time"
-                          value={toTime}
-                          onChange={(e) => setToTime(e.target.value)}
-                          className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-end gap-1">
-                          <Typography variant="mobileCardValue">
-                            {toTime || "—"}
-                          </Typography>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {isEditingTimes && (
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => setIsEditingTimes(false)}
-                        className="text-sm px-3 py-1 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleTimeSubmit}
-                        className="text-sm px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  )}
                 </div>
-              )}
-
-            <div className="flex justify-between w-full">
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel">Due Date</Typography>
-                <Typography variant="mobileCardValue">
-                  {formatToIndianDate(data?.due_date || data?.date)}
-                </Typography>
-              </div>
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel">Reason</Typography>
-                <Typography variant="mobileCardValue">
-                  {label === "Leave Application"
-                    ? data?.reference_document?.custom_reason
-                    : data?.reference_document?.reason}
-                </Typography>
-              </div>
             </div>
-          </div>
 
-          {/* Explanation */}
-          <div className="flex flex-col gap-2">
-            <Typography variant="mobileCardLabel">Explanation</Typography>
-
-            <Typography variant="mobileCardValue">
-              {cleanExplaination}
-            </Typography>
-          </div>
-
-          {/* Description */}
-          <div className="flex flex-col gap-2">
-            <Typography variant="mobileCardLabel">Description</Typography>
-
-            <Typography variant="mobileCardValue">
-              {cleanDescription}
-            </Typography>
-          </div>
-
-          {/* Attachments */}
-          {data?.attachments && data?.attachments?.length > 0 && (
-            <div>
-              <Typography
-                variant="bodySmall"
-                className="mb-2 font-bold block"
-              >
-                Attachments
-              </Typography>
-              <div className="space-y-2">
-                {data.attachments.map((item: any) => (
-                  <AttachmentCard
-                    key={item.file_url}
-                    fileUrl={item.file_url}
-                    fileName={item.file_name}
-                  />
-                ))}
-              </div>
+            {/* Date */}
+            <div className="p-4 border-b">
+                <p className="text-sm text-gray-500 mb-1">Date</p>
+                <p className="font-medium">{formatDateString(data?.creation)}</p>
             </div>
-          )}
+
+            {/* Log Details */}
+            <div className="p-4 border-b">
+                <p className="text-sm text-gray-500 mb-3">Log Details</p>
+
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                                <Check className="h-3 w-3 text-green-600" />
+                            </div>
+                            <div>
+                                <p className="font-medium text-sm">Check In</p>
+                                {/* <p className="text-xs text-gray-500">{data?.checkInType}</p> */}
+                            </div>
+                        </div>
+                        {/* <p className="font-medium">{data?.checkIn || "--:--"}</p> */}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
+                                <X className="h-3 w-3 text-red-600" />
+                            </div>
+                            <div>
+                                <p className="font-medium text-sm">Check Out</p>
+                                {/* <p className="text-xs text-gray-500">{requestData.checkOut}</p> */}
+                            </div>
+                        </div>
+                        {/* <p className="font-medium">{data?.checkOut || "--:--"}</p> */}
+                    </div>
+                </div>
+            </div>
+
+            {/* Reason */}
+            <div className="p-4 ">
+                <p className="text-sm text-gray-500 mb-2">Reason for Request</p>
+                <div className="bg-gray-100 p-3 rounded-lg">
+                    <p className="text-sm text-gray-700">{data?.reason}</p>
+                </div>
+            </div>
+
         </div>
+        {/* Action Buttons */}
+        <div className="p-4 flex space-x-3 fixed bottom-0 w-full border-t border-gray-300 ">
+            <button
+                className="bg-red-100 p-2 w-1/2 text-red-700 rounded-xl font-semibold"
+            // onClick={(e) => handleAction("rejected", e)}
+            >
+                Reject
+            </button>
+            <button
+                className="bg-green-200 p-2 w-1/2 text-green-700 rounded-xl font-semibold"
+            // onClick={(e) => handleAction("approved", e)}
+            >
+                Approve
+            </button>
+        </div>
+    </div> : null
 
-        {/* Actions */}
-        {actions?.length > 0 &&
-          (data?.reference_document?.custom_status === "Pending" || data?.reference_document?.custom_status === "Open") && !isActed ? (
-          <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-            <TeamApprovalActionPill
-              variant={isDesktop ? "modal" : "buttons"}
-              actions={actions}
-              status={data?.reference_document?.custom_status}
-              recordId={data?.todo_id}
-              loadingAction={
-                currentAction
-                  ? { id: data?.todo_id, action: currentAction }
-                  : null
-              }
-              onAction={(action) => handleActionClick(action)}
-            />
-          </div>
-        ) : (
-          <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-            <div className="flex items-center justify-center">
-              <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
-                Action Taken
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-      <RejectionReasonModal
-        isOpen={showCommentModal}
-        isPending={updateRejectionReasonMutation.isPending}
-        description={`Please add a comment before ${pendingAction?.toLowerCase() === "approve" ? "approving" : "rejecting"} this attendance request.`}
-        label={`${pendingAction?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
-        placeholder={`Enter ${pendingAction?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
-        onCancel={handleCancelComment}
-        onSave={handleSaveComment}
-      />
-    </div >
-  );
 }

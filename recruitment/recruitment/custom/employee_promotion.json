@@ -411,7 +411,7 @@
    "idx": 0,
    "is_child_table": 0,
    "link_doctype": "Salary Appraisal Calculation",
-   "link_fieldname": "promotion_reference",
+   "link_fieldname": "employee_promotion_id",
    "modified": "2024-08-31 22:33:50.973916",
    "modified_by": "Administrator",
    "name": "32t1bmre68",

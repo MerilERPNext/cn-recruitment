@@ -1,2 +1,0 @@
-[     908ms] [ERROR] Failed to load resource: the server responded with a status of 403 (FORBIDDEN) @ https://dev.pwhr.in/api/resource/Dynamic%20User%20Assignment/PP-001?fields=[%22*%22]:0
-[    2066ms] [ERROR] Failed to load resource: the server responded with a status of 404 (NOT FOUND) @ https://dev.pwhr.in/files/website_theme/frappe/public/css/fonts/inter/inter.css:0

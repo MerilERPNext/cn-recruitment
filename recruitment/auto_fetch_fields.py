@@ -3,7 +3,6 @@ from frappe.model.mapper import get_mapped_doc
 
 @frappe.whitelist()
 def job_applicant_fields(job_applicant):
-    frappe.has_permission("Job Applicant", "read", doc=job_applicant, throw=True)
     job_applicant_doc = frappe.get_doc("Job Applicant", job_applicant)
     recruitment_settings = frappe.get_doc("Recruitment Settings")
 
@@ -26,7 +25,6 @@ def job_applicant_fields(job_applicant):
 
 @frappe.whitelist()
 def job_requisition_fields(job_requisition):
-    frappe.has_permission("Job Requisition", "read", doc=job_requisition, throw=True)
     job_requisition_doc = frappe.get_doc("Job Requisition", job_requisition)
     recruitment_settings = frappe.get_doc("Recruitment Settings")
 
@@ -54,7 +52,6 @@ def job_requisition_fields(job_requisition):
 
 @frappe.whitelist()
 def make_employee(source_name, target_doc=None):
-    frappe.has_permission("Employee", "create", throw=True)
     doc = frappe.get_doc("Employee Onboarding", source_name)
     settings = frappe.get_doc("Recruitment Settings")
 
@@ -106,20 +103,10 @@ def link_employee_to_onboarding(doc, method):
         onboarding = frappe.get_doc("Employee Onboarding", employee_onboarding[0].name)
         onboarding.db_set("employee", doc.name)  # Update only after Employee is saved
 
-        # Fallback connector for the Field Flow chain — covers Employees created
-        # outside the Onboarding "Create Employee" mapper.
-        from recruitment.recruitment.field_flow_sync import CONNECTOR_FIELD
 
-        if frappe.get_meta("Employee").get_field(CONNECTOR_FIELD) and not doc.get(CONNECTOR_FIELD):
-            doc.db_set(CONNECTOR_FIELD, onboarding.name)
-
-
+@frappe.whitelist()
 def update_employee_fields(doc, event=None):
-    # Document-event hook (Employee Onboarding on_update) — not an HTTP endpoint.
-    # The recruitment-app whitelist was removed (the frontend's update_employee_fields
-    # call targets cn_hrms_core, a different app). Dropping it removes an HTTP write
-    # surface without affecting the hook.
-    onboarding_doc = frappe.get_doc("Employee Onboarding", doc.name)
+    onboarding_doc = frappe.get_doc("Employee Onboarding", doc.name)  
 
     if onboarding_doc.employee:
         employee_doc = frappe.get_doc("Employee", onboarding_doc.employee)

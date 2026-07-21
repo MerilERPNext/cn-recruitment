@@ -39,12 +39,3 @@ export const useDesignations = (
     ...options,
   })
 }
-
-export const useReferralListColumns = () => {
-  return useQuery({
-    queryKey: ["referral-list-columns"],
-    queryFn: () => referralService.getReferralListColumns(),
-    staleTime: 5 * 60 * 1000,
-    retry: (failureCount, error) => !isPermissionError(error) && failureCount < 3,
-  })
-}

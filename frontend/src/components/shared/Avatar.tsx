@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 
 interface AvatarProps {
   src?: string;
@@ -11,7 +11,6 @@ interface AvatarProps {
   indicatorPositionClass?: string;
   avatarBgColor?: string;
   avatarTextColor?: string;
-  fontSize?: string;
 }
 
 const Avatar: React.FC<AvatarProps> = ({
@@ -19,16 +18,13 @@ const Avatar: React.FC<AvatarProps> = ({
   name,
   size = "h-12 w-12",
   indicatorBgColor,
-  indicatorBorderColor = "border-black",
+  indicatorBorderColor = "border-white",
   indicatorNode,
   indicatorSize = "h-4 w-4",
   indicatorPositionClass = "absolute bottom-0 right-0",
-  avatarBgColor = "bg-indigo-100",
-  avatarTextColor = "text-indigo-800",
-  fontSize = "text-lg",
+  avatarBgColor = "bg-indigo-100", avatarTextColor = "text-indigo-800"
 }) => {
-  const [imageError, setImageError] = useState(false);
-
+  // If a custom indicator node is passed, render that instead
   const indicator = indicatorNode ? (
     <span className={`${indicatorPositionClass} ${indicatorSize}`}>
       {indicatorNode}
@@ -39,28 +35,24 @@ const Avatar: React.FC<AvatarProps> = ({
     />
   ) : null;
 
-  const initials = name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
-  const avatarContent =
-    src && !imageError ? (
-      <img
-        src={src}
-        alt={name}
-        onError={() => setImageError(true)}
-        className={`aspect-square rounded-full object-cover border border-gray-200 bg-white ${size}`}
-      />
-    ) : (
-      <div
-        className={`flex items-center justify-center rounded-full font-bold ${fontSize} uppercase ${avatarBgColor} ${avatarTextColor} ${size}`}
-      >
-        {initials}
-      </div>
-    );
+  const avatarContent = src ? (
+    <img
+      src={src}
+      alt={name}
+      className={`aspect-square rounded-full object-cover border border-gray-200 bg-white ${size}`}
+    />
+  ) : (
+    <div
+      className={`flex items-center justify-center rounded-full font-bold text-lg uppercase ${avatarBgColor} ${avatarTextColor} ${size}`}
+    >
+      {name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()}
+    </div>
+  );
 
   return (
     <div className="relative inline-block">

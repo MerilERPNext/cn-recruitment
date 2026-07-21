@@ -39,12 +39,6 @@ export interface DesignationResponse {
   data: Designation[]
 }
 
-export interface ReferralListColumn {
-  fieldname: string
-  label: string
-  value_key: string
-}
-
 // ✅ Option type for select dropdown
 export interface SelectOption {
   label: string

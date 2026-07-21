@@ -174,10 +174,6 @@ def get_referral_status(referral_id):
     if not referral_id:
         return {"status": "error", "message": "Referral ID is required."}
 
-    # Was readable for any referral id by any logged-in user. Enforce read perm
-    # on the specific referral (record-level when referrer perm rules apply).
-    frappe.has_permission("Employee Referral", "read", doc=referral_id, throw=True)
-
     referral = frappe.get_doc("Employee Referral", referral_id)
     email = referral.email
     referrer = referral.referrer
@@ -331,9 +327,6 @@ def add_referral_comment(referral_id, content):
     if not referral_id or not content:
         frappe.throw("Referral ID and comment content are required.")
 
-    # Must be allowed to write the referral being commented on.
-    frappe.has_permission("Employee Referral", "write", doc=referral_id, throw=True)
-
     frappe.get_doc({
         "doctype": "Communication",
         "communication_type": "Comment",
@@ -354,9 +347,6 @@ def filter_referrals_by_name(full_name=None):
             "status": "error",
             "message": "Please provide a name to search."
         }
-
-    # Searches all referrals — require Employee Referral read (HR).
-    frappe.has_permission("Employee Referral", "read", throw=True)
 
 
     referrals = frappe.get_all(
