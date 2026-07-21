@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { Pencil } from "lucide-react";
 import Avatar from "../../../shared/Avatar";
 import { Typography } from "../../../shared/atoms/Typography";
 import { OnboardingPerson } from "../../../../types/onboarding";
@@ -16,9 +15,6 @@ const ManagerCard = ({ manager, isLoading }: ManagerCardProps) => (
       <Typography variant="bodyMedium" className="font-bold text-slate-800">
         Manager
       </Typography>
-      <button className="text-blue-500 hover:text-blue-700 transition-colors">
-        <Pencil size={16} />
-      </button>
     </div>
 
     {isLoading ? (
