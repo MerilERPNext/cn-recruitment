@@ -9,6 +9,7 @@
   "round_code",
   "round_name",
   "round_type",
+  "hiring_stage",
   "scheduled_at",
   "duration_mins",
   "capacity",
@@ -17,7 +18,8 @@
   "virtual_link",
   "assessment_template",
   "requires_panel",
-  "requires_gd_grouping"
+  "requires_gd_grouping",
+  "gd_group_size"
  ],
  "fields": [
   {
@@ -42,6 +44,13 @@
    "fieldtype": "Select",
    "label": "Round Type",
    "options": "PPT\nAssessment\nGroup Discussion\nTechnical\nHR\nOffer\nOther"
+  },
+  {
+   "fieldname": "hiring_stage",
+   "fieldtype": "Select",
+   "label": "Hiring Stage",
+   "description": "Stage on the linked openings' hiring workflow that this round fulfils",
+   "options": ""
   },
   {
    "columns": 2,
@@ -98,6 +107,14 @@
    "fieldname": "requires_gd_grouping",
    "fieldtype": "Check",
    "label": "Requires GD Grouping"
+  },
+  {
+   "fieldname": "gd_group_size",
+   "fieldtype": "Int",
+   "label": "GD Group Size",
+   "default": "5",
+   "depends_on": "eval:doc.requires_gd_grouping",
+   "description": "Candidates per Group Discussion group"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -115,4 +132,3 @@
  "sort_order": "ASC",
  "states": []
 }
-
