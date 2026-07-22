@@ -489,12 +489,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           ],
         },
 
-        {
-          name: "Performance Review",
-          icon: ChartNoAxesCombined,
-          href: "/webapp/performance-app/performance-review",
-          permissionKey: "Performance Review",
-        },
+
         {
           name: "Cycle",
           icon: ChartNoAxesCombined,

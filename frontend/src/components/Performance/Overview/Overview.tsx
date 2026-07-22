@@ -10,10 +10,11 @@ import Feedback from '../Feedback/Feedback';
 import SelfReview from '../Review/SelfReview';
 import NewGoal from '../GoalCreation/NewGaol';
 import PeerNominationPage from '../Review/PeerNominationPage';
+import PerformanceReviewApp from '../PerformanceReview/PerformanceReviewApp';
 
 const Overview: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'my-goals' | 'skills' | 'review' | 'feedback'>('overview');
-  const [activeReviewTab, setActiveReviewTab] = useState<'self' | 'peer'>('self');
+  const [activeReviewTab, setActiveReviewTab] = useState<'self' | 'peer' | 'final'>('self');
   const [isCreatingGoal, setIsCreatingGoal] = useState(false);
 
   const renderActiveTabContent = () => {
@@ -59,6 +60,7 @@ const Overview: React.FC = () => {
                 {[
                   { id: 'self', name: 'Self Review' },
                   { id: 'peer', name: 'Peer Nomination' },
+                  { id: 'final', name: 'Final Rating' },
                 ].map((subTab) => {
                   const isActive = activeReviewTab === subTab.id;
                   return (
@@ -82,7 +84,13 @@ const Overview: React.FC = () => {
 
             {/* Sub-tab content */}
             <div>
-              {activeReviewTab === 'self' ? <SelfReview /> : <PeerNominationPage />}
+              {activeReviewTab === 'self' ? (
+                <SelfReview />
+              ) : activeReviewTab === 'peer' ? (
+                <PeerNominationPage />
+              ) : (
+                <PerformanceReviewApp />
+              )}
             </div>
           </div>
         );
