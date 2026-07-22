@@ -2,6 +2,8 @@ import React from 'react';
 import { ArrowRight, Check } from 'lucide-react'
 import Badge from '../../../shared/Badge'
 import { Typography } from '../../../shared/atoms/Typography'
+import Button from '../../../shared/atoms/Button';
+import { useScreenSize } from '../../../../hooks/useScreenSize';
 const steps = [
   { n: null, label: "Goal Setting", done: true },
   { n: 2, label: "Self-Review", active: true },
@@ -15,6 +17,8 @@ interface OverviewHeaderProps {
 }
 
 const OverviewHeader = ({ setActiveTab }: OverviewHeaderProps) => {
+  const { isMobile, isTablet } = useScreenSize();
+    const isCompact = isMobile || isTablet;
   return (
      <article aria-label="Cycle Information" className="min-w-0 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
               <div aria-label="Cycle Details" className="mb-5 flex min-w-0 flex-col justify-between gap-4 sm:mb-8 lg:flex-row lg:items-end">
@@ -27,12 +31,16 @@ const OverviewHeader = ({ setActiveTab }: OverviewHeaderProps) => {
                   <Typography variant="bodySmall" className="mt-1 block break-words text-gray-500">Configured by HR &middot; India Tech BU &middot; 2,140 participants</Typography>
                 </div>
                 <div className="flex w-full min-w-0 flex-col items-start lg:w-auto lg:items-end">
-                  <Typography variant="label" className="text-gray-400 font-semibold tracking-wider uppercase mb-2">Next Deadline</Typography>
                   <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center lg:w-auto lg:justify-end">
                     <Typography variant="bodySmall" className="font-medium text-blue-600">Self-Review due 21 May</Typography>
-                    <button onClick={()=> setActiveTab("review")} className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 sm:w-auto" aria-label="Continue self review">
-                      Continue Self-Review <ArrowRight className="w-4 h-4" />
-                    </button>
+            <Button
+              variant="contain"
+              bgColor="primary"
+              onClick={() => setActiveTab("review")}
+              className={`${isCompact ? "w-full sm:w-auto" : "px-5 py-2.5"} bg-[#1a73e8] hover:bg-blue-600 font-semibold rounded-lg shadow-sm text-sm inline-flex items-center justify-center`}
+            >
+              Continue Self-Review <ArrowRight className="w-4 h-4 ml-1.5" />
+            </Button>
                   </div>
                 </div>
               </div>
