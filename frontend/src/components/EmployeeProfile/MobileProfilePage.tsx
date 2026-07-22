@@ -13,6 +13,7 @@ import {
     CreditCard,
     ShieldCheck,
     LogOut,
+    RotateCcwKey,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import useLogout from "../../hooks/useLogout";
@@ -50,7 +51,7 @@ const quickActions: QuickAction[] = [
         href: "/webapp/policies-app",
     },{
         label: "Reset Password",
-        icon: <ShieldCheck className="w-5 h-5" />,
+        icon: <RotateCcwKey className="w-5 h-5" />,
         onClick : handleReset
     }
 
