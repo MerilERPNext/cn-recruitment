@@ -2,10 +2,19 @@ import React from 'react';
 import { ArrowRight, Check } from 'lucide-react'
 import Badge from '../../../shared/Badge'
 import { Typography } from '../../../shared/atoms/Typography'
+const steps = [
+  { n: null, label: "Goal Setting", done: true },
+  { n: 2, label: "Self-Review", active: true },
+  { n: 3, label: "Manager Review", done: false },
+  { n: 4, label: "Calibration", done: false },
+  { n: 5, label: "Released", done: false },
+];
+
 interface OverviewHeaderProps {
   setActiveTab : React.Dispatch<React.SetStateAction<"overview" | "my-goals" | "skills" | "review" | "feedback">>
- }
-const OverviewHeader= ({ setActiveTab }: OverviewHeaderProps) => {
+}
+
+const OverviewHeader = ({ setActiveTab }: OverviewHeaderProps) => {
   return (
      <article aria-label="Cycle Information" className="min-w-0 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
               <div aria-label="Cycle Details" className="mb-5 flex min-w-0 flex-col justify-between gap-4 sm:mb-8 lg:flex-row lg:items-end">
@@ -29,50 +38,34 @@ const OverviewHeader= ({ setActiveTab }: OverviewHeaderProps) => {
               </div>
     
               {/* Stepper */}
-              <div className="flex w-full max-w-full items-start gap-2 overflow-x-auto pb-2 sm:items-center sm:gap-3 lg:max-w-xl lg:overflow-visible lg:pb-0">
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="w-6 h-6 shrink-0 rounded-full bg-green-500 text-white flex items-center justify-center">
-                    <Check className="w-4 h-4" />
-                  </div>
-                  <Typography variant="bodySmall" className="whitespace-nowrap font-medium text-green-600">Goal Setting</Typography>
-                </div>
-                
-                <div className="mt-3 h-[2px] min-w-5 flex-1 rounded-md bg-green-400 sm:mt-0"></div>
-                
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="w-6 h-6 shrink-0 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">
-                    2
-                  </div>
-                  <Typography variant="bodySmall" className="whitespace-nowrap font-medium text-gray-900">Self-Review</Typography>
-                </div>
-                
-                <div className="mt-3 h-px min-w-5 flex-1 bg-gray-200 sm:mt-0"></div>
-                
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="w-6 h-6 shrink-0 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">
-                    3
-                  </div>
-                  <Typography variant="bodySmall" className="whitespace-nowrap font-medium text-gray-500">Manager Review</Typography>
-                </div>
-    
-                <div className="mt-3 h-px min-w-5 flex-1 bg-gray-200 sm:mt-0"></div>
-    
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="w-6 h-6 shrink-0 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">
-                    4
-                  </div>
-                  <Typography variant="bodySmall" className="whitespace-nowrap font-medium text-gray-500">Calibration</Typography>
-                </div>
-    
-                <div className="mt-3 h-px min-w-5 flex-1 bg-gray-200 sm:mt-0"></div>
-    
-                <div className="flex items-center gap-2 shrink-0">
-                  <div className="w-6 h-6 shrink-0 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">
-                    5
-                  </div>
-                  <Typography variant="bodySmall" className="whitespace-nowrap font-medium text-gray-500">Released</Typography>
-                </div>
-              </div>
+             <div className="flex items-center gap-0 overflow-x-auto pb-1 scrollbar-hide">
+                     {steps.map((step, idx) => (
+                       <React.Fragment key={step.label}>
+                         {idx > 0 && <div className="h-px w-10 shrink-0 bg-gray-200 mx-3" />}
+                         <div
+                           className={`flex items-center gap-2 shrink-0 ${!step.done && !step.active ? "opacity-40" : ""}`}
+                         >
+                           {step.done ? (
+                             <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center">
+                               <Check className="w-3 h-3" />
+                             </div>
+                           ) : (
+                             <div
+                               className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${step.active ? "bg-[#1a73e8] text-white" : "bg-gray-100 text-gray-500"}`}
+                             >
+                               {step.n}
+                             </div>
+                           )}
+                           <Typography
+                             variant="caption"
+                             className={`whitespace-nowrap font-medium text-[11px] ${step.active ? "text-[#1a73e8] font-bold" : step.done ? "text-green-600 font-bold" : "text-gray-500"}`}
+                           >
+                             {step.label}
+                           </Typography>
+                         </div>
+                       </React.Fragment>
+                     ))}
+                   </div>
             </article>
     
   )

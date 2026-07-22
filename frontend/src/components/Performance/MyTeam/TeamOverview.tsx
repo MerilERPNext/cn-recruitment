@@ -67,7 +67,7 @@ const TeamOverview: React.FC = () => {
       <div className="w-full min-w-0 flex flex-col flex-1">
         
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200 px-4 sm:px-10 bg-white flex-shrink-0 overflow-x-auto pb-1">
+        <div className="border-b border-gray-200 px-4 sm:px-6 bg-white flex-shrink-0 overflow-x-auto pb-1">
           <nav className="-mb-px flex space-x-8 min-w-max" aria-label="Team Tabs">
             {[
               { id: 'overview', name: 'Overview' },
@@ -97,7 +97,7 @@ const TeamOverview: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        <div className={`flex-1 overflow-y-auto ${isMobile ? "px-3 py-4" : isTablet ? "px-4 py-5" : "p-8"}`}>
+        <div className={`flex-1 overflow-y-auto ${isMobile ? "px-3 py-4" : isTablet ? "px-4 py-5" : "px-3 py-4 sm:px-4 sm:py-5 lg:px-6 lg:py-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto"}`}>
           {renderActiveTabContent()}
         </div>
 
