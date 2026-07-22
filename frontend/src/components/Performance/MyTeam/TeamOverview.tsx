@@ -47,8 +47,8 @@ const TeamOverview: React.FC = () => {
       <div className="w-full min-w-0 flex flex-col flex-1">
         
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200 px-6 sm:px-10 bg-white flex-shrink-0">
-          <nav className="-mb-px flex space-x-8" aria-label="Team Tabs">
+        <div className="border-b border-gray-200 px-4 sm:px-10 bg-white flex-shrink-0 overflow-x-auto pb-1">
+          <nav className="-mb-px flex space-x-8 min-w-max" aria-label="Team Tabs">
             {[
               { id: 'overview', name: 'Overview' },
               { id: 'goals', name: 'Team Goals' },

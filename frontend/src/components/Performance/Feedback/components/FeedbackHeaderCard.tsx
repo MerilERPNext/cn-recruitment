@@ -13,8 +13,8 @@ interface FeedbackHeaderCardProps {
 export const FeedbackHeaderCard: React.FC<FeedbackHeaderCardProps> = ({ activeReview }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6 flex flex-col sm:flex-row justify-between items-start">
-      <div className="flex gap-4">
-        <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center text-xl font-bold shrink-0">
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="w-14 h-14 mx-auto rounded-full bg-blue-50 text-blue-700 flex items-center justify-center text-xl font-bold shrink-0">
           {activeReview.id}
         </div>
         <div className="flex flex-col justify-center">

@@ -55,8 +55,8 @@ const Overview: React.FC = () => {
         return (
           <div className="space-y-4">
             {/* Sub-tabs for Review */}
-            <div className="border-b border-gray-200 flex justify-center">
-              <nav className="-mb-px flex space-x-8" aria-label="Review Tabs">
+            <div className="border-b border-gray-200 flex justify-start sm:justify-center overflow-x-auto pb-1">
+              <nav className="-mb-px flex space-x-8 min-w-max px-4 sm:px-0" aria-label="Review Tabs">
                 {[
                   { id: 'self', name: 'Self Review' },
                   { id: 'peer', name: 'Peer Nomination' },
@@ -106,8 +106,8 @@ const Overview: React.FC = () => {
       <div className="mx-auto w-full min-w-0 flex flex-col flex-1">
         
         {/* Tab Navigation */}
-        <div className="border-b border-gray-200 px-6 bg-white flex-shrink-0">
-          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+        <div className="border-b border-gray-200 px-4 sm:px-6 bg-white flex-shrink-0 overflow-x-auto pb-1">
+          <nav className="-mb-px flex space-x-8 min-w-max" aria-label="Tabs">
             {[
               { id: 'overview', name: 'Overview' },
               { id: 'my-goals', name: 'My Goals' },
