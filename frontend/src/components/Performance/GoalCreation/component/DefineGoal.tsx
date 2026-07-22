@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Check, FileText, GitBranch, Plus, Sparkles, X, type LucideIcon } from 'lucide-react';
+import { Form } from '@tsed/react-formio';
+import { format, isValid, parse } from 'date-fns';
 import Badge from '../../../shared/Badge';
 import Button from '../../../shared/atoms/Button';
 import { Card } from '../../../shared/atoms/Card';
@@ -115,8 +117,120 @@ const keyResults: KeyResult[] = [
 const fieldClass = 'h-[46px] w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100';
 const labelClass = 'mb-1.5 block text-xs font-medium text-gray-600';
 
+const goalPeriodFormSchema = {
+    display: 'form',
+    components: [
+        {
+            type: 'columns',
+            key: 'periodDates',
+            label: '',
+            hideLabel: true,
+            columns: [
+                {
+                    width: 6,
+                    offset: 0,
+                    push: 0,
+                    pull: 0,
+                    components: [
+                        {
+                            type: 'datetime',
+                            key: 'start_date',
+                            label: 'Start Date',
+                            placeholder: 'Select start date',
+                            format: 'dd-MM-yyyy',
+                            enableTime: false,
+                            validate: { required: true },
+                            customClass: 'mb-0',
+                            input: true,
+                            widget: {
+                                type: 'calendar',
+                                displayInTimezone: 'viewer',
+                                locale: 'en',
+                                useLocaleSettings: false,
+                                allowInput: true,
+                                mode: 'single',
+                                enableTime: false,
+                                noCalendar: false,
+                                format: 'yyyy-MM-dd',
+                                hourIncrement: 1,
+                                minuteIncrement: 5,
+                                time_24hr: false,
+                                minDate: null,
+                                disabledDates: '',
+                                maxDate: null,
+                            },
+                        },
+                    ],
+                },
+                {
+                    width: 6,
+                    offset: 0,
+                    push: 0,
+                    pull: 0,
+                    components: [
+                        {
+                            type: 'datetime',
+                            key: 'end_date',
+                            label: 'End Date',
+                            placeholder: 'Select end date',
+                            format: 'dd-MM-yyyy',
+                            enableTime: false,
+                            validate: { required: true },
+                            customClass: 'mb-0',
+                            input: true,
+                            widget: {
+                                type: 'calendar',
+                                displayInTimezone: 'viewer',
+                                locale: 'en',
+                                useLocaleSettings: false,
+                                allowInput: true,
+                                mode: 'single',
+                                enableTime: false,
+                                noCalendar: false,
+                                format: 'yyyy-MM-dd',
+                                hourIncrement: 1,
+                                minuteIncrement: 5,
+                                time_24hr: false,
+                                minDate: null,
+                                disabledDates: '',
+                                maxDate: null,
+                            },
+                        },
+                    ],
+                },
+            ],
+        },
+    ],
+};
+
+const parseGoalDate = (value: string, pattern = 'yyyy-MM-dd') => {
+    if (!value) return null;
+    const parsedDate = parse(value, pattern, new Date());
+    return isValid(parsedDate) ? parsedDate : null;
+};
+
+const formatGoalDateForForm = (value: string) => {
+    const parsedDate =
+        parseGoalDate(value, 'yyyy-MM-dd') ||
+        parseGoalDate(value, 'MM/dd/yyyy') ||
+        parseGoalDate(value, 'dd-MM-yyyy');
+    return parsedDate ? format(parsedDate, 'yyyy-MM-dd') : '';
+};
+
+const formatFormDateForGoal = (value?: string) => {
+    if (!value) return '';
+    const dateValue = String(value).split('T')[0];
+    const parsedDate =
+        parseGoalDate(dateValue, 'yyyy-MM-dd') ||
+        parseGoalDate(dateValue, 'dd-MM-yyyy') ||
+        parseGoalDate(dateValue, 'MM/dd/yyyy');
+    return parsedDate ? format(parsedDate, 'yyyy-MM-dd') : '';
+};
+
 const DefineGoal = () => {
     const [weightage, setWeightage] = useState(30);
+    const [startDate, setStartDate] = useState('2026-04-01');
+    const [endDate, setEndDate] = useState('2026-12-31');
     const [selectedCategory, setSelectedCategory] = useState<CategorySelectOption>(
         categorySelectOptions.find((option) => option.value === 'Individual') ?? categorySelectOptions[0],
     );
@@ -211,14 +325,26 @@ const DefineGoal = () => {
                             />
                         </div>
 
-                        <div>
-                            <label className={labelClass}>Start Date</label>
-                            <input className={fieldClass} defaultValue="2026-04-01" type="date" aria-label="Goal start date" />
-                        </div>
-
-                        <div>
-                            <label className={labelClass}>End Date</label>
-                            <input className={fieldClass} defaultValue="2026-12-31" type="date" aria-label="Goal end date" />
+                        <div className="lg:col-span-2 [&_.formio-component]:!mb-0 [&_.formio-component-datetime_input]:!mb-0 [&_label]:!mt-0 [&_label]:!pt-0 [&_label]:!pb-0 [&_label]:!mb-1.5 [&_label]:!text-xs [&_label]:!font-medium [&_label]:!text-gray-600 [&_label]:!h-auto [&_label]:!block [&_.form-group]:!mt-0 [&_.form-group]:!mb-0 [&_.formio-form]:!mt-0 [&_.form-control]:h-[46px] [&_.form-control]:w-full [&_.form-control]:rounded-lg [&_.form-control]:border [&_.form-control]:border-gray-300 [&_.form-control]:bg-white [&_.form-control]:px-4 [&_.form-control]:text-sm [&_.form-control]:text-gray-900 [&_.form-control]:shadow-sm [&_.form-control]:outline-none [&_.form-control]:transition [&_.form-control:focus]:border-blue-400 [&_.form-control:focus]:ring-2 [&_.form-control:focus]:ring-blue-100 [&_.row]:-mx-2 [&_.row>div]:px-2">
+                            <Form
+                                form={goalPeriodFormSchema}
+                                submission={{
+                                    data: {
+                                        start_date: formatGoalDateForForm(startDate),
+                                        end_date: formatGoalDateForForm(endDate),
+                                    },
+                                }}
+                                onChange={(form: { data: Record<string, string> }) => {
+                                    const start = formatFormDateForGoal(form.data.start_date);
+                                    const end = formatFormDateForGoal(form.data.end_date);
+                                    if (start) setStartDate(start);
+                                    if (end) setEndDate(end);
+                                }}
+                                options={{
+                                    noAlerts: true,
+                                    submitButton: false,
+                                }}
+                            />
                         </div>
                     </div>
 
