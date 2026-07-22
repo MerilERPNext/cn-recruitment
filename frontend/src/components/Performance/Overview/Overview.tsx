@@ -22,8 +22,22 @@ const Overview: React.FC = () => {
   const topRef = React.useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    // scrollIntoView works regardless of which parent is the scroll container
-    topRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (topRef.current) {
+      let parent = topRef.current.parentElement;
+      let scrolled = false;
+      while (parent) {
+        const overflowY = window.getComputedStyle(parent).overflowY;
+        if ((overflowY === 'auto' || overflowY === 'scroll') && parent.scrollHeight > parent.clientHeight) {
+          parent.scrollTo({ top: 0, behavior: 'smooth' });
+          scrolled = true;
+          break;
+        }
+        parent = parent.parentElement;
+      }
+      if (!scrolled) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
   }, [activeTab, isCreatingGoal, selectedGoalId]);
   const renderActiveTabContent = () => {
     switch (activeTab) {
