@@ -40,10 +40,10 @@ const sortReportingItems = (items: any[]): any[] =>
 const CATEGORY_FIELD_MAP: Record<string, string> = {
   "Manager": "reports_to",
   "Dotted Line Manager": "custom_dotted_line_manager",
-  "HOD": "custom_hod",
-  "CXO": "custom_cxo",
   "HRBP": "custom_hrbp",
   "HRBP Lead": "hrbp_lead",
+  "HOD": "custom_hod",
+  "CXO": "custom_cxo",
 };
 
 const CATEGORY_LABEL_MAP: Record<string, string> = {
