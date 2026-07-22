@@ -103,12 +103,14 @@ const EmployeeTable = ({
 
   const isSelectableStatus = (status: string) =>
     status === "Active" || status === "Pending";
+  const isInactiveStatus = (status: string) =>
+    status === "Inactive" || status === "Left" || status === "Suspended";
   const selectableEmployees = employees.filter((emp) =>
     isSelectableStatus(emp.status),
   );
   const showCheckboxColumn = selectableEmployees.length > 0;
   const hasCheckboxesOrChevrons = employees.some(
-    (emp) => isSelectableStatus(emp.status) || emp.status === "Inactive",
+    (emp) => isSelectableStatus(emp.status) || isInactiveStatus(emp.status),
   );
 
   const isAllSelected =
@@ -206,7 +208,7 @@ const EmployeeTable = ({
                                 className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm"
                               />
                             )}
-                            {(item.status === "Inactive" ||
+                            {(isInactiveStatus(item.status) ||
                               item.status === "Pending") && (
                               <button
                                 onClick={() => toggleRow(item.name)}
@@ -349,7 +351,7 @@ const EmployeeTable = ({
                                     </Button>
                                   )}
                                 {canUndoDeactivation &&
-                                  item.status === "Inactive" && (
+                                  isInactiveStatus(item.status) && (
                                     <Button
                                       variant="subtle"
                                       size="md"
@@ -446,7 +448,7 @@ const EmployeeTable = ({
                         {item.branch_name || "-"}
                       </td>
                     </tr>
-                    {item.status === "Inactive" &&
+                    {isInactiveStatus(item.status) &&
                       expandedRows.includes(item.name) && (
                         <tr className="bg-gray-50/50 border-b border-gray-100">
                           <td colSpan={7} className="p-0">
@@ -513,7 +515,7 @@ const EmployeeTable = ({
                             className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer shadow-sm shrink-0"
                           />
                         )}
-                        {(item.status === "Inactive" ||
+                        {(isInactiveStatus(item.status) ||
                           item.status === "Pending") && (
                           <button
                             onClick={() => toggleRow(item.name)}
@@ -663,7 +665,7 @@ const EmployeeTable = ({
                               Platform Access Controls
                             </Button>
                           )}
-                        {canUndoDeactivation && item.status === "Inactive" && (
+                        {canUndoDeactivation && isInactiveStatus(item.status) && (
                           <Button
                             variant="subtle"
                             size="sm"
@@ -757,7 +759,7 @@ const EmployeeTable = ({
                   )}
                 </div>
 
-                {item.status === "Inactive" &&
+                {isInactiveStatus(item.status) &&
                   expandedRows.includes(item.name) && (
                     <div className="mt-4 border-t border-gray-100 pt-4">
                       <SeparationDetailsView employeeId={item.employee} />
