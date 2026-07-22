@@ -9,11 +9,11 @@
   "configuration_tab",
   "overview_section",
   "drive_name",
-  "drive_owner",
-  "drive_start_date",
-  "column_break_overview",
   "drive_status",
+  "drive_owner",
+  "column_break_overview",
   "drive_id",
+  "drive_start_date",
   "drive_end_date",
   "campus_invites_section",
   "campus_invites",
@@ -31,6 +31,8 @@
   "minimum_academic_percentage",
   "column_break_batch_eligibility",
   "eligible_streams",
+  "candidates_tab",
+  "institute_candidates_html",
   "registration_form_tab",
   "registration_form_section",
   "registration_form_enabled",
@@ -42,10 +44,13 @@
   "rounds_tab",
   "rounds_section",
   "rounds",
+  "interview_rounds_html",
   "round_panel_section",
   "round_panelists",
   "gd_groups_section",
-  "gd_groups"
+  "gd_groups",
+  "gd_group_members",
+  "gd_groups_html"
  ],
  "fields": [
   {
@@ -197,7 +202,7 @@
   {
    "fieldname": "institute_candidates_html",
    "fieldtype": "HTML",
-   "label": "Institute-wise Candidates"
+   "label": "Drive Candidates"
   },
   {
    "fieldname": "registration_form_tab",
@@ -260,6 +265,11 @@
    "options": "Campus Drive Round"
   },
   {
+   "fieldname": "interview_rounds_html",
+   "fieldtype": "HTML",
+   "label": "Round Tracking"
+  },
+  {
    "fieldname": "round_panel_section",
    "fieldtype": "Section Break",
    "label": "Round Panelists"
@@ -279,7 +289,20 @@
    "fieldname": "gd_groups",
    "fieldtype": "Table",
    "label": "GD Groups",
-   "options": "Campus Drive GD Group"
+   "options": "Campus Drive GD Group",
+   "hidden": 1
+  },
+  {
+   "fieldname": "gd_group_members",
+   "fieldtype": "Table",
+   "label": "GD Group Members",
+   "options": "Campus Drive GD Group Member",
+   "hidden": 1
+  },
+  {
+   "fieldname": "gd_groups_html",
+   "fieldtype": "HTML",
+   "label": "GD Groups"
   }
  ],
  "grid_page_length": 50,
