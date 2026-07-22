@@ -18,6 +18,8 @@ Endpoints (call as `recruitment.recruitment.alumni_portal.<fn>`):
 
 from __future__ import annotations
 
+import html
+
 import frappe
 from frappe import _
 from frappe.auth import LoginManager
@@ -505,6 +507,268 @@ def _ticket_status_label(status: str) -> str:
 
 def _alumni_email(user: str) -> str:
     return frappe.db.get_value("User", user, "email") or user
+
+
+def _build_comment_content(content: str, attachment: dict | None) -> str:
+    """Render uploaded attachment content as Quill-safe HTML.
+
+    The frontend parser expects file URLs inside the rich-text body (for example
+    as ``<a>`` tags), so uploaded files are embedded as clickable links in the
+    saved comment content.
+    """
+    text = (content or "").strip()
+    if not attachment or not attachment.get("file_url"):
+        return text
+
+    file_name = attachment.get("file_name") or "attachment"
+    file_url = attachment.get("file_url")
+    escaped_name = html.escape(file_name, quote=False)
+    escaped_url = html.escape(file_url, quote=True)
+    attachment_html = (
+        f'<p><a href="{escaped_url}" target="_blank" rel="noopener noreferrer">'
+        f"{escaped_name}</a></p>"
+    )
+    if text:
+        return f"{text}<br>{attachment_html}"
+    return attachment_html
+
+
+@frappe.whitelist(methods=["GET"])
+def get_alumni_ticket(name: str | None = None, ticket_id: str | None = None) -> dict:
+    """Return a minimal ticket payload for the logged-in alumnus.
+
+    This is a portal-safe variant of the Helpdesk ticket detail API. It only
+    exposes the fields needed by the alumni UI:
+    - ticket id
+    - category
+    - status
+    - priority
+    - assigned_to (first assignee, when present)
+    - raised_time (from ``creation``)
+    - comments
+
+    Access is strictly limited to tickets raised by the current alumnus so the
+    endpoint cannot leak another user's support history.
+    """
+    user = _require_alumni_session()
+    email = _alumni_email(user)
+    ticket_name = (name or ticket_id or "").strip()
+
+    if not ticket_name:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("Ticket ID is required.")}
+
+    ticket = frappe.db.get_value(
+        "HD Ticket",
+        {"name": ticket_name, "raised_by": email},
+        ["name", "subject", "ticket_type", "status", "priority", "_assign", "creation"],
+        as_dict=True,
+    )
+    if not ticket:
+        frappe.local.response["http_status_code"] = 404
+        return {"success": False, "message": _("Ticket not found.")}
+
+    comments = frappe.get_all(
+        "HD Ticket Comment",
+        filters={"reference_ticket": ticket_name},
+        fields=["name", "content", "commented_by", "creation"],
+        order_by="creation asc",
+    )
+
+    assigned_to = []
+    if ticket.get("_assign"):
+        try:
+            parsed_assign = frappe.parse_json(ticket.get("_assign") or "[]")
+            if isinstance(parsed_assign, list):
+                assignees = parsed_assign
+            elif parsed_assign:
+                assignees = [parsed_assign]
+            else:
+                assignees = []
+
+            assigned_to = [
+                {
+                    "name": assignee,
+                    "full_name": frappe.db.get_value("User", assignee, "full_name") or "",
+                }
+                for assignee in assignees
+                if assignee
+            ]
+        except Exception:
+            assigned_to = []
+
+    return {
+        "success": True,
+        "ticket": {
+            "id": ticket.name,
+            "subject": ticket.subject,
+            "category": ticket.ticket_type,
+            "status": ticket.status,
+            "priority": ticket.priority,
+            "assigned_to": assigned_to,
+            "raised_time": _d(ticket.creation),
+            "comments": [
+                {
+                    "id": c.name,
+                    "content": c.content,
+                    "commented_by": c.commented_by,
+                    "created_at": _d(c.creation),
+                }
+                for c in comments
+            ],
+        },
+    }
+
+
+@frappe.whitelist(methods=["GET"])
+def get_alumni_recent_open_tickets(limit: int = 5) -> dict:
+    """Return recent open tickets for the logged-in alumnus with summary stats.
+
+    The response contains the most recently updated open tickets, the total
+    open ticket count for the alumnus, and the average first-response time in
+    hours for matching tickets.
+    """
+    user = _require_alumni_session()
+    email = _alumni_email(user)
+
+    total_open_count = frappe.db.count(
+        "HD Ticket",
+        {"raised_by": email, "status": ["in", _TICKET_OPEN_STATUSES]},
+    )
+
+    rows = frappe.get_all(
+        "HD Ticket",
+        filters={"raised_by": email, "status": ["in", _TICKET_OPEN_STATUSES]},
+        fields=[
+            "name",
+            "subject",
+            "ticket_type",
+            "status",
+            "agent_group",
+            "creation",
+            "modified",
+            "opening_date",
+            "first_responded_on",
+        ],
+        order_by="modified desc",
+        page_length=min(max(int(limit), 1), 50),
+    )
+
+    from frappe.utils import add_days, get_datetime, now_datetime, time_diff_in_seconds
+
+    cutoff = add_days(now_datetime(), -30)
+    response_secs = [
+        time_diff_in_seconds(t.first_responded_on, t.creation)
+        for t in rows
+        if t.first_responded_on and get_datetime(t.creation) >= cutoff
+    ]
+    avg_response_hours = round((sum(response_secs) / len(response_secs)) / 3600) if response_secs else None
+
+    tickets = [
+        {
+            "id": r.name,
+            "subject": r.subject,
+            "category": r.ticket_type,
+            "status": r.status,
+            "team": r.agent_group,
+            "raised_on": _d(r.opening_date or r.creation),
+            "updated_on": _d(r.modified),
+        }
+        for r in rows
+    ]
+
+    return {
+        "success": True,
+        "total_open_count": total_open_count,
+        "avg_response_hours": avg_response_hours,
+        "tickets": tickets,
+    }
+
+
+@frappe.whitelist(methods=["POST"])
+def add_alumni_ticket_comment(ticket_id: str | None = None, comment: str | None = None) -> dict:
+    """Add a comment to an alumnus-owned HD Ticket and optionally attach one file.
+
+    Accepts a multipart/form-data request with:
+    - ``ticket_id`` or ``name`` as form field/argument
+    - ``comment`` as the text body
+    - ``file`` as the single uploaded attachment
+
+    The comment is stored against the ticket and the uploaded file is attached to
+    the created HD Ticket Comment record.
+    """
+    user = _require_alumni_session()
+    email = _alumni_email(user)
+    ticket_name = (ticket_id or "").strip() or (frappe.form_dict.get("name") or "").strip()
+
+    if not ticket_name:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("Ticket ID is required.")}
+
+    if not frappe.db.exists("HD Ticket", {"name": ticket_name, "raised_by": email}):
+        frappe.local.response["http_status_code"] = 404
+        return {"success": False, "message": _("Ticket not found.")}
+
+    content = (comment or frappe.form_dict.get("comment") or "").strip()
+    uploaded_file = None
+    if getattr(frappe, "request", None) and getattr(frappe.request, "files", None):
+        uploaded_file = frappe.request.files.get("file") or frappe.request.files.get("attachment")
+
+    if not content and not uploaded_file:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("Comment text or an attachment is required.")}
+
+    try:
+        comment_doc = frappe.get_doc(
+            {
+                "doctype": "HD Ticket Comment",
+                "reference_ticket": ticket_name,
+                "commented_by": user,
+                "content": content or "",
+                "is_pinned": 0,
+            }
+        )
+        comment_doc.insert(ignore_permissions=True)
+
+        attachment = None
+        if uploaded_file:
+            from frappe.utils.file_manager import save_file
+
+            file_content = uploaded_file.stream.read()
+            saved_file = save_file(
+                uploaded_file.filename or "attachment",
+                file_content,
+                "HD Ticket Comment",
+                comment_doc.name,
+                is_private=0,
+            )
+            attachment = {
+                "name": saved_file.name,
+                "file_name": saved_file.file_name,
+                "file_url": saved_file.file_url,
+            }
+            comment_doc.content = _build_comment_content(comment_doc.content, attachment)
+            comment_doc.save(ignore_permissions=True)
+
+        frappe.db.commit()
+    except Exception:
+        frappe.db.rollback()
+        frappe.log_error(frappe.get_traceback(), "alumni add_alumni_ticket_comment failed")
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("Unable to add the comment right now.")}
+
+    return {
+        "success": True,
+        "message": _("Your comment has been added."),
+        "comment": {
+            "id": comment_doc.name,
+            "ticket_id": ticket_name,
+            "content": comment_doc.content,
+            "commented_by": comment_doc.commented_by,
+            "created_at": _d(comment_doc.creation),
+        },
+        "attachment": attachment,
+    }
 
 
 @frappe.whitelist(methods=["GET"])
