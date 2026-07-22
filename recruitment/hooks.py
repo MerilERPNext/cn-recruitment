@@ -481,9 +481,12 @@ override_doctype_class = {
 # Authentication and authorization
 # --------------------------------
 
-# auth_hooks = [
-# 	"recruitment.auth.validate"
-# ]
+# Centralized Alumni Portal isolation: runs after the session user is resolved,
+# on every request. Confines alumni sessions to the alumni_portal namespace and
+# leaves every other user (ESS) completely unaffected. See alumni_guard.py.
+auth_hooks = [
+    "recruitment.recruitment.alumni_guard.enforce_alumni_isolation"
+]
 
 # Automatically update python controller files with type annotations for this app.
 # export_python_type_annotations = True

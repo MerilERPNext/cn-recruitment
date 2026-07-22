@@ -92,7 +92,7 @@ def portal_login(email: str, password: str) -> dict:
         frappe.local.response["http_status_code"] = 403
         return {
             "success": False,
-            "message": _("You are not authorized to login to the Alumni Portal."),
+            "message": _("Only Alumni employees can access this portal."),
         }
 
     login_manager.post_login()
@@ -301,38 +301,136 @@ def get_alumni_profile() -> dict:
 
     emp_name = frappe.db.get_value("Employee", {"user_id": user}, "name")
     if emp_name:
-        e = frappe.db.get_value(
-            "Employee",
-            emp_name,
-            [
-                "name", "employee_name", "employee_number", "designation", "department",
-                "company", "branch", "date_of_joining", "relieving_date", "status",
-                "personal_email", "prefered_email", "cell_number", "gender", "image",
-                "reports_to",
-            ],
-            as_dict=True,
-        ) or {}
-        profile["employee"] = {
-            "employee_id": e.get("name"),
-            "employee_number": e.get("employee_number"),
-            "employee_name": e.get("employee_name"),
-            "designation": e.get("designation"),
-            "department": e.get("department"),
-            "company": e.get("company"),
-            "branch": e.get("branch"),
-            "status": e.get("status"),
-            "date_of_joining": _d(e.get("date_of_joining")),
-            "relieving_date": _d(e.get("relieving_date")),
-            "personal_email": e.get("personal_email"),
-            "prefered_email": e.get("prefered_email"),
-            "mobile": e.get("cell_number"),
-            "gender": e.get("gender"),
-            "reports_to": e.get("reports_to"),
-        }
-        if not profile["image"] and e.get("image"):
-            profile["image"] = e.get("image")
+        # (output key, Employee fieldname). "employee_id" is the docname;
+        # "preferred_email" maps to core's misspelled `prefered_email`.
+        field_map = [
+            ("employee_id", "name"),
+            ("employee_name", "employee_name"),
+            ("image", "image"),
+            ("designation", "designation"),
+            ("custom_designation_title", "custom_designation_title"),
+            ("department", "department"),
+            ("company", "company"),
+            ("branch", "branch"),
+            ("employment_type", "employment_type"),
+            ("custom_employee_role", "custom_employee_role"),
+            ("status", "status"),
+            ("custom__custom_marital_status", "custom__custom_marital_status"),
+            ("date_of_joining", "date_of_joining"),
+            ("relieving_date", "relieving_date"),
+            ("company_email", "company_email"),
+            ("personal_email", "personal_email"),
+            ("preferred_email", "prefered_email"),
+            ("custom_personal_mobile_no", "custom_personal_mobile_no"),
+            ("custom_office_mobile_no", "custom_office_mobile_no"),
+            ("custom_whatsapp_no", "custom_whatsapp_no"),
+            ("gender", "gender"),
+            ("date_of_birth", "date_of_birth"),
+            ("linkedin_id", "linkedin_id"),
+            ("facebook_id", "facebook_id"),
+            ("bio", "bio"),
+        ]
+        date_keys = {"date_of_joining", "relieving_date", "date_of_birth"}
+
+        # Only pull fields whose DB column actually exists (schema-drift safe:
+        # some fields are in the doctype meta but have no column on this env).
+        # Missing ones come back as "" so the response shape is always identical.
+        src_fields = [
+            f for _, f in field_map
+            if f != "name" and frappe.db.has_column("Employee", f)
+        ]
+        e = frappe.db.get_value("Employee", emp_name, src_fields, as_dict=True) or {}
+        e["name"] = emp_name
+
+        emp = {}
+        for out_key, src in field_map:
+            val = e.get(src)
+            if out_key in date_keys:
+                emp[out_key] = _d(val) or ""
+            else:
+                emp[out_key] = val if val is not None else ""
+        profile["employee"] = emp
+
+        if not profile.get("image") and emp.get("image"):
+            profile["image"] = emp["image"]
 
     return {"success": True, "profile": profile}
+
+
+# Fields an alumnus may edit on their OWN profile. HR-controlled fields
+# (employee_id/name, status, company, designation, department, branch,
+# employment_type, joining/relieving dates, company_email, office mobile, …) are
+# deliberately NOT here and can never be changed from the portal.
+_EDITABLE_ALUMNI_PROFILE_FIELDS = (
+    "personal_email",
+    "custom_personal_mobile_no",
+    "custom_whatsapp_no",
+    "linkedin_id",
+    "facebook_id",
+    "bio",
+    "custom__custom_marital_status",
+    "gender",
+    "date_of_birth",
+    "image",
+)
+
+
+@frappe.whitelist(methods=["POST"])
+def update_alumni_profile(**kwargs) -> dict:
+    """Update the alumnus's OWN editable profile fields.
+
+    Accepts either flat fields ({"bio": "...", "linkedin_id": "..."}) or a
+    ``values`` JSON blob. Only whitelisted, existing-column fields are applied;
+    everything else is ignored. Written with ``frappe.db.set_value`` so NO
+    Employee validate/on_update hooks run — existing HRMS behaviour is untouched.
+    """
+    user = _require_alumni_session()
+    emp_name = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    if not emp_name:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("No employee record is linked to your account.")}
+
+    incoming = kwargs.get("values", kwargs)
+    if isinstance(incoming, str):
+        try:
+            incoming = frappe.parse_json(incoming)
+        except Exception:
+            incoming = {}
+    if not isinstance(incoming, dict):
+        incoming = {}
+
+    updates = {}
+    for key, val in incoming.items():
+        if key not in _EDITABLE_ALUMNI_PROFILE_FIELDS:
+            continue
+        if not frappe.db.has_column("Employee", key):
+            continue
+        if key.endswith("email") and val:
+            from frappe.utils import validate_email_address
+
+            if not validate_email_address(val):  # "" when invalid
+                frappe.local.response["http_status_code"] = 400
+                return {
+                    "success": False,
+                    "message": _("{0} is not a valid email address.").format(val),
+                }
+        updates[key] = val
+
+    if not updates:
+        frappe.local.response["http_status_code"] = 400
+        return {
+            "success": False,
+            "message": _("No editable profile fields were provided."),
+        }
+
+    updated_keys = list(updates.keys())  # capture before set_value mutates the dict
+    frappe.db.set_value("Employee", emp_name, updates)
+    frappe.db.commit()
+    return {
+        "success": True,
+        "updated": updated_keys,
+        "message": _("Your profile has been updated."),
+    }
 
 
 @frappe.whitelist(methods=["GET"])
