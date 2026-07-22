@@ -23,13 +23,19 @@ const getStatusVariant = (status: GoalStatus): BadgeVariant => {
   return "default";
 };
 
-const MyGoals: React.FC = () => {
+interface MyGoalsProps {
+  onCreateGoal?: () => void;
+  onSelectGoal?: (index: number) => void;
+}
+
+const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
   const navigate = useNavigate();
   const { isMobile, isTablet, isDesktop } = useScreenSize();
   const isCompact = isMobile || isTablet;
   const [openGoalIndex, setOpenGoalIndex] = useState<number | null>(null);
+
   return (
-    <div className="min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] px-3 py-4 font-sans sm:px-4 sm:py-5 lg:px-6 lg:py-6">
+    <div className="min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] px-3 py-4 font-sans sm:px-4 sm:py-5 lg:px-1 lg:py-1">
       <div className="mx-auto w-full  min-w-0 space-y-4 sm:space-y-5">
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="flex min-w-0 flex-col gap-4 border-b border-slate-100 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
@@ -111,9 +117,7 @@ const MyGoals: React.FC = () => {
                 Filter
               </Button>
               <Button
-                onClick={() =>
-                  navigate("/webapp/performance-app/my-goals/new-goal")
-                }
+                onClick={() => onCreateGoal?.()}
                 variant="contain"
                 bgColor="primary"
                 size="sm"
@@ -160,9 +164,13 @@ const MyGoals: React.FC = () => {
             {goals.map((goal, index) => (
               <div
                 key={index}
-                onClick={() =>
-                  navigate(`/webapp/performance-app/my-goals/${index}`)
-                }
+                onClick={() => {
+                  if (onSelectGoal) {
+                    onSelectGoal(index);
+                  } else {
+                    navigate(`/webapp/performance-app/my-goals/${index}`);
+                  }
+                }}
                 className="relative z-10 min-w-0 cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
               >
                 {!isCompact && (

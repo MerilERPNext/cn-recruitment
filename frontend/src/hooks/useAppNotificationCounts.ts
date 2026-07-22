@@ -75,55 +75,92 @@ export const useAppNotificationCounts = () => {
       ? app.doctypes
       : [];
 
-    // Leaves & Holidays
-    if (uiLabel === "Leaves & Holidays") {
-      const dt = doctypes.find(d => d.doctype === "Leave Application");
+    const labelSubLabelCountMap: {
+      Label: string;
+      subLabels: Record<string, { backendMap: string; count_value: string[] }>;
+    }[] = [
+        {
+          Label: "Leaves & Holidays",
+          subLabels: {
+            "My Requests": {
+              backendMap: "Leave Application",
+              count_value: ["self"]
+            },
+            "Team Requests": {
+              backendMap: "Leave Application",
+              count_value: ["allocated"]
+            },
+            "Compensatory": {
+              backendMap: "Compensatory Leave Request",
+              count_value: ["self", "allocated"]
+            }
+          },
+        },
+        {
+          Label: "Attendance",
+          subLabels: {
+            "My Requests": {
+              backendMap: "Attendance Request",
+              count_value: ["self"]
+            },
+            "Team Requests": {
+              backendMap: "Attendance Request",
+              count_value: ["allocated"]
+            },
+            "All Shifts": {
+              backendMap: "Shift Request",
+              count_value: ["self", "allocated"]
+            }
+          }
+        }, {
+          Label: "Compensation",
+          subLabels: {
+            "My Loan Requests": {
+              backendMap: "Loan Application",
+              count_value: ["self"]
+            },
+            "Team Loan Requests": {
+              backendMap: "Leave Application",
+              count_value: ["allocated"]
+            }
+          }
+        }, {
+          Label: "Help Desk",
+          subLabels: {
+            "All Requests": {
+              backendMap: "HD Ticket",
+              count_value: ["self", "allocated"]
+            }
+          }
+        }, {
+          Label: "Expenses",
+          subLabels: {
+            "Expense Claims": {
+              backendMap: "Expense Claim",
+              count_value: ["self"]
+            },
+            "Team Requests": {
+              backendMap: "Expense Claim",
+              count_value: ["allocated"]
+            }
+          }
+        }
+      ]
 
-      if (subModuleLabel === "My Requests") return dt?.self || 0;
-      if (subModuleLabel === "Team Requests") return dt?.allocated || 0;
-    }
+    const module = labelSubLabelCountMap.find((item) => item.Label === uiLabel);
+    if (!module) return 0;
 
-    // Attendance
-    if (uiLabel === "Attendance") {
-      if (subModuleLabel === "My Requests") {
-        const dt = doctypes.find(d => d.doctype === "Attendance Request");
-        return dt?.self || 0;
-      }
+    const subModule = module.subLabels[subModuleLabel];
 
-      if (subModuleLabel === "Team Requests") {
-        const dt = doctypes.find(d => d.doctype === "Attendance Request");
-        return dt?.allocated || 0;
-      }
+    if (!subModule) return 0;
 
-      if (subModuleLabel === "All Shifts") {
-        const dt = doctypes.find(d => d.doctype === "Shift Request");
-        return (dt?.self || 0) + (dt?.allocated || 0);
-      }
-    }
+    const backendMap = subModule.backendMap;
+    const count_value = subModule?.count_value ?? [];
 
-    // Compensation
-    if (uiLabel === "Compensation") {
-      const dt = doctypes.find(d => d.doctype === "Loan Application");
+    const dt = doctypes.find(d => d.doctype === backendMap);
+    if (!dt) return 0;
 
-      if (subModuleLabel === "My Loan Requests") return dt?.self || 0;
-      if (subModuleLabel === "Team Loan Requests") return dt?.allocated || 0;
-    }
-
-    // Help Desk
-    if (uiLabel === "Help Desk") {
-      const dt = doctypes.find(d => d.doctype === "HD Ticket");
-      return (dt?.self || 0) + (dt?.allocated || 0);
-    }
-
-    // Expenses
-    if (uiLabel === "Expenses") {
-      const dt = doctypes.find(d => d.doctype === "Expense Claim");
-
-      if (subModuleLabel === "Expense Claims") return dt?.self || 0;
-      if (subModuleLabel === "Team Requests") return dt?.allocated || 0;
-    }
-
-    return 0;
+    return count_value.reduce((acc: number, curr) => acc + Number(dt[curr as keyof typeof dt] ?? 0), 0);
   };
 
   // ------------------------------------------------

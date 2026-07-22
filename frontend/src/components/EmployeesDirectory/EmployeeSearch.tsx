@@ -123,6 +123,14 @@ const EmployeeSearch = ({
         const dateStr =
           typeof value === "string" ? value.split("T")[0] : String(value);
         filters.push(["date_of_joining", "<=", dateStr]);
+      } else if (key === "status") {
+        if (value === "Inactive") {
+          filters.push(["status", "in", ["Inactive", "Left", "Suspended"]]);
+        } else if (Array.isArray(value) && value.length > 0) {
+          filters.push(["status", "in", value]);
+        } else {
+          filters.push(["status", "=", value]);
+        }
       } else if (Array.isArray(value) && value.length > 0) {
         filters.push([key, "in", value]);
       } else if (!Array.isArray(value)) {

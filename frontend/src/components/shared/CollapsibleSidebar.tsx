@@ -16,7 +16,6 @@ import {
   FileSpreadsheet,
   FileText,
   Gift,
-  Goal,
   Grid3X3,
   HandCoins,
   HelpCircle,
@@ -456,81 +455,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           permissionKey: "Overview",
         },
         {
-          name: "My Goals",
-          icon: Goal,
-          href: "/webapp/performance-app/my-goals",
-          permissionKey: "My Goals",
-        },
-        {
           name: "My Team",
           icon: Users,
           href: "/webapp/performance-app/team-overview",
           permissionKey: "My Team",
-          subItems: [
-            {
-              name: "Overview",
-              icon: ChartNoAxesCombined,
-              href: "/webapp/performance-app/team-overview",
-            },
-            {
-              name: "Team Goals",
-              icon: Goal,
-              href: "/webapp/performance-app/team-goals",
-            },
-            {
-              name: "Reviews",
-              icon: CheckCircle,
-              href: "/webapp/performance-app/team-reviews",
-            },
-            {
-              name: "Calibration",
-              icon: SlidersHorizontal,
-              href: "/webapp/performance-app/team-calibration",
-            },
-            {
-              name: "Check-Ins",
-              icon: Clock,
-              href: "/webapp/performance-app/team-check-ins",
-            },
-          ],
-        },
-        {
-          name: "Review",
-          icon: CheckCircle,
-          href: "/webapp/performance-app",
-          permissionKey: "Review",
-          subItems: [
-            {
-              name: "Self Review",
-              icon: User,
-              href: "/webapp/performance-app/review",
-            },
-            {
-              name: "Peer Nomination",
-              icon: Award,
-              href: "/webapp/performance-app/review/peer-nomination",
-            },
-          ],
-        },
-        {
-          name: "Feedback",
-          icon: Goal,
-          href: "/webapp/performance-app/feedback",
-          permissionKey: "Feedback",
         },
 
-        {
-          name: "Skills And Proficiency",
-          icon: Goal,
-          href: "/webapp/performance-app/skills",
-          permissionKey: "Skills And Proficiency",
-        },
-        {
-          name: "Performance Review",
-          icon: ChartNoAxesCombined,
-          href: "/webapp/performance-app/performance-review",
-          permissionKey: "Performance Review",
-        },
+
         {
           name: "Cycle",
           icon: ChartNoAxesCombined,

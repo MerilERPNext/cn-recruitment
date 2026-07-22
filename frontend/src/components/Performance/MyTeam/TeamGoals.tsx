@@ -333,7 +333,7 @@ const TeamGoals: React.FC = () => {
 
   return (
     <main
-      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] font-sans ${isMobile ? "px-3 py-4" : isTablet ? "px-4 py-5" : "p-6"}`}
+      className={`min-h-full overflow-y-auto overflow-x-hidden bg-[#f6f8fb] font-sans ${isMobile ? "px-3 py-4" : isTablet ? "px-2 py-2" : "p-1"}`}
     >
       <div className="mx-auto w-full  space-y-4 sm:space-y-5">
         {/* Page Header */}

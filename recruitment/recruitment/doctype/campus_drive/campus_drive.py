@@ -277,19 +277,21 @@ def get_drive_breakdown(campus_drive):
 		                        fields=["name", "job_title"])
 	} if opening_order else {}
 
-	# counts: opening -> institute -> status
+	# counts: opening -> institute -> status.
+	# Tallied in Python rather than with a SQL aggregate in `fields`: Frappe v16
+	# rejects "count(name) as cnt" as a string in SELECT, and its dict form isn't
+	# available on v15 — a plain fetch works identically on both.
 	agg = {}
 	for c in frappe.get_all(
 		"Job Applicant",
 		filters={"custom_campus_invite": ["in", invite_names]},
-		fields=["job_title as opening", "custom_institute as institute",
-		        "status", "count(name) as cnt"],
-		group_by="job_title, custom_institute, status",
+		fields=["job_title as opening", "custom_institute as institute", "status"],
+		limit_page_length=0,
 	):
 		if not c.opening:
 			continue
 		by_status = agg.setdefault(c.opening, {}).setdefault(c.institute or "", {})
-		by_status[c.status] = by_status.get(c.status, 0) + c.cnt
+		by_status[c.status] = by_status.get(c.status, 0) + 1
 
 	openings_out = []
 	drive_by_status, grand_total = zero(), 0
@@ -971,34 +973,38 @@ def get_rounds_overview(campus_drive):
 	doc = _drive_lite(campus_drive)
 	invites = _drive_invites(doc)
 
-	# How many drive candidates sit at each hiring stage right now
+	# How many drive candidates sit at each hiring stage right now.
+	# Counted in Python — see the note in get_drive_breakdown: a SQL aggregate in
+	# `fields` is rejected by Frappe v16 and the dict form doesn't exist on v15.
 	stage_counts = {}
 	if invites:
 		for r in frappe.get_all(
 			"Job Applicant",
 			filters={"custom_campus_invite": ["in", invites]},
-			fields=["custom_current_stage as stage", "count(name) as cnt"],
-			group_by="custom_current_stage",
+			fields=["custom_current_stage as stage"],
+			limit_page_length=0,
 		):
-			stage_counts[r.stage or ""] = r.cnt
+			key = r.stage or ""
+			stage_counts[key] = stage_counts.get(key, 0) + 1
 
 	# Interviews this drive created, with their feedback progress
 	iv_rows = frappe.get_all(
 		"Interview",
 		filters={"custom_campus_drive": campus_drive, "docstatus": ["<", 2]},
 		fields=["name", "custom_campus_round_code as code", "status"],
+		limit_page_length=0,
 	)
 	iv_names = [i.name for i in iv_rows]
 	got, expected = {}, {}
 	if iv_names:
 		for f in frappe.get_all("Interview Feedback",
 		                        filters={"interview": ["in", iv_names], "docstatus": 1},
-		                        fields=["interview", "count(name) as cnt"], group_by="interview"):
-			got[f.interview] = f.cnt
+		                        fields=["interview"], limit_page_length=0):
+			got[f.interview] = got.get(f.interview, 0) + 1
 		for d in frappe.get_all("Interview Detail",
 		                        filters={"parent": ["in", iv_names], "parenttype": "Interview"},
-		                        fields=["parent", "count(name) as cnt"], group_by="parent"):
-			expected[d.parent] = d.cnt
+		                        fields=["parent"], limit_page_length=0):
+			expected[d.parent] = expected.get(d.parent, 0) + 1
 
 	by_round = {}
 	for i in iv_rows:
