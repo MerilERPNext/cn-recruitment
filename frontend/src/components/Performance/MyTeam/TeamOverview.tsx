@@ -10,10 +10,10 @@ import TeamReviews from "./TeamReviews";
 import TeamCalibration from "./TeamCalibration";
 import TeamCheckIns from "./TeamCheckIns";
 
-const TeamOverviewContent: React.FC<{ isCompact: boolean }> = ({ isCompact }) => {
+const TeamOverviewContent: React.FC<{ isCompact: boolean, setActiveTab: React.Dispatch<React.SetStateAction<"overview" | "goals" | "reviews" | "calibration" | "check-ins">> }> = ({ isCompact, setActiveTab }) => {
   return (
     <div className="space-y-4 sm:space-y-5">
-      <HeroCard isCompact={isCompact} />
+      <HeroCard setActiveTab={setActiveTab} isCompact={isCompact} />
       <OverviewStats isCompact={isCompact} stats={OVERVIEW_STATS} />
       <TeamTable isCompact={isCompact} members={OVERVIEW_TEAM_MEMBERS} />
     </div>
@@ -48,7 +48,7 @@ const TeamOverview: React.FC = () => {
   const renderActiveTabContent = () => {
     switch (activeTab) {
       case 'overview':
-        return <TeamOverviewContent isCompact={isCompact} />;
+        return <TeamOverviewContent setActiveTab={setActiveTab} isCompact={isCompact} />;
       case 'goals':
         return <TeamGoals />;
       case 'reviews':

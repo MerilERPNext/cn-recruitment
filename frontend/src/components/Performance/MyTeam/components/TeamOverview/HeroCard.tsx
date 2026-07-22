@@ -13,9 +13,10 @@ const steps = [
 
 interface HeroCardProps {
   isCompact: boolean;
+  setActiveTab: React.Dispatch<React.SetStateAction<"overview" | "goals" | "reviews" | "calibration" | "check-ins">>
 }
 
-const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
+const HeroCard: React.FC<HeroCardProps> = ({ isCompact, setActiveTab }) => {
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:p-6">
       <div
@@ -63,6 +64,7 @@ const HeroCard: React.FC<HeroCardProps> = ({ isCompact }) => {
           <Button
             variant="contain"
             bgColor="primary"
+            onClick={()=>setActiveTab("reviews")}
             className={`${isCompact ? "w-full sm:w-auto" : "px-5 py-2.5"} bg-[#1a73e8] hover:bg-blue-600 font-semibold rounded-lg shadow-sm text-sm inline-flex items-center justify-center`}
           >
             Continue Self-Review <ArrowRight className="w-4 h-4 ml-1.5" />
