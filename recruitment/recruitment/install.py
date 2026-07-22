@@ -17,6 +17,57 @@ def after_migrate():
     ensure_job_offer_salary_period()
     ensure_tpo_access()
     ensure_offer_compensation()
+    ensure_alumni_employee_field()
+    backfill_alumni_flag()
+
+
+def ensure_alumni_employee_field():
+    """Add the `User.custom_is_alumni_employee` checkbox that gates Alumni Portal
+    access. Kept in sync with Employee.status == 'Left' by
+    recruitment.recruitment.alumni_portal.sync_alumni_flag. Idempotent."""
+    if frappe.get_meta("User").get_field("custom_is_alumni_employee"):
+        return
+    try:
+        from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+
+        create_custom_field(
+            "User",
+            {
+                "fieldname": "custom_is_alumni_employee",
+                "label": "Is Alumni Employee",
+                "fieldtype": "Check",
+                "insert_after": "enabled",
+                "description": (
+                    "Set automatically when the linked Employee's status is 'Left'. "
+                    "Grants access to the Alumni Portal."
+                ),
+                "module": "Recruitment",
+            },
+            ignore_validate=True,
+        )
+        frappe.clear_cache(doctype="User")
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_alumni_employee_field: skipped")
+
+
+def backfill_alumni_flag():
+    """One-time (idempotent) backfill: flag Users of already-'Left' employees as
+    alumni, so existing former employees can use the Alumni Portal."""
+    if not frappe.get_meta("User").get_field("custom_is_alumni_employee"):
+        return
+    try:
+        frappe.db.sql(
+            """
+            UPDATE `tabUser` u
+            JOIN `tabEmployee` e ON e.user_id = u.name
+            SET u.custom_is_alumni_employee = 1
+            WHERE e.status = 'Left'
+              AND (u.custom_is_alumni_employee IS NULL OR u.custom_is_alumni_employee = 0)
+            """
+        )
+        frappe.db.commit()
+    except Exception:
+        frappe.logger("recruitment").warning("backfill_alumni_flag: skipped")
 
 
 def ensure_offer_compensation():

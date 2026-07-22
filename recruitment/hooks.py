@@ -311,6 +311,9 @@ doc_events = {
             "recruitment.recruitment.referral_reward_engine.generate_referral_reward_on_employee",
         ],
         "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
+        # Keep the User's "Is Alumni Employee" flag in sync with status == "Left"
+        # (only sets that checkbox; never touches Employee.status or User.enabled).
+        "on_update": "recruitment.recruitment.alumni_portal.sync_alumni_flag",
     },
     "Job Applicant": {
         "before_insert": "recruitment.customizations.ta_duplicity_check.check_duplicity",
