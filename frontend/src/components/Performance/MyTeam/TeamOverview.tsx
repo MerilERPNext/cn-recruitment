@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import HeroCard from "./components/TeamOverview/HeroCard";
 import OverviewStats from "./components/TeamOverview/OverviewStats";
@@ -24,6 +24,11 @@ const TeamOverview: React.FC = () => {
   const { isMobile, isTablet } = useScreenSize();
   const isCompact = isMobile || isTablet;
   const [activeTab, setActiveTab] = useState<'overview' | 'goals' | 'reviews' | 'calibration' | 'check-ins'>('overview');
+  const topRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeTab]);
 
   const renderActiveTabContent = () => {
     switch (activeTab) {
@@ -43,7 +48,7 @@ const TeamOverview: React.FC = () => {
   };
 
   return (
-    <main className="min-h-full bg-[#f6f8fb] font-sans flex flex-col">
+    <main ref={topRef} className="min-h-full bg-[#f6f8fb] font-sans flex flex-col">
       <div className="w-full min-w-0 flex flex-col flex-1">
         
         {/* Tab Navigation */}

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Paperclip, Mic } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
@@ -53,23 +53,29 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
   );
 };
 
-const GoalDetails: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+interface GoalDetailsProps {
+  goalId?: string;
+  onBack?: () => void;
+}
+
+const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = goalId ?? paramId;
   const navigate = useNavigate();
   const goalIndex = id ? Number(id) : Number.NaN;
   const goal = Number.isInteger(goalIndex) ? goals[goalIndex] : undefined;
   const topRef = React.useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  // useEffect(() => {
     // scrollIntoView works regardless of which parent is the scroll container
-    topRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+  //   topRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // }, []);
 
   if (!goal) {
     return (
       <div className="p-6">
         <Typography variant="bodyMedium">Goal not found.</Typography>
-        <Button variant="outline" bgColor="text" onClick={() => navigate(-1)} className="mt-4">
+        <Button variant="outline" bgColor="text" onClick={() => onBack ? onBack() : navigate(-1)} className="mt-4">
           Go Back
         </Button>
       </div>
@@ -83,7 +89,7 @@ const GoalDetails: React.FC = () => {
         {/* Back Button */}
         <button 
           aria-label="Back to goals"
-          onClick={() => navigate(-1)}
+          onClick={() => onBack ? onBack() : navigate(-1)}
           className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors mb-2"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />

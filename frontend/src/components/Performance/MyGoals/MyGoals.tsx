@@ -25,9 +25,10 @@ const getStatusVariant = (status: GoalStatus): BadgeVariant => {
 
 interface MyGoalsProps {
   onCreateGoal?: () => void;
+  onSelectGoal?: (index: number) => void;
 }
 
-const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal }) => {
+const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
   const navigate = useNavigate();
   const { isMobile, isTablet, isDesktop } = useScreenSize();
   const isCompact = isMobile || isTablet;
@@ -163,9 +164,13 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal }) => {
             {goals.map((goal, index) => (
               <div
                 key={index}
-                onClick={() =>
-                  navigate(`/webapp/performance-app/my-goals/${index}`)
-                }
+                onClick={() => {
+                  if (onSelectGoal) {
+                    onSelectGoal(index);
+                  } else {
+                    navigate(`/webapp/performance-app/my-goals/${index}`);
+                  }
+                }}
                 className="relative z-10 min-w-0 cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
               >
                 {!isCompact && (

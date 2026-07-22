@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import OverviewHeader from './component/OverviewHeader';
 import OverviewStats from './component/OverviewStats';
 import OverviewGoals from './component/OverviewGoals';
@@ -11,12 +11,20 @@ import SelfReview from '../Review/SelfReview';
 import NewGoal from '../GoalCreation/NewGaol';
 import PeerNominationPage from '../Review/PeerNominationPage';
 import PerformanceReviewApp from '../PerformanceReview/PerformanceReviewApp';
+import GoalDetails from '../MyGoals/components/GoalDetails';
 
 const Overview: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'my-goals' | 'skills' | 'review' | 'feedback'>('overview');
   const [activeReviewTab, setActiveReviewTab] = useState<'self' | 'peer' | 'final'>('self');
   const [isCreatingGoal, setIsCreatingGoal] = useState(false);
-
+  
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+  const topRef = React.useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    // scrollIntoView works regardless of which parent is the scroll container
+    topRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [activeTab, isCreatingGoal, selectedGoalId]);
   const renderActiveTabContent = () => {
     switch (activeTab) {
       case 'overview':
@@ -48,12 +56,25 @@ const Overview: React.FC = () => {
         if (isCreatingGoal) {
           return <NewGoal onClose={() => setIsCreatingGoal(false)} />;
         }
-        return <MyGoals onCreateGoal={() => setIsCreatingGoal(true)} />;
+        if (selectedGoalId !== null) {
+          return (
+            <GoalDetails
+              goalId={selectedGoalId}
+              onBack={() => setSelectedGoalId(null)}
+            />
+          );
+        }
+        return (
+          <MyGoals 
+            onCreateGoal={() => setIsCreatingGoal(true)} 
+            onSelectGoal={(index) => setSelectedGoalId(String(index))}
+          />
+        );
       case 'skills':
         return <SkillsAndProficiency />;
       case 'review':
         return (
-          <div className="space-y-4">
+          <div  className="space-y-4">
             {/* Sub-tabs for Review */}
             <div className="border-b border-gray-200 flex justify-start sm:justify-center overflow-x-auto pb-1">
               <nav className="-mb-px flex space-x-8 min-w-max px-4 sm:px-0" aria-label="Review Tabs">
@@ -102,7 +123,7 @@ const Overview: React.FC = () => {
   };
 
   return (
-    <main aria-label="Performance Overview" className="min-h-full bg-[#f8fafc] font-sans flex flex-col">
+    <main ref={topRef} aria-label="Performance Overview" className="min-h-full bg-[#f8fafc] font-sans flex flex-col">
       <div className="mx-auto w-full min-w-0 flex flex-col flex-1">
         
         {/* Tab Navigation */}
@@ -121,6 +142,7 @@ const Overview: React.FC = () => {
                   key={tab.id}
                   onClick={() => {
                     setIsCreatingGoal(false);
+                    setSelectedGoalId(null);
                     setActiveTab(tab.id as any);
                   }}
                   className={`
@@ -139,7 +161,7 @@ const Overview: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        <div className={isCreatingGoal && activeTab === 'my-goals' ? "flex-1 flex flex-col min-h-0" : "px-3 py-4 sm:px-4 sm:py-5 lg:px-6 lg:py-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto"}>
+        <div className={(isCreatingGoal || selectedGoalId !== null) && activeTab === 'my-goals' ? "flex-1 flex flex-col min-h-0" : "px-3 py-4 sm:px-4 sm:py-5 lg:px-6 lg:py-6 space-y-4 sm:space-y-6 flex-1 overflow-y-auto"}>
           {renderActiveTabContent()}
         </div>
 
