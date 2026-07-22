@@ -263,6 +263,129 @@ def reset_password_with_otp(email: str, otp: str, new_password: str) -> dict:
     }
 
 
+# ── Login via email OTP ───────────────────────────────────────────────────────
+# A LOGIN code is deliberately kept in its own cache namespace from the
+# password-reset code, so a reset code can never be replayed as a login (or
+# vice versa) — they authorise different things.
+
+_GENERIC_LOGIN_OTP_MSG = (
+    "If an alumni account exists for that email, a login code has been sent."
+)
+
+
+def _login_otp_cache_key(email: str) -> str:
+    return f"recruitment:alumni_login_otp:{(email or '').strip().lower()}"
+
+
+def _consume_login_otp(email: str, otp: str) -> tuple[bool, str]:
+    """Same attempt-capped check as the reset code, against the login key."""
+    key = _login_otp_cache_key(email)
+    data = frappe.cache().get_value(key)
+    if not data:
+        return False, _("This login code is invalid or has expired.")
+    attempts = int(data.get("attempts", 0)) + 1
+    if attempts > OTP_MAX_ATTEMPTS:
+        frappe.cache().delete_value(key)
+        return False, _("Too many incorrect attempts. Please request a new code.")
+    if _hash_otp(email, otp) != data.get("hash"):
+        data["attempts"] = attempts
+        frappe.cache().set_value(key, data, expires_in_sec=OTP_TTL_SECONDS)
+        return False, _("The login code is incorrect.")
+    return True, ""
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+@rate_limit(key="email", limit=5, seconds=60 * 60)
+def request_login_otp(email: str) -> dict:
+    """Email a 6-digit login code to an enabled alumni employee."""
+    generic = {"success": True, "message": _(_GENERIC_LOGIN_OTP_MSG)}
+    if not email:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("Email is required.")}
+
+    user_name = frappe.db.get_value("User", {"email": email}, "name")
+    # Silent no-op for unknown / non-alumni / disabled — never reveal which.
+    if not user_name or not is_alumni_employee(user_name):
+        return generic
+    if not frappe.db.get_value("User", user_name, "enabled"):
+        return generic
+
+    try:
+        import secrets
+
+        otp = f"{secrets.randbelow(10 ** 6):06d}"
+        frappe.cache().set_value(
+            _login_otp_cache_key(email),
+            {"hash": _hash_otp(email, otp), "attempts": 0},
+            expires_in_sec=OTP_TTL_SECONDS,
+        )
+        full_name = frappe.db.get_value("User", user_name, "full_name") or email
+        frappe.sendmail(
+            recipients=[email],
+            subject=_("Your Alumni Portal login code"),
+            message=_(
+                "<p>Hi {0},</p>"
+                "<p>Your Alumni Portal login code is:</p>"
+                "<p style='font-size:22px;font-weight:bold;letter-spacing:3px'>{1}</p>"
+                "<p>This code expires in {2} minutes. If you didn't request it, "
+                "you can safely ignore this email.</p>"
+            ).format(full_name, otp, OTP_TTL_SECONDS // 60),
+            now=True,
+        )
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "alumni request_login_otp failed")
+
+    return generic
+
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+@rate_limit(key="email", limit=10, seconds=60 * 60)
+def login_with_otp(email: str, otp: str) -> dict:
+    """Sign an alumni employee in with an emailed code (no password).
+
+    Mirrors portal_login's response so the frontend handles both identically.
+    """
+    if not email or not otp:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("Email and code are required.")}
+
+    user_name = frappe.db.get_value("User", {"email": email}, "name")
+    if not user_name or not is_alumni_employee(user_name):
+        frappe.local.response["http_status_code"] = 403
+        return {
+            "success": False,
+            "message": _("You are not authorized to login to the Alumni Portal."),
+        }
+
+    # IMPORTANT: login_as() bypasses LoginManager.authenticate, which is what
+    # normally rejects disabled accounts — so check it explicitly here. Without
+    # this, an OTP would sign in a User that HRMS disabled on exit.
+    if not frappe.db.get_value("User", user_name, "enabled"):
+        frappe.local.response["http_status_code"] = 403
+        return {
+            "success": False,
+            "message": _("Your account is not active. Please contact HR."),
+        }
+
+    ok, err = _consume_login_otp(email, otp)
+    if not ok:
+        frappe.local.response["http_status_code"] = 401
+        return {"success": False, "message": err}
+
+    frappe.cache().delete_value(_login_otp_cache_key(email))  # single-use
+
+    login_manager = LoginManager()
+    login_manager.login_as(user_name)
+
+    frappe.local.response["http_status_code"] = 200
+    return {
+        "success": True,
+        "message": _("Login successful."),
+        "user": user_name,
+        "full_name": frappe.db.get_value("User", user_name, "full_name"),
+    }
+
+
 # ── Profile & notifications (session-scoped, alumni only) ─────────────────────
 def _require_alumni_session() -> str:
     """Return the session user, or raise 401 (guest) / 403 (not an alumnus)."""
@@ -885,6 +1008,191 @@ def raise_alumni_ticket(subject, description=None, category=None, priority=None)
         "status": doc.status,
         "message": _("Your ticket has been raised."),
     }
+
+
+# ── Documents (Employee Documents, session-scoped, alumni only) ───────────────
+# Source = "Employee Documents" (employee → file). Category comes from the linked
+# Document Template's `type_of_letter` (else the doc's own `type`); title from the
+# template's `letter_name`; size from the File doctype; Approved → "Ready".
+_DOC_HIDDEN_STATUSES = ("Archived", "Rejected")
+
+
+def _fmt_size(nbytes) -> str:
+    if not nbytes:
+        return ""
+    kb = nbytes / 1024
+    return f"{round(kb)} KB" if kb < 1024 else f"{round(kb / 1024, 1)} MB"
+
+
+def _clean_doc_title(file_name: str | None) -> str:
+    if not file_name:
+        return ""
+    base = file_name.rsplit("/", 1)[-1]
+    return base.rsplit(".", 1)[0] if "." in base else base
+
+
+def _build_alumni_documents(emp, category=None, year=None, search=None, limit=200, start=0) -> dict:
+    from collections import Counter
+
+    from frappe.utils import cint, getdate
+
+    rows = frappe.get_all(
+        "Employee Documents",
+        filters={"employee": emp, "archived": 0},
+        fields=["name", "document_template", "type", "status", "file_name", "end_date", "creation"],
+        order_by="creation desc",
+    )
+
+    # Batch-resolve templates (category + title) and file sizes.
+    tmpl_names = list({r.document_template for r in rows if r.document_template})
+    tmpl_map = {}
+    if tmpl_names:
+        for t in frappe.get_all(
+            "Document Template",
+            filters={"name": ["in", tmpl_names]},
+            fields=["name", "type_of_letter", "letter_name"],
+        ):
+            tmpl_map[t.name] = t
+    # File sizes: `file_name` (Attach) sometimes stores the full "/files/…" URL and
+    # sometimes only the basename, so match File on file_url OR file_name.
+    file_vals = [r.file_name for r in rows if r.file_name]
+    basenames = [v.rsplit("/", 1)[-1] for v in file_vals]
+    size_by_url, size_by_name = {}, {}
+    if file_vals:
+        for f in frappe.get_all(
+            "File",
+            filters={"file_url": ["in", file_vals]},
+            fields=["file_url", "file_size"],
+        ):
+            size_by_url[f.file_url] = f.file_size
+        for f in frappe.get_all(
+            "File",
+            filters={"file_name": ["in", basenames]},
+            fields=["file_name", "file_size"],
+        ):
+            size_by_name[f.file_name] = f.file_size
+
+    docs = []
+    for r in rows:
+        if (r.status or "") in _DOC_HIDDEN_STATUSES:
+            continue
+        t = tmpl_map.get(r.document_template)
+        cat = (t.get("type_of_letter") if t else None) or (r.type or "Other")
+        title = (t.get("letter_name") if t else None) or _clean_doc_title(r.file_name) or r.name
+        when = r.end_date or r.creation
+        nbytes = size_by_url.get(r.file_name) or size_by_name.get(
+            (r.file_name or "").rsplit("/", 1)[-1]
+        )
+        docs.append(
+            {
+                "name": r.name,
+                "title": title,
+                "category": cat,
+                "type": r.type,
+                "status": r.status,
+                "status_label": "Ready" if (r.status or "") == "Approved" else "Pending",
+                "date": (str(getdate(when)) if when else ""),
+                "year": (getdate(when).year if when else None),
+                "size": _fmt_size(nbytes),
+                "size_bytes": nbytes or 0,
+                "file_url": r.file_name,
+            }
+        )
+
+    # Stats + filter options computed over the FULL set (unfiltered).
+    cat_counts = Counter(x["category"] for x in docs)
+    years = sorted({x["year"] for x in docs if x["year"]}, reverse=True)
+    stats = {
+        "total": len(docs),
+        "ready": sum(1 for x in docs if x["status_label"] == "Ready"),
+        "pending": sum(1 for x in docs if x["status_label"] != "Ready"),
+        "by_category": dict(cat_counts),
+    }
+
+    # Apply filters.
+    out = docs
+    if category and str(category).lower() not in ("all", "all documents", ""):
+        out = [x for x in out if x["category"] == category]
+    if year and str(year).lower() not in ("all", ""):
+        out = [x for x in out if str(x["year"]) == str(year)]
+    if search:
+        s = str(search).lower()
+        out = [x for x in out if s in (x["title"] or "").lower() or s in (x["category"] or "").lower()]
+
+    total_filtered = len(out)
+    out = out[cint(start) : cint(start) + (cint(limit) or 200)]
+
+    return {
+        "success": True,
+        "stats": stats,
+        "filter_options": {
+            "categories": [
+                {"name": k, "count": v}
+                for k, v in sorted(cat_counts.items(), key=lambda kv: -kv[1])
+            ],
+            "years": years,
+        },
+        "total_count": total_filtered,
+        "documents": out,
+    }
+
+
+@frappe.whitelist(methods=["GET"])
+def get_alumni_documents(category=None, year=None, search=None, limit=200, start=0) -> dict:
+    """The alumnus's documents (Employee Documents) with stats + category/year filters.
+
+    `category` = a document category (Document Template `type_of_letter`, or the
+    doc `type`); `year` = a 4-digit year; `search` = free text over title/category.
+    Stats + filter_options are always computed across ALL the user's documents.
+    """
+    user = _require_alumni_session()
+    emp = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    if not emp:
+        return {
+            "success": True,
+            "stats": {"total": 0, "ready": 0, "pending": 0, "by_category": {}},
+            "filter_options": {"categories": [], "years": []},
+            "total_count": 0,
+            "documents": [],
+        }
+    return _build_alumni_documents(emp, category, year, search, limit, start)
+
+
+@frappe.whitelist(methods=["GET"])
+def download_alumni_document(name: str) -> None:
+    """Stream one of the alumnus's OWN documents.
+
+    Needed because the alumni guard blocks direct ``/files/*`` access — this
+    namespace endpoint verifies ownership then streams the file.
+    """
+    user = _require_alumni_session()
+    emp = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    doc = frappe.db.get_value(
+        "Employee Documents", name, ["employee", "file_name"], as_dict=True
+    )
+    if not doc or not doc.file_name or doc.employee != emp:
+        frappe.local.response["http_status_code"] = 404
+        frappe.throw(_("Document not found."), frappe.DoesNotExistError)
+
+    # `file_name` (Attach) may hold the "/files/…" URL or just the basename, so
+    # resolve the backing File record by file_url OR file_name and stream it.
+    basename = doc.file_name.rsplit("/", 1)[-1]
+    file_id = frappe.db.get_value("File", {"file_url": doc.file_name}, "name") or frappe.db.get_value(
+        "File", {"file_name": basename}, "name"
+    )
+    if not file_id:
+        frappe.local.response["http_status_code"] = 404
+        frappe.throw(_("Document file not found."), frappe.DoesNotExistError)
+
+    file_doc = frappe.get_doc("File", file_id)
+    try:
+        content = file_doc.get_content()
+    except (OSError, FileNotFoundError):
+        frappe.local.response["http_status_code"] = 404
+        frappe.throw(_("Document file is no longer available."), frappe.DoesNotExistError)
+    frappe.local.response.filename = file_doc.file_name or basename
+    frappe.local.response.filecontent = content
+    frappe.local.response.type = "download"
 
 
 # ── Keep the alumni flag in sync with Employee lifecycle ──────────────────────
