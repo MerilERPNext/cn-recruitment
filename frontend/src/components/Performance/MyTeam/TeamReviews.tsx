@@ -151,7 +151,7 @@ const TeamReviews: React.FC = () => {
   );
 
   return (
-    <main className="min-h-full overflow-y-auto overflow-x-hidden bg-[#f4f7fb] px-3 py-4 font-sans text-gray-900 sm:px-4 lg:px-6 lg:py-6">
+    <main className="min-h-full overflow-y-auto overflow-x-hidden bg-[#f4f7fb] px-3 py-4 font-sans text-gray-900 sm:px-4 lg:px-1 lg:py-1">
       <div className="mx-auto grid w-full  min-w-0 gap-4 xl:grid-cols-[260px_minmax(0,1fr)] 2xl:grid-cols-[260px_minmax(0,1fr)_300px]">
         <aside className="order-2 min-w-0 xl:order-1 xl:sticky  xl:self-start">
           <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">

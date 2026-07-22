@@ -16,7 +16,6 @@ import {
   FileSpreadsheet,
   FileText,
   Gift,
-  Goal,
   Grid3X3,
   HandCoins,
   HelpCircle,
@@ -460,33 +459,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Users,
           href: "/webapp/performance-app/team-overview",
           permissionKey: "My Team",
-          subItems: [
-            {
-              name: "Overview",
-              icon: ChartNoAxesCombined,
-              href: "/webapp/performance-app/team-overview",
-            },
-            {
-              name: "Team Goals",
-              icon: Goal,
-              href: "/webapp/performance-app/team-goals",
-            },
-            {
-              name: "Reviews",
-              icon: CheckCircle,
-              href: "/webapp/performance-app/team-reviews",
-            },
-            {
-              name: "Calibration",
-              icon: SlidersHorizontal,
-              href: "/webapp/performance-app/team-calibration",
-            },
-            {
-              name: "Check-Ins",
-              icon: Clock,
-              href: "/webapp/performance-app/team-check-ins",
-            },
-          ],
         },
 
 
