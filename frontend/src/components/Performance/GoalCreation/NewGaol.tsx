@@ -66,7 +66,11 @@ const LazySectionFallback = () => (
     </div>
 );
 
-const NewGoal = () => {
+interface NewGoalProps {
+    onClose?: () => void;
+}
+
+const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
     const { isMobile } = useScreenSize();
     const [activeStepIndex, setActiveStepIndex] = useState(0);
     const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
@@ -103,6 +107,11 @@ const NewGoal = () => {
     const handleSecondaryAction = (event?: MouseEvent<HTMLButtonElement>) => {
         event?.preventDefault();
         event?.stopPropagation();
+
+        if (activeStepIndex === 0) {
+            if (onClose) onClose();
+            return;
+        }
 
         setActiveStepIndex((currentIndex) => {
             const boundedIndex = Math.min(

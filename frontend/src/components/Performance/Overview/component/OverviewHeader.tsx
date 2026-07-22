@@ -2,10 +2,10 @@ import React from 'react';
 import { ArrowRight, Check } from 'lucide-react'
 import Badge from '../../../shared/Badge'
 import { Typography } from '../../../shared/atoms/Typography'
-import { useNavigate } from 'react-router-dom';
-
-const OverviewHeader:React.FC = () => {
-const navigate = useNavigate()
+interface OverviewHeaderProps {
+  setActiveTab : React.Dispatch<React.SetStateAction<"overview" | "my-goals" | "skills" | "review" | "feedback">>
+ }
+const OverviewHeader= ({ setActiveTab }: OverviewHeaderProps) => {
   return (
      <article aria-label="Cycle Information" className="min-w-0 rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
               <div aria-label="Cycle Details" className="mb-5 flex min-w-0 flex-col justify-between gap-4 sm:mb-8 lg:flex-row lg:items-end">
@@ -21,7 +21,7 @@ const navigate = useNavigate()
                   <Typography variant="label" className="text-gray-400 font-semibold tracking-wider uppercase mb-2">Next Deadline</Typography>
                   <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center lg:w-auto lg:justify-end">
                     <Typography variant="bodySmall" className="font-medium text-blue-600">Self-Review due 21 May</Typography>
-                    <button onClick={()=> navigate("/webapp/performance-app/review")} className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 sm:w-auto" aria-label="Continue self review">
+                    <button onClick={()=> setActiveTab("review")} className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 sm:w-auto" aria-label="Continue self review">
                       Continue Self-Review <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
