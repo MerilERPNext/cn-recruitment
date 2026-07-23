@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowRight, Plus, FileText, Sparkles, GitMerge } from 'lucide-react';
 import { Typography } from '../../../../shared/atoms/Typography';
 import Button from '../../../../shared/atoms/Button';
+import { Card } from '../../../../shared/atoms/Card';
 
 interface GoalCardsProps {
     blankGoalDescription: string;
@@ -78,7 +79,7 @@ const GoalCards: React.FC<GoalCardsProps> = ({
             </div>
 
             {/* AI Suggestion Card */}
-            <div className="relative overflow-hidden rounded-2xl border border-amber-300 bg-[#FFFCF4] shadow-sm">
+            <Card  className="relative overflow-hidden rounded-2xl border border-amber-300 bg-[#FFFCF4] shadow-sm">
                 <div className="p-4 sm:p-5">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div className="flex items-start gap-3 min-w-0">
@@ -130,7 +131,7 @@ const GoalCards: React.FC<GoalCardsProps> = ({
                         </Typography>
                     </div>
                 </div>
-            </div>
+            </Card>
 
             {/* Cascade Card */}
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
