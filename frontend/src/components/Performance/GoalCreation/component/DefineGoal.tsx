@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import type { CategorySelectOption, MetricSelectOption } from '../Type';
 import {
     autoPullSources,
@@ -92,4 +92,4 @@ const DefineGoal = () => {
     );
 };
 
-export default DefineGoal;
+export default React.memo(DefineGoal);

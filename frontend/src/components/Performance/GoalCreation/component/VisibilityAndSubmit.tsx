@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
     ArrowRight,
     Building2,
@@ -312,4 +312,4 @@ const VisibilityAndSubmit = ({ onSubmitForApproval }: VisibilityAndSubmitProps) 
     );
 };
 
-export default VisibilityAndSubmit;
+export default React.memo(VisibilityAndSubmit);
