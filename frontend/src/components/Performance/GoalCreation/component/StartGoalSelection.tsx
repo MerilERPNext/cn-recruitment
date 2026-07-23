@@ -6,6 +6,7 @@ import Modal from '../../../shared/Modal';
 import { useScreenSize } from '../../../../hooks/useScreenSize';
 import { LazySectionFallback } from '../NewGaol';
 import GoalLibraryPopup from './GoalLibraryPopup';
+import AcknowledgmentPopup from './define-goal/AcknowledgmentPopup';
 
 
 const StartGoalSelection = () => {
@@ -15,6 +16,7 @@ const StartGoalSelection = () => {
         "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
     );
 
+    const [openAcknowledgmentPopup , setOpenAcknowledgePopu] = useState(false)
 
     return <>
         <div className="bg-[#fff8f6] border border-red-100 rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
@@ -48,7 +50,7 @@ const StartGoalSelection = () => {
                 </div>
             </div>
             <div className="w-full md:w-auto mt-1 md:mt-0 self-start md:self-center">
-                <Button variant="contain" bgColor="error" className="w-full md:w-auto justify-center bg-[#cd2c41] hover:bg-[#b02235] text-white">
+                <Button onClick={() => setOpenAcknowledgePopu(true)} variant="contain" bgColor="error" className="w-full md:w-auto justify-center bg-[#cd2c41] hover:bg-[#b02235] text-white">
                     Acknowledge 3 <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
             </div>
@@ -266,6 +268,16 @@ const StartGoalSelection = () => {
         >
             <Suspense fallback={<LazySectionFallback />}>
                 <GoalLibraryPopup onClose={() => setIsGoalLibraryOpen(false)} />
+            </Suspense>
+        </Modal>
+        <Modal
+            isOpen={openAcknowledgmentPopup}
+            onClose={() => setOpenAcknowledgePopu(false)}
+            size={isMobile ? 'full' : 'xl'}
+            className="max-w-[1300px] p-0"
+        >
+            <Suspense fallback={<LazySectionFallback />}>
+                <AcknowledgmentPopup onClose={() => setOpenAcknowledgePopu(false)} />
             </Suspense>
         </Modal>
     </>
