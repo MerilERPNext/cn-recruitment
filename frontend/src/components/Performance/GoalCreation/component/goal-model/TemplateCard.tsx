@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import Button from '../../../../shared/atoms/Button';
 import { Typography } from '../../../../shared/atoms/Typography';
 import { GoalTemplate } from './types';
@@ -7,7 +8,7 @@ interface TemplateCardProps {
     onUseTemplate?: (template: GoalTemplate) => void;
 }
 
-const TemplateCard = ({ template, onUseTemplate }: TemplateCardProps) => {
+const TemplateCard = memo(({ template, onUseTemplate }: TemplateCardProps) => {
     return (
         <div
             className={`flex min-w-0 flex-col rounded-xl border bg-white p-3 transition hover:border-blue-200 hover:shadow-sm sm:min-h-[132px] sm:p-4 ${
@@ -50,6 +51,8 @@ const TemplateCard = ({ template, onUseTemplate }: TemplateCardProps) => {
             </div>
         </div>
     );
-};
+});
+
+TemplateCard.displayName = 'TemplateCard';
 
 export default TemplateCard;

@@ -1,7 +1,8 @@
+import React from 'react';
 import TemplateCard from './TemplateCard';
 import { GoalTemplate, TemplateListProps } from './types';
 
-export const departmentTemplates: GoalTemplate[] = [
+const templates: GoalTemplate[] = [
     { id: 'dep-01', scope: 'Design', title: 'Define and ship a unified design system v2.0', usedCount: 94, recommended: true },
     { id: 'dep-02', scope: 'Design', title: 'Reduce design-to-dev handoff time by 40%', usedCount: 87 },
     { id: 'dep-03', scope: 'Design', title: 'Conduct 12 user research sessions this quarter', usedCount: 76 },
@@ -15,10 +16,10 @@ export const departmentTemplates: GoalTemplate[] = [
 
 const DepartmentTemplates = ({ onUseTemplate }: TemplateListProps) => (
     <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-        {departmentTemplates.map((template) => (
+        {templates.map((template) => (
             <TemplateCard key={template.id} template={template} onUseTemplate={onUseTemplate} />
         ))}
     </div>
 );
 
-export default DepartmentTemplates;
+export default React.memo(DepartmentTemplates);

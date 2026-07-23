@@ -1,7 +1,8 @@
+import React from 'react';
 import TemplateCard from './TemplateCard';
 import { GoalTemplate, TemplateListProps } from './types';
 
-export const recommendedTemplates: GoalTemplate[] = [
+const templates: GoalTemplate[] = [
     {
         id: 'product-release',
         scope: 'Org',
@@ -80,10 +81,10 @@ export const recommendedTemplates: GoalTemplate[] = [
 
 const RecommendedTemplates = ({ onUseTemplate }: TemplateListProps) => (
     <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-        {recommendedTemplates.map((template) => (
+        {templates.map((template) => (
             <TemplateCard key={template.id} template={template} onUseTemplate={onUseTemplate} />
         ))}
     </div>
 );
 
-export default RecommendedTemplates;
+export default React.memo(RecommendedTemplates);

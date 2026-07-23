@@ -4,11 +4,11 @@ import Button from '../../../shared/atoms/Button';
 import { Select } from '../../../shared/atoms/Select';
 import { Typography } from '../../../shared/atoms/Typography';
 import { GoalTemplate } from './goal-model/types';
-import RecommendedTemplates, { recommendedTemplates } from './goal-model/RecommendedTemplates';
-import AllOrgTemplates, { allOrgTemplates } from './goal-model/AllOrgTemplates';
-import DepartmentTemplates, { departmentTemplates } from './goal-model/DepartmentTemplates';
-import RoleBasedTemplates, { roleBasedTemplates } from './goal-model/RoleBasedTemplates';
-import UsedByTeamTemplates, { usedByTeamTemplates } from './goal-model/UsedByTeamTemplates';
+import RecommendedTemplates from './goal-model/RecommendedTemplates';
+import AllOrgTemplates from './goal-model/AllOrgTemplates';
+import DepartmentTemplates from './goal-model/DepartmentTemplates';
+import RoleBasedTemplates from './goal-model/RoleBasedTemplates';
+import UsedByTeamTemplates from './goal-model/UsedByTeamTemplates';
 
 interface GoalLibraryPopupProps {
     onClose?: () => void;
@@ -18,11 +18,11 @@ interface GoalLibraryPopupProps {
 type TabKey = 'recommended' | 'all-org' | 'department' | 'role-based' | 'used-by-team';
 
 const tabs: { key: TabKey; label: string; count: number }[] = [
-    { key: 'recommended',   label: 'Recommended for you', count: recommendedTemplates.length  },
-    { key: 'all-org',       label: 'All Org templates',   count: allOrgTemplates.length },
-    { key: 'department',    label: 'Department · Design', count: departmentTemplates.length  },
-    { key: 'role-based',    label: 'Role-based',          count: roleBasedTemplates.length  },
-    { key: 'used-by-team',  label: 'Used by your team',   count: usedByTeamTemplates.length   },
+    { key: 'recommended',   label: 'Recommended for you', count: 12 },
+    { key: 'all-org',       label: 'All Org templates',   count: 12 },
+    { key: 'department',    label: 'Department · Design', count: 9  },
+    { key: 'role-based',    label: 'Role-based',          count: 9  },
+    { key: 'used-by-team',  label: 'Used by your team',   count: 9  },
 ];
 
 const departmentOptions = [
