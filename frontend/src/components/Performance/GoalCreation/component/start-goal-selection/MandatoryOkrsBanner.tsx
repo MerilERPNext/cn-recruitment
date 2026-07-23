@@ -6,8 +6,6 @@ import Modal from '../../../../shared/Modal';
 import { LazySectionFallback } from '../../NewGaol';
 import AcknowledgmentPopup from '../define-goal/AcknowledgmentPopup';
 
-
-
 const MandatoryOkrsBanner = () => {
     const [openAcknowledgmentPopup, setOpenAcknowledgePopu] = useState(false);
 
