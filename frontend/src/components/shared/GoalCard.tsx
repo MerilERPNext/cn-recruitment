@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Info } from "lucide-react";
 import { Typography } from "./atoms/Typography";
@@ -21,7 +21,7 @@ export interface GoalCardProps {
   onSelectGoal?: (index: number) => void;
 }
 
-export const GoalCard: React.FC<GoalCardProps> = ({
+export const GoalCard: React.FC<GoalCardProps> = memo(({
   goal,
   index,
   isOpen,
@@ -35,22 +35,22 @@ export const GoalCard: React.FC<GoalCardProps> = ({
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isExpanded = isOpen !== undefined ? isOpen : internalIsOpen;
 
-  const handleToggle = (e: React.MouseEvent) => {
+  const handleToggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (onToggleOpen) {
       onToggleOpen(index);
     } else {
       setInternalIsOpen((prev) => !prev);
     }
-  };
+  }, [onToggleOpen, index]);
 
-  const handleCardClick = () => {
+  const handleCardClick = useCallback(() => {
     if (onSelectGoal) {
       onSelectGoal(index);
     } else {
       navigate(`/webapp/performance-app/my-goals/${index}`);
     }
-  };
+  }, [onSelectGoal, index, navigate]);
 
   return (
     <div
@@ -214,6 +214,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
       </div>
     </div>
   );
-};
+});
 
-export default GoalCard;
+
+export default React.memo(GoalCard);
