@@ -15,7 +15,7 @@ export const LivePreviewCard = memo(({
 }: LivePreviewCardProps) => {
     return (
         <aside className="space-y-4">
-            <Card className="overflow-hidden border border-gray-800 bg-gray-950 p-0 text-white shadow-sm" radius="xl" padding="none">
+            <Card className="overflow-hidden border border-gray-200 bg-gray-950 p-0 text-white shadow-sm" radius="xl" padding="none">
                 <div className="border-b border-white/10 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                     Live Preview - how your manager will see it
                 </div>
