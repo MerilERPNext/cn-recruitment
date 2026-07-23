@@ -404,6 +404,39 @@ def _d(v):
     return str(v) if v else None
 
 
+# Employee Link fields for which the profile response should also carry a
+# human-readable "<field>_title" alongside the raw id.
+_ALUMNI_LINK_TITLE_FIELDS = (
+    "designation",
+    "custom_designation_title",
+    "department",
+    "branch",
+    "employment_type",
+)
+
+
+def _resolve_link_title(doctype: str, fieldname: str, value: str) -> str:
+    """Human-readable title for a Link field's `value`, falling back to `value`.
+
+    Resolves the field's target doctype and its title field from meta, then
+    fetches the title. Any schema drift / missing record falls back to the id
+    so the response shape is always identical.
+    """
+    if not value:
+        return ""
+    try:
+        df = frappe.get_meta(doctype).get_field(fieldname)
+        target = df.options if df else None
+        if not target:
+            return value
+        title_field = frappe.get_meta(target).get_title_field()
+        if not title_field or title_field == "name":
+            return value
+        return frappe.db.get_value(target, value, title_field) or value
+    except Exception:
+        return value
+
+
 @frappe.whitelist(methods=["GET"])
 def get_alumni_profile() -> dict:
     """Normal profile details of the logged-in alumnus, based on their Employee.
@@ -474,6 +507,13 @@ def get_alumni_profile() -> dict:
                 emp[out_key] = _d(val) or ""
             else:
                 emp[out_key] = val if val is not None else ""
+
+        # For Link fields, also expose a human-readable title next to the raw id
+        # (e.g. designation -> designation_title). The id stays under the
+        # original key so existing callers are unaffected.
+        for fld in _ALUMNI_LINK_TITLE_FIELDS:
+            emp[f"{fld}_title"] = _resolve_link_title("Employee", fld, emp.get(fld) or "")
+
         profile["employee"] = emp
 
         if not profile.get("image") and emp.get("image"):
