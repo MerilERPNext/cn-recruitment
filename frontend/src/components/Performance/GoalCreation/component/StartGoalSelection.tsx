@@ -273,8 +273,8 @@ const StartGoalSelection = () => {
         <Modal
             isOpen={openAcknowledgmentPopup}
             onClose={() => setOpenAcknowledgePopu(false)}
-            size={isMobile ? 'full' : 'xl'}
-            className="max-w-[1300px] p-0"
+            size="lg"
+            className="max-w-[560px] p-0"
         >
             <Suspense fallback={<LazySectionFallback />}>
                 <AcknowledgmentPopup onClose={() => setOpenAcknowledgePopu(false)} />

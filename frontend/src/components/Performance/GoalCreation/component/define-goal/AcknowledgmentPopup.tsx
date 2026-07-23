@@ -68,20 +68,20 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose }) => {
     const acceptedCount = okrs.filter((o) => o.status === 'accepted').length;
 
     return (
-        <div className="flex h-full min-h-0 w-full max-w-full flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:max-h-[90vh] sm:rounded-xl sm:animate-slideUp">
+        <div className="flex w-full max-w-full flex-col overflow-hidden bg-white">
 
             {/* Header */}
             <div className="relative z-30 shrink-0 border-b border-gray-100 bg-white px-4 py-2.5 sm:px-5 sm:py-4">
-                <div className="flex items-center gap-2 mb-1">
-                    <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-md tracking-wider">
+                <div className="flex flex-col gap-0.5 mb-1 pr-11 sm:flex-row sm:items-center sm:gap-2 sm:pr-0">
+                    <span className="shrink-0 bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-md tracking-wider w-fit">
                         3 MANDATORY OKRs ASSIGNED
                     </span>
-                    <span className="text-gray-400 text-xs">Pushed by HR · India Tech BU · lock 21 May 2026</span>
+                    <span className="truncate text-gray-400 text-xs">Pushed by HR · India Tech BU · lock 21 May 2026</span>
                 </div>
-                <Typography variant="h4" className="pr-11 text-lg font-semibold leading-tight text-gray-900 sm:mt-1 sm:text-2xl">
+                <Typography variant="h4" className="pr-11 text-base font-semibold leading-tight text-gray-900 sm:pr-0 sm:mt-1 sm:text-2xl">
                     Acknowledge Mandatory OKRs
                 </Typography>
-                <Typography variant="caption" className="text-gray-500 mt-0.5">
+                <Typography variant="caption" className="text-gray-500 mt-0.5 text-[12px] leading-4 sm:text-xs sm:leading-normal">
                     Review each OKR and accept or reject. You must action all before proceeding.
                 </Typography>
 
@@ -96,7 +96,7 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose }) => {
             </div>
 
             {/* OKR Cards */}
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+            <div className="px-4 py-4 sm:px-5">
                 <div className="flex flex-col gap-3 sm:gap-4">
                     {okrs.map((okr) => (
                         <div
@@ -144,7 +144,7 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose }) => {
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex shrink-0 gap-2 sm:ml-auto">
+                            <div className="flex w-full shrink-0 gap-2 sm:w-auto sm:ml-auto">
                                 <Button
                                     type="button"
                                     variant={okr.status === 'accepted' ? 'contain' : 'outline'}
@@ -189,7 +189,7 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose }) => {
                         : `${okrs.filter((o) => o.status !== 'pending').length} of 3 actioned — please review all before submitting.`}
                 </Typography>
 
-                <div className="flex gap-2">
+                <div className="flex w-full gap-2 sm:w-auto">
                     <Button
                         type="button"
                         variant="outline"
