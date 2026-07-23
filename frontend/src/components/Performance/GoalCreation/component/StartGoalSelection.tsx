@@ -3,14 +3,13 @@ import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge } from 'lucide-re
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
 import Modal from '../../../shared/Modal';
-import { useScreenSize } from '../../../../hooks/useScreenSize';
+
 import { LazySectionFallback } from '../NewGaol';
 import GoalLibraryPopup from './GoalLibraryPopup';
 import AcknowledgmentPopup from './define-goal/AcknowledgmentPopup';
 
 
 const StartGoalSelection = () => {
-    const { isMobile } = useScreenSize();
     const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
     const [blankGoalDescription, setBlankGoalDescription] = useState(
         "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
@@ -263,7 +262,7 @@ const StartGoalSelection = () => {
         <Modal
             isOpen={isGoalLibraryOpen}
             onClose={() => setIsGoalLibraryOpen(false)}
-            size={isMobile ? 'full' : 'xl'}
+            size="xl"
             className="max-w-[1300px] p-0"
         >
             <Suspense fallback={<LazySectionFallback />}>
@@ -274,7 +273,7 @@ const StartGoalSelection = () => {
             isOpen={openAcknowledgmentPopup}
             onClose={() => setOpenAcknowledgePopu(false)}
             size="lg"
-            className="max-w-[560px] p-0"
+            className="max-w-[780px] p-0"
         >
             <Suspense fallback={<LazySectionFallback />}>
                 <AcknowledgmentPopup onClose={() => setOpenAcknowledgePopu(false)} />
