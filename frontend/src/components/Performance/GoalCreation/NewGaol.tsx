@@ -55,7 +55,7 @@ const stepDefinitions: {
         },
     ];
 
-const LazySectionFallback = () => (
+export const LazySectionFallback = () => (
     <div className="min-h-[240px] rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="h-5 w-40 animate-pulse rounded bg-gray-100" />
         <div className="mt-5 space-y-3">
@@ -71,16 +71,13 @@ interface NewGoalProps {
 }
 
 const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
-    const { isMobile } = useScreenSize();
     const [activeStepIndex, setActiveStepIndex] = useState(0);
-    const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
 
     const safeStepIndex = Math.min(
         Math.max(activeStepIndex, 0),
         stepDefinitions.length - 1,
     );
     const activeStep = stepDefinitions[safeStepIndex].key;
-    const isLastStep = safeStepIndex === stepDefinitions.length - 1;
     const currentStep = stepDefinitions[safeStepIndex];
 
     const steps = stepDefinitions.map((step, index) => ({
@@ -89,10 +86,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
     }));
 
     const handlePrimaryAction = () => {
-        if (isLastStep) {
-            setIsGoalLibraryOpen(true);
-            return;
-        }
+      
 
         setActiveStepIndex((currentIndex) => {
             const boundedIndex = Math.min(
@@ -185,16 +179,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
                 </Suspense>
             </PageLayoutWrapper>
 
-            <Modal
-                isOpen={isGoalLibraryOpen}
-                onClose={() => setIsGoalLibraryOpen(false)}
-                size={isMobile ? 'full' : 'xl'}
-                className="max-w-[1300px] p-0"
-            >
-                <Suspense fallback={<LazySectionFallback />}>
-                    <GoalLibraryPopup onClose={() => setIsGoalLibraryOpen(false)} />
-                </Suspense>
-            </Modal>
+          
         </>
     );
 };
