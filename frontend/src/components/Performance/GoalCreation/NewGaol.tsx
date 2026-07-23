@@ -1,4 +1,4 @@
-import { lazy, Suspense, type MouseEvent, useState } from 'react';
+import { lazy, Suspense, type MouseEvent, useState, useMemo, useCallback } from 'react';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import Button from '../../shared/atoms/Button';
 import PageLayoutWrapper from '../../shared/PageLayoutWrapper';
@@ -77,42 +77,41 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
     const activeStep = stepDefinitions[safeStepIndex].key;
     const currentStep = stepDefinitions[safeStepIndex];
 
-    const steps = stepDefinitions.map((step, index) => ({
-        label: step.label,
-        active: index === safeStepIndex,
-    }));
-
-    const handlePrimaryAction = () => {
-
-
+    const steps = useMemo(
+        () =>
+            stepDefinitions.map((step, index) => ({
+                label: step.label,
+                active: index === safeStepIndex,
+            })),
+        [safeStepIndex],
+    );
+    const handlePrimaryAction = useCallback(() => {
         setActiveStepIndex((currentIndex) => {
             const boundedIndex = Math.min(
                 Math.max(currentIndex, 0),
                 stepDefinitions.length - 1,
             );
-
             return Math.min(boundedIndex + 1, stepDefinitions.length - 1);
         });
-    };
-
-    const handleSecondaryAction = (event?: MouseEvent<HTMLButtonElement>) => {
-        event?.preventDefault();
-        event?.stopPropagation();
-
-        if (activeStepIndex === 0) {
-            if (onClose) onClose();
-            return;
-        }
-
-        setActiveStepIndex((currentIndex) => {
-            const boundedIndex = Math.min(
-                Math.max(currentIndex, 0),
-                stepDefinitions.length - 1,
-            );
-
-            return Math.max(boundedIndex - 1, 0);
-        });
-    };
+    }, []);
+    const handleSecondaryAction = useCallback(
+        (event?: MouseEvent<HTMLButtonElement>) => {
+            event?.preventDefault();
+            event?.stopPropagation();
+            if (activeStepIndex === 0) {
+                if (onClose) onClose();
+                return;
+            }
+            setActiveStepIndex((currentIndex) => {
+                const boundedIndex = Math.min(
+                    Math.max(currentIndex, 0),
+                    stepDefinitions.length - 1,
+                );
+                return Math.max(boundedIndex - 1, 0);
+            });
+        },
+        [activeStepIndex, onClose],
+    );
 
     const renderStepContent = () => {
         switch (activeStep) {
