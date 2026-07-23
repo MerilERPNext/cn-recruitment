@@ -1,13 +1,10 @@
 import { lazy, Suspense, type MouseEvent, useState } from 'react';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import Button from '../../shared/atoms/Button';
-import Modal from '../../shared/Modal';
 import PageLayoutWrapper from '../../shared/PageLayoutWrapper';
-import { useScreenSize } from '../../../hooks/useScreenSize';
 
 const DefineGoal = lazy(() => import('./component/DefineGoal'));
 const GoalAlignment = lazy(() => import('./component/GoalAlignment'));
-const GoalLibraryPopup = lazy(() => import('./component/GoalLibraryPopup'));
 const StartGoalSelection = lazy(() => import('./component/StartGoalSelection'));
 const VisibilityAndSubmit = lazy(() => import('./component/VisibilityAndSubmit'));
 
@@ -120,7 +117,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
     const renderStepContent = () => {
         switch (activeStep) {
             case 'start':
-                return <StartGoalSelection onContinue={handlePrimaryAction} />;
+                return <StartGoalSelection />;
 
             case 'define':
                 return <DefineGoal />;

@@ -7,11 +7,8 @@ import { useScreenSize } from '../../../../hooks/useScreenSize';
 import { LazySectionFallback } from '../NewGaol';
 import GoalLibraryPopup from './GoalLibraryPopup';
 
-interface StartGoalSelectionProps {
-    onContinue?: () => void;
-}
 
-const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
+const StartGoalSelection = () => {
     const { isMobile } = useScreenSize();
     const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
     const [blankGoalDescription, setBlankGoalDescription] = useState(
