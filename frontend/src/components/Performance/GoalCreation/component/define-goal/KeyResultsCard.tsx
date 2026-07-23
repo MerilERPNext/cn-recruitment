@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Check, Plus, Sparkles, X } from 'lucide-react';
 import Badge from '../../../../shared/Badge';
 import Button from '../../../../shared/atoms/Button';
@@ -15,7 +16,7 @@ interface KeyResultsCardProps {
     fieldClass: string;
 }
 
-export const KeyResultsCard = ({
+export const KeyResultsCard = memo(({
     keyResults,
     keyResultMetricTypes,
     handleMetricTypeChange,
@@ -153,4 +154,4 @@ export const KeyResultsCard = ({
             </div>
         </Card>
     );
-};
+});

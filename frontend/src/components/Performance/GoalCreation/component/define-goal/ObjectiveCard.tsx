@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Form } from '@tsed/react-formio';
 import { format, isValid, parse } from 'date-fns';
 import { Sparkles, X } from 'lucide-react';
@@ -132,7 +133,7 @@ const formatFormDateForGoal = (value?: string) => {
     return parsedDate ? format(parsedDate, 'yyyy-MM-dd') : '';
 };
 
-export const ObjectiveCard = ({
+export const ObjectiveCard = memo(({
     weightage,
     setWeightage,
     selectedCategory,
@@ -239,4 +240,4 @@ export const ObjectiveCard = ({
             </div>
         </Card>
     );
-};
+});

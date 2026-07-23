@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import Badge from '../../../../shared/Badge';
 import { Card } from '../../../../shared/atoms/Card';
 import { Typography } from '../../../../shared/atoms/Typography';
@@ -8,7 +9,7 @@ interface LivePreviewCardProps {
     keyResults: KeyResult[];
 }
 
-export const LivePreviewCard = ({
+export const LivePreviewCard = memo(({
     weightage,
     keyResults,
 }: LivePreviewCardProps) => {
@@ -65,4 +66,4 @@ export const LivePreviewCard = ({
             </Card>
         </aside>
     );
-};
+});
