@@ -146,8 +146,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                         bgColor="text"
                         className="h-10 w-full justify-center rounded-lg border-gray-200 bg-white px-4 text-gray-700 hover:bg-gray-50 sm:h-9 sm:w-auto"
                     >
-                        Browse all 506
-                        <ArrowRight className="h-4 w-4" />
+                        Submit
                     </Button>
                 </div>
 
