@@ -1,7 +1,7 @@
 import TemplateCard from './TemplateCard';
 import { GoalTemplate, TemplateListProps } from './types';
 
-const templates: GoalTemplate[] = [
+export const allOrgTemplates: GoalTemplate[] = [
     { id: 'org-01', scope: 'Org', title: 'Drive company-wide Net Promoter Score above 60', usedCount: 312 },
     { id: 'org-02', scope: 'Org', title: 'Launch new employee onboarding program in Q2', usedCount: 278 },
     { id: 'org-03', scope: 'Org', title: 'Achieve 95% performance review completion rate', usedCount: 245, recommended: true },
@@ -18,7 +18,7 @@ const templates: GoalTemplate[] = [
 
 const AllOrgTemplates = ({ onUseTemplate }: TemplateListProps) => (
     <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-        {templates.map((template) => (
+        {allOrgTemplates.map((template) => (
             <TemplateCard key={template.id} template={template} onUseTemplate={onUseTemplate} />
         ))}
     </div>

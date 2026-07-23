@@ -1,7 +1,7 @@
 import TemplateCard from './TemplateCard';
 import { GoalTemplate, TemplateListProps } from './types';
 
-const templates: GoalTemplate[] = [
+export const usedByTeamTemplates: GoalTemplate[] = [
     { id: 'team-01', scope: 'Design', title: 'Improve team design review velocity by 30%', usedCount: 9, recommended: true },
     { id: 'team-02', scope: 'Design', title: 'Adopt shared Figma component library across team', usedCount: 8 },
     { id: 'team-03', scope: 'Design', title: 'Reduce rework cycles on design handoffs to zero', usedCount: 7 },
@@ -15,7 +15,7 @@ const templates: GoalTemplate[] = [
 
 const UsedByTeamTemplates = ({ onUseTemplate }: TemplateListProps) => (
     <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-        {templates.map((template) => (
+        {usedByTeamTemplates.map((template) => (
             <TemplateCard key={template.id} template={template} onUseTemplate={onUseTemplate} />
         ))}
     </div>
