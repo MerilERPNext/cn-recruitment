@@ -13,7 +13,8 @@ Employee.status or User.enabled).
 
 Endpoints (call as `recruitment.recruitment.alumni_portal.<fn>`):
     portal_login, get_alumni_context, portal_logout,
-    request_password_otp, verify_password_otp, reset_password_with_otp
+    request_password_otp, verify_password_otp, reset_password_with_otp,
+    get_alumni_tickets
 """
 
 from __future__ import annotations
@@ -672,6 +673,60 @@ def _alumni_email(user: str) -> str:
     return frappe.db.get_value("User", user, "email") or user
 
 
+def _attach_category_names(tickets: list[dict]) -> None:
+    cat_ids = list(set(t.get("category") for t in tickets if t.get("category")))
+    if not cat_ids:
+        return
+    cats = frappe.get_all("HD Category", filters={"name": ["in", cat_ids]}, fields=["name", "category_name"])
+    cat_map = {c.name: c.category_name for c in cats}
+    for t in tickets:
+        if t.get("category"):
+            t["category_name"] = cat_map.get(t["category"]) or t["category"]
+
+
+def _attach_assigned_to(tickets: list[dict]) -> None:
+    assignee_ids = set()
+    for t in tickets:
+        assign_raw = t.get("_assign")
+        if assign_raw:
+            try:
+                parsed = frappe.parse_json(assign_raw)
+                if isinstance(parsed, str):
+                    parsed = frappe.parse_json(parsed)
+                assignees = parsed if isinstance(parsed, list) else [parsed]
+                for a in assignees:
+                    if a:
+                        assignee_ids.add(a)
+            except Exception:
+                pass
+
+    user_map = {}
+    if assignee_ids:
+        users = frappe.get_all("User", filters={"name": ["in", list(assignee_ids)]}, fields=["name", "full_name"])
+        user_map = {u.name: (u.full_name or u.name) for u in users}
+
+    for t in tickets:
+        assigned_to = []
+        assign_raw = t.get("_assign")
+        if assign_raw:
+            try:
+                parsed = frappe.parse_json(assign_raw)
+                if isinstance(parsed, str):
+                    parsed = frappe.parse_json(parsed)
+                assignees = parsed if isinstance(parsed, list) else [parsed]
+                for a in assignees:
+                    if a:
+                        assigned_to.append({
+                            "name": a,
+                            "full_name": user_map.get(a) or a
+                        })
+            except Exception:
+                pass
+        
+        t.pop("_assign", None)
+        t["assigned_to"] = assigned_to
+
+
 def _build_comment_content(content: str, attachment: dict | None) -> str:
     """Render uploaded attachment content as Quill-safe HTML.
 
@@ -721,10 +776,14 @@ def get_alumni_ticket(name: str | None = None, ticket_id: str | None = None) -> 
         frappe.local.response["http_status_code"] = 400
         return {"success": False, "message": _("Ticket ID is required.")}
 
+    fields = ["name", "subject", "ticket_type", "status", "priority", "_assign", "creation"]
+    if frappe.db.has_column("HD Ticket", "custom_category"):
+        fields.append("custom_category")
+
     ticket = frappe.db.get_value(
         "HD Ticket",
         {"name": ticket_name, "raised_by": email},
-        ["name", "subject", "ticket_type", "status", "priority", "_assign", "creation"],
+        fields,
         as_dict=True,
     )
     if not ticket:
@@ -760,26 +819,29 @@ def get_alumni_ticket(name: str | None = None, ticket_id: str | None = None) -> 
         except Exception:
             assigned_to = []
 
+    ticket_payload = {
+        "id": ticket.name,
+        "subject": ticket.subject,
+        "category": ticket.get("custom_category") or ticket.ticket_type,
+        "status": ticket.status,
+        "priority": ticket.priority,
+        "assigned_to": assigned_to,
+        "raised_time": _d(ticket.creation),
+        "comments": [
+            {
+                "id": c.name,
+                "content": c.content,
+                "commented_by": c.commented_by,
+                "created_at": _d(c.creation),
+            }
+            for c in comments
+        ],
+    }
+    _attach_category_names([ticket_payload])
+
     return {
         "success": True,
-        "ticket": {
-            "id": ticket.name,
-            "subject": ticket.subject,
-            "category": ticket.ticket_type,
-            "status": ticket.status,
-            "priority": ticket.priority,
-            "assigned_to": assigned_to,
-            "raised_time": _d(ticket.creation),
-            "comments": [
-                {
-                    "id": c.name,
-                    "content": c.content,
-                    "commented_by": c.commented_by,
-                    "created_at": _d(c.creation),
-                }
-                for c in comments
-            ],
-        },
+        "ticket": ticket_payload,
     }
 
 
@@ -799,20 +861,25 @@ def get_alumni_recent_open_tickets(limit: int = 5) -> dict:
         {"raised_by": email, "status": ["in", _TICKET_OPEN_STATUSES]},
     )
 
+    fields = [
+        "name",
+        "subject",
+        "ticket_type",
+        "status",
+        "agent_group",
+        "creation",
+        "modified",
+        "opening_date",
+        "first_responded_on",
+        "_assign",
+    ]
+    if frappe.db.has_column("HD Ticket", "custom_category"):
+        fields.append("custom_category")
+
     rows = frappe.get_all(
         "HD Ticket",
         filters={"raised_by": email, "status": ["in", _TICKET_OPEN_STATUSES]},
-        fields=[
-            "name",
-            "subject",
-            "ticket_type",
-            "status",
-            "agent_group",
-            "creation",
-            "modified",
-            "opening_date",
-            "first_responded_on",
-        ],
+        fields=fields,
         order_by="modified desc",
         page_length=min(max(int(limit), 1), 50),
     )
@@ -831,14 +898,18 @@ def get_alumni_recent_open_tickets(limit: int = 5) -> dict:
         {
             "id": r.name,
             "subject": r.subject,
-            "category": r.ticket_type,
+            "category": r.get("custom_category") or r.ticket_type,
             "status": r.status,
             "team": r.agent_group,
             "raised_on": _d(r.opening_date or r.creation),
             "updated_on": _d(r.modified),
+            "_assign": r.get("_assign"),
         }
         for r in rows
     ]
+    
+    _attach_category_names(tickets)
+    _attach_assigned_to(tickets)
 
     return {
         "success": True,
@@ -946,19 +1017,26 @@ def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
 
     filters = {"raised_by": email}
     if category:
-        filters["ticket_type"] = category
+        if frappe.db.has_column("HD Ticket", "custom_category"):
+            filters["custom_category"] = category
+        else:
+            filters["ticket_type"] = category
     if status == "open":
         filters["status"] = ["in", _TICKET_OPEN_STATUSES]
     elif status == "resolved":
         filters["status"] = ["in", _TICKET_RESOLVED_STATUSES]
 
+    fields = [
+        "name", "subject", "ticket_type", "status", "agent_group",
+        "creation", "modified", "opening_date", "_assign"
+    ]
+    if frappe.db.has_column("HD Ticket", "custom_category"):
+        fields.append("custom_category")
+
     rows = frappe.get_all(
         "HD Ticket",
         filters=filters,
-        fields=[
-            "name", "subject", "ticket_type", "status", "agent_group",
-            "creation", "modified", "opening_date",
-        ],
+        fields=fields,
         order_by="creation desc",
         start=frappe.utils.cint(start),
         page_length=frappe.utils.cint(limit) or 50,
@@ -967,15 +1045,21 @@ def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
         {
             "name": r.name,
             "subject": r.subject,
-            "category": r.ticket_type,        # the type flag / chip
+            "category": r.get("custom_category") or r.ticket_type,        # the type flag / chip
             "status": r.status,
             "status_label": _ticket_status_label(r.status),
             "team": r.agent_group,
             "raised_on": _d(r.opening_date or r.creation),
             "updated_on": _d(r.modified),
+            "_assign": r.get("_assign"),
         }
         for r in rows
     ]
+
+    _attach_category_names(tickets)
+    _attach_assigned_to(tickets)
+
+    total_filtered_count = frappe.db.count("HD Ticket", filters=filters)
 
     # ── stats over ALL of the user's tickets ──
     all_t = frappe.get_all(
@@ -1000,8 +1084,12 @@ def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
     rated = [x.feedback_rating for x in all_t if x.feedback_rating]
     satisfaction_percent = round((sum(rated) / len(rated)) * 100) if rated else None
 
+    from recruitment.recruitment.alumni_helpdesk import get_alumni_hd_categories
+    hd_categories_res = get_alumni_hd_categories()
+
     return {
         "success": True,
+        "total_filtered_count": total_filtered_count,
         "stats": {
             "open_tickets": open_count,
             "resolved_tickets": resolved_count,
@@ -1009,7 +1097,7 @@ def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
             "avg_response_hours": avg_response_hours,
             "satisfaction_percent": satisfaction_percent,
         },
-        "filter_options": {"categories": frappe.get_all("HD Ticket Type", pluck="name")},
+        "filter_options": {"categories": hd_categories_res.get("categories", [])},
         "tickets": tickets,
     }
 
