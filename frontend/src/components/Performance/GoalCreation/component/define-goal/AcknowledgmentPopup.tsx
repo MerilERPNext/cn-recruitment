@@ -221,4 +221,4 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose }) => {
     );
 };
 
-export default AcknowledgmentPopup;
+export default React.memo(AcknowledgmentPopup);

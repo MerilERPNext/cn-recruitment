@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ArrowRight, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
 import { Select } from '../../../shared/atoms/Select';
@@ -156,4 +156,4 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     );
 };
 
-export default GoalLibraryPopup;
+export default React.memo(GoalLibraryPopup);
