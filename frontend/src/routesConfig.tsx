@@ -494,6 +494,11 @@ const Overview = lazyWithRetry(
   "Overview",
 );
 
+const OverviewDashboard = lazyWithRetry(
+  () => import("./components/Performance/Overview/component/OverviewDashboard"),
+  "OverviewDashboard",
+);
+
 const PerformanceReviewApp = lazyWithRetry(
   () =>
     import("./components/Performance/PerformanceReview/PerformanceReviewApp"),
@@ -1455,11 +1460,53 @@ export const routesConfig: AppRoute[] = [
     element: <PerformanceApp />,
     permissionKey: "Performance",
     children: [
-      { path: "overview", element: <Overview />, permissionKey: "Overview" },
       {
-        path: "my-goals",
-        element: <MyGoals />,
-        permissionKey: "My Goals",
+        path: "",
+        element: <Overview />,
+        permissionKey: "Overview",
+        children: [
+          { path: "overview", element: <OverviewDashboard />, permissionKey: "Overview" },
+          {
+            path: "my-goals",
+            element: <MyGoals />,
+            permissionKey: "My Goals",
+          },
+          {
+            path: "my-goals/:id",
+            element: <GoalDetails />,
+            permissionKey: "My Goals",
+          },
+          {
+            path: "review",
+            element: <Review />,
+            permissionKey: "Review",
+          },
+          {
+            path: "review/peer-nomination",
+            element: <PeerNominationPage />,
+            permissionKey: "Review",
+          },
+          {
+            path: "feedback",
+            element: <Feedback />,
+            permissionKey: "Feedback",
+          },
+          {
+            path: "my-goals/new-goal",
+            element: <NewGoal />,
+            permissionKey: "New Goal Plan",
+          },
+          {
+            path: "skills",
+            element: <SkillsAndProficiency />,
+            permissionKey: "Skills And Proficiency",
+          },
+          {
+            path: "performance-review",
+            element: <PerformanceReviewApp />,
+            permissionKey: "Performance Review",
+          },
+        ]
       },
       {
         path: "team-overview",
@@ -1495,41 +1542,6 @@ export const routesConfig: AppRoute[] = [
         path: "team-check-ins",
         element: <TeamCheckIns />,
         permissionKey: "Team Check-Ins",
-      },
-      {
-        path: "my-goals/:id",
-        element: <GoalDetails />,
-        permissionKey: "My Goals",
-      },
-      {
-        path: "review",
-        element: <Review />,
-        permissionKey: "Review",
-      },
-      {
-        path: "review/peer-nomination",
-        element: <PeerNominationPage />,
-        permissionKey: "Review",
-      },
-      {
-        path: "feedback",
-        element: <Feedback />,
-        permissionKey: "Feedback",
-      },
-      {
-        path: "my-goals/new-goal",
-        element: <NewGoal />,
-        permissionKey: "New Goal Plan",
-      },
-      {
-        path: "skills",
-        element: <SkillsAndProficiency />,
-        permissionKey: "Skills And Proficiency",
-      },
-      {
-        path: "performance-review",
-        element: <PerformanceReviewApp />,
-        permissionKey: "Performance Review",
       },
       {
         path: "appraisal-cycle-wizard",
