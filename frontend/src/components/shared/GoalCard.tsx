@@ -54,7 +54,10 @@ export const GoalCard: React.FC<GoalCardProps> = memo(({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={handleCardClick}
+      onKeyDown={(e) => e.key === "Enter" && handleCardClick()}
       className="relative z-10 min-w-0 cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
     >
       {!isCompact && (

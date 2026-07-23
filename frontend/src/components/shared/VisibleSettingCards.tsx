@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction } from 'react'
+import React, { Dispatch, SetStateAction } from 'react'
 import { Typography } from './atoms/Typography'
 import { VisibilityOption, VisibilitySetting } from '../Performance/GoalCreation/component/VisibilityAndSubmit'
 
@@ -44,4 +44,4 @@ const VisibleSettingCards = ({ setting, setSelectedVisibility, selectedVisibilit
     )
 }
 
-export default VisibleSettingCards
+export default React.memo(VisibleSettingCards)
