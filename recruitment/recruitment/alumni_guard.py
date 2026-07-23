@@ -37,8 +37,11 @@ from __future__ import annotations
 import frappe
 from frappe import _
 
-# The only namespace an alumni session may call.
-ALUMNI_NAMESPACE = "recruitment.recruitment.alumni_portal."
+# The namespaces an alumni session may call.
+ALUMNI_NAMESPACES = (
+    "recruitment.recruitment.alumni_portal.",
+    "recruitment.recruitment.alumni_helpdesk.",
+)
 
 # Framework commands an alumni session may still hit (kept intentionally tiny).
 _ALUMNI_GLOBAL_ALLOWLIST = {
@@ -106,7 +109,7 @@ def _is_allowed_for_alumni(kind: str, command: str) -> bool:
     if kind != "method":
         # /api/resource/* and any non-method request -> blocked for alumni.
         return False
-    if command.startswith(ALUMNI_NAMESPACE):
+    if any(command.startswith(ns) for ns in ALUMNI_NAMESPACES):
         return True
     return command in _ALUMNI_GLOBAL_ALLOWLIST
 
