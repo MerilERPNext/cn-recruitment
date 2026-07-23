@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Check, Info, Link2, Users } from 'lucide-react';
 import Badge from '../../../shared/Badge';
 import Button from '../../../shared/atoms/Button';
 import { Card } from '../../../shared/atoms/Card';
 import { Typography } from '../../../shared/atoms/Typography';
+import { useScreenSize } from '../../../../hooks/useScreenSize';
 
 const parentGoals = [
     {
@@ -61,7 +62,7 @@ const crossFunctionalKrs = [
 
 const GoalAlignment = () => {
     const [contribution, setContribution] = useState(35);
-    const [isMobileView, setIsMobileView] = useState(false);
+    const { isMobile: isMobileView } = useScreenSize();
     const existingParentContribution = 70;
     const parentContributionTotal = existingParentContribution + contribution;
     const remainingParentContribution = Math.max(100 - parentContributionTotal, 0);
@@ -71,22 +72,12 @@ const GoalAlignment = () => {
             .map((option) => option.label),
     );
 
-    const toggleAlignmentOption = (label: string) => {
+    const toggleAlignmentOption = useCallback((label: string) => {
         setSelectedOptions((currentOptions) => (
             currentOptions.includes(label)
                 ? currentOptions.filter((option) => option !== label)
                 : [...currentOptions, label]
         ));
-    };
-
-    useEffect(() => {
-        const updateViewport = () => {
-            setIsMobileView(window.innerWidth < 768);
-        };
-
-        updateViewport();
-        window.addEventListener('resize', updateViewport);
-        return () => window.removeEventListener('resize', updateViewport);
     }, []);
 
     return (
@@ -104,7 +95,7 @@ const GoalAlignment = () => {
 
                     {isMobileView ? (
                         <div className="rounded-xl bg-white">
-                            <div className="mx-auto rounded-xl border border-blue-300 bg-blue-50 px-4 py-3 text-center shadow-sm">
+                            <div className="mx-auto rounded-xl border border-blue-300 bg-blue-50 px-4 py-3 text-center shadow-sm" aria-label="Org Goal: Alakh Pandey">
                                 <Typography variant="caption" className="font-semibold uppercase tracking-wide text-blue-600">
                                     Org - Alakh Pandey
                                 </Typography>
@@ -119,6 +110,7 @@ const GoalAlignment = () => {
                                 {parentGoals.map((goal) => (
                                     <div
                                         key={goal.title}
+                                        aria-label={`Parent goal option: ${goal.title}`}
                                         className={`rounded-xl border bg-white p-4 shadow-sm ${goal.selected ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200'}`}
                                     >
                                         <div className="mb-2 flex items-center justify-between gap-3">
@@ -142,7 +134,7 @@ const GoalAlignment = () => {
 
                             <div className="mx-auto h-10 w-px border-l-2 border-dashed border-violet-300" />
 
-                            <div className="rounded-xl bg-violet-600 px-4 py-4 text-white shadow-lg">
+                            <div className="rounded-xl bg-violet-600 px-4 py-4 text-white shadow-lg" aria-label="Current draft goal">
                                 <div className="mb-2 flex min-w-0 items-center gap-2">
                                     <Badge label="MY NEW GOAL - DRAFT" variant="white" size="sm" icon={<Link2 className="h-3 w-3" />} />
                                 </div>
@@ -156,7 +148,7 @@ const GoalAlignment = () => {
                         </div>
                     ) : (
                         <div className="relative min-h-[430px] overflow-hidden rounded-xl bg-white">
-                            <div className="absolute left-1/2 top-2 z-10 w-[300px] -translate-x-1/2 rounded-xl border border-blue-300 bg-blue-50 px-5 py-3 text-center shadow-sm">
+                            <div className="absolute left-1/2 top-2 z-10 w-[300px] -translate-x-1/2 rounded-xl border border-blue-300 bg-blue-50 px-5 py-3 text-center shadow-sm" aria-label="Org Goal: Alakh Pandey">
                                 <Typography variant="caption" className="font-semibold uppercase tracking-wide text-blue-600">
                                     Org - Alakh Pandey
                                 </Typography>
@@ -174,6 +166,7 @@ const GoalAlignment = () => {
                                 {parentGoals.map((goal) => (
                                     <div
                                         key={goal.title}
+                                        aria-label={`Parent goal option: ${goal.title}`}
                                         className={`rounded-xl border bg-white p-4 shadow-sm ${goal.selected ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200'}`}
                                     >
                                         <div className="mb-2 flex items-center justify-between">
@@ -195,7 +188,7 @@ const GoalAlignment = () => {
                                 ))}
                             </div>
 
-                            <div className="absolute bottom-0 left-[15%] w-[360px] rounded-xl bg-violet-600 px-5 py-4 text-white shadow-lg">
+                            <div className="absolute bottom-0 left-[15%] w-[360px] rounded-xl bg-violet-600 px-5 py-4 text-white shadow-lg" aria-label="Current draft goal">
                                 <div className="mb-1 flex items-center gap-2">
                                     <Badge label="MY NEW GOAL - DRAFT" variant="white" size="sm" icon={<Link2 className="h-3 w-3" />} />
                                 </div>
@@ -295,7 +288,7 @@ const GoalAlignment = () => {
                                 Shared KRs with teams in other functions
                             </Typography>
                         </div>
-                        <Button type="button" variant="soft" bgColor="primary" className="h-9 bg-blue-50 px-3 text-blue-700 hover:bg-blue-100">
+                        <Button type="button" variant="soft" bgColor="primary" className="h-9 bg-blue-50 px-3 text-blue-700 hover:bg-blue-100" aria-label="Add collaborator button">
                             <Users className="h-4 w-4" />
                             Add collaborator
                         </Button>
@@ -303,7 +296,7 @@ const GoalAlignment = () => {
 
                     <div className="space-y-3">
                         {crossFunctionalKrs.map((kr) => (
-                            <div key={kr.title} className="grid grid-cols-1 gap-3 rounded-xl border border-gray-200 p-4 md:grid-cols-[auto_1fr_auto] md:items-center">
+                            <div key={kr.title} aria-label={`Cross functional key result: ${kr.title}`} className="grid grid-cols-1 gap-3 rounded-xl border border-gray-200 p-4 md:grid-cols-[auto_1fr_auto] md:items-center">
                                 <Badge label={kr.team} variant="info" size="sm" />
                                 <div>
                                     <Typography variant="bodyMedium" className="text-sm font-semibold text-gray-900">
@@ -375,4 +368,4 @@ const GoalAlignment = () => {
     );
 };
 
-export default GoalAlignment;
+export default React.memo(GoalAlignment);
