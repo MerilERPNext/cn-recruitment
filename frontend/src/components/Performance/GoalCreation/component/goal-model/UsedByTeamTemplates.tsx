@@ -3,18 +3,7 @@ import { CheckSquare, Square } from 'lucide-react';
 import TemplateCard from './TemplateCard';
 import { GoalTemplate, TemplateListProps } from './types';
 import Button from '../../../../shared/atoms/Button';
-
-const templates: GoalTemplate[] = [
-    { id: 'team-01', scope: 'Design', title: 'Improve team design review velocity by 30%', usedCount: 9, recommended: true },
-    { id: 'team-02', scope: 'Design', title: 'Adopt shared Figma component library across team', usedCount: 8 },
-    { id: 'team-03', scope: 'Design', title: 'Reduce rework cycles on design handoffs to zero', usedCount: 7 },
-    { id: 'team-04', scope: 'Design', title: 'Ship mobile-first redesign of the onboarding flow', usedCount: 6 },
-    { id: 'team-05', scope: 'Design', title: 'Complete team accessibility audit on all active screens', usedCount: 5 },
-    { id: 'team-06', scope: 'Design', title: 'Hold monthly team retrospectives with action tracking', usedCount: 5 },
-    { id: 'team-07', scope: 'Design', title: 'Achieve 100% on-time delivery of design assets', usedCount: 4 },
-    { id: 'team-08', scope: 'Design', title: 'Grow team skill score in motion design by EOY', usedCount: 3 },
-    { id: 'team-09', scope: 'Design', title: 'Establish peer feedback culture across design team', usedCount: 3 },
-];
+import { usedByTeamTemplates } from '../../MockData';
 
 const UsedByTeamTemplates = ({ onUseTemplate }: TemplateListProps) => {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -36,14 +25,14 @@ const UsedByTeamTemplates = ({ onUseTemplate }: TemplateListProps) => {
     };
 
     const handleSelectAll = () => {
-        if (selectedIds.length === templates.length) {
+        if (selectedIds.length === usedByTeamTemplates.length) {
             setSelectedIds([]);
         } else {
-            setSelectedIds(templates.map((t) => t.id));
+            setSelectedIds(usedByTeamTemplates.map((t) => t.id));
         }
     };
 
-    const isAllSelected = selectedIds.length === templates.length;
+    const isAllSelected = selectedIds.length === usedByTeamTemplates.length;
 
     const totalSelectedWeightage = selectedIds.reduce(
         (acc, id) => acc + (weightages[id] ?? 10),
@@ -88,7 +77,7 @@ const UsedByTeamTemplates = ({ onUseTemplate }: TemplateListProps) => {
                             bgColor="primary"
                             className="h-8 text-xs bg-blue-600 text-white hover:bg-blue-700"
                             onClick={() => {
-                                const selectedTemplates = templates.filter((t) => selectedIds.includes(t.id));
+                                const selectedTemplates = usedByTeamTemplates.filter((t) => selectedIds.includes(t.id));
                                 selectedTemplates.forEach((t) => onUseTemplate?.(t));
                             }}
                         >
@@ -99,7 +88,7 @@ const UsedByTeamTemplates = ({ onUseTemplate }: TemplateListProps) => {
             </div>
 
             <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-                {templates.map((template) => (
+                {usedByTeamTemplates.map((template) => (
                     <TemplateCard
                         key={template.id}
                         template={template}
