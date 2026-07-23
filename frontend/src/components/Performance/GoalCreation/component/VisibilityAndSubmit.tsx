@@ -16,7 +16,7 @@ import Badge from '../../../shared/Badge';
 import Button from '../../../shared/atoms/Button';
 import { Card } from '../../../shared/atoms/Card';
 import { Typography } from '../../../shared/atoms/Typography';
-import VisibleSettingCards from '../../../shared/GoalCards';
+import VisibleSettingCards from '../../../shared/VisibleSettingCards';
 
 export type VisibilityOption = 'Private' | 'Manager-only' | 'Team' | 'Org-wide';
 
