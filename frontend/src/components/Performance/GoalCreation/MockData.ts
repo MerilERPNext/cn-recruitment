@@ -1,4 +1,13 @@
+import { FileText, GitBranch, Sparkles } from 'lucide-react';
 import { GoalTemplate } from './component/goal-model/types';
+import type {
+    MetricType,
+    CategoryType,
+    MetricSelectOption,
+    CategorySelectOption,
+    KeyResult,
+    AutoPullSource,
+} from './Type';
 
 export const recommendedTemplates: GoalTemplate[] = [
     {
@@ -126,4 +135,92 @@ export const usedByTeamTemplates: GoalTemplate[] = [
     { id: 'team-07', scope: 'Design', title: 'Achieve 100% on-time delivery of design assets', usedCount: 4 },
     { id: 'team-08', scope: 'Design', title: 'Grow team skill score in motion design by EOY', usedCount: 3 },
     { id: 'team-09', scope: 'Design', title: 'Establish peer feedback culture across design team', usedCount: 3 },
+];
+
+export const tags = ['product', 'oxygen', 'rollout', 'fy26-q3'];
+
+export const metricTypeOptions: MetricType[] = ['%', 'Number', 'Count', 'Currency', 'Boolean', 'Milestone'];
+
+export const categoryOptions: CategoryType[] = [
+    'Organisational',
+    'Business',
+    'Functional',
+    'Team',
+    'Individual',
+    'Development',
+];
+
+export const metricSelectOptions: MetricSelectOption[] = metricTypeOptions.map((option) => ({
+    label: option,
+    value: option,
+}));
+
+export const categorySelectOptions: CategorySelectOption[] = categoryOptions.map((option) => ({
+    label: option,
+    value: option,
+}));
+
+export const autoPullSources: AutoPullSource[] = [
+    {
+        id: 'jira',
+        label: 'Jira',
+        description: 'OXY-2.0 epic · 48/76 issues',
+        enabled: true,
+        icon: FileText,
+    },
+    {
+        id: 'github',
+        label: 'GitHub',
+        description: 'oxygen-web · 142 PRs merged',
+        enabled: true,
+        icon: GitBranch,
+    },
+    {
+        id: 'figma',
+        label: 'Figma',
+        description: 'Not connected',
+        enabled: false,
+        icon: Sparkles,
+    },
+    {
+        id: 'salesforce',
+        label: 'Salesforce',
+        description: 'Not applicable',
+        enabled: false,
+        icon: FileText,
+    },
+];
+
+export const keyResults: KeyResult[] = [
+    {
+        id: 'KR 1',
+        title: 'Design system v2 components shipped',
+        metricType: 'Count',
+        start: '0',
+        current: '24',
+        target: '32',
+        unit: 'components',
+        weight: '35',
+    },
+    {
+        id: 'KR 2',
+        title: 'Dashboard usability score (post-launch survey)',
+        metricType: 'Number',
+        start: '0',
+        current: '0',
+        target: '4.4',
+        unit: '/ 5',
+        weight: '30',
+    },
+    {
+        id: 'KR 3',
+        title: 'WAU adoption among all PW employees by Q3',
+        metricType: '%',
+        start: '0',
+        current: '0',
+        target: '80',
+        unit: '%',
+        weight: '35',
+        suggested: true,
+    },
 ];

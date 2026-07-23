@@ -6,7 +6,7 @@ import Button from '../../../../shared/atoms/Button';
 import { Card } from '../../../../shared/atoms/Card';
 import { Select } from '../../../../shared/atoms/Select';
 import { Typography } from '../../../../shared/atoms/Typography';
-import type { CategorySelectOption } from '../DefineGoal';
+import type { CategorySelectOption } from '../../Type';
 
 interface ObjectiveCardProps {
     weightage: number;

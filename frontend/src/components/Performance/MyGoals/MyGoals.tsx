@@ -167,7 +167,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
           )}
 
           <div className="relative min-w-0 space-y-3 sm:space-y-4 md:pl-9 lg:pl-12">
-            {goals.map((goal, index) => (
+            {goals.map((goal: any, index:number) => (
               <div
                 key={index}
                 onClick={() => {

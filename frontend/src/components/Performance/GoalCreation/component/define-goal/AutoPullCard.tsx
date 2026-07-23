@@ -1,14 +1,6 @@
 import { Card } from '../../../../shared/atoms/Card';
 import { Typography } from '../../../../shared/atoms/Typography';
-import type { LucideIcon } from 'lucide-react';
-
-export interface AutoPullSource {
-    id: string;
-    label: string;
-    description: string;
-    enabled: boolean;
-    icon: LucideIcon;
-}
+import type { AutoPullSource } from '../../Type';
 
 interface AutoPullCardProps {
     autoPullSources: AutoPullSource[];

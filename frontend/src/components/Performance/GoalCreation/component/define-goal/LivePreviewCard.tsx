@@ -1,7 +1,7 @@
 import Badge from '../../../../shared/Badge';
 import { Card } from '../../../../shared/atoms/Card';
 import { Typography } from '../../../../shared/atoms/Typography';
-import type { KeyResult } from '../DefineGoal';
+import type { KeyResult } from '../../Type';
 
 interface LivePreviewCardProps {
     weightage: number;
