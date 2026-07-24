@@ -178,6 +178,24 @@ def get_alumni_creation_form_json(category: str, sub_category: str | None = None
     )
     return form_json
 
+@frappe.whitelist(methods=["GET"])
+def get_alumni_exit_form_json(category: str, sub_category: str | None = None) -> dict:
+    _require_alumni_session()
+    return frappe.call(
+        "pw_helpdesk.customizations.api.ticket.get_exit_form_json",
+        category=category,
+        sub_category=sub_category,
+    )
+
+@frappe.whitelist(methods=["GET"])
+def get_alumni_feedback_form_json(category: str, sub_category: str | None = None) -> dict:
+    _require_alumni_session()
+    return frappe.call(
+        "pw_helpdesk.customizations.api.ticket.get_feedback_form_json",
+        category=category,
+        sub_category=sub_category,
+    )
+
 
 @frappe.whitelist(methods=["POST"])
 def create_alumni_hd_ticket(
@@ -356,3 +374,169 @@ def download_alumni_ticket_attachment(file_url: str):
     frappe.local.response.filename = file_url.split("/")[-1]
     frappe.local.response.filecontent = frappe.get_file_content(file_url)
     frappe.local.response.type = "download"
+
+
+# ── Ticket Actions ───────────────────────────────────────────────────────────
+
+def _validate_ticket_ownership(ticket_id: str):
+    user = _require_alumni_session()
+    email = _alumni_email(user)
+    if not frappe.db.exists("HD Ticket", {"name": ticket_id, "raised_by": email}):
+        frappe.local.response["http_status_code"] = 404
+        frappe.throw(_("Ticket not found or you don't have permission to access it."), frappe.PermissionError)
+    return user, email
+
+@frappe.whitelist(methods=["GET"])
+def get_alumni_hd_ticket_detail(ticket_id: str) -> dict:
+    """Return the detailed ticket payload matching the HelpDesk desk view."""
+    _validate_ticket_ownership(ticket_id)
+    # The normal helpdesk get_one returns the full ticket detail.
+    # We use frappe.call to execute it as if we hit the endpoint.
+    try:
+        result = frappe.call(
+            "helpdesk.helpdesk.doctype.hd_ticket.api.get_one",
+            name=ticket_id,
+            is_customer_portal=False,
+        )
+        return result
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "alumni get_alumni_hd_ticket_detail failed")
+        frappe.local.response["http_status_code"] = 500
+        return {"success": False, "message": _("Unable to fetch ticket details.")}
+
+@frappe.whitelist(methods=["POST"])
+def reply_alumni_hd_ticket(ticket_id: str, content: str) -> dict:
+    """Add a reply (Communication) to the ticket as the alumnus."""
+    user, email = _validate_ticket_ownership(ticket_id)
+    
+    if not content or not content.strip():
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("Content is required")}
+
+    try:
+        # Create a standard Communication linked to the ticket
+        comm = frappe.get_doc({
+            "doctype": "Communication",
+            "communication_type": "Communication",
+            "communication_medium": "Email",
+            "sent_or_received": "Received",
+            "reference_doctype": "HD Ticket",
+            "reference_name": ticket_id,
+            "subject": f"Reply to {ticket_id}",
+            "content": content,
+            "sender": email,
+            "sender_full_name": frappe.db.get_value("User", user, "full_name") or email,
+            "status": "Linked"
+        })
+        comm.insert(ignore_permissions=True)
+        
+        # Optionally update ticket status to Open if it was waiting for customer
+        # Standard Frappe/Helpdesk handles this on Communication insert via hooks,
+        # but just to be safe if the hook doesn't run for portal users:
+        ticket = frappe.get_doc("HD Ticket", ticket_id)
+        if ticket.status == "Waiting for Customer":
+            ticket.status = "Open"
+            ticket.save(ignore_permissions=True)
+            
+        frappe.db.commit()
+        return {"success": True, "message": _("Reply sent successfully")}
+    except Exception:
+        frappe.db.rollback()
+        frappe.log_error(frappe.get_traceback(), "alumni reply_alumni_hd_ticket failed")
+        return {"success": False, "message": _("Failed to send reply.")}
+
+
+@frappe.whitelist(methods=["POST"])
+def revoke_alumni_hd_ticket(ticket_id: str) -> dict:
+    """Archived/Revoke the ticket by the alumnus."""
+    _validate_ticket_ownership(ticket_id)
+    try:
+        frappe.db.set_value("HD Ticket", ticket_id, "custom_archived", 1)
+        frappe.db.commit()
+        return {"success": True, "message": _("Ticket revoked successfully.")}
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "alumni revoke_alumni_hd_ticket failed")
+        return {"success": False, "message": _("Failed to revoke ticket.")}
+
+@frappe.whitelist(methods=["POST"])
+def reopen_alumni_hd_ticket(ticket_id: str) -> dict:
+    """Reopen a closed or resolved ticket."""
+    _validate_ticket_ownership(ticket_id)
+    try:
+        result = frappe.call("pw_helpdesk.customizations.api.ticket.reopen_ticket", ticket_id=ticket_id)
+        return result
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "alumni reopen_alumni_hd_ticket failed")
+        return {"success": False, "message": _("Failed to reopen ticket.")}
+
+@frappe.whitelist(methods=["POST"])
+def reject_alumni_hd_ticket_resolution(ticket_id: str, rejection_reason: str) -> dict:
+    """Reject the resolution provided by an agent."""
+    _validate_ticket_ownership(ticket_id)
+    try:
+        result = frappe.call(
+            "pw_helpdesk.customizations.ticket_closure_workflow.reject_resolution", 
+            ticket_id=ticket_id, 
+            rejection_reason=rejection_reason
+        )
+        return result
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "alumni reject_alumni_hd_ticket_resolution failed")
+        return {"success": False, "message": _("Failed to reject resolution.")}
+
+@frappe.whitelist(methods=["POST"])
+def close_alumni_hd_ticket(ticket_id: str, resolution_notes: str = None, closing_form_data: str = None, feedback_form_data: str = None) -> dict:
+    """Close the ticket with optional resolution notes and form data."""
+    
+    _validate_ticket_ownership(ticket_id)
+    try:
+        if resolution_notes:
+            frappe.call(
+                "helpdesk.api.resolution.save_resolution_with_history", 
+                ticket_id=str(ticket_id), 
+                resolution_content=resolution_notes
+            )
+            
+        # Get the ticket with ignore_permissions since alumni user can't read/write HD Ticket directly
+        frappe.flags.ignore_permissions = True
+        try:
+            ticket_doc = frappe.get_doc("HD Ticket", str(ticket_id))
+            if feedback_form_data:
+                import json
+                ticket_doc.feedback_form_data = feedback_form_data if isinstance(feedback_form_data, str) else json.dumps(feedback_form_data)
+            if closing_form_data:
+                import json
+                ticket_doc.closing_form_data = closing_form_data if isinstance(closing_form_data, str) else json.dumps(closing_form_data)
+            ticket_doc.status = "Closed"
+            ticket_doc.resolution_date = frappe.utils.now_datetime()
+            ticket_doc.save(ignore_permissions=True)
+        finally:
+            frappe.flags.ignore_permissions = False
+            
+        return {"success": True, "message": "Ticket closed successfully"}
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "alumni close_alumni_hd_ticket failed")
+        return {"success": False, "message": f"Failed to close ticket: {str(e)}"}
+
+@frappe.whitelist(methods=["POST"])
+def accept_alumni_hd_ticket_closure(ticket_id: str, resolution_notes: str = None, closing_form_data: str = None, feedback_form_data: str = None) -> dict:
+    """Accept the resolution provided by an agent (closes the ticket)."""
+    
+    _validate_ticket_ownership(ticket_id)
+    try:
+        frappe.flags.ignore_permissions = True
+        try:
+            doc = frappe.get_doc("HD Ticket", str(ticket_id))
+            if feedback_form_data:
+                doc.feedback_form_data = feedback_form_data
+            if closing_form_data:
+                doc.closing_form_data = closing_form_data
+            doc.status = "Closed"
+            doc.save(ignore_permissions=True)
+        finally:
+            frappe.flags.ignore_permissions = False
+        
+        return {"success": True, "message": "Ticket closure accepted"}
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "alumni accept_alumni_hd_ticket_closure failed")
+        return {"success": False, "message": f"Failed to accept closure: {str(e)}"}
