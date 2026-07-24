@@ -193,6 +193,85 @@ def _field_label(doctype, fieldname):
     return (df.label if (df and df.label) else fieldname)
 
 
+def _meta_section_anchor(section_label, exclude=()):
+    """Last Job Applicant field of ``section_label`` in the *live doctype layout*.
+
+    This anchors the desk-form placement, so a new field lands physically inside
+    that section on the Job Applicant form (right after the section's current last
+    field, before the next section break). Grouping comes from
+    ``iter_profile_fields`` — the same logic the settings UI uses — so labels line
+    up. Returns ``None`` when the section doesn't exist in the current layout
+    (e.g. a curated, drifted settings-only section), in which case the desk form
+    is left untouched. ``exclude`` skips fields we're about to (re)place.
+    """
+    from recruitment.recruitment.doctype.job_applicant_profile_settings.job_applicant_profile_settings import (
+        iter_profile_fields,
+    )
+
+    section_label = (section_label or "").strip()
+    if not section_label:
+        return None
+
+    meta = frappe.get_meta(SOURCE_DOCTYPE)
+    anchor = None
+    for f, section, _tab in iter_profile_fields(meta):
+        if section == section_label and f.fieldname not in exclude:
+            anchor = f.fieldname
+    return anchor
+
+
+def _place_fields_in_section(fieldnames, section_label):
+    """Put newly created Job Applicant fields into ``section_label``.
+
+    Two placements, matching the two views of the field:
+      * settings / candidate config — assign the settings-table section directly
+        (``ensure_fields_in_section``); authoritative and independent of meta
+        drift, this is what makes them show under the chosen sidebar section.
+      * Job Applicant desk form — chain each field's ``insert_after`` after that
+        section's last field *in the live layout*, so they land physically inside
+        that section on the form. Skipped when the section isn't part of the
+        current layout (a drifted settings-only section has no place to point at).
+    """
+    from recruitment.recruitment.doctype.job_applicant_profile_settings.job_applicant_profile_settings import (
+        ensure_fields_in_section,
+    )
+
+    fieldnames = [fn for fn in fieldnames if fn]
+    if not fieldnames:
+        return
+
+    # Desk-form placement (before we touch the settings table).
+    anchor = _meta_section_anchor(section_label, exclude=set(fieldnames))
+    if anchor:
+        # Resolve every new field's Custom Field name in one query, not per field.
+        cf_by_field = {
+            r.fieldname: r.name
+            for r in frappe.get_all(
+                "Custom Field",
+                filters={
+                    "dt": SOURCE_DOCTYPE,
+                    "fieldname": ["in", fieldnames],
+                    "is_system_generated": 1,
+                },
+                fields=["name", "fieldname"],
+            )
+        }
+        prev = anchor
+        moved = False
+        for fn in fieldnames:
+            cf_name = cf_by_field.get(fn)
+            if not cf_name or fn == prev:
+                continue
+            frappe.db.set_value("Custom Field", cf_name, "insert_after", prev)
+            prev = fn
+            moved = True
+        if moved:
+            frappe.clear_cache(doctype=SOURCE_DOCTYPE)
+
+    # Authoritative: the settings/candidate grouping.
+    ensure_fields_in_section(fieldnames, section_label)
+
+
 def ensure_flow_definition(flow_name, items):
     """Create or reconcile the Document Data Flow to match ``items`` (ordered
     ``[{target_doctype, docfield}]``; row 1 is the source with no docfield)."""
@@ -306,12 +385,16 @@ def save_field_flows_bulk(payload):
     mode = data.get("source_mode") or "Create New Field"
     editable = 0 if data.get("editable_after_fetch") in (0, "0", False) else 1
     rows = data.get("rows") or []
+    # Section the fields should land in on the source doctype (from the dialog's
+    # Section picker, defaulting to the section the admin was viewing).
+    section = (data.get("section") or "").strip()
 
     ensure_flow_definition(flow_name, items)
     flow_doctypes = [it.get("target_doctype") for it in items if it.get("target_doctype")]
     source_doctype = flow_doctypes[0]
 
     created, errors = [], []
+    placed_fieldnames = []  # created Job Applicant fields to drop into `section`
     for i, row in enumerate(rows):
         savepoint = f"ff_row_{i}"
         frappe.db.savepoint(savepoint)
@@ -347,6 +430,14 @@ def save_field_flows_bulk(payload):
 
             data_element_name = _upsert_data_element(cfg)
             attachment_name = _upsert_attachment(flow_name, data_element_name, target_rows)
+
+            # A newly created field defaults to the end of Job Applicant (its
+            # internal "Feedback" tab, which the profile settings hide). Remember
+            # it so we can drop it into the chosen section below. Map-existing
+            # fields keep their own placement.
+            if section and mode != MAP_EXISTING and source_doctype == SOURCE_DOCTYPE:
+                placed_fieldnames.append(cfg.fieldname)
+
             created.append({
                 "fieldname": cfg.fieldname,
                 "field_label": cfg.field_label,
@@ -356,6 +447,10 @@ def save_field_flows_bulk(payload):
         except Exception as exc:
             frappe.db.rollback(save_point=savepoint)
             errors.append({"row": i + 1, "error": str(exc)})
+
+    # Place all newly created fields into the chosen section in one settings save.
+    if placed_fieldnames:
+        _place_fields_in_section(placed_fieldnames, section)
 
     return {"created": created, "errors": errors}
 

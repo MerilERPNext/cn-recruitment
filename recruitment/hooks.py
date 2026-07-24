@@ -369,6 +369,8 @@ scheduler_events = {
         "0 6 * * *": [
             "recruitment.recruitment.scheduled_jobs.trigger_confirmation_todos",
             "recruitment.recruitment.scheduled_jobs.create_extension_confirmations",
+            # Move Campus Drives through Draft -> Live -> Completed by their window.
+            "recruitment.recruitment.doctype.campus_drive.campus_drive.update_drive_statuses",
         ],
         "0 7 * * *": [
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",

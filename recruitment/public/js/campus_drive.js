@@ -176,6 +176,7 @@ function cdRenderRounds(frm) {
 		const r = (cdRoundsData.rounds || []).find((x) => x.round_code === code) || {};
 		const items = [
 			{ label: __("Add extra interview for one candidate"), action: () => cdAddCandidateInterview(frm, code, () => cdRenderRounds(frm)) },
+			{ label: __("Sync results from interviews (fix stuck candidates)"), action: () => cdReconcileRound(frm, code, () => cdRenderRounds(frm)) },
 		];
 		if (r.awaiting_feedback) {
 			items.push({ label: __("Nudge {0} pending feedback", [r.awaiting_feedback]), action: () => cdNudgeFeedback(frm, code, () => cdRenderRounds(frm)) });
@@ -191,7 +192,11 @@ function cdRenderRounds(frm) {
 	$root.on("click", "[data-rd-list]", function () {
 		const filters = { custom_campus_drive: frm.doc.name, custom_campus_round_code: $(this).attr("data-rd-list") };
 		const st = $(this).attr("data-rd-status");
-		if (st) filters.status = st;
+		if (st) {
+			// A comma list (e.g. the awaiting tile: "Appeared,Under Review") becomes an
+			// "in" filter so the list matches the tile's count exactly.
+			filters.status = st.includes(",") ? ["in", st.split(",")] : st;
+		}
 		frappe.set_route("List", "Interview", filters);
 	});
 	$root.on("click", "[data-rd-pool]", function () {
@@ -414,6 +419,24 @@ function cdAddCandidateInterview(frm, roundCode, done) {
 	d.show();
 }
 
+function cdReconcileRound(frm, roundCode, done) {
+	frappe.call({
+		method: "recruitment.recruitment.doctype.campus_drive.campus_drive.reconcile_round",
+		args: { campus_drive: frm.doc.name, round_code: roundCode },
+		callback: (r) => {
+			const m = r.message || {};
+			frappe.msgprint({
+				title: __("Synced from interviews"),
+				indicator: m.advanced || m.rejected ? "green" : "blue",
+				message: (m.advanced || m.rejected)
+					? __("Advanced {0} cleared candidate(s), rejected {1}. Any who cleared earlier but got stuck are now moved on.", [m.advanced, m.rejected])
+					: __("Everything already in sync — no stuck candidates."),
+			});
+			if (done) done();
+		},
+	});
+}
+
 function cdNudgeFeedback(frm, roundCode, done) {
 	frappe.call({
 		method: "recruitment.recruitment.doctype.campus_drive.campus_drive.nudge_pending_feedback",
@@ -460,7 +483,6 @@ function cdDrawRounds($root, frm, data) {
 			})
 			.join("");
 
-		const s = r.by_status || {};
 		const cnt = (label, val, color, status) =>
 			`<div class="cd-tile" data-rd-list="${esc(r.round_code)}" ${
 				status ? `data-rd-status="${esc(status)}"` : ""
@@ -520,9 +542,10 @@ function cdDrawRounds($root, frm, data) {
 					? ""
 					: `<div class="cd-tiles">
 						${cnt(__("Interviews"), r.interviews, "#6366f1", null)}
-						${cnt(__("Awaiting Feedback"), r.awaiting_feedback, "#F59E0B", null)}
-						${cnt(__("Cleared"), s.Cleared, "#10B981", "Cleared")}
-						${cnt(__("Rejected"), s.Rejected, "#EF4444", "Rejected")}
+						${cnt(__("Pending"), r.pending, "#6B7280", "Pending")}
+						${cnt(__("Awaiting Feedback"), r.awaiting_feedback, "#F59E0B", "Appeared,Under Review")}
+						${cnt(__("Cleared"), r.cleared, "#10B981", "Cleared")}
+						${cnt(__("Rejected"), r.rejected, "#EF4444", "Rejected")}
 					</div>`
 			}
 		</div>`;

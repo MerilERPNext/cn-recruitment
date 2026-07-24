@@ -406,9 +406,21 @@
 	 * Onboarding → Employee and can be extended (Add doctype auto-detects the
 	 * connecting link field). Update creates the nextai records one row at a time.
 	 */
-	function openFieldFlowDialog(frm) {
+	function openFieldFlowDialog(frm, presetSection) {
 		const state = { flow_name: "", flow: [], mode: "Create New Field", rows: [] };
 		let d;
+
+		// Sections the admin can drop the new field into — the same groups shown
+		// in the left sidebar. Default to the section they were viewing.
+		const sectionOptions = [];
+		(frm.doc.default_application_fields || []).forEach((r) => {
+			const s = r.section || "General";
+			if (!sectionOptions.includes(s)) sectionOptions.push(s);
+		});
+		if (presetSection && !sectionOptions.includes(presetSection)) sectionOptions.unshift(presetSection);
+		if (!sectionOptions.length) sectionOptions.push("General");
+		const defaultSection = (presetSection && sectionOptions.includes(presetSection))
+			? presetSection : sectionOptions[0];
 
 		function emptyRow() {
 			return state.mode === MAP_MODE
@@ -648,6 +660,7 @@
 				flow: state.flow.map((f) => ({ target_doctype: f.doctype, docfield: f.docfield })),
 				source_mode: state.mode,
 				editable_after_fetch: editable,
+				section: d.get_value("section") || "",
 				rows: rows,
 			};
 			d.disable_primary_action();
@@ -694,7 +707,19 @@
 				{
 					fieldname: "source_mode", fieldtype: "Select", label: __("Mode"),
 					options: ["Create New Field", MAP_MODE].join("\n"), default: "Create New Field",
-					onchange() { state.mode = d.get_value("source_mode"); state.rows = [emptyRow()]; render(); },
+					onchange() {
+						state.mode = d.get_value("source_mode");
+						state.rows = [emptyRow()];
+						// Section only governs where a newly created field lands;
+						// mapped existing fields keep their own placement.
+						d.set_df_property("section", "hidden", state.mode === MAP_MODE ? 1 : 0);
+						render();
+					},
+				},
+				{
+					fieldname: "section", fieldtype: "Select", label: __("Section"),
+					options: sectionOptions.join("\n"), default: defaultSection,
+					description: __("The section on the applicant profile this field is added to."),
 				},
 				{
 					fieldname: "editable_after_fetch", fieldtype: "Check", default: 1,

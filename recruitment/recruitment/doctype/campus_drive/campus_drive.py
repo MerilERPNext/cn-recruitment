@@ -13,10 +13,34 @@ class CampusDrive(Document):
 	def validate(self):
 		self.drive_id = self.name
 		self._validate_drive_window()
+		self._apply_lifecycle_status()
 		self._sync_campus_invites()
 		validate_unique_job_openings(self, table_fieldname="linked_job_openings")
 		self._set_registration_defaults()
 		self._set_round_codes()
+
+	def _lifecycle_status(self):
+		"""Where the drive sits in its window: Draft before it starts, Live during,
+		Completed after it ends. Returns None if there's no start date to judge by."""
+		from frappe.utils import getdate, nowdate
+
+		if not self.drive_start_date:
+			return None
+		today = getdate(nowdate())
+		if today < getdate(self.drive_start_date):
+			return "Draft"
+		if self.drive_end_date and today > getdate(self.drive_end_date):
+			return "Completed"
+		return "Live"
+
+	def _apply_lifecycle_status(self):
+		"""Auto-advance the status from the drive window. 'Closed' is a manual, terminal
+		state we never override; everything else tracks the dates."""
+		if self.drive_status == "Closed":
+			return
+		target = self._lifecycle_status()
+		if target and self.drive_status != target:
+			self.drive_status = target
 
 	def _sync_campus_invites(self):
 		"""Merge each linked Campus Invite's Institute and Job Openings into
@@ -355,6 +379,11 @@ def get_drive_breakdown(campus_drive):
 GD_POOL_STATUS = "Shortlisted"
 DEFAULT_GD_GROUP_SIZE = 5
 
+# Interview statuses that mean "candidate appeared, awaiting the panel's verdict".
+# Sites may use "Appeared" and/or the stock "Under Review"; both count as awaiting.
+# Kept in sync with the client (campus_drive.js) so the tile filter matches the count.
+AWAITING_INTERVIEW_STATUSES = ("Appeared", "Under Review")
+
 
 def _balanced_group_sizes(total, size):
 	"""Split `total` candidates into groups of about `size`, with NO undersized
@@ -456,13 +485,16 @@ def generate_gd_groups(campus_drive, round_code=None, group_size=None, split_by=
 	applicants = frappe.get_all(
 		"Job Applicant",
 		filters={"custom_campus_invite": ["in", invite_names], "status": GD_POOL_STATUS},
-		fields=["name", "applicant_name", "custom_institute as institute", "job_title as job_opening"],
+		fields=["name", "applicant_name", "custom_applicant_last_name",
+		        "custom_institute as institute", "job_title as job_opening"],
 		order_by="name asc",
 	)
 	if not applicants:
 		frappe.throw(
 			_("No {0} candidates found on this drive's campus invites.").format(frappe.bold(GD_POOL_STATUS))
 		)
+	for a in applicants:  # store the full name on the group member snapshot
+		a.applicant_name = _full_name(a.applicant_name, a.get("custom_applicant_last_name"))
 
 	by_role = {}
 	for a in applicants:
@@ -680,6 +712,31 @@ def _round_by_code(doc, round_code):
 	return row
 
 
+def _full_name(first, last):
+	"""Full candidate name for display: campus applications store the first name in
+	`applicant_name` and the surname in `custom_applicant_last_name`, so combine them
+	(guarding against a surname already present in the first field)."""
+	full = (first or "").strip()
+	last = (last or "").strip()
+	if last and last.lower() not in full.lower():
+		full = (full + " " + last).strip()
+	return full or last
+
+
+def _applicant_full_names(ja_names):
+	"""Map {job_applicant: full name} for a set of Job Applicants, in one query."""
+	ja_names = [n for n in set(ja_names) if n]
+	if not ja_names:
+		return {}
+	return {
+		r.name: _full_name(r.applicant_name, r.get("custom_applicant_last_name"))
+		for r in frappe.get_all(
+			"Job Applicant", filters={"name": ["in", ja_names]},
+			fields=["name", "applicant_name", "custom_applicant_last_name"],
+		)
+	}
+
+
 # Interview fields THIS module already sets — never touched by the auto-filler.
 _INTERVIEW_CORE_FIELDS = {
 	"job_applicant", "job_opening", "interview_round", "interview_type", "designation",
@@ -841,10 +898,12 @@ def get_round_pool(campus_drive, round_code):
 	pool = frappe.get_all(
 		"Job Applicant",
 		filters={"custom_campus_invite": ["in", invites], "custom_current_stage": stage},
-		fields=["name", "applicant_name", "custom_institute as institute",
-		        "job_title as job_opening", "designation"],
+		fields=["name", "applicant_name", "custom_applicant_last_name",
+		        "custom_institute as institute", "job_title as job_opening", "designation"],
 		order_by="job_title asc, name asc",
 	)
+	for c in pool:  # show full name in the schedule picker
+		c["applicant_name"] = _full_name(c.applicant_name, c.get("custom_applicant_last_name"))
 	already = set(frappe.get_all(
 		"Interview",
 		filters={"custom_campus_drive": campus_drive, "custom_campus_round_code": round_code,
@@ -981,11 +1040,7 @@ def get_round_interviews(campus_drive, round_code):
 		limit_page_length=0,
 	)
 	iv_names = [i.name for i in ivs]
-	applicant_name = {
-		r.name: r.applicant_name
-		for r in frappe.get_all("Job Applicant", filters={"name": ["in", [i.job_applicant for i in ivs] or [""]]},
-		                        fields=["name", "applicant_name"])
-	} if ivs else {}
+	applicant_name = _applicant_full_names([i.job_applicant for i in ivs])
 	got, expected = {}, {}
 	if iv_names:
 		for f in frappe.get_all("Interview Feedback",
@@ -1105,6 +1160,65 @@ def apply_gd_results(campus_drive, round_code):
 
 
 @frappe.whitelist()
+def reconcile_round(campus_drive, round_code):
+	"""Re-sync a round's Cleared/Rejected interviews into the hiring pipeline.
+
+	The auto-advance on feedback is best-effort — if saving the candidate failed at
+	the time (e.g. a stale field value), the interview shows Cleared but the candidate
+	never moved. This catches up any such stragglers. Safe to re-run: it only advances
+	candidates STILL sitting at this round's stage, so already-advanced ones are left
+	alone (never double-advanced).
+	"""
+	from recruitment.api.hiring_stage import get_opening_stages, _find_stage, _enter_stage
+
+	_gd_guard(campus_drive)
+	row = _round_by_code(frappe.get_doc("Campus Drive", campus_drive), round_code)
+	stage = (row.hiring_stage or "").strip()
+	if not stage:
+		frappe.throw(_("Set the Hiring Stage on round {0} first.").format(round_code))
+
+	ivs = frappe.get_all(
+		"Interview",
+		filters={"custom_campus_drive": campus_drive, "custom_campus_round_code": round_code,
+		         "status": ["in", ["Cleared", "Rejected"]], "docstatus": ["<", 2]},
+		fields=["name", "status", "job_applicant"],
+	)
+	advanced = rejected = skipped = 0
+	stage_cache = {}
+	for iv in ivs:
+		try:
+			ja = frappe.get_doc("Job Applicant", iv.job_applicant)
+			if iv.status == "Rejected":
+				if ja.status != "Rejected":
+					ja.status = "Rejected"
+					ja.save(ignore_permissions=True)
+					rejected += 1
+				else:
+					skipped += 1
+				continue
+			# Cleared — advance only if still parked at THIS round's stage.
+			if (ja.custom_current_stage or "") != stage:
+				skipped += 1
+				continue
+			opening = ja.job_title
+			if opening not in stage_cache:
+				stage_cache[opening] = get_opening_stages(opening)
+			stages = stage_cache[opening]
+			idx = _find_stage(stages, stage)
+			if idx < 0 or idx + 1 >= len(stages):
+				skipped += 1
+				continue
+			_enter_stage(ja, stages[idx + 1], result="Auto (Cleared)", interview=iv.name,
+			             ignore_permissions=True)
+			advanced += 1
+		except Exception as e:
+			skipped += 1
+			frappe.log_error(frappe.get_traceback(), f"Campus reconcile failed for {iv.name}: {e}")
+	frappe.db.commit()
+	return {"advanced": advanced, "rejected": rejected, "skipped": skipped, "processed": len(ivs)}
+
+
+@frappe.whitelist()
 def get_rounds_overview(campus_drive):
 	"""Per-round tracking for the drive: who is waiting, what is scheduled, what is
 	still awaiting interviewer feedback, and how it concluded.
@@ -1116,46 +1230,55 @@ def get_rounds_overview(campus_drive):
 	doc = _drive_lite(campus_drive)
 	invites = _drive_invites(doc)
 
-	# How many drive candidates sit at each hiring stage right now.
-	# Counted in Python — see the note in get_drive_breakdown: a SQL aggregate in
-	# `fields` is rejected by Frappe v16 and the dict form doesn't exist on v15.
-	stage_counts = {}
+	# Which drive candidates sit at each hiring stage right now (names, so "waiting"
+	# can exclude those already scheduled for the round). Counted in Python — a SQL
+	# aggregate in `fields` is rejected by Frappe v16 and the dict form isn't on v15.
+	stage_applicants = {}
 	if invites:
 		for r in frappe.get_all(
 			"Job Applicant",
 			filters={"custom_campus_invite": ["in", invites]},
-			fields=["custom_current_stage as stage"],
+			fields=["name", "custom_current_stage as stage"],
 			limit_page_length=0,
 		):
-			key = r.stage or ""
-			stage_counts[key] = stage_counts.get(key, 0) + 1
+			stage_applicants.setdefault(r.stage or "", set()).add(r.name)
 
 	# Interviews this drive created, with their feedback progress
 	iv_rows = frappe.get_all(
 		"Interview",
 		filters={"custom_campus_drive": campus_drive, "docstatus": ["<", 2]},
-		fields=["name", "custom_campus_round_code as code", "status"],
+		fields=["name", "custom_campus_round_code as code", "status", "job_applicant"],
 		limit_page_length=0,
 	)
 	iv_names = [i.name for i in iv_rows]
-	got, expected = {}, {}
+	got = {}
 	if iv_names:
 		for f in frappe.get_all("Interview Feedback",
 		                        filters={"interview": ["in", iv_names], "docstatus": 1},
 		                        fields=["interview"], limit_page_length=0):
 			got[f.interview] = got.get(f.interview, 0) + 1
-		for d in frappe.get_all("Interview Detail",
-		                        filters={"parent": ["in", iv_names], "parenttype": "Interview"},
-		                        fields=["parent"], limit_page_length=0):
-			expected[d.parent] = expected.get(d.parent, 0) + 1
 
+	# Per round: a clean, mutually-exclusive status breakdown that sums to `total`, and
+	# the set of candidates already scheduled (to net off "waiting").
+	#   Cleared / Rejected  -> the verdict
+	#   Awaiting Feedback   -> the candidate appeared (or feedback started) but no
+	#                          verdict yet
+	#   Pending             -> everything else (created, not yet appeared)
 	by_round = {}
 	for i in iv_rows:
-		b = by_round.setdefault(i.code or "", {"total": 0, "by_status": {}, "awaiting": 0})
+		b = by_round.setdefault(i.code or "", {
+			"total": 0, "cleared": 0, "rejected": 0, "awaiting": 0, "pending": 0,
+			"scheduled": set()})
 		b["total"] += 1
-		b["by_status"][i.status] = b["by_status"].get(i.status, 0) + 1
-		if i.status in ("Pending", "Under Review") and got.get(i.name, 0) < expected.get(i.name, 0):
+		b["scheduled"].add(i.job_applicant)
+		if i.status == "Cleared":
+			b["cleared"] += 1
+		elif i.status == "Rejected":
+			b["rejected"] += 1
+		elif i.status in AWAITING_INTERVIEW_STATUSES or got.get(i.name, 0) > 0:
 			b["awaiting"] += 1
+		else:
+			b["pending"] += 1
 
 	role_titles = {r.job_opening: r.job_title for r in (doc.linked_job_openings or [])}
 	all_users = set()
@@ -1172,10 +1295,17 @@ def get_rounds_overview(campus_drive):
 		                        fields=["name", "full_name"])
 	} if all_users else {}
 
+	empty_stat = {"total": 0, "cleared": 0, "rejected": 0, "awaiting": 0, "pending": 0,
+	              "scheduled": set()}
 	rounds = []
 	for r in (doc.rounds or []):
 		panels, missing = panels_by_round[r.round_code]
-		stat = by_round.get(r.round_code, {"total": 0, "by_status": {}, "awaiting": 0})
+		stat = by_round.get(r.round_code, empty_stat)
+		# "waiting" = candidates at this round's stage who are NOT yet scheduled for it
+		# (so it drops to 0 once everyone's been assigned, and the NEXT round's waiting
+		# rises as candidates clear into its stage).
+		at_stage = stage_applicants.get(r.hiring_stage, set()) if r.hiring_stage else set()
+		waiting = len(at_stage - stat["scheduled"])
 		rounds.append({
 			"round_code": r.round_code,
 			"round_name": r.round_name,
@@ -1184,7 +1314,7 @@ def get_rounds_overview(campus_drive):
 			"round_status": r.round_status,
 			"scheduled_at": str(r.scheduled_at)[:10] if r.scheduled_at else None,
 			"is_gd": bool(r.requires_gd_grouping),
-			"waiting": stage_counts.get(r.hiring_stage, 0) if r.hiring_stage else 0,
+			"waiting": waiting,
 			"panels": [
 				{"panel": k, "role": v["role"], "role_title": role_titles.get(v["role"]) or v["role"],
 				 "interviewers": [{"user": u, "name": names.get(u, u)} for u in v["users"]]}
@@ -1192,8 +1322,10 @@ def get_rounds_overview(campus_drive):
 			],
 			"missing_user": missing,
 			"interviews": stat["total"],
-			"by_status": stat["by_status"],
+			"cleared": stat["cleared"],
+			"rejected": stat["rejected"],
 			"awaiting_feedback": stat["awaiting"],
+			"pending": stat["pending"],
 		})
 
 	# Folded in so the client gets rounds + the stage picker's options in ONE call.
@@ -1354,3 +1486,33 @@ def add_candidate_interview(campus_drive, job_applicant, stage_name, scheduled_o
 	frappe.db.commit()
 	return {"interview": iv.name, "job_applicant": ja.name, "stage": stage_name,
 	        "interviewers": len(users)}
+
+
+def update_drive_statuses():
+	"""Daily scheduler job: move each drive's status in step with its window, since a
+	drive going Live / Completed happens by the calendar passing, not by a save.
+	Manually 'Closed' drives are left untouched.
+	"""
+	from frappe.utils import getdate, nowdate
+
+	today = getdate(nowdate())
+	changed = 0
+	for d in frappe.get_all(
+		"Campus Drive",
+		filters={"drive_status": ["!=", "Closed"]},
+		fields=["name", "drive_start_date", "drive_end_date", "drive_status"],
+	):
+		if not d.drive_start_date:
+			continue
+		if today < getdate(d.drive_start_date):
+			target = "Draft"
+		elif d.drive_end_date and today > getdate(d.drive_end_date):
+			target = "Completed"
+		else:
+			target = "Live"
+		if target != d.drive_status:
+			frappe.db.set_value("Campus Drive", d.name, "drive_status", target,
+			                    update_modified=False)
+			changed += 1
+	frappe.db.commit()
+	return {"updated": changed}
