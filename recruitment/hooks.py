@@ -327,6 +327,12 @@ doc_events = {
     "Appointment Letter": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
     },
+    # Alumni Employee Request: when the approval Workflow reaches "Approved",
+    # flag the linked Employee as an alumnus (once). See
+    # recruitment.recruitment.alumni_employee_request_service.handle_workflow_transition.
+    "Alumni Employee Request": {
+        "on_update": "recruitment.recruitment.alumni_employee_request_service.handle_workflow_transition",
+    },
     "Employee Onboarding": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
         # "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents",

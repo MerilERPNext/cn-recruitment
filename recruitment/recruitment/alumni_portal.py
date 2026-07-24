@@ -1,9 +1,12 @@
 """Alumni Portal authentication (part of the Recruitment app).
 
-A former employee (Employee.status == "Left") is flagged on their User via the
-`custom_is_alumni_employee` checkbox (kept in sync by `sync_alumni_flag`, and
-created/back-filled in recruitment.install). That single checkbox is the gate
-for the Alumni Portal — no separate app, no Portal Configuration doctype.
+Alumni Portal access is controlled by the `custom_is_alumni_employee` checkbox on
+the User — that single flag is the gate (no separate app, no Portal Configuration
+doctype). It is edited from the Employee form: the editable
+`Employee.custom_is_alumni_employee` checkbox is written through to the linked
+User by `sync_alumni_flag`, giving HR full manual grant/revoke control. New exits
+(Employee.status == "Left") default to granted, but a later manual untick is never
+overridden. The flag is created/back-filled in recruitment.install.
 
 The login flow is intentionally identical to a normal Frappe login
 (`LoginManager.authenticate` -> check gate -> `post_login`); the only difference
@@ -37,6 +40,25 @@ def is_alumni_employee(user: str | None) -> bool:
     return bool(frappe.db.get_value("User", user, ALUMNI_FLAG))
 
 
+def employee_is_alumni(employee: str | None) -> int:
+    """Alumni flag (``0``/``1``) for an *Employee*.
+
+    Reads the flag off the linked User — the gate that actually controls Alumni
+    Portal access — rather than the Employee's own checkbox, so it reflects the
+    effective access even if the two ever drift (e.g. the User flag was edited
+    directly). Use it in reports, server scripts, and backend business logic when
+    you hold an Employee id. Returns ``0`` when the Employee has no linked User,
+    the User is missing, or the flag is unchecked. ``cache=True`` keeps the User
+    lookup request-cheap.
+    """
+    if not employee:
+        return 0
+    user_id = frappe.db.get_value("Employee", employee, "user_id", cache=True)
+    if not user_id:
+        return 0
+    return 1 if frappe.db.get_value("User", user_id, ALUMNI_FLAG, cache=True) else 0
+
+
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def check_alumni_eligibility(email: str) -> dict:
     """Report whether an email can use the Alumni Portal.
@@ -68,6 +90,92 @@ def check_alumni_eligibility(email: str) -> dict:
             "message": _("Your alumni account isn't active yet. Please contact HR."),
         }
     return {"eligible": True}
+
+
+# ── Public landing stats (no login) ───────────────────────────────────────────
+# Powers the counters on the alumni sign-in screen (alumni network / avg ticket
+# SLA / active openings). Guest-accessible and cached, so it stays cheap even
+# under unauthenticated traffic and never exposes anything but aggregate counts.
+_PUBLIC_STATS_CACHE_KEY = "recruitment:alumni_public_stats"
+_PUBLIC_STATS_TTL = 5 * 60          # seconds — short cache for a public endpoint
+_SLA_WINDOW_DAYS = 90               # look-back window for the avg response time
+
+
+def _compact_plus(n: int | None) -> str:
+    """Marketing-style rounded-DOWN count with a '+', e.g. 12345 -> '12k+',
+    432 -> '400+', 47 -> '47'. Never over-states the real number."""
+    n = int(n or 0)
+    if n >= 1000:
+        return f"{n // 1000}k+"
+    if n >= 100:
+        return f"{(n // 100) * 100}+"
+    return str(n)
+
+
+def _compute_alumni_public_stats() -> dict:
+    """Aggregate, non-sensitive counts for the alumni landing page."""
+    from frappe.utils import add_days, now_datetime
+
+    # 1) Alumni network — everyone who has left (the alumni population).
+    alumni_network = frappe.db.count("Employee", {"status": "Left"})
+
+    # 2) Active openings — Open (and, where the column exists, published) jobs.
+    opening_filters = {"status": "Open"}
+    if frappe.db.has_column("Job Opening", "publish"):
+        opening_filters["publish"] = 1
+    active_openings = frappe.db.count("Job Opening", opening_filters)
+
+    # 3) Avg ticket SLA — mean first-response time (hours) over recently responded
+    #    HD Tickets, averaged in SQL. Helpdesk may be absent on a site, so guard
+    #    the table and degrade to None (rendered as "—") instead of erroring.
+    avg_sla_hours = None
+    if frappe.db.table_exists("HD Ticket"):
+        try:
+            cutoff = add_days(now_datetime(), -_SLA_WINDOW_DAYS)
+            row = frappe.db.sql(
+                """
+                SELECT AVG(TIMESTAMPDIFF(SECOND, creation, first_responded_on))
+                FROM `tabHD Ticket`
+                WHERE first_responded_on IS NOT NULL
+                  AND first_responded_on >= %(cutoff)s
+                  AND first_responded_on >= creation
+                """,
+                {"cutoff": cutoff},
+            )
+            avg_secs = row[0][0] if row and row[0] else None
+            if avg_secs:
+                avg_sla_hours = round(float(avg_secs) / 3600)
+        except Exception:
+            avg_sla_hours = None
+
+    return {
+        "alumni_network": alumni_network,
+        "alumni_network_display": _compact_plus(alumni_network),
+        "active_openings": active_openings,
+        "active_openings_display": _compact_plus(active_openings),
+        "avg_ticket_sla_hours": avg_sla_hours,
+        "avg_ticket_sla_display": (f"{avg_sla_hours}h" if avg_sla_hours else "—"),
+    }
+
+
+@frappe.whitelist(allow_guest=True, methods=["GET"])
+def get_alumni_public_stats(refresh: int = 0) -> dict:
+    """Public (no-login) landing-page counters: alumni network size, average
+    ticket SLA, and active openings.
+
+    Exposes ONLY aggregate counts — nothing user-identifiable. Cached for a few
+    minutes because it's an unauthenticated, potentially high-traffic endpoint;
+    pass ``refresh=1`` to recompute and repopulate the cache.
+    """
+    cache = frappe.cache()
+    if not int(refresh or 0):
+        cached = cache.get_value(_PUBLIC_STATS_CACHE_KEY)
+        if cached:
+            return {"success": True, "stats": cached, "cached": True}
+
+    stats = _compute_alumni_public_stats()
+    cache.set_value(_PUBLIC_STATS_CACHE_KEY, stats, expires_in_sec=_PUBLIC_STATS_TTL)
+    return {"success": True, "stats": stats, "cached": False}
 
 
 # ── Login / session ───────────────────────────────────────────────────────────
@@ -1323,19 +1431,377 @@ def download_alumni_document(name: str) -> None:
     frappe.local.response.type = "download"
 
 
+# ---------------------------------------------------------------------------
+# Refer a friend
+# ---------------------------------------------------------------------------
+# The alumnus picks an open job, fills in the candidate's details, and we create
+# a Job Applicant (source = "Employee Referral") linked to that opening and
+# attributed to the referring alumnus. "Your referrals" reads those back.
+
+# Job Applicant status -> (alumnus-facing label, stat group used on the card).
+_REFERRAL_STATUS_MAP = {
+    "Open": ("Submitted", "submitted"),
+    "Replied": ("Screening", "screening"),
+    "Hold": ("On hold", "screening"),
+    "Accepted": ("Hired", "hired"),
+    "Rejected": ("Not selected", "rejected"),
+}
+_REFERRAL_SOURCE = "Employee Referral"
+
+
+def _alumni_referrer_employee(user: str) -> "frappe._dict":
+    """Employee (name, employee_name) linked to the alumnus, or raise 400."""
+    emp = frappe.db.get_value(
+        "Employee", {"user_id": user}, ["name", "employee_name"], as_dict=True
+    )
+    if not emp:
+        frappe.local.response["http_status_code"] = 400
+        frappe.throw(_("No employee record is linked to your account."))
+    return emp
+
+
+def _ensure_referral_source() -> None:
+    """Idempotently create the 'Employee Referral' Job Applicant Source master."""
+    if not frappe.db.exists("Job Applicant Source", _REFERRAL_SOURCE):
+        frappe.get_doc(
+            {"doctype": "Job Applicant Source", "source_name": _REFERRAL_SOURCE}
+        ).insert(ignore_permissions=True, ignore_if_duplicate=True)
+
+
+def _attach_referral_resume(resume_file, applicant_name: str) -> str | None:
+    """Attach an optional {"filename", "content"} resume to the Job Applicant.
+
+    Mirrors the existing employee-referral upload contract (base64 ``content``).
+    Any failure is logged and swallowed so it never blocks the referral itself.
+    """
+    if not resume_file:
+        return None
+    if isinstance(resume_file, str):
+        try:
+            resume_file = frappe.parse_json(resume_file)
+        except Exception:
+            return None
+    if not isinstance(resume_file, dict):
+        return None
+    filename = resume_file.get("filename")
+    content = resume_file.get("content")
+    if not filename or not content:
+        return None
+    try:
+        file_doc = frappe.get_doc(
+            {
+                "doctype": "File",
+                "file_name": filename,
+                "attached_to_doctype": "Job Applicant",
+                "attached_to_name": applicant_name,
+                "is_private": 1,
+                "content": content,
+            }
+        )
+        file_doc.insert(ignore_permissions=True)
+        return file_doc.file_url
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Alumni referral resume upload failed")
+        return None
+
+
+@frappe.whitelist(methods=["GET"])
+def get_alumni_referral_jobs(search: str = None, limit=200, start=0) -> dict:
+    """Open jobs an alumnus can refer a friend to (the 'Department / role area'
+    picker). Every opening with status == 'Open' is returned — the `publish` flag
+    (public careers-site visibility) is intentionally NOT required here, so alumni
+    can refer into internal/unpublished roles too. Each job carries link ids plus
+    resolved `*_title` labels.
+    """
+    from frappe.utils import cint
+
+    user = _require_alumni_session()
+    _alumni_referrer_employee(user)
+
+    filters = {"status": "Open"}
+
+    or_filters = None
+    if search:
+        needle = f"%{search.strip()}%"
+        or_filters = [["job_title", "like", needle], ["name", "like", needle]]
+
+    candidate_fields = [
+        "name", "job_title", "designation", "department",
+        "location", "employment_type", "company", "description",
+    ]
+    fields = [
+        f for f in candidate_fields
+        if f == "name" or frappe.db.has_column("Job Opening", f)
+    ]
+
+    rows = frappe.get_all(
+        "Job Opening",
+        filters=filters,
+        or_filters=or_filters,
+        fields=fields,
+        order_by="creation desc",
+        limit_page_length=cint(limit) or 200,
+        limit_start=cint(start) or 0,
+    ) or []
+
+    jobs = []
+    for r in rows:
+        jobs.append({
+            "id": r.get("name"),
+            "job_title": r.get("job_title") or r.get("name"),
+            "designation": r.get("designation") or "",
+            "designation_title": _resolve_link_title(
+                "Job Opening", "designation", r.get("designation") or ""),
+            "department": r.get("department") or "",
+            "department_title": _resolve_link_title(
+                "Job Opening", "department", r.get("department") or ""),
+            "location": r.get("location") or "",
+            "location_title": _resolve_link_title(
+                "Job Opening", "location", r.get("location") or ""),
+            "employment_type": r.get("employment_type") or "",
+            "employment_type_title": _resolve_link_title(
+                "Job Opening", "employment_type", r.get("employment_type") or ""),
+            "company": r.get("company") or "",
+            "description": r.get("description") or "",
+        })
+
+    return {"success": True, "jobs": jobs, "count": len(jobs)}
+
+
+@frappe.whitelist(methods=["POST"])
+def submit_alumni_referral(
+    job_opening: str,
+    full_name: str,
+    email: str,
+    phone: str = None,
+    linkedin: str = None,
+    note: str = None,
+    resume_file=None,
+) -> dict:
+    """Refer a friend against a specific open job.
+
+    Creates a Job Applicant (source = "Employee Referral") linked to
+    ``job_opening`` and attributed to the logged-in alumnus. ``resume_file`` is
+    an optional ``{"filename", "content"}`` (base64) blob. Returns the created
+    applicant's name.
+    """
+    user = _require_alumni_session()
+    referrer = _alumni_referrer_employee(user)
+
+    full_name = (full_name or "").strip()
+    email = (email or "").strip()
+    if not full_name:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("Candidate name is required.")}
+    if not email:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("Candidate email is required.")}
+
+    from frappe.utils import validate_email_address
+
+    if not validate_email_address(email):  # "" when invalid
+        frappe.local.response["http_status_code"] = 400
+        return {
+            "success": False,
+            "message": _("{0} is not a valid email address.").format(email),
+        }
+
+    opening = frappe.db.get_value(
+        "Job Opening", job_opening,
+        ["name", "status", "designation", "department", "job_title"],
+        as_dict=True,
+    )
+    if not opening:
+        frappe.local.response["http_status_code"] = 404
+        return {"success": False, "message": _("The selected job opening was not found.")}
+    if (opening.get("status") or "").lower() != "open":
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("This opening is no longer accepting referrals.")}
+
+    # Don't let the same candidate be referred to the same opening twice.
+    existing = frappe.db.exists(
+        "Job Applicant", {"email_id": email, "job_title": opening.name}
+    )
+    if existing:
+        frappe.local.response["http_status_code"] = 409
+        return {
+            "success": False,
+            "name": existing,
+            "message": _("You have already referred this candidate for this role."),
+        }
+
+    _ensure_referral_source()
+
+    has = {df.fieldname for df in frappe.get_meta("Job Applicant").fields}
+
+    applicant = frappe.new_doc("Job Applicant")
+    applicant.applicant_name = full_name
+    applicant.email_id = email
+    applicant.job_title = opening.name
+    applicant.source = _REFERRAL_SOURCE
+    if opening.get("designation") and "designation" in has:
+        applicant.designation = opening.get("designation")
+    if phone and "phone_number" in has:
+        applicant.phone_number = phone
+    if linkedin and "custom_linkedin_url" in has:
+        applicant.custom_linkedin_url = linkedin
+    if note and "cover_letter" in has:
+        applicant.cover_letter = note
+    if "custom_referred_by" in has:
+        applicant.custom_referred_by = referrer.name
+    if "custom_referred_employee_name" in has:
+        applicant.custom_referred_employee_name = referrer.employee_name
+
+    try:
+        applicant.insert(ignore_permissions=True)
+    except frappe.DuplicateEntryError:
+        frappe.db.rollback()
+        frappe.local.response["http_status_code"] = 409
+        return {"success": False, "message": _("This candidate has already been submitted.")}
+
+    resume_url = _attach_referral_resume(resume_file, applicant.name)
+    if resume_url and "resume_attachment" in has:
+        applicant.db_set("resume_attachment", resume_url, update_modified=False)
+
+    frappe.db.commit()
+
+    return {
+        "success": True,
+        "name": applicant.name,
+        "job_opening": opening.name,
+        "job_title": opening.get("job_title") or opening.name,
+        "resume_url": resume_url or "",
+        "message": _("Referral submitted. Recruiting will reach out within 5 days."),
+    }
+
+
+@frappe.whitelist(methods=["GET"])
+def get_alumni_referrals(status: str = None, search: str = None, limit=50, start=0) -> dict:
+    """The alumnus's referrals ('Your referrals'), with stat groups.
+
+    Each referral carries the linked opening, a friendly pipeline label/group,
+    and an 'Interviewing' override when a live Interview exists. Stats are always
+    computed over the FULL set; `limit`/`start` paginate the returned list.
+    """
+    from frappe.utils import cint
+
+    user = _require_alumni_session()
+    referrer = _alumni_referrer_employee(user)
+
+    rows = frappe.get_all(
+        "Job Applicant",
+        filters={"custom_referred_by": referrer.name},
+        fields=[
+            "name", "applicant_name", "email_id", "phone_number",
+            "designation", "job_title", "status", "creation",
+        ],
+        order_by="creation desc",
+        limit_page_length=0,
+    ) or []
+
+    opening_cache = {}
+
+    def _opening(name):
+        if not name:
+            return frappe._dict()
+        if name not in opening_cache:
+            opening_cache[name] = frappe.db.get_value(
+                "Job Opening", name,
+                ["job_title", "designation", "location", "status"],
+                as_dict=True,
+            ) or frappe._dict()
+        return opening_cache[name]
+
+    # Applicants with a live (non-terminal) interview surface as "Interviewing".
+    interviewing = set()
+    names = [r.name for r in rows]
+    if names:
+        for iv in frappe.get_all(
+            "Interview",
+            filters={"job_applicant": ["in", names]},
+            fields=["job_applicant", "status"],
+        ) or []:
+            if (iv.get("status") or "") not in ("Cleared", "Rejected"):
+                interviewing.add(iv.get("job_applicant"))
+
+    stats = {
+        "total": len(rows), "submitted": 0, "screening": 0,
+        "interviewing": 0, "hired": 0, "rejected": 0,
+    }
+    referrals = []
+    for r in rows:
+        label, group = _REFERRAL_STATUS_MAP.get(r.status, ("Submitted", "submitted"))
+        if r.name in interviewing and group not in ("hired", "rejected"):
+            label, group = "Interviewing", "interviewing"
+        stats[group] = stats.get(group, 0) + 1
+        op = _opening(r.job_title)
+        desig = r.designation or op.get("designation") or ""
+        referrals.append({
+            "name": r.name,
+            "candidate_name": r.applicant_name,
+            "email": r.email_id,
+            "phone": r.phone_number,
+            "opening": r.job_title,
+            "job_title": op.get("job_title") or r.job_title,
+            "designation": desig,
+            "designation_title": _resolve_link_title("Job Applicant", "designation", desig),
+            "location": op.get("location") or "",
+            "location_title": _resolve_link_title("Job Opening", "location", op.get("location") or ""),
+            "date_of_referral": _d(r.creation),
+            "raw_status": r.status,
+            "status": label,
+            "status_group": group,
+            "job_status": op.get("status"),
+        })
+
+    if status and status != "all":
+        referrals = [x for x in referrals if x["status_group"] == status]
+    if search:
+        needle = search.strip().lower()
+        referrals = [
+            x for x in referrals
+            if needle in (x["candidate_name"] or "").lower()
+            or needle in (x["email"] or "").lower()
+            or needle in (x["job_title"] or "").lower()
+        ]
+
+    total_matched = len(referrals)
+    start_i = cint(start) or 0
+    lim = cint(limit) or 50
+    referrals = referrals[start_i:start_i + lim] if lim else referrals
+
+    return {"success": True, "stats": stats, "referrals": referrals, "count": total_matched}
+
+
 # ── Keep the alumni flag in sync with Employee lifecycle ──────────────────────
 def sync_alumni_flag(doc, method: str | None = None) -> None:
-    """Employee `on_update` hook: mark/unmark the linked User as an alumni employee.
+    """Employee `on_update` hook: write the editable `custom_is_alumni_employee`
+    checkbox through to the linked User.
 
-    Purely additive — sets only the `custom_is_alumni_employee` checkbox on the
-    linked User. It NEVER touches Employee.status or User.enabled, so no existing
-    HRMS/exit behaviour changes.
+    The Employee checkbox is the single authority for Alumni Portal access — HR
+    grants or revokes access by ticking/unticking it — and its value is mirrored
+    onto `User.custom_is_alumni_employee`, the flag that actually gates login.
+
+    Full manual control: ticking grants, unticking revokes (even for a 'Left'
+    employee). New exits still default to granted — when status transitions into
+    'Left' the checkbox is turned on — but a later manual untick is never
+    overridden. Never touches Employee.status or User.enabled.
     """
     if not getattr(doc, "user_id", None):
         return
-    is_alumni = 1 if doc.status == "Left" else 0
-    current = frappe.db.get_value("User", doc.user_id, ALUMNI_FLAG)
-    if int(current or 0) != is_alumni:
+    from frappe.utils import cint
+
+    # Default-grant on the transition into 'Left'; manual edits win afterwards.
+    if (
+        doc.status == "Left"
+        and doc.has_value_changed("status")
+        and not cint(doc.get(ALUMNI_FLAG))
+    ):
+        doc.db_set(ALUMNI_FLAG, 1, update_modified=False)
+
+    desired = cint(doc.get(ALUMNI_FLAG))
+    current = cint(frappe.db.get_value("User", doc.user_id, ALUMNI_FLAG))
+    if current != desired:
         frappe.db.set_value(
-            "User", doc.user_id, ALUMNI_FLAG, is_alumni, update_modified=False
+            "User", doc.user_id, ALUMNI_FLAG, desired, update_modified=False
         )

@@ -18,7 +18,10 @@ def after_migrate():
     ensure_tpo_access()
     ensure_offer_compensation()
     ensure_alumni_employee_field()
+    ensure_alumni_employee_employee_field()
     backfill_alumni_flag()
+    backfill_employee_alumni_mirror()
+    ensure_alumni_employee_request_workflow()
 
 
 def ensure_alumni_employee_field():
@@ -50,6 +53,93 @@ def ensure_alumni_employee_field():
         frappe.logger("recruitment").warning("ensure_alumni_employee_field: skipped")
 
 
+def ensure_alumni_employee_employee_field():
+    """Add an EDITABLE `Employee.custom_is_alumni_employee` checkbox.
+
+    This is the control HR uses to grant/revoke Alumni Portal access from the
+    Employee form. It is a normal stored Check field; its value is written through
+    to the linked User's `custom_is_alumni_employee` flag (the flag that actually
+    gates portal login) by recruitment.recruitment.alumni_portal.sync_alumni_flag.
+    New exits (status == 'Left') default to granted, but a later manual untick is
+    never overridden.
+
+    Idempotent, and self-heals the earlier VIRTUAL read-only definition (which
+    mirrored the User flag and could not be edited) into this editable stored one.
+    Converting virtual -> stored adds the DB column on migrate; existing values
+    are seeded from the User flag by `backfill_employee_alumni_mirror`.
+    """
+    from frappe.utils import cint
+
+    # Editable + stored: undo the old virtual / read-only / getter definition.
+    desired = {
+        "is_virtual": 0,
+        "read_only": 0,
+        "options": "",
+        "no_copy": 1,
+    }
+    try:
+        existing = frappe.get_meta("Employee").get_field("custom_is_alumni_employee")
+        if existing:
+            cf_name = frappe.db.get_value(
+                "Custom Field",
+                {"dt": "Employee", "fieldname": "custom_is_alumni_employee"},
+            )
+            if cf_name:
+                cf = frappe.get_doc("Custom Field", cf_name)
+                if cint(cf.is_virtual) or cint(cf.read_only) or (cf.options or ""):
+                    cf.update(desired)
+                    cf.save(ignore_permissions=True)
+                    frappe.clear_cache(doctype="Employee")
+            return
+
+        from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+
+        create_custom_field(
+            "Employee",
+            {
+                "fieldname": "custom_is_alumni_employee",
+                "label": "Is Alumni Employee",
+                "fieldtype": "Check",
+                "insert_after": "user_id",
+                "no_copy": 1,
+                "description": (
+                    "Grants access to the Alumni Portal. Editable — checking or "
+                    "unchecking here grants or revokes portal access for the linked "
+                    "User. New exits (status = 'Left') default to granted."
+                ),
+                "module": "Recruitment",
+            },
+            ignore_validate=True,
+        )
+        frappe.clear_cache(doctype="Employee")
+    except Exception:
+        frappe.logger("recruitment").warning(
+            "ensure_alumni_employee_employee_field: skipped", exc_info=True
+        )
+
+
+def backfill_employee_alumni_mirror():
+    """Seed the (now editable, stored) `Employee.custom_is_alumni_employee` column
+    from the authoritative `User.custom_is_alumni_employee` flag, so existing
+    alumni show as checked on the Employee form after the virtual -> stored switch.
+    Idempotent; skips until the column exists (added when the field turns stored)."""
+    if not frappe.db.has_column("Employee", "custom_is_alumni_employee"):
+        return
+    try:
+        frappe.db.sql(
+            """
+            UPDATE `tabEmployee` e
+            JOIN `tabUser` u ON u.name = e.user_id
+            SET e.custom_is_alumni_employee = COALESCE(u.custom_is_alumni_employee, 0)
+            WHERE COALESCE(e.custom_is_alumni_employee, 0)
+                  <> COALESCE(u.custom_is_alumni_employee, 0)
+            """
+        )
+        frappe.db.commit()
+    except Exception:
+        frappe.logger("recruitment").warning("backfill_employee_alumni_mirror: skipped")
+
+
 def backfill_alumni_flag():
     """One-time (idempotent) backfill: flag Users of already-'Left' employees as
     alumni, so existing former employees can use the Alumni Portal."""
@@ -68,6 +158,22 @@ def backfill_alumni_flag():
         frappe.db.commit()
     except Exception:
         frappe.logger("recruitment").warning("backfill_alumni_flag: skipped")
+
+
+def ensure_alumni_employee_request_workflow():
+    """Idempotently create the Alumni Employee Request approval Workflow (states,
+    action masters and the Workflow itself). Business logic lives in the service
+    module; this is the migrate entry point. Never breaks a migrate."""
+    try:
+        from recruitment.recruitment.alumni_employee_request_service import (
+            ensure_alumni_employee_request_workflow as _ensure,
+        )
+
+        _ensure()
+    except Exception:
+        frappe.logger("recruitment").warning(
+            "ensure_alumni_employee_request_workflow: skipped"
+        )
 
 
 def ensure_offer_compensation():
