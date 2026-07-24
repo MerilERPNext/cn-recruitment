@@ -2,16 +2,21 @@ import { useState } from 'react';
 import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
+import Modal from '../../../shared/Modal';
+import GoalLibraryPopup from './GoalLibraryPopup';
+import AcknowledgmentPopup from './define-goal/AcknowledgmentPopup';
 
 interface StartGoalSelectionProps {
     onContinue?: () => void;
 }
 
 const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
+    const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
+    const [isAcknowledgmentOpen, setIsAcknowledgmentOpen] = useState(false);
     const [blankGoalDescription, setBlankGoalDescription] = useState(
         "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
     );
-  
+
     return <>
         <div  className="bg-[#fff8f6] border border-red-100 rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
             <div className="bg-white border border-red-100 text-red-500 w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
@@ -44,7 +49,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                 </div>
             </div>
             <div className="w-full md:w-auto mt-1 md:mt-0 self-start md:self-center">
-                <Button variant="contain" bgColor="error" className="w-full md:w-auto justify-center bg-[#cd2c41] hover:bg-[#b02235] text-white">
+                <Button onClick={() => setIsAcknowledgmentOpen(true)} variant="contain" bgColor="error" className="w-full md:w-auto justify-center bg-[#cd2c41] hover:bg-[#b02235] text-white">
                     Acknowledge 3 <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
             </div>
@@ -96,7 +101,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             <div className="text-sm font-medium text-gray-700">Most popular · 142 templates for Design</div>
                             <div className="text-xs text-gray-500">Median time: ~ 90 seconds</div>
                         </div>
-                        <Button variant="contain" className="w-full sm:w-auto justify-center bg-indigo-500 hover:bg-indigo-600 text-white" onClick={onContinue} aria-label="Use goal library">
+                        <Button variant="contain" className="w-full sm:w-auto justify-center bg-indigo-500 hover:bg-indigo-600 text-white" onClick={() => setIsGoalLibraryOpen(true)} aria-label="Use goal library">
                             Use this <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
                     </div>
@@ -139,7 +144,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                         </div>
 
                         <button
-                            onClick={onContinue}
+                            onClick={() => setIsGoalLibraryOpen(true)}
                             className="h-9 w-full sm:w-auto rounded-lg flex justify-center items-center gap-2 bg-amber-400 px-4 text-sm font-medium text-slate-900 "
                             aria-label="Use AI suggested goal"
                         >
@@ -187,6 +192,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                         </div>
 
                         <Button
+                            onClick={() => setIsGoalLibraryOpen(true)}
                             variant="contain"
                             bgColor="primary"
                             className="h-9 w-full sm:w-auto justify-center whitespace-nowrap rounded-lg bg-indigo-500 px-4 text-sm font-medium text-white hover:bg-indigo-600"
@@ -253,6 +259,30 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                 Bulk Import <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
         </div>
+
+        <Modal
+            isOpen={isGoalLibraryOpen}
+            onClose={() => setIsGoalLibraryOpen(false)}
+            size="xl"
+            className="max-w-[1300px] p-0"
+        >
+            <GoalLibraryPopup
+                onClose={() => setIsGoalLibraryOpen(false)}
+                onUseTemplate={() => {
+                    setIsGoalLibraryOpen(false);
+                    onContinue?.();
+                }}
+            />
+        </Modal>
+
+        <Modal
+            isOpen={isAcknowledgmentOpen}
+            onClose={() => setIsAcknowledgmentOpen(false)}
+            size="lg"
+            className="max-w-[780px] p-0"
+        >
+            <AcknowledgmentPopup onClose={() => setIsAcknowledgmentOpen(false)} />
+        </Modal>
     </>};
 
 export default StartGoalSelection;
