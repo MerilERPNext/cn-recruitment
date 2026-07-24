@@ -1,11 +1,11 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { X, CheckCircle } from 'lucide-react';
 import { Typography } from '../../../../shared/atoms/Typography';
 import Button from '../../../../shared/atoms/Button';
 import { Goal } from '../../../../../types/goal';
 
 interface AcknowledgmentProps {
-    onClose: (value?: any) => void;
+    onClose: (isOpen: boolean) => void;
     goalData?: Goal[];
 }
 
@@ -19,9 +19,8 @@ export const getWeightageColor = (weightage?: number, index: number = 0) => {
             return { dot: 'bg-blue-500', text: 'text-blue-500' };
         } else if (weightage <= 20) {
             return { dot: 'bg-indigo-500', text: 'text-indigo-500' };
-        } else {
-            return { dot: 'bg-emerald-500', text: 'text-emerald-500' };
         }
+        return { dot: 'bg-emerald-500', text: 'text-emerald-500' };
     }
     const colors = [
         { dot: 'bg-red-500', text: 'text-red-500' },
@@ -31,15 +30,19 @@ export const getWeightageColor = (weightage?: number, index: number = 0) => {
     return colors[index % colors.length];
 };
 
-const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData }) => {
+const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData = [] }) => {
+    const totalWeightage = useMemo(
+        () => goalData.reduce((acc, curr) => acc + (curr.weightage || 0), 0),
+        [goalData]
+    );
+
     return (
         <div className="flex w-full max-w-full flex-col overflow-hidden bg-white">
-
             {/* Header */}
             <div className="relative z-30 shrink-0 border-b border-gray-100 bg-white px-4 py-2.5 sm:px-5 sm:py-4">
                 <div className="flex flex-col gap-0.5 mb-1 pr-11 sm:flex-row sm:items-center sm:gap-2 sm:pr-0">
                     <span className="shrink-0 bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-md tracking-wider w-fit">
-                        {goalData?.length ?? 3} MANDATORY OKRs ASSIGNED
+                        {goalData.length} MANDATORY OKRs ASSIGNED {totalWeightage > 0 ? `(${totalWeightage}%)` : ''}
                     </span>
                     <span className="truncate text-gray-400 text-xs">Pushed by HR · India Tech BU · lock 21 May 2026</span>
                 </div>
@@ -47,7 +50,7 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
                     Acknowledge Mandatory OKRs
                 </Typography>
                 <Typography variant="caption" className="text-gray-500 mt-0.5 text-[12px] leading-4 sm:text-xs sm:leading-normal">
-                    Review each OKR and accept or reject. You must action all before proceeding.
+                    Review each OKR before proceeding.
                 </Typography>
 
                 <button
@@ -61,41 +64,48 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
             </div>
 
             {/* OKR Cards */}
-            <div className="px-4 py-4 sm:px-5">
-                <div className="flex flex-col gap-3 sm:gap-4">
-                    {goalData?.map((okr: Goal, index: number) => {
-                        const colorConfig = getWeightageColor(okr?.weightage, index);
-                        return (
-                            <div
-                                key={okr.goal || index}
-                                className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 rounded-xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm"
-                            >
-                                {/* OKR Info */}
-                                <div className="flex min-w-0 flex-1 items-start gap-3">
-                                    <div
-                                        className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${colorConfig.dot}`}
-                                    />
-                                    <div className="min-w-0 flex-1">
-                                        <Typography
-                                            variant="bodyMedium"
-                                            className="break-words text-sm font-semibold leading-5 text-gray-900"
-                                        >
-                                            {okr.title}
-                                        </Typography>
-                                        <div className="mt-1 flex items-center gap-2">
-                                            <Typography variant="caption" className="text-gray-400 text-xs">
-                                                Weight:
+            <div className="px-4 py-4 sm:px-5 min-h-[140px] max-h-[360px] overflow-y-auto">
+                {goalData.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center text-gray-400 gap-2">
+                        <CheckCircle className="w-8 h-8 text-gray-300" />
+                        <span className="text-sm">No mandatory OKRs assigned at this time.</span>
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-3 sm:gap-4">
+                        {goalData.map((okr: Goal, index: number) => {
+                            const colorConfig = getWeightageColor(okr?.weightage, index);
+                            return (
+                                <div
+                                    key={okr.goal || index}
+                                    className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 rounded-xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm"
+                                >
+                                    {/* OKR Info */}
+                                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                                        <div
+                                            className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${colorConfig.dot}`}
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <Typography
+                                                variant="bodyMedium"
+                                                className="break-words text-sm font-semibold leading-5 text-gray-900"
+                                            >
+                                                {okr.title}
                                             </Typography>
-                                            <span className={`text-xs font-semibold ${colorConfig.text}`}>
-                                                {okr?.weightage}%
-                                            </span>
+                                            <div className="mt-1 flex items-center gap-2">
+                                                <Typography variant="caption" className="text-gray-400 text-xs">
+                                                    Weight:
+                                                </Typography>
+                                                <span className={`text-xs font-semibold ${colorConfig.text}`}>
+                                                    {okr?.weightage}%
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             {/* Footer */}
