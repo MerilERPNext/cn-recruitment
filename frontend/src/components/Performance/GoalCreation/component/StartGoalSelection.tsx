@@ -52,7 +52,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                                 mandatoryGoals?.data?.goals?.map((Goal: Goal, index: number) => {
                                     const colorConfig = getWeightageColor(Goal?.weightage, index);
                                     return (
-                                        <div key={index} className="w-full sm:w-auto bg-white border border-gray-200 rounded-lg px-3 py-2 flex items-start sm:items-center gap-2 text-sm shadow-sm">
+                                        <div key={Goal?.goal} className="w-full sm:w-auto bg-white border border-gray-200 rounded-lg px-3 py-2 flex items-start sm:items-center gap-2 text-sm shadow-sm">
                                             <div className={`w-2 h-2 rounded-full ${colorConfig.dot}`}></div>
                                             <span className="min-w-0 flex-1 text-gray-700">{Goal?.title ?? "no title"}</span>
                                             <span className={`shrink-0 ${colorConfig.text} font-medium`}>{Goal?.weightage}%</span>
