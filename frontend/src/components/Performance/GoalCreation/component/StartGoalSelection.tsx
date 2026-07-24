@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge, AlertCircle, RefreshCw } from 'lucide-react';
+import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge, AlertCircle, RefreshCw, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
@@ -23,6 +23,15 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
     );
     const { data: mandatoryGoals, isLoading, error, refetch } = useGetMandotaryGoals();
+    const goalsCount = mandatoryGoals?.data?.goals?.length ?? 0;
+    const pushedBy = mandatoryGoals?.data?.pushed_by;
+    const lockDate = mandatoryGoals?.data?.lock_date;
+    const metadataText = [
+        pushedBy ? `Pushed by - ${pushedBy}` : null,
+        'India Tech BU',
+        lockDate ? `lock ${lockDate}` : null,
+    ].filter(Boolean).join(' · ');
+
     return <>
         <div className="bg-[#fff8f6] border border-red-100 rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
             <div className="bg-white border border-red-100 text-red-500 w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
@@ -34,28 +43,43 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                 <>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center flex-wrap gap-2 mb-2">
-                            <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-md tracking-wider">{mandatoryGoals?.data?.goals?.length ?? ""} MANDATORY OKRs ASSIGNED</span>
-                            <span className="text-gray-500 text-sm">Pushed by - {mandatoryGoals?.data?.pushed_by ?? ""}· India Tech BU · lock {mandatoryGoals?.data?.lock_date ?? "21 May 2026"} </span>
+                            <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-md tracking-wider">{goalsCount} MANDATORY OKRs ASSIGNED</span>
+                            {metadataText && <span className="text-gray-500 text-sm">{metadataText}</span>}
                         </div>
                         <Typography variant="subheading" className="font-semibold text-gray-900 mb-4">
-                            You have {mandatoryGoals?.data?.goals?.length ?? ""} mandatory OKRs to acknowledge before adding your own.
+                            {goalsCount > 0
+                                ? `You have ${goalsCount} mandatory OKRs to acknowledge before adding your own.`
+                                : 'No mandatory OKRs assigned at this time.'}
                         </Typography>
                         <div className="flex flex-wrap gap-3">
-                            {mandatoryGoals?.data?.goals?.map((Goal: Goal, index: number) => {
-                                const colorConfig = getWeightageColor(Goal?.weightage, index);
-                                return (
-                                    <div key={index} className="w-full sm:w-auto bg-white border border-gray-200 rounded-lg px-3 py-2 flex items-start sm:items-center gap-2 text-sm shadow-sm">
-                                        <div className={`w-2 h-2 rounded-full ${colorConfig.dot}`}></div>
-                                        <span className="min-w-0 flex-1 text-gray-700">{Goal?.title ?? "no title"}</span>
-                                        <span className={`shrink-0 ${colorConfig.text} font-medium`}>{Goal?.weightage}%</span>
-                                    </div>
-                                );
-                            })}
+                            {goalsCount > 0 ? (
+                                mandatoryGoals?.data?.goals?.map((Goal: Goal, index: number) => {
+                                    const colorConfig = getWeightageColor(Goal?.weightage, index);
+                                    return (
+                                        <div key={index} className="w-full sm:w-auto bg-white border border-gray-200 rounded-lg px-3 py-2 flex items-start sm:items-center gap-2 text-sm shadow-sm">
+                                            <div className={`w-2 h-2 rounded-full ${colorConfig.dot}`}></div>
+                                            <span className="min-w-0 flex-1 text-gray-700">{Goal?.title ?? "no title"}</span>
+                                            <span className={`shrink-0 ${colorConfig.text} font-medium`}>{Goal?.weightage}%</span>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="flex items-center gap-2 text-gray-400 text-sm">
+                                    <CheckCircle className="w-4 h-4 text-gray-400" />
+                                    <span>No mandatory OKRs assigned at this time.</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div className="w-full md:w-auto mt-1 md:mt-0 self-start md:self-center">
-                        <Button onClick={() => setAcknowledgementGoalsData(mandatoryGoals?.data?.goals)} variant="contain" bgColor="error" className="w-full md:w-auto justify-center bg-[#cd2c41] hover:bg-[#b02235] text-white">
-                            Acknowledge 3 <ArrowRight className="w-4 h-4 ml-1" />
+                        <Button
+                            onClick={() => setAcknowledgementGoalsData(mandatoryGoals?.data?.goals)}
+                            variant="contain"
+                            bgColor="error"
+                            disabled={goalsCount === 0}
+                            className="w-full md:w-auto justify-center bg-[#cd2c41] hover:bg-[#b02235] text-white disabled:bg-gray-300 disabled:text-gray-500 disabled:opacity-60"
+                        >
+                            Acknowledge {goalsCount} <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
                     </div>
                 </>
@@ -297,7 +321,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
             size="lg"
             className="max-w-[780px] p-0"
         >
-            <AcknowledgmentPopup text={`Pushed by - ${mandatoryGoals?.data?.pushed_by ?? ""}· India Tech BU · lock ${mandatoryGoals?.data?.lock_date ?? "21 May 2026"} `} goalData={acknowledgementGoalsData} onClose={() => setAcknowledgementGoalsData(undefined)} />
+            <AcknowledgmentPopup text={metadataText} goalData={acknowledgementGoalsData} onClose={() => setAcknowledgementGoalsData(undefined)} />
         </Modal>
     </>
 };
