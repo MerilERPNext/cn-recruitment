@@ -236,7 +236,7 @@ def auto_separate_employees_on_lwd():
             continue
 
         employee_status = frappe.db.get_value("Employee", sep.employee, "status")
-        if employee_status == "Left":
+        if employee_status == "Inactive":
             continue
 
         force_separate = False
@@ -259,7 +259,7 @@ def auto_separate_employees_on_lwd():
 
             employee_doc = frappe.get_doc("Employee", sep.employee)
             employee_doc.flags.ignore_permissions = True
-            employee_doc.status = "Left"
+            employee_doc.status = "Inactive"
             employee_doc.custom_employment_status = "Separated"
             employee_doc.relieving_date = sep.custom_final_last_working_day
             employee_doc.save()
@@ -330,7 +330,7 @@ def mark_relieved_employees_as_left():
         filters=[
             ["relieving_date", "is", "set"],
             ["relieving_date", "<=", current_date],
-            ["status", "!=", "Left"],
+            ["status", "!=", "Inactive"],
         ],
         fields=["name", "employee_name", "user_id", "relieving_date"],
     )
@@ -342,7 +342,7 @@ def mark_relieved_employees_as_left():
             "docstatus": 1,
         })
         frappe.db.set_value("Employee", emp.name, {
-            "status": "Left",
+            "status": "Inactive",
             "custom_employment_status": "Terminated" if is_termination else "Left",
         })
 

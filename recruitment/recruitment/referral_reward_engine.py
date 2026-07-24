@@ -168,7 +168,7 @@ def _is_on_notice(employee):
 
 
 def _is_alumni(employee):
-	"""Referee already exists as a former (Left) employee -> boomerang re-hire."""
+	"""Referee already exists as a former (Inactive) employee -> boomerang re-hire."""
 	if not employee:
 		return False
 	personal, prefered = frappe.db.get_value(
@@ -176,7 +176,7 @@ def _is_alumni(employee):
 	)
 	for email in (personal, prefered):
 		if email and frappe.db.exists(
-			"Employee", {"name": ["!=", employee], "status": "Left", "personal_email": email}
+			"Employee", {"name": ["!=", employee], "status": "Inactive", "personal_email": email}
 		):
 			return True
 	return False

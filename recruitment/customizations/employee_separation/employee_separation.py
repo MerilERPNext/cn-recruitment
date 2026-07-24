@@ -213,7 +213,7 @@ def update_employee_relieving_date(doc, method=None):
         relieving = getdate(doc.custom_final_last_working_day)
         if relieving and relieving <= getdate(today()):
             frappe.db.set_value("Employee", doc.employee, {
-                "status": "Left",
+                "status": "Inactive",
                 "custom_employment_status": "Terminated",
             })
         # future relieving date -> mark_relieved_employees_as_left marks it on the day
