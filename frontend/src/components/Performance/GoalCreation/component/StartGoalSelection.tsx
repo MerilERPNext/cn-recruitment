@@ -25,12 +25,8 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
     const { data: mandatoryGoals, isLoading, error, refetch } = useGetMandotaryGoals();
     const goalsCount = mandatoryGoals?.data?.goals?.length ?? 0;
     const pushedBy = mandatoryGoals?.data?.pushed_by;
-    const lockDate = mandatoryGoals?.data?.lock_date;
-    const metadataText = [
-        pushedBy ? `Pushed by - ${pushedBy}` : null,
-        'India Tech BU',
-        lockDate ? `lock ${lockDate}` : null,
-    ].filter(Boolean).join(' · ');
+    const lockDate = mandatoryGoals?.data?.lock_date; 
+    const metadataText = `Pushed by - ${pushedBy} . India Tech BU . lock ${lockDate}`
 
     return <>
         <div className="bg-[#fff8f6] border border-red-100 rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
@@ -44,7 +40,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center flex-wrap gap-2 mb-2">
                             <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-md tracking-wider">{goalsCount} MANDATORY OKRs ASSIGNED</span>
-                            {metadataText && <span className="text-gray-500 text-sm">{metadataText}</span>}
+                            {metadataText && goalsCount > 0  && <span className="text-gray-500 text-sm">{metadataText}</span>}
                         </div>
                         <Typography variant="subheading" className="font-semibold text-gray-900 mb-4">
                             {goalsCount > 0
