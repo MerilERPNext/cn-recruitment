@@ -9,7 +9,7 @@ const StartGoalSelection = lazy(() => import('./component/StartGoalSelection'));
 const VisibilityAndSubmit = lazy(() => import('./component/VisibilityAndSubmit'));
 
 type GoalWizardStep = 'start' | 'define' | 'alignment' | 'visibility';
-
+ 
 const stepDefinitions: {
     key: GoalWizardStep;
     label: string;
