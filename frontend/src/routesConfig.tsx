@@ -646,6 +646,11 @@ const EmployeeDocumentsPage = lazyWithRetry(
   "EmployeeDocumentsPage",
 );
 
+const TimesheetApp = lazyWithRetry(
+  () => import("./components/Timesheet/TimesheetApp"),
+  "TimesheetApp",
+);
+
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -796,6 +801,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/requests",
     element: <Requests />,
     permissionKey: "Dashboard",
+  },
+  {
+    path: "/webapp/timesheet",
+    element: <TimesheetApp />,
+    permissionKey: "Timesheet",
   },
   {
     path: "/webapp/id-card",
