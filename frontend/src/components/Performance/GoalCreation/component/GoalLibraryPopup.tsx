@@ -3,12 +3,12 @@ import { ArrowRight, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
 import { Select } from '../../../shared/atoms/Select';
 import { Typography } from '../../../shared/atoms/Typography';
-import { GoalTemplate } from './goal-model/types';
-import RecommendedTemplates from './goal-model/RecommendedTemplates';
-import AllOrgTemplates from './goal-model/AllOrgTemplates';
-import DepartmentTemplates from './goal-model/DepartmentTemplates';
-import RoleBasedTemplates from './goal-model/RoleBasedTemplates';
-import UsedByTeamTemplates from './goal-model/UsedByTeamTemplates';
+import { GoalTemplate, filterTemplates } from './goal-model/types';
+import RecommendedTemplates, { recommendedTemplatesData } from './goal-model/RecommendedTemplates';
+import AllOrgTemplates, { allOrgTemplatesData } from './goal-model/AllOrgTemplates';
+import DepartmentTemplates, { departmentTemplatesData } from './goal-model/DepartmentTemplates';
+import RoleBasedTemplates, { roleBasedTemplatesData } from './goal-model/RoleBasedTemplates';
+import UsedByTeamTemplates, { usedByTeamTemplatesData } from './goal-model/UsedByTeamTemplates';
 
 interface GoalLibraryPopupProps {
     onClose?: () => void;
@@ -17,40 +17,94 @@ interface GoalLibraryPopupProps {
 
 type TabKey = 'recommended' | 'all-org' | 'department' | 'role-based' | 'used-by-team';
 
-const tabs: { key: TabKey; label: string; count: number }[] = [
-    { key: 'recommended',   label: 'Recommended for you', count: 12 },
-    { key: 'all-org',       label: 'All Org templates',   count: 12 },
-    { key: 'department',    label: 'Department · Design', count: 9  },
-    { key: 'role-based',    label: 'Role-based',          count: 9  },
-    { key: 'used-by-team',  label: 'Used by your team',   count: 9  },
-];
-
 const departmentOptions = [
-    { label: 'Design',      value: 'Design'      },
-    { label: 'Engineering', value: 'Engineering' },
-    { label: 'Product',     value: 'Product'     },
-    { label: 'Marketing',   value: 'Marketing'   },
+    { label: 'All Departments', value: 'All' },
+    { label: 'Design',          value: 'Design' },
+    { label: 'Engineering',     value: 'Engineering' },
+    { label: 'Product',         value: 'Product' },
+    { label: 'Marketing',       value: 'Marketing' },
+    { label: 'HR',              value: 'HR' },
+    { label: 'Sales',           value: 'Sales' },
+    { label: 'Finance',         value: 'Finance' },
 ];
 
 const levelOptions = [
-    { label: 'L3 / L4',  value: 'L3 / L4'  },
-    { label: 'L1 / L2',  value: 'L1 / L2'  },
-    { label: 'L5 / L6',  value: 'L5 / L6'  },
-    { label: 'Manager',  value: 'Manager'   },
+    { label: 'All Designations', value: 'All' },
+    { label: 'L1 / L2',          value: 'L1 / L2' },
+    { label: 'L3 / L4',          value: 'L3 / L4' },
+    { label: 'L5 / L6',          value: 'L5 / L6' },
+    { label: 'Manager',          value: 'Manager' },
+    { label: 'Director',         value: 'Director' },
+    { label: 'VP',               value: 'VP' },
 ];
 
 const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => {
     const [activeTab, setActiveTab] = useState<TabKey>('recommended');
+    const [searchQuery, setSearchQuery] = useState('');
     const [selectedDepartment, setSelectedDepartment] = useState(departmentOptions[0]);
     const [selectedLevel, setSelectedLevel] = useState(levelOptions[0]);
 
+    const recommendedCount = filterTemplates(
+        recommendedTemplatesData,
+        searchQuery,
+        selectedDepartment.value,
+        selectedLevel.value
+    ).length;
+
+    const allOrgCount = filterTemplates(
+        allOrgTemplatesData,
+        searchQuery,
+        selectedDepartment.value,
+        selectedLevel.value
+    ).length;
+
+    const departmentCount = filterTemplates(
+        departmentTemplatesData,
+        searchQuery,
+        selectedDepartment.value,
+        selectedLevel.value
+    ).length;
+
+    const roleBasedCount = filterTemplates(
+        roleBasedTemplatesData,
+        searchQuery,
+        selectedDepartment.value,
+        selectedLevel.value
+    ).length;
+
+    const usedByTeamCount = filterTemplates(
+        usedByTeamTemplatesData,
+        searchQuery,
+        selectedDepartment.value,
+        selectedLevel.value
+    ).length;
+
+    const tabs: { key: TabKey; label: string; count: number }[] = [
+        { key: 'recommended',  label: 'Recommended for you', count: recommendedCount },
+        { key: 'all-org',      label: 'All Org templates',   count: allOrgCount },
+        {
+            key: 'department',
+            label: selectedDepartment.value === 'All' ? 'Department' : `Department · ${selectedDepartment.label}`,
+            count: departmentCount,
+        },
+        { key: 'role-based',   label: 'Role-based',          count: roleBasedCount },
+        { key: 'used-by-team', label: 'Used by your team',   count: usedByTeamCount },
+    ];
+
     const renderTemplates = () => {
+        const commonProps = {
+            onUseTemplate,
+            searchQuery,
+            selectedDepartment: selectedDepartment.value,
+            selectedDesignation: selectedLevel.value,
+        };
+
         switch (activeTab) {
-            case 'recommended':  return <RecommendedTemplates onUseTemplate={onUseTemplate} />;
-            case 'all-org':      return <AllOrgTemplates      onUseTemplate={onUseTemplate} />;
-            case 'department':   return <DepartmentTemplates  onUseTemplate={onUseTemplate} />;
-            case 'role-based':   return <RoleBasedTemplates   onUseTemplate={onUseTemplate} />;
-            case 'used-by-team': return <UsedByTeamTemplates  onUseTemplate={onUseTemplate} />;
+            case 'recommended':  return <RecommendedTemplates {...commonProps} />;
+            case 'all-org':      return <AllOrgTemplates {...commonProps} />;
+            case 'department':   return <DepartmentTemplates {...commonProps} />;
+            case 'role-based':   return <RoleBasedTemplates {...commonProps} />;
+            case 'used-by-team': return <UsedByTeamTemplates {...commonProps} />;
         }
     };
 
@@ -81,11 +135,23 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                         <div className="relative">
                             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                             <input
-                                className="h-9 w-full rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-3 text-sm text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 sm:h-11"
-                                defaultValue=""
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="h-9 w-full rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-8 text-sm text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 sm:h-11"
                                 placeholder="Search templates · 'design'"
                                 aria-label="Search goal templates"
                             />
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    aria-label="Clear search"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            )}
                         </div>
                         <Select
                             options={departmentOptions}
@@ -156,3 +222,4 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
 };
 
 export default React.memo(GoalLibraryPopup);
+
