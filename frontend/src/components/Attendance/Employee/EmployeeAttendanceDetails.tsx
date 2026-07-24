@@ -379,7 +379,7 @@ const EmployeeAttendanceDetails = ({
     >
       No check-ins available for{" "}
       <span className="font-semibold">
-        {validDate ? format(validDate, "dd-MM-yyyy") : "Unknown Date"}
+        {validDate ? formatToIndianDate(validDate) : "Unknown Date"}
       </span>
     </Typography>
   );
