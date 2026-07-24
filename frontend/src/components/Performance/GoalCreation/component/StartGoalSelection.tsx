@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge, AlertCircle, RefreshCw, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Typography } from '../../../shared/atoms/Typography';
@@ -26,26 +26,33 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
     const [blankGoalDescription, setBlankGoalDescription] = useState(
         "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
     );
-    const {data:userUiPermission , isLoading:isPermissionLoading} = useGetUiPermission(APP_NAME)
+    const { data: userUiPermission, isLoading: isPermissionLoading } = useGetUiPermission(APP_NAME)
     const { data: mandatoryGoals, isLoading, error, refetch } = useGetMandotaryGoals();
-    
-    
+
+
     const permissions = getActionsEnabled(userUiPermission, [
         'start_from_blank',
         'use_goal_library',
         'ai_suggestion',
         'cascade_from_manager',
-        'bulk_import'] , PAGE_NAME)
-    
-    const canStartBlank = isPermissionLoading ? false : permissions.start_from_blank;
-    const canUseLibrary = isPermissionLoading ? false : permissions.use_goal_library;
-    const canUseAI = isPermissionLoading ? false : permissions.ai_suggestion;
-    const canCascade = isPermissionLoading ? false : permissions.cascade_from_manager;
-    
+        'bulk_import'], PAGE_NAME)
+    const {
+        start_from_blank,
+        use_goal_library,
+        ai_suggestion,
+        cascade_from_manager,
+    } = permissions;
+    const canStartBlank = isPermissionLoading ? false : start_from_blank;
+    const canUseLibrary = isPermissionLoading ? false : use_goal_library;
+    const canUseAI = isPermissionLoading ? false : ai_suggestion;
+    const canCascade = isPermissionLoading ? false : cascade_from_manager;
+
     const goalsCount = mandatoryGoals?.data?.goals?.length ?? 0;
     const pushedBy = mandatoryGoals?.data?.pushed_by;
-    const lockDate = mandatoryGoals?.data?.lock_date; 
-    const metadataText = `Pushed by - ${pushedBy} . India Tech BU . lock ${lockDate}`
+    const lockDate = mandatoryGoals?.data?.lock_date;
+    const metadataText = useMemo(() => {
+        if (!pushedBy) return ""; `Pushed by - ${pushedBy} . India Tech BU . lock ${lockDate}`
+    }, [pushedBy, lockDate]);
 
     return <>
         <div className="bg-[#fff8f6] border border-red-100 rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
@@ -59,7 +66,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center flex-wrap gap-2 mb-2">
                             <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-md tracking-wider">{goalsCount} MANDATORY OKRs ASSIGNED</span>
-                            {metadataText && goalsCount > 0  && <span className="text-gray-500 text-sm">{metadataText}</span>}
+                            {metadataText && goalsCount > 0 && <span className="text-gray-500 text-sm">{metadataText}</span>}
                         </div>
                         <Typography variant="subheading" className="font-semibold text-gray-900 mb-4">
                             {goalsCount > 0
@@ -103,7 +110,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {canStartBlank &&  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+            {canStartBlank && <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
                 <div className="p-4 sm:p-6 flex-1">
                     <div className="flex gap-4 items-start mb-6">
                         <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
@@ -132,7 +139,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                 </div>
             </div>}
 
-           {canUseLibrary &&  <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+            {canUseLibrary && <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
                 <div className="p-4 sm:p-6 flex-1">
                     <div className="flex gap-4 items-start mb-6">
                         <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">
@@ -164,7 +171,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
 
 
             {/* AI Suggestion Card */}
-          {canUseAI &&  <div className="relative overflow-hidden rounded-2xl border border-amber-300 bg-[#FFFCF4] shadow-sm">
+            {canUseAI && <div className="relative overflow-hidden rounded-2xl border border-amber-300 bg-[#FFFCF4] shadow-sm">
                 <div className="p-4 sm:p-5">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div className="flex items-start gap-3 min-w-0">
@@ -217,9 +224,9 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                     </div>
                 </div>
             </div>
-}
+            }
             {/* Cascade Card */}
-            { canCascade && <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            {canCascade && <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="p-4 sm:p-5">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div className="flex items-start gap-3 min-w-0">
@@ -289,7 +296,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                     </div>
                 </div>
             </div>
-}
+            }
 
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center  sm:justify-between gap-4 shadow-sm mb-8 lg:mb-12">
