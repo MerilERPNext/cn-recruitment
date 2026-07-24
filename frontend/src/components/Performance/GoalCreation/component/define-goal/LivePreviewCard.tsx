@@ -1,21 +1,20 @@
-import { memo } from 'react';
 import Badge from '../../../../shared/Badge';
 import { Card } from '../../../../shared/atoms/Card';
 import { Typography } from '../../../../shared/atoms/Typography';
-import type { KeyResult } from '../../Type';
+import type { KeyResult } from '../DefineGoal';
 
 interface LivePreviewCardProps {
     weightage: number;
     keyResults: KeyResult[];
 }
 
-export const LivePreviewCard = memo(({
+export const LivePreviewCard = ({
     weightage,
     keyResults,
 }: LivePreviewCardProps) => {
     return (
         <aside className="space-y-4">
-            <Card className="overflow-hidden border border-gray-200 bg-gray-950 p-0 text-white shadow-sm" radius="xl" padding="none">
+            <Card className="overflow-hidden border border-gray-800 bg-gray-950 p-0 text-white shadow-sm" radius="xl" padding="none">
                 <div className="border-b border-white/10 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                     Live Preview - how your manager will see it
                 </div>
@@ -66,4 +65,4 @@ export const LivePreviewCard = memo(({
             </Card>
         </aside>
     );
-});
+};

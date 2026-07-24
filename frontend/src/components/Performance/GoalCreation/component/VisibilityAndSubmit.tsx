@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
     ArrowRight,
     Building2,
@@ -16,11 +16,10 @@ import Badge from '../../../shared/Badge';
 import Button from '../../../shared/atoms/Button';
 import { Card } from '../../../shared/atoms/Card';
 import { Typography } from '../../../shared/atoms/Typography';
-import VisibleSettingCards from '../../../shared/VisibleSettingCards';
 
-export type VisibilityOption = 'Private' | 'Manager-only' | 'Team' | 'Org-wide';
+type VisibilityOption = 'Private' | 'Manager-only' | 'Team' | 'Org-wide';
 
-export interface VisibilitySetting {
+interface VisibilitySetting {
     label: VisibilityOption;
     title: string;
     description: string;
@@ -134,9 +133,41 @@ const VisibilityAndSubmit = ({ onSubmitForApproval }: VisibilityAndSubmitProps) 
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        {visibilitySettings.map((setting: VisibilitySetting) => {
+                        {visibilitySettings.map((setting) => {
+                            const Icon = setting.icon;
+                            const isSelected = selectedVisibility === setting.label;
+
                             return (
-                                <VisibleSettingCards selectedVisibility={selectedVisibility} setSelectedVisibility={setSelectedVisibility} setting={setting} key={setting.label} />
+                                <label
+                                    key={setting.label}
+                                    className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${isSelected
+                                        ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                                        : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    <input
+                                        aria-label={`Set goal visibility to ${setting.label}`}
+                                        checked={isSelected}
+                                        className="mt-1 h-4 w-4 accent-blue-600"
+                                        name="goal-visibility"
+                                        type="radio"
+                                        onChange={() => setSelectedVisibility(setting.label)}
+                                    />
+                                    <span className="min-w-0">
+                                        <span className="mb-1 flex items-center gap-2">
+                                            <Icon className={`h-4 w-4 ${isSelected ? 'text-blue-600' : 'text-gray-500'}`} />
+                                            <Typography variant="bodyMedium" className="text-sm font-semibold text-gray-900">
+                                                {setting.title}
+                                            </Typography>
+                                        </span>
+                                        <Typography variant="caption" className="block text-gray-500">
+                                            {setting.description}
+                                        </Typography>
+                                        <Typography variant="caption" className="mt-2 block text-gray-400">
+                                            {setting.sees}
+                                        </Typography>
+                                    </span>
+                                </label>
                             );
                         })}
                     </div>
@@ -312,4 +343,4 @@ const VisibilityAndSubmit = ({ onSubmitForApproval }: VisibilityAndSubmitProps) 
     );
 };
 
-export default React.memo(VisibilityAndSubmit);
+export default VisibilityAndSubmit;
