@@ -23,6 +23,7 @@ const GoalDrafts: React.FC = () => {
     } = useGoalModel();
 
     const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
+    const [goalToDelete, setGoalToDelete] = useState<GoalTemplate | null>(null);
 
     // Sync selected goals passed via navigation state into global GoalModelContext
     useEffect(() => {
@@ -162,58 +163,48 @@ const GoalDrafts: React.FC = () => {
                             </Button>
                         </div>
                     ) : (
-                        <div className="space-y-3.5">
+                        <div className="space-y-4">
                             {draftGoals.map((goal, index) => (
                                 <div
                                     key={goal.id || index}
-                                    className="group relative flex flex-col justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4.5 shadow-sm transition hover:border-blue-300 hover:shadow-md sm:flex-row sm:items-center"
+                                    className="group relative flex flex-col justify-between gap-5 rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm transition-all duration-200 hover:border-blue-300 hover:shadow-md sm:flex-row sm:items-center sm:p-6"
                                 >
-                                    <div className="flex min-w-0 items-start gap-3.5 flex-1">
-                                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-xs font-bold text-blue-600">
-                                            #{index + 1}
+                                    <div className="flex min-w-0 items-start gap-4 flex-1">
+                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 text-xs font-bold text-blue-700 shadow-2xs">
+                                            {String(index + 1).padStart(2, '0')}
                                         </span>
                                         <div className="min-w-0 flex-1">
-                                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                <span className="rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
                                                     {goal.scope}
                                                 </span>
-                                                {goal.department && (
-                                                    <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
-                                                        Dept: {goal.department}
-                                                    </span>
-                                                )}
-                                                {goal.designation && (
-                                                    <span className="rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">
-                                                        Level: {goal.designation}
-                                                    </span>
-                                                )}
                                                 {goal.recommended && (
-                                                    <span className="rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                                                        * Recommended
+                                                    <span className="rounded-md bg-amber-50 border border-amber-200/70 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                                                        ★ Recommended
                                                     </span>
                                                 )}
                                             </div>
 
                                             <Typography
                                                 variant="bodyMedium"
-                                                className="text-base font-semibold leading-snug text-gray-900"
+                                                className="text-base font-semibold leading-relaxed text-gray-900"
                                             >
                                                 {goal.title}
                                             </Typography>
 
-                                            <Typography variant="caption" className="mt-1 block text-xs text-gray-400">
+                                            <Typography variant="caption" className="mt-1.5 block text-xs text-gray-400">
                                                 Used {goal.usedCount ?? 120} times this cycle
                                             </Typography>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-3 border-t border-gray-100 pt-3 sm:border-t-0 sm:pt-0 shrink-0">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-xs font-medium text-gray-500">Weight:</span>
+                                    <div className="flex items-center gap-3 border-t border-gray-100 pt-3.5 sm:border-t-0 sm:pt-0 shrink-0">
+                                        <div className="flex items-center gap-2 rounded-xl bg-gray-50/80 border border-gray-200/70 px-3 py-1.5">
+                                            <span className="text-xs font-semibold text-gray-500">Weight:</span>
                                             <select
-                                                value={goal.weightage}
+                                                value={goal.weightage ?? 10}
                                                 onChange={(e) => handleWeightageChange(goal.id, Number(e.target.value))}
-                                                className="h-9 rounded-lg border border-gray-200 bg-gray-50 px-2.5 text-xs font-semibold text-gray-700 outline-none transition hover:border-gray-300 focus:border-blue-400 focus:bg-white"
+                                                className="bg-transparent text-xs font-bold text-gray-800 outline-none cursor-pointer"
                                             >
                                                 <option value={5}>5%</option>
                                                 <option value={10}>10%</option>
@@ -226,8 +217,8 @@ const GoalDrafts: React.FC = () => {
 
                                         <button
                                             type="button"
-                                            onClick={() => handleRemoveGoal(goal.id)}
-                                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 bg-red-50/50 text-red-500 transition hover:bg-red-100 hover:text-red-700"
+                                            onClick={() => setGoalToDelete(goal)}
+                                            className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-100 bg-red-50/60 text-red-500 transition hover:bg-red-100 hover:text-red-700"
                                             title="Remove goal"
                                             aria-label="Remove goal"
                                         >
@@ -280,6 +271,51 @@ const GoalDrafts: React.FC = () => {
                     onClose={() => setIsLibraryModalOpen(false)}
                     onUseTemplate={handleAddGoalsFromLibrary}
                 />
+            </Modal>
+
+            {/* Delete Goal Confirmation Modal */}
+            <Modal
+                isOpen={Boolean(goalToDelete)}
+                onClose={() => setGoalToDelete(null)}
+                size="sm"
+                className="max-w-md p-6 sm:rounded-2xl"
+            >
+                <div className="flex flex-col items-center text-center">
+                    <div className="mb-3.5 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 border border-red-100 shadow-2xs">
+                        <Trash2 className="h-6 w-6" />
+                    </div>
+                    <Typography variant="h4" className="font-semibold text-gray-900">
+                        Remove Goal from Draft?
+                    </Typography>
+                    <Typography variant="bodyMedium" className="mt-2 text-sm text-gray-500 leading-relaxed">
+                        Are you sure you want to remove <span className="font-semibold text-gray-800">"{goalToDelete?.title}"</span> from your draft plan?
+                    </Typography>
+                    <div className="mt-6 flex w-full items-center justify-end gap-3">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            bgColor="text"
+                            className="h-10 flex-1 justify-center rounded-xl border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                            onClick={() => setGoalToDelete(null)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="contain"
+                            bgColor="error"
+                            className="h-10 flex-1 justify-center rounded-xl bg-red-600 text-sm font-semibold text-white hover:bg-red-700 shadow-sm"
+                            onClick={() => {
+                                if (goalToDelete) {
+                                    handleRemoveGoal(goalToDelete.id);
+                                    setGoalToDelete(null);
+                                }
+                            }}
+                        >
+                            Remove Goal
+                        </Button>
+                    </div>
+                </div>
             </Modal>
         </>
     );
