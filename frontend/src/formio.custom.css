@@ -252,19 +252,22 @@ chatnext-app.field-required::after {
   /* Mobile stacked layout for datagrids */
   .overtime-request-form .formio-component-overtime_details table,
   .bulk-leave-request-form .formio-component-leaveRequests table,
-  .cost-center-form .formio-component-allocations table {
+  .cost-center-form .formio-component-allocations table,
+  .timesheet-form .formio-component-time_logs table {
     display: block;
   }
 
   .overtime-request-form .formio-component-overtime_details table thead,
   .bulk-leave-request-form .formio-component-leaveRequests table thead,
-  .cost-center-form .formio-component-allocations table thead {
+  .cost-center-form .formio-component-allocations table thead,
+  .timesheet-form .formio-component-time_logs table thead {
     display: none;
   }
 
   .overtime-request-form .formio-component-overtime_details table tbody,
   .bulk-leave-request-form .formio-component-leaveRequests table tbody,
-  .cost-center-form .formio-component-allocations table tbody {
+  .cost-center-form .formio-component-allocations table tbody,
+  .timesheet-form .formio-component-time_logs table tbody {
     display: block;
     font-size: 0.85rem;
     font-weight: 600;
@@ -274,7 +277,8 @@ chatnext-app.field-required::after {
 
   .overtime-request-form .formio-component-overtime_details table tbody tr,
   .bulk-leave-request-form .formio-component-leaveRequests table tbody tr,
-  .cost-center-form .formio-component-allocations table tbody tr {
+  .cost-center-form .formio-component-allocations table tbody tr,
+  .timesheet-form .formio-component-time_logs table tbody tr {
     display: flex;
     flex-direction: column;
     background: white;
@@ -289,7 +293,8 @@ chatnext-app.field-required::after {
 
   .overtime-request-form .formio-component-overtime_details table tbody td,
   .bulk-leave-request-form .formio-component-leaveRequests table tbody td,
-  .cost-center-form .formio-component-allocations table tbody td {
+  .cost-center-form .formio-component-allocations table tbody td,
+  .timesheet-form .formio-component-time_logs table tbody td {
     display: block;
     width: 100%;
     border: none !important;
@@ -348,10 +353,18 @@ chatnext-app.field-required::after {
   .cost-center-form .formio-component-allocations table tbody td:nth-child(3)::before { content: "Start Date"; }
   .cost-center-form .formio-component-allocations table tbody td:nth-child(4)::before { content: "End Date"; }
 
+  /* Timesheet specific labels */
+  .timesheet-form .formio-component-time_logs table tbody td:nth-child(1)::before { content: "Activity Type"; }
+  .timesheet-form .formio-component-time_logs table tbody td:nth-child(2)::before { content: "Project"; }
+  .timesheet-form .formio-component-time_logs table tbody td:nth-child(3)::before { content: "From Time"; }
+  .timesheet-form .formio-component-time_logs table tbody td:nth-child(4)::before { content: "To Time"; }
+  .timesheet-form .formio-component-time_logs table tbody td:nth-child(5)::before { content: "Hours"; }
+
   /* Position the remove button (last column) to top-right */
   .overtime-request-form .formio-component-overtime_details table tbody td:last-child,
   .bulk-leave-request-form .formio-component-leaveRequests table tbody td:last-child,
-  .cost-center-form .formio-component-allocations table tbody td:last-child {
+  .cost-center-form .formio-component-allocations table tbody td:last-child,
+  .timesheet-form .formio-component-time_logs table tbody td:last-child {
     position: absolute;
     top: 8px;
     right: 8px;
@@ -362,7 +375,8 @@ chatnext-app.field-required::after {
   /* Remove border from New Row container */
   .overtime-request-form .formio-component-overtime_details table tfoot td,
   .bulk-leave-request-form .formio-component-leaveRequests table tfoot td,
-  .cost-center-form .formio-component-allocations table tfoot td {
+  .cost-center-form .formio-component-allocations table tfoot td,
+  .timesheet-form .formio-component-time_logs table tfoot td {
     border: none !important;
     padding-top: 10px !important;
   }
@@ -370,7 +384,8 @@ chatnext-app.field-required::after {
   /* Enhance Remove Row button with text */
   .overtime-request-form .formio-button-remove-row,
   .bulk-leave-request-form .formio-button-remove-row,
-  .cost-center-form .formio-button-remove-row {
+  .cost-center-form .formio-button-remove-row,
+  .timesheet-form .formio-button-remove-row {
     width: auto !important;
     display: flex !important;
     align-items: center;
@@ -382,7 +397,8 @@ chatnext-app.field-required::after {
 
   .overtime-request-form .formio-button-remove-row::after,
   .bulk-leave-request-form .formio-button-remove-row::after,
-  .cost-center-form .formio-button-remove-row::after {
+  .cost-center-form .formio-button-remove-row::after,
+  .timesheet-form .formio-button-remove-row::after {
     content: "Remove Row";
     font-family:
       ui-sans-serif,

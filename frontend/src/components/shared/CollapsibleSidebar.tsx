@@ -496,6 +496,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Employee Directory",
     },
     {
+      icon: Clock,
+      label: "Timesheet",
+      path: "/webapp/timesheet",
+      permissionKey: "Timesheet",
+    },
+    {
       icon: UserSearch,
       label: "Recruitment",
       path: "/webapp/recruitment",
@@ -715,6 +721,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         };
       })
       .filter((item): item is NavigationItem => item !== null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uiPermissions, recognitionFlags.hideRewardsPointSummary]);
 
   const isSubSubItemActive = (subSubItem: SubSubMenuItem) => {
@@ -846,6 +853,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     );
 
     setOpenDropdown(activeParent?.label || null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, navigationItems]);
 
   if (isUiPermissionsLoading) {
