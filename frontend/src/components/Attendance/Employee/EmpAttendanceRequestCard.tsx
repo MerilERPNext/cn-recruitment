@@ -1,4 +1,4 @@
-import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
+import { differenceInCalendarDays, parseISO, startOfDay } from "date-fns";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
@@ -71,16 +71,13 @@ const EmpAttendanceRequestCard = ({
       );
     }
   };
-  function getDays(from_date: string, to_date: string) {
-    const format = "dd-MM-yyyy";
 
-    const fromDate = startOfDay(parse(from_date, format, new Date()));
-    const toDate = startOfDay(parse(to_date, format, new Date()));
-
-
-    const diff = differenceInCalendarDays(toDate, fromDate);
-
-    return diff + 1; // inclusive
+  function getDays(from_date: string, to_date: string): number {
+    if (!from_date || !to_date) return 0;
+    const fromDate = startOfDay(parseISO(from_date));
+    const toDate = startOfDay(parseISO(to_date));
+    if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) return 0;
+    return differenceInCalendarDays(toDate, fromDate) + 1; // inclusive
   }
 
   const formattedFromDate = formatToIndianDate(
@@ -89,7 +86,11 @@ const EmpAttendanceRequestCard = ({
   const formattedToDate = formatToIndianDate(data?.reference_document?.to_date);
   const formattedDueDate = formatToIndianDate(data?.due_date);
   const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation);
-  const duration = getDays(formattedFromDate, formattedToDate);
+
+  const duration = getDays(
+    data?.reference_document?.from_date ?? "",
+    data?.reference_document?.to_date ?? "",
+  );
   const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 0.8fr 1fr 1fr 1fr 1fr";
 
   const status = data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.custom_status;
