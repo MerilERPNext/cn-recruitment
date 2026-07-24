@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Form } from '@tsed/react-formio';
 import { format, isValid, parse } from 'date-fns';
 import { Sparkles, X } from 'lucide-react';
@@ -6,7 +7,7 @@ import Button from '../../../../shared/atoms/Button';
 import { Card } from '../../../../shared/atoms/Card';
 import { Select } from '../../../../shared/atoms/Select';
 import { Typography } from '../../../../shared/atoms/Typography';
-import type { CategorySelectOption } from '../DefineGoal';
+import type { CategorySelectOption } from '../../Type';
 
 interface ObjectiveCardProps {
     weightage: number;
@@ -132,7 +133,7 @@ const formatFormDateForGoal = (value?: string) => {
     return parsedDate ? format(parsedDate, 'yyyy-MM-dd') : '';
 };
 
-export const ObjectiveCard = ({
+export const ObjectiveCard = memo(({
     weightage,
     setWeightage,
     selectedCategory,
@@ -239,4 +240,4 @@ export const ObjectiveCard = ({
             </div>
         </Card>
     );
-};
+});

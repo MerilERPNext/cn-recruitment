@@ -1,13 +1,10 @@
-import { lazy, Suspense, type MouseEvent, useState } from 'react';
+import { lazy, Suspense, type MouseEvent, useState, useMemo, useCallback } from 'react';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import Button from '../../shared/atoms/Button';
-import Modal from '../../shared/Modal';
 import PageLayoutWrapper from '../../shared/PageLayoutWrapper';
-import { useScreenSize } from '../../../hooks/useScreenSize';
 
 const DefineGoal = lazy(() => import('./component/DefineGoal'));
 const GoalAlignment = lazy(() => import('./component/GoalAlignment'));
-const GoalLibraryPopup = lazy(() => import('./component/GoalLibraryPopup'));
 const StartGoalSelection = lazy(() => import('./component/StartGoalSelection'));
 const VisibilityAndSubmit = lazy(() => import('./component/VisibilityAndSubmit'));
 
@@ -55,7 +52,7 @@ const stepDefinitions: {
         },
     ];
 
-const LazySectionFallback = () => (
+export const LazySectionFallback = () => (
     <div className="min-h-[240px] rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="h-5 w-40 animate-pulse rounded bg-gray-100" />
         <div className="mt-5 space-y-3">
@@ -71,62 +68,55 @@ interface NewGoalProps {
 }
 
 const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
-    const { isMobile } = useScreenSize();
     const [activeStepIndex, setActiveStepIndex] = useState(0);
-    const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
 
     const safeStepIndex = Math.min(
         Math.max(activeStepIndex, 0),
         stepDefinitions.length - 1,
     );
     const activeStep = stepDefinitions[safeStepIndex].key;
-    const isLastStep = safeStepIndex === stepDefinitions.length - 1;
     const currentStep = stepDefinitions[safeStepIndex];
 
-    const steps = stepDefinitions.map((step, index) => ({
-        label: step.label,
-        active: index === safeStepIndex,
-    }));
-
-    const handlePrimaryAction = () => {
-        if (isLastStep) {
-            setIsGoalLibraryOpen(true);
-            return;
-        }
-
+    const steps = useMemo(
+        () =>
+            stepDefinitions.map((step, index) => ({
+                label: step.label,
+                active: index === safeStepIndex,
+            })),
+        [safeStepIndex],
+    );
+    const handlePrimaryAction = useCallback(() => {
         setActiveStepIndex((currentIndex) => {
             const boundedIndex = Math.min(
                 Math.max(currentIndex, 0),
                 stepDefinitions.length - 1,
             );
-
             return Math.min(boundedIndex + 1, stepDefinitions.length - 1);
         });
-    };
-
-    const handleSecondaryAction = (event?: MouseEvent<HTMLButtonElement>) => {
-        event?.preventDefault();
-        event?.stopPropagation();
-
-        if (activeStepIndex === 0) {
-            if (onClose) onClose();
-            return;
-        }
-
-        setActiveStepIndex((currentIndex) => {
-            const boundedIndex = Math.min(
-                Math.max(currentIndex, 0),
-                stepDefinitions.length - 1,
-            );
-
-            return Math.max(boundedIndex - 1, 0);
-        });
-    };
+    }, []);
+    const handleSecondaryAction = useCallback(
+        (event?: MouseEvent<HTMLButtonElement>) => {
+            event?.preventDefault();
+            event?.stopPropagation();
+            if (activeStepIndex === 0) {
+                if (onClose) onClose();
+                return;
+            }
+            setActiveStepIndex((currentIndex) => {
+                const boundedIndex = Math.min(
+                    Math.max(currentIndex, 0),
+                    stepDefinitions.length - 1,
+                );
+                return Math.max(boundedIndex - 1, 0);
+            });
+        },
+        [activeStepIndex, onClose],
+    );
 
     const renderStepContent = () => {
         switch (activeStep) {
             case 'start':
-                return <StartGoalSelection onContinue={handlePrimaryAction} />;
+                return <StartGoalSelection />;
 
             case 'define':
                 return <DefineGoal />;
@@ -185,16 +175,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
                 </Suspense>
             </PageLayoutWrapper>
 
-            <Modal
-                isOpen={isGoalLibraryOpen}
-                onClose={() => setIsGoalLibraryOpen(false)}
-                size={isMobile ? 'full' : 'xl'}
-                className="max-w-[1300px] p-0"
-            >
-                <Suspense fallback={<LazySectionFallback />}>
-                    <GoalLibraryPopup onClose={() => setIsGoalLibraryOpen(false)} />
-                </Suspense>
-            </Modal>
+
         </>
     );
 };

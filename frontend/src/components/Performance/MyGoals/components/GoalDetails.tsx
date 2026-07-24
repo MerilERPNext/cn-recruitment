@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, memo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Paperclip, Mic } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
@@ -14,11 +14,10 @@ const getStatusVariant = (status: Goal['status']): BadgeVariant => {
   return 'default';
 };
 
-const CircularProgress = ({ percentage }: { percentage: number }) => {
+const CircularProgress = memo(({ percentage }: { percentage: number }) => {
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
-
 
   return (
     <div className="relative flex items-center justify-center w-24 h-24">
@@ -51,7 +50,9 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
       </div>
     </div>
   );
-};
+});
+
+CircularProgress.displayName = 'CircularProgress';
 
 interface GoalDetailsProps {
   goalId?: string;
@@ -66,16 +67,19 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const goal = Number.isInteger(goalIndex) ? goals[goalIndex] : undefined;
   const topRef = React.useRef<HTMLDivElement>(null);
 
-  // useEffect(() => {
-    // scrollIntoView works regardless of which parent is the scroll container
-  //   topRef.current?.scrollIntoView({ behavior: 'smooth' });
-  // }, []);
+  const handleBack = useCallback(() => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate(-1);
+    }
+  }, [onBack, navigate]);
 
   if (!goal) {
     return (
       <div className="p-6">
         <Typography variant="bodyMedium">Goal not found.</Typography>
-        <Button variant="outline" bgColor="text" onClick={() => onBack ? onBack() : navigate(-1)} className="mt-4">
+        <Button variant="outline" bgColor="text" onClick={handleBack} className="mt-4">
           Go Back
         </Button>
       </div>
@@ -89,7 +93,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
         {/* Back Button */}
         <button 
           aria-label="Back to goals"
-          onClick={() => onBack ? onBack() : navigate(-1)}
+          onClick={handleBack}
           className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors mb-2"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
@@ -170,7 +174,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
 
               <div className="space-y-4 sm:space-y-6">
                 {goal.krs?.map((kr: GoalKeyResult, idx: number, krs: GoalKeyResult[]) => (
-                  <div key={idx} className="relative">
+                  <div key={kr.id || idx} className="relative">
                     <div className="flex flex-col gap-2 mb-2 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex min-w-0 items-start gap-3 sm:items-center">
                         <Badge label={kr.id} variant="purple" size="sm" />
@@ -229,15 +233,9 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                   <div>
                     <Typography variant="caption" className="text-gray-700 font-medium block mb-2">Self-declared Health</Typography>
                     <div className="grid grid-cols-3 gap-2">
-                      
-                        <Badge label="On-track" backgroundColor="bg-green-50  w-full" textColor="text-green-700" size="sm"  />
-                      
-                      
-                        <Badge label="At-risk" backgroundColor="bg-white border border-gray-200 hover:bg-gray-50 w-full" textColor="text-gray-600" size="sm" />
-                      
-                      
-                        <Badge label="Off-track" backgroundColor="bg-white border border-gray-200 hover:bg-gray-50 w-full" textColor="text-gray-600" size="sm" />
-                      
+                      <Badge label="On-track" backgroundColor="bg-green-50 w-full" textColor="text-green-700" size="sm" />
+                      <Badge label="At-risk" backgroundColor="bg-white border border-gray-200 hover:bg-gray-50 w-full" textColor="text-gray-600" size="sm" />
+                      <Badge label="Off-track" backgroundColor="bg-white border border-gray-200 hover:bg-gray-50 w-full" textColor="text-gray-600" size="sm" />
                     </div>
                   </div>
                 </div>
@@ -328,4 +326,4 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   );
 };
 
-export default GoalDetails;
+export default memo(GoalDetails);
