@@ -9,7 +9,7 @@ export interface GoalTemplate {
 }
 
 export interface TemplateListProps {
-    onUseTemplate?: (template: GoalTemplate | GoalTemplate[]) => void;
+    onUseTemplate?: (template: GoalTemplate | GoalTemplate[], source?: string) => void;
     searchQuery?: string;
     selectedDepartment?: string;
     selectedDesignation?: string;

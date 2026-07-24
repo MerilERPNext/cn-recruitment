@@ -12,30 +12,30 @@ import UsedByTeamTemplates, { usedByTeamTemplatesData } from './goal-model/UsedB
 
 interface GoalLibraryPopupProps {
     onClose?: () => void;
-    onUseTemplate?: (template: GoalTemplate | GoalTemplate[]) => void;
+    onUseTemplate?: (template: GoalTemplate | GoalTemplate[], source?: string) => void;
 }
 
 type TabKey = 'recommended' | 'all-org' | 'department' | 'role-based' | 'used-by-team';
 
 const departmentOptions = [
     { label: 'All Departments', value: 'All' },
-    { label: 'Design',          value: 'Design' },
-    { label: 'Engineering',     value: 'Engineering' },
-    { label: 'Product',         value: 'Product' },
-    { label: 'Marketing',       value: 'Marketing' },
-    { label: 'HR',              value: 'HR' },
-    { label: 'Sales',           value: 'Sales' },
-    { label: 'Finance',         value: 'Finance' },
+    { label: 'Design', value: 'Design' },
+    { label: 'Engineering', value: 'Engineering' },
+    { label: 'Product', value: 'Product' },
+    { label: 'Marketing', value: 'Marketing' },
+    { label: 'HR', value: 'HR' },
+    { label: 'Sales', value: 'Sales' },
+    { label: 'Finance', value: 'Finance' },
 ];
 
 const levelOptions = [
     { label: 'All Designations', value: 'All' },
-    { label: 'L1 / L2',          value: 'L1 / L2' },
-    { label: 'L3 / L4',          value: 'L3 / L4' },
-    { label: 'L5 / L6',          value: 'L5 / L6' },
-    { label: 'Manager',          value: 'Manager' },
-    { label: 'Director',         value: 'Director' },
-    { label: 'VP',               value: 'VP' },
+    { label: 'L1 / L2', value: 'L1 / L2' },
+    { label: 'L3 / L4', value: 'L3 / L4' },
+    { label: 'L5 / L6', value: 'L5 / L6' },
+    { label: 'Manager', value: 'Manager' },
+    { label: 'Director', value: 'Director' },
+    { label: 'VP', value: 'VP' },
 ];
 
 const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => {
@@ -45,7 +45,6 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const [selectedLevel, setSelectedLevel] = useState(levelOptions[0]);
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
     const [weightages, setWeightages] = useState<Record<string, number>>({});
-
     const handleToggleSelect = (template: GoalTemplate) => {
         setSelectedTemplates((prev) =>
             prev.some((t) => t.id === template.id)
@@ -77,21 +76,8 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
 
     const handleSubmitFooter = () => {
         if (selectedTemplates.length > 0) {
-            onUseTemplate?.(selectedTemplates);
-            return;
+            onUseTemplate?.(selectedTemplates, activeTab);
         }
-
-        const activeFiltered = filterTemplates(
-            activeTab === 'recommended' ? recommendedTemplatesData :
-            activeTab === 'all-org' ? allOrgTemplatesData :
-            activeTab === 'department' ? departmentTemplatesData :
-            activeTab === 'role-based' ? roleBasedTemplatesData : usedByTeamTemplatesData,
-            searchQuery,
-            selectedDepartment.value,
-            selectedLevel.value
-        );
-        const fallbackBatch = activeFiltered.length > 0 ? [activeFiltered[0]] : [recommendedTemplatesData[0]];
-        onUseTemplate?.(fallbackBatch);
     };
 
     const recommendedCount = filterTemplates(
@@ -130,20 +116,20 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     ).length;
 
     const tabs: { key: TabKey; label: string; count: number }[] = [
-        { key: 'recommended',  label: 'Recommended for you', count: recommendedCount },
-        { key: 'all-org',      label: 'All Org templates',   count: allOrgCount },
+        { key: 'recommended', label: 'Recommended for you', count: recommendedCount },
+        { key: 'all-org', label: 'All Org templates', count: allOrgCount },
         {
             key: 'department',
             label: selectedDepartment.value === 'All' ? 'Department' : `Department · ${selectedDepartment.label}`,
             count: departmentCount,
         },
-        { key: 'role-based',   label: 'Role-based',          count: roleBasedCount },
-        { key: 'used-by-team', label: 'Used by your team',   count: usedByTeamCount },
+        { key: 'role-based', label: 'Role-based', count: roleBasedCount },
+        { key: 'used-by-team', label: 'Used by your team', count: usedByTeamCount },
     ];
 
     const renderTemplates = () => {
         const commonProps = {
-            onUseTemplate,
+            onUseTemplate: (t: GoalTemplate | GoalTemplate[]) => onUseTemplate?.(t, activeTab),
             searchQuery,
             selectedDepartment: selectedDepartment.value,
             selectedDesignation: selectedLevel.value,
@@ -155,10 +141,10 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
         };
 
         switch (activeTab) {
-            case 'recommended':  return <RecommendedTemplates {...commonProps} />;
-            case 'all-org':      return <AllOrgTemplates {...commonProps} />;
-            case 'department':   return <DepartmentTemplates {...commonProps} />;
-            case 'role-based':   return <RoleBasedTemplates {...commonProps} />;
+            case 'recommended': return <RecommendedTemplates {...commonProps} />;
+            case 'all-org': return <AllOrgTemplates {...commonProps} />;
+            case 'department': return <DepartmentTemplates {...commonProps} />;
+            case 'role-based': return <RoleBasedTemplates {...commonProps} />;
             case 'used-by-team': return <UsedByTeamTemplates {...commonProps} />;
         }
     };
@@ -233,11 +219,10 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                                 type="button"
                                 aria-label={`Show ${tab.label} templates`}
                                 onClick={() => setActiveTab(tab.key)}
-                                className={`flex h-9 shrink-0 snap-start items-center gap-2 border-b-2 text-sm font-semibold transition sm:h-11 ${
-                                    isActive
+                                className={`flex h-9 shrink-0 snap-start items-center gap-2 border-b-2 text-sm font-semibold transition sm:h-11 ${isActive
                                         ? 'border-blue-500 text-blue-600'
                                         : 'border-transparent text-gray-500 hover:text-gray-700'
-                                }`}
+                                    }`}
                             >
                                 <span className="whitespace-nowrap">{tab.label}</span>
                                 <span className={`rounded-md px-2 py-0.5 text-xs ${isActive ? 'bg-blue-50 text-gray-500' : 'bg-gray-100 text-gray-500'}`}>

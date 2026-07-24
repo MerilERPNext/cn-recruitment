@@ -272,13 +272,17 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         >
             <GoalLibraryPopup
                 onClose={() => setIsGoalLibraryOpen(false)}
-                onUseTemplate={(selected) => {
+                onUseTemplate={(selected, source) => {
                     setIsGoalLibraryOpen(false);
                     const selectedGoals = Array.isArray(selected) ? selected : [selected];
                     addDraftGoals(selectedGoals);
-                    navigate('/webapp/performance-app/my-goals/goal-draft', {
-                        state: { selectedGoals }
-                    });
+                    if (source === 'recommended') {
+                        onContinue?.();
+                    } else {
+                        navigate('/webapp/performance-app/my-goals/goal-draft', {
+                            state: { selectedGoals }
+                        });
+                    }
                 }}
             />
         </Modal>
