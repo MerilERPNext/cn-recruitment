@@ -1473,6 +1473,16 @@ export const routesConfig: AppRoute[] = [
             permissionKey: "My Goals",
           },
           {
+            path: "my-goals/new-goal",
+            element: <NewGoal />,
+            permissionKey: "Goal Creation",
+          },
+          {
+            path: "my-goals/goal-draft",
+            element: <GoalDrafts />,
+            permissionKey: "New Goal Plan",
+          },
+          {
             path: "my-goals/:id",
             element: <GoalDetails />,
             permissionKey: "My Goals",
@@ -1492,16 +1502,7 @@ export const routesConfig: AppRoute[] = [
             element: <Feedback />,
             permissionKey: "Feedback",
           },
-          {
-            path: "my-goals/new-goal",
-            element: <NewGoal />,
-            permissionKey: "New Goal Plan",
-          },
-          {
-            path: "my-goals/goal-draft",
-            element: <GoalDrafts />,
-            permissionKey: "New Goal Plan",
-          },
+         
           {
             path: "skills",
             element: <SkillsAndProficiency />,
