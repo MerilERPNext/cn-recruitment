@@ -225,3 +225,32 @@ export const formatTime = (timeString?: string): string => {
     return timeString;
   }
 };
+
+export function calculateEndMonth(startDate: string, tenure: number) {
+  if (!startDate || !tenure) return "-";
+
+  const date = parseDate(startDate) || new Date(startDate);
+  if (isNaN(date.getTime())) return "-";
+
+  date.setMonth(date.getMonth() + tenure);
+
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = String(date.getFullYear());
+  
+  const format = getDateFormat();
+
+  switch (format) {
+    case "yyyy-mm-dd":
+      return `${year}-${month}`;
+    case "dd-mm-yyyy":
+    case "mm-dd-yyyy":
+      return `${month}-${year}`;
+    case "dd/mm/yyyy":
+    case "mm/dd/yyyy":
+      return `${month}/${year}`;
+    case "dd.mm.yyyy":
+      return `${month}.${year}`;
+    default:
+      return `${month}-${year}`;
+  }
+}

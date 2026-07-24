@@ -3,7 +3,7 @@ import { useState } from "react";
 
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import { formatCurrency } from "../../../../utils/currency";
-import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import formatToIndianDate, { calculateEndMonth } from "../../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
 import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../../shared/atoms/statusBadge";
@@ -28,16 +28,6 @@ interface LoanListProps {
   handleEdit: (docname: string) => void;
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
-}
-function calculateEndMonth(startDate: string, tenure: number) {
-  if (!startDate || !tenure) return "-";
-
-  const date = new Date(startDate);
-  date.setMonth(date.getMonth() + tenure);
-
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${month}/${year}`;
 }
 
 export default function LoanList({
