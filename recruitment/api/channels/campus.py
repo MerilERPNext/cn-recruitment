@@ -551,6 +551,12 @@ def submit_invite_application(campus_invite, job_opening, email, form_data=None)
         doc.email_id = candidate_email
         doc.job_title = opening
         doc.status = SUBMIT_STATUS
+        # The campus form captures first name in applicant_name and surname in
+        # custom_applicant_last_name — store the FULL name in applicant_name so the
+        # candidate shows with their complete name everywhere (JA list, campus drive).
+        _last = doc.get("custom_applicant_last_name")
+        if _last and _last.strip() and _last.strip().lower() not in (doc.applicant_name or "").lower():
+            doc.applicant_name = f"{(doc.applicant_name or '').strip()} {_last.strip()}".strip()
         source = _common.source_value_for(CHANNEL)
         if source and not doc.get("source"):
             doc.source = source

@@ -12,6 +12,7 @@ import {
   LeaderboardPersonEntry,
   AppreciationApiItem,
 } from "../../../services/recognitionService";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 // Resolve relative Frappe file paths (e.g. "/private/files/..") against the API host.
 const API_HOST =
@@ -78,7 +79,7 @@ const AppreciationNoteCard: React.FC<{ item: AppreciationApiItem }> = ({ item })
           {item.person}
         </Typography>
         <Typography variant="caption" color="body2" className="block">
-          {item.direction === "received" ? "From" : "To"} · {item.date}
+          {item.direction === "received" ? "From" : "To"} · {formatToIndianDate(item.date)}
         </Typography>
       </div>
     </div>

@@ -117,7 +117,13 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                 Filter
               </Button>
               <Button
-                onClick={() => onCreateGoal?.()}
+                onClick={() => {
+                  if (onCreateGoal) {
+                    onCreateGoal();
+                  } else {
+                    navigate("/webapp/performance-app/my-goals/new-goal");
+                  }
+                }}
                 variant="contain"
                 bgColor="primary"
                 size="sm"

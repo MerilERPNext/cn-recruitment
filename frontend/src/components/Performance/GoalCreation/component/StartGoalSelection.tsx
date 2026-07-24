@@ -1,16 +1,20 @@
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
+import Modal from '../../../shared/Modal';
+import { useScreenSize } from '../../../../hooks/useScreenSize';
+import { LazySectionFallback } from '../NewGaol';
+import GoalLibraryPopup from './GoalLibraryPopup';
 
-interface StartGoalSelectionProps {
-    onContinue?: () => void;
-}
 
-const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
+const StartGoalSelection = () => {
+    const { isMobile } = useScreenSize();
+    const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
     const [blankGoalDescription, setBlankGoalDescription] = useState(
         "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
     );
+
   
     return <>
         <div  className="bg-[#fff8f6] border border-red-100 rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
@@ -67,7 +71,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             <div className="text-sm font-medium text-gray-700">Used by 18% of PW employees</div>
                             <div className="text-xs text-gray-500">Median time: ~ 4 minutes</div>
                         </div>
-                        <Button variant="contain" bgColor="primary" className="w-full sm:w-auto justify-center bg-blue-500 hover:bg-blue-600" onClick={onContinue} aria-label="Use start from blank">
+                        <Button onClick={() => setIsGoalLibraryOpen(true)} variant="contain" bgColor="primary" className="w-full sm:w-auto justify-center bg-blue-500 hover:bg-blue-600" aria-label="Use start from blank">
                             Use this <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
                     </div>
@@ -96,7 +100,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             <div className="text-sm font-medium text-gray-700">Most popular · 142 templates for Design</div>
                             <div className="text-xs text-gray-500">Median time: ~ 90 seconds</div>
                         </div>
-                        <Button variant="contain" className="w-full sm:w-auto justify-center bg-indigo-500 hover:bg-indigo-600 text-white" onClick={onContinue} aria-label="Use goal library">
+                        <Button variant="contain" className="w-full sm:w-auto justify-center bg-indigo-500 hover:bg-indigo-600 text-white" onClick={() => setIsGoalLibraryOpen(true)} aria-label="Use goal library">
                             Use this <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
                     </div>
@@ -139,7 +143,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                         </div>
 
                         <button
-                            onClick={onContinue}
+                            onClick={() => setIsGoalLibraryOpen(true)}
                             className="h-9 w-full sm:w-auto rounded-lg flex justify-center items-center gap-2 bg-amber-400 px-4 text-sm font-medium text-slate-900 "
                             aria-label="Use AI suggested goal"
                         >
@@ -187,6 +191,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                         </div>
 
                         <Button
+                            onClick={() => setIsGoalLibraryOpen(true)}
                             variant="contain"
                             bgColor="primary"
                             className="h-9 w-full sm:w-auto justify-center whitespace-nowrap rounded-lg bg-indigo-500 px-4 text-sm font-medium text-white hover:bg-indigo-600"
@@ -253,6 +258,16 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                 Bulk Import <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
         </div>
+        <Modal
+            isOpen={isGoalLibraryOpen}
+            onClose={() => setIsGoalLibraryOpen(false)}
+            size={isMobile ? 'full' : 'xl'}
+            className="max-w-[1300px] p-0"
+        >
+            <Suspense fallback={<LazySectionFallback />}>
+                <GoalLibraryPopup onClose={() => setIsGoalLibraryOpen(false)} />
+            </Suspense>
+        </Modal>
     </>};
 
 export default StartGoalSelection;

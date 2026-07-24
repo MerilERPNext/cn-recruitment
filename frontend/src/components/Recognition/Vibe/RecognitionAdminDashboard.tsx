@@ -28,6 +28,7 @@ import {
   useDoctypeOptions,
   type RecognitionAdminParams,
 } from "../../../services/recognitionService";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 /* ────────────────────────────────────────────────────────────────────────────
  * Types
@@ -587,8 +588,8 @@ export default function RecognitionAdminDashboard() {
                 render: (r) => <span className="font-medium text-gray-900">{r.code}</span>,
               },
               { key: "name", header: "Program Name", sortable: true, className: "1.5fr", render: (r) => r.name },
-              { key: "start", header: "Program Start Date", sortable: true, className: "1fr", render: (r) => r.startDate },
-              { key: "end", header: "Program End Date", sortable: true, className: "1fr", render: (r) => r.endDate },
+              { key: "start", header: "Program Start Date", sortable: true, className: "1fr", render: (r) => formatToIndianDate(r.startDate) },
+              { key: "end", header: "Program End Date", sortable: true, className: "1fr", render: (r) => formatToIndianDate(r.endDate) },
               { key: "status", header: "Status", className: "0.8fr", render: (r) => <StatusPill status={r.status} /> },
               {
                 key: "actions",
@@ -627,8 +628,8 @@ export default function RecognitionAdminDashboard() {
               },
               { key: "name", header: "Program Name", sortable: true, className: "1.8fr", render: (r) => r.name },
               { key: "awardType", header: "Award Type", sortable: true, className: "0.9fr", render: (r) => r.awardType },
-              { key: "start", header: "Award Start Date", sortable: true, className: "1fr", render: (r) => r.startDate },
-              { key: "end", header: "Award End Date", sortable: true, className: "1fr", render: (r) => r.endDate },
+              { key: "start", header: "Award Start Date", sortable: true, className: "1fr", render: (r) => formatToIndianDate(r.startDate) },
+              { key: "end", header: "Award End Date", sortable: true, className: "1fr", render: (r) => formatToIndianDate(r.endDate) },
               { key: "status", header: "Status", className: "0.7fr", render: (r) => <StatusPill status={r.status} /> },
               {
                 key: "actions",

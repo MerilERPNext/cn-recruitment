@@ -26,6 +26,7 @@ import CardTable from "./shared/CardTable";
 import { Typography } from "./shared/atoms/Typography";
 import { useReferralListColumns } from "../hooks/useReferralDetails";
 import type { ReferralListColumn } from "../types/referral";
+import formatToIndianDate, { formatToIndianDateWithTime } from "../utils/formatToIndianDate";
 
 // ─── Status Modal ────────────────────────────────────────────────────────────
 
@@ -733,7 +734,7 @@ const AddNewReferral: React.FC = () => {
                   const displayValue =
                     (REFER_OPENING_DATE_KEYS.has(normalizedKey) ||
                       normalizedKey.includes("date")) && value
-                      ? String(value).split(" ")[0]
+                      ? formatToIndianDate(String(value))
                       : getReferDisplayValue(value);
 
                   return (
@@ -794,7 +795,7 @@ const AddNewReferral: React.FC = () => {
               {selectedJob.job_title} ({selectedJob.name})
             </h2>
             <span className="text-xs text-gray-400 font-semibold mt-1">
-              Open since {selectedJob.posted_on || "N/A"}
+              Open since {formatToIndianDateWithTime(selectedJob.posted_on) || "N/A"}
             </span>
             </div>
           </div>

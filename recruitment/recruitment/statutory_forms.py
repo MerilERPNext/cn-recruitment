@@ -253,6 +253,11 @@ def _normalize_marital(m):
     if not m:
         return None
     m = m.strip().capitalize()
+    # Employee Onboarding uses the Employee-standard values (Single/Married/
+    # Divorced/Widowed); statutory forms use Married/Unmarried/Widow/Widower/
+    # Divorcee. Map the standard values onto the statutory vocabulary.
+    mapping = {"Single": "Unmarried", "Widowed": "Widower", "Divorced": "Divorcee"}
+    m = mapping.get(m, m)
     return m if m in ("Married", "Unmarried", "Widow", "Widower", "Divorcee") else m
 
 
