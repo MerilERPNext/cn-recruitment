@@ -34,7 +34,7 @@ import { getBadgePropsByStatus } from "../../../utils/helperUtils";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
-import formatToIndianDate, { formatToIndianDateWithTime } from "../../../utils/formatToIndianDate";
+import formatToIndianDate, { formatTime, formatToIndianDateWithTime } from "../../../utils/formatToIndianDate";
 import OvertimeJournal from "./OvertimeJournal";
 
 interface EmployeeAttendanceDetailsProps {
@@ -109,7 +109,10 @@ const EmployeeAttendanceDetails = ({
   );
   const leaveDetailsFromButtonStatusData = buttonStatus?.leave_applications?.filter(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (item: any) => new Date(item?.from_date).toDateString() === validDate?.toDateString(),
+    (item: any) =>
+      !!validDate &&
+      !!item?.from_date &&
+      formatToIndianDate(item.from_date) === formatToIndianDate(validDate),
   );
   const { start, end } = useMemo(() => {
     if (!validDate) return { start: "", end: "" };
@@ -293,7 +296,7 @@ const EmployeeAttendanceDetails = ({
             error={overtimeError as any}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             data={overtimeJournal as any}
-            date={validDate ? format(validDate, "dd-MM-yyyy") : ""}
+            date={validDate ? formatToIndianDate(validDate) : ""}
           />
           {onClose && (
             <Button
@@ -635,40 +638,7 @@ export const AttendanceRequestInfo = ({
   propStatus?: string;
 }) => {
 
-  const formatTime = (timeString?: string): string => {
-    if (!timeString) return "-";
-
-    try {
-      // Split microseconds if present
-      const [hms] = timeString.split(".");
-
-      const parts = hms.split(":");
-
-      if (parts.length !== 3) return timeString;
-
-      const [hours, minutes, seconds] = parts;
-
-      // Ensure all parts exist
-      if (!hours || !minutes || !seconds) return timeString;
-
-      // Normalize to HH:mm:ss
-      const normalizedTime = [
-        hours.padStart(2, "0"),
-        minutes.padStart(2, "0"),
-        seconds.padStart(2, "0"),
-      ].join(":");
-
-      const date = new Date(`1970-01-01T${normalizedTime}`);
-
-      // Validate date
-      if (isNaN(date.getTime())) return timeString;
-
-      // 24-hour format
-      return format(date, "HH:mm");
-    } catch {
-      return timeString;
-    }
-  };
+  
 
   const status = getBadgePropsByStatus(data.custom_status);
 

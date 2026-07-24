@@ -16,6 +16,12 @@
  *     (e.g. "2026-04-28", "2026-04-28 12:32:27", "28-04-2026", "04/28/2026", …)
  */
 
+import {
+  differenceInCalendarDays,
+  format,
+  parseISO,
+  startOfDay,
+} from "date-fns";
 import { getDateFormat, type SupportedDateFormat } from "./dateFormatStore";
 
 const buildDateString = (
@@ -176,3 +182,46 @@ export function formatDateDDMonthYYYY(dateString: string): string {
   const year = date.getFullYear();
   return `${day} ${month} ${year}`;
 }
+
+export function getDays(from_date: string, to_date: string): number {
+  if (!from_date || !to_date) return 0;
+  const fromDate = startOfDay(parseISO(from_date));
+  const toDate = startOfDay(parseISO(to_date));
+  if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) return 0;
+  return differenceInCalendarDays(toDate, fromDate) + 1; // inclusive
+}
+
+export const formatTime = (timeString?: string): string => {
+  if (!timeString) return "-";
+
+  try {
+    // Split microseconds if present
+    const [hms] = timeString.split(".");
+
+    const parts = hms.split(":");
+
+    if (parts.length !== 3) return timeString;
+
+    const [hours, minutes, seconds] = parts;
+
+    // Ensure all parts exist
+    if (!hours || !minutes || !seconds) return timeString;
+
+    // Normalize to HH:mm:ss
+    const normalizedTime = [
+      hours.padStart(2, "0"),
+      minutes.padStart(2, "0"),
+      seconds.padStart(2, "0"),
+    ].join(":");
+
+    const date = new Date(`1970-01-01T${normalizedTime}`);
+
+    // Validate date
+    if (isNaN(date.getTime())) return timeString;
+
+    // 24-hour format
+    return format(date, "HH:mm");
+  } catch {
+    return timeString;
+  }
+};

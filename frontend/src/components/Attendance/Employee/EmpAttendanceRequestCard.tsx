@@ -1,4 +1,3 @@
-import { differenceInCalendarDays, parseISO, startOfDay } from "date-fns";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
@@ -8,7 +7,7 @@ import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
+import formatToIndianDate, { getDays } from "../../../utils/formatToIndianDate";
 import { truncateByChars } from "../../../utils/sanitizeToPlainText";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
@@ -71,14 +70,6 @@ const EmpAttendanceRequestCard = ({
       );
     }
   };
-
-  function getDays(from_date: string, to_date: string): number {
-    if (!from_date || !to_date) return 0;
-    const fromDate = startOfDay(parseISO(from_date));
-    const toDate = startOfDay(parseISO(to_date));
-    if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) return 0;
-    return differenceInCalendarDays(toDate, fromDate) + 1; // inclusive
-  }
 
   const formattedFromDate = formatToIndianDate(
     data?.reference_document?.from_date,
