@@ -2349,7 +2349,7 @@
    "name": "Job Applicant-custom_marital_status",
    "no_copy": 0,
    "non_negative": 0,
-   "options": "Unmarried\nMarried\nDivorced\nWidowed",
+   "options": "\nSingle\nMarried\nDivorced\nWidowed",
    "owner": "Administrator",
    "permlevel": 0,
    "placeholder": null,

@@ -680,6 +680,73 @@ def _round_by_code(doc, round_code):
 	return row
 
 
+# Interview fields THIS module already sets — never touched by the auto-filler.
+_INTERVIEW_CORE_FIELDS = {
+	"job_applicant", "job_opening", "interview_round", "interview_type", "designation",
+	"scheduled_on", "from_time", "to_time", "status", "custom_campus_drive",
+	"custom_campus_round_code", "custom_interview_panel", "interview_details",
+}
+
+
+def _set_interview_round(iv, round_name):
+	"""Set the Interview Round on whatever field links to it.
+
+	The fieldname differs across HRMS versions — v15 calls it ``interview_round``,
+	v16 renamed it to ``interview_type`` — so we target EVERY Link field whose options
+	is the "Interview Round" doctype instead of hardcoding a name. This is why the
+	round wasn't landing on v16: our old ``iv.interview_round = ...`` set a field that
+	no longer exists there.
+	"""
+	targets = [df.fieldname for df in iv.meta.fields
+	           if df.fieldtype == "Link" and df.options == "Interview Round"]
+	if not targets and iv.meta.get_field("interview_round"):
+		targets = ["interview_round"]
+	for fn in targets:
+		iv.set(fn, round_name)
+	return targets
+
+
+def _interview_autofill_defaults():
+	"""Compute default values for mandatory Interview fields ONCE per bulk run.
+
+	This is the version-safety net: HRMS v16 made ``interview_type`` a required stock
+	field that v15 didn't have, and different client sites add their own required
+	fields — we can't hardcode each, so we default every reqd, non-core field:
+
+	  - Select      -> "On-Site" if offered, else the first option
+	  - Data / Text -> "On-Site" for a *type*-ish field, else a neutral "Campus Drive"
+	  - Link        -> any existing record of the target doctype (just to satisfy the
+	                   constraint; HR can correct it on the Interview if needed)
+
+	Computed once and reused across all interviews in a schedule — the meta scan and
+	the link-master lookups do NOT repeat per row (that was a query per interview).
+	"""
+	defaults = {}
+	for df in frappe.get_meta("Interview").fields:
+		if not df.reqd or df.fieldname in _INTERVIEW_CORE_FIELDS:
+			continue
+		ftype = df.fieldtype
+		if ftype == "Select":
+			options = [o.strip() for o in (df.options or "").split("\n") if o.strip()]
+			if options:
+				defaults[df.fieldname] = "On-Site" if "On-Site" in options else options[0]
+		elif ftype in ("Data", "Small Text", "Text", "Long Text"):
+			label_blob = f"{df.fieldname} {df.label or ''}".lower()
+			defaults[df.fieldname] = "On-Site" if "type" in label_blob else "Campus Drive"
+		elif ftype == "Link" and df.options:
+			rec = frappe.db.get_value(df.options, {}, "name")  # one lookup, cached here
+			if rec:
+				defaults[df.fieldname] = rec
+	return defaults
+
+
+def _apply_interview_defaults(iv, defaults):
+	"""Apply the precomputed defaults to one Interview, without overriding set values."""
+	for fieldname, value in (defaults or {}).items():
+		if not iv.get(fieldname):
+			iv.set(fieldname, value)
+
+
 def _drive_invites(doc):
 	names = [r.campus_invite for r in (doc.campus_invites or []) if r.campus_invite]
 	return list(dict.fromkeys(names))
@@ -836,6 +903,7 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 		frappe.throw(_("Nobody is waiting at stage {0} for this drive.").format(frappe.bold(stage)))
 
 	interview_round = _ensure_interview_round(stage)
+	autofill = _interview_autofill_defaults()  # computed ONCE, reused for every row
 	# Panels that name a role serve only that role; the rest are general-purpose.
 	by_role = {}
 	general = [k for k, v in panels.items() if not v["role"]]
@@ -857,7 +925,7 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 			iv = frappe.new_doc("Interview")
 			iv.job_applicant = cand.name
 			iv.job_opening = cand.job_opening
-			iv.interview_round = interview_round
+			_set_interview_round(iv, interview_round)
 			iv.designation = cand.designation
 			iv.scheduled_on = date
 			iv.from_time = from_time or DEFAULT_DAY_START
@@ -868,6 +936,7 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 			iv.custom_campus_drive = campus_drive
 			iv.custom_campus_round_code = round_code
 			iv.custom_interview_panel = panel_name
+			_apply_interview_defaults(iv, autofill)
 			iv.flags.ignore_permissions = True
 			iv.insert(ignore_permissions=True)
 			created.append(iv.name)
@@ -880,6 +949,80 @@ def schedule_round_interviews(campus_drive, round_code, scheduled_on=None,
 		"created": len(created), "skipped": skipped[:10], "skipped_count": len(skipped),
 		"panels": list(panels),
 	}
+
+
+@frappe.whitelist()
+def get_round_interviews(campus_drive, round_code):
+	"""Read-only panel view for an interview round: each panel with its interviewers
+	and the candidates assigned to it, showing each candidate's INTERVIEW status.
+
+	Panel assignment creates one standard Interview per candidate (see
+	schedule_round_interviews), stamped with the panel name. Feedback is given on
+	those Interview records and the verdict advances the candidate automatically —
+	the drive only displays the outcome, it never marks Pass/Fail itself.
+	"""
+	doc = _drive_lite(campus_drive)
+	panels, missing = _panels_for_round(doc, round_code)
+	users = set()
+	for v in panels.values():
+		users.update(v["users"])
+	names = {
+		u.name: (u.full_name or u.name)
+		for u in frappe.get_all("User", filters={"name": ["in", list(users)]},
+		                        fields=["name", "full_name"])
+	} if users else {}
+
+	ivs = frappe.get_all(
+		"Interview",
+		filters={"custom_campus_drive": campus_drive, "custom_campus_round_code": round_code,
+		         "docstatus": ["<", 2]},
+		fields=["name", "job_applicant", "status", "custom_interview_panel as panel",
+		        "scheduled_on"],
+		limit_page_length=0,
+	)
+	iv_names = [i.name for i in ivs]
+	applicant_name = {
+		r.name: r.applicant_name
+		for r in frappe.get_all("Job Applicant", filters={"name": ["in", [i.job_applicant for i in ivs] or [""]]},
+		                        fields=["name", "applicant_name"])
+	} if ivs else {}
+	got, expected = {}, {}
+	if iv_names:
+		for f in frappe.get_all("Interview Feedback",
+		                        filters={"interview": ["in", iv_names], "docstatus": 1},
+		                        fields=["interview"], limit_page_length=0):
+			got[f.interview] = got.get(f.interview, 0) + 1
+		for de in frappe.get_all("Interview Detail",
+		                         filters={"parent": ["in", iv_names], "parenttype": "Interview"},
+		                         fields=["parent"], limit_page_length=0):
+			expected[de.parent] = expected.get(de.parent, 0) + 1
+
+	by_panel = {}
+	for i in ivs:
+		by_panel.setdefault(i.panel or "", []).append({
+			"interview": i.name,
+			"job_applicant": i.job_applicant,
+			"applicant_name": applicant_name.get(i.job_applicant, i.job_applicant),
+			"status": i.status,
+			"scheduled_on": str(i.scheduled_on) if i.scheduled_on else None,
+			"feedback_got": got.get(i.name, 0),
+			"feedback_expected": expected.get(i.name, 0),
+		})
+
+	out = []
+	for panel_name, v in panels.items():
+		out.append({
+			"panel": panel_name,
+			"role": v["role"],
+			"interviewers": [{"user": u, "name": names.get(u, u)} for u in v["users"]],
+			"candidates": by_panel.get(panel_name, []),
+		})
+	for panel_name, rows in by_panel.items():
+		if panel_name not in panels:
+			out.append({"panel": panel_name or "(unassigned)", "role": None,
+			            "interviewers": [], "candidates": rows})
+	return {"round_code": round_code, "panels": out, "missing_user": missing,
+	        "total_interviews": len(ivs)}
 
 
 @frappe.whitelist()
@@ -1193,7 +1336,7 @@ def add_candidate_interview(campus_drive, job_applicant, stage_name, scheduled_o
 	iv = frappe.new_doc("Interview")
 	iv.job_applicant = ja.name
 	iv.job_opening = ja.job_title
-	iv.interview_round = _ensure_interview_round(stage_name)
+	_set_interview_round(iv, _ensure_interview_round(stage_name))
 	iv.designation = ja.designation
 	iv.scheduled_on = scheduled_on
 	iv.from_time = from_time or DEFAULT_DAY_START
@@ -1206,6 +1349,7 @@ def add_candidate_interview(campus_drive, job_applicant, stage_name, scheduled_o
 		iv.custom_campus_round_code = round_code
 	if panel:
 		iv.custom_interview_panel = panel
+	_apply_interview_defaults(iv, _interview_autofill_defaults())
 	iv.insert(ignore_permissions=True)
 	frappe.db.commit()
 	return {"interview": iv.name, "job_applicant": ja.name, "stage": stage_name,
