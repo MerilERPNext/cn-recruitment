@@ -1,24 +1,24 @@
 import React, { useMemo } from 'react';
 import { X, CheckCircle } from 'lucide-react';
-import { Typography } from '../../../../shared/atoms/Typography';
-import Button from '../../../../shared/atoms/Button';
-import { Goal } from '../../../../../types/goal';
+import { Typography } from '../../../shared/atoms/Typography';
+import Button from '../../../shared/atoms/Button';
+import { Goal } from '../../../../types/goal';
 
 interface AcknowledgmentProps {
     onClose: (isOpen: boolean) => void;
     goalData?: Goal[];
-    text?:string
+    text?: string
 }
 
 export const getWeightageColor = (weightage?: number, index: number = 0) => {
     if (weightage !== undefined) {
-        if (weightage <= 5) {
+        if (weightage <= 10) {
             return index % 2 === 0
                 ? { dot: 'bg-red-500', text: 'text-red-500' }
                 : { dot: 'bg-orange-400', text: 'text-orange-500' };
-        } else if (weightage <= 10) {
-            return { dot: 'bg-blue-500', text: 'text-blue-500' };
         } else if (weightage <= 20) {
+            return { dot: 'bg-blue-500', text: 'text-blue-500' };
+        } else if (weightage <= 50) {
             return { dot: 'bg-indigo-500', text: 'text-indigo-500' };
         }
         return { dot: 'bg-emerald-500', text: 'text-emerald-500' };
@@ -31,7 +31,7 @@ export const getWeightageColor = (weightage?: number, index: number = 0) => {
     return colors[index % colors.length];
 };
 
-const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData = [] , text }) => {
+const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData = [], text }) => {
     const totalWeightage = useMemo(
         () => goalData.reduce((acc, curr) => acc + (curr.weightage || 0), 0),
         [goalData]
