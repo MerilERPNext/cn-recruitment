@@ -83,7 +83,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
     const handleGoalsChange = useCallback((goals: GoalSaveItem[]) => {
         setGoalsToSave(goals);
     }, []);
-
+  
     useEffect(() => {
         if (goalTypeOptions.length === 0) return;
 

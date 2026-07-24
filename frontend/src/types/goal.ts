@@ -195,3 +195,29 @@ export interface MyGoalsResponse {
   message: string;
   data: MyGoalsData;
 }
+
+export interface MandatoryGoalsResponse {
+  message: Message;
+}
+
+export interface Message {
+  success: boolean;
+  message: string;
+  data: MandatoryGoalsData;
+}
+
+export interface MandatoryGoalsData {
+  count: number;
+  has_pending: boolean;
+  pushed_by: string;
+  company: string;
+  lock_date: string; // ISO date string (YYYY-MM-DD)
+  active_cycle: string;
+  goals: Goal[];
+}
+
+export interface Goal {
+  goal: string;
+  title: string;
+  weightage: number;
+}
