@@ -63,9 +63,11 @@ interface NewGoalProps {
 const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const draftGoal = (location.state as { draftGoal?: MyGoalsGoal } | null)?.draftGoal;
+    const locationState = location.state as { draftGoal?: MyGoalsGoal; stepIndex?: number } | null;
+    const draftGoal = locationState?.draftGoal;
     const isEditingDraft = draftGoal?.submission_status.toLowerCase() === 'draft';
-    const [activeStepIndex, setActiveStepIndex] = useState(isEditingDraft ? 1 : 0);
+    const isDefineStep = locationState?.stepIndex === 1 || isEditingDraft;
+    const [activeStepIndex, setActiveStepIndex] = useState(isDefineStep ? 1 : 0);
     const [goalsToSave, setGoalsToSave] = useState<GoalSaveItem[]>([]);
     const { data: goalFormConfig, isLoading: isGoalFormConfigLoading, isError: isGoalFormConfigError } = useGoalFormConfig();
     const goalTypeOptions = useMemo<GoalTypeOption[]>(

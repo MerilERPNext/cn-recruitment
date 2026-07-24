@@ -44,11 +44,17 @@ const GoalDrafts: React.FC = () => {
         toast.success('Goal removed from draft');
     };
 
-    const handleAddGoalsFromLibrary = (selected: GoalTemplate | GoalTemplate[]) => {
-        addDraftGoals(selected);
+    const handleAddGoalsFromLibrary = (selected: GoalTemplate | GoalTemplate[], source?: string) => {
+        const templateArray = Array.isArray(selected) ? selected : [selected];
+        addDraftGoals(templateArray);
         setIsLibraryModalOpen(false);
-        const count = Array.isArray(selected) ? selected.length : 1;
-        toast.success(`${count} goal(s) added to draft!`);
+        if (source === 'recommended' || templateArray.length === 1) {
+            navigate('/webapp/performance-app/my-goals/new-goal', {
+                state: { stepIndex: 1, selectedTemplate: templateArray[0] }
+            });
+        } else {
+            toast.success(`${templateArray.length} goal(s) added to draft!`);
+        }
     };
 
     const handleSubmitPlan = () => {
