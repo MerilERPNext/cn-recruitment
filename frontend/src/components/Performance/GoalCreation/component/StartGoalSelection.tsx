@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge } from 'lucide-react';
+import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge, AlertCircle, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
 import Modal from '../../../shared/Modal';
 import GoalLibraryPopup from './GoalLibraryPopup';
-import AcknowledgmentPopup from './define-goal/AcknowledgmentPopup';
+import AcknowledgmentPopup, { getWeightageColor } from './define-goal/AcknowledgmentPopup';
 import { useGoalModel } from '../../GoalModelContext';
 import { useGetMandotaryGoals } from '../../../../hooks/usePerformance';
 import { Goal } from '../../../../types/goal';
@@ -18,41 +18,50 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
     const navigate = useNavigate();
     const { addDraftGoals } = useGoalModel();
     const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
-    const [isAcknowledgmentOpen, setIsAcknowledgmentOpen] = useState(false);
+    const [acknowledgementGoalsData, setAcknowledgementGoalsData] = useState<Goal[] | undefined>(undefined);
     const [blankGoalDescription, setBlankGoalDescription] = useState(
         "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
     );
-    const { data:mandatoryGoals , isLoading , error } = useGetMandotaryGoals()
+    const { data: mandatoryGoals, isLoading, error, refetch } = useGetMandotaryGoals();
     useEffect(() => console.log(mandatoryGoals, '=============='), [mandatoryGoals])
     return <>
         <div  className="bg-[#fff8f6] border border-red-100 rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
             <div className="bg-white border border-red-100 text-red-500 w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
                 <FileText className="w-6 h-6" />
             </div>
-            {isLoading ? "loading" : <div className="min-w-0 flex-1">
-                <div className="flex items-center flex-wrap gap-2 mb-2">
-                    <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-md tracking-wider">{mandatoryGoals?.data?.goals?.length ?? ""} MANDATORY OKRs ASSIGNED</span>
-                    <span className="text-gray-500 text-sm">Pushed by - {mandatoryGoals?.data?.pushed_by ?? ""}· India Tech BU · lock {mandatoryGoals?.data?.lock_date ?? "21 May 2026"} </span>
-                </div>
-                <Typography variant="subheading" className="font-semibold text-gray-900 mb-4">
-                    You have {mandatoryGoals?.data?.goals?.length ?? ""} mandatory OKRs to acknowledge before adding your own.
-                </Typography>
-                <div className="flex flex-wrap gap-3">
-                    {mandatoryGoals?.data?.goals?.map((Goal:Goal)=>(
-                    <div className="w-full sm:w-auto bg-white border border-gray-200 rounded-lg px-3 py-2 flex items-start sm:items-center gap-2 text-sm shadow-sm">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                            <span className="min-w-0 flex-1 text-gray-700">{Goal?.title ?? "no title"}</span>
-                        <span className="shrink-0 text-red-500 font-medium">{Goal?.weightage}%</span>
+            {error ? <MandatoryGoalsError onRetry={()=>refetch()}/> : isLoading ? (
+                <MandatoryGoalsSkeleton />
+            ): (
+                <>
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center flex-wrap gap-2 mb-2">
+                        <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-md tracking-wider">{mandatoryGoals?.data?.goals?.length ?? ""} MANDATORY OKRs ASSIGNED</span>
+                        <span className="text-gray-500 text-sm">Pushed by - {mandatoryGoals?.data?.pushed_by ?? ""}· India Tech BU · lock {mandatoryGoals?.data?.lock_date ?? "21 May 2026"} </span>
                     </div>
-
-                   ) )}
+                    <Typography variant="subheading" className="font-semibold text-gray-900 mb-4">
+                        You have {mandatoryGoals?.data?.goals?.length ?? ""} mandatory OKRs to acknowledge before adding your own.
+                    </Typography>
+                    <div className="flex flex-wrap gap-3">
+                        {mandatoryGoals?.data?.goals?.map((Goal: Goal, index: number) => {
+                            const colorConfig = getWeightageColor(Goal?.weightage, index);
+                            return (
+                                <div key={index} className="w-full sm:w-auto bg-white border border-gray-200 rounded-lg px-3 py-2 flex items-start sm:items-center gap-2 text-sm shadow-sm">
+                                    <div className={`w-2 h-2 rounded-full ${colorConfig.dot}`}></div>
+                                    <span className="min-w-0 flex-1 text-gray-700">{Goal?.title ?? "no title"}</span>
+                                    <span className={`shrink-0 ${colorConfig.text} font-medium`}>{Goal?.weightage}%</span>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
-            </div>}
-            <div className="w-full md:w-auto mt-1 md:mt-0 self-start md:self-center">
-                <Button onClick={() => setIsAcknowledgmentOpen(true)} variant="contain" bgColor="error" className="w-full md:w-auto justify-center bg-[#cd2c41] hover:bg-[#b02235] text-white">
+                 <div className="w-full md:w-auto mt-1 md:mt-0 self-start md:self-center">
+                <Button onClick={() => setAcknowledgementGoalsData(mandatoryGoals?.data?.goals)} variant="contain" bgColor="error" className="w-full md:w-auto justify-center bg-[#cd2c41] hover:bg-[#b02235] text-white">
                     Acknowledge 3 <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
             </div>
+            </>
+            )}
+           
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
@@ -284,13 +293,60 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         </Modal>
 
         <Modal
-            isOpen={isAcknowledgmentOpen}
-            onClose={() => setIsAcknowledgmentOpen(false)}
+            isOpen={!!acknowledgementGoalsData}
+            onClose={() => setAcknowledgementGoalsData(undefined)}
             size="lg"
             className="max-w-[780px] p-0"
         >
-            <AcknowledgmentPopup onClose={() => setIsAcknowledgmentOpen(false)} />
+            <AcknowledgmentPopup goalData={acknowledgementGoalsData} onClose={() => setAcknowledgementGoalsData(undefined)} />
         </Modal>
     </>};
+
+const MandatoryGoalsSkeleton = () => {
+    return (
+        <div className="min-w-0 flex-1 animate-pulse space-y-3">
+            <div className="flex items-center gap-2 mb-2">
+                <div className="h-5 w-44 bg-red-200/60 rounded-md"></div>
+                <div className="h-4 w-52 bg-red-100/60 rounded-md"></div>
+            </div>
+            <div className="h-5 w-3/4 bg-gray-200 rounded-md mb-4"></div>
+            <div className="flex flex-wrap gap-3">
+                <div className="h-9 w-60 bg-white border border-gray-200 rounded-lg p-2 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                    <div className="h-4 w-40 bg-gray-200 rounded"></div>
+                    <div className="h-4 w-8 bg-gray-200 rounded ml-auto"></div>
+                </div>
+                <div className="h-9 w-52 bg-white border border-gray-200 rounded-lg p-2 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                    <div className="h-4 w-32 bg-gray-200 rounded"></div>
+                    <div className="h-4 w-8 bg-gray-200 rounded ml-auto"></div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const MandatoryGoalsError = ({ onRetry }: { onRetry?: () => void }) => {
+    return (
+        <div className="min-w-0 flex-1 py-1">
+            <div className="flex items-center gap-2 text-red-600 mb-1 font-medium text-sm">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>Failed to load mandatory goals</span>
+            </div>
+            <Typography variant="bodyMedium" className="text-gray-500 text-xs mb-3">
+                Unable to fetch mandatory OKRs at this moment. Please try again or contact HR.
+            </Typography>
+            {onRetry && (
+                <button
+                    type="button"
+                    onClick={onRetry}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-md transition-colors"
+                >
+                    <RefreshCw className="w-3 h-3" /> Retry
+                </button>
+            )}
+        </div>
+    );
+};
 
 export default StartGoalSelection;
