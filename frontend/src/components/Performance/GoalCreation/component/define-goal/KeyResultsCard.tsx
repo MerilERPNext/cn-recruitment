@@ -1,11 +1,10 @@
-import { memo } from 'react';
 import { Check, Plus, Sparkles, X } from 'lucide-react';
 import Badge from '../../../../shared/Badge';
 import Button from '../../../../shared/atoms/Button';
 import { Card } from '../../../../shared/atoms/Card';
 import { Select } from '../../../../shared/atoms/Select';
 import { Typography } from '../../../../shared/atoms/Typography';
-import type { MetricSelectOption, KeyResult } from '../../Type';
+import type { MetricSelectOption, KeyResult } from '../DefineGoal';
 
 interface KeyResultsCardProps {
     keyResults: KeyResult[];
@@ -16,7 +15,7 @@ interface KeyResultsCardProps {
     fieldClass: string;
 }
 
-export const KeyResultsCard = memo(({
+export const KeyResultsCard = ({
     keyResults,
     keyResultMetricTypes,
     handleMetricTypeChange,
@@ -154,4 +153,4 @@ export const KeyResultsCard = memo(({
             </div>
         </Card>
     );
-});
+};
