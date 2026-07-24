@@ -1,16 +1,20 @@
 import { useState } from 'react';
 import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
 import Modal from '../../../shared/Modal';
 import GoalLibraryPopup from './GoalLibraryPopup';
 import AcknowledgmentPopup from './define-goal/AcknowledgmentPopup';
+import { useGoalModel } from '../../GoalModelContext';
 
 interface StartGoalSelectionProps {
     onContinue?: () => void;
 }
 
 const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
+    const navigate = useNavigate();
+    const { addDraftGoals } = useGoalModel();
     const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
     const [isAcknowledgmentOpen, setIsAcknowledgmentOpen] = useState(false);
     const [blankGoalDescription, setBlankGoalDescription] = useState(
@@ -268,9 +272,13 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         >
             <GoalLibraryPopup
                 onClose={() => setIsGoalLibraryOpen(false)}
-                onUseTemplate={() => {
+                onUseTemplate={(selected) => {
                     setIsGoalLibraryOpen(false);
-                    onContinue?.();
+                    const selectedGoals = Array.isArray(selected) ? selected : [selected];
+                    addDraftGoals(selectedGoals);
+                    navigate('/webapp/performance-app/my-goals/goal-draft', {
+                        state: { selectedGoals }
+                    });
                 }}
             />
         </Modal>

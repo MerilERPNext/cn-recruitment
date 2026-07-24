@@ -110,6 +110,10 @@ const RecommendedTemplates = ({
     searchQuery = '',
     selectedDepartment = 'All',
     selectedDesignation = 'All',
+    selectedTemplates = [],
+    onToggleSelect,
+    weightages = {},
+    onWeightageChange,
 }: TemplateListProps) => {
     const filteredTemplates = filterTemplates(
         recommendedTemplatesData,
@@ -117,6 +121,8 @@ const RecommendedTemplates = ({
         selectedDepartment,
         selectedDesignation
     );
+
+    const selectedIds = selectedTemplates.map((t) => t.id);
 
     if (filteredTemplates.length === 0) {
         return (
@@ -135,7 +141,15 @@ const RecommendedTemplates = ({
     return (
         <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
             {filteredTemplates.map((template) => (
-                <TemplateCard key={template.id} template={template} onUseTemplate={onUseTemplate} />
+                <TemplateCard
+                    key={template.id}
+                    template={template}
+                    onUseTemplate={(t) => onUseTemplate?.([t])}
+                    isSelected={selectedIds.includes(template.id)}
+                    onToggleSelect={onToggleSelect}
+                    weightage={weightages[template.id] ?? 10}
+                    onWeightageChange={onWeightageChange}
+                />
             ))}
         </div>
     );

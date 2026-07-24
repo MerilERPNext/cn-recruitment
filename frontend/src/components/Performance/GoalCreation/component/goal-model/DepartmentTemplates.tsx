@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { CheckSquare, Square, Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
 import { GoalTemplate, TemplateListProps, filterTemplates } from './types';
@@ -22,10 +22,12 @@ const DepartmentTemplates = ({
     searchQuery = '',
     selectedDepartment = 'All',
     selectedDesignation = 'All',
+    selectedTemplates = [],
+    onToggleSelect,
+    onSelectAll,
+    weightages = {},
+    onWeightageChange,
 }: TemplateListProps) => {
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [weightages, setWeightages] = useState<Record<string, number>>({});
-
     const filteredTemplates = filterTemplates(
         departmentTemplatesData,
         searchQuery,
@@ -33,37 +35,14 @@ const DepartmentTemplates = ({
         selectedDesignation
     );
 
-    const handleToggleSelect = (template: GoalTemplate) => {
-        setSelectedIds((prev) =>
-            prev.includes(template.id)
-                ? prev.filter((id) => id !== template.id)
-                : [...prev, template.id]
-        );
-    };
-
-    const handleWeightageChange = (template: GoalTemplate, weight: number) => {
-        setWeightages((prev) => ({
-            ...prev,
-            [template.id]: weight,
-        }));
-    };
+    const selectedIds = selectedTemplates.map((t) => t.id);
 
     const isAllSelected =
         filteredTemplates.length > 0 &&
         filteredTemplates.every((t) => selectedIds.includes(t.id));
 
-    const handleSelectAll = () => {
-        if (isAllSelected) {
-            const filteredIds = new Set(filteredTemplates.map((t) => t.id));
-            setSelectedIds((prev) => prev.filter((id) => !filteredIds.has(id)));
-        } else {
-            const filteredIds = filteredTemplates.map((t) => t.id);
-            setSelectedIds((prev) => Array.from(new Set([...prev, ...filteredIds])));
-        }
-    };
-
-    const totalSelectedWeightage = selectedIds.reduce(
-        (acc, id) => acc + (weightages[id] ?? 10),
+    const totalSelectedWeightage = selectedTemplates.reduce(
+        (acc, item) => acc + (weightages[item.id] ?? 10),
         0
     );
 
@@ -87,7 +66,7 @@ const DepartmentTemplates = ({
                 <div className="flex items-center gap-2 text-sm font-medium text-blue-900">
                     <button
                         type="button"
-                        onClick={handleSelectAll}
+                        onClick={() => onSelectAll?.(filteredTemplates)}
                         className="flex items-center gap-2 hover:text-blue-700 font-semibold"
                     >
                         {isAllSelected ? (
@@ -96,34 +75,23 @@ const DepartmentTemplates = ({
                             <Square className="h-4 w-4 text-gray-400" />
                         )}
                         <span>
-                            {selectedIds.length > 0
-                                ? `${selectedIds.length} Goals Selected (${totalSelectedWeightage}% Weightage)`
+                            {selectedTemplates.length > 0
+                                ? `${selectedTemplates.length} Goals Selected (${totalSelectedWeightage}% Weightage)`
                                 : 'Multi-select Goals'}
                         </span>
                     </button>
                 </div>
 
-                {selectedIds.length > 0 && (
+                {selectedTemplates.length > 0 && (
                     <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="h-8 text-xs bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
-                            onClick={() => setSelectedIds([])}
-                        >
-                            Clear
-                        </Button>
                         <Button
                             type="button"
                             variant="contain"
                             bgColor="primary"
                             className="h-8 text-xs bg-blue-600 text-white hover:bg-blue-700"
-                            onClick={() => {
-                                const selectedTemplates = departmentTemplatesData.filter((t) => selectedIds.includes(t.id));
-                                selectedTemplates.forEach((t) => onUseTemplate?.(t));
-                            }}
+                            onClick={() => onUseTemplate?.(selectedTemplates)}
                         >
-                            Add {selectedIds.length} Selected Goal{selectedIds.length > 1 ? 's' : ''}
+                            Add {selectedTemplates.length} Selected Goal{selectedTemplates.length > 1 ? 's' : ''}
                         </Button>
                     </div>
                 )}
@@ -136,9 +104,9 @@ const DepartmentTemplates = ({
                         template={template}
                         hideUseTemplate={true}
                         isSelected={selectedIds.includes(template.id)}
-                        onToggleSelect={handleToggleSelect}
+                        onToggleSelect={onToggleSelect}
                         weightage={weightages[template.id] ?? 10}
-                        onWeightageChange={handleWeightageChange}
+                        onWeightageChange={onWeightageChange}
                     />
                 ))}
             </div>

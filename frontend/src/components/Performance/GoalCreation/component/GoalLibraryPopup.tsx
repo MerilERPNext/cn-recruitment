@@ -12,7 +12,7 @@ import UsedByTeamTemplates, { usedByTeamTemplatesData } from './goal-model/UsedB
 
 interface GoalLibraryPopupProps {
     onClose?: () => void;
-    onUseTemplate?: (template: GoalTemplate) => void;
+    onUseTemplate?: (template: GoalTemplate | GoalTemplate[]) => void;
 }
 
 type TabKey = 'recommended' | 'all-org' | 'department' | 'role-based' | 'used-by-team';
@@ -43,6 +43,56 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDepartment, setSelectedDepartment] = useState(departmentOptions[0]);
     const [selectedLevel, setSelectedLevel] = useState(levelOptions[0]);
+    const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
+    const [weightages, setWeightages] = useState<Record<string, number>>({});
+
+    const handleToggleSelect = (template: GoalTemplate) => {
+        setSelectedTemplates((prev) =>
+            prev.some((t) => t.id === template.id)
+                ? prev.filter((t) => t.id !== template.id)
+                : [...prev, template]
+        );
+    };
+
+    const handleSelectAll = (templatesToToggle: GoalTemplate[]) => {
+        const toggleIds = new Set(templatesToToggle.map((t) => t.id));
+        const allIncluded =
+            templatesToToggle.length > 0 &&
+            templatesToToggle.every((t) => selectedTemplates.some((st) => st.id === t.id));
+
+        if (allIncluded) {
+            setSelectedTemplates((prev) => prev.filter((t) => !toggleIds.has(t.id)));
+        } else {
+            setSelectedTemplates((prev) => {
+                const existingIds = new Set(prev.map((t) => t.id));
+                const newItems = templatesToToggle.filter((t) => !existingIds.has(t.id));
+                return [...prev, ...newItems];
+            });
+        }
+    };
+
+    const handleWeightageChange = (template: GoalTemplate, weight: number) => {
+        setWeightages((prev) => ({ ...prev, [template.id]: weight }));
+    };
+
+    const handleSubmitFooter = () => {
+        if (selectedTemplates.length > 0) {
+            onUseTemplate?.(selectedTemplates);
+            return;
+        }
+
+        const activeFiltered = filterTemplates(
+            activeTab === 'recommended' ? recommendedTemplatesData :
+            activeTab === 'all-org' ? allOrgTemplatesData :
+            activeTab === 'department' ? departmentTemplatesData :
+            activeTab === 'role-based' ? roleBasedTemplatesData : usedByTeamTemplatesData,
+            searchQuery,
+            selectedDepartment.value,
+            selectedLevel.value
+        );
+        const fallbackBatch = activeFiltered.length > 0 ? [activeFiltered[0]] : [recommendedTemplatesData[0]];
+        onUseTemplate?.(fallbackBatch);
+    };
 
     const recommendedCount = filterTemplates(
         recommendedTemplatesData,
@@ -97,6 +147,11 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             searchQuery,
             selectedDepartment: selectedDepartment.value,
             selectedDesignation: selectedLevel.value,
+            selectedTemplates,
+            onToggleSelect: handleToggleSelect,
+            onSelectAll: handleSelectAll,
+            weightages,
+            onWeightageChange: handleWeightageChange,
         };
 
         switch (activeTab) {
@@ -208,11 +263,12 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                     </Typography>
                     <Button
                         type="button"
-                        variant="outline"
-                        bgColor="text"
-                        className="h-10 w-full justify-center rounded-lg border-gray-200 bg-white px-4 text-gray-700 hover:bg-gray-50 sm:h-9 sm:w-auto"
+                        variant="contain"
+                        bgColor="primary"
+                        className="h-10 w-full justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700 sm:h-9 sm:w-auto"
+                        onClick={handleSubmitFooter}
                     >
-                        Submit
+                        Submit {selectedTemplates.length > 0 ? `(${selectedTemplates.length} Selected)` : ''}
                     </Button>
                 </div>
 

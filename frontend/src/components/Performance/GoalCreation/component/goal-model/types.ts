@@ -9,10 +9,15 @@ export interface GoalTemplate {
 }
 
 export interface TemplateListProps {
-    onUseTemplate?: (template: GoalTemplate) => void;
+    onUseTemplate?: (template: GoalTemplate | GoalTemplate[]) => void;
     searchQuery?: string;
     selectedDepartment?: string;
     selectedDesignation?: string;
+    selectedTemplates?: GoalTemplate[];
+    onToggleSelect?: (template: GoalTemplate) => void;
+    onSelectAll?: (templates: GoalTemplate[]) => void;
+    weightages?: Record<string, number>;
+    onWeightageChange?: (template: GoalTemplate, weightage: number) => void;
 }
 
 export const filterTemplates = (

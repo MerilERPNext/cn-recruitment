@@ -1,4 +1,10 @@
 import React, { createContext, useContext, useState } from "react";
+import { GoalTemplate } from "./GoalCreation/component/goal-model/types";
+
+export interface DraftGoalItem extends GoalTemplate {
+  weightage?: number;
+}
+
 type RequestLeaveDefaults = {
   fromDate?: string;
   toDate?: string;
@@ -18,11 +24,19 @@ type RequestLeaveDefaults = {
 
 type GoalModelContextType = {
   selectedGoalPlanId: string;
-  setGoalPlanId: (id: string)=> void;
+  setGoalPlanId: (id: string) => void;
   showModal: boolean;
   openModal: (defaults?: RequestLeaveDefaults) => void;
   closeModal: () => void;
   defaults: RequestLeaveDefaults | null;
+
+  // Global Draft Goals State & Actions
+  draftGoals: DraftGoalItem[];
+  setDraftGoals: React.Dispatch<React.SetStateAction<DraftGoalItem[]>>;
+  addDraftGoals: (goals: GoalTemplate | GoalTemplate[]) => void;
+  removeDraftGoal: (id: string) => void;
+  updateDraftGoalWeightage: (id: string, weightage: number) => void;
+  clearDraftGoals: () => void;
 };
 
 const GoalModelContext = createContext<
@@ -40,18 +54,60 @@ export const GoalModelProvider: React.FC<{
   };
   const closeModal = () => setShowModal(false);
   const [selectedGoalPlanId, setSelectedGoalPlanId] = useState("");
-  const setGoalPlanId = (id: string)=>{
+  const setGoalPlanId = (id: string) => {
     setSelectedGoalPlanId(id);
-  }
+  };
+
+  // Draft goals state
+  const [draftGoals, setDraftGoals] = useState<DraftGoalItem[]>([]);
+
+  const addDraftGoals = (goals: GoalTemplate | GoalTemplate[]) => {
+    const goalArray = Array.isArray(goals) ? goals : [goals];
+    setDraftGoals((prev) => {
+      const existingIds = new Set(prev.map((g) => g.id));
+      const newItems = goalArray
+        .filter((g) => !existingIds.has(g.id))
+        .map((g) => ({ ...g, weightage: (g as DraftGoalItem).weightage || 10 }));
+      return [...prev, ...newItems];
+    });
+  };
+
+  const removeDraftGoal = (id: string) => {
+    setDraftGoals((prev) => prev.filter((g) => g.id !== id));
+  };
+
+  const updateDraftGoalWeightage = (id: string, weightage: number) => {
+    setDraftGoals((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, weightage } : g))
+    );
+  };
+
+  const clearDraftGoals = () => {
+    setDraftGoals([]);
+  };
 
   return (
     <GoalModelContext.Provider
-      value={{ selectedGoalPlanId, setGoalPlanId, showModal, openModal, closeModal, defaults }}
+      value={{
+        selectedGoalPlanId,
+        setGoalPlanId,
+        showModal,
+        openModal,
+        closeModal,
+        defaults,
+        draftGoals,
+        setDraftGoals,
+        addDraftGoals,
+        removeDraftGoal,
+        updateDraftGoalWeightage,
+        clearDraftGoals,
+      }}
     >
       {children}
     </GoalModelContext.Provider>
   );
 };
+
 // eslint-disable-next-line react-refresh/only-export-components
 export const useGoalModel = (): GoalModelContextType => {
   const context = useContext(GoalModelContext);
@@ -62,3 +118,4 @@ export const useGoalModel = (): GoalModelContextType => {
   }
   return context;
 };
+
