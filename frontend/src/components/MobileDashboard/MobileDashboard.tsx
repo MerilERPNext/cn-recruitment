@@ -1,9 +1,7 @@
 import { Calendar, CheckCircle, RotateCcw, Search, Timer, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
-  useCanShowClockIn,
   useCheckInOutService,
-  useClockInOutService,
   useGetEmployeeShift,
   useGetQuickAttendanceSummary,
   useHomeSummaryDetails,
@@ -107,9 +105,7 @@ const MobileDashboard: React.FC = () => {
     useCurrentEmployeeDetails({ logged_in_employee_details: true });
 
   const employeeState = useEmployeeWithFallback();
-  const { data: canShowClockIn } = useCanShowClockIn(
-    currentEmployee?.user_id ? { user: currentEmployee.user_id } : {},
-  );
+
   const { data: employeeAttendanceSummary } = useGetQuickAttendanceSummary(
     currentEmployee?.employee || "",
     format(startOfMonth(new Date()), "yyyy-MM-dd"),
@@ -118,8 +114,7 @@ const MobileDashboard: React.FC = () => {
 
   const { mutate: checkInCheckOutMutation, isPending: checkInCheckOutPending } =
     useCheckInOutService();
-  const { mutate: clockInCheckOutMutation, isPending: clockInCheckOutPending } =
-    useClockInOutService();
+
   const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
   const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
 
@@ -253,47 +248,6 @@ const MobileDashboard: React.FC = () => {
     }
   };
 
-  const handleClockInOut = (type: string) => {
-    if (type === "clockIn") {
-      clockInCheckOutMutation(
-        {
-          employee: currentEmployee?.employee,
-          shift: employeeShift?.shift,
-          action: "Clock In",
-        },
-        {
-          onSuccess: () => {
-            refetchHomeSummary();
-            toast.success("Clock In successful");
-          },
-          onError: (e: CustomError) => {
-            toast.error(
-              e?.response?.data?.message?.error || "Error while Clocking out",
-            );
-          },
-        },
-      );
-    } else {
-      clockInCheckOutMutation(
-        {
-          employee: currentEmployee?.employee,
-          shift: employeeShift?.shift,
-          action: "Clock Out",
-        },
-        {
-          onSuccess: () => {
-            refetchHomeSummary();
-            toast.success("Clock Out successful");
-          },
-          onError: (e: CustomError) => {
-            toast.error(
-              e?.response?.data?.message?.error || "Error while Clocking out",
-            );
-          },
-        },
-      );
-    }
-  };
 
   const getTotalTime = () => {
     if (!homeSummary || homeSummary.length === 0) {
@@ -649,28 +603,7 @@ const MobileDashboard: React.FC = () => {
                 )}
               </div>
             ) : null}
-            {canShowClockIn?.can_show ? (
-              <Button
-                variant="contain"
-                fullWidth
-                size="lg"
-                onClick={() =>
-                  handleClockInOut(
-                    isCurrentlyCheckedIn ? "clockOut" : "clockIn",
-                  )
-                }
-                disabled={clockInCheckOutPending || !employeeShift?.shift}
-                className="font-medium"
-              >
-                {clockInCheckOutPending || isRefetching ? (
-                  <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
-                ) : isCurrentlyCheckedIn ? (
-                  "Clock Out"
-                ) : (
-                  "Clock In"
-                )}
-              </Button>
-            ) : null}
+
           </div>
         </div>
         {/* ---------------------------------Tasks Awaiting--------------------------------- */}
