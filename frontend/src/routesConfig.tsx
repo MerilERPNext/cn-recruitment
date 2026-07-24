@@ -159,7 +159,7 @@ const Feedback = lazyWithRetry(
   "Feedback",
 );
 const NewGoal = lazyWithRetry(
-  () => import("./components/Performance/GoalCreation/NewGaol"),
+  () => import("./components/Performance/GoalCreation/NewGoal"),
   "NewGoal",
 );
 const SkillsAndProficiency = lazyWithRetry(

@@ -1,191 +1,301 @@
-import { useState } from 'react';
-import { FileText, GitBranch, Sparkles, type LucideIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { ObjectiveCard } from './define-goal/ObjectiveCard';
-import { KeyResultsCard } from './define-goal/KeyResultsCard';
-import { AutoPullCard } from './define-goal/AutoPullCard';
 import { LivePreviewCard } from './define-goal/LivePreviewCard';
+import type { GoalFormConfig, GoalSaveItem, MyGoalsGoal } from '../../../../types/goal';
 
 export type MetricType = '%' | 'Number' | 'Count' | 'Currency' | 'Boolean' | 'Milestone';
-export type CategoryType =
-    | 'Organisational'
-    | 'Business'
-    | 'Functional'
-    | 'Team'
-    | 'Individual'
-    | 'Development';
+export type DepartmentType = string;
+export type DesignationType = string;
 export type MetricSelectOption = { label: string; value: MetricType };
-export type CategorySelectOption = { label: string; value: CategoryType };
+export type DepartmentSelectOption = { label: string; value: DepartmentType };
+export type DesignationSelectOption = { label: string; value: DesignationType };
 
 export interface KeyResult {
     id: string;
     title: string;
-    metricType: MetricType;
-    start: string;
-    current: string;
-    target: string;
-    unit: string;
+    metricType?: MetricType;
+    start?: string;
+    current?: string;
+    target?: string;
+    unit?: string;
     weight: string;
     suggested?: boolean;
 }
 
-const tags = ['product', 'oxygen', 'rollout', 'fy26-q3'];
-const metricTypeOptions: MetricType[] = ['%', 'Number', 'Count', 'Currency', 'Boolean', 'Milestone'];
-const categoryOptions: CategoryType[] = [
-    'Organisational',
-    'Business',
-    'Functional',
-    'Team',
-    'Individual',
-    'Development',
-];
-const metricSelectOptions = metricTypeOptions.map((option) => ({ label: option, value: option }));
-const categorySelectOptions = categoryOptions.map((option) => ({ label: option, value: option }));
-const autoPullSources: Array<{
+export interface GoalItem {
     id: string;
-    label: string;
+    existingGoalName?: string;
+    title: string;
     description: string;
-    enabled: boolean;
-    icon: LucideIcon;
-}> = [
-    {
-        id: 'jira',
-        label: 'Jira',
-        description: 'OXY-2.0 epic · 48/76 issues',
-        enabled: true,
-        icon: FileText,
-    },
-    {
-        id: 'github',
-        label: 'GitHub',
-        description: 'oxygen-web · 142 PRs merged',
-        enabled: true,
-        icon: GitBranch,
-    },
-    {
-        id: 'figma',
-        label: 'Figma',
-        description: 'Not connected',
-        enabled: false,
-        icon: Sparkles,
-    },
-    {
-        id: 'salesforce',
-        label: 'Salesforce',
-        description: 'Not applicable',
-        enabled: false,
-        icon: FileText,
-    },
-];
+    weightage: number;
+    selectedDepartment: DepartmentSelectOption;
+    selectedDesignation: DesignationSelectOption;
+    startDate: string;
+    endDate: string;
+    keyResults: KeyResult[];
+    isCollapsed: boolean;
+}
 
-const keyResults: KeyResult[] = [
-    {
-        id: 'KR 1',
-        title: 'Design system v2 components shipped',
-        metricType: 'Count',
-        start: '0',
-        current: '24',
-        target: '32',
-        unit: 'components',
-        weight: '35',
-    },
-    {
-        id: 'KR 2',
-        title: 'Dashboard usability score (post-launch survey)',
-        metricType: 'Number',
-        start: '0',
-        current: '0',
-        target: '4.4',
-        unit: '/ 5',
-        weight: '30',
-    },
-    {
-        id: 'KR 3',
-        title: 'WAU adoption among all PW employees by Q3',
-        metricType: '%',
-        start: '0',
-        current: '0',
-        target: '80',
-        unit: '%',
-        weight: '35',
-        suggested: true,
-    },
-];
+interface DefineGoalProps {
+    goalType: string;
+    formConfig: GoalFormConfig;
+    initialGoal?: MyGoalsGoal;
+    onGoalsChange: (goals: GoalSaveItem[]) => void;
+}
 
-const fieldClass = 'h-[46px] w-full rounded-lg border border-gray-300 bg-white px-4 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100';
+const createInitialKeyResults = (minimumKeyResults: number): KeyResult[] =>
+    Array.from({ length: minimumKeyResults }, (_, index) => ({
+        id: `KR ${index + 1}`,
+        title: '',
+        weight: '',
+    }));
+
 const labelClass = 'mb-1.5 block text-xs font-medium text-gray-600';
 
-const DefineGoal = () => {
-    const [weightage, setWeightage] = useState(30);
-    const [startDate, setStartDate] = useState('2026-04-01');
-    const [endDate, setEndDate] = useState('2026-12-31');
-    const [selectedCategory, setSelectedCategory] = useState<CategorySelectOption>(
-        categorySelectOptions.find((option) => option.value === 'Individual') ?? categorySelectOptions[0],
-    );
-    const [sourceStates, setSourceStates] = useState<Record<string, boolean>>(
-        () =>
-            autoPullSources.reduce<Record<string, boolean>>((acc, source) => {
-                acc[source.id] = source.enabled;
-                return acc;
-            }, {}),
-    );
-    const [keyResultMetricTypes, setKeyResultMetricTypes] = useState<Record<string, MetricSelectOption>>(
-        () =>
-            keyResults.reduce<Record<string, MetricSelectOption>>((acc, result) => {
-                acc[result.id] = { label: result.metricType, value: result.metricType };
-                return acc;
-            }, {}),
-    );
+const DefineGoal = ({ goalType, formConfig, initialGoal, onGoalsChange }: DefineGoalProps) => {
+    const departmentSelectOptions: DepartmentSelectOption[] = (formConfig.departments ?? []).map((department) => ({
+        label: department.department_name,
+        value: department.name,
+    }));
+    const defaultDepartment = departmentSelectOptions[0] ?? { label: 'No department available', value: '' };
 
-    const handleMetricTypeChange = (resultId: string, option: MetricSelectOption) => {
-        setKeyResultMetricTypes((current) => ({
-            ...current,
-            [resultId]: option,
-        }));
+    const designationSelectOptions: DesignationSelectOption[] = (formConfig.designations ?? []).map((desig) => ({
+        label: desig.designation_name || desig.name,
+        value: desig.name,
+    }));
+    const defaultDesignation = designationSelectOptions[0] ?? { label: 'No designation available', value: '' };
+
+    const minimumKeyResults = formConfig.limits?.min_krs ?? 1;
+    const maximumKeyResults = formConfig.limits?.max_krs ?? null;
+
+    const [goals, setGoals] = useState<GoalItem[]>(() => {
+        if (!initialGoal) {
+            return [{
+                id: 'goal-1',
+                title: '',
+                description: '',
+                weightage: 30,
+                selectedDepartment: defaultDepartment,
+                selectedDesignation: defaultDesignation,
+                startDate: formConfig.start_date,
+                endDate: formConfig.end_date,
+                keyResults: createInitialKeyResults(minimumKeyResults),
+                isCollapsed: false,
+            }];
+        }
+
+        const selectedDepartment = departmentSelectOptions.find(
+            (department) => department.value === initialGoal.department || department.label === initialGoal.department,
+        ) ?? { label: initialGoal.department, value: initialGoal.department };
+
+        const selectedDesignation = designationSelectOptions.find(
+            (desig) => desig.value === (initialGoal as unknown as { designation?: string }).designation || desig.label === (initialGoal as unknown as { designation?: string }).designation,
+        ) ?? defaultDesignation;
+
+        return [{
+            id: initialGoal.name,
+            existingGoalName: initialGoal.name,
+            title: initialGoal.title,
+            description: initialGoal.description,
+            weightage: initialGoal.weightage,
+            selectedDepartment,
+            selectedDesignation,
+            startDate: initialGoal.start_date || formConfig.start_date,
+            endDate: initialGoal.end_date || formConfig.end_date,
+            keyResults: initialGoal.key_results.map((keyResult, index) => ({
+                id: `KR ${index + 1}`,
+                title: keyResult.title,
+                weight: String(keyResult.weightage),
+            })),
+            isCollapsed: false,
+        }];
+    });
+
+    const handleAddGoal = () => {
+        setGoals((prevGoals) => {
+            const collapsedGoals = prevGoals.map((g) => ({ ...g, isCollapsed: true }));
+            const newGoal: GoalItem = {
+                id: `goal-${Date.now()}`,
+                title: '',
+                description: '',
+                weightage: 30,
+                selectedDepartment: defaultDepartment,
+                selectedDesignation: defaultDesignation,
+                startDate: formConfig.start_date,
+                endDate: formConfig.end_date,
+                keyResults: createInitialKeyResults(minimumKeyResults),
+                isCollapsed: false,
+            };
+            return [...collapsedGoals, newGoal];
+        });
     };
 
-    const toggleSource = (sourceId: string) => {
-        setSourceStates((current) => ({
-            ...current,
-            [sourceId]: !current[sourceId],
-        }));
+    const handleToggleCollapseGoal = (goalId: string) => {
+        setGoals((prevGoals) =>
+            prevGoals.map((g) => (g.id === goalId ? { ...g, isCollapsed: !g.isCollapsed } : g))
+        );
     };
+
+    const handleUpdateGoalField = <K extends keyof GoalItem>(
+        goalId: string,
+        field: K,
+        value: GoalItem[K],
+    ) => {
+        setGoals((prevGoals) =>
+            prevGoals.map((g) => (g.id === goalId ? { ...g, [field]: value } : g))
+        );
+    };
+
+    const handleDeleteKeyResult = (goalId: string, krId: string) => {
+        setGoals((prevGoals) =>
+            prevGoals.map((g) => {
+                if (g.id !== goalId || g.keyResults.length <= minimumKeyResults) return g;
+                return {
+                    ...g,
+                    keyResults: g.keyResults.filter((kr) => kr.id !== krId),
+                };
+            })
+        );
+    };
+
+    const handleAddKeyResult = (goalId: string) => {
+        setGoals((prevGoals) =>
+            prevGoals.map((g) => {
+                if (g.id !== goalId || (maximumKeyResults !== null && g.keyResults.length >= maximumKeyResults)) return g;
+                return {
+                    ...g,
+                    keyResults: [
+                        ...g.keyResults,
+                        {
+                            id: `KR ${g.keyResults.length + 1}`,
+                            title: '',
+                            weight: '',
+                        },
+                    ],
+                };
+            })
+        );
+    };
+
+    const handleUpdateKeyResult = (
+        goalId: string,
+        krId: string,
+        field: 'title' | 'weight',
+        value: string
+    ) => {
+        setGoals((prevGoals) =>
+            prevGoals.map((g) => {
+                if (g.id !== goalId) return g;
+                if (field === 'weight') {
+                    const otherSum = g.keyResults
+                        .filter((kr) => kr.id !== krId)
+                        .reduce((sum, kr) => sum + (parseFloat(kr.weight) || 0), 0);
+                    const maxAllowed = Math.max(0, 100 - otherSum);
+
+                    return {
+                        ...g,
+                        keyResults: g.keyResults.map((kr) => {
+                            if (kr.id !== krId) return kr;
+                            if (value === '') return { ...kr, weight: '' };
+                            const num = parseFloat(value);
+                            if (!isNaN(num)) {
+                                const cappedVal = Math.min(num, maxAllowed);
+                                return { ...kr, weight: String(cappedVal) };
+                            }
+                            return kr;
+                        }),
+                    };
+                }
+
+                return {
+                    ...g,
+                    keyResults: g.keyResults.map((kr) =>
+                        kr.id === krId ? { ...kr, [field]: value } : kr
+                    ),
+                };
+            })
+        );
+    };
+
+    // Find active (uncollapsed) goal or default to last goal
+    const activeGoalIndex = goals.findIndex((g) => !g.isCollapsed);
+    const activeGoal = activeGoalIndex !== -1 ? goals[activeGoalIndex] : goals[goals.length - 1];
+    const activeGoalNumber = activeGoalIndex !== -1 ? activeGoalIndex + 1 : goals.length;
+
+    useEffect(() => {
+        onGoalsChange(goals.map((goal) => ({
+            goal: goal.existingGoalName ?? null,
+            goal_type: goalType,
+            title: goal.title,
+            description: goal.description,
+            weightage: goal.weightage,
+            department: goal.selectedDepartment.value,
+            designation: goal.selectedDesignation.value,
+            key_results: goal.keyResults.map((keyResult) => ({
+                title: keyResult.title,
+                weightage: Number.parseFloat(keyResult.weight) || 0,
+            })),
+        })));
+    }, [goalType, goals, onGoalsChange]);
 
     return (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="space-y-5">
-                <ObjectiveCard
-                    weightage={weightage}
-                    setWeightage={setWeightage}
-                    selectedCategory={selectedCategory}
-                    setSelectedCategory={setSelectedCategory}
-                    startDate={startDate}
-                    setStartDate={setStartDate}
-                    endDate={endDate}
-                    setEndDate={setEndDate}
-                    labelClass={labelClass}
-                    categorySelectOptions={categorySelectOptions}
-                    tags={tags}
-                />
+                {goals.map((goal, index) => (
+                    <ObjectiveCard
+                        key={goal.id}
+                        goalNumber={goals.length > 1 ? index + 1 : undefined}
+                        title={goal.title}
+                        setTitle={(val) => handleUpdateGoalField(goal.id, 'title', val)}
+                        description={goal.description}
+                        setDescription={(val) => handleUpdateGoalField(goal.id, 'description', val)}
+                        weightage={goal.weightage}
+                        setWeightage={(val) => handleUpdateGoalField(goal.id, 'weightage', val)}
+                        selectedDepartment={goal.selectedDepartment}
+                        setSelectedDepartment={(val) => handleUpdateGoalField(goal.id, 'selectedDepartment', val)}
+                        selectedDesignation={goal.selectedDesignation}
+                        setSelectedDesignation={(val) => handleUpdateGoalField(goal.id, 'selectedDesignation', val)}
+                        startDate={goal.startDate}
+                        setStartDate={(val) => handleUpdateGoalField(goal.id, 'startDate', val)}
+                        endDate={goal.endDate}
+                        setEndDate={(val) => handleUpdateGoalField(goal.id, 'endDate', val)}
+                        labelClass={labelClass}
+                        departmentSelectOptions={departmentSelectOptions}
+                        designationSelectOptions={designationSelectOptions}
+                        keyResults={goal.keyResults}
+                        onDeleteKeyResult={(krId) => handleDeleteKeyResult(goal.id, krId)}
+                        onAddKeyResult={() => handleAddKeyResult(goal.id)}
+                        onUpdateKeyResult={(krId, field, value) =>
+                            handleUpdateKeyResult(goal.id, krId, field, value)
+                        }
+                        minimumKeyResults={minimumKeyResults}
+                        maximumKeyResults={maximumKeyResults}
+                        isCollapsed={goal.isCollapsed}
+                        onToggleCollapse={() => handleToggleCollapseGoal(goal.id)}
+                    />
+                ))}
 
-                <KeyResultsCard
-                    keyResults={keyResults}
-                    keyResultMetricTypes={keyResultMetricTypes}
-                    handleMetricTypeChange={handleMetricTypeChange}
-                    metricSelectOptions={metricSelectOptions}
-                    labelClass={labelClass}
-                    fieldClass={fieldClass}
-                />
-
-                <AutoPullCard
-                    autoPullSources={autoPullSources}
-                    sourceStates={sourceStates}
-                    toggleSource={toggleSource}
-                />
+                <button
+                    type="button"
+                    onClick={handleAddGoal}
+                    className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 bg-white text-sm font-semibold text-violet-700 shadow-sm hover:border-violet-300 hover:bg-violet-50/50 transition-colors"
+                    aria-label="Add Another Goal"
+                >
+                    <Plus className="h-4 w-4" />
+                    Add Another Goal
+                </button>
             </div>
 
             <LivePreviewCard
-                weightage={weightage}
-                keyResults={keyResults}
+                goalType={goalType}
+                goalTitle={activeGoal?.title}
+                department={activeGoal?.selectedDepartment?.value}
+                weightage={activeGoal ? activeGoal.weightage : 30}
+                keyResults={activeGoal ? activeGoal.keyResults : []}
+                goalNumber={goals.length > 1 ? activeGoalNumber : undefined}
+                minimumKeyResults={minimumKeyResults}
+                maximumKeyResults={maximumKeyResults}
             />
         </div>
     );

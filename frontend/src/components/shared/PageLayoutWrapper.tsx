@@ -5,6 +5,7 @@ import { Typography } from "./atoms/Typography";
 interface PageLayoutWrapperProps {
     title: string;
     subtitle?: string;
+    titleSlot?: React.ReactNode;
     steps?: Array<{ label: string; active?: boolean }>;
     footerLeft?: React.ReactNode;
     footerRight?: React.ReactNode;
@@ -15,6 +16,7 @@ interface PageLayoutWrapperProps {
 const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
     title,
     subtitle,
+    titleSlot,
     steps,
     footerLeft,
     footerRight,
@@ -40,9 +42,15 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
             <div className="bg-white border-b border-gray-200 px-6 sm:px-10 py-5">
                 <div className="max-w-screen mx-auto flex flex-col lg:flex-row md:items-center justify-between gap-6">
                     <div className="text-left w-full lg:min-w-0 lg:flex-1">
-                        <Typography variant="h3" className="text-gray-900 mb-1">
-                            {title}
-                        </Typography>
+                        {titleSlot ? (
+                            <Typography variant="h3" className="text-gray-900 mb-1">
+                                {titleSlot}
+                            </Typography>
+                        ) : (
+                            <Typography variant="h3" className="text-gray-900 mb-1">
+                                {title}
+                            </Typography>
+                        )}
                         {subtitle ? (
                             <Typography variant="bodyMedium" className="text-gray-500">
                                 {subtitle}

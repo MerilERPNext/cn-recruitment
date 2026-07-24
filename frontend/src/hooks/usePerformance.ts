@@ -1,0 +1,68 @@
+import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
+import type { GoalFormConfig, GoalPlanId, GoalPlanResponse, MyGoalsResponse, SaveGoalsPayload } from "../types/goal";
+import { performanceService } from "../services/performanceService";
+
+export const PERFORMANCE_QUERY_KEYS = {
+  goalPlans: (employeeId: string) => ["performance", "goal-plans", employeeId] as const,
+  goalPlan: (goalId: string) => ["performance", "goal-plan", goalId] as const,
+  goalFormConfig: ["performance", "goal-form-config"] as const,
+  myGoals: ["performance", "my-goals"] as const,
+};
+
+export const useGoalPlans = (employeeId: string): UseQueryResult<GoalPlanId[], Error> =>
+  useQuery<GoalPlanId[], Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.goalPlans(employeeId),
+    queryFn: () => performanceService.getAllGoalPlans(employeeId),
+    refetchOnWindowFocus: true,
+  });
+
+export const useGoalFormConfig = (): UseQueryResult<GoalFormConfig, Error> =>
+  useQuery<GoalFormConfig, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.goalFormConfig,
+    queryFn: performanceService.getGoalFormConfig,
+    staleTime: 5 * 60 * 1000,
+  });
+
+export const useAddGoals = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => performanceService.addGoals(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["performance", "goal-plans"] }),
+  });
+};
+
+export const useUpdateGoals = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: Record<string, unknown>) => performanceService.updateGoals(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["performance", "goal-plans"] }),
+  });
+};
+
+export const useSaveGoals = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: SaveGoalsPayload) => performanceService.saveGoals(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["performance", "goal-plans"] });
+      queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals });
+    },
+  });
+};
+
+export const useGoalPlanDetails = (goalId: string): UseQueryResult<GoalPlanResponse, Error> =>
+  useQuery<GoalPlanResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.goalPlan(goalId),
+    queryFn: () => performanceService.getGoalPlanDetails(goalId),
+    refetchOnWindowFocus: true,
+  });
+
+export const useMyGoals = (): UseQueryResult<MyGoalsResponse, Error> =>
+  useQuery<MyGoalsResponse, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.myGoals,
+    queryFn: () => performanceService.getMyGoals(),
+    refetchOnWindowFocus: true,
+  });

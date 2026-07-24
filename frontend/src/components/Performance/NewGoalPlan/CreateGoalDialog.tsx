@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { CustomError } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import createGoalFormSchema from "./createGoalFormSchema.json";
-import { useAddGoalRequest, useUpdateGoalRequest } from "../../../hooks/useGoal";
+import { useAddGoals, useUpdateGoals } from "../../../hooks/usePerformance";
 import { GroupGoalItem } from "../../../types/goal";
 import { useGoalModel } from "../GoalModelContext";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -37,8 +37,8 @@ export default function CreateGoalDialog({
 
   const isFormReady = useRef(false);
 
-  const { mutate: addGoalRequest } = useAddGoalRequest();
-  const { mutate: updateGoalRequest } = useUpdateGoalRequest();
+  const { mutate: addGoalRequest } = useAddGoals();
+  const { mutate: updateGoalRequest } = useUpdateGoals();
 
   function toTitleCase(str: string | undefined) {
     if (!str) return "";
