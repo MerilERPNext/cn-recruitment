@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { GoalFormConfig, GoalPlanId, GoalPlanResponse, MandatoryGoalsResponse, MyGoalsResponse, SaveGoalsPayload } from "../types/goal";
+import type { GoalFormConfig, GoalPlanId, GoalPlanResponse, Message, MyGoalsResponse, SaveGoalsPayload } from "../types/goal";
 import { performanceService } from "../services/performanceService";
 interface PerformanceQueryKey {
    
@@ -75,8 +75,8 @@ export const useMyGoals = (): UseQueryResult<MyGoalsResponse, Error> =>
     queryFn: () => performanceService.getMyGoals(),
     refetchOnWindowFocus: true,
   });
-export const useGetMandotaryGoals = (): UseQueryResult<MandatoryGoalsResponse, Error> =>
-  useQuery<MandatoryGoalsResponse, Error>({
+export const useGetMandotaryGoals = (): UseQueryResult<Message, Error> =>
+  useQuery<Message, Error>({
     queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals,
     queryFn: () => performanceService.getMandotaryGoals(),
     refetchOnWindowFocus: true,
