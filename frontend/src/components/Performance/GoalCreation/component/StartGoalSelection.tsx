@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import {  useState } from 'react';
 import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge, AlertCircle, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Typography } from '../../../shared/atoms/Typography';
@@ -23,7 +23,6 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
     );
     const { data: mandatoryGoals, isLoading, error, refetch } = useGetMandotaryGoals();
-    useEffect(() => console.log(mandatoryGoals, '=============='), [mandatoryGoals])
     return <>
         <div  className="bg-[#fff8f6] border border-red-100 rounded-xl p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col md:flex-row gap-4 sm:gap-5 items-start">
             <div className="bg-white border border-red-100 text-red-500 w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
@@ -298,7 +297,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
             size="lg"
             className="max-w-[780px] p-0"
         >
-            <AcknowledgmentPopup goalData={acknowledgementGoalsData} onClose={() => setAcknowledgementGoalsData(undefined)} />
+            <AcknowledgmentPopup text={`Pushed by - ${mandatoryGoals?.data?.pushed_by ?? ""}· India Tech BU · lock ${mandatoryGoals?.data?.lock_date ?? "21 May 2026"} `} goalData={acknowledgementGoalsData} onClose={() => setAcknowledgementGoalsData(undefined)} />
         </Modal>
     </>};
 

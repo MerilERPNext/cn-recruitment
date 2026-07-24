@@ -7,6 +7,7 @@ import { Goal } from '../../../../../types/goal';
 interface AcknowledgmentProps {
     onClose: (isOpen: boolean) => void;
     goalData?: Goal[];
+    text?:string
 }
 
 export const getWeightageColor = (weightage?: number, index: number = 0) => {
@@ -30,7 +31,7 @@ export const getWeightageColor = (weightage?: number, index: number = 0) => {
     return colors[index % colors.length];
 };
 
-const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData = [] }) => {
+const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData = [] , text }) => {
     const totalWeightage = useMemo(
         () => goalData.reduce((acc, curr) => acc + (curr.weightage || 0), 0),
         [goalData]
@@ -44,7 +45,7 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
                     <span className="shrink-0 bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-md tracking-wider w-fit">
                         {goalData.length} MANDATORY OKRs ASSIGNED {totalWeightage > 0 ? `(${totalWeightage}%)` : ''}
                     </span>
-                    <span className="truncate text-gray-400 text-xs">Pushed by HR · India Tech BU · lock 21 May 2026</span>
+                    <span className="truncate text-gray-400 text-xs">{text}</span>
                 </div>
                 <Typography variant="h4" className="pr-11 text-base font-semibold leading-tight text-gray-900 sm:pr-0 sm:mt-1 sm:text-2xl">
                     Acknowledge Mandatory OKRs
