@@ -228,7 +228,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                     if (onSelectGoal) {
                       onSelectGoal(index);
                     } else {
-                      navigate(`/webapp/performance-app/my-goals/${index}`);
+                      navigate(`/webapp/performance-app/my-goals/${goal.name}`);
                     }
                   }}
                   className="relative z-10 min-w-0 cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
