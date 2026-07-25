@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge, AlertCircle, RefreshCw, CheckCircle } from 'lucide-react';
+import { ArrowRight, FileText, Plus, Inbox, Sparkles, GitMerge, AlertCircle, RefreshCw, CheckCircle, FolderX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
@@ -41,11 +41,15 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         use_goal_library,
         ai_suggestion,
         cascade_from_manager,
+        bulk_import,
     } = permissions;
     const canStartBlank = isPermissionLoading ? false : start_from_blank;
     const canUseLibrary = isPermissionLoading ? false : use_goal_library;
     const canUseAI = isPermissionLoading ? false : ai_suggestion;
     const canCascade = isPermissionLoading ? false : cascade_from_manager;
+    const canBulkImport = isPermissionLoading ? false : bulk_import;
+
+    const hasAnyGoalOption = canStartBlank || canUseLibrary || canUseAI || canCascade;
 
     const goalsCount = mandatoryGoals?.data?.goals?.length ?? 0;
     const pushedBy = mandatoryGoals?.data?.pushed_by;
@@ -298,21 +302,37 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
             </div>
             }
 
+            {isPermissionLoading && !hasAnyGoalOption && (
+                <div className="col-span-full bg-white rounded-2xl border border-gray-200 shadow-sm p-8 sm:p-10 text-center flex flex-col items-center justify-center min-h-[240px]">
+                    <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 border border-amber-100/80 shadow-xs">
+                        <FolderX className="w-7 h-7" />
+                    </div>
+                    <Typography variant="h4" className="font-bold text-gray-900 mb-1.5">
+                        You don't have any template
+                    </Typography>
+                    <Typography variant="bodyMedium" className="text-gray-500 max-w-md mx-auto text-sm leading-relaxed">
+                        You do not have permission to access any goal creation templates or options. Please contact your manager or HR administrator to request access.
+                    </Typography>
+                </div>
+            )}
+
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center  sm:justify-between gap-4 shadow-sm mb-8 lg:mb-12">
-            <div className="flex w-full min-w-0 items-start sm:items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-green-50 text-green-500 flex items-center justify-center shrink-0">
-                    <Inbox className="w-6 h-6" />
+        {canBulkImport && (
+            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-sm mb-8 lg:mb-12">
+                <div className="flex w-full min-w-0 items-start sm:items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-green-50 text-green-500 flex items-center justify-center shrink-0">
+                        <Inbox className="w-6 h-6" />
+                    </div>
+                    <div className="min-w-0">
+                        <Typography variant="subheading" className="font-semibold text-gray-900">Need to create many goals at once?</Typography>
+                        <Typography variant="bodyMedium" className="text-gray-500 text-sm">Bulk-import via CSV/XLSX — up to 5,000 rows with row-level validation. Suitable for managers cascading to a team.</Typography>
+                    </div>
                 </div>
-                <div className="min-w-0">
-                    <Typography variant="subheading" className="font-semibold text-gray-900">Need to create many goals at once?</Typography>
-                    <Typography variant="bodyMedium" className="text-gray-500 text-sm">Bulk-import via CSV/XLSX — up to 5,000 rows with row-level validation. Suitable for managers cascading to a team.</Typography>
-                </div>
+                <Button variant="outline" bgColor="text" className="w-full sm:w-auto justify-center whitespace-nowrap bg-white">
+                    Bulk Import <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
             </div>
-            <Button variant="outline" bgColor="text" className="w-full sm:w-auto justify-center whitespace-nowrap bg-white">
-                Bulk Import <ArrowRight className="w-4 h-4 ml-1" />
-            </Button>
-        </div>
+        )}
 
         <Modal
             isOpen={isGoalLibraryOpen}
