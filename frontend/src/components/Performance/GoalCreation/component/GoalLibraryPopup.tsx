@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ArrowRight, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
 import { Select } from '../../../shared/atoms/Select';
@@ -9,6 +9,7 @@ import AllOrgTemplates, { allOrgTemplatesData } from './goal-model/AllOrgTemplat
 import DepartmentTemplates, { departmentTemplatesData } from './goal-model/DepartmentTemplates';
 import RoleBasedTemplates, { roleBasedTemplatesData } from './goal-model/RoleBasedTemplates';
 import UsedByTeamTemplates, { usedByTeamTemplatesData } from './goal-model/UsedByTeamTemplates';
+import { useGoalFormConfig } from '../../../../hooks/usePerformance';
 
 interface GoalLibraryPopupProps {
     onClose?: () => void;
@@ -17,7 +18,7 @@ interface GoalLibraryPopupProps {
 
 type TabKey = 'recommended' | 'all-org' | 'department' | 'role-based' | 'used-by-team';
 
-const departmentOptions = [
+const defaultDepartmentOptions = [
     { label: 'All Departments', value: 'All' },
     { label: 'Design', value: 'Design' },
     { label: 'Engineering', value: 'Engineering' },
@@ -28,7 +29,7 @@ const departmentOptions = [
     { label: 'Finance', value: 'Finance' },
 ];
 
-const levelOptions = [
+const defaultLevelOptions = [
     { label: 'All Designations', value: 'All' },
     { label: 'L1 / L2', value: 'L1 / L2' },
     { label: 'L3 / L4', value: 'L3 / L4' },
@@ -39,8 +40,32 @@ const levelOptions = [
 ];
 
 const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => {
+    const { data: formConfig } = useGoalFormConfig();
     const [activeTab, setActiveTab] = useState<TabKey>('recommended');
     const [searchQuery, setSearchQuery] = useState('');
+
+    const departmentOptions = useMemo(() => {
+        if (!formConfig?.departments || formConfig.departments.length === 0) {
+            return defaultDepartmentOptions;
+        }
+        const dynamicDeps = formConfig.departments.map((dep) => ({
+            label: dep.department_name || dep.name || 'Unknown',
+            value: dep.name || dep.department_name || '',
+        }));
+        return [{ label: 'All Departments', value: 'All' }, ...dynamicDeps];
+    }, [formConfig?.departments]);
+
+    const levelOptions = useMemo(() => {
+        if (!formConfig?.designations || formConfig.designations.length === 0) {
+            return defaultLevelOptions;
+        }
+        const dynamicDesigs = formConfig.designations.map((desig) => ({
+            label: desig.designation_name || desig.name || 'Unknown',
+            value: desig.name || desig.designation_name || '',
+        }));
+        return [{ label: 'All Designations', value: 'All' }, ...dynamicDesigs];
+    }, [formConfig?.designations]);
+
     const [selectedDepartment, setSelectedDepartment] = useState(departmentOptions[0]);
     const [selectedLevel, setSelectedLevel] = useState(levelOptions[0]);
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
@@ -198,12 +223,14 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                             options={departmentOptions}
                             value={selectedDepartment}
                             onChange={setSelectedDepartment}
+                            searchable
                             className="relative w-full min-w-0 [&>button]:h-9 [&>button]:min-w-0 [&>button]:px-3 [&>button]:text-sm [&>div]:!w-full sm:[&>button]:h-11"
                         />
                         <Select
                             options={levelOptions}
                             value={selectedLevel}
                             onChange={setSelectedLevel}
+                            searchable
                             className="relative w-full min-w-0 sm:col-span-2 lg:col-span-1 [&>button]:h-9 [&>button]:min-w-0 [&>button]:px-3 [&>button]:text-sm [&>div]:!w-full sm:[&>button]:h-11"
                         />
                     </div>
