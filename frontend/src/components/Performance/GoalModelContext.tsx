@@ -1,43 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { GoalTemplate } from "./GoalCreation/component/goal-model/types";
+import {
+  DraftGoalItem,
+  RequestLeaveDefaults,
+  GoalModelContextType,
+} from "../../types/goal";
 
-export interface DraftGoalItem extends GoalTemplate {
-  weightage?: number;
-}
-
-type RequestLeaveDefaults = {
-  fromDate?: string;
-  toDate?: string;
-  leaveType?: string;
-  halfDay?: boolean;
-  halfDayOption?: "First Half" | "Second Half";
-  half_day_date?: string;
-  custom_second_half_day_date?: string;
-  description?: string;
-  custom_reason?: string;
-  custom_attachment?: { url: string }[];
-  source?: "holiday" | "other";
-  hideHalfDayToggle?: boolean;
-  isEdit?: boolean;
-  leave_application?: string;
-};
-
-type GoalModelContextType = {
-  selectedGoalPlanId: string;
-  setGoalPlanId: (id: string) => void;
-  showModal: boolean;
-  openModal: (defaults?: RequestLeaveDefaults) => void;
-  closeModal: () => void;
-  defaults: RequestLeaveDefaults | null;
-
-  // Global Draft Goals State & Actions
-  draftGoals: DraftGoalItem[];
-  setDraftGoals: React.Dispatch<React.SetStateAction<DraftGoalItem[]>>;
-  addDraftGoals: (goals: GoalTemplate | GoalTemplate[]) => void;
-  removeDraftGoal: (id: string) => void;
-  updateDraftGoalWeightage: (id: string, weightage: number) => void;
-  clearDraftGoals: () => void;
-};
+export type { DraftGoalItem, RequestLeaveDefaults, GoalModelContextType };
 
 const GoalModelContext = createContext<
   GoalModelContextType | undefined

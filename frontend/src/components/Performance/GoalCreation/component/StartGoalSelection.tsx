@@ -446,13 +446,13 @@ const MandatoryGoalsError = ({ onRetry }: { onRetry?: () => void }) => {
                 Unable to fetch mandatory OKRs at this moment. Please try again or contact HR.
             </Typography>
             {onRetry && (
-                <button
+                <Button
                     type="button"
                     onClick={onRetry}
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-md transition-colors"
                 >
                     <RefreshCw className="w-3 h-3" /> Retry
-                </button>
+                </Button>
             )}
         </div>
     );
