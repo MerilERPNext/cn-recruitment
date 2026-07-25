@@ -176,7 +176,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             description="Marissa proposes an OKR based on your role, last cycle, and recent check-ins."
                             statPrimary="Beta · 84% acceptance rate"
                             statSecondary="Median time: ~ 60 seconds"
-                            onUse={() => setIsGoalLibraryOpen(true)}
+                            onUse={() => setIsGoalLibraryOpen(false)}
                             ariaLabel="Use AI suggested goal"
                             buttonClass="bg-amber-400 hover:bg-amber-500 text-slate-900"
                         >
