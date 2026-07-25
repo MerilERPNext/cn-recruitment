@@ -1,8 +1,13 @@
 import React, { useMemo } from 'react';
-import { X, CheckCircle } from 'lucide-react';
+import { X, CheckCircle, Loader } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
-import { Goal } from '../../../../types/goal';
+import { Goal, GoalsRequest } from '../../../../types/goal';
+import { PERFORMANCE_QUERY_KEYS, useSubmitMandatoryGoals } from '../../../../hooks/usePerformance';
+import { useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+
+import { errorResponseFormater } from '../../../../utils/errorResponseFormater';
 
 interface AcknowledgmentProps {
     onClose: (isOpen: boolean) => void;
@@ -32,10 +37,35 @@ export const getWeightageColor = (weightage?: number, index: number = 0) => {
 };
 
 const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData = [], text }) => {
+    const queryClient = useQueryClient();
+    const { mutate: mutateGoals, isPending } = useSubmitMandatoryGoals();
+   
     const totalWeightage = useMemo(
         () => goalData.reduce((acc, curr) => acc + (curr.weightage || 0), 0),
         [goalData]
     );
+
+    const submiteAcknowledgeGoals = () => {
+        const payload: GoalsRequest = {
+            goals: goalData.map((goal) => goal?.goal),
+        };
+
+        mutateGoals(
+            payload,
+            {
+                onSuccess: () => {
+                    toast.success("Mandatory OKRs acknowledged successfully");
+                    queryClient.invalidateQueries({
+                        queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals
+                    });
+                    onClose(false);
+                },
+                onError: (error) => {
+                    errorResponseFormater(error, "Failed to acknowledge mandatory OKRs", { showToast: true });
+                }
+            }
+        );
+    };
 
     return (
         <div className="flex w-full max-w-full flex-col overflow-hidden bg-white">
@@ -56,6 +86,7 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
 
                 <button
                     type="button"
+                    disabled={isPending}
                     className="absolute right-3 top-2 flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 sm:right-4 sm:top-4"
                     onClick={() => onClose(false)}
                     aria-label="Close acknowledgment popup"
@@ -116,6 +147,7 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
                         type="button"
                         variant="outline"
                         bgColor="text"
+                        disabled={(goalData.length === 0) || isPending}
                         className="h-10 w-full justify-center rounded-lg border-gray-200 bg-white px-4 text-gray-700 hover:bg-gray-50 sm:h-9 sm:w-auto"
                         onClick={() => onClose(false)}
                     >
@@ -126,11 +158,17 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
                         variant="contain"
                         bgColor="error"
                         className="h-10 w-full justify-center rounded-lg px-5 text-sm font-semibold sm:h-9 sm:w-auto transition-all duration-150 bg-[#cd2c41] text-white hover:bg-[#b02235]"
-                        disabled={goalData.length === 0}
-                        onClick={() => onClose(false)}
+                        disabled={(goalData.length === 0) || isPending}
+                        onClick={submiteAcknowledgeGoals}
                     >
-                        Submit & Continue
-                    </Button>
+                        {isPending ? (
+                            <span className="flex items-center gap-2">
+                                <Loader className="h-4 w-4 animate-spin" />
+                                Saving...
+                            </span>
+                        ) : (
+                            "Submit & Continue"
+                        )}                    </Button>
                 </div>
             </div>
         </div>

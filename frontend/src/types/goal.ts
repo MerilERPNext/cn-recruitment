@@ -155,6 +155,11 @@ export interface SaveGoalsResponse {
   message: string;
   data: { goals: SaveGoalsResponseGoal[] };
 }
+export interface GoalSubmitResponse {
+  success: boolean;
+  message: string;
+  data: { acknowledged: any[], remaining:number };
+}
 
 // -------------------------
 // My Goals List API Response
@@ -264,4 +269,8 @@ export type GoalModelContextType = {
   removeDraftGoal: (id: string) => void;
   updateDraftGoalWeightage: (id: string, weightage: number) => void;
   clearDraftGoals: () => void;
+};
+
+export type GoalsRequest = {
+  goals: string[];
 };

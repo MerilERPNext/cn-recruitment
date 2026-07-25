@@ -4,6 +4,8 @@ import type {
   GoalPlanId,
   GoalPlanItem,
   GoalPlanResponse,
+  GoalsRequest,
+  GoalSubmitResponse,
   GroupGoalItem,
   Message,
   MyGoalsResponse,
@@ -77,7 +79,16 @@ export const performanceService = {
   getMandotaryGoals: async (): Promise<Message> => {
     const response = await FrappeAPI.callMethod("cn_pms.cn_performance_management.api.goal_api.get_mandatory_goals")
     return response as Message
-  }
+  },
+
+  submitMandatoryGoals: async (payload: GoalsRequest): Promise<GoalSubmitResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.goal_api.acknowledge_goals",
+      { payload },
+    );
+
+    return response as GoalSubmitResponse;
+  },
 
 };
 
