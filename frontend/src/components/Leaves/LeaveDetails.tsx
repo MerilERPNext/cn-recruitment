@@ -22,7 +22,7 @@ import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
-import RejectionReasonModal from "../shared/RejectionReasonModal";
+import ActionReasonModal from "../shared/ActionReasonModal";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 type LeaveAttachment = {
@@ -372,21 +372,22 @@ export function LeaveDetailView({
           </div>
         )}
       </div>
-      <RejectionReasonModal
+      <ActionReasonModal
         isOpen={showCommentModal}
         isPending={approvalCommentMutation.isPending}
+        type={pendingAction?.toLowerCase() === "approve" ? "approval" : "rejection"}
         title="Comment Required"
         description={`Please add a comment before ${pendingAction?.toLowerCase() === "approve"
-            ? "approving"
-            : "rejecting"
+          ? "approving"
+          : "rejecting"
           } this leave request.`}
         label={`${pendingAction?.toLowerCase() === "approve"
-            ? "APPROVAL"
-            : "REJECTION"
+          ? "APPROVAL"
+          : "REJECTION"
           } COMMENT *`}
         placeholder={`Enter ${pendingAction?.toLowerCase() === "approve"
-            ? "approval"
-            : "rejection"
+          ? "approval"
+          : "rejection"
           } comment...`}
         onCancel={handleCancelComment}
         onSave={handleSaveComment}

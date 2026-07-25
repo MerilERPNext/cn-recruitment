@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import Button from "./atoms/Button";
 
-type RejectionReasonModalProps = {
+type ActionReasonModalProps = {
   isOpen: boolean;
   isPending?: boolean;
+  type?: "approval" | "rejection" | "act";
   title?: string;
   description?: string;
   label?: string;
@@ -14,7 +15,7 @@ type RejectionReasonModalProps = {
   onSave: (reason: string) => void;
 };
 
-const RejectionReasonModal = ({
+const ActionReasonModal = ({
   isOpen,
   isPending = false,
   title = "Comment Required",
@@ -24,7 +25,8 @@ const RejectionReasonModal = ({
   required = true,
   onCancel,
   onSave,
-}: RejectionReasonModalProps) => {
+  type
+}: ActionReasonModalProps) => {
   const [reason, setReason] = useState("");
 
   useEffect(() => {
@@ -33,7 +35,9 @@ const RejectionReasonModal = ({
 
   if (!isOpen) return null;
 
-  const isValid = required
+  const isActuallyRequired = type === "approval" ? false : required;
+
+  const isValid = isActuallyRequired
     ? reason.trim().length >= 15
     : true;
 
@@ -60,7 +64,7 @@ const RejectionReasonModal = ({
         <p className="text-sm text-gray-600 mb-4">{description}</p>
         <div className="mb-4">
           <label className="text-xs text-gray-500 uppercase mb-1 block">
-            {label}
+            {isActuallyRequired ? label : label.replace(" *", "")}
           </label>
           <textarea
             value={reason}
@@ -71,7 +75,7 @@ const RejectionReasonModal = ({
             rows={4}
             autoFocus
           />
-          {(required || reason.trim().length > 0) && (
+          {isActuallyRequired && (
             <div className={`text-xs mt-1 text-right ${reason.trim().length >= 15 ? 'text-green-600' : 'text-gray-500'}`}>
               {reason.trim().length}/15 characters minimum
             </div>
@@ -99,4 +103,4 @@ const RejectionReasonModal = ({
   );
 };
 
-export default RejectionReasonModal;
+export default ActionReasonModal;

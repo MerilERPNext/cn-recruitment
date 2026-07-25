@@ -31,7 +31,7 @@ import { FlowRequestItem } from "../../../types/flows";
 import ActivityLogDrawer from "../../shared/ActivityLogDrawer";
 import Tooltip from "../../shared/Tooltip";
 import DropdownMenu from "../../shared/DropDownMenu";
-import RejectionReasonModal from "../../shared/RejectionReasonModal";
+import ActionReasonModal from "../../shared/ActionReasonModal";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 
@@ -506,9 +506,10 @@ const Separation = () => {
           </Button>
         )}
       </div>
-      <RejectionReasonModal
+      <ActionReasonModal
         isOpen={isRevokeModalOpen}
         isPending={isRevoking}
+        type="act"
         required={false}
         title="Revoke Separation Request"
         description="Are you sure you want to revoke this separation request? Please provide a reason."

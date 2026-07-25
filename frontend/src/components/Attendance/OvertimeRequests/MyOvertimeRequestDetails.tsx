@@ -17,7 +17,7 @@ import {
   ErrorView,
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
-import RejectionReasonModal from "../../shared/RejectionReasonModal";
+import ActionReasonModal from "../../shared/ActionReasonModal";
 import Button from "../../shared/atoms/Button";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
@@ -224,7 +224,7 @@ export function MyOvertimeDetails({
               <StatusBadge
                 status={
                   data?.todo_status === "Closed" &&
-                  data?.reference_document?.status !== "Rejected"
+                    data?.reference_document?.status !== "Rejected"
                     ? "Approved"
                     : data?.reference_document?.status
                 }
@@ -364,8 +364,8 @@ export function MyOvertimeDetails({
           )}
         </div>
         {actions?.length > 0 &&
-        data?.reference_document?.status === "Open" &&
-        !isActed ? (
+          data?.reference_document?.status === "Open" &&
+          !isActed ? (
           <div className="w-full bg-white border-t shadow-md p-4 z-20">
             {typeof data?.allocated_to === "string" && type !== "my" && (
               <TeamApprovalActionPill
@@ -393,9 +393,10 @@ export function MyOvertimeDetails({
           </div>
         )}
       </div>
-      <RejectionReasonModal
+      <ActionReasonModal
         isOpen={showCommentModal}
         isPending={updateRejectionReasonMutation.isPending}
+        type={pendingAction?.toLowerCase() === "approve" ? "approval" : "rejection"}
         description="Please add a comment before rejecting this overtime request."
         onCancel={handleCancelComment}
         onSave={handleSaveComment}
