@@ -55,7 +55,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
     const pushedBy = mandatoryGoals?.data?.pushed_by;
     const lockDate = mandatoryGoals?.data?.lock_date;
     const metadataText = useMemo(() => {
-        if (!pushedBy) return ""; `Pushed by - ${pushedBy} . India Tech BU . lock ${lockDate}`
+    return   `Pushed by - ${pushedBy ?? ""} . India Tech BU . lock ${lockDate ?? ""}`
     }, [pushedBy, lockDate]);
 
     return <>
