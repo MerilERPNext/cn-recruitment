@@ -16,7 +16,20 @@ def after_migrate():
     ensure_performance_indexes()
     ensure_job_offer_salary_period()
     ensure_tpo_access()
+    ensure_custom_html_blocks()
     ensure_offer_compensation()
+
+
+def ensure_custom_html_blocks():
+    """Push every app-managed Custom HTML Block (html/css/js kept as source files
+    under recruitment/recruitment/custom_blocks) into its DB record. Idempotent —
+    it only writes when the files actually changed."""
+    try:
+        from recruitment.recruitment.custom_blocks import sync_custom_html_blocks
+
+        sync_custom_html_blocks()
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_custom_html_blocks: skipped")
 
 
 def ensure_offer_compensation():
