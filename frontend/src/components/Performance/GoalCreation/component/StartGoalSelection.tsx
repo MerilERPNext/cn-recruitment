@@ -11,6 +11,7 @@ import { useGetMandotaryGoals } from '../../../../hooks/usePerformance';
 import { Goal } from '../../../../types/goal';
 import { useGetUiPermission } from '../../../../hooks/userUiPermission';
 import { getActionsEnabled } from '../../../../utils/uiPermission';
+import TeamGoalLibraryPopup from './TeamGoalLibraryPopup';
 
 const APP_NAME = "Performance";
 const PAGE_NAME = "Goal Creation";
@@ -20,16 +21,16 @@ interface StartGoalSelectionProps {
 
 const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
     const navigate = useNavigate();
+    const { data: userUiPermission, isLoading: isPermissionLoading } = useGetUiPermission(APP_NAME)
+    const { data: mandatoryGoals, isLoading, error, refetch } = useGetMandotaryGoals();
     const { addDraftGoals } = useGoalModel();
     const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
     const [acknowledgementGoalsData, setAcknowledgementGoalsData] = useState<Goal[] | undefined>(undefined);
     const [blankGoalDescription, setBlankGoalDescription] = useState(
         "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
     );
-    const { data: userUiPermission, isLoading: isPermissionLoading } = useGetUiPermission(APP_NAME)
-    const { data: mandatoryGoals, isLoading, error, refetch } = useGetMandotaryGoals();
 
-
+const [openTeamGoals , setOpenTeamGoals] = useState(false)
     const permissions = getActionsEnabled(userUiPermission, [
         'start_from_blank',
         'use_goal_library',
@@ -201,7 +202,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             description="Inherit a sub-OKR from one of Rohit Khanna’s 4 active goals."
                             statPrimary="Arithmetic cascading · 4 parents available"
                             statSecondary="Median time: ~ 2 minutes"
-                            onUse={() => setIsGoalLibraryOpen(true)}
+                            onUse={() => setOpenTeamGoals(true)}
                             buttonClass="bg-indigo-500 hover:bg-indigo-600 text-white"
                         >
                             <div className="mt-4 space-y-2">
@@ -283,6 +284,24 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             state: { selectedGoals }
                         });
                     }
+                }}
+            />
+        </Modal>
+        <Modal
+            isOpen={openTeamGoals}
+            onClose={() => setOpenTeamGoals(false)}
+            size="xl"
+            className="max-w-[1300px] p-0"
+        >
+            <TeamGoalLibraryPopup
+                onClose={() => setOpenTeamGoals(false)}
+                onUseTemplate={(selected) => {
+                    setOpenTeamGoals(false);
+                    const selectedGoals = Array.isArray(selected) ? selected : [selected];
+                    addDraftGoals(selectedGoals);
+                    navigate('/webapp/performance-app/my-goals/goal-draft', {
+                        state: { selectedGoals }
+                    });
                 }}
             />
         </Modal>
