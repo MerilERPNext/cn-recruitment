@@ -155,7 +155,11 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
         event?.stopPropagation();
 
         if (activeStepIndex === 0) {
-            if (onClose) onClose();
+            if (onClose) {
+                onClose();
+            } else {
+                navigate('/webapp/performance-app/my-goals');
+            }
             return;
         }
 
