@@ -7,6 +7,26 @@ import Button from '../../../shared/atoms/Button';
 import { goals } from '../data';
 import type { Goal, GoalKeyResult } from '../types';
 
+const defaultGoal: Goal = {
+  type: 'OKR',
+  label: '-',
+  title: '-',
+  subtitle: '-',
+  current: 0,
+  target: 0,
+  unit: '',
+  percentage: 0,
+  weight: 0,
+  status: 'On-track',
+  state: '-',
+  barColor: 'bg-blue-500',
+  startDate: '-',
+  endDate: '-',
+  owner: '-',
+  alignedTo: '-',
+  krs: [],
+};
+
 const getStatusVariant = (status: Goal['status']): BadgeVariant => {
   if (status === 'On-track') return 'success';
   if (status === 'At-risk') return 'warning';
@@ -18,7 +38,6 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
-
 
   return (
     <div className="relative flex items-center justify-center w-24 h-24">
@@ -63,19 +82,16 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const id = goalId ?? paramId;
   const navigate = useNavigate();
   const goalIndex = id ? Number(id) : Number.NaN;
-  const goal = Number.isInteger(goalIndex) ? goals[goalIndex] : undefined;
+  
+  const targetGoal = Number.isInteger(goalIndex) ? goals[goalIndex] : undefined;
+  const goal: Goal = targetGoal || defaultGoal;
   const topRef = React.useRef<HTMLDivElement>(null);
 
-  // useEffect(() => {
-    // scrollIntoView works regardless of which parent is the scroll container
-  //   topRef.current?.scrollIntoView({ behavior: 'smooth' });
-  // }, []);
-
-  if (!goal) {
+  if (!targetGoal && !goalId && !paramId) {
     return (
       <div className="p-6">
         <Typography variant="bodyMedium">Goal not found.</Typography>
-        <Button variant="outline" bgColor="text" onClick={() => onBack ? onBack() : navigate(-1)} className="mt-4">
+        <Button variant="outline" bgColor="text" onClick={() => (onBack ? onBack() : navigate(-1))} className="mt-4">
           Go Back
         </Button>
       </div>
@@ -89,8 +105,8 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
         {/* Back Button */}
         <button 
           aria-label="Back to goals"
-          onClick={() => onBack ? onBack() : navigate(-1)}
-          className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors mb-2"
+          onClick={() => (onBack ? onBack() : navigate(-1))}
+          className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors mb-2 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 mr-1" />
           Back to Goals
@@ -101,11 +117,11 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
           <div className="flex flex-col lg:flex-row justify-between gap-6">
             <div className="min-w-0 space-y-4 lg:max-w-xl">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge label={goal.type} variant="purple" size="sm" />
-                <Badge label={goal.label} variant="default" size="sm" />
-                <Badge label={goal.state} variant="info" size="sm" />
+                <Badge label={goal.type || 'OKR'} variant="purple" size="sm" />
+                <Badge label={goal.label || '-'} variant="default" size="sm" />
+                <Badge label={goal.state || '-'} variant="info" size="sm" />
                 <Badge 
-                  label={goal.status} 
+                  label={goal.status || '-'} 
                   variant={getStatusVariant(goal.status)}
                   size="sm" 
                   pulse={{ show: true }} 
@@ -113,38 +129,38 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               </div>
               
               <div>
-                <Typography variant="h3" className="mb-2 text-xl leading-tight sm:text-2xl">{goal.title}</Typography>
-                <Typography variant="bodySmall" className="text-gray-500">{goal.subtitle}</Typography>
+                <Typography variant="h3" className="mb-2 text-xl leading-tight sm:text-2xl">{goal.title || '-'}</Typography>
+                <Typography variant="bodySmall" className="text-gray-500">{goal.subtitle || '-'}</Typography>
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100 sm:grid-cols-3 lg:grid-cols-5">
                 <div className="rounded-lg bg-gray-50 p-3 lg:bg-transparent lg:p-0">
                   <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">Weightage</Typography>
-                  <Typography variant="bodySmall" className="font-semibold text-gray-900">{goal.weight}%</Typography>
+                  <Typography variant="bodySmall" className="font-semibold text-gray-900">{goal.weight !== undefined ? `${goal.weight}%` : '-'}</Typography>
                 </div>
                 <div className="rounded-lg bg-gray-50 p-3 lg:bg-transparent lg:p-0">
                   <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">Start</Typography>
-                  <Typography variant="bodySmall" className="font-semibold text-gray-900">1 Apr 2026</Typography>
+                  <Typography variant="bodySmall" className="font-semibold text-gray-900">{goal.startDate || '-'}</Typography>
                 </div>
                 <div className="rounded-lg bg-gray-50 p-3 lg:bg-transparent lg:p-0">
                   <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">End</Typography>
-                  <Typography variant="bodySmall" className="font-semibold text-gray-900">31 Mar 2027</Typography>
+                  <Typography variant="bodySmall" className="font-semibold text-gray-900">{goal.endDate || '-'}</Typography>
                 </div>
                 <div className="rounded-lg bg-gray-50 p-3 lg:bg-transparent lg:p-0">
                   <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">Owner</Typography>
-                  <Typography variant="bodySmall" className="font-semibold text-gray-900">Pallavi Mahar</Typography>
+                  <Typography variant="bodySmall" className="font-semibold text-gray-900">{goal.owner || '-'}</Typography>
                 </div>
                 <div className="col-span-2 rounded-lg bg-gray-50 p-3 sm:col-span-1 lg:bg-transparent lg:p-0">
                   <Typography variant="caption" className="text-gray-500 uppercase tracking-wider block mb-1 font-semibold">Aligned To</Typography>
-                  <Typography variant="bodySmall" className="font-semibold text-gray-900">Alakh Pandey · Org OKR</Typography>
+                  <Typography variant="bodySmall" className="font-semibold text-gray-900">{goal.alignedTo || '-'}</Typography>
                 </div>
               </div>
             </div>
 
             <div className="shrink-0 flex flex-col items-center justify-center bg-gray-50 rounded-xl p-4 sm:p-6 lg:w-[200px]">
-              <CircularProgress percentage={goal.percentage} />
+              <CircularProgress percentage={goal.percentage || 0} />
               <Typography variant="caption" className="text-gray-500 mt-3 text-center">
-                {goal.current} / {goal.target} {goal.unit}
+                {goal.current || goal.target ? `${goal.current} / ${goal.target} ${goal.unit || ''}` : `${goal.percentage || 0}% Achieved`}
               </Typography>
             </div>
           </div>
@@ -169,28 +185,26 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               </div>
 
               <div className="space-y-4 sm:space-y-6">
-                {goal.krs?.map((kr: GoalKeyResult, idx: number, krs: GoalKeyResult[]) => (
-                  <div key={idx} className="relative">
-                    <div className="flex flex-col gap-2 mb-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex min-w-0 items-start gap-3 sm:items-center">
-                        <Badge label={kr.id} variant="purple" size="sm" />
-                        <Typography variant="bodyMedium" className="font-medium leading-snug text-gray-900">{kr.title}</Typography>
+                {goal.krs && goal.krs.length > 0 ? (
+                  goal.krs.map((kr: GoalKeyResult, idx: number, krs: GoalKeyResult[]) => (
+                    <div key={idx} className="relative">
+                      <div className="flex flex-col gap-2 mb-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex min-w-0 items-start gap-3 sm:items-center">
+                          <Badge label={kr.id || `KR ${idx + 1}`} variant="purple" size="sm" />
+                          <Typography variant="bodyMedium" className="font-medium leading-snug text-gray-900">{kr.title || '-'}</Typography>
+                        </div>
+                        <Typography variant="bodyMedium" className="font-bold text-gray-900 sm:text-right">{kr.percentage ?? 0}%</Typography>
                       </div>
-                      <Typography variant="bodyMedium" className="font-bold text-gray-900 sm:text-right">{kr.percentage}%</Typography>
+                      <div className="w-full bg-gray-100 rounded-md h-2 overflow-hidden">
+                        <div 
+                          className={`h-2 rounded-md ${kr.percentage >= 75 ? 'bg-green-500' : kr.percentage >= 50 ? 'bg-yellow-500' : 'bg-blue-500'}`} 
+                          style={{ width: `${kr.percentage}%` }}
+                        />
+                      </div>
+                      {idx !== krs.length - 1 && <hr className="mt-6 border-gray-100" />}
                     </div>
-                    <Typography variant="caption" className="text-gray-500 mb-2 block">
-                      Current {Math.round((kr.percentage / 100) * 32)} / Target 32
-                    </Typography>
-                    <div className="w-full bg-gray-100 rounded-md h-2 overflow-hidden">
-                      <div 
-                        className={`h-2 rounded-md ${kr.percentage >= 75 ? 'bg-green-500' : kr.percentage >= 50 ? 'bg-yellow-500' : 'bg-blue-500'}`} 
-                        style={{ width: `${kr.percentage}%` }}
-                      />
-                    </div>
-                    {idx !== krs.length - 1 && <hr className="mt-6 border-gray-100" />}
-                  </div>
-                ))}
-                {(!goal.krs || goal.krs.length === 0) && (
+                  ))
+                ) : (
                   <Typography variant="bodyMedium" className="text-gray-500 text-center py-4">No Key Results found.</Typography>
                 )}
               </div>
@@ -200,7 +214,7 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
             <div className="bg-white rounded-xl shadow-sm border border-blue-200 overflow-hidden">
               <div className="p-4 sm:p-6">
                 <Typography variant="h4" className="mb-1">Quick Check-in</Typography>
-                <Typography variant="bodySmall" className="text-gray-500 mb-6">Update your progress · Last check-in 12 days ago</Typography>
+                <Typography variant="bodySmall" className="text-gray-500 mb-6">Update your progress</Typography>
 
                 <div className="grid grid-cols-1 gap-4 mb-4 sm:mb-6 md:grid-cols-3 md:gap-6">
                   <div>
@@ -208,12 +222,12 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                     <div className="flex items-center">
                       <input 
                         type="text" 
-                        defaultValue={goal.current}
+                        defaultValue={goal.current || 0}
                         className="w-full border border-gray-300 rounded-l-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                         aria-label="New goal progress value"
                       />
                       <span className="bg-gray-50 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-sm text-gray-500 whitespace-nowrap">
-                        {goal.unit.split(' ')[0]}
+                        {goal.unit ? goal.unit.split(' ')[0] : '%'}
                       </span>
                     </div>
                   </div>
@@ -221,23 +235,16 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                   <div>
                     <Typography variant="caption" className="text-gray-700 font-medium block mb-2">Auto Progress</Typography>
                     <div className="bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 flex min-h-[38px] items-center">
-                      <span className="text-blue-600 font-bold text-sm mr-2">{goal.percentage}%</span>
-                      <span className="text-gray-400 text-sm">+4 from 64%</span>
+                      <span className="text-blue-600 font-bold text-sm mr-2">{goal.percentage || 0}%</span>
                     </div>
                   </div>
 
                   <div>
                     <Typography variant="caption" className="text-gray-700 font-medium block mb-2">Self-declared Health</Typography>
                     <div className="grid grid-cols-3 gap-2">
-                      
-                        <Badge label="On-track" backgroundColor="bg-green-50  w-full" textColor="text-green-700" size="sm"  />
-                      
-                      
-                        <Badge label="At-risk" backgroundColor="bg-white border border-gray-200 hover:bg-gray-50 w-full" textColor="text-gray-600" size="sm" />
-                      
-                      
-                        <Badge label="Off-track" backgroundColor="bg-white border border-gray-200 hover:bg-gray-50 w-full" textColor="text-gray-600" size="sm" />
-                      
+                      <Badge label="On-track" backgroundColor="bg-green-50 w-full" textColor="text-green-700" size="sm" />
+                      <Badge label="At-risk" backgroundColor="bg-white border border-gray-200 hover:bg-gray-50 w-full" textColor="text-gray-600" size="sm" />
+                      <Badge label="Off-track" backgroundColor="bg-white border border-gray-200 hover:bg-gray-50 w-full" textColor="text-gray-600" size="sm" />
                     </div>
                   </div>
                 </div>
@@ -245,7 +252,6 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
                 <textarea 
                   className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[100px] mb-4"
                   placeholder="Add details about your progress..."
-                  defaultValue="Shipped Goals list + tree view. Calibration screen blocked on data model — coordinating with backend."
                   aria-label="Goal progress details"
                 ></textarea>
 
@@ -276,31 +282,11 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               <Typography variant="bodySmall" className="text-gray-500 mb-6">Last 30 days</Typography>
 
               <div className="relative border-l border-gray-200 ml-3 space-y-6">
-                
                 <div className="relative pl-6">
                   <div className="absolute w-2 h-2 bg-blue-500 rounded-full -left-[4.5px] top-1.5 border-2 border-white ring-2 ring-blue-100"></div>
-                  <Typography variant="bodySmall" className="font-medium text-gray-900 block">Check-in submitted</Typography>
-                  <Typography variant="caption" className="text-gray-500">Pallavi · 12 days ago · 60→64%</Typography>
+                  <Typography variant="bodySmall" className="font-medium text-gray-900 block">Goal created</Typography>
+                  <Typography variant="caption" className="text-gray-500">{goal.owner || '-'}</Typography>
                 </div>
-
-                <div className="relative pl-6">
-                  <div className="absolute w-2 h-2 bg-purple-500 rounded-full -left-[4.5px] top-1.5 border-2 border-white ring-2 ring-purple-100"></div>
-                  <Typography variant="bodySmall" className="font-medium text-gray-900 block">KR added by Manager</Typography>
-                  <Typography variant="caption" className="text-gray-500">Rohit Khanna · 18 days ago · WAU adoption ≥ 80%</Typography>
-                </div>
-
-                <div className="relative pl-6">
-                  <div className="absolute w-2 h-2 bg-green-500 rounded-full -left-[4.5px] top-1.5 border-2 border-white ring-2 ring-green-100"></div>
-                  <Typography variant="bodySmall" className="font-medium text-gray-900 block">Goal approved</Typography>
-                  <Typography variant="caption" className="text-gray-500">Rohit Khanna · 24 days ago</Typography>
-                </div>
-
-                <div className="relative pl-6">
-                  <div className="absolute w-2 h-2 bg-yellow-500 rounded-full -left-[4.5px] top-1.5 border-2 border-white ring-2 ring-yellow-100"></div>
-                  <Typography variant="bodySmall" className="font-medium text-gray-900 block">Goal submitted</Typography>
-                  <Typography variant="caption" className="text-gray-500">Pallavi · 25 days ago</Typography>
-                </div>
-
               </div>
             </div>
 
@@ -310,13 +296,13 @@ const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
               
               <div className="border border-gray-100 rounded-lg p-3 flex flex-col gap-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded flex items-center justify-center font-bold text-xs">JR</div>
+                  <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded flex items-center justify-center font-bold text-xs">--</div>
                   <div className="min-w-0">
-                    <Typography variant="bodySmall" className="font-medium text-gray-900 block">Jira · OXY-2.0</Typography>
-                    <Typography variant="caption" className="text-gray-500 block">Synced 4h ago · 48/76 issues done</Typography>
+                    <Typography variant="bodySmall" className="font-medium text-gray-900 block">No source connected</Typography>
+                    <Typography variant="caption" className="text-gray-500 block">Manual tracking</Typography>
                   </div>
                 </div>
-                <div className="w-fit px-2 py-1 bg-green-50 text-green-700 text-xs font-medium rounded">Connected</div>
+                <div className="w-fit px-2 py-1 bg-gray-50 text-gray-500 text-xs font-medium rounded">-</div>
               </div>
             </div>
 
