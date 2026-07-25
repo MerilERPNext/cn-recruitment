@@ -51,7 +51,7 @@ import {
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
-import RejectionReasonModal from "../../shared/RejectionReasonModal";
+import ActionReasonModal from "../../shared/ActionReasonModal";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 export function TeamExpenseDetailView({
@@ -1165,9 +1165,10 @@ export function TeamExpenseDetailView({
           )}
 
           {/* Comment modal */}
-          <RejectionReasonModal
+          <ActionReasonModal
             isOpen={showCommentModal}
             isPending={commentMutation.isPending}
+            type={pendingAction?.toLowerCase() === "approve" ? "approval" : "rejection"}
             title="Comment Required"
             description={`Please add a comment before ${pendingAction?.toLowerCase() === "approve" ? "approving" : "rejecting"} this expense claim.`}
             label={`${pendingAction?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}

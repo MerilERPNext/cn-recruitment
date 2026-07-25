@@ -18,7 +18,7 @@ import { isActionEnabled } from "../../utils/uiPermission";
 import { BulkActionFooter } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
 import DataListView, { FilterField } from "../DataListView";
 import { useBulkSelectContext } from "./BulkSelectContext";
-import RejectionReasonModal from "./RejectionReasonModal";
+import ActionReasonModal from "./ActionReasonModal";
 
 type ApprovalListProps = {
   uiPermission?: {
@@ -393,7 +393,7 @@ const ApprovalList = ({
             }),
           ),
         );
-        
+
         queryClient.invalidateQueries({ queryKey: ["teamRequests"] });
         queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
         queryClient.invalidateQueries({ queryKey: ["attendance-request"] });
@@ -616,9 +616,10 @@ const ApprovalList = ({
           }
         }}
       />
-      <RejectionReasonModal
+      <ActionReasonModal
         isOpen={showBulkCommentModal}
         isPending={isCommentSaving}
+        type={pendingBulkAction === "Approve" ? "approval" : "rejection"}
         title={pendingBulkAction === "Approve" ? "Approval Comment" : "Rejection Comment"}
         description={`Please add a comment before ${pendingBulkAction === "Approve" ? "approving" : "rejecting"} these requests.`}
         label={`${pendingBulkAction === "Approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}

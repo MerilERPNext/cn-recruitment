@@ -24,7 +24,7 @@ import {
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
-import RejectionReasonModal from "../shared/RejectionReasonModal";
+import ActionReasonModal from "../shared/ActionReasonModal";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 export function AttendanceDetailView({
@@ -462,9 +462,10 @@ export function AttendanceDetailView({
           </div>
         )}
       </div>
-      <RejectionReasonModal
+      <ActionReasonModal
         isOpen={showCommentModal}
         isPending={updateRejectionReasonMutation.isPending}
+        type={pendingAction?.toLowerCase() === "approve" ? "approval" : "rejection"}
         description={`Please add a comment before ${pendingAction?.toLowerCase() === "approve" ? "approving" : "rejecting"} this attendance request.`}
         label={`${pendingAction?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
         placeholder={`Enter ${pendingAction?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
