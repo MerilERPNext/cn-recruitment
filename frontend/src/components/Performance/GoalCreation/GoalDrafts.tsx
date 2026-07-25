@@ -50,11 +50,12 @@ const GoalDrafts: React.FC = () => {
         const templateArray = Array.isArray(selected) ? selected : [selected];
         addDraftGoals(templateArray);
         setIsLibraryModalOpen(false);
-        if (source === 'recommended' || templateArray.length === 1) {
+        if (source === 'recommended' ) {
             navigate('/webapp/performance-app/my-goals/new-goal', {
                 state: { stepIndex: 1, selectedTemplate: templateArray[0] }
             });
         } else {
+            navigate("/webapp/performance-app/my-goals/goal-draft")
             toast.success(`${templateArray.length} goal(s) added to draft!`);
         }
     };

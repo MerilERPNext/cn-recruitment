@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { GoalTemplate } from "./GoalCreation/component/goal-model/types";
 
 export interface DraftGoalItem extends GoalTemplate {
@@ -76,7 +76,7 @@ export const GoalModelProvider: React.FC<{
     }
   }, [draftGoals]);
 
-  const addDraftGoals = (goals: GoalTemplate | GoalTemplate[]) => {
+  const addDraftGoals = useCallback((goals: GoalTemplate | GoalTemplate[]) => {
     const goalArray = Array.isArray(goals) ? goals : [goals];
     setDraftGoals((prev) => {
       const existingIds = new Set(prev.map((g) => g.id));
@@ -85,26 +85,26 @@ export const GoalModelProvider: React.FC<{
         .map((g) => ({ ...g, weightage: (g as DraftGoalItem).weightage || 10 }));
       return [...prev, ...newItems];
     });
-  };
+  }, []);
 
-  const removeDraftGoal = (id: string) => {
+  const removeDraftGoal = useCallback((id: string) => {
     setDraftGoals((prev) => prev.filter((g) => g.id !== id));
-  };
+  }, []);
 
-  const updateDraftGoalWeightage = (id: string, weightage: number) => {
+  const updateDraftGoalWeightage = useCallback((id: string, weightage: number) => {
     setDraftGoals((prev) =>
       prev.map((g) => (g.id === id ? { ...g, weightage } : g))
     );
-  };
+  }, []);
 
-  const clearDraftGoals = () => {
+  const clearDraftGoals = useCallback(() => {
     setDraftGoals([]);
     try {
       localStorage.removeItem("performance_draft_goals");
     } catch (e) {
       console.error("Failed to clear draft goals from localStorage", e);
     }
-  };
+  }, []);
 
   return (
     <GoalModelContext.Provider
