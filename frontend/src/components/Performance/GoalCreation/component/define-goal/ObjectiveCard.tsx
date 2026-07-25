@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { format, isValid, parse } from "date-fns";
 import { ChevronDown, ChevronUp } from "lucide-react";
@@ -201,7 +201,12 @@ export const ObjectiveCard = ({
       setLocalIsCollapsed((prev) => !prev);
     }
   };
-
+  const submissionData = useMemo(() => ({
+    data: {
+      start_date: formatGoalDateForForm(startDate),
+      end_date: formatGoalDateForForm(endDate),
+    }
+  }), [startDate, endDate]);
   return (
     <Card
       className="border border-violet-200 bg-white p-5 shadow-sm"
@@ -321,12 +326,7 @@ export const ObjectiveCard = ({
             <div className="lg:col-span-2 [&_.formio-component]:!mb-0 [&_.formio-component-datetime_input]:!mb-0 [&_label]:!mt-0 [&_label]:!pt-0 [&_label]:!pb-0 [&_label]:!mb-1.5 [&_label]:!text-xs [&_label]:!font-medium [&_label]:!text-gray-600 [&_label]:!h-auto [&_label]:!block [&_.form-group]:!mt-0 [&_.form-group]:!mb-0 [&_.formio-form]:!mt-0 [&_.form-control]:h-[40px] [&_.form-control]:w-full [&_.form-control]:rounded-lg [&_.form-control]:border [&_.form-control]:border-gray-200 [&_.form-control]:bg-white [&_.form-control]:px-4 [&_.form-control]:text-sm [&_.form-control]:text-gray-900 [&_.form-control]:shadow-sm [&_.form-control]:outline-none [&_.row]:-mx-2 [&_.row>div]:px-2">
               <Form
                 form={buildGoalPeriodFormSchema(formatGoalDateForForm(startDate), formatGoalDateForForm(endDate))}
-                submission={{
-                  data: {
-                    start_date: formatGoalDateForForm(startDate),
-                    end_date: formatGoalDateForForm(endDate),
-                  },
-                }}
+                submission={submissionData}
                 onChange={(form: { data: Record<string, string> }) => {
                   const start = formatFormDateForGoal(form.data.start_date);
                   const end = formatFormDateForGoal(form.data.end_date);

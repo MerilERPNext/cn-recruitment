@@ -30,7 +30,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
     );
 
-const [openTeamGoals , setOpenTeamGoals] = useState(false)
+    const [openTeamGoals, setOpenTeamGoals] = useState(false)
     const permissions = getActionsEnabled(userUiPermission, [
         'start_from_blank',
         'use_goal_library',
@@ -56,7 +56,7 @@ const [openTeamGoals , setOpenTeamGoals] = useState(false)
     const pushedBy = mandatoryGoals?.data?.pushed_by;
     const lockDate = mandatoryGoals?.data?.lock_date;
     const metadataText = useMemo(() => {
-    return   `Pushed by - ${pushedBy ?? ""} . India Tech BU . lock ${lockDate ?? ""}`
+        return `Pushed by - ${pushedBy ?? ""} . India Tech BU . lock ${lockDate ?? ""}`
     }, [pushedBy, lockDate]);
 
     return <>
@@ -177,7 +177,7 @@ const [openTeamGoals , setOpenTeamGoals] = useState(false)
                             description="Marissa proposes an OKR based on your role, last cycle, and recent check-ins."
                             statPrimary="Beta · 84% acceptance rate"
                             statSecondary="Median time: ~ 60 seconds"
-                            onUse={() => setIsGoalLibraryOpen(false)}
+                            onUse={onContinue}
                             ariaLabel="Use AI suggested goal"
                             buttonClass="bg-amber-400 hover:bg-amber-500 text-slate-900"
                         >

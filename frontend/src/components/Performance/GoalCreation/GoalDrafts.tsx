@@ -168,7 +168,7 @@ const GoalDrafts: React.FC = () => {
                         <div className="space-y-4">
                             {draftGoals.map((goal, index) => (
                                 <div
-                                    key={goal.id || index}
+                                    key={goal.id}
                                     className="group relative flex flex-col justify-between gap-5 rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm transition-all duration-200 hover:border-blue-300 hover:shadow-md sm:flex-row sm:items-center sm:p-6"
                                 >
                                     <div className="flex min-w-0 items-start gap-4 flex-1">
