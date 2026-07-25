@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { GoalTemplate } from "./GoalCreation/component/goal-model/types";
 
 export interface DraftGoalItem extends GoalTemplate {
@@ -58,8 +58,23 @@ export const GoalModelProvider: React.FC<{
     setSelectedGoalPlanId(id);
   };
 
-  // Draft goals state
-  const [draftGoals, setDraftGoals] = useState<DraftGoalItem[]>([]);
+  // Draft goals state initialized from localStorage
+  const [draftGoals, setDraftGoals] = useState<DraftGoalItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("performance_draft_goals");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("performance_draft_goals", JSON.stringify(draftGoals));
+    } catch (e) {
+      console.error("Failed to save draft goals to localStorage", e);
+    }
+  }, [draftGoals]);
 
   const addDraftGoals = (goals: GoalTemplate | GoalTemplate[]) => {
     const goalArray = Array.isArray(goals) ? goals : [goals];
@@ -84,6 +99,11 @@ export const GoalModelProvider: React.FC<{
 
   const clearDraftGoals = () => {
     setDraftGoals([]);
+    try {
+      localStorage.removeItem("performance_draft_goals");
+    } catch (e) {
+      console.error("Failed to clear draft goals from localStorage", e);
+    }
   };
 
   return (

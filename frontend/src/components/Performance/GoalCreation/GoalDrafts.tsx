@@ -25,13 +25,14 @@ const GoalDrafts: React.FC = () => {
     const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
     const [goalToDelete, setGoalToDelete] = useState<GoalTemplate | null>(null);
 
-    // Sync selected goals passed via navigation state into global GoalModelContext
+    // Sync selected goals passed via navigation state into global GoalModelContext and clear history state
     useEffect(() => {
         const passedGoals = (location.state as { selectedGoals?: GoalTemplate[] } | null)?.selectedGoals;
         if (passedGoals && passedGoals.length > 0) {
             addDraftGoals(passedGoals);
+            navigate(location.pathname, { replace: true, state: {} });
         }
-    }, [location.state]);
+    }, [location.state, addDraftGoals, navigate, location.pathname]);
 
     // Calculate total weightage
     const totalWeightage = draftGoals.reduce((sum, g) => sum + (g.weightage ?? 10), 0);
