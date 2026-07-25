@@ -4,7 +4,6 @@ import { ArrowLeft, Plus, Paperclip, Mic } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Badge, { type BadgeVariant } from '../../../shared/Badge';
 import Button from '../../../shared/atoms/Button';
-import { goals } from '../data';
 import type { Goal, GoalKeyResult } from '../types';
 
 const defaultGoal: Goal = {
@@ -79,15 +78,12 @@ interface GoalDetailsProps {
 
 const GoalDetails: React.FC<GoalDetailsProps> = ({ goalId, onBack }) => {
   const { id: paramId } = useParams<{ id: string }>();
-  const id = goalId ?? paramId;
   const navigate = useNavigate();
-  const goalIndex = id ? Number(id) : Number.NaN;
   
-  const targetGoal = Number.isInteger(goalIndex) ? goals[goalIndex] : undefined;
-  const goal: Goal = targetGoal || defaultGoal;
+  const goal: Goal = defaultGoal;
   const topRef = React.useRef<HTMLDivElement>(null);
 
-  if (!targetGoal && !goalId && !paramId) {
+  if ( !goalId && !paramId) {
     return (
       <div className="p-6">
         <Typography variant="bodyMedium">Goal not found.</Typography>

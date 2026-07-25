@@ -71,10 +71,10 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
     const q = searchQuery.toLowerCase();
     return allGoals.filter(
       (g) =>
-        g.title.toLowerCase().includes(q) ||
-        g.description.toLowerCase().includes(q) ||
-        g.department_title.toLowerCase().includes(q) ||
-        g.goal_type.toLowerCase().includes(q),
+        (g.title || "").toLowerCase().includes(q) ||
+        (g.description || "").toLowerCase().includes(q) ||
+        (g.department_title || "").toLowerCase().includes(q) ||
+        (g.goal_type || "").toLowerCase().includes(q)
     );
   }, [allGoals, searchQuery]);
 
