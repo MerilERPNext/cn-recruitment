@@ -414,30 +414,28 @@ def reply_alumni_hd_ticket(ticket_id: str, content: str) -> dict:
         return {"success": False, "message": _("Content is required")}
 
     try:
-        # Create a standard Communication linked to the ticket
-        comm = frappe.get_doc({
-            "doctype": "Communication",
-            "communication_type": "Communication",
-            "communication_medium": "Email",
-            "sent_or_received": "Received",
-            "reference_doctype": "HD Ticket",
-            "reference_name": ticket_id,
-            "subject": f"Reply to {ticket_id}",
-            "content": content,
-            "sender": email,
-            "sender_full_name": frappe.db.get_value("User", user, "full_name") or email,
-            "status": "Linked"
-        })
-        comm.insert(ignore_permissions=True)
-        
-        # Optionally update ticket status to Open if it was waiting for customer
-        # Standard Frappe/Helpdesk handles this on Communication insert via hooks,
-        # but just to be safe if the hook doesn't run for portal users:
         ticket = frappe.get_doc("HD Ticket", ticket_id)
-        if ticket.status == "Waiting for Customer":
-            ticket.status = "Open"
-            ticket.save(ignore_permissions=True)
-            
+        old_skip_email_workflow = frappe.db.get_single_value(
+            "HD Settings", "skip_email_workflow"
+        )
+        frappe.db.set_value(
+            "HD Settings",
+            "HD Settings",
+            "skip_email_workflow",
+            1,
+        )
+
+        try:
+            ticket.reply_via_agent(content, to=email)
+        finally:
+            frappe.db.set_value(
+                "HD Settings",
+                "HD Settings",
+                "skip_email_workflow",
+                old_skip_email_workflow,
+            )
+
+
         frappe.db.commit()
         return {"success": True, "message": _("Reply sent successfully")}
     except Exception:
@@ -451,8 +449,9 @@ def revoke_alumni_hd_ticket(ticket_id: str) -> dict:
     """Archived/Revoke the ticket by the alumnus."""
     _validate_ticket_ownership(ticket_id)
     try:
-        frappe.db.set_value("HD Ticket", ticket_id, "custom_archived", 1)
-        frappe.db.commit()
+        ticket = frappe.get_doc("HD Ticket", ticket_id)
+        ticket.custom_archived = 1
+        ticket.save()
         return {"success": True, "message": _("Ticket revoked successfully.")}
     except Exception:
         frappe.log_error(frappe.get_traceback(), "alumni revoke_alumni_hd_ticket failed")
