@@ -56,7 +56,7 @@ def create_job_offer_for_applicant(job_applicant):
 	applicant = frappe.db.get_value(
 		"Job Applicant",
 		job_applicant,
-		["name", "applicant_name", "email_id", "designation", "custom_expected_doj", "phone_number"],
+		["name", "applicant_name", "email_id", "designation", "custom_expected_doj", "phone_number", "custom_employment_type"],
 		as_dict=True,
 	)
 	if not applicant:
@@ -75,6 +75,7 @@ def create_job_offer_for_applicant(job_applicant):
 	job_offer.designation = applicant.designation
 	job_offer.custom_expected_doj = applicant.custom_expected_doj
 	job_offer.custom_phone_number = applicant.phone_number
+	job_offer.custom_employment_type = applicant.custom_employment_type
 	job_offer.offer_date = frappe.utils.today()
 	job_offer.insert(ignore_permissions=True)
 	frappe.db.set_value("Job Applicant", applicant.name, "status", "Open")
@@ -103,7 +104,7 @@ def create_bulk_job_offer(applicants):
             applicant = frappe.db.get_value(
                 "Job Applicant",
                 app,
-                ["name", "applicant_name", "email_id", "designation", "custom_expected_doj", "phone_number"],
+                ["name", "applicant_name", "email_id", "designation", "custom_expected_doj", "phone_number", "custom_employment_type"],
                 as_dict=True
             )
 
@@ -124,6 +125,7 @@ def create_bulk_job_offer(applicants):
             job_offer.designation = applicant.designation
             job_offer.custom_expected_doj = applicant.custom_expected_doj
             job_offer.custom_phone_number = applicant.phone_number
+            job_offer.custom_employment_type = applicant.custom_employment_type
 
             job_offer.offer_date = frappe.utils.today()
 
