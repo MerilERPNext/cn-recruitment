@@ -97,9 +97,11 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
                 </div>
             </div>
 
-            <div className="md:sticky bottom-0 left-0 right-0 z-10 flex flex-col gap-2 border-t border-gray-200 bg-white px-6 py-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:flex-row md:items-center md:justify-between">
-                <div className="w-full md:min-w-0 md:flex-1">{footerLeft}</div>
-                <div className="w-full md:w-auto md:flex-none">{footerRight}</div>
+            <div className="shrink-0 bg-white/95 backdrop-blur-md border-t border-gray-200/80 px-4 py-3 sm:px-6 md:py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-20">
+                <div className="max-w-5xl mx-auto flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
+                    <div className="w-full md:min-w-0 md:flex-1">{footerLeft}</div>
+                    <div className="w-full md:w-auto md:flex-none">{footerRight}</div>
+                </div>
             </div>
         </div>
     );

@@ -80,20 +80,22 @@ const GoalDrafts: React.FC = () => {
                         type="button"
                         variant="outline"
                         bgColor="text"
-                        className="h-9 justify-center rounded-lg border-gray-200 bg-white px-4 text-gray-700 hover:bg-gray-50 md:w-auto"
+                        fullWidth
+                        className="h-10 w-full justify-center rounded-xl border-gray-200 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-all sm:text-sm md:h-9.5 md:w-auto"
                         onClick={() => navigate('/webapp/performance-app/my-goals/new-goal')}
                     >
-                        <ArrowLeft className="mr-1 h-4 w-4" />
+                        <ArrowLeft className="mr-1.5 h-4 w-4 text-gray-500" />
                         Back to Goal Selection
                     </Button>
                 }
                 footerRight={
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                    <div className="flex w-full items-center gap-2.5 sm:gap-3">
                         <Button
                             type="button"
                             variant="outline"
                             bgColor="text"
-                            className="h-9 justify-center rounded-lg border-gray-200 bg-white px-4 text-gray-700 hover:bg-gray-50"
+                            fullWidth
+                            className="h-11 flex-1 justify-center rounded-xl border-gray-200 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-all shadow-2xs sm:text-sm md:h-9.5 md:w-auto md:flex-initial md:px-5"
                             onClick={() => toast.success('Draft saved successfully!')}
                         >
                             Save Draft
@@ -102,11 +104,12 @@ const GoalDrafts: React.FC = () => {
                             type="button"
                             variant="contain"
                             bgColor="primary"
-                            className="h-9 justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700"
+                            fullWidth
+                            className="h-11 flex-[1.4] justify-center rounded-xl bg-blue-600 text-xs font-semibold text-white hover:bg-blue-700 active:bg-blue-800 transition-all shadow-sm shadow-blue-500/20 sm:text-sm md:h-9.5 md:w-auto md:flex-initial md:px-5"
                             onClick={handleSubmitPlan}
                         >
                             Submit Goal Plan ({draftGoals.length})
-                            <ArrowRight className="ml-1 h-4 w-4" />
+                            <ArrowRight className="ml-1.5 h-4 w-4" />
                         </Button>
                     </div>
                 }
@@ -232,17 +235,17 @@ const GoalDrafts: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Niche (Bottom) Add Goals Button */}
-                    <div className="flex flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:flex-row sm:justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                                <CheckCircle2 className="h-5 w-5" />
+                    {/* Bottom Add Goals Card */}
+                    <div className="flex flex-col gap-4 rounded-2xl border border-indigo-100/80 bg-gradient-to-r from-blue-50/60 via-indigo-50/30 to-white p-4 sm:p-5 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-3.5 sm:items-center min-w-0">
+                            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs sm:mt-0">
+                                <Sparkles className="h-5 w-5" />
                             </div>
-                            <div>
-                                <Typography variant="subheading" className="font-semibold text-gray-900">
+                            <div className="min-w-0">
+                                <Typography variant="subheading" className="text-sm font-bold text-gray-900 sm:text-base">
                                     Want to add more goals from library?
                                 </Typography>
-                                <Typography variant="caption" className="text-gray-500">
+                                <Typography variant="caption" className="mt-0.5 block text-xs text-gray-500 leading-relaxed">
                                     Explore role-based and department OKR templates anytime.
                                 </Typography>
                             </div>
@@ -252,7 +255,7 @@ const GoalDrafts: React.FC = () => {
                             type="button"
                             variant="contain"
                             bgColor="primary"
-                            className="h-11 w-full justify-center rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm sm:w-auto"
+                            className="h-10 w-full shrink-0 justify-center rounded-xl bg-blue-600 px-5 text-xs font-semibold text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm transition-all sm:w-auto sm:text-sm"
                             onClick={() => setIsLibraryModalOpen(true)}
                         >
                             <Plus className="mr-1.5 h-4 w-4" /> Add Goal
