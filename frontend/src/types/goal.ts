@@ -1,3 +1,6 @@
+import type React from "react";
+import { GoalTemplate } from "../components/Performance/GoalCreation/component/goal-model/types";
+
 // -------------------------
 // Subgoal (is_group: 0)
 // -------------------------
@@ -152,6 +155,11 @@ export interface SaveGoalsResponse {
   message: string;
   data: { goals: SaveGoalsResponseGoal[] };
 }
+export interface GoalSubmitResponse {
+  success: boolean;
+  message: string;
+  data: { acknowledged: any[], remaining:number };
+}
 
 // -------------------------
 // My Goals List API Response
@@ -195,3 +203,74 @@ export interface MyGoalsResponse {
   message: string;
   data: MyGoalsData;
 }
+
+export interface MandatoryGoalsResponse {
+  message: Message;
+}
+
+export interface Message {
+  success: boolean;
+  message: string;
+  data: MandatoryGoalsData;
+}
+
+export interface MandatoryGoalsData {
+  count: number;
+  has_pending: boolean;
+  pushed_by: string;
+  company: string;
+  lock_date: string; // ISO date string (YYYY-MM-DD)
+  active_cycle: string;
+  goals: Goal[];
+}
+
+export interface Goal {
+  goal: string;
+  title: string;
+  weightage: number;
+}
+
+// -------------------------
+// Goal Model Context Types
+// -------------------------
+export interface DraftGoalItem extends GoalTemplate {
+  weightage?: number;
+}
+
+export type RequestLeaveDefaults = {
+  fromDate?: string;
+  toDate?: string;
+  leaveType?: string;
+  halfDay?: boolean;
+  halfDayOption?: "First Half" | "Second Half";
+  half_day_date?: string;
+  custom_second_half_day_date?: string;
+  description?: string;
+  custom_reason?: string;
+  custom_attachment?: { url: string }[];
+  source?: "holiday" | "other";
+  hideHalfDayToggle?: boolean;
+  isEdit?: boolean;
+  leave_application?: string;
+};
+
+export type GoalModelContextType = {
+  selectedGoalPlanId: string;
+  setGoalPlanId: (id: string) => void;
+  showModal: boolean;
+  openModal: (defaults?: RequestLeaveDefaults) => void;
+  closeModal: () => void;
+  defaults: RequestLeaveDefaults | null;
+
+  // Global Draft Goals State & Actions
+  draftGoals: DraftGoalItem[];
+  setDraftGoals: React.Dispatch<React.SetStateAction<DraftGoalItem[]>>;
+  addDraftGoals: (goals: GoalTemplate | GoalTemplate[]) => void;
+  removeDraftGoal: (id: string) => void;
+  updateDraftGoalWeightage: (id: string, weightage: number) => void;
+  clearDraftGoals: () => void;
+};
+
+export type GoalsRequest = {
+  goals: string[];
+};

@@ -1,12 +1,21 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { GoalFormConfig, GoalPlanId, GoalPlanResponse, MyGoalsResponse, SaveGoalsPayload } from "../types/goal";
+import type { GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, SaveGoalsPayload } from "../types/goal";
 import { performanceService } from "../services/performanceService";
+interface PerformanceQueryKey {
 
-export const PERFORMANCE_QUERY_KEYS = {
+  goalPlans: (employeeId: string) => ["performance", "goal-plans", string];
+  goalPlan: (goalId: string) => ["performance", "goal-plan", string];
+  goalFormConfig: ["performance", "goal-form-config"];
+  myGoals: ["performance", "my-goals"];
+  mandatoryGoals: ["performance", "mandatory-goals"];
+
+}
+export const PERFORMANCE_QUERY_KEYS: PerformanceQueryKey = {
   goalPlans: (employeeId: string) => ["performance", "goal-plans", employeeId] as const,
   goalPlan: (goalId: string) => ["performance", "goal-plan", goalId] as const,
   goalFormConfig: ["performance", "goal-form-config"] as const,
   myGoals: ["performance", "my-goals"] as const,
+  mandatoryGoals: ["performance", "mandatory-goals"] as const,
 };
 
 export const useGoalPlans = (employeeId: string): UseQueryResult<GoalPlanId[], Error> =>
@@ -65,4 +74,19 @@ export const useMyGoals = (): UseQueryResult<MyGoalsResponse, Error> =>
     queryKey: PERFORMANCE_QUERY_KEYS.myGoals,
     queryFn: () => performanceService.getMyGoals(),
     refetchOnWindowFocus: true,
+    staleTime: 1 * 60 * 1000,
+  });
+
+export const useGetMandotaryGoals = (): UseQueryResult<Message, Error> =>
+  useQuery<Message, Error>({
+    queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals,
+    queryFn: () => performanceService.getMandotaryGoals(),
+    refetchOnWindowFocus: true,
+    staleTime: 30 * 1000,
+  });
+export const useSubmitMandatoryGoals = () =>
+  useMutation<GoalSubmitResponse, Error, GoalsRequest>({
+
+    mutationFn: (payload) => performanceService.submitMandatoryGoals(payload),
+
   });
