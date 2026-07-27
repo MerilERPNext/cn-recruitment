@@ -469,6 +469,7 @@ export function AttendanceDetailView({
         description={`Please add a comment before ${pendingAction?.toLowerCase() === "approve" ? "approving" : "rejecting"} this attendance request.`}
         label={`${pendingAction?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
         placeholder={`Enter ${pendingAction?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
+        todo_id={data?.todo_id}
         onCancel={handleCancelComment}
         onSave={handleSaveComment}
       />

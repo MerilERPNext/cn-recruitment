@@ -433,6 +433,7 @@ const LeaveApprovalCard = ({
           ? "approval"
           : "rejection"
           } comment...`}
+        todo_id={data?.todo_id}
         onCancel={handleCancelComment}
         onSave={handleSaveComment}
       />

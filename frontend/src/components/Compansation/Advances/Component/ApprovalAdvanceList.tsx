@@ -5,15 +5,14 @@ import { Link } from "react-router-dom";
 import { useCurrentUser } from "../../../../hooks/useCurrentUser";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
-import { getActionStyles } from "../../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
-import Button from "../../../shared/atoms/Button";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../../shared/atoms/Typography";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import Tooltip from "../../../shared/Tooltip";
+import ActionReasonModal from "../../../shared/ActionReasonModal";
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -45,7 +44,6 @@ const ApprovalRejectionAdvanceList = ({
   const commentMutation = useExpenseCommentUpdate();
   const [commentOpen, setCommentOpen] = useState(false);
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
-  const [comment, setComment] = useState("");
 
   if (!data) return null;
 
@@ -61,14 +59,13 @@ const ApprovalRejectionAdvanceList = ({
 
   const handleActionClick = (action: string) => {
     setSelectedAction(action);
-    setComment("");
     setCommentOpen(true);
   };
 
-  const handleConfirmAction = async () => {
+  const handleConfirmAction = async (reason: string) => {
     if (!selectedAction) return;
 
-    if (!comment.trim()) {
+    if (!reason.trim()) {
       toast.error("Comment is required");
       return;
     }
@@ -82,13 +79,12 @@ const ApprovalRejectionAdvanceList = ({
       await commentMutation.mutateAsync({
         referenceDoctype,
         referenceName,
-        content: comment,
+        content: reason,
         comment_email: user?.name || "",
       });
 
       onAction(selectedAction, data);
 
-      setComment("");
       setSelectedAction(null);
       setCommentOpen(false);
       toast.success(`${selectedAction} successful`);
@@ -184,7 +180,7 @@ const ApprovalRejectionAdvanceList = ({
             </Typography>
           </Tooltip>
           <div className="flex items-center justify-center">
-            {actionsEnabled && data?.todo_status === "Open" && !isActed ? (
+            {actionsEnabled && ["Open", "Pending", "Draft"].includes(data.reference_document.custom_final_status) && !isActed ? (
               <TeamApprovalActionPill
                 actions={actions}
                 status={data?.status}
@@ -203,43 +199,18 @@ const ApprovalRejectionAdvanceList = ({
         </div>
 
         {/* COMMENT MODAL */}
-        {commentOpen && (
-          <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
-            <div className="bg-white w-full max-w-md rounded-xl p-5">
-              <Typography variant="h4" className="font-semibold mb-2">
-                {selectedAction === "Reject"
-                  ? "Reject Reason"
-                  : "Approval Comment"}
-              </Typography>
-
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                rows={4}
-                className="w-full border rounded-md p-2 text-sm"
-                placeholder="Enter comment..."
-              />
-
-              <div className="flex justify-end gap-3 mt-4">
-                <Button
-                  bgColor="gray-200"
-                  onClick={() => setCommentOpen(false)}
-                >
-                  Cancel
-                </Button>
-
-                <Button
-                  bgColor={getActionStyles(selectedAction!).bgColor}
-                  variant={getActionStyles(selectedAction!).variant}
-                  onClick={handleConfirmAction}
-                  disabled={commentMutation.isPending || !comment.trim()}
-                >
-                  Save & {selectedAction}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        <ActionReasonModal
+          isOpen={commentOpen}
+          isPending={commentMutation.isPending}
+          type={selectedAction === "Reject" ? "rejection" : "approval"}
+          title={selectedAction === "Reject" ? "Reject Reason" : "Approval Comment"}
+          description={`Please add a comment before ${selectedAction === "Reject" ? "rejecting" : "approving"} this request.`}
+          label={`${selectedAction === "Reject" ? "REJECTION" : "APPROVAL"} COMMENT *`}
+          placeholder="Enter comment..."
+          todo_id={data?.todo_id}
+          onCancel={() => setCommentOpen(false)}
+          onSave={handleConfirmAction}
+        />
       </>
     );
   }
@@ -344,40 +315,18 @@ const ApprovalRejectionAdvanceList = ({
       </div>
 
       {/* COMMENT MODAL */}
-      {commentOpen && (
-        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
-          <div className="bg-white w-full max-w-md rounded-xl p-5">
-            <Typography variant="h4" className="font-semibold mb-2">
-              {selectedAction === "Reject"
-                ? "Reject Reason"
-                : "Approval Comment"}
-            </Typography>
-
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={4}
-              className="w-full border rounded-md p-2 text-sm"
-              placeholder="Enter comment..."
-            />
-
-            <div className="flex justify-end gap-3 mt-4">
-              <Button bgColor="gray-200" onClick={() => setCommentOpen(false)}>
-                Cancel
-              </Button>
-
-              <Button
-                bgColor={getActionStyles(selectedAction!).bgColor}
-                variant={getActionStyles(selectedAction!).variant}
-                onClick={handleConfirmAction}
-                disabled={commentMutation.isPending || !comment.trim()}
-              >
-                Save & {selectedAction}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ActionReasonModal
+        isOpen={commentOpen}
+        isPending={commentMutation.isPending}
+        type={selectedAction === "Reject" ? "rejection" : "approval"}
+        title={selectedAction === "Reject" ? "Reject Reason" : "Approval Comment"}
+        description={`Please add a comment before ${selectedAction === "Reject" ? "rejecting" : "approving"} this request.`}
+        label={`${selectedAction === "Reject" ? "REJECTION" : "APPROVAL"} COMMENT *`}
+        placeholder="Enter comment..."
+        todo_id={data?.todo_id}
+        onCancel={() => setCommentOpen(false)}
+        onSave={handleConfirmAction}
+      />
     </>
   );
 };

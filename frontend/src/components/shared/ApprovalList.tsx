@@ -624,6 +624,7 @@ const ApprovalList = ({
         description={`Please add a comment before ${pendingBulkAction === "Approve" ? "approving" : "rejecting"} these requests.`}
         label={`${pendingBulkAction === "Approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
         placeholder={`Enter ${pendingBulkAction === "Approve" ? "approval" : "rejection"} comment...`}
+        todo_id={selectedIds[0]}
         onCancel={handleCancelBulkComment}
         onSave={handleSaveBulkComment}
       />
