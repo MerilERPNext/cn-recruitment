@@ -86,7 +86,7 @@ const DefineGoal = ({ goalType, formConfig, initialGoal, onGoalsChange }: Define
         const selectedDesignation = initialDesignation ? { label: initialDesignation, value: initialDesignation } : defaultDesignation;
 
         return [{
-            id: initialGoal.name,
+            id: initialGoal.name || `goal-1`,
             existingGoalName: initialGoal.name,
             title: initialGoal.title,
             description: initialGoal.description,
