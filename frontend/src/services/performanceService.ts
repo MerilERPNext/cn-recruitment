@@ -6,11 +6,14 @@ import type {
   GoalPlanResponse,
   GoalsRequest,
   GoalSubmitResponse,
+  GoalActionResponse,
+  DeleteGoalsPayload,
   GroupGoalItem,
   Message,
   MyGoalsResponse,
   SaveGoalsPayload,
   SaveGoalsResponse,
+  SubmitSelectedGoalsPayload,
   SubGoalItem,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
@@ -74,6 +77,26 @@ export const performanceService = {
     );
 
     return response as MyGoalsResponse;
+  },
+
+  submitSelectedGoals: async (
+    payload: SubmitSelectedGoalsPayload,
+  ): Promise<GoalActionResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.goal_api.submit_selected_goals",
+      { payload },
+    );
+
+    return response as GoalActionResponse;
+  },
+
+  deleteGoals: async (payload: DeleteGoalsPayload): Promise<GoalActionResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.goal_api.delete_goals",
+      { payload },
+    );
+
+    return response as GoalActionResponse;
   },
 
   getMandotaryGoals: async (): Promise<Message> => {

@@ -204,6 +204,23 @@ export interface MyGoalsResponse {
   data: MyGoalsData;
 }
 
+export interface SubmitSelectedGoalsPayload {
+  goals: Array<{
+    goal: string;
+    weightage: number;
+  }>;
+}
+
+export interface DeleteGoalsPayload {
+  goals: string[];
+}
+
+export interface GoalActionResponse {
+  success: boolean;
+  message: string;
+  data?: unknown;
+}
+
 export interface MandatoryGoalsResponse {
   message: Message;
 }

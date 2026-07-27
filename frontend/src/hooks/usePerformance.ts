@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, SaveGoalsPayload } from "../types/goal";
+import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload } from "../types/goal";
 import { performanceService } from "../services/performanceService";
 interface PerformanceQueryKey {
 
@@ -76,6 +76,24 @@ export const useMyGoals = (): UseQueryResult<MyGoalsResponse, Error> =>
     refetchOnWindowFocus: true,
     staleTime: 1 * 60 * 1000,
   });
+
+export const useSubmitSelectedGoals = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<GoalActionResponse, Error, SubmitSelectedGoalsPayload>({
+    mutationFn: (payload) => performanceService.submitSelectedGoals(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals }),
+  });
+};
+
+export const useDeleteGoals = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<GoalActionResponse, Error, DeleteGoalsPayload>({
+    mutationFn: (payload) => performanceService.deleteGoals(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: PERFORMANCE_QUERY_KEYS.myGoals }),
+  });
+};
 
 export const useGetMandotaryGoals = (): UseQueryResult<Message, Error> =>
   useQuery<Message, Error>({
