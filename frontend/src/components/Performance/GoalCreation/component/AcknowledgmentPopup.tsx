@@ -157,7 +157,7 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
                         type="button"
                         variant="contain"
                         bgColor="error"
-                        className="h-10 w-full justify-center rounded-lg px-5 text-sm font-semibold sm:h-9 sm:w-auto transition-all duration-150 bg-[#cd2c41] text-white hover:bg-[#b02235]"
+                        className="h-10 w-full justify-center rounded-lg px-5 text-sm font-semibold sm:h-9 sm:w-auto transition-all duration-150 bg-[#E35D6A] hover:bg-[#cb4f5b] text-white "
                         disabled={(goalData.length === 0) || isPending}
                         onClick={submiteAcknowledgeGoals}
                     >

@@ -106,7 +106,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             variant="contain"
                             bgColor="error"
                             disabled={goalsCount === 0}
-                            className="w-full md:w-auto justify-center bg-[#cd2c41] hover:bg-[#b02235] text-white disabled:bg-gray-300 disabled:text-gray-500 disabled:opacity-60"
+                                className="w-full md:w-auto justify-center bg-[#E35D6A] hover:bg-[#cb4f5b] text-white disabled:bg-gray-300 disabled:text-gray-500 disabled:opacity-60"
                         >
                             Acknowledge {goalsCount} <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
@@ -122,27 +122,32 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
             ) : hasAnyGoalOption ? (
                 <>
                     {canStartBlank && (
-                        <TemplateCard
-                            icon={<Plus className="w-6 h-6" />}
-                            iconClass="w-12 h-12 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0"
-                            title="Start from blank"
-                            description="Write your own OKR from scratch — full creative control."
-                            statPrimary="Used by 18% of PW employees"
-                            statSecondary="Median time: ~ 4 minutes"
-                            onUse={onContinue}
-                            ariaLabel="Use start from blank"
-                            buttonClass="bg-blue-500 hover:bg-blue-600 text-white"
-                        >
-                            <textarea
-                                aria-label="Start from blank description"
-                                className="min-h-[92px] w-full resize-none rounded-lg border border-gray-100 bg-blue-50 p-4 text-sm leading-6 text-gray-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                                value={blankGoalDescription}
-                                onChange={(event) => setBlankGoalDescription(event.target.value)}
-                            />
-                        </TemplateCard>
+                            <div className={`${!canUseLibrary ? 'grid-cols-2' :""}`}>
+
+                            <TemplateCard
+                                icon={<Plus className="w-6 h-6" />}
+                                iconClass="w-12 h-12 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0"
+                                title="Start from blank"
+                                description="Write your own OKR from scratch — full creative control."
+                                statPrimary="Used by 18% of PW employees"
+                                statSecondary="Median time: ~ 4 minutes"
+                                onUse={onContinue}
+                                ariaLabel="Use start from blank"
+                                buttonClass="bg-blue-500 hover:bg-blue-600 text-white"
+                            >
+                                <textarea
+                                    aria-label="Start from blank description"
+                                    className="min-h-[92px] w-full resize-none rounded-lg border border-gray-100 bg-blue-50 p-4 text-sm leading-6 text-gray-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                                    value={blankGoalDescription}
+                                    onChange={(event) => setBlankGoalDescription(event.target.value)}
+                                />
+                            </TemplateCard>
+                        </div>
                     )}
 
                     {canUseLibrary && (
+                            <div className={`${!canStartBlank ? 'grid-cols-2' : ""}`}>
+
                         <TemplateCard
                             icon={<FileText className="w-6 h-6" />}
                             iconClass="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0"
@@ -153,7 +158,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             onUse={() => setIsGoalLibraryOpen(true)}
                             ariaLabel="Use goal library"
                             buttonClass="bg-indigo-500 hover:bg-indigo-600 text-white"
-                        >
+                            >
                             <div className="flex flex-wrap gap-2">
                                 <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">Design craft +12</span>
                                 <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">Mentorship</span>
@@ -162,10 +167,13 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                                 <span className="bg-indigo-50 text-indigo-600 text-xs px-2.5 py-1 rounded-md">+138 more</span>
                             </div>
                         </TemplateCard>
+                            </div>
                     )}
 
                     {/* AI Suggestion Card */}
                     {canUseAI && (
+                            <div className={`${!canCascade ? 'grid-cols-2' : ""}`}>
+
                         <TemplateCard
                             containerClass="relative overflow-hidden rounded-2xl border border-amber-300 bg-[#FFFCF4] shadow-sm flex flex-col"
                             icon={<Sparkles className="w-4 h-4" />}
@@ -182,7 +190,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             onUse={onContinue}
                             ariaLabel="Use AI suggested goal"
                             buttonClass="bg-amber-400 hover:bg-amber-500 text-slate-900"
-                        >
+                            >
                             <div className="mt-4 rounded-xl border border-dashed border-amber-300 bg-[#FFF8E8] px-4 py-3">
                                 <Typography className="text-[13px] italic leading-6 text-slate-700">
                                     ✨ Marissa™ would suggest:
@@ -192,10 +200,13 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                                 </Typography>
                             </div>
                         </TemplateCard>
+                            </div>
                     )}
 
                     {/* Cascade Card */}
                     {canCascade && (
+                            <div className={`${!canUseAI ? 'grid-cols-2' : ""}`}>
+
                         <TemplateCard
                             containerClass="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm flex flex-col"
                             icon={<GitMerge className="h-4 w-4" />}
@@ -206,7 +217,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             statSecondary="Median time: ~ 2 minutes"
                             onUse={() => setOpenTeamGoals(true)}
                             buttonClass="bg-indigo-500 hover:bg-indigo-600 text-white"
-                        >
+                            >
                             <div className="mt-4 space-y-2">
                                 <div className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
                                     <span className="min-w-0 text-[12px] text-slate-700">
@@ -234,6 +245,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                                 </div>
                             </div>
                         </TemplateCard>
+                            </div>
                     )}
                 </>
             ) : (

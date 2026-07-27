@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, ArrowRight, Layers, Plus, Trash2, CheckCircle2, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Layers, Plus, Trash2, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Button from '../../shared/atoms/Button';
