@@ -39,7 +39,7 @@ const PageLayoutWrapper: React.FC<PageLayoutWrapperProps> = ({
        
     return (
         <div className="relative flex-1 flex flex-col min-h-0 bg-[#f8fafc] font-sans">
-            <div className="sticky top-0 z-20 shrink-0 bg-white/95 backdrop-blur-md border-b border-gray-200 px-6 sm:px-10 py-5 shadow-2xs">
+            <div className="md:sticky top-0 z-20 shrink-0 bg-white/95 backdrop-blur-md border-b border-gray-200 px-6 sm:px-10 py-5 shadow-2xs">
                 <div className="max-w-screen mx-auto flex flex-col lg:flex-row md:items-center justify-between gap-6">
                     <div className="text-left w-full lg:min-w-0 lg:flex-1">
                         {titleSlot ? (
