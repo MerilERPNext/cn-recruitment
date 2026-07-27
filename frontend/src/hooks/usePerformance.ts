@@ -99,7 +99,7 @@ export const useGetMandotaryGoals = (): UseQueryResult<Message, Error> =>
   useQuery<Message, Error>({
     queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals,
     queryFn: () => performanceService.getMandotaryGoals(),
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     staleTime: 30 * 1000,
   });
 export const useSubmitMandatoryGoals = () =>

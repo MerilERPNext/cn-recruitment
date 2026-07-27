@@ -64,7 +64,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
     const location = useLocation();
     const locationState = location.state as { draftGoal?: MyGoalsGoal; stepIndex?: number } | null;
     const draftGoal = locationState?.draftGoal;
-    const isEditingDraft = draftGoal?.submission_status.toLowerCase() === 'draft';
+    const isEditingDraft = draftGoal?.submission_status?.toLowerCase() === 'draft';
     const isDefineStep = locationState?.stepIndex === 1 || isEditingDraft;
     const [activeStepIndex, setActiveStepIndex] = useState(isDefineStep ? 1 : 0);
     const [goalsToSave, setGoalsToSave] = useState<GoalSaveItem[]>([]);
