@@ -1,6 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import FrappeAPI from "../utils/frappeAPI";
-import { SelectOption } from "../components/shared/atoms/Select"; // wait, Select doesn't export SelectOption currently, I will just define it locally
 
 export interface UseLinkFieldOptionsParams {
     doctype: string;
@@ -13,7 +12,7 @@ export const useLinkFieldOptions = ({ doctype, searchText = "", filters, enabled
     return useInfiniteQuery({
         queryKey: ["link-field-options", doctype, searchText, filters],
         queryFn: async ({ pageParam = 0 }) => {
-            const res = await FrappeAPI.callMethod("recruitment.api.job_requisition.get_link_field_options", {
+            const res:any = await FrappeAPI.callMethod("recruitment.api.job_requisition.get_link_field_options", {
                 doctype,
                 search_text: searchText,
                 limit: 20,
