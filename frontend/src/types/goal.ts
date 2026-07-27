@@ -244,11 +244,16 @@ export interface MandatoryGoalsData {
   company: string;
   lock_date: string; // ISO date string (YYYY-MM-DD)
   active_cycle: string;
-  goals: Goal[];
+  goals: Templates[] ;
 }
 
 export interface Goal {
   goal: string;
+  title: string;
+  weightage: number;
+}
+export interface Templates {
+  template: string;
   title: string;
   weightage: number;
 }
@@ -295,5 +300,5 @@ export type GoalModelContextType = {
 };
 
 export type GoalsRequest = {
-  goals: string[];
+  templates: string[];
 };

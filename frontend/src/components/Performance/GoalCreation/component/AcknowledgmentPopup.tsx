@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { X, CheckCircle, Loader } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
-import { Goal, GoalsRequest } from '../../../../types/goal';
+import { GoalsRequest, Templates } from '../../../../types/goal';
 import { PERFORMANCE_QUERY_KEYS, useSubmitMandatoryGoals } from '../../../../hooks/usePerformance';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -11,7 +11,7 @@ import { errorResponseFormater } from '../../../../utils/errorResponseFormater';
 
 interface AcknowledgmentProps {
     onClose: (isOpen: boolean) => void;
-    goalData?: Goal[];
+    goalData?: Templates[];
     text?: string
 }
 
@@ -47,9 +47,9 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
 
     const submiteAcknowledgeGoals = () => {
         const payload: GoalsRequest = {
-            goals: goalData.map((goal) => goal?.goal),
+            templates: goalData.map((goal) => goal?.template),
         };
-
+console.log(payload,'=============================')
         mutateGoals(
             payload,
             {
@@ -104,11 +104,11 @@ const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData 
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3 sm:gap-4">
-                        {goalData.map((okr: Goal, index: number) => {
+                        {goalData.map((okr: Templates, index: number) => {
                             const colorConfig = getWeightageColor(okr?.weightage, index);
                             return (
                                 <div
-                                    key={okr.goal || index}
+                                    key={okr.template || index}
                                     className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 rounded-xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm"
                                 >
                                     {/* OKR Info */}

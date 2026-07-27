@@ -8,7 +8,7 @@ import GoalLibraryPopup from './GoalLibraryPopup';
 import AcknowledgmentPopup, { getWeightageColor } from './AcknowledgmentPopup';
 import { useGoalModel } from '../../GoalModelContext';
 import { useGetMandotaryGoals } from '../../../../hooks/usePerformance';
-import { Goal } from '../../../../types/goal';
+import {  Templates } from '../../../../types/goal';
 import { useGetUiPermission } from '../../../../hooks/userUiPermission';
 import { getActionsEnabled } from '../../../../utils/uiPermission';
 import TeamGoalLibraryPopup from './TeamGoalLibraryPopup';
@@ -27,7 +27,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
     const { data: mandatoryGoals, isLoading, error, refetch } = useGetMandotaryGoals();
     const { addDraftGoals } = useGoalModel();
     const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
-    const [acknowledgementGoalsData, setAcknowledgementGoalsData] = useState<Goal[] | undefined>(undefined);
+    const [acknowledgementGoalsData, setAcknowledgementGoalsData] = useState<Templates[] | undefined>(undefined);
     const [blankGoalDescription, setBlankGoalDescription] = useState(
         "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
     );
@@ -82,10 +82,10 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                         </Typography>
                         <div className="flex flex-wrap gap-3">
                             {goalsCount > 0 ? (
-                                mandatoryGoals?.data?.goals?.map((Goal: Goal, index: number) => {
+                                mandatoryGoals?.data?.goals?.map((Goal: Templates, index: number) => {
                                     const colorConfig = getWeightageColor(Goal?.weightage, index);
                                     return (
-                                        <div key={Goal?.goal} className="w-full sm:w-auto bg-white border border-gray-200 rounded-lg px-3 py-2 flex items-start sm:items-center gap-2 text-sm shadow-sm">
+                                        <div key={Goal?.template} className="w-full sm:w-auto bg-white border border-gray-200 rounded-lg px-3 py-2 flex items-start sm:items-center gap-2 text-sm shadow-sm">
                                             <div className={`w-2 h-2 rounded-full ${colorConfig.dot}`}></div>
                                             <span className="min-w-0 flex-1 text-gray-700">{Goal?.title ?? "no title"}</span>
                                             <span className={`shrink-0 ${colorConfig.text} font-medium`}>{Goal?.weightage}%</span>
