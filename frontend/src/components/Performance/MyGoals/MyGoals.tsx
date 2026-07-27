@@ -26,8 +26,8 @@ import {
 } from "../../../hooks/usePerformance";
 import type { MyGoalsGoal, MyGoalsKeyResult } from "../../../types/goal";
 
-const getStatusVariant = (status: string): BadgeVariant => {
-  const s = status.toLowerCase();
+const getStatusVariant = (status?: string): BadgeVariant => {
+  const s = (status ?? "").toLowerCase();
   if (s === "on-track" || s === "completed") return "success";
   if (s === "at-risk" || s === "in progress") return "warning";
   if (s === "off-track" || s === "cancelled") return "danger";
@@ -35,8 +35,8 @@ const getStatusVariant = (status: string): BadgeVariant => {
   return "default";
 };
 
-const getSubmissionVariant = (state: string): BadgeVariant => {
-  const s = state.toLowerCase();
+const getSubmissionVariant = (state?: string): BadgeVariant => {
+  const s = (state ?? "").toLowerCase();
   if (s === "approved") return "success";
   if (s === "pending" || s === "submitted") return "warning";
   if (s === "rejected") return "danger";
@@ -44,8 +44,8 @@ const getSubmissionVariant = (state: string): BadgeVariant => {
   return "info";
 };
 
-const getBarColor = (status: string): string => {
-  const s = status.toLowerCase();
+const getBarColor = (status?: string): string => {
+  const s = (status ?? "").toLowerCase();
   if (s === "on-track" || s === "completed") return "bg-green-500";
   if (s === "at-risk" || s === "in progress") return "bg-yellow-500";
   if (s === "off-track" || s === "cancelled") return "bg-red-500";
@@ -106,7 +106,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
   };
 
   const draftGoals = goals.filter(
-    (g) => g.submission_status.toLowerCase() === "draft"
+    (g) => g?.submission_status?.toLowerCase() === "draft"
   );
 
   const selectedGoalsData = allGoals.filter((g) => selectedGoals.includes(g.name));
@@ -383,7 +383,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                   <div className="relative z-10 flex min-w-0 flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
                     {/* Left: Checkbox + goal_type badge + department + title */}
                     <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start">
-                      {goal.submission_status.toLowerCase() === "draft" && (
+                      {goal.submission_status?.toLowerCase() === "draft" && (
                         <div
                           className="flex shrink-0 items-center mt-1 mr-2"
                           onClick={(e) => e.stopPropagation()}
@@ -495,7 +495,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                         />
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        {goal.submission_status.toLowerCase() === "draft" && (
+                        {goal.submission_status?.toLowerCase() === "draft" && (
                           <button
                             onClick={(e) => handleDeleteDraftGoal(e, goal)}
                             className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-600"
