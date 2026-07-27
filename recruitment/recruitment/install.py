@@ -124,6 +124,9 @@ _PERF_INDEX_TARGETS = [
     ("Job Opening Posting Channel", "external_recruiter"),
     ("Job Opening Posting Channel", "external_recruiter_group"),
     ("TA External Recruiter Group Member", "external_recruiter"),
+    # Scanned on every Candidate Registration save by the duplicate check, and by
+    # the TPO drive cards.
+    ("Candidate Registration", "campus_invite"),
 ]
 
 

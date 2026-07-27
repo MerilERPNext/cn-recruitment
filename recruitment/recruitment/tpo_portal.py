@@ -12,6 +12,8 @@ narrows a TPO to the invites carrying their email and ``candidate_registration_q
 to the registrations they own. HR sees every live drive.
 """
 
+from collections import Counter
+
 import frappe
 
 from recruitment.recruitment.doctype.campus_invite.campus_invite import get_invite_institutes
@@ -112,18 +114,23 @@ def _registration_stats(invites):
 		return {}
 
 	# Child table, already fenced to the parents resolved above.
-	counts = frappe.get_all(
+	#
+	# Counting in Python rather than with a SQL COUNT/GROUP BY on purpose: v16
+	# rejects SQL functions written as field strings ("SQL functions are not
+	# allowed as strings in SELECT"), and its dict form ({"COUNT": "*"}) does not
+	# exist on v15. Plucking one column and tallying works identically on both,
+	# and the payload is a single short column.
+	parents = frappe.get_all(
 		"Candidate Registration Detail",
 		filters={
 			"parenttype": "Candidate Registration",
 			"parentfield": "candidates",
 			"parent": ["in", [r.name for r in registrations]],
 		},
-		# "rows" is reserved in MariaDB — alias it to something safe.
-		fields=["parent", "count(name) as candidate_rows"],
-		group_by="parent",
+		pluck="parent",
+		limit_page_length=0,
 	)
-	rows_by_parent = {c.parent: c.candidate_rows for c in counts}
+	rows_by_parent = Counter(parents)
 
 	stats = {}
 	for reg in registrations:
