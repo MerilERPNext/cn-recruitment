@@ -20,6 +20,25 @@ export const getPerquisite = async (
 };
 
 
+// Month-wise Perquisite Calendar + summary for one employee & payroll period.
+// callMethod unwraps `.message`, so this resolves to
+// { payroll_period, start_date, end_date, summary[], calendar[] }.
+export const getEmployeePerquisites = async (
+  employeeId?: string,
+  payroll_period?: string,
+) => {
+  const response = await FrappeAPI.callMethod(
+    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.perquisite_payment.get_employee_perquisites",
+    {
+      employee: employeeId,
+      payroll_period: payroll_period,
+    },
+  );
+
+  return response;
+};
+
+
 export const getInvoiceSalarySlip = async (
   employeeId?: string,
   company?: string,
