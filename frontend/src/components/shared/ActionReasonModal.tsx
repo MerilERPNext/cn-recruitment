@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import Button from "./atoms/Button";
+import { useTodoTypeApprovalConfig } from "../../hooks/useTodo";
 
 type ActionReasonModalProps = {
   isOpen: boolean;
@@ -11,8 +12,10 @@ type ActionReasonModalProps = {
   label?: string;
   placeholder?: string;
   required?: boolean;
+  todo_id?: string;
   onCancel: () => void;
   onSave: (reason: string) => void;
+  children?: React.ReactNode;
 };
 
 const ActionReasonModal = ({
@@ -23,11 +26,14 @@ const ActionReasonModal = ({
   label = "REJECTION REASON *",
   placeholder = "Enter rejection reason...",
   required = true,
+  todo_id,
   onCancel,
   onSave,
-  type
+  type,
+  children
 }: ActionReasonModalProps) => {
   const [reason, setReason] = useState("");
+  const { data: config, isLoading: isConfigLoading } = useTodoTypeApprovalConfig(isOpen ? todo_id : undefined);
 
   useEffect(() => {
     if (!isOpen) setReason("");
@@ -35,15 +41,34 @@ const ActionReasonModal = ({
 
   if (!isOpen) return null;
 
-  const isActuallyRequired = type === "approval" ? false : required;
+  let minLength = required ? 15 : 0;
+  let isActuallyRequired = type === "approval" ? false : required;
+
+  if (todo_id && config) {
+    if (type === "approval") {
+      isActuallyRequired = config.reason_required_for_approval;
+    } else if (type === "rejection") {
+      isActuallyRequired = config.reason_required_for_rejection;
+    }
+    
+    if (config.reason_character_mandatory !== undefined && config.reason_character_mandatory !== null) {
+      minLength = config.reason_character_mandatory;
+    }
+  } else {
+     if (isActuallyRequired && minLength === 0) {
+        minLength = 15;
+     }
+  }
+
+  const displayMinLength = isActuallyRequired && minLength === 0 ? 1 : minLength;
 
   const isValid = isActuallyRequired
-    ? reason.trim().length >= 15
+    ? reason.trim().length >= displayMinLength
     : true;
 
   const handleSave = () => {
     if (!isValid) {
-      toast.error("Please enter a comment of at least 15 characters");
+      toast.error(`Please enter a comment of at least ${displayMinLength} characters`);
       return;
     }
     onSave(reason);
@@ -76,10 +101,11 @@ const ActionReasonModal = ({
             autoFocus
           />
           {isActuallyRequired && (
-            <div className={`text-xs mt-1 text-right ${reason.trim().length >= 15 ? 'text-green-600' : 'text-gray-500'}`}>
-              {reason.trim().length}/15 characters minimum
+            <div className={`text-xs mt-1 text-right ${reason.trim().length >= displayMinLength ? 'text-green-600' : 'text-gray-500'}`}>
+              {reason.trim().length}/{displayMinLength} characters minimum
             </div>
           )}
+          {children}
         </div>
         <div className="flex gap-3 justify-end">
           <Button onClick={onCancel} size="sm" bgColor="disabled">
@@ -89,7 +115,7 @@ const ActionReasonModal = ({
             onClick={handleSave}
             size="sm"
             bgColor="primary"
-            disabled={!isValid || isPending}
+            disabled={!isValid || isPending || isConfigLoading}
           >
             {isPending ? (
               <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />

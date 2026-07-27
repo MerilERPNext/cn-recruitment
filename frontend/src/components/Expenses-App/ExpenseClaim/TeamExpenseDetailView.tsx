@@ -1173,6 +1173,7 @@ export function TeamExpenseDetailView({
             description={`Please add a comment before ${pendingAction?.toLowerCase() === "approve" ? "approving" : "rejecting"} this expense claim.`}
             label={`${pendingAction?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
             placeholder={`Enter your ${pendingAction?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
+            todo_id={todoId}
             onCancel={handleCancelComment}
             onSave={handleSaveComment}
           />

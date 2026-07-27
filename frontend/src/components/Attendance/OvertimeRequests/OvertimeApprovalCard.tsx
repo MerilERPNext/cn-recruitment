@@ -316,6 +316,7 @@ const OvertimeApprovalCard = ({
         isPending={updateRejectionReasonMutation.isPending}
         type={pendingActionData?.action?.toLowerCase() === "approve" ? "approval" : "rejection"}
         description="Please add a comment before rejecting this overtime request."
+        todo_id={data?.todo_id}
         onCancel={handleCancelComment}
         onSave={handleSaveComment}
       />

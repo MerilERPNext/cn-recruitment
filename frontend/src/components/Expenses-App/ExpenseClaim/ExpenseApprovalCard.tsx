@@ -551,6 +551,7 @@ const ExpenseApprovalCard = ({
         description={`Please add a comment before ${pendingActionData?.action?.toLowerCase() === "approve" ? "approving" : "rejecting"} this expense claim.`}
         label={`${pendingActionData?.action?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
         placeholder={`Enter your ${pendingActionData?.action?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
+        todo_id={data?.todo_id}
         onCancel={handleCancelComment}
         onSave={handleSaveComment}
       />
