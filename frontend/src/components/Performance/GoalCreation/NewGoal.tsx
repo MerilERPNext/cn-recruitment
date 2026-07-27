@@ -3,7 +3,6 @@ import { ArrowRight, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Button from '../../shared/atoms/Button';
-import { Select } from '../../shared/atoms/Select';
 import PageLayoutWrapper from '../../shared/PageLayoutWrapper';
 import { useGoalFormConfig, useSaveGoals } from '../../../hooks/usePerformance';
 import type { GoalSaveAction, GoalSaveItem, MyGoalsGoal } from '../../../types/goal';
