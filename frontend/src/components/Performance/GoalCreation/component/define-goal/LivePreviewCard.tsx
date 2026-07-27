@@ -1,3 +1,4 @@
+import { CheckCircle2, Circle } from "lucide-react";
 import Badge from "../../../../shared/Badge";
 import { Card } from "../../../../shared/atoms/Card";
 import { Typography } from "../../../../shared/atoms/Typography";
@@ -7,6 +8,7 @@ interface LivePreviewCardProps {
   goalType?: string;
   goalTitle?: string;
   department?: string;
+  designation?: string;
   weightage: number;
   keyResults: KeyResult[];
   goalNumber?: number;
@@ -17,13 +19,35 @@ interface LivePreviewCardProps {
 export const LivePreviewCard = ({
   goalType = "OKR",
   goalTitle = "",
-  department = "Engineering",
+  department,
+  designation,
   weightage,
   keyResults,
   goalNumber,
   minimumKeyResults,
   maximumKeyResults,
 }: LivePreviewCardProps) => {
+  const isTitleFilled = !!goalTitle.trim();
+  const isDepartmentFilled = !!department && department.trim() !== "";
+  const isDesignationFilled = !!designation && designation.trim() !== "";
+  const areKrTitlesFilled = keyResults.length >= minimumKeyResults && keyResults.every((kr) => !!kr.title.trim());
+  const krWeightageSum = keyResults.reduce((sum, kr) => sum + (parseFloat(kr.weight) || 0), 0);
+  const hasEmptyKrWeightage = keyResults.some(kr => !kr.weight || parseFloat(kr.weight) <= 0);
+  const isKrWeightage100 = krWeightageSum === 100 && !hasEmptyKrWeightage;
+  const isObjectiveWeightageFilled = weightage > 0;
+
+  const filledKrTitlesCount = keyResults.filter((kr) => !!kr.title.trim()).length;
+  const totalKrsCount = keyResults.length;
+  
+  const checklist = [
+    { label: "Objective title", isCompleted: isTitleFilled },
+    { label: "Objective weightage is filled", isCompleted: isObjectiveWeightageFilled },
+    { label: "Department selected", isCompleted: isDepartmentFilled },
+    { label: "Designation selected", isCompleted: isDesignationFilled },
+    { label: `Key result titles (${filledKrTitlesCount}/${totalKrsCount})`, isCompleted: areKrTitlesFilled },
+    { label: "KR weightage totals 100%", isCompleted: isKrWeightage100 },
+  ];
+
   return (
     <aside className="space-y-4">
       <Card
@@ -39,7 +63,8 @@ export const LivePreviewCard = ({
           <div className="rounded-xl border border-gray-100 bg-slate-50/50 p-4 text-gray-900">
             <div className="mb-3 flex flex-wrap gap-2">
               <Badge label={goalType} variant="purple" size="sm" />
-              <Badge label={department} variant="default" size="sm" />
+              {department && <Badge label={department} variant="default" size="sm" />}
+              {designation && <Badge label={designation} variant="info" size="sm" />}
             </div>
 
             <Typography
@@ -107,6 +132,35 @@ export const LivePreviewCard = ({
         <Typography variant="caption" className="mt-1 block text-amber-700">
           Most high-performing PW OKRs have 3-4 KRs. More than 5 dilutes focus.
         </Typography>
+      </Card>
+
+      <Card
+        className="overflow-hidden border border-gray-200 bg-white shadow-sm"
+        radius="xl"
+        padding="none"
+      >
+        <div className="border-b border-gray-100 bg-gray-50 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+          Required Fields
+        </div>
+        <div className="p-4">
+          <ul className="space-y-2.5">
+          {checklist.map((item, index) => (
+            <li key={index} className="flex items-center gap-2">
+              {item.isCompleted ? (
+                <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+              ) : (
+                <Circle className="h-4 w-4 text-gray-300 shrink-0" />
+              )}
+              <Typography
+                variant="caption"
+                className={item.isCompleted ? "text-gray-700" : "text-gray-500"}
+              >
+                {item.label}
+              </Typography>
+            </li>
+          ))}
+          </ul>
+        </div>
       </Card>
     </aside>
   );

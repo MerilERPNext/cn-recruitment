@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import { Plus } from 'lucide-react';
 import { ObjectiveCard } from './define-goal/ObjectiveCard';
 import { LivePreviewCard } from './define-goal/LivePreviewCard';
@@ -54,17 +55,11 @@ const createInitialKeyResults = (minimumKeyResults: number): KeyResult[] =>
 const labelClass = 'mb-1.5 block text-xs font-medium text-gray-600';
 
 const DefineGoal = ({ goalType, formConfig, initialGoal, onGoalsChange }: DefineGoalProps) => {
-    const departmentSelectOptions: DepartmentSelectOption[] = (formConfig.departments ?? []).map((department) => ({
-        label: department.department_name,
-        value: department.name,
-    }));
-    const defaultDepartment = departmentSelectOptions[0] ?? { label: 'No department available', value: '' };
+    const defaultDepartment = { label: 'Select', value: '' };
+    const defaultDesignation = { label: 'Select', value: '' };
 
-    const designationSelectOptions: DesignationSelectOption[] = (formConfig.designations ?? []).map((desig) => ({
-        label: desig.designation_name || desig.name,
-        value: desig.name,
-    }));
-    const defaultDesignation = designationSelectOptions[0] ?? { label: 'No designation available', value: '' };
+    const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+    const currentCompany = currentEmployee?.company;
 
     const minimumKeyResults = formConfig.limits?.min_krs ?? 1;
     const maximumKeyResults = formConfig.limits?.max_krs ?? null;
@@ -85,13 +80,10 @@ const DefineGoal = ({ goalType, formConfig, initialGoal, onGoalsChange }: Define
             }];
         }
 
-        const selectedDepartment = departmentSelectOptions.find(
-            (department) => department.value === initialGoal.department || department.label === initialGoal.department,
-        ) ?? { label: initialGoal.department, value: initialGoal.department };
+        const selectedDepartment = initialGoal.department ? { label: initialGoal.department, value: initialGoal.department } : defaultDepartment;
 
-        const selectedDesignation = designationSelectOptions.find(
-            (desig) => desig.value === (initialGoal as unknown as { designation?: string }).designation || desig.label === (initialGoal as unknown as { designation?: string }).designation,
-        ) ?? defaultDesignation;
+        const initialDesignation = (initialGoal as unknown as { designation?: string }).designation;
+        const selectedDesignation = initialDesignation ? { label: initialDesignation, value: initialDesignation } : defaultDesignation;
 
         return [{
             id: initialGoal.name,
@@ -133,8 +125,20 @@ const DefineGoal = ({ goalType, formConfig, initialGoal, onGoalsChange }: Define
 
     const handleToggleCollapseGoal = (goalId: string) => {
         setGoals((prevGoals) =>
-            prevGoals.map((g) => (g.id === goalId ? { ...g, isCollapsed: !g.isCollapsed } : g))
+            prevGoals.map((g) => {
+                if (g.id === goalId) {
+                    return { ...g, isCollapsed: !g.isCollapsed };
+                }
+                return { ...g, isCollapsed: true };
+            })
         );
+    };
+
+    const handleDeleteGoal = (goalId: string) => {
+        setGoals((prevGoals) => {
+            if (prevGoals.length <= 1) return prevGoals;
+            return prevGoals.filter((g) => g.id !== goalId);
+        });
     };
 
     const handleUpdateGoalField = <K extends keyof GoalItem>(
@@ -253,7 +257,10 @@ const DefineGoal = ({ goalType, formConfig, initialGoal, onGoalsChange }: Define
                         weightage={goal.weightage}
                         setWeightage={(val) => handleUpdateGoalField(goal.id, 'weightage', val)}
                         selectedDepartment={goal.selectedDepartment}
-                        setSelectedDepartment={(val) => handleUpdateGoalField(goal.id, 'selectedDepartment', val)}
+                        setSelectedDepartment={(val) => {
+                            handleUpdateGoalField(goal.id, 'selectedDepartment', val);
+                            handleUpdateGoalField(goal.id, 'selectedDesignation', { label: 'Select', value: '' });
+                        }}
                         selectedDesignation={goal.selectedDesignation}
                         setSelectedDesignation={(val) => handleUpdateGoalField(goal.id, 'selectedDesignation', val)}
                         startDate={goal.startDate}
@@ -261,8 +268,7 @@ const DefineGoal = ({ goalType, formConfig, initialGoal, onGoalsChange }: Define
                         endDate={goal.endDate}
                         setEndDate={(val) => handleUpdateGoalField(goal.id, 'endDate', val)}
                         labelClass={labelClass}
-                        departmentSelectOptions={departmentSelectOptions}
-                        designationSelectOptions={designationSelectOptions}
+                        currentCompany={currentCompany}
                         keyResults={goal.keyResults}
                         onDeleteKeyResult={(krId) => handleDeleteKeyResult(goal.id, krId)}
                         onAddKeyResult={() => handleAddKeyResult(goal.id)}
@@ -273,6 +279,7 @@ const DefineGoal = ({ goalType, formConfig, initialGoal, onGoalsChange }: Define
                         maximumKeyResults={maximumKeyResults}
                         isCollapsed={goal.isCollapsed}
                         onToggleCollapse={() => handleToggleCollapseGoal(goal.id)}
+                        onDeleteGoal={goals.length > 1 ? () => handleDeleteGoal(goal.id) : undefined}
                     />
                 ))}
 
@@ -290,7 +297,8 @@ const DefineGoal = ({ goalType, formConfig, initialGoal, onGoalsChange }: Define
             <LivePreviewCard
                 goalType={goalType}
                 goalTitle={activeGoal?.title}
-                department={activeGoal?.selectedDepartment?.value}
+                department={activeGoal?.selectedDepartment?.label !== 'Select' ? activeGoal?.selectedDepartment?.label : undefined}
+                designation={activeGoal?.selectedDesignation?.label !== 'Select' ? activeGoal?.selectedDesignation?.label : undefined}
                 weightage={activeGoal ? activeGoal.weightage : 30}
                 keyResults={activeGoal ? activeGoal.keyResults : []}
                 goalNumber={goals.length > 1 ? activeGoalNumber : undefined}

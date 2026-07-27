@@ -38,9 +38,9 @@ const stepDefinitions: {
         {
             key: 'define',
             label: 'Define',
-            title: (goalType: GoalType) => `Define your ${goalType}`,
+            title: 'Define your goals',
             subtitle: '',
-            nextLabel: 'Submit',
+            nextLabel: 'Add Goals',
             backLabel: 'Back to Start',
         },
     ];
@@ -114,6 +114,22 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
         active: index === safeStepIndex,
     }));
 
+    const isSaveDisabled = isLastStep && (
+        isSavingGoals ||
+        goalsToSave.length === 0 ||
+        goalsToSave.some(goal => {
+            const hasEmptyTitle = !goal.title || goal.title.trim() === '';
+            const hasEmptyKrTitle = (goal.key_results || []).some(kr => !kr.title || kr.title.trim() === '');
+            const hasEmptyKrWeightage = (goal.key_results || []).some(kr => !kr.weightage || Number(kr.weightage) <= 0);
+            const krWeightageSum = (goal.key_results || []).reduce((sum, kr) => sum + (Number(kr.weightage) || 0), 0);
+            const missingDepartment = !goal.department || goal.department.trim() === '';
+            const missingDesignation = !goal.designation || goal.designation.trim() === '';
+            const missingObjectiveWeightage = !goal.weightage || Number(goal.weightage) <= 0;
+            
+            return hasEmptyTitle || hasEmptyKrTitle || hasEmptyKrWeightage || missingDepartment || missingDesignation || missingObjectiveWeightage || krWeightageSum !== 100;
+        })
+    );
+
     const handleSaveGoals = (action: GoalSaveAction) => {
         if (goalsToSave.length === 0) return;
 
@@ -136,7 +152,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
 
     const handlePrimaryAction = () => {
         if (isLastStep) {
-            handleSaveGoals('submit');
+            handleSaveGoals('draft');
             return;
         }
 
@@ -196,23 +212,6 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
         }
     };
 
-    const renderTitleArea = () => {
-        if (activeStep === 'define') {
-            return (
-                <div className="flex items-center gap-2">
-                    <span className="text-gray-900">Define your</span>
-                    <Select
-                        options={goalTypeOptions}
-                        value={selectedGoalType}
-                        onChange={(option) => setSelectedGoalType(option)}
-                        className="w-28"
-                        disabled={goalTypeOptions.length === 0}
-                    />
-                </div>
-            );
-        }
-        return null;
-    };
 
     return (
         <>
@@ -221,7 +220,6 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
                 subtitle={currentStep.subtitle}
                 steps={steps}
                 resetScrollKey={safeStepIndex}
-                titleSlot={renderTitleArea()}
                 footerLeft={
                     <Button
                         type="button"
@@ -242,25 +240,14 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
                         </div>
                         <Button
                             type="button"
-                            variant="outline"
-                            bgColor="text"
-                            fullWidth
-                            disabled={isSavingGoals || goalsToSave.length === 0}
-                            className="h-9 justify-center rounded-lg border-gray-200 bg-white px-4 text-gray-700 md:w-auto"
-                            onClick={() => handleSaveGoals('draft')}
-                        >
-                            Save Draft
-                        </Button>
-                        <Button
-                            type="button"
                             variant="contain"
                             bgColor="primary"
                             fullWidth
-                            className="h-9 justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700 md:w-auto"
+                            className="h-9 justify-center rounded-lg bg-blue-600 px-4 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed md:w-auto"
                             onClick={handlePrimaryAction}
-                            disabled={isLastStep && (isSavingGoals || goalsToSave.length === 0)}
+                            disabled={isSaveDisabled}
                         >
-                            {currentStep.nextLabel} <ArrowRight className="w-4 h-4 ml-1" />
+                            {currentStep.nextLabel} {!isLastStep && <ArrowRight className="w-4 h-4 ml-1" />}
                         </Button>
                     </div>
                 }

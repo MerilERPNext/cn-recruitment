@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { format, isValid, parse } from "date-fns";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import Badge from "../../../../shared/Badge";
 import { Card } from "../../../../shared/atoms/Card";
-import { Select } from "../../../../shared/atoms/Select";
+import { AsyncSelect } from "../../../../shared/atoms/AsyncSelect";
+import FrappeAPI from "../../../../../utils/frappeAPI";
 import { Typography } from "../../../../shared/atoms/Typography";
 import type { DepartmentSelectOption, DesignationSelectOption, KeyResult } from "../DefineGoal";
 import { KeyResultsCard } from "./KeyResultsCard";
@@ -25,8 +26,7 @@ interface ObjectiveCardProps {
   endDate: string;
   setEndDate: (date: string) => void;
   labelClass: string;
-  departmentSelectOptions: DepartmentSelectOption[];
-  designationSelectOptions?: DesignationSelectOption[];
+  currentCompany?: string;
   keyResults: KeyResult[];
   onDeleteKeyResult: (id: string) => void;
   onAddKeyResult: () => void;
@@ -40,6 +40,7 @@ interface ObjectiveCardProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   goalNumber?: number;
+  onDeleteGoal?: () => void;
 }
 
 const buildGoalPeriodFormSchema = (minDateStr?: string, maxDateStr?: string) => ({
@@ -176,8 +177,7 @@ export const ObjectiveCard = ({
   endDate,
   setEndDate,
   labelClass,
-  departmentSelectOptions,
-  designationSelectOptions = [],
+  currentCompany,
   keyResults,
   onDeleteKeyResult,
   onAddKeyResult,
@@ -187,6 +187,7 @@ export const ObjectiveCard = ({
   isCollapsed: controlledIsCollapsed,
   onToggleCollapse,
   goalNumber,
+  onDeleteGoal,
 }: ObjectiveCardProps) => {
   const [localIsCollapsed, setLocalIsCollapsed] = useState(false);
 
@@ -201,6 +202,49 @@ export const ObjectiveCard = ({
       setLocalIsCollapsed((prev) => !prev);
     }
   };
+
+  const fetchDepartmentOptions = async (search: string, skip: number) => {
+    try {
+      const res: any = await FrappeAPI.callMethod("recruitment.api.job_requisition.get_link_field_options", {
+        doctype: "Department",
+        search_text: search,
+        limit: 20,
+        skip: skip,
+        company: currentCompany,
+        disabled: 0,
+      });
+      const data = res?.results || (Array.isArray(res) ? res : []);
+      return data.map((item: any) => ({
+        label: item.label || item.id,
+        value: item.id,
+      }));
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  };
+
+  const fetchDesignationOptions = async (search: string, skip: number) => {
+    if (!selectedDepartment?.value) return [];
+    try {
+      const res: any = await FrappeAPI.callMethod("recruitment.api.job_requisition.get_link_field_options", {
+        doctype: "Designation",
+        search_text: search,
+        limit: 20,
+        skip: skip,
+        custom_department: selectedDepartment.value,
+        custom_status: "Active",
+      });
+      const data = res?.results || (Array.isArray(res) ? res : []);
+      return data.map((item: any) => ({
+        label: item.label || item.id,
+        value: item.id,
+      }));
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  };
   const submissionData = useMemo(() => ({
     data: {
       start_date: formatGoalDateForForm(startDate),
@@ -209,10 +253,23 @@ export const ObjectiveCard = ({
   }), [startDate, endDate]);
   return (
     <Card
-      className="border border-violet-200 bg-white p-5 shadow-sm"
+      className="relative border border-violet-200 bg-white p-5 shadow-sm"
       radius="xl"
       padding="none"
     >
+      {onDeleteGoal && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeleteGoal();
+          }}
+          className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-500 shadow-sm transition-colors hover:bg-red-500 hover:text-white"
+          aria-label="Delete objective"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
       <div className="flex items-center justify-between">
         <div
           className="flex flex-wrap items-center gap-2 cursor-pointer select-none"
@@ -232,7 +289,7 @@ export const ObjectiveCard = ({
             }
           >
             {isCollapsed && title.trim()
-              ? title
+              ? `${title} (${weightage || 0}%)`
               : "What you want to achieve - qualitative"}
           </Typography>
         </div>
@@ -275,7 +332,7 @@ export const ObjectiveCard = ({
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
             <div>
-              <label className={labelClass}>Weightage</label>
+              <label className={labelClass}>Weightage (%)</label>
               <div className="w-full">
                 <input
                   type="text"
@@ -303,23 +360,24 @@ export const ObjectiveCard = ({
 
             <div>
               <label className={labelClass}>Department</label>
-              <Select
-                options={departmentSelectOptions}
+              <AsyncSelect
+                fetchOptions={fetchDepartmentOptions}
                 value={selectedDepartment}
-                onChange={setSelectedDepartment}
+                onChange={(opt: any) => setSelectedDepartment(opt)}
                 className="relative w-full"
-                searchable
+                placeholder="Search department..."
               />
             </div>
 
             <div>
               <label className={labelClass}>Designation</label>
-              <Select
-                options={designationSelectOptions}
-                value={selectedDesignation || designationSelectOptions[0] || { label: 'No designation', value: '' }}
-                onChange={(option) => setSelectedDesignation?.(option)}
+              <AsyncSelect
+                fetchOptions={fetchDesignationOptions}
+                value={selectedDesignation || { label: 'Select', value: '' }}
+                onChange={(opt: any) => setSelectedDesignation?.(opt)}
                 className="relative w-full"
-                searchable
+                placeholder="Search designation..."
+                disabled={!selectedDepartment?.value}
               />
             </div>
 
