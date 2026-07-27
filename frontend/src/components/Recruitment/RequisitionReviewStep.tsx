@@ -586,11 +586,12 @@ export default function RequisitionReviewStep({
 
       {/* Buttons */}
       <div className="flex justify-between mt-8 gap-4 border-t border-slate-100 pt-6">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" size="md" onClick={onBack}>
           Previous
         </Button>
         <Button
           bgColor="primary"
+          size="md"
           onClick={onSubmit}
           disabled={!acknowledged || hasValidationErrors}
           loading={submitPending}

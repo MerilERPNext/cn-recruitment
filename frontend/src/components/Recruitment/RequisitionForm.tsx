@@ -2057,14 +2057,15 @@ const RequisitionForm = () => {
   const isLastStep = currentStep === steps.length - 1;
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-6 bg-white rounded-lg shadow">
+    <div className="relative max-w-5xl mx-auto p-4 md:p-6 bg-white rounded-lg shadow">
       {/* Close button */}
-      <div className="flex justify-end mb-4">
+      <div className="absolute top-3 right-3 z-20">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-1 px-3 py-2 border rounded-md hover:bg-gray-100 transition"
+          className="flex items-center justify-center p-1.5 rounded-full hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700"
+          aria-label="Close"
         >
-          <X />
+          <X size={20} />
         </button>
       </div>
 
