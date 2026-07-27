@@ -38,7 +38,8 @@ const getStatusVariant = (status?: string): BadgeVariant => {
 const getSubmissionVariant = (state?: string): BadgeVariant => {
   const s = (state ?? "").toLowerCase();
   if (s === "approved") return "success";
-  if (s === "pending" || s === "submitted") return "warning";
+  if (s === "pending") return "warning";
+  if (s === "submitted") return "info";
   if (s === "rejected") return "danger";
   if (s === "draft") return "info";
   return "info";
@@ -51,6 +52,14 @@ const getBarColor = (status?: string): string => {
   if (s === "off-track" || s === "cancelled") return "bg-red-500";
   return "bg-blue-500";
 };
+
+const getGoalId = (goal: MyGoalsGoal): string => goal.goal_key || goal.name || "";
+
+const getGoalSubmissionStatus = (goal: MyGoalsGoal): string =>
+  goal.goal_status || goal.submission_status || "";
+
+const isSelectableGoal = (goal: MyGoalsGoal): boolean =>
+  ["draft", "pending"].includes(getGoalSubmissionStatus(goal).toLowerCase());
 
 interface MyGoalsProps {
   onCreateGoal?: () => void;
@@ -76,7 +85,8 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
   const totalGoals = goalsData?.total ?? 0;
   const activeCycle = goalsData?.active_cycle ?? "";
   const totalWeightage = allGoals.reduce((sum, g) => {
-    const w = editedWeightages[g.name] !== undefined ? editedWeightages[g.name] : g.weightage;
+    const goalId = getGoalId(g);
+    const w = editedWeightages[goalId] !== undefined ? editedWeightages[goalId] : g.weightage;
     return sum + (Number(w) || 0);
   }, 0);
 
@@ -94,7 +104,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
 
   const handleDeleteDraftGoal = (e: React.MouseEvent, goal: MyGoalsGoal) => {
     e.stopPropagation();
-    setGoalsToDelete([goal.name]);
+    setGoalsToDelete([getGoalId(goal)]);
   };
 
   const handleToggleSelection = (goalId: string) => {
@@ -105,20 +115,19 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
     );
   };
 
-  const draftGoals = goals.filter(
-    (g) => g?.submission_status?.toLowerCase() === "draft"
-  );
+  const draftGoals = goals.filter(isSelectableGoal);
 
-  const selectedGoalsData = allGoals.filter((g) => selectedGoals.includes(g.name));
+  const selectedGoalsData = allGoals.filter((g) => selectedGoals.includes(getGoalId(g)));
   const selectedWeightageSum = selectedGoalsData.reduce((sum, g) => {
-    const w = editedWeightages[g.name] !== undefined ? editedWeightages[g.name] : g.weightage;
+    const goalId = getGoalId(g);
+    const w = editedWeightages[goalId] !== undefined ? editedWeightages[goalId] : g.weightage;
     return sum + (Number(w) || 0);
   }, 0);
   const isTotalWeightageValid = Math.abs(selectedWeightageSum - 100) < 0.0001;
   const hasPositiveWeightageForEachGoal = selectedGoalsData.every((goal) => {
     const weightage =
-      editedWeightages[goal.name] !== undefined
-        ? editedWeightages[goal.name]
+      editedWeightages[getGoalId(goal)] !== undefined
+        ? editedWeightages[getGoalId(goal)]
         : goal.weightage;
     return Number(weightage) > 0;
   });
@@ -146,10 +155,10 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
     try {
       const response = await submitSelectedGoals({
         goals: selectedGoalsData.map((goal) => ({
-          goal: goal.name,
+          goal: getGoalId(goal),
           weightage:
-            editedWeightages[goal.name] !== undefined
-              ? editedWeightages[goal.name]
+            editedWeightages[getGoalId(goal)] !== undefined
+              ? editedWeightages[getGoalId(goal)]
               : goal.weightage,
         })),
       });
@@ -197,7 +206,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
     if (selectedGoals.length === draftGoals.length && draftGoals.length > 0) {
       setSelectedGoals([]);
     } else {
-      setSelectedGoals(draftGoals.map((g) => g.name));
+      setSelectedGoals(draftGoals.map(getGoalId));
     }
   };
 
@@ -366,12 +375,12 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
             ) : (
               goals.map((goal: MyGoalsGoal, index: number) => (
                 <div
-                  key={goal.name}
+                  key={getGoalId(goal)}
                   onClick={() => {
                     if (onSelectGoal) {
                       onSelectGoal(index);
                     } else {
-                      navigate(`/webapp/performance-app/my-goals/${goal.name}`);
+                      navigate(`/webapp/performance-app/my-goals/${getGoalId(goal)}`);
                     }
                   }}
                   className="relative z-10 min-w-0 cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:border-blue-300 hover:shadow-md"
@@ -383,15 +392,15 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                   <div className="relative z-10 flex min-w-0 flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between lg:p-5">
                     {/* Left: Checkbox + goal_type badge + department + title */}
                     <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start">
-                      {goal.submission_status?.toLowerCase() === "draft" && (
+                      {isSelectableGoal(goal) && (
                         <div
                           className="flex shrink-0 items-center mt-1 mr-2"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <input
                             type="checkbox"
-                            checked={selectedGoals.includes(goal.name)}
-                            onChange={() => handleToggleSelection(goal.name)}
+                            checked={selectedGoals.includes(getGoalId(goal))}
+                            onChange={() => handleToggleSelection(getGoalId(goal))}
                             className="h-4 w-4 cursor-pointer rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                             aria-label={`Select ${goal.title}`}
                           />
@@ -426,16 +435,16 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                     <div className="flex w-full min-w-0 shrink-0 flex-col gap-3 rounded-lg bg-slate-50 p-3 md:flex-row md:items-center md:justify-between lg:max-w-[400px] lg:bg-transparent lg:p-0">
                       <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 lg:border-r lg:border-slate-100 lg:pr-5">
                         <div className="min-w-0">
-                          {selectedGoals.includes(goal.name) ? (
+                          {selectedGoals.includes(getGoalId(goal)) ? (
                             <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                               <input
                                 type="text"
                                 className="w-14 rounded border border-gray-300 px-2 py-1 text-sm font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                value={editedWeightages[goal.name] !== undefined ? editedWeightages[goal.name] : goal.weightage}
+                                value={editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}
                                 onChange={(e) => {
                                   const rawVal = e.target.value;
                                   if (rawVal === "") {
-                                    setEditedWeightages((prev) => ({ ...prev, [goal.name]: 0 }));
+                                    setEditedWeightages((prev) => ({ ...prev, [getGoalId(goal)]: 0 }));
                                     return;
                                   }
                                   if (/^\d*\.?\d*$/.test(rawVal)) {
@@ -443,7 +452,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                                     if (!isNaN(num)) {
                                       setEditedWeightages((prev) => ({
                                         ...prev,
-                                        [goal.name]: Math.min(num, 100)
+                                        [getGoalId(goal)]: Math.min(num, 100)
                                       }));
                                     }
                                   }
@@ -456,7 +465,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                               variant="bodyMedium"
                               className="block whitespace-nowrap font-bold text-slate-950"
                             >
-                              {editedWeightages[goal.name] !== undefined ? editedWeightages[goal.name] : goal.weightage}%
+                              {editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}%
                             </Typography>
                           )}
                           <Typography
@@ -471,12 +480,12 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                             variant="caption"
                             className="text-right text-slate-500"
                           >
-                            {editedWeightages[goal.name] !== undefined ? editedWeightages[goal.name] : goal.weightage}%
+                            {editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}%
                           </Typography>
                           <div className="h-2 w-full overflow-hidden rounded-md bg-slate-200">
                             <div
                               className={`h-2 rounded-md ${getBarColor(goal.status)} transition-all duration-300`}
-                              style={{ width: `${editedWeightages[goal.name] !== undefined ? editedWeightages[goal.name] : goal.weightage}%` }}
+                              style={{ width: `${editedWeightages[getGoalId(goal)] !== undefined ? editedWeightages[getGoalId(goal)] : goal.weightage}%` }}
                             />
                           </div>
                         </div>
@@ -489,13 +498,13 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                           pulse={{ show: true }}
                         />
                         <Badge
-                          label={goal.submission_status}
-                          variant={getSubmissionVariant(goal.submission_status)}
+                          label={getGoalSubmissionStatus(goal)}
+                          variant={getSubmissionVariant(getGoalSubmissionStatus(goal))}
                           size="sm"
                         />
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        {goal.submission_status?.toLowerCase() === "draft" && (
+                        {isSelectableGoal(goal) && (
                           <button
                             onClick={(e) => handleDeleteDraftGoal(e, goal)}
                             className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-600"
@@ -531,7 +540,7 @@ const MyGoals: React.FC<MyGoalsProps> = ({ onCreateGoal, onSelectGoal }) => {
                             )}
                             {goal.key_results.map((kr: MyGoalsKeyResult, kIdx: number) => (
                               <div
-                                key={kr.name}
+                                key={kr.goal_key || kr.name}
                                 className="relative flex min-w-0 flex-col gap-2 rounded-lg border border-slate-100 bg-white p-3 lg:flex-row lg:items-center"
                               >
                                 {!isCompact && (

@@ -166,15 +166,20 @@ export interface GoalSubmitResponse {
 // (from goal_api.get_my_goals)
 // -------------------------
 export interface MyGoalsKeyResult {
-  name: string;
+  goal_key: string;
+  name?: string;
+  goal?: string | null;
   title: string;
   weightage: number;
   achievement: number;
-  status: string;
+  status?: string;
+  goal_status?: string;
 }
 
 export interface MyGoalsGoal {
-  name: string;
+  goal_key: string;
+  name?: string;
+  goal?: string | null;
   title: string;
   description: string;
   goal_type: string;
@@ -183,9 +188,10 @@ export interface MyGoalsGoal {
   weightage: number;
   status: string;
   achievement: number;
-  submission_status: string;
-  start_date: string;
-  end_date: string;
+  goal_status?: string;
+  submission_status?: string;
+  start_date?: string;
+  end_date?: string;
   key_results: MyGoalsKeyResult[];
 }
 
