@@ -27,6 +27,21 @@ export function getAllActions(
   );
 }
 
+// Check if a specific page is enabled (across any app that declares it).
+// Page permission is evaluated per target on the backend (X-Target-Employee-Id),
+// so this reflects "am I allowed to view this page for the current target".
+export function isPageEnabled(
+  userUiPermission: AppPermission[] | undefined,
+  pageName: string
+): boolean {
+  if (!userUiPermission) {
+    return false;
+  }
+  return userUiPermission.some((app) =>
+    app.pages.some((page) => page.page_name === pageName && page.enabled)
+  );
+}
+
 // Check if a specific action is enabled
 export function isActionEnabled(
   userUiPermission: AppPermission[] | undefined,
