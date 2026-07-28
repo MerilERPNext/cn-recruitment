@@ -26,7 +26,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const [activeTab, setActiveTab] = useState<TabKey>('recommended');
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
-
+    console.log(debouncedSearchQuery,'booooooooooooooosss')
     const [selectedDepartment, setSelectedDepartment] = useState({ label: 'All Departments', value: 'All' });
     const [selectedLevel, setSelectedLevel] = useState({ label: 'All Designations', value: 'All' });
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
