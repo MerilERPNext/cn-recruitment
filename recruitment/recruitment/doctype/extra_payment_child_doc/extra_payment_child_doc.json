@@ -1,0 +1,63 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-07-28 17:15:29.501182",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "salary_component",
+  "pay_frequency",
+  "amount",
+  "note",
+  "paid_after_confirmation"
+ ],
+ "fields": [
+  {
+   "fieldname": "salary_component",
+   "fieldtype": "Link",
+   "label": "Salary Component",
+   "options": "Salary Component"
+  },
+  {
+   "fieldname": "pay_frequency",
+   "fieldtype": "Select",
+   "label": "Pay Frequency",
+   "options": "\nMonthly (12 payouts)\nQuarterly (4 payouts)\nHalf-Yearly (2 payouts)\nYearly (1 payout)"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Float",
+   "label": "Amount",
+   "mandatory_depends_on": "salary_component"
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Note"
+  },
+  {
+   "default": "0",
+   "fetch_from": "salary_component.custom_paid_after_confirmation",
+   "fieldname": "paid_after_confirmation",
+   "fieldtype": "Check",
+   "label": "Paid After Confirmation",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-07-28 20:03:08.682130",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Extra Payment Child Doc",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
