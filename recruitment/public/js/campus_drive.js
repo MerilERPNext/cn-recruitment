@@ -551,11 +551,26 @@ function cdDrawRounds($root, frm, data) {
 		</div>`;
 	};
 
+	// Health banner — surfaces misconfigurations (a round mapped to a stage no opening
+	// has, wrong stage type, candidates stranded on an uncovered stage) so HR sees the
+	// cause of a silent "0 waiting" instead of guessing.
+	const health = data.health || [];
+	const healthHtml = health.length
+		? `<div class="cd-health">${health
+				.map(
+					(h) => `<div class="cd-health-item cd-health-${h.level === "error" ? "err" : "warn"}">
+						<span class="cd-health-icon">${h.level === "error" ? "⛔" : "⚠️"}</span>
+						<span class="cd-health-text"><b>${esc(h.title)}</b><br>${esc(h.detail)}</span>
+					</div>`
+				)
+				.join("")}</div>`
+		: `<div class="cd-health cd-health-ok">✓ ${__("All rounds are wired to valid stages — no pipeline issues detected.")}</div>`;
+
 	$root.html(
 		`<div class="cd-toolbar"><div class="cd-toolbar-title">${__("Round Tracking")}
 			<span class="cd-hint text-muted">${__(
 				"panels are set up once per round; on-site, deal candidates into them — interviews are created and feedback drives the result"
-			)}</span></div></div>` + rounds.map(card).join("")
+			)}</span></div></div>` + healthHtml + rounds.map(card).join("")
 	);
 }
 
@@ -1483,6 +1498,15 @@ function cdInjectStyles() {
 .cd-rd-batch-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .cd-rd-batch-title{font-size:12px;font-weight:700;color:var(--heading-color,var(--text-color));margin-right:4px}
 .cd-rd-batch-actions{display:flex;gap:8px;flex-wrap:wrap}
+.cd-health{margin-bottom:14px;display:flex;flex-direction:column;gap:8px}
+.cd-health-ok{padding:10px 12px;border-radius:10px;font-size:12px;font-weight:600;color:#15803d;background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.25)}
+.cd-health-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;font-size:12px;line-height:1.5}
+.cd-health-err{color:#b42318;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.28)}
+.cd-health-warn{color:#b45309;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3)}
+.cd-health-icon{flex:0 0 auto;font-size:14px}
+.cd-health-text{color:var(--text-color)}
+.cd-health-err .cd-health-text b{color:#b42318}
+.cd-health-warn .cd-health-text b{color:#b45309}
 .cd-picker-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .cd-picker-count{font-size:12px;color:var(--text-muted);font-weight:600}
 .cd-picker-scroll{max-height:320px;overflow-y:auto;border:1px solid var(--border-color);border-radius:8px}
