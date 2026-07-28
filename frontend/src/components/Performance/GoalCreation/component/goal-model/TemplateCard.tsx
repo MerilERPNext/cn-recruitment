@@ -57,18 +57,27 @@ const TemplateCard = memo(({
                 </Typography>
                 <div className="flex items-center gap-2">
                     {onWeightageChange && (
-                        <select
-                            value={weightage}
-                            onChange={(e) => onWeightageChange(template, Number(e.target.value))}
-                            className="h-8 rounded-md border border-gray-200 bg-gray-50 px-2 text-xs font-semibold text-gray-700 outline-none transition hover:border-gray-300 focus:border-blue-400 focus:bg-white"
+                        <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={weightage === 0 ? '' : weightage}
+                            onChange={(e) => {
+                                const raw = e.target.value;
+                                if (raw === '') {
+                                    onWeightageChange(template, 0);
+                                    return;
+                                }
+                                const num = Math.floor(Number(raw));
+                                if (!isNaN(num)) {
+                                    const capped = Math.min(100, Math.max(0, num));
+                                    onWeightageChange(template, capped);
+                                }
+                            }}
+                            placeholder="Weight %"
+                            className="h-8 w-24 rounded-md border border-gray-200 bg-gray-50 px-2 text-xs font-semibold text-gray-700 outline-none transition hover:border-gray-300 focus:border-blue-400 focus:bg-white focus:ring-1 focus:ring-blue-100 placeholder:font-normal placeholder:text-gray-400"
                             aria-label={`Weightage for ${template.title}`}
-                        >
-                            <option value={5}>5%</option>
-                            <option value={10}>10%</option>
-                            <option value={15}>15%</option>
-                            <option value={20}>20%</option>
-                            <option value={25}>25%</option>
-                        </select>
+                        />
                     )}
                     {onToggleSelect && (
                         <Button
