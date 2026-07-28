@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload } from "../types/goal";
+import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload } from "../types/goal";
 import { performanceService } from "../services/performanceService";
 interface PerformanceQueryKey {
 
@@ -8,6 +8,7 @@ interface PerformanceQueryKey {
   goalFormConfig: ["performance", "goal-form-config"];
   myGoals: ["performance", "my-goals"];
   mandatoryGoals: ["performance", "mandatory-goals"];
+  referenceGoals: (params?: ReferenceGoalsParams) => ["performance", "reference-goals", ReferenceGoalsParams | undefined]
 
 }
 export const PERFORMANCE_QUERY_KEYS: PerformanceQueryKey = {
@@ -16,6 +17,7 @@ export const PERFORMANCE_QUERY_KEYS: PerformanceQueryKey = {
   goalFormConfig: ["performance", "goal-form-config"] as const,
   myGoals: ["performance", "my-goals"] as const,
   mandatoryGoals: ["performance", "mandatory-goals"] as const,
+  referenceGoals: (params?: ReferenceGoalsParams) => ["performance", "reference-goals", params]
 };
 
 export const useGoalPlans = (employeeId: string): UseQueryResult<GoalPlanId[], Error> =>
@@ -135,5 +137,14 @@ export const fetchDesignationOptions = (department?: string) => {
       return [];
     }
   };
+};
+
+export const useReferanceGoals = (params?:ReferenceGoalsParams , options?:{enabled?:boolean}):UseQueryResult<ReferenceGoalsResponse , Error> => {
+  return useQuery<ReferenceGoalsResponse , Error>({
+    queryKey:PERFORMANCE_QUERY_KEYS.referenceGoals(params),
+    queryFn:()=>performanceService.getReferanceGoals(params),
+    enabled:options?.enabled ?? true,
+    staleTime:2 * 60 * 1000
+  })
 };
 

@@ -15,6 +15,8 @@ import type {
   SaveGoalsResponse,
   SubmitSelectedGoalsPayload,
   SubGoalItem,
+  ReferenceGoalsResponse,
+  ReferenceGoalsParams,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -155,6 +157,14 @@ export const performanceService = {
       value: item?.id,
     }));
   },
+  getReferanceGoals: async (params?: ReferenceGoalsParams): Promise<ReferenceGoalsResponse> =>{
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.goal_api.get_reference_goals",
+      params as Record<string, unknown>
+    );
+    return response as ReferenceGoalsResponse
+
+  }
 };
 
 
