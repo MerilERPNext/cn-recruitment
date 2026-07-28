@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import CustomDropdown from "../../shared/CustomDropdown";
 import { useCurrentEmployeeDetails } from "../../../hooks/useEmployee";
+import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
+import { useEmployeePerquisites } from "../../../hooks/payroll/usePerquisite";
 import { useTargetUser } from "../../../context/ViewedUserContext";
+import { useTargetEmployeeCompany } from "../../../hooks/useTargetEmployeeCompany";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
@@ -66,12 +70,13 @@ const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
   { sortable: false },
 ];
 
-// ─── Perquisites Calendar (monthly pivot) ──────────────────────────────────────
-interface CalendarRow {
-  id: string;
-  name: string;
-  monthly: Record<string, number>;
+// ─── Perquisites Calendar (server-pivoted) ─────────────────────────────────────
+// Server-pivoted calendar row from get_employee_perquisites:
+// { perquisite, total, "2026-04": <amount>, "2026-05": <amount>, … }
+interface ApiCalendarRow {
+  perquisite: string;
   total: number;
+  [month: string]: number | string;
 }
 
 // The 12 months of the current Indian financial year (April → March), each as
@@ -85,40 +90,6 @@ const getFinancialYearMonths = (ref: Date = new Date()): string[] => {
   });
 };
 
-// Pivot the flat perquisite-payment rows into one row per component, summing the
-// amount into each month bucket (and a running total across the FY months).
-const mapPerquisiteCalendar = (
-  rawData: ApiPerquisiteItem[],
-  months: string[],
-): CalendarRow[] => {
-  if (!Array.isArray(rawData)) return [];
-  const rows = new Map<string, CalendarRow>();
-  for (const item of rawData) {
-    const monthKey = (item.payment_date || "").slice(0, 7); // "YYYY-MM"
-    let row = rows.get(item.salary_component);
-    if (!row) {
-      row = {
-        id: item.salary_component,
-        name: item.salary_component,
-        monthly: Object.fromEntries(months.map((m) => [m, 0])),
-        total: 0,
-      };
-      rows.set(item.salary_component, row);
-    }
-    const amount = item.amount || 0;
-    if (monthKey in row.monthly) {
-      row.monthly[monthKey] += amount;
-      row.total += amount;
-    }
-  }
-  return Array.from(rows.values());
-};
-
-// Column template shared by the calendar header + rows: component name, 12
-// months, then Total.
-const CALENDAR_GRID_COLS =
-  "minmax(150px,1.4fr) repeat(12, minmax(80px,1fr)) minmax(110px,1fr)";
-
 export default function PerquisiteList() {
   const [selectedPerquisite, setSelectedPerquisite] = useState<UiPerquisite | null>(null);
 
@@ -127,7 +98,29 @@ export default function PerquisiteList() {
   const { isDesktop } = useScreenSize();
 
   const employeeId = targetEmployeeId || user?.employee || "";
-  const company = user?.company ?? "";
+  // When impersonating/viewing another employee, use the TARGET user's company —
+  // otherwise the logged-in user's — so payroll periods and the list query match
+  // the employee actually being viewed.
+  const { targetCompany } = useTargetEmployeeCompany();
+  const company = (targetEmployeeId ? targetCompany : user?.company) ?? "";
+
+  // ── Payroll period filter ────────────────────────────────────────────────────
+  // Periods for the employee's company; default to the one covering today (else
+  // the most recent). Drives both the list table and the calendar below.
+  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(company || null) as {
+    data: { name: string; start_date: string; end_date: string }[] | undefined;
+  };
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  useEffect(() => {
+    if (!payrollPeriods?.length || selectedPeriod) return;
+    const today = new Date();
+    const matched = payrollPeriods.find((p) => {
+      const start = new Date(p.start_date);
+      const end = new Date(p.end_date);
+      return today >= start && today <= end;
+    });
+    setSelectedPeriod(matched?.name || payrollPeriods[0].name);
+  }, [payrollPeriods, selectedPeriod]);
 
   const titles = ["Perquisite Name", "Payment Date", "Taxable Value", "Status", "Action"];
   const columnWidths = ["0.5fr", "1.2fr", "1.2fr", "1fr", "1fr"];
@@ -137,25 +130,60 @@ export default function PerquisiteList() {
     ? {
       method:
         "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.perquisite_payment.get_perquisite_payment_list",
-      params: { employee: employeeId, company },
+      params: { employee: employeeId, company, payroll_period: selectedPeriod },
     }
     : null;
 
   // Client-side sort applied after DataListView gives us mapped data
 
-  // Current financial-year months for the Perquisites Calendar columns.
-  const fyMonths = getFinancialYearMonths();
+  // ── Perquisites Calendar — server-pivoted data from get_employee_perquisites ──
+  // (payroll period is resolved / selected above and shared with the list table).
+  const { data: perquisiteResp, isLoading: isCalendarLoading } =
+    useEmployeePerquisites(employeeId, selectedPeriod);
+  // FrappeAPI.callMethod already unwraps `.message`, so the response IS the payload
+  // ({ payroll_period, start_date, end_date, summary, calendar }).
+  const calendarRows: ApiCalendarRow[] =
+    (perquisiteResp as any)?.calendar ?? [];
+
+  // Month columns come straight from the API response (aligned with the period);
+  // fall back to the current financial year before the first load resolves.
+  const calendarMonths = useMemo<string[]>(() => {
+    const first = calendarRows[0];
+    if (first) {
+      return Object.keys(first)
+        .filter((k) => k !== "perquisite" && k !== "total")
+        .sort();
+    }
+    return getFinancialYearMonths();
+  }, [calendarRows]);
+
+  // Grid template: component name + N month columns + Total.
+  const calendarGridCols = `minmax(150px,1.4fr) repeat(${calendarMonths.length}, minmax(80px,1fr)) minmax(110px,1fr)`;
 
   return (
     <div className="w-full bg-app font-brand flex flex-col min-h-screen">
       {/* ── Top bar ──────────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10 w-full">
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-20 w-full">
         {/* Desktop top bar (hidden on mobile) */}
         {isDesktop && (
           <div className="sm:flex items-center justify-between h-[52px] px-7">
             <span className="font-bold text-[17px] text-text-title tracking-tight">Employee Perquisite</span>
             <div className="flex items-center gap-3.5">
-              {/* No other buttons inside header */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[13px] text-text-body2">Payroll Period</span>
+                <CustomDropdown
+                  value={selectedPeriod}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                    setSelectedPeriod(e.target.value)
+                  }
+                  options={
+                    payrollPeriods?.map((p) => ({
+                      value: p.name,
+                      label: p.name,
+                    })) || []
+                  }
+                />
+              </div>
             </div>
           </div>
         )}
@@ -165,6 +193,18 @@ export default function PerquisiteList() {
           <div className="flex flex-col px-4 pt-3 pb-3 gap-2.5">
             <div className="flex items-center justify-between">
               <span className="font-bold text-[16px] text-text-title tracking-tight">Employee Perquisite</span>
+              <CustomDropdown
+                value={selectedPeriod}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setSelectedPeriod(e.target.value)
+                }
+                options={
+                  payrollPeriods?.map((p) => ({
+                    value: p.name,
+                    label: p.name,
+                  })) || []
+                }
+              />
             </div>
           </div>
         )}
@@ -178,13 +218,13 @@ export default function PerquisiteList() {
           titles={titles}
           columnWidths={columnWidths}
           columnSortConfig={PERQUISITE_SORT_CONFIG}
-
+          stickyTopClassName="top-[52px]"
         >
           {!customAPI ? (
             <CardSkeleton />
           ) : (
             <DataListView<UiPerquisite>
-              queryKey={["perquisites", employeeId, company]}
+              queryKey={["perquisites", employeeId, company, selectedPeriod]}
               customAPI={customAPI}
               isSearch={true}
               isFilter={false}
@@ -243,7 +283,7 @@ export default function PerquisiteList() {
             <CardSkeleton />
           ) : (
             <DataListView<UiPerquisite>
-              queryKey={["perquisites", employeeId, company]}
+              queryKey={["perquisites", employeeId, company, selectedPeriod]}
               customAPI={customAPI}
               isSearch={true}
               isFilter={true}
@@ -308,7 +348,8 @@ export default function PerquisiteList() {
       )}
 
       {/* ================= PERQUISITES CALENDAR ================= */}
-      {customAPI && (
+      {/* Server-pivoted month-wise data from get_employee_perquisites. */}
+      {employeeId && (
         <div className="mt-8">
           <span className="font-bold text-[16px] text-text-title tracking-tight">
             Perquisites Calendar
@@ -318,12 +359,12 @@ export default function PerquisiteList() {
               {/* Header row */}
               <div
                 className="grid items-center gap-2 px-6 h-12 bg-gray-50 border-b border-gray-100 text-center"
-                style={{ gridTemplateColumns: CALENDAR_GRID_COLS }}
+                style={{ gridTemplateColumns: calendarGridCols }}
               >
                 <Typography variant="bodySmall" className="font-semibold text-left">
                   Perquisites
                 </Typography>
-                {fyMonths.map((m) => (
+                {calendarMonths.map((m) => (
                   <Typography key={m} variant="bodySmall" className="font-semibold">
                     {m}
                   </Typography>
@@ -333,47 +374,41 @@ export default function PerquisiteList() {
                 </Typography>
               </div>
 
-              {/* Rows — pivoted from the same perquisite payment data */}
-              <DataListView<CalendarRow>
-                queryKey={["perquisites-calendar", employeeId, company]}
-                customAPI={customAPI}
-                isSearch={false}
-                isFilter={false}
-                showPagination={false}
-                pageSize={500}
-                SkeletonComponent={CardSkeleton}
-                clientFilterFn={(rawData) =>
-                  mapPerquisiteCalendar(
-                    rawData as unknown as ApiPerquisiteItem[],
-                    fyMonths,
-                  )
-                }
-                noRecordsScreen={
-                  <NoDataFound
-                    title="No Perquisites Found"
-                    subtitle="No perquisite records available."
-                  />
-                }
-                renderItem={(row: CalendarRow) => (
-                  <div
-                    key={row.id}
-                    className="grid items-center gap-2 px-6 h-14 border-b border-gray-50 text-center"
-                    style={{ gridTemplateColumns: CALENDAR_GRID_COLS }}
-                  >
-                    <Typography variant="bodySmall" className="font-medium text-left">
-                      {row.name}
-                    </Typography>
-                    {fyMonths.map((m) => (
-                      <Typography key={m} variant="bodySmall" className="font-medium">
-                        {row.monthly[m] ? formatCurrency(row.monthly[m]) : "0"}
+              {/* Rows — one per perquisite component, straight from the API */}
+              {isCalendarLoading ? (
+                <CardSkeleton />
+              ) : calendarRows.length === 0 ? (
+                <NoDataFound
+                  title="No Perquisites Found"
+                  subtitle="No perquisite records available."
+                />
+              ) : (
+                calendarRows.map((row) => {
+                  const total = Number(row.total || 0);
+                  return (
+                    <div
+                      key={row.perquisite}
+                      className="grid items-center gap-2 px-6 h-14 border-b border-gray-50 text-center"
+                      style={{ gridTemplateColumns: calendarGridCols }}
+                    >
+                      <Typography variant="bodySmall" className="font-medium text-left">
+                        {row.perquisite}
                       </Typography>
-                    ))}
-                    <Typography variant="bodySmall" className="font-semibold">
-                      {row.total ? formatCurrency(row.total) : "0"}
-                    </Typography>
-                  </div>
-                )}
-              />
+                      {calendarMonths.map((m) => {
+                        const val = Number(row[m] || 0);
+                        return (
+                          <Typography key={m} variant="bodySmall" className="font-medium">
+                            {val ? formatCurrency(val) : "0"}
+                          </Typography>
+                        );
+                      })}
+                      <Typography variant="bodySmall" className="font-semibold">
+                        {total ? formatCurrency(total) : "0"}
+                      </Typography>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

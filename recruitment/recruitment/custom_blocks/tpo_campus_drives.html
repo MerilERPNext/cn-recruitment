@@ -1,0 +1,23 @@
+<!--
+  Body of the "TPO Campus Drives" Custom HTML Block, placed on the TPO Space
+  workspace. One card per Campus Invite belonging to the logged-in TPO, each with
+  an "Add Candidates" button. Filled in by tpo_campus_drives.js.
+
+  Note: the block renders inside a shadow root and Frappe strips <script> and
+  <style> out of this field, so the JS and CSS live in their sibling files.
+-->
+<div class="tpo-drives">
+	<div class="tpo-drives-head">
+		<div>
+			<div class="tpo-drives-title">Campus Drives</div>
+			<div class="tpo-drives-subtitle">
+				Pick a drive to open a Candidate Registration with the invite already filled in.
+			</div>
+		</div>
+		<button class="btn btn-default btn-sm" data-action="refresh">Refresh</button>
+	</div>
+
+	<div class="tpo-drive-list" data-region="list">
+		<div class="text-muted">Loading your campus drives…</div>
+	</div>
+</div>

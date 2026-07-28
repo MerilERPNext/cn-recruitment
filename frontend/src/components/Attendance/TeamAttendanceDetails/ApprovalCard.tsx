@@ -13,7 +13,7 @@ import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
-import RejectionReasonModal from "../../shared/RejectionReasonModal";
+import ActionReasonModal from "../../shared/ActionReasonModal";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { getAssignedUsersCell } from "../../../utils/getAssignedUsersCell";
@@ -308,12 +308,12 @@ const ApprovalCard = ({
                   {getAssignedUsersCell(data)}
                 </Typography>
               </div>
-                <div>
-                  <Typography variant="mobileCardLabel">Sendback Comment</Typography>
-                  <Typography variant="mobileCardValue" className="text-gray-700">
-                    {data?.send_back_comment || "--"}
-                  </Typography>
-                </div>
+              <div>
+                <Typography variant="mobileCardLabel">Sendback Comment</Typography>
+                <Typography variant="mobileCardValue" className="text-gray-700">
+                  {data?.send_back_comment || "--"}
+                </Typography>
+              </div>
               {/* Actions */}
               {data?.todo_status === "Open" && !isActed ? (
                 <TeamApprovalActionPill
@@ -336,12 +336,14 @@ const ApprovalCard = ({
           </div>
         </div>
       )}
-      <RejectionReasonModal
+      <ActionReasonModal
         isOpen={showCommentModal}
         isPending={updateRejectionReasonMutation.isPending}
+        type={pendingActionData?.action?.toLowerCase() === "approve" ? "approval" : "rejection"}
         description={`Please add a comment before ${pendingActionData?.action?.toLowerCase() === "approve" ? "approving" : "rejecting"} this attendance request.`}
         label={`${pendingActionData?.action?.toLowerCase() === "approve" ? "APPROVAL" : "REJECTION"} COMMENT *`}
         placeholder={`Enter ${pendingActionData?.action?.toLowerCase() === "approve" ? "approval" : "rejection"} comment...`}
+        todo_id={data?.todo_id}
         onCancel={handleCancelComment}
         onSave={handleSaveComment}
       />

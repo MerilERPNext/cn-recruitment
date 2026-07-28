@@ -21,8 +21,10 @@ export type Attendance = {
   attendance_date: string; // ISO date string (e.g. '2025-07-01')
   company: string;
   department: string;
+  custom_department_name?: string | null;
   attendance_request: string | null;
   shift: string | null;
+  custom_shift_name?: string | null;
   in_time: string | null;
   out_time: string | null;
   late_entry: number;
