@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ArrowRight, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
 import { AsyncSelect } from '../../../shared/atoms/AsyncSelect';
@@ -11,6 +11,7 @@ import RoleBasedTemplates, { roleBasedTemplatesData } from './goal-model/RoleBas
 import UsedByTeamTemplates, { usedByTeamTemplatesData } from './goal-model/UsedByTeamTemplates';
 import { fetchDepartmentOptions, fetchDesignationOptions } from '../../../../hooks/usePerformance';
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
+import useDebounce from '../../../../hooks/useDebounce';
 
 interface GoalLibraryPopupProps {
     onClose?: () => void;
@@ -24,6 +25,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const currentCompany = currentEmployee?.company;
     const [activeTab, setActiveTab] = useState<TabKey>('recommended');
     const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
     const [selectedDepartment, setSelectedDepartment] = useState({ label: 'All Departments', value: 'All' });
     const [selectedLevel, setSelectedLevel] = useState({ label: 'All Designations', value: 'All' });
@@ -36,7 +38,6 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                 : [...prev, template]
         );
     };
-
     const handleSelectAll = (templatesToToggle: GoalTemplate[]) => {
         const toggleIds = new Set(templatesToToggle.map((t) => t.id));
         const allIncluded =
@@ -63,58 +64,31 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             onUseTemplate?.(selectedTemplates, activeTab);
         }
     };
+    const counts = useMemo(() => ({
+        recommended: filterTemplates(recommendedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        allOrg: filterTemplates(allOrgTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        department: filterTemplates(departmentTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        usedByTeam: filterTemplates(usedByTeamTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+    }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value]);
 
-    const recommendedCount = filterTemplates(
-        recommendedTemplatesData,
-        searchQuery,
-        selectedDepartment.value,
-        selectedLevel.value
-    ).length;
 
-    const allOrgCount = filterTemplates(
-        allOrgTemplatesData,
-        searchQuery,
-        selectedDepartment.value,
-        selectedLevel.value
-    ).length;
-
-    const departmentCount = filterTemplates(
-        departmentTemplatesData,
-        searchQuery,
-        selectedDepartment.value,
-        selectedLevel.value
-    ).length;
-
-    const roleBasedCount = filterTemplates(
-        roleBasedTemplatesData,
-        searchQuery,
-        selectedDepartment.value,
-        selectedLevel.value
-    ).length;
-
-    const usedByTeamCount = filterTemplates(
-        usedByTeamTemplatesData,
-        searchQuery,
-        selectedDepartment.value,
-        selectedLevel.value
-    ).length;
-
-    const tabs: { key: TabKey; label: string; count: number }[] = [
-        { key: 'recommended', label: 'Recommended for you', count: recommendedCount },
-        { key: 'all-org', label: 'All Org templates', count: allOrgCount },
+    const tabs: { key: TabKey; label: string; count: number }[] = useMemo(() => [
+        { key: 'recommended', label: 'Recommended for you', count: counts.recommended },
+        { key: 'all-org', label: 'All Org templates', count: counts.allOrg },
         {
             key: 'department',
             label: selectedDepartment.value === 'All' ? 'Department' : `Department · ${selectedDepartment.label}`,
-            count: departmentCount,
+            count: counts.department,
         },
-        { key: 'role-based', label: 'Role-based', count: roleBasedCount },
-        { key: 'used-by-team', label: 'Used by your team', count: usedByTeamCount },
-    ];
+        { key: 'role-based', label: 'Role-based', count: counts.roleBased },
+        { key: 'used-by-team', label: 'Used by your team', count: counts.usedByTeam },
+    ], [counts, selectedDepartment.label, selectedDepartment.value]);
 
     const renderTemplates = () => {
         const commonProps = {
             onUseTemplate: (t: GoalTemplate | GoalTemplate[]) => onUseTemplate?.(t, activeTab),
-            searchQuery,
+            searchQuery: debouncedSearchQuery,
             selectedDepartment: selectedDepartment.value,
             selectedDesignation: selectedLevel.value,
             selectedTemplates,
@@ -215,8 +189,8 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                                 aria-label={`Show ${tab.label} templates`}
                                 onClick={() => setActiveTab(tab.key)}
                                 className={`flex h-9 shrink-0 snap-start items-center gap-2 border-b-2 text-sm font-semibold transition sm:h-11 ${isActive
-                                        ? 'border-blue-500 text-blue-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`}
                             >
                                 <span className="whitespace-nowrap">{tab.label}</span>
