@@ -8,7 +8,7 @@ import Badge from '../../shared/Badge';
 import Modal from '../../shared/Modal';
 import PageLayoutWrapper from '../../shared/PageLayoutWrapper';
 import GoalLibraryPopup from './component/GoalLibraryPopup';
-import { GoalTemplate } from './component/goal-model/types';
+import { GoalTemplate, getGoalKey } from './component/goal-model/types';
 import { useGoalModel } from '../GoalModelContext';
 
 const GoalDrafts: React.FC = () => {
@@ -50,12 +50,12 @@ const GoalDrafts: React.FC = () => {
         const templateArray = Array.isArray(selected) ? selected : [selected];
         addDraftGoals(templateArray);
         setIsLibraryModalOpen(false);
-        if (source === 'recommended' ) {
+        if (source === 'recommended') {
             navigate('/webapp/performance-app/my-goals/new-goal', {
                 state: { stepIndex: 1, selectedTemplate: templateArray[0] }
             });
         } else {
-            navigate("/webapp/performance-app/my-goals/goal-draft")
+            navigate("/webapp/performance-app/my-goals/goal-draft");
             toast.success(`${templateArray.length} goal(s) added to draft!`);
         }
     };
@@ -169,69 +169,79 @@ const GoalDrafts: React.FC = () => {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {draftGoals.map((goal, index) => (
-                                <div
-                                    key={goal.id}
-                                    className="group relative flex flex-col justify-between gap-5 rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm transition-all duration-200 hover:border-blue-300 hover:shadow-md sm:flex-row sm:items-center sm:p-6"
-                                >
-                                    <div className="flex min-w-0 items-start gap-4 flex-1">
-                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 text-xs font-bold text-blue-700 shadow-2xs">
-                                            {String(index + 1).padStart(2, '0')}
-                                        </span>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex flex-wrap items-center gap-2 mb-2">
-                                                <span className="rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                                                    {goal.scope}
-                                                </span>
-                                                {goal.recommended && (
-                                                    <span className="rounded-md bg-amber-50 border border-amber-200/70 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
-                                                        ★ Recommended
+                            {draftGoals.map((goal, index) => {
+                                const key = getGoalKey(goal);
+                                return (
+                                    <div
+                                        key={key}
+                                        className="group relative flex flex-col justify-between gap-5 rounded-2xl border border-gray-200/80 bg-white p-5 shadow-sm transition-all duration-200 hover:border-blue-300 hover:shadow-md sm:flex-row sm:items-center sm:p-6"
+                                    >
+                                        <div className="flex min-w-0 items-start gap-4 flex-1">
+                                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 border border-blue-100 text-xs font-bold text-blue-700 shadow-2xs">
+                                                {String(index + 1).padStart(2, '0')}
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                    <span className="rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
+                                                        {goal.goal_type || goal.scope || 'OKR'}
                                                     </span>
+                                                    {(goal.department_title || goal.department) && (
+                                                        <span className="rounded-md bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                                                            {goal.department_title || goal.department}
+                                                        </span>
+                                                    )}
+                                                    {goal.recommended && (
+                                                        <span className="rounded-md bg-amber-50 border border-amber-200/70 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                                                            ★ Recommended
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <Typography
+                                                    variant="bodyMedium"
+                                                    className="text-base font-semibold leading-relaxed text-gray-900"
+                                                >
+                                                    {goal.title}
+                                                </Typography>
+
+                                                {goal.description && (
+                                                    <Typography variant="caption" className="mt-1 block text-xs text-gray-500 line-clamp-2">
+                                                        {goal.description}
+                                                    </Typography>
                                                 )}
                                             </div>
-
-                                            <Typography
-                                                variant="bodyMedium"
-                                                className="text-base font-semibold leading-relaxed text-gray-900"
-                                            >
-                                                {goal.title}
-                                            </Typography>
-
-                                            <Typography variant="caption" className="mt-1.5 block text-xs text-gray-400">
-                                                Used {goal.usedCount ?? 120} times this cycle
-                                            </Typography>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center gap-3 border-t border-gray-100 pt-3.5 sm:border-t-0 sm:pt-0 shrink-0">
-                                        <div className="flex items-center gap-2 rounded-xl bg-gray-50/80 border border-gray-200/70 px-3 py-1.5">
-                                            <span className="text-xs font-semibold text-gray-500">Weight:</span>
-                                            <select
-                                                value={goal.weightage ?? 10}
-                                                onChange={(e) => handleWeightageChange(goal.id, Number(e.target.value))}
-                                                className="bg-transparent text-xs font-bold text-gray-800 outline-none cursor-pointer"
-                                            >
-                                                <option value={5}>5%</option>
-                                                <option value={10}>10%</option>
-                                                <option value={15}>15%</option>
-                                                <option value={20}>20%</option>
-                                                <option value={25}>25%</option>
-                                                <option value={30}>30%</option>
-                                            </select>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            onClick={() => setGoalToDelete(goal)}
-                                            className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-100 bg-red-50/60 text-red-500 transition hover:bg-red-100 hover:text-red-700"
-                                            title="Remove goal"
-                                            aria-label="Remove goal"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
+                                        <div className="flex items-center gap-3 border-t border-gray-100 pt-3.5 sm:border-t-0 sm:pt-0 shrink-0">
+                                            <div className="flex items-center gap-2 rounded-xl bg-gray-50/80 border border-gray-200/70 px-3 py-1.5">
+                                                <span className="text-xs font-semibold text-gray-500">Weight:</span>
+                                                <select
+                                                    value={goal.weightage ?? 10}
+                                                    onChange={(e) => handleWeightageChange(key, Number(e.target.value))}
+                                                    className="bg-transparent text-xs font-bold text-gray-800 outline-none cursor-pointer"
+                                                >
+                                                    <option value={5}>5%</option>
+                                                    <option value={10}>10%</option>
+                                                    <option value={15}>15%</option>
+                                                    <option value={20}>20%</option>
+                                                    <option value={25}>25%</option>
+                                                    <option value={30}>30%</option>
+                                                </select>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setGoalToDelete(goal)}
+                                                className="flex h-10 w-10 items-center justify-center rounded-xl border border-red-100 bg-red-50/60 text-red-500 transition hover:bg-red-100 hover:text-red-700"
+                                                title="Remove goal"
+                                                aria-label="Remove goal"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
 
@@ -312,7 +322,7 @@ const GoalDrafts: React.FC = () => {
                             className="h-10 flex-1 justify-center rounded-xl bg-red-600 text-sm font-semibold text-white hover:bg-red-700 shadow-sm"
                             onClick={() => {
                                 if (goalToDelete) {
-                                    handleRemoveGoal(goalToDelete.id);
+                                    handleRemoveGoal(getGoalKey(goalToDelete));
                                     setGoalToDelete(null);
                                 }
                             }}

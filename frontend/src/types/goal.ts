@@ -261,7 +261,7 @@ export interface Templates {
 // -------------------------
 // Goal Model Context Types
 // -------------------------
-export interface DraftGoalItem {
+export interface DraftGoalItem extends GoalTemplate {
   weightage?: number;
 }
 
