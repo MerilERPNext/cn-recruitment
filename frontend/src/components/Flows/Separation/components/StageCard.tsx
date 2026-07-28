@@ -151,12 +151,12 @@ const CardStages = ({
   const approverPerfix =
     isActive ? "Process triggered for"
       : stage?.status == "Pending"
-        ? "Process yet to be trigger for"
+        ? "Process yet to be trigger"
         : stage?.status == "Approved"
           ? "Approved by "
           : stage?.status == "Rejected"
             ? "Rejected by"
-            : "Pending inputs from ";
+            : "Pending input from ";
 
   return (
     <div className="grid w-full lg:hover:bg-primary/20 cursor-pointer  items-center text-sm  lg:px-6">
@@ -170,7 +170,7 @@ const CardStages = ({
           <div className="ml-4 flex flex-col">
             <Typography variant="bodyMedium">{stage?.stage_name}</Typography>
             <Typography variant="bodySmall">
-              {approverPerfix} {stage?.role || stage?.user}
+              {approverPerfix} {stage.status === "Pending" ? stage?.role || stage?.user : ""}
             </Typography>
           </div>
 

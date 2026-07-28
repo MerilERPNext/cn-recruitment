@@ -144,7 +144,7 @@ const StageCard: React.FC<StageCardProps> = ({
 
   const approverPerfix =
     status == "pending"
-      ? "Process yet to be trigger for"
+      ? "Process yet to be trigger"
       : status == "completed"
         ? "Approved by "
         : "Pending input from ";
@@ -157,7 +157,7 @@ const StageCard: React.FC<StageCardProps> = ({
         <div className="ml-4 flex flex-col">
           <Typography variant="bodyMedium">{stage?.stage_name}</Typography>
           <Typography variant="bodySmall">
-            {approverPerfix} {stage?.role || stage?.user}
+            {approverPerfix} {status == "pending" ? stage?.role || stage?.user : ""}
           </Typography>
         </div>
 
