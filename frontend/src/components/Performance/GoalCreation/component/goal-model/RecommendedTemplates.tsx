@@ -1,108 +1,115 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
-import { GoalTemplate, TemplateListProps, filterTemplates } from './types';
+import { GoalTemplate, TemplateListProps, filterTemplates, getGoalKey } from './types';
 import { Typography } from '../../../../shared/atoms/Typography';
 
 export const recommendedTemplatesData: GoalTemplate[] = [
     {
-        id: 'product-release',
-        scope: 'Org',
+        goal: 'GOAL-26-03450',
         title: 'Ship a major product release to all employees',
-        usedCount: 142,
-        recommended: true,
+        description: 'Deliver the major product release v3.0 with complete release notes',
+        goal_type: 'OKR',
+        category: 'Individual',
         department: 'Product',
-        designation: 'Manager',
+        department_title: 'Product',
+        weightage: 20,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
     },
     {
-        id: 'handoff-time',
-        scope: 'Function',
+        goal: 'GOAL-26-03451',
         title: 'Reduce handoff time between design and engineering',
-        usedCount: 87,
+        description: 'Streamline design handoff workflows and component specs',
+        goal_type: 'OKR',
+        category: 'Individual',
         department: 'Design',
-        designation: 'L3 / L4',
+        department_title: 'Design',
+        weightage: 15,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
     },
     {
-        id: 'mentor-juniors',
-        scope: 'Org',
+        goal: 'GOAL-26-03452',
         title: 'Mentor 2 junior team members to next level',
-        usedCount: 124,
+        description: 'Conduct weekly 1-on-1 mentorship and career growth sessions',
+        goal_type: 'MBO',
+        category: 'Individual',
         department: 'Engineering',
-        designation: 'L5 / L6',
+        department_title: 'Engineering',
+        weightage: 10,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
     },
     {
-        id: 'csat',
-        scope: 'Org',
+        goal: 'GOAL-26-03453',
         title: 'Maintain CSAT >= 4.5 across cross-functional partners',
-        usedCount: 96,
+        description: 'Gather quarterly CSAT feedback and resolve partner queries',
+        goal_type: 'OKR',
+        category: 'Individual',
         department: 'Marketing',
-        designation: 'Manager',
+        department_title: 'Marketing',
+        weightage: 15,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
     },
     {
-        id: 'thought-leadership',
-        scope: 'Function',
+        goal: 'GOAL-26-03454',
         title: 'Launch a thought leadership / content series',
-        usedCount: 38,
+        description: 'Publish 4 articles on industry best practices and tech trends',
+        goal_type: 'OKR',
+        category: 'Individual',
         department: 'Marketing',
-        designation: 'Director',
+        department_title: 'Marketing',
+        weightage: 10,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
     },
     {
-        id: 'service-incidents',
-        scope: 'Function',
+        goal: 'GOAL-26-03455',
         title: 'Reduce service incidents in your area by 30%',
-        usedCount: 64,
+        description: 'Implement automated monitoring and defensive error handling',
+        goal_type: 'MBO',
+        category: 'Individual',
         department: 'Engineering',
-        designation: 'L3 / L4',
+        department_title: 'Engineering',
+        weightage: 15,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
     },
     {
-        id: 'offer-conversion',
-        scope: 'Function',
+        goal: 'GOAL-26-03456',
         title: 'Improve interview-to-offer conversion by 20%',
-        usedCount: 24,
-        department: 'HR',
-        designation: 'L3 / L4',
-    },
-    {
-        id: 'onboard-team',
-        scope: 'Manager',
-        title: 'Onboard X new team members successfully',
-        usedCount: 52,
-        department: 'HR',
-        designation: 'Manager',
-    },
-    {
-        id: 'design-ops',
-        scope: 'BU',
-        title: 'Establish design ops practice in your BU',
-        usedCount: 18,
-        recommended: true,
-        department: 'Design',
-        designation: 'L5 / L6',
-    },
-    {
-        id: 'retention-score',
-        scope: 'Org',
-        title: 'Improve employee retention score by 15% YoY',
-        usedCount: 76,
-        department: 'HR',
-        designation: 'Director',
-    },
-    {
-        id: 'docs-coverage',
-        scope: 'Function',
-        title: 'Achieve 90% documentation coverage for all APIs',
-        usedCount: 31,
-        department: 'Engineering',
-        designation: 'L1 / L2',
-    },
-    {
-        id: 'feedback-loop',
-        scope: 'Manager',
-        title: 'Establish bi-weekly feedback loops across the team',
-        usedCount: 45,
-        department: 'Design',
-        designation: 'Manager',
-    },
+        description: 'Optimize recruitment candidate screening pipeline',
+        goal_type: 'OKR',
+        category: 'Individual',
+        department: 'Human Resources',
+        department_title: 'Human Resources',
+        weightage: 15,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    }
 ];
 
 const RecommendedTemplates = ({
@@ -136,7 +143,7 @@ const RecommendedTemplates = ({
         <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
             {filteredTemplates.map((template) => (
                 <TemplateCard
-                    key={template.id}
+                    key={getGoalKey(template)}
                     template={template}
                     onUseTemplate={onUseTemplate}
                 />

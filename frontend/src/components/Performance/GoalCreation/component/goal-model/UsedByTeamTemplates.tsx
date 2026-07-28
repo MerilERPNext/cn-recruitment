@@ -1,20 +1,71 @@
 import React from 'react';
 import { CheckSquare, Square, Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
-import { GoalTemplate, TemplateListProps, filterTemplates } from './types';
+import { GoalTemplate, TemplateListProps, filterTemplates, getGoalKey } from './types';
 import Button from '../../../../shared/atoms/Button';
 import { Typography } from '../../../../shared/atoms/Typography';
 
 export const usedByTeamTemplatesData: GoalTemplate[] = [
-    { id: 'team-01', scope: 'Design', title: 'Improve team design review velocity by 30%', usedCount: 9, recommended: true, department: 'Design', designation: 'L3 / L4' },
-    { id: 'team-02', scope: 'Design', title: 'Adopt shared Figma component library across team', usedCount: 8, department: 'Design', designation: 'L1 / L2' },
-    { id: 'team-03', scope: 'Design', title: 'Reduce rework cycles on design handoffs to zero', usedCount: 7, department: 'Engineering', designation: 'L3 / L4' },
-    { id: 'team-04', scope: 'Design', title: 'Ship mobile-first redesign of the onboarding flow', usedCount: 6, department: 'Product', designation: 'Manager' },
-    { id: 'team-05', scope: 'Design', title: 'Complete team accessibility audit on all active screens', usedCount: 5, department: 'Engineering', designation: 'L5 / L6' },
-    { id: 'team-06', scope: 'Design', title: 'Hold monthly team retrospectives with action tracking', usedCount: 5, department: 'HR', designation: 'Manager' },
-    { id: 'team-07', scope: 'Design', title: 'Achieve 100% on-time delivery of design assets', usedCount: 4, department: 'Marketing', designation: 'L3 / L4' },
-    { id: 'team-08', scope: 'Design', title: 'Grow team skill score in motion design by EOY', usedCount: 3, department: 'Design', designation: 'L5 / L6' },
-    { id: 'team-09', scope: 'Design', title: 'Establish peer feedback culture across design team', usedCount: 3, department: 'HR', designation: 'L1 / L2' },
+    {
+        goal: 'GOAL-26-03465',
+        title: 'Improve team design review velocity by 30%',
+        description: 'Accelerate design critique turns and sign-off SLA',
+        goal_type: 'OKR',
+        category: 'Individual',
+        department: 'Design',
+        department_title: 'Design',
+        weightage: 20,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03466',
+        title: 'Adopt shared Figma component library across team',
+        description: 'Unify design assets across team projects',
+        goal_type: 'OKR',
+        category: 'Individual',
+        department: 'Design',
+        department_title: 'Design',
+        weightage: 15,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03467',
+        title: 'Reduce rework cycles on design handoffs to zero',
+        description: 'Clear documentation and dev specs for smooth engineering handoff',
+        goal_type: 'MBO',
+        category: 'Individual',
+        department: 'Engineering',
+        department_title: 'Engineering',
+        weightage: 15,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03468',
+        title: 'Ship mobile-first redesign of the onboarding flow',
+        description: 'Redesign initial sign-up and onboarding user journey',
+        goal_type: 'OKR',
+        category: 'Individual',
+        department: 'Product',
+        department_title: 'Product',
+        weightage: 25,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    }
 ];
 
 const UsedByTeamTemplates = ({
@@ -35,14 +86,14 @@ const UsedByTeamTemplates = ({
         selectedDesignation
     );
 
-    const selectedIds = selectedTemplates.map((t) => t.id);
+    const selectedIds = selectedTemplates.map((t) => getGoalKey(t));
 
     const isAllSelected =
         filteredTemplates.length > 0 &&
-        filteredTemplates.every((t) => selectedIds.includes(t.id));
+        filteredTemplates.every((t) => selectedIds.includes(getGoalKey(t)));
 
     const totalSelectedWeightage = selectedTemplates.reduce(
-        (acc, item) => acc + (weightages[item.id] ?? 10),
+        (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
         0
     );
 
@@ -100,12 +151,12 @@ const UsedByTeamTemplates = ({
             <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
                 {filteredTemplates.map((template) => (
                     <TemplateCard
-                        key={template.id}
+                        key={getGoalKey(template)}
                         template={template}
                         hideUseTemplate={true}
-                        isSelected={selectedIds.includes(template.id)}
+                        isSelected={selectedIds.includes(getGoalKey(template))}
                         onToggleSelect={onToggleSelect}
-                        weightage={weightages[template.id] ?? 10}
+                        weightage={weightages[getGoalKey(template)] ?? 10}
                         onWeightageChange={onWeightageChange}
                     />
                 ))}

@@ -1,24 +1,9 @@
 import React from 'react';
 import { CheckSquare, Square, Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
-import { GoalTemplate, TemplateListProps, filterTemplates } from './types';
+import { GoalTemplate, TemplateListProps, filterTemplates, getGoalKey } from './types';
 import Button from '../../../../shared/atoms/Button';
 import { Typography } from '../../../../shared/atoms/Typography';
-
-export const allOrgTemplatesData: GoalTemplate[] = [
-    { id: 'org-01', scope: 'Org', title: 'Drive company-wide Net Promoter Score above 60', usedCount: 312, department: 'Sales', designation: 'VP' },
-    { id: 'org-02', scope: 'Org', title: 'Launch new employee onboarding program in Q2', usedCount: 278, department: 'HR', designation: 'Manager' },
-    { id: 'org-03', scope: 'Org', title: 'Achieve 95% performance review completion rate', usedCount: 245, recommended: true, department: 'HR', designation: 'Director' },
-    { id: 'org-04', scope: 'Org', title: 'Reduce overall operational costs by 10%', usedCount: 198, department: 'Finance', designation: 'VP' },
-    { id: 'org-05', scope: 'Org', title: 'Launch quarterly all-hands knowledge sharing sessions', usedCount: 176, department: 'Engineering', designation: 'L5 / L6' },
-    { id: 'org-06', scope: 'Org', title: 'Increase internal mobility rate by 20% this FY', usedCount: 164, department: 'HR', designation: 'Manager' },
-    { id: 'org-07', scope: 'Function', title: 'Improve cross-team collaboration index by 25%', usedCount: 153, department: 'Product', designation: 'Director' },
-    { id: 'org-08', scope: 'BU', title: 'Achieve BU-level profitability target of 18% margin', usedCount: 141, department: 'Finance', designation: 'Director' },
-    { id: 'org-09', scope: 'Org', title: 'Standardise OKR process across all departments', usedCount: 139, department: 'Product', designation: 'Manager' },
-    { id: 'org-10', scope: 'Org', title: 'Build and publish organisation capability framework', usedCount: 127, department: 'Engineering', designation: 'VP' },
-    { id: 'org-11', scope: 'Function', title: 'Deliver 3 cross-functional innovation sprints', usedCount: 115, department: 'Design', designation: 'L3 / L4' },
-    { id: 'org-12', scope: 'Org', title: 'Reduce voluntary attrition to below 12% annually', usedCount: 108, department: 'HR', designation: 'VP' },
-];
 
 const AllOrgTemplates = ({
     onUseTemplate,
@@ -30,6 +15,7 @@ const AllOrgTemplates = ({
     onSelectAll,
     weightages = {},
     onWeightageChange,
+    allOrgTemplatesData = []
 }: TemplateListProps) => {
     const filteredTemplates = filterTemplates(
         allOrgTemplatesData,
@@ -38,14 +24,14 @@ const AllOrgTemplates = ({
         selectedDesignation
     );
 
-    const selectedIds = selectedTemplates.map((t) => t.id);
+    const selectedIds = selectedTemplates.map((t) => getGoalKey(t));
 
     const isAllSelected =
         filteredTemplates.length > 0 &&
-        filteredTemplates.every((t) => selectedIds.includes(t.id));
+        filteredTemplates.every((t) => selectedIds.includes(getGoalKey(t)));
 
     const totalSelectedWeightage = selectedTemplates.reduce(
-        (acc, item) => acc + (weightages[item.id] ?? 10),
+        (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
         0
     );
 
@@ -101,14 +87,14 @@ const AllOrgTemplates = ({
             </div>
 
             <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-                {filteredTemplates.map((template) => (
+                {filteredTemplates.map((template: GoalTemplate) => (
                     <TemplateCard
-                        key={template.id}
+                        key={getGoalKey(template)}
                         template={template}
                         hideUseTemplate={true}
-                        isSelected={selectedIds.includes(template.id)}
+                        isSelected={selectedIds.includes(getGoalKey(template))}
                         onToggleSelect={onToggleSelect}
-                        weightage={weightages[template.id] ?? 10}
+                        weightage={weightages[getGoalKey(template)] ?? 10}
                         onWeightageChange={onWeightageChange}
                     />
                 ))}

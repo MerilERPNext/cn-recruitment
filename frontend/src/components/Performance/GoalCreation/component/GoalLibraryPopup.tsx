@@ -3,13 +3,13 @@ import { ArrowRight, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
 import { AsyncSelect } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
-import { GoalTemplate, filterTemplates } from './goal-model/types';
+import { GoalTemplate, filterTemplates, getGoalKey } from './goal-model/types';
 import RecommendedTemplates, { recommendedTemplatesData } from './goal-model/RecommendedTemplates';
-import AllOrgTemplates, { allOrgTemplatesData } from './goal-model/AllOrgTemplates';
+import AllOrgTemplates  from './goal-model/AllOrgTemplates';
 import DepartmentTemplates, { departmentTemplatesData } from './goal-model/DepartmentTemplates';
 import RoleBasedTemplates, { roleBasedTemplatesData } from './goal-model/RoleBasedTemplates';
 import UsedByTeamTemplates, { usedByTeamTemplatesData } from './goal-model/UsedByTeamTemplates';
-import { fetchDepartmentOptions, fetchDesignationOptions } from '../../../../hooks/usePerformance';
+import { fetchDepartmentOptions, fetchDesignationOptions, useReferanceGoals } from '../../../../hooks/usePerformance';
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import useDebounce from '../../../../hooks/useDebounce';
 
@@ -26,37 +26,50 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const [activeTab, setActiveTab] = useState<TabKey>('recommended');
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
-    console.log(debouncedSearchQuery,'booooooooooooooosss')
     const [selectedDepartment, setSelectedDepartment] = useState({ label: 'All Departments', value: 'All' });
     const [selectedLevel, setSelectedLevel] = useState({ label: 'All Designations', value: 'All' });
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
     const [weightages, setWeightages] = useState<Record<string, number>>({});
+    
+    const { data: refGoalsData, isLoading, error } = useReferanceGoals({
+        search: debouncedSearchQuery || undefined,
+        department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
+        designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
+        cycle_only: 0,
+        exclude_own: 0,
+        limit: 50
+    });
+    const goals = refGoalsData?.data?.goals || [];
+
     const handleToggleSelect = (template: GoalTemplate) => {
+        const key = getGoalKey(template);
         setSelectedTemplates((prev) =>
-            prev.some((t) => t.id === template.id)
-                ? prev.filter((t) => t.id !== template.id)
+            prev.some((t) => getGoalKey(t) === key)
+                ? prev.filter((t) => getGoalKey(t) !== key)
                 : [...prev, template]
         );
     };
+
     const handleSelectAll = (templatesToToggle: GoalTemplate[]) => {
-        const toggleIds = new Set(templatesToToggle.map((t) => t.id));
+        const toggleKeys = new Set(templatesToToggle.map((t) => getGoalKey(t)));
         const allIncluded =
             templatesToToggle.length > 0 &&
-            templatesToToggle.every((t) => selectedTemplates.some((st) => st.id === t.id));
+            templatesToToggle.every((t) => selectedTemplates.some((st) => getGoalKey(st) === getGoalKey(t)));
 
         if (allIncluded) {
-            setSelectedTemplates((prev) => prev.filter((t) => !toggleIds.has(t.id)));
+            setSelectedTemplates((prev) => prev.filter((t) => !toggleKeys.has(getGoalKey(t))));
         } else {
             setSelectedTemplates((prev) => {
-                const existingIds = new Set(prev.map((t) => t.id));
-                const newItems = templatesToToggle.filter((t) => !existingIds.has(t.id));
+                const existingKeys = new Set(prev.map((t) => getGoalKey(t)));
+                const newItems = templatesToToggle.filter((t) => !existingKeys.has(getGoalKey(t)));
                 return [...prev, ...newItems];
             });
         }
     };
 
     const handleWeightageChange = (template: GoalTemplate, weight: number) => {
-        setWeightages((prev) => ({ ...prev, [template.id]: weight }));
+        const key = getGoalKey(template);
+        setWeightages((prev) => ({ ...prev, [key]: weight }));
     };
 
     const handleSubmitFooter = () => {
@@ -64,14 +77,14 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             onUseTemplate?.(selectedTemplates, activeTab);
         }
     };
+
     const counts = useMemo(() => ({
         recommended: filterTemplates(recommendedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
-        allOrg: filterTemplates(allOrgTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        allOrg: filterTemplates(goals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
         department: filterTemplates(departmentTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
         roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
         usedByTeam: filterTemplates(usedByTeamTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
-    }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value]);
-
+    }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals]);
 
     const tabs: { key: TabKey; label: string; count: number }[] = useMemo(() => [
         { key: 'recommended', label: 'Recommended for you', count: counts.recommended },
@@ -96,6 +109,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             onSelectAll: handleSelectAll,
             weightages,
             onWeightageChange: handleWeightageChange,
+            allOrgTemplatesData: goals,
         };
 
         switch (activeTab) {
