@@ -3,10 +3,10 @@ import {
   permissionService,
   UiPermissionResponse,
 } from "../services/permissionService";
-import { useTargetUser } from "../context/ViewedUserContext";
+import { useOptionalTargetEmployeeId } from "../context/ViewedUserContext";
 
 export const useGetUiPermission = (appName?: string) => {
-  const { targetEmployeeId } = useTargetUser();
+  const targetEmployeeId = useOptionalTargetEmployeeId();
   return useQuery<UiPermissionResponse>({
     // Permissions are evaluated per target on the backend via the
     // X-Target-Employee-Id header (e.g. "Employee Self" vs "Employee Manager"),
