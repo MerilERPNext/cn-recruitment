@@ -91,7 +91,7 @@ const TimesheetApp = () => {
             refetchTrigger={refreshTrigger}
             onRefetchComplete={() => setRefreshTrigger(false)}
             isSearch={true}
-            isFilter={true}
+            isFilter={false}
             onItemClick={(item) => setSelectedTimesheetId(item)}
           />
         </CardTable>
