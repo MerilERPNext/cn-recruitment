@@ -17,7 +17,10 @@ const MyToDoItem: React.FC<{ item: ToDo; index?: number }> = ({ item }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (item.custom_dynamic_route) {
+    // if startes with /helpdesk then open in new tab 
+    if (item.custom_dynamic_route.startsWith("/helpdesk")) {
+      window.open(item.custom_dynamic_route, "_blank");
+    } else if (item.custom_dynamic_route) {
       navigate(item.custom_dynamic_route);
     } else {
       navigate(`/webapp/todo-app#/${item.name}`);
