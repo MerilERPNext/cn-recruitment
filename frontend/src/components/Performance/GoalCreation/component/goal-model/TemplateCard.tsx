@@ -34,7 +34,7 @@ const TemplateCard = memo(({
                     ? 'border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20 shadow-sm'
                     : template?.recommended
                     ? 'border-amber-200/90 bg-amber-50/30 hover:border-amber-300'
-                    : 'border-slate-200/80 bg-white hover:border-blue-300'
+                    : 'border-slate-400 bg-white hover:border-blue-300'
             }`}
         >
             {/* Header Badges */}
@@ -79,20 +79,20 @@ const TemplateCard = memo(({
                         variant="caption"
                         className="mt-1.5 line-clamp-2 break-words text-xs leading-relaxed text-slate-500 font-normal"
                     >
-                        {template.description}
+                        {template?.description}
                     </Typography>
                 )}
             </div>
 
             {/* Footer */}
-            <div className="mt-4 flex flex-col gap-2.5 border-t border-slate-100 pt-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+            <div className="mt-4 flex flex-col gap-2.5 border-t border-slate-300 pt-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
                 <div className="flex items-center gap-2">
                     <Typography variant="caption" className="break-words text-xs font-medium text-slate-500">
-                        {template.usedCount !== undefined
-                            ? `Used ${template.usedCount} times`
+                        {template?.usedCount !== undefined
+                            ? `Used ${template?.usedCount} times`
                             : krCount > 0
                             ? `${krCount} Key Result${krCount > 1 ? 's' : ''}`
-                            : `Weight: ${template.weightage ?? 10}%`}
+                            : `Weight: ${template?.weightage ?? 10}%`}
                     </Typography>
                 </div>
 
