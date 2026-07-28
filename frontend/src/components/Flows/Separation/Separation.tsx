@@ -324,7 +324,7 @@ const Separation = () => {
             {canViewWorkflow && (
               <Button
                 onClick={handleShowWorkflow}
-                size="md"
+                size="sm"
                 bgColor="primary"
                 className="hover:bg-primary text-white"
               >
