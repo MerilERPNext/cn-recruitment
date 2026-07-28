@@ -263,7 +263,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                         <Typography variant="bodyMedium" className="text-gray-500 text-sm">Bulk-import via CSV/XLSX — up to 5,000 rows with row-level validation. Suitable for managers cascading to a team.</Typography>
                     </div>
                 </div>
-                <Button variant="outline" bgColor="text" className="w-full sm:w-auto justify-center whitespace-nowrap bg-white">
+                <Button variant="outline" bgColor="text" className="w-full sm:w-auto justify-center whitespace-nowrap bg-white" onClick={() => navigate('/webapp/performance-app/my-goals/bulk-import')}>
                     Bulk Import <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
             </div>

@@ -49,6 +49,7 @@ import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabe
 import BoxGrid from "./components/Performance/Calibrator/BoxGrid.tsx";
 import CalibratorSession from "./components/Performance/Calibrator/Calibrator.tsx";
 import GoalDrafts from "./components/Performance/GoalCreation/GoalDrafts.tsx";
+import BulkImportGoals from "./components/Performance/GoalCreation/BulkImportGoals.tsx";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -1481,6 +1482,11 @@ export const routesConfig: AppRoute[] = [
             path: "my-goals/goal-draft",
             element: <GoalDrafts />,
             permissionKey: "New Goal Plan",
+          },
+          {
+            path: "my-goals/bulk-import",
+            element: <BulkImportGoals />,
+            permissionKey: "Goal Creation",
           },
           {
             path: "my-goals/:id",
