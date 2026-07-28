@@ -5,7 +5,7 @@ import { ChevronDown, ChevronUp, X } from "lucide-react";
 import Badge from "../../../../shared/Badge";
 import { Card } from "../../../../shared/atoms/Card";
 import { AsyncSelect } from "../../../../shared/atoms/AsyncSelect";
-import FrappeAPI from "../../../../../utils/frappeAPI";
+import { performanceService } from "../../../../../services/performanceService";
 import { Typography } from "../../../../shared/atoms/Typography";
 import type { DepartmentSelectOption, DesignationSelectOption, KeyResult } from "../DefineGoal";
 import { KeyResultsCard } from "./KeyResultsCard";
@@ -205,19 +205,11 @@ export const ObjectiveCard = ({
 
   const fetchDepartmentOptions = async (search: string, skip: number) => {
     try {
-      const res: any = await FrappeAPI.callMethod("recruitment.api.job_requisition.get_link_field_options", {
-        doctype: "Department",
+      return await performanceService.getDepartmentOptions({
         search_text: search,
-        limit: 20,
-        skip: skip,
+        skip,
         company: currentCompany,
-        disabled: 0,
       });
-      const data = res?.results || (Array.isArray(res) ? res : []);
-      return data.map((item: any) => ({
-        label: item.label || item.id,
-        value: item.id,
-      }));
     } catch (e) {
       console.error(e);
       return [];
@@ -227,19 +219,11 @@ export const ObjectiveCard = ({
   const fetchDesignationOptions = async (search: string, skip: number) => {
     if (!selectedDepartment?.value) return [];
     try {
-      const res: any = await FrappeAPI.callMethod("recruitment.api.job_requisition.get_link_field_options", {
-        doctype: "Designation",
+      return await performanceService.getDesignationOptions({
         search_text: search,
-        limit: 20,
-        skip: skip,
-        custom_department: selectedDepartment.value,
-        custom_status: "Active",
+        skip,
+        department: selectedDepartment.value,
       });
-      const data = res?.results || (Array.isArray(res) ? res : []);
-      return data.map((item: any) => ({
-        label: item.label || item.id,
-        value: item.id,
-      }));
     } catch (e) {
       console.error(e);
       return [];

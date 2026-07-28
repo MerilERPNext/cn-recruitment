@@ -104,7 +104,36 @@ export const useGetMandotaryGoals = (): UseQueryResult<Message, Error> =>
   });
 export const useSubmitMandatoryGoals = () =>
   useMutation<GoalSubmitResponse, Error, GoalsRequest>({
-
     mutationFn: (payload) => performanceService.submitMandatoryGoals(payload),
-
   });
+
+export const fetchDepartmentOptions = (company?: string) => {
+  return async (search: string, skip: number) => {
+    try {
+      return await performanceService.getDepartmentOptions({
+        search_text: search,
+        skip,
+        company,
+      });
+    } catch (e) {
+      console.error("Failed to fetch department options", e);
+      return [];
+    }
+  };
+};
+
+export const fetchDesignationOptions = (department?: string) => {
+  return async (search: string, skip: number) => {
+    try {
+      return await performanceService.getDesignationOptions({
+        search_text: search,
+        skip,
+        department,
+      });
+    } catch (e) {
+      console.error("Failed to fetch designation options", e);
+      return [];
+    }
+  };
+};
+
