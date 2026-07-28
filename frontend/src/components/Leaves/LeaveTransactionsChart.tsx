@@ -81,7 +81,7 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
     return actualMax < 6 ? 6 : actualMax;
   }, [cleanedData]);
 
-  const MAX_TICKS = 10;
+  const MAX_TICKS = 6;
   const tickAmount = Math.min(maxValue, MAX_TICKS);
 
   const monthlyOptions: ApexOptions = useMemo(
@@ -89,7 +89,7 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
       chart: {
         type: "bar",
         toolbar: { show: false },
-   
+
       },
       dataLabels: {
         enabled: false,
@@ -105,6 +105,12 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
         categories: months,
         labels: {
           style: { colors: "#6b7280", fontSize: "14px" },
+          offsetY: 5,
+        },
+        title: {
+          text: "Months",
+          style: { color: "#6b7280", fontSize: "14px", fontWeight: 500 },
+          offsetY: 5,
         },
       },
       yaxis: {
@@ -114,10 +120,12 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
         labels: {
           style: { colors: "#6b7280", fontSize: "14px" },
           formatter: (val) => (Number.isInteger(val) ? `${val}` : ""),
+          offsetX: -5,
         },
         title: {
           text: "Days",
-          style: { color: "#6b7280", fontSize: "14px" },
+          style: { color: "#6b7280", fontSize: "14px", fontWeight: 500 },
+          offsetX: -5,
         },
       },
       legend: {
@@ -125,6 +133,10 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
       },
       grid: {
         borderColor: "#e5e7eb",
+        padding: {
+          bottom: 15,
+          left: 15,
+        },
       },
       tooltip: {
         y: {
@@ -166,7 +178,7 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
             options={monthlyOptions}
             series={monthlySeries}
             type="bar"
-            height={350}
+            height={380}
           />
         </div>
       </div>
