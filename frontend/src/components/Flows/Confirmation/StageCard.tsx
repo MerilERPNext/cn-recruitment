@@ -157,7 +157,7 @@ const StageCard: React.FC<StageCardProps> = ({
         <div className="ml-4 flex flex-col">
           <Typography variant="bodyMedium">{stage?.stage_name}</Typography>
           <Typography variant="bodySmall">
-            {approverPerfix} {status == "pending" ? stage?.role || stage?.user : ""}
+            {approverPerfix} {status == "pending" ? "" : stage?.role || stage?.user}
           </Typography>
         </div>
 
@@ -166,6 +166,8 @@ const StageCard: React.FC<StageCardProps> = ({
             <div className="flex gap-3 items-center">
               {stage?.approval_response_data && stage?.status != "pending" && (
                 <ViewFormButton
+                  variant="contain"
+                  size="sm"
                   onClick={() =>
                     handleShowFormWithResponse(
                       stage?.form_json?.components,
@@ -180,6 +182,8 @@ const StageCard: React.FC<StageCardProps> = ({
                 app="HR Process"
                 page="Confirmation"
                 isPending={status === "action_required"}
+                variant="contain"
+                size="sm"
               />
               <StageRetriggerButton
                 todoId={stage?.todo?.name}
@@ -190,7 +194,6 @@ const StageCard: React.FC<StageCardProps> = ({
                   <Button
                     key={action}
                     variant="contain"
-                    size="md"
                     onClick={() =>
                       handleAct({
                         name: action,
@@ -210,7 +213,7 @@ const StageCard: React.FC<StageCardProps> = ({
           </div>
           <div className="justify-self-end max-sm:justify-self-start max-sm:order-3">
             {status == "action_required"
-              ? "In Progress"
+              ? "In Progress..."
               : formatToIndianDate(stage?.approval_time || "")}
           </div>
         </div>

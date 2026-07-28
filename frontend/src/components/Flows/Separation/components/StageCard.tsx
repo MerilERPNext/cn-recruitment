@@ -170,7 +170,7 @@ const CardStages = ({
           <div className="ml-4 flex flex-col">
             <Typography variant="bodyMedium">{stage?.stage_name}</Typography>
             <Typography variant="bodySmall">
-              {approverPerfix} {stage.status === "Pending" ? stage?.role || stage?.user : ""}
+              {approverPerfix} {stage.status === "Pending" ? "" : stage?.role || stage?.user}
             </Typography>
           </div>
 
@@ -179,6 +179,8 @@ const CardStages = ({
               <div className="flex gap-3 items-center">
                 {stage?.approval_response_data && stage?.status != "Pending" && (
                   <ViewFormButton
+                    variant="contain"
+                    size="sm"
                     onClick={() =>
                       handleShowFormWithResponse(
                         stage?.form_json?.components,
@@ -192,6 +194,8 @@ const CardStages = ({
                   app="HR Process"
                   page="Separation"
                   isPending={isActive}
+                  variant="contain"
+                  size="sm"
                 />
                 <StageRetriggerButton
                   todoId={stage?.todo?.name}
