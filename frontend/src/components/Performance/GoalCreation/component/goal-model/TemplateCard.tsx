@@ -37,7 +37,7 @@ const TemplateCard = memo(({
                 <Typography variant="caption" className="text-gray-500">
                     {template?.goal_type || '-'}
                 </Typography>
-                {template.recommended && (
+                {template?.recommended && (
                     <span className="shrink-0 rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
                         * For you
                     </span>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Search, X } from 'lucide-react';
+import { AlertCircle, ArrowRight, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
 import { AsyncSelect } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
@@ -12,6 +12,7 @@ import UsedByTeamTemplates, { usedByTeamTemplatesData } from './goal-model/UsedB
 import { fetchDepartmentOptions, fetchDesignationOptions, useReferanceGoals } from '../../../../hooks/usePerformance';
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import useDebounce from '../../../../hooks/useDebounce';
+import LoadingAllOrgSkeleton from './LoadingAllOrgSkeleton';
 
 interface GoalLibraryPopupProps {
     onClose?: () => void;
@@ -99,6 +100,23 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     ], [counts, selectedDepartment.label, selectedDepartment.value]);
 
     const renderTemplates = () => {
+        if (isLoading && activeTab === 'all-org') {
+            return <LoadingAllOrgSkeleton />;
+        }
+        if (error && activeTab === 'all-org') {
+            return (
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-red-200 bg-red-50/40 p-8 text-center sm:py-12">
+                    <AlertCircle className="mb-2 h-8 w-8 text-red-500" />
+                    <Typography variant="bodyMedium" className="font-semibold text-gray-800">
+                        Failed to load goals
+                    </Typography>
+                    <Typography variant="caption" className="mt-1 text-gray-500 max-w-sm">
+                        {error?.message || 'Something went wrong while fetching reference goals from server.'}
+                    </Typography>
+                </div>
+            );
+        }
+
         const commonProps = {
             onUseTemplate: (t: GoalTemplate | GoalTemplate[]) => onUseTemplate?.(t, activeTab),
             searchQuery: debouncedSearchQuery,
@@ -122,7 +140,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     };
 
     return (
-        <div className="flex h-[90vh] w-full max-w-full flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:max-h-[90vh] sm:min-h-[580px] sm:rounded-xl sm:animate-slideUp">
+        <div className="flex h-[90vh] w-full max-w-full flex-col overflow-hidden bg-white shadow-2xl  sm:h-[90vh] sm:min-h-[580px] sm:rounded-xl sm:animate-slideUp">
 
             {/* Header */}
             <div className="relative z-30 shrink-0 border-b border-gray-100 bg-white px-4 py-2.5 sm:px-5 sm:py-4">
