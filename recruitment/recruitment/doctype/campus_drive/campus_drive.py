@@ -900,6 +900,58 @@ def _panels_for_round(doc, round_code, emp_users=None):
 
 
 @frappe.whitelist()
+def get_offer_candidates(campus_drive, round_code):
+	"""Candidates who have reached an Offer round's stage — i.e. cleared everything
+	before it — so HR can select them and raise Job Offers straight from the drive.
+	Flags anyone who already has a Job Offer so they aren't offered twice.
+	"""
+	doc = _drive_lite(campus_drive)
+	row = _round_by_code(doc, round_code)
+	stage = (row.hiring_stage or "").strip()
+	if not stage:
+		frappe.throw(_("Set the Hiring Stage on round {0} first.").format(round_code))
+
+	invites = _drive_invites(doc)
+	if not invites:
+		return {"stage": stage, "candidates": []}
+
+	rows = frappe.get_all(
+		"Job Applicant",
+		filters={"custom_campus_invite": ["in", invites], "custom_current_stage": stage},
+		fields=["name", "applicant_name", "custom_applicant_last_name",
+		        "custom_institute as institute", "job_title as job_opening",
+		        "designation", "status"],
+		order_by="job_title asc, name asc",
+	)
+	names = [r.name for r in rows]
+	with_offer = set(frappe.get_all(
+		"Job Offer", filters={"job_applicant": ["in", names or [""]], "docstatus": ["!=", 2]},
+		pluck="job_applicant")) if names else set()
+
+	return {
+		"stage": stage,
+		"candidates": [{
+			"name": r.name,
+			"applicant_name": _full_name(r.applicant_name, r.get("custom_applicant_last_name")),
+			"institute": r.institute,
+			"job_opening": r.job_opening,
+			"designation": r.designation,
+			"has_offer": r.name in with_offer,
+		} for r in rows],
+	}
+
+
+@frappe.whitelist()
+def create_offers_for_candidates(campus_drive, applicants):
+	"""Raise Job Offers for the selected candidates (reuses the shared bulk creator so
+	the offer records are built exactly like the rest of the app)."""
+	from recruitment.api.bulk_job_offer import create_bulk_job_offer
+
+	_gd_guard(campus_drive)
+	return create_bulk_job_offer(applicants)
+
+
+@frappe.whitelist()
 def get_round_pool(campus_drive, round_code):
 	"""Candidates waiting at this round's hiring stage, grouped by role.
 
