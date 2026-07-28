@@ -1,15 +1,12 @@
 import React from 'react';
 import { CheckSquare, Square, Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
-import { GoalTemplate, TemplateListProps, filterTemplates, getGoalKey } from './types';
+import { GoalTemplate, TemplateListProps, getGoalKey } from './types';
 import Button from '../../../../shared/atoms/Button';
 import { Typography } from '../../../../shared/atoms/Typography';
 
 const AllOrgTemplates = ({
     onUseTemplate,
-    searchQuery = '',
-    selectedDepartment = 'All',
-    selectedDesignation = 'All',
     selectedTemplates = [],
     onToggleSelect,
     onSelectAll,
@@ -17,25 +14,19 @@ const AllOrgTemplates = ({
     onWeightageChange,
     allOrgTemplatesData = []
 }: TemplateListProps) => {
-    const filteredTemplates = filterTemplates(
-        allOrgTemplatesData,
-        searchQuery,
-        selectedDepartment,
-        selectedDesignation
-    );
 
     const selectedIds = selectedTemplates.map((t) => getGoalKey(t));
 
     const isAllSelected =
-        filteredTemplates.length > 0 &&
-        filteredTemplates.every((t) => selectedIds.includes(getGoalKey(t)));
+        allOrgTemplatesData.length > 0 &&
+        allOrgTemplatesData.every((t) => selectedIds.includes(getGoalKey(t)));
 
     const totalSelectedWeightage = selectedTemplates.reduce(
         (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
         0
     );
 
-    if (filteredTemplates.length === 0) {
+    if (allOrgTemplatesData.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-6">
                 <Search className="h-8 w-8 text-gray-400 mb-2" />
@@ -55,7 +46,7 @@ const AllOrgTemplates = ({
                 <div className="flex items-center gap-2 text-sm font-medium text-blue-900">
                     <button
                         type="button"
-                        onClick={() => onSelectAll?.(filteredTemplates)}
+                        onClick={() => onSelectAll?.(allOrgTemplatesData)}
                         className="flex items-center gap-2 hover:text-blue-700 font-semibold"
                     >
                         {isAllSelected ? (
@@ -87,7 +78,7 @@ const AllOrgTemplates = ({
             </div>
 
             <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-                {filteredTemplates.map((template: GoalTemplate) => (
+                {allOrgTemplatesData.map((template: GoalTemplate) => (
                     <TemplateCard
                         key={getGoalKey(template)}
                         template={template}
