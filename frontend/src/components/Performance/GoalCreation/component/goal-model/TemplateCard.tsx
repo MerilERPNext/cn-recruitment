@@ -23,39 +23,80 @@ const TemplateCard = memo(({
     weightage = 10,
     onWeightageChange,
 }: TemplateCardProps) => {
+    const goalType = template?.goal_type || 'OKR';
+    const deptTitle = template?.department_title || template?.department;
+    const krCount = template?.key_results?.length || 0;
+
     return (
         <div
-            className={`flex min-w-0 flex-col rounded-xl border p-3 transition hover:border-blue-200 hover:shadow-sm sm:min-h-[132px] sm:p-4 ${
+            className={`group flex min-w-0 flex-col rounded-xl border p-4 transition-all duration-200 hover:shadow-md sm:min-h-[148px] ${
                 isSelected
-                    ? 'border-blue-500 bg-blue-50/30 ring-1 ring-blue-400'
+                    ? 'border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20 shadow-sm'
                     : template?.recommended
-                    ? 'border-amber-400 bg-amber-50/30'
-                    : 'border-gray-200 bg-white'
+                    ? 'border-amber-200/90 bg-amber-50/30 hover:border-amber-300'
+                    : 'border-slate-200/80 bg-white hover:border-blue-300'
             }`}
         >
-            <div className="mb-3 flex min-w-0 items-start justify-between gap-3">
-                <Typography variant="caption" className="text-gray-500">
-                    {template?.goal_type || '-'}
-                </Typography>
+            {/* Header Badges */}
+            <div className="mb-2.5 flex min-w-0 items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                    <span
+                        className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+                            goalType === 'OKR'
+                                ? 'bg-blue-50 text-blue-700 border border-blue-100'
+                                : goalType === 'MBO'
+                                ? 'bg-purple-50 text-purple-700 border border-purple-100'
+                                : 'bg-slate-100 text-slate-700'
+                        }`}
+                    >
+                        {goalType}
+                    </span>
+                    {deptTitle && (
+                        <span className="truncate rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                            {deptTitle}
+                        </span>
+                    )}
+                </div>
+
                 {template?.recommended && (
-                    <span className="shrink-0 rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                        * For you
+                    <span className="shrink-0 rounded-md bg-amber-100/80 border border-amber-200/70 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                        ★ For you
                     </span>
                 )}
             </div>
 
-            <Typography
-                variant="bodyMedium"
-                className="line-clamp-3 break-words text-sm font-semibold leading-5 text-gray-900 sm:line-clamp-2"
-            >
-                {template?.title}
-            </Typography>
-
-            <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between sm:mt-auto">
-                <Typography variant="caption" className="break-words text-gray-500">
-                    {template.usedCount !== undefined ? `Used ${template.usedCount} times this cycle` : `Weight: ${template.weightage ?? 10}%`}
+            {/* Title & Description */}
+            <div className="flex-1 min-w-0">
+                <Typography
+                    variant="bodyMedium"
+                    className="line-clamp-2 break-words text-sm font-semibold leading-snug text-slate-900 group-hover:text-blue-600 transition-colors"
+                >
+                    {template?.title}
                 </Typography>
+
+                {template?.description && (
+                    <Typography
+                        variant="caption"
+                        className="mt-1.5 line-clamp-2 break-words text-xs leading-relaxed text-slate-500 font-normal"
+                    >
+                        {template.description}
+                    </Typography>
+                )}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-4 flex flex-col gap-2.5 border-t border-slate-100 pt-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
                 <div className="flex items-center gap-2">
+                    <Typography variant="caption" className="break-words text-xs font-medium text-slate-500">
+                        {template.usedCount !== undefined
+                            ? `Used ${template.usedCount} times`
+                            : krCount > 0
+                            ? `${krCount} Key Result${krCount > 1 ? 's' : ''}`
+                            : `Weight: ${template.weightage ?? 10}%`}
+                    </Typography>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
                     {onWeightageChange && (
                         <input
                             type="number"
@@ -75,7 +116,7 @@ const TemplateCard = memo(({
                                 }
                             }}
                             placeholder="Weight %"
-                            className="h-8 w-24 rounded-md border border-gray-200 bg-gray-50 px-2 text-xs font-semibold text-gray-700 outline-none transition hover:border-gray-300 focus:border-blue-400 focus:bg-white focus:ring-1 focus:ring-blue-100 placeholder:font-normal placeholder:text-gray-400"
+                            className="h-8 w-22 rounded-lg border border-slate-200 bg-slate-50 px-2.5 text-xs font-semibold text-slate-800 outline-none transition-all hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 placeholder:font-normal placeholder:text-slate-400"
                             aria-label={`Weightage for ${template.title}`}
                         />
                     )}
@@ -84,10 +125,10 @@ const TemplateCard = memo(({
                             type="button"
                             variant={isSelected ? 'contain' : 'outline'}
                             bgColor="primary"
-                            className={`h-8 shrink-0 justify-center rounded-md px-2.5 text-xs transition ${
+                            className={`h-8 shrink-0 justify-center rounded-lg px-3 text-xs font-semibold transition-all ${
                                 isSelected
-                                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                    : 'border-blue-200 text-blue-600 hover:bg-blue-50'
+                                    ? 'bg-blue-600 text-white shadow-xs hover:bg-blue-700'
+                                    : 'border-blue-200 bg-white text-blue-600 hover:bg-blue-50'
                             }`}
                             onClick={() => onToggleSelect(template)}
                         >
@@ -107,7 +148,7 @@ const TemplateCard = memo(({
                             type="button"
                             variant="contain"
                             bgColor="primary"
-                            className="h-9 w-full shrink-0 justify-center rounded-md bg-blue-600 px-3 text-xs text-white hover:bg-blue-700 min-[420px]:h-8 min-[420px]:w-auto"
+                            className="h-8 w-full shrink-0 justify-center rounded-lg bg-blue-600 px-3.5 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 active:bg-blue-800 transition-all min-[420px]:w-auto"
                             onClick={() => onUseTemplate?.(template)}
                         >
                             Use template
