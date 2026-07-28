@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { X, CheckCircle, Loader } from 'lucide-react';
 import { Typography } from '../../../shared/atoms/Typography';
 import Button from '../../../shared/atoms/Button';
@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
 import { errorResponseFormater } from '../../../../utils/errorResponseFormater';
+import { useNavigate } from 'react-router-dom';
 
 interface AcknowledgmentProps {
     onClose: (isOpen: boolean) => void;
@@ -37,19 +38,30 @@ export const getWeightageColor = (weightage?: number, index: number = 0) => {
 };
 
 const AcknowledgmentPopup: React.FC<AcknowledgmentProps> = ({ onClose, goalData = [], text }) => {
+    const [goalStatuses, setGoalStatuses] = useState<Record<string, 'accept' | 'reject'>>({});
     const queryClient = useQueryClient();
     const { mutate: mutateGoals, isPending } = useSubmitMandatoryGoals();
-   
+    const navigate = useNavigate()
+    const handleStatusChange = (templateId: string, status: 'accept' | 'reject') => {
+        setGoalStatuses((prev) => ({
+            ...prev,
+            [templateId]: status,
+        }));
+    };
+
     const totalWeightage = useMemo(
         () => goalData.reduce((acc, curr) => acc + (curr.weightage || 0), 0),
         [goalData]
     );
 
     const submiteAcknowledgeGoals = () => {
+        const acceptedTemplates = goalData
+            .filter((goal) => (goalStatuses[goal.template] || 'accept') === 'accept')
+            .map((goal) => goal.template);
+
         const payload: GoalsRequest = {
-            templates: goalData.map((goal) => goal?.template),
+            templates: acceptedTemplates,
         };
-console.log(payload,'=============================')
         mutateGoals(
             payload,
             {
@@ -59,6 +71,7 @@ console.log(payload,'=============================')
                         queryKey: PERFORMANCE_QUERY_KEYS.mandatoryGoals
                     });
                     onClose(false);
+                    navigate("/webapp/performance-app/my-goals/goal-draft")
                 },
                 onError: (error) => {
                     errorResponseFormater(error, "Failed to acknowledge mandatory OKRs", { showToast: true });
@@ -106,10 +119,11 @@ console.log(payload,'=============================')
                     <div className="flex flex-col gap-3 sm:gap-4">
                         {goalData.map((okr: Templates, index: number) => {
                             const colorConfig = getWeightageColor(okr?.weightage, index);
+                            const currentStatus = goalStatuses[okr.template] || 'accept';
                             return (
                                 <div
-                                    key={okr.template || index}
-                                    className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 rounded-xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm"
+                                    key={`${okr.template}-${index}`}
+                                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 rounded-xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm"
                                 >
                                     {/* OKR Info */}
                                     <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -132,6 +146,34 @@ console.log(payload,'=============================')
                                                 </span>
                                             </div>
                                         </div>
+                                    </div>
+
+                                    {/* Accept / Reject Buttons */}
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        <button
+                                            type="button"
+                                            aria-pressed={currentStatus === 'accept'}
+                                            onClick={() => handleStatusChange(okr.template, 'accept')}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                                currentStatus === 'accept'
+                                                    ? 'bg-emerald-600 text-white shadow-sm'
+                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            Accept
+                                        </button>
+                                        <button
+                                            area-pressed={currentStatus === 'reject'}
+                                            type="button"
+                                            onClick={() => handleStatusChange(okr.template, 'reject')}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                                                currentStatus === 'reject'
+                                                    ? 'bg-red-600 text-white shadow-sm'
+                                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            Reject
+                                        </button>
                                     </div>
                                 </div>
                             );
