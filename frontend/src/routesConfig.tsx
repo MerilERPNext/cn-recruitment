@@ -769,7 +769,9 @@ export interface AppRoute {
   // Usually a single Modular Ui page name. An array is allowed when a route
   // aggregates several pages (e.g. Awards-Live covers individual + team award
   // pages): the route guard grants access if ANY of the listed pages is enabled.
-  permissionKey: string | string[];
+  // Optional: routes without a key are not gated by the generic route guard
+  // (e.g. your own Employee Profile, which is gated inside the component).
+  permissionKey?: string | string[];
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -1086,7 +1088,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/employee-profile",
     element: <EmployeeProfile />,
-    permissionKey: "Employee Profile",
+    // No route-level permissionKey: your OWN profile is always accessible
+    // ("Employee Self"). Access to ANOTHER employee's profile is gated inside
+    // EmployeeProfile, which is target-aware (own vs other) in a way the generic
+    // route gate can't express.
   },
   {
     path: "/webapp/mobile-profile",
