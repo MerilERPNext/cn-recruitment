@@ -37,8 +37,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
         department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
         designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
         cycle_only: 0,
-        exclude_own: 0,
-        limit: 50
+        exclude_own: 0
     });
 
     const { data: goalRepo, isLoading: goalRepoLoading, error: goalRepoErr, refetch: refetchGoalRepo } = useGoalRepository({
@@ -46,8 +45,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
         department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
         designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
         cycle_only: 0,
-        exclude_own: 0,
-        limit: 50
+        exclude_own: 0
     });
 
     const goals = refGoalsData?.data?.goals || [];
