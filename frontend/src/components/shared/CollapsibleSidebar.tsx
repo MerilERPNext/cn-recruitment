@@ -96,8 +96,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const { data: currentEmployee } = useCurrentEmployeeDetails({
     logged_in_employee_details: true,
   });
-
-  const currentEmployeeCompany = currentEmployee?.company;
+  const currentEmployeeCompany = currentEmployee?.company_name || currentEmployee?.company || "-";
   const { data: singleCompanyLogo } = useSingleCompanyLogo(
     currentEmployeeCompany || "",
   );
