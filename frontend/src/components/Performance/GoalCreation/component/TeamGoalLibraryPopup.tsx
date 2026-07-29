@@ -5,8 +5,9 @@ import { Select } from '../../../shared/atoms/Select';
 import { Typography } from '../../../shared/atoms/Typography';
 import GoalItemCard from './GoalItemCard';
 import { GoalTemplate } from './goal-model/types';
-import { useGoalFormConfig } from '../../../../hooks/usePerformance';
-import { managerAndTeamGoals, defaultDepartmentOptions, defaultLevelOptions } from '../../mockdata';
+import { useCascadeMangerGoals, useGoalFormConfig } from '../../../../hooks/usePerformance';
+import {defaultDepartmentOptions, defaultLevelOptions } from '../../mockdata';
+import { CascadeGoal } from '../../../../types/goal';
 
 interface TeamGoalLibraryPopupProps {
     onClose?: () => void;
@@ -17,6 +18,9 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
     const { data: formConfig } = useGoalFormConfig();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
+
+    const { data:teamGoals ,isLoading:teamGoalsLoading , error} = useCascadeMangerGoals()
+    console.log(teamGoals , '=========================team goals')
 
     const departmentOptions = useMemo(() => {
         if (!formConfig?.departments || formConfig.departments.length === 0) {
@@ -48,27 +52,26 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
         const dept = selectedDepartment.value.toLowerCase();
         const desig = selectedLevel.value.toLowerCase();
 
-        return managerAndTeamGoals.filter((g) => {
+        return teamGoals?.data?.goals?.filter((g) => {
             const matchesQuery =
                 !query ||
                 g.title.toLowerCase().includes(query) ||
-                g.ownerName.toLowerCase().includes(query) ||
-                g.ownerRole.toLowerCase().includes(query) ||
-                g.scope.toLowerCase().includes(query) ||
+                g?.owner_designation?.toLowerCase().includes(query) ||
+                g?.performance_cycle?.toLowerCase().includes(query) ||
+                g?.description?.toLowerCase().includes(query) ||
                 (g.department ?? '').toLowerCase().includes(query);
 
             const matchesDept =
                 dept === 'all' ||
-                (g.department ?? '').toLowerCase() === dept ||
-                g.scope.toLowerCase().includes(dept);
+                (g.department ?? '').toLowerCase() === dept 
 
             const matchesDesig =
                 desig === 'all' ||
-                (g.designation ?? '').toLowerCase().includes(desig);
+                (g?.owner_designation ?? '').toLowerCase().includes(desig);
 
             return matchesQuery && matchesDept && matchesDesig;
         });
-    }, [searchQuery, selectedDepartment, selectedLevel]);
+    }, [searchQuery, teamGoals, selectedDepartment, selectedLevel]);
 
     const handleToggleSelect = (template: GoalTemplate) => {
         setSelectedTemplates((prev) =>
@@ -151,7 +154,7 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
 
                 {/* Content Area: GoalItemCard List */}
                 <div className="px-4 py-4 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:px-5 space-y-3.5">
-                    {filteredGoals.length === 0 ? (
+                    {filteredGoals?.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-6">
                             <Search className="h-8 w-8 text-gray-400 mb-2" />
                             <Typography variant="bodyMedium" className="font-semibold text-gray-700">
@@ -162,11 +165,11 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                             </Typography>
                         </div>
                     ) : (
-                        filteredGoals.map((goal, index) => {
-                            const isSelected = selectedTemplates.some((t) => t.id === goal.id);
+                            filteredGoals?.map((goal: CascadeGoal, index) => {
+                            const isSelected = selectedTemplates.some((t) => t.goal === goal.goal);
                             return (
                                 <GoalItemCard
-                                    key={goal.id}
+                                    key={goal.goal}
                                     goal={goal}
                                     index={index}
                                     isSelected={isSelected}

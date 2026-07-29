@@ -2,6 +2,7 @@ import React from 'react';
 import { Check, Plus } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
 import { Typography } from '../../../shared/atoms/Typography';
+import { CascadeGoal } from '../../../../types/goal';
 
 export interface GoalItemCardData {
     id: string;
@@ -16,7 +17,7 @@ export interface GoalItemCardData {
 }
 
 export interface GoalItemCardProps {
-    goal: GoalItemCardData;
+    goal: CascadeGoal;
     index: number;
     isSelected?: boolean;
     onToggleSelect?: (goal: any) => void;
@@ -36,7 +37,7 @@ const GoalItemCard: React.FC<GoalItemCardProps> = ({
 }) => {
     return (
         <div
-            key={goal.id}
+            key={goal.goal}
             className={`group relative flex flex-col justify-between gap-5 rounded-2xl border p-5 transition-all duration-200 sm:flex-row sm:items-center sm:p-6 ${
                 isSelected
                     ? 'border-indigo-300 bg-indigo-50/40 shadow-sm'
@@ -49,24 +50,20 @@ const GoalItemCard: React.FC<GoalItemCardProps> = ({
                 </span>
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 mb-2">
-                        {goal.isManager ? (
+                        {goal?.is_manager_goal && (
                             <span className="rounded-md bg-amber-100 border border-amber-200/80 px-2.5 py-0.5 text-xs font-bold text-amber-900">
                                 Manager Parent Goal
                             </span>
-                        ) : goal.scope ? (
-                            <span className="rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                                {goal.scope}
-                            </span>
-                        ) : null}
+                        )}
 
-                        {goal.department && (
+                        {goal?.department && (
                             <span className="rounded-md bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-700">
                                 {goal.department}
                             </span>
                         )}
 
-                        {goal.cycle && (
-                            <span className="text-xs text-gray-400">· {goal.cycle}</span>
+                        {goal?.performance_cycle && (
+                            <span className="text-xs text-gray-400">· {goal.performance_cycle}</span>
                         )}
                     </div>
 
@@ -74,13 +71,13 @@ const GoalItemCard: React.FC<GoalItemCardProps> = ({
                         {goal.title}
                     </Typography>
 
-                    {(goal.ownerName || goal.usedCount !== undefined) && (
+                    {(goal.owner_name || goal.used_by_count !== undefined) && (
                         <Typography variant="caption" className="mt-1.5 block text-xs text-gray-500">
-                            {goal.ownerName && (
-                                <span className="font-medium text-gray-700">{goal.ownerName}</span>
+                            {goal.owner_name && (
+                                <span className="font-medium text-gray-700">{goal.owner_name}</span>
                             )}
-                            {goal.ownerRole && ` (${goal.ownerRole})`}
-                            {goal.usedCount !== undefined && ` · Used by ${goal.usedCount} team members`}
+
+                            {goal.used_by_count !== undefined && ` · Used by ${goal.used_by_count} team members`}
                         </Typography>
                     )}
                 </div>
