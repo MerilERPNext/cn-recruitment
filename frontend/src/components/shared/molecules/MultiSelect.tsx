@@ -140,7 +140,7 @@ const MultiSelect = <T extends Option>({
                     }
         `}
             >
-                <div className="flex flex-wrap items-center gap-1 flex-1">
+                <div className="flex flex-wrap items-start gap-1 flex-1 max-h-[72px] overflow-y-auto">
                     {selected.map((opt) => (
                         <span
                             key={String(opt[valueKey])}
