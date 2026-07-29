@@ -28,14 +28,7 @@ export const GoalModelProvider: React.FC<{
   };
 
   // Draft goals state initialized from localStorage
-  const [draftGoals, setDraftGoals] = useState<DraftGoalItem[]>(() => {
-    try {
-      const saved = localStorage.getItem("performance_draft_goals");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [draftGoals, setDraftGoals] = useState<DraftGoalItem[]>([]);
 
 
   const addDraftGoals = useCallback((goals: GoalTemplate | GoalTemplate[]) => {

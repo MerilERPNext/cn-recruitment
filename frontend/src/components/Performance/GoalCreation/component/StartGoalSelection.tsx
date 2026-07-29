@@ -284,6 +284,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                     onContinue?.();
                    
                 }}
+                
             />
         </Modal>
         <Modal
