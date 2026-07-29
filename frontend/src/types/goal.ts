@@ -351,3 +351,39 @@ export interface ReferenceGoalsParams {
   limit?: number;
   start?: number;
 }
+
+export interface GoalRepositoryGoal {
+  goal_template: string;
+  title: string;
+  description: string;
+  category: string;
+  scorecard_pillar: string | null;
+  weightage: number;
+  key_results: KeyResult[];
+}
+
+export interface GoalRepositoryItem {
+  repository: string;
+  title: string;
+  description: string;
+  recommended: number;
+  usage_count: number;
+  goal_count: number;
+  total_weightage: number;
+  goals: GoalRepositoryGoal[];
+}
+
+export interface GoalRepositoryData {
+  count: number;
+  total: number;
+  active_cycle: string;
+  repositories: GoalRepositoryItem[];
+}
+
+export interface GoalRepositoryResponse {
+  success: boolean;
+  message: string;
+  data: GoalRepositoryData;
+}
+
+export type GoalRepositoriesResponse = GoalRepositoryResponse;

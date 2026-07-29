@@ -17,6 +17,7 @@ import type {
   SubGoalItem,
   ReferenceGoalsResponse,
   ReferenceGoalsParams,
+  GoalRepositoryResponse,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -164,6 +165,13 @@ export const performanceService = {
     );
     return response as ReferenceGoalsResponse
 
+  },
+  getGoalRepository: async (params?: ReferenceGoalsParams): Promise<GoalRepositoryResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.goal_api.get_goal_repositories",
+      params as Record<string, unknown>
+    );
+    return response as GoalRepositoryResponse;
   }
 };
 

@@ -112,14 +112,20 @@ export const recommendedTemplatesData: GoalTemplate[] = [
     }
 ];
 
+interface RecommendedTemplatesProps extends TemplateListProps {
+    recommendedTemplatesData?: GoalTemplate[];
+}
+
 const RecommendedTemplates = ({
     onUseTemplate,
     searchQuery = '',
     selectedDepartment = 'All',
     selectedDesignation = 'All',
-}: TemplateListProps) => {
+    recommendedTemplatesData: customTemplates,
+}: RecommendedTemplatesProps) => {
+    const templatesToUse = customTemplates || recommendedTemplatesData;
     const filteredTemplates = filterTemplates(
-        recommendedTemplatesData,
+        templatesToUse,
         searchQuery,
         selectedDepartment,
         selectedDesignation
