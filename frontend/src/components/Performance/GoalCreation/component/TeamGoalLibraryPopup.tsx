@@ -8,6 +8,7 @@ import { GoalTemplate } from './goal-model/types';
 import { useCascadeMangerGoals, useGoalFormConfig } from '../../../../hooks/usePerformance';
 import {defaultDepartmentOptions, defaultLevelOptions } from '../../mockdata';
 import { CascadeGoal } from '../../../../types/goal';
+import { useGoalModel } from '../../GoalModelContext';
 
 interface TeamGoalLibraryPopupProps {
     onClose?: () => void;
@@ -16,6 +17,7 @@ interface TeamGoalLibraryPopupProps {
 
 const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, onUseTemplate }) => {
     const { data: formConfig } = useGoalFormConfig();
+    const { setDraftGoals } = useGoalModel();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
 
@@ -73,16 +75,33 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
         });
     }, [searchQuery, teamGoals, selectedDepartment, selectedLevel]);
 
-    const handleToggleSelect = (template: GoalTemplate) => {
+    const handleToggleSelect = (goal: CascadeGoal | GoalTemplate) => {
+        const item: GoalTemplate = {
+            id: (goal as any).goal || (goal as any).id,
+            goal: (goal as any).goal || (goal as any).id,
+            title: goal.title,
+            description: (goal as any).description || '',
+            category: (goal as any).category || '',
+            department: goal.department || null,
+            weightage: (goal as any).weightage || 30,
+            scorecard_pillar: (goal as any).scorecard_pillar || null,
+            performance_cycle: (goal as any).performance_cycle,
+            owner_employee: (goal as any).owner_employee,
+            designation: (goal as any).owner_designation || (goal as any).designation,
+            usedCount: (goal as any).used_by_count || (goal as any).usedCount || 0,
+            key_results: (goal as any).key_results || [],
+        };
+        const key = item.goal || item.id || item.title;
         setSelectedTemplates((prev) =>
-            prev.some((t) => t.id === template.id)
-                ? prev.filter((t) => t.id !== template.id)
-                : [...prev, template]
+            prev.some((t) => (t.goal || t.id || t.title) === key)
+                ? prev.filter((t) => (t.goal || t.id || t.title) !== key)
+                : [...prev, item]
         );
     };
 
     const handleSubmitFooter = () => {
         if (selectedTemplates.length > 0) {
+            setDraftGoals(selectedTemplates as any);
             onUseTemplate?.(selectedTemplates, 'cascade');
         }
     };
@@ -166,7 +185,7 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                         </div>
                     ) : (
                             filteredGoals?.map((goal: CascadeGoal, index) => {
-                            const isSelected = selectedTemplates.some((t) => t.goal === goal.goal);
+                            const isSelected = selectedTemplates.some((t) => t.goal === goal.goal || t.id === goal.goal);
                             return (
                                 <GoalItemCard
                                     key={goal.goal}

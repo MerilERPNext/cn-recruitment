@@ -193,7 +193,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
     const renderStepContent = () => {
         switch (activeStep) {
             case 'start':
-                return <StartGoalSelection onContinue={handlePrimaryAction} />;
+                return <StartGoalSelection  onContinue={handlePrimaryAction} />;
 
             case 'define':
                 if (isGoalFormConfigLoading) return <LazySectionFallback />;
