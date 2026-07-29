@@ -54,11 +54,6 @@ export const GoalModelProvider: React.FC<{
 
   const clearDraftGoals = useCallback(() => {
     setDraftGoals([]);
-    try {
-      localStorage.removeItem("performance_draft_goals");
-    } catch (e) {
-      console.error("Failed to clear draft goals from localStorage", e);
-    }
   }, []);
 
   return (

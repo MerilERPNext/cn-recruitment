@@ -118,14 +118,16 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
         goalsToSave.length === 0 ||
         goalsToSave.some(goal => {
             const hasEmptyTitle = !goal.title || goal.title.trim() === '';
-            const hasEmptyKrTitle = (goal.key_results || []).some(kr => !kr.title || kr.title.trim() === '');
-            const hasEmptyKrWeightage = (goal.key_results || []).some(kr => !kr.weightage || Number(kr.weightage) <= 0);
-            const krWeightageSum = (goal.key_results || []).reduce((sum, kr) => sum + (Number(kr.weightage) || 0), 0);
+            const keyResults = goal.key_results || [];
+            const hasEmptyKrTitle = keyResults.some(kr => !kr.title || kr.title.trim() === '');
+            const hasEmptyKrWeightage = keyResults.some(kr => !kr.weightage || Number(kr.weightage) <= 0);
+            const krWeightageSum = keyResults.reduce((sum, kr) => sum + (Number(kr.weightage) || 0), 0);
+            const isKrSumInvalid = keyResults.length > 0 && Math.abs(krWeightageSum - 100) > 0.01;
             const missingDepartment = !goal.department || goal.department.trim() === '';
             const missingDesignation = !goal.designation || goal.designation.trim() === '';
             const missingObjectiveWeightage = !goal.weightage || Number(goal.weightage) <= 0;
             
-            return hasEmptyTitle || hasEmptyKrTitle || hasEmptyKrWeightage || missingDepartment || missingDesignation || missingObjectiveWeightage || krWeightageSum !== 100;
+            return hasEmptyTitle || hasEmptyKrTitle || hasEmptyKrWeightage || missingDepartment || missingDesignation || missingObjectiveWeightage || isKrSumInvalid;
         })
     );
 

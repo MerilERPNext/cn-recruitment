@@ -62,13 +62,13 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                     category: g.category,
                     scorecard_pillar: g.scorecard_pillar,
                     weightage: g.weightage,
-                    key_results: ((g.key_results as any[]) || []).map((kr: any) => ({
+                    key_results: Array.isArray(g.key_results) ? g.key_results.map((kr: any) => ({
                         title: kr.title,
                         weightage: kr.weightage,
                         metric: kr.metric,
                         target: kr.target,
                         target_type: kr.target_type,
-                    })),
+                    })) : []
                 }));
 
                 return {
@@ -128,12 +128,12 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     };
 
     const counts = useMemo(() => ({
-        recommended: filterTemplates(recommendedGoals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
-        allOrg: filterTemplates(goals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        recommended: goalRepo?.data?.total ?? filterTemplates(recommendedGoals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        allOrg: refGoalsData?.data?.total ?? filterTemplates(goals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
         department: filterTemplates(departmentTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
         roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
         usedByTeam: filterTemplates(usedByTeamTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
-    }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals, recommendedGoals]);
+    }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals, recommendedGoals, refGoalsData?.data?.total, goalRepo?.data?.total]);
 
     const tabs: { key: TabKey; label: string; count: number }[] = useMemo(() => [
         { key: 'recommended', label: 'Recommended for you', count: counts.recommended },
