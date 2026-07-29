@@ -51,11 +51,10 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     });
 
     const goals = refGoalsData?.data?.goals || [];
-    console.log(goalRepo,'===============================================================')
     const recommendedGoals: GoalTemplate[] | any = useMemo(() => {
         if (goalRepo?.data?.repositories && Array.isArray(goalRepo.data.repositories) && goalRepo.data.repositories.length > 0) {
-            const extracted = goalRepo.data.repositories.flatMap((repo) =>
-                (repo.goals || []).map((g) => ({
+            return goalRepo.data.repositories.map((repo) => {
+                const mappedGoals = (repo.goals || []).map((g) => ({
                     id: g.goal_template,
                     goal: g.goal_template,
                     title: g.title,
@@ -63,14 +62,27 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                     category: g.category,
                     scorecard_pillar: g.scorecard_pillar,
                     weightage: g.weightage,
-                    key_results: g.key_results || [],
+                    key_results: ((g.key_results as any[]) || []).map((kr: any) => ({
+                        title: kr.title,
+                        weightage: kr.weightage,
+                        metric: kr.metric,
+                        target: kr.target,
+                        target_type: kr.target_type,
+                    })),
+                }));
+
+                return {
+                    id: repo.repository,
+                    goal: repo.repository,
+                    title: repo.title,
+                    description: repo.description,
                     usedCount: repo.usage_count,
                     recommended: Boolean(repo.recommended),
-                }))
-            );
-            if (extracted.length > 0) return extracted;
+                    repository_goals: mappedGoals,
+                };
+            });
         }
-        return (goalRepoLoading || goalRepo?.data?.repositories?.length == 0) && [] ;
+        return (goalRepoLoading || goalRepo?.data?.repositories?.length === 0) ? [] : [];
     }, [goalRepo, goalRepoLoading]);
 
     const handleToggleSelect = (template: GoalTemplate) => {
@@ -106,7 +118,10 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
 
     const handleSubmitFooter = () => {
         if (selectedTemplates.length > 0) {
-            onUseTemplate?.(selectedTemplates, activeTab);
+            const allGoals = selectedTemplates.flatMap((t: any) =>
+                t.repository_goals ? t.repository_goals : t
+            );
+            onUseTemplate?.(allGoals, activeTab);
         }
     };
 

@@ -89,7 +89,7 @@ const TemplateCard = memo(({
                 <div className="flex items-center gap-2">
                     <Typography variant="caption" className="break-words text-xs font-medium text-slate-500">
                         {template?.usedCount !== undefined
-                            ? `Used ${template?.usedCount} times`
+                            ? `Used ${template?.usedCount} times this cycle`
                             : krCount > 0
                             ? `${krCount} Key Result${krCount > 1 ? 's' : ''}`
                             : `Weight: ${template?.weightage ?? 10}%`}

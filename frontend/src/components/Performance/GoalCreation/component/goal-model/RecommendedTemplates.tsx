@@ -121,9 +121,9 @@ const RecommendedTemplates = ({
     searchQuery = '',
     selectedDepartment = 'All',
     selectedDesignation = 'All',
-    recommendedTemplatesData: customTemplates,
+    recommendedTemplatesData,
 }: RecommendedTemplatesProps) => {
-    const templatesToUse = customTemplates || recommendedTemplatesData;
+    const templatesToUse = recommendedTemplatesData || [];
     const filteredTemplates = filterTemplates(
         templatesToUse,
         searchQuery,
@@ -151,7 +151,12 @@ const RecommendedTemplates = ({
                 <TemplateCard
                     key={getGoalKey(template)}
                     template={template}
-                    onUseTemplate={onUseTemplate}
+                    onUseTemplate={(t) => {
+                        const repoGoals = (t as any).repository_goals;
+                        if (repoGoals) {
+                            onUseTemplate?.(repoGoals);
+                        }
+                    }}
                 />
             ))}
         </div>
