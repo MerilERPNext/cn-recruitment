@@ -26,11 +26,11 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     const currentCompany = currentEmployee?.company;
     const [activeTab, setActiveTab] = useState<TabKey>('recommended');
     const [searchQuery, setSearchQuery] = useState('');
-    const debouncedSearchQuery = useDebounce(searchQuery, 300);
     const [selectedDepartment, setSelectedDepartment] = useState({ label: 'All Departments', value: 'All' });
     const [selectedLevel, setSelectedLevel] = useState({ label: 'All Designations', value: 'All' });
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
     const [weightages, setWeightages] = useState<Record<string, number>>({});
+    const debouncedSearchQuery = useDebounce(searchQuery, 300);
     
     const { data: refGoalsData, isLoading, error, refetch: refetchRefGoals } = useReferanceGoals({
         search: debouncedSearchQuery || undefined,

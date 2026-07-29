@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
-import { Select } from '../../../shared/atoms/Select';
+import { AsyncSelect } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
 import GoalItemCard from './GoalItemCard';
 import { GoalTemplate } from './goal-model/types';
-import { useCascadeMangerGoals, useGoalFormConfig } from '../../../../hooks/usePerformance';
-import {defaultDepartmentOptions, defaultLevelOptions } from '../../mockdata';
+import { useCascadeMangerGoals, fetchDepartmentOptions, fetchDesignationOptions } from '../../../../hooks/usePerformance';
+import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import { CascadeGoal } from '../../../../types/goal';
 import { useGoalModel } from '../../GoalModelContext';
+import useDebounce from '../../../../hooks/useDebounce';
 
 interface TeamGoalLibraryPopupProps {
     onClose?: () => void;
@@ -16,38 +17,21 @@ interface TeamGoalLibraryPopupProps {
 }
 
 const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, onUseTemplate }) => {
-    const { data: formConfig } = useGoalFormConfig();
+    const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+    const currentCompany = currentEmployee?.company;
     const { setDraftGoals } = useGoalModel();
     const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearchQuery = useDebounce(searchQuery, 300);
+    const [selectedDepartment, setSelectedDepartment] = useState({ label: 'All Departments', value: 'All' });
+    const [selectedLevel, setSelectedLevel] = useState({ label: 'All Designations', value: 'All' });
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
 
-    const { data:teamGoals ,isLoading:teamGoalsLoading , error} = useCascadeMangerGoals()
-    console.log(teamGoals , '=========================team goals')
-
-    const departmentOptions = useMemo(() => {
-        if (!formConfig?.departments || formConfig.departments.length === 0) {
-            return defaultDepartmentOptions;
-        }
-        const dynamicDeps = formConfig.departments.map((dep) => ({
-            label: dep.department_name || dep.name || 'Unknown',
-            value: dep.name || dep.department_name || '',
-        }));
-        return [{ label: 'All Departments', value: 'All' }, ...dynamicDeps];
-    }, [formConfig?.departments]);
-
-    const levelOptions = useMemo(() => {
-        if (!formConfig?.designations || formConfig.designations.length === 0) {
-            return defaultLevelOptions;
-        }
-        const dynamicDesigs = formConfig.designations.map((desig) => ({
-            label: desig.designation_name || desig.name || 'Unknown',
-            value: desig.name || desig.designation_name || '',
-        }));
-        return [{ label: 'All Designations', value: 'All' }, ...dynamicDesigs];
-    }, [formConfig?.designations]);
-
-    const [selectedDepartment, setSelectedDepartment] = useState(departmentOptions[0]);
-    const [selectedLevel, setSelectedLevel] = useState(levelOptions[0]);
+    const { data: teamGoals, isLoading: teamGoalsLoading, error } = useCascadeMangerGoals({
+        search: debouncedSearchQuery || undefined,
+        department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
+        designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
+    });
+    console.log(teamGoals, '=========================team goals');
 
     const filteredGoals = useMemo(() => {
         const query = searchQuery.trim().toLowerCase();
@@ -65,7 +49,7 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
 
             const matchesDept =
                 dept === 'all' ||
-                (g.department ?? '').toLowerCase() === dept 
+                (g.department ?? '').toLowerCase() === dept;
 
             const matchesDesig =
                 desig === 'all' ||
@@ -154,19 +138,28 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                                 </button>
                             )}
                         </div>
-                        <Select
-                            options={departmentOptions}
+                        <AsyncSelect
+                            fetchOptions={async (search, skip) => {
+                                const res = await fetchDepartmentOptions(currentCompany)(search, skip);
+                                return skip === 0 ? [{ label: 'All Departments', value: 'All' }, ...res] : res;
+                            }}
                             value={selectedDepartment}
-                            onChange={setSelectedDepartment}
-                            searchable
+                            onChange={(opt: any) => {
+                                setSelectedDepartment(opt);
+                                setSelectedLevel({ label: 'All Designations', value: 'All' });
+                            }}
                             className="relative w-full min-w-0 [&>button]:h-9 [&>button]:min-w-0 [&>button]:px-3 [&>button]:text-sm [&>div]:!w-full sm:[&>button]:h-11"
+                            placeholder="Search department..."
                         />
-                        <Select
-                            options={levelOptions}
+                        <AsyncSelect
+                            fetchOptions={async (search, skip) => {
+                                const res = await fetchDesignationOptions(selectedDepartment.value)(search, skip);
+                                return skip === 0 ? [{ label: 'All Designations', value: 'All' }, ...res] : res;
+                            }}
                             value={selectedLevel}
-                            onChange={setSelectedLevel}
-                            searchable
+                            onChange={(opt: any) => setSelectedLevel(opt)}
                             className="relative w-full min-w-0 sm:col-span-2 lg:col-span-1 [&>button]:h-9 [&>button]:min-w-0 [&>button]:px-3 [&>button]:text-sm [&>div]:!w-full sm:[&>button]:h-11"
+                            placeholder="Search designation..."
                         />
                     </div>
                 </div>
