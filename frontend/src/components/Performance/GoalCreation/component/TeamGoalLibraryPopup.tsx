@@ -200,12 +200,12 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
         </div>
     );
 };
-const TeamGoalSkeleton = () => (
-    <div className="space-y-3.5">
+function TeamGoalSkeleton() {
+    return  <div className="space-y-3.5">
         {Array.from({ length: 2 }).map((_, index) => (
             <div
-                key={index}
-                className="flex flex-col justify-between gap-5 rounded-2xl border border-gray-200/80 bg-white p-5 animate-pulse sm:flex-row sm:items-center sm:p-6"
+            key={index}
+            className="flex flex-col justify-between gap-5 rounded-2xl border border-gray-200/80 bg-white p-5 animate-pulse sm:flex-row sm:items-center sm:p-6"
             >
                 <div className="flex items-start gap-4 min-w-0 flex-1">
                     <div className="h-9 w-9 shrink-0 rounded-xl bg-gray-200" />
@@ -223,10 +223,11 @@ const TeamGoalSkeleton = () => (
             </div>
         ))}
     </div>
-);
+}
 
-const TeamGoalError = ({ error, onRetry }: { error: any; onRetry: () => void }) => (
-    <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-red-100 bg-red-50/40 p-6">
+
+function TeamGoalError ({ error, onRetry }: { error: any; onRetry: () => void }) {
+    return <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-red-100 bg-red-50/40 p-6">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100/80 text-red-600 mb-3 shadow-2xs">
             <AlertCircle className="h-6 w-6" />
         </div>
@@ -245,6 +246,6 @@ const TeamGoalError = ({ error, onRetry }: { error: any; onRetry: () => void }) 
             Try Again
         </Button>
     </div>
-);
+};
 
 export default React.memo(TeamGoalLibraryPopup);
