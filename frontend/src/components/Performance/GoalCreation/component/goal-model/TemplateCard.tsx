@@ -85,7 +85,7 @@ const TemplateCard = memo(({
             </div>
 
             {/* Footer */}
-            <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+            <div className="mt-4 flex flex-col gap-2 border-t border-slate-400 pt-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
                 <div className="flex flex-wrap items-center gap-2">
                     {template?.usedCount !== undefined && (
                         <Typography variant="caption" className="break-words text-xs font-medium text-slate-500">
