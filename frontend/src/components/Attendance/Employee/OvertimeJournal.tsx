@@ -6,6 +6,7 @@ import SideDrawer from "../../shared/SideDrawer";
 import NavigationTabs, { Tab } from "../../NavigationTab";
 import { KeyValueItem, OvertimeJournalData, PolicyItem } from "../../../types/attendance";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 
 
@@ -143,7 +144,7 @@ const OvertimeJournal = ({
                 open={open}
                 onClose={() => setOpen(false)}
                 side="right"
-                title={"Overtime Journal - " + date}
+                title={"Overtime Journal - " + formatToIndianDate(date)}
                 size="xxl"
                 className="pt-0"
             >

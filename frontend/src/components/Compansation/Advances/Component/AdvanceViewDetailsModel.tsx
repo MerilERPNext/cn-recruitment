@@ -18,6 +18,7 @@ import { Typography } from "../../../shared/atoms/Typography";
 import advanceDetailsFormSchema from "./AdvanceDetailsModel.json";
 import { Form } from "@tsed/react-formio";
 import StatusBadge from "../../../shared/atoms/statusBadge";
+import ActionReasonModal from "../../../shared/ActionReasonModal";
 
 type Props = {
   open: boolean;
@@ -43,7 +44,6 @@ const AdvanceDetailsModal = ({
 
   // 🔥 Comment popup state
   const [commentOpen, setCommentOpen] = useState(false);
-  const [comment, setComment] = useState("");
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [formLiveData, setFormLiveData] = useState<any>({});
 
@@ -102,15 +102,14 @@ const AdvanceDetailsModal = ({
   // 🔥 Open popup on action click
   const handleActionClick = (action: string) => {
     setSelectedAction(action);
-    setComment("");
     setCommentOpen(true);
   };
 
   // 🔥 Final submit
-  const handleConfirmAction = async () => {
+  const handleConfirmAction = async (reason: string) => {
     if (!selectedAction) return;
 
-    if (!comment.trim()) {
+    if (!reason.trim()) {
       toast.error("Comment is required");
       return;
     }
@@ -129,7 +128,7 @@ const AdvanceDetailsModal = ({
       await commentMutation.mutateAsync({
         referenceDoctype,
         referenceName: refName,
-        content: comment,
+        content: reason,
         comment_email: user?.name || "",
       });
 
@@ -166,7 +165,6 @@ const AdvanceDetailsModal = ({
       );
 
       // cleanup
-      setComment("");
       setSelectedAction(null);
       setCommentOpen(false);
       onClose();
@@ -267,42 +265,18 @@ const AdvanceDetailsModal = ({
       </div>
 
       {/* 🔥 COMMENT POPUP */}
-      {commentOpen && (
-        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
-          <div className="w-full max-w-md bg-white rounded-xl p-5 flex flex-col gap-4">
-
-            <Typography variant="h4">
-              {selectedAction === "Reject"
-                ? "Reject Reason"
-                : "Approval Comment"}
-            </Typography>
-
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={4}
-              className="w-full border rounded-md p-2"
-              placeholder="Enter comment..."
-            />
-
-            <div className="flex justify-end gap-3">
-              <Button bgColor="gray-200" onClick={() => setCommentOpen(false)}>
-                Cancel
-              </Button>
-
-              <Button
-                onClick={handleConfirmAction}
-                disabled={
-                  commentMutation.isPending ||
-                  advanceFormUpdate.isPending
-                }
-              >
-                Save & {selectedAction}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ActionReasonModal
+        isOpen={commentOpen}
+        isPending={commentMutation.isPending || advanceFormUpdate.isPending}
+        type={selectedAction === "Reject" ? "rejection" : "approval"}
+        title={selectedAction === "Reject" ? "Reject Reason" : "Approval Comment"}
+        description={`Please add a comment before ${selectedAction === "Reject" ? "rejecting" : "approving"} this request.`}
+        label={`${selectedAction === "Reject" ? "REJECTION" : "APPROVAL"} COMMENT *`}
+        placeholder="Enter comment..."
+        todo_id={data?.todo_id}
+        onCancel={() => setCommentOpen(false)}
+        onSave={handleConfirmAction}
+      />
     </>
   );
 };

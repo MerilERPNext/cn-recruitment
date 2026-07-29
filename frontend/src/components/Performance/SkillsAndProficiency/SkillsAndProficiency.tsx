@@ -35,7 +35,7 @@ const SkillsAndProficiency: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-full overflow-y-auto bg-surface p-3 font-brand text-text-title sm:p-4 lg:p-6">
+    <div className="min-h-full overflow-y-auto bg-surface p-3 font-brand text-text-title sm:p-2 lg:p-1">
       <div className="mx-auto max-w-screen space-y-4 lg:space-y-5">
         <div className="rounded-lg border border-primary-100 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

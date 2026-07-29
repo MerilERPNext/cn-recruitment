@@ -54,6 +54,8 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
                 "read_only": row.read_only,
                 "hidden": row.hidden,
                 "options": row.options,
+                "selected_child_fields": row.get("selected_child_fields"),
+                "mandatory_child_fields": row.get("mandatory_child_fields"),
             })
 
     def get_selected_onboarding_portal_form(self):

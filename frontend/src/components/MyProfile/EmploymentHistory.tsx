@@ -251,6 +251,38 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
         )}
         {!isLoading && !error && employeeId && (
           <>
+            <div className="flex flex-col gap-2 mt-6">
+              <div className="flex items-center justify-between">
+                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
+                  Employee Joining History
+                </Typography>
+              </div>
+              {previousJoiningHistory.length > 0 ? (
+                <div className="flex gap-2 overflow-auto">
+                  {previousJoiningHistory.map((item) => (
+                    <div
+                      key={item.employee + item.date_of_joining}
+                      className={`${previousJoiningHistory.length === 1 ? "max-w-md w-full" : ""}`}
+                    >
+                      <EmployeePreviousJoiningCard
+                        employee={item.employee}
+                        employee_name={item.employee_name}
+                        designation={item.designation}
+                        company_name={item.company_name}
+                        department_name={item.department_name}
+                        location_name={item.location_name}
+                        date_of_joining={item.date_of_joining}
+                        relieving_date={item.relieving_date}
+                        current_employee_joining_date={data?.date_of_joining || null}
+                        image={item?.image}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <NoDataFound title="No Employee Joining History" subtitle="No employee joining history records found." />
+              )}
+            </div>
             <div className="flex flex-col gap-2" data-subsection="work_role">
               <div className="flex items-center justify-between">
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
@@ -291,44 +323,41 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               )}
             </div>
 
-            <div className="flex flex-col gap-2 mt-6" data-subsection="work_location">
+            <div className="flex flex-col gap-2 mt-6" data-subsection="employee_role">
               <div className="flex items-center justify-between">
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                  Work Locations
+                  Employment Roles
                 </Typography>
                 {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("work_location")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                  <Button onClick={() => handleAddCard("employee_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
                     Add
                   </Button>
                 )}
               </div>
-              {workLocation.length > 0 ? (
+              {employeeRoles.length > 0 ? (
                 <div className="flex gap-2 overflow-auto">
-                  {workLocation.map((item) => (
+                  {employeeRoles.map((item) => (
                     <div
                       key={item.from_date + item?.to_date}
-                      className={`${workLocation.length === 1 ? "max-w-md w-full" : ""}`}
+                      className={`${employeeRoles.length === 1 ? "max-w-md w-full" : ""}`}
                     >
-                      <EmploymentWorkLocationCard
+                      <EmployeeRolesCard
                         from_date={item.from_date}
                         to_date={item.to_date}
                         is_current={item.is_current}
-                        work_location={item.work_location}
-                        office_area={item.office_area}
-                        country={item.country}
-                        state={item.state}
-                        city={item.city}
-                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "work_location") : undefined}
+                        is_promotion={item.is_promotion}
+                        employee_role={item.employee_role}
+                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "employee_role") : undefined}
                         onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
-                          const names = [item.work_location?.row_name].filter(Boolean) as string[];
-                          setPendingDelete({ type: "history", names, subSection: "work_location" });
+                          const names = [item.employee_role?.row_name].filter(Boolean) as string[];
+                          setPendingDelete({ type: "history", names, subSection: "employee_role" });
                         } : undefined}
                       />
                     </div>
                   ))}
                 </div>
               ) : (
-                <NoDataFound title="No Work Locations" subtitle="No work location records have been added yet." />
+                <NoDataFound title="No Employment Roles" subtitle="No employment role records have been added yet." />
               )}
             </div>
 
@@ -371,41 +400,44 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               )}
             </div>
 
-            <div className="flex flex-col gap-2 mt-6" data-subsection="employee_role">
+            <div className="flex flex-col gap-2 mt-6" data-subsection="work_location">
               <div className="flex items-center justify-between">
                 <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                  Employment Roles
+                  Work Locations
                 </Typography>
                 {canAddEmploymentHistory && (
-                  <Button onClick={() => handleAddCard("employee_role")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
+                  <Button onClick={() => handleAddCard("work_location")} icon={<PlusIcon className="h-4 w-4" />} variant="contain" size="md">
                     Add
                   </Button>
                 )}
               </div>
-              {employeeRoles.length > 0 ? (
+              {workLocation.length > 0 ? (
                 <div className="flex gap-2 overflow-auto">
-                  {employeeRoles.map((item) => (
+                  {workLocation.map((item) => (
                     <div
                       key={item.from_date + item?.to_date}
-                      className={`${employeeRoles.length === 1 ? "max-w-md w-full" : ""}`}
+                      className={`${workLocation.length === 1 ? "max-w-md w-full" : ""}`}
                     >
-                      <EmployeeRolesCard
+                      <EmploymentWorkLocationCard
                         from_date={item.from_date}
                         to_date={item.to_date}
                         is_current={item.is_current}
-                        is_promotion={item.is_promotion}
-                        employee_role={item.employee_role}
-                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "employee_role") : undefined}
+                        work_location={item.work_location}
+                        office_area={item.office_area}
+                        country={item.country}
+                        state={item.state}
+                        city={item.city}
+                        onEdit={(canEditEmploymentHistory && item.can_edit !== false) ? () => handleEditCard(item, "work_location") : undefined}
                         onDelete={(canDeleteEmploymentHistory && item.can_delete) ? () => {
-                          const names = [item.employee_role?.row_name].filter(Boolean) as string[];
-                          setPendingDelete({ type: "history", names, subSection: "employee_role" });
+                          const names = [item.work_location?.row_name].filter(Boolean) as string[];
+                          setPendingDelete({ type: "history", names, subSection: "work_location" });
                         } : undefined}
                       />
                     </div>
                   ))}
                 </div>
               ) : (
-                <NoDataFound title="No Employment Roles" subtitle="No employment role records have been added yet." />
+                <NoDataFound title="No Work Locations" subtitle="No work location records have been added yet." />
               )}
             </div>
 
@@ -505,38 +537,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               )}
             </div> */}
 
-            <div className="flex flex-col gap-2 mt-6">
-              <div className="flex items-center justify-between">
-                <Typography variant="h4" className="font-bold text-gray-900 text-lg">
-                  Employee Joining History
-                </Typography>
-              </div>
-              {previousJoiningHistory.length > 0 ? (
-                <div className="flex gap-2 overflow-auto">
-                  {previousJoiningHistory.map((item) => (
-                    <div
-                      key={item.employee + item.date_of_joining}
-                      className={`${previousJoiningHistory.length === 1 ? "max-w-md w-full" : ""}`}
-                    >
-                      <EmployeePreviousJoiningCard
-                        employee={item.employee}
-                        employee_name={item.employee_name}
-                        designation={item.designation}
-                        company_name={item.company_name}
-                        department_name={item.department_name}
-                        location_name={item.location_name}
-                        date_of_joining={item.date_of_joining}
-                        relieving_date={item.relieving_date}
-                        current_employee_joining_date={data?.date_of_joining || null}
-                        image={item?.image}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <NoDataFound title="No Employee Joining History" subtitle="No employee joining history records found." />
-              )}
-            </div>
+
           </>
         )}
 

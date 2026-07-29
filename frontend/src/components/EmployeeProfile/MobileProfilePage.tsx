@@ -13,16 +13,26 @@ import {
     CreditCard,
     ShieldCheck,
     LogOut,
+    RotateCcwKey,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import useLogout from "../../hooks/useLogout";
+import ChangePassword from "../ChangePassword/ChangePassword";
+import { useState } from "react";
 
 type QuickAction = {
     label: string;
     icon: React.ReactNode;
-    href: string;
+    href?: string;
     onClick?: () => void;
 };
+
+
+const MobileProfilePage = () => {
+    const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+const handleReset = ()=>{
+    setShowChangePasswordModal(true);
+}
 
 const quickActions: QuickAction[] = [
     {
@@ -39,12 +49,13 @@ const quickActions: QuickAction[] = [
         label: "Policies",
         icon: <ShieldCheck className="w-5 h-5" />,
         href: "/webapp/policies-app",
-    },
+    },{
+        label: "Reset Password",
+        icon: <RotateCcwKey className="w-5 h-5" />,
+        onClick : handleReset
+    }
 
 ];
-
-
-const MobileProfilePage = () => {
     const navigate = useNavigate();
     const { targetEmployeeId } = useTargetUser();
     const { data: currentUser, isLoading: isCurrentUserLoading } =
@@ -117,26 +128,45 @@ const MobileProfilePage = () => {
             <div className="space-y-1 mt-4 px-2">
                 {quickActions.map((action) => {
 
-                    return (
-                        <Link
-                            key={action.label}
-                            to={action.href}
-                            className="w-full block"
-                        >
-                            <div className="flex items-center justify-between rounded-lg px-3 py-3 hover:bg-gray-50 active:bg-gray-100">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-gray-700">
-                                        {action.icon}
-                                    </span>
-                                    <Typography variant="bodyMedium" color="body2">
-                                        {action.label}
-                                    </Typography>
-                                </div>
+                    if(action?.href)
+                        return (
+                            <Link
+                                key={action.label}
+                                to={action.href}
+                                className="w-full block"
+                            >
+                                <div className="flex items-center justify-between rounded-lg px-3 py-3 hover:bg-gray-50 active:bg-gray-100">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-gray-700">
+                                            {action.icon}
+                                        </span>
+                                        <Typography variant="bodyMedium" color="body2">
+                                            {action.label}
+                                        </Typography>
+                                    </div>
 
-                                <ChevronRight className="w-4 h-4 text-gray-400" />
-                            </div>
-                        </Link>
-                    );
+                                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                                </div>
+                            </Link>
+                        )
+                        else{
+                            return (
+                                   <div 
+                                onClick={action.onClick}
+                                   className="flex items-center justify-between rounded-lg px-3 py-3 hover:bg-gray-50 active:bg-gray-100">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-gray-700">
+                                            {action.icon}
+                                        </span>
+                                        <Typography variant="bodyMedium" color="body2">
+                                            {action.label}
+                                        </Typography>
+                                    </div>
+
+                                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                                </div>
+                            )
+                        }
                 })}
             </div>
             <div
@@ -156,6 +186,10 @@ const MobileProfilePage = () => {
                     <ChevronRight className="w-4 h-4 text-gray-400" />
                 </div>
             </div>
+            <ChangePassword
+                    isOpen={showChangePasswordModal}
+                    onClose={() => setShowChangePasswordModal(false)}
+                  />
         </div>
     );
 };

@@ -352,6 +352,7 @@ const DesktopAttendanceCalendar: React.FC<attendanceProps> = ({
                     setSelectedDate(date);
                 }}
                 openToDate={selectedDate as Date}
+                formatWeekDay={(day) => day}
                 inline
                 renderCustomHeader={({
                     date,

@@ -494,6 +494,11 @@ const Overview = lazyWithRetry(
   "Overview",
 );
 
+const OverviewDashboard = lazyWithRetry(
+  () => import("./components/Performance/Overview/component/OverviewDashboard"),
+  "OverviewDashboard",
+);
+
 const PerformanceReviewApp = lazyWithRetry(
   () =>
     import("./components/Performance/PerformanceReview/PerformanceReviewApp"),
@@ -641,6 +646,11 @@ const EmployeeDocumentsPage = lazyWithRetry(
   "EmployeeDocumentsPage",
 );
 
+const TimesheetApp = lazyWithRetry(
+  () => import("./components/Timesheet/TimesheetApp"),
+  "TimesheetApp",
+);
+
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -759,7 +769,9 @@ export interface AppRoute {
   // Usually a single Modular Ui page name. An array is allowed when a route
   // aggregates several pages (e.g. Awards-Live covers individual + team award
   // pages): the route guard grants access if ANY of the listed pages is enabled.
-  permissionKey: string | string[];
+  // Optional: routes without a key are not gated by the generic route guard
+  // (e.g. your own Employee Profile, which is gated inside the component).
+  permissionKey?: string | string[];
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -791,6 +803,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/requests",
     element: <Requests />,
     permissionKey: "Dashboard",
+  },
+  {
+    path: "/webapp/timesheet",
+    element: <TimesheetApp />,
+    permissionKey: "Timesheet",
   },
   {
     path: "/webapp/id-card",
@@ -1071,7 +1088,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/employee-profile",
     element: <EmployeeProfile />,
-    permissionKey: "Employee Profile",
+    // No route-level permissionKey: your OWN profile is always accessible
+    // ("Employee Self"). Access to ANOTHER employee's profile is gated inside
+    // EmployeeProfile, which is target-aware (own vs other) in a way the generic
+    // route gate can't express.
   },
   {
     path: "/webapp/mobile-profile",
@@ -1455,11 +1475,53 @@ export const routesConfig: AppRoute[] = [
     element: <PerformanceApp />,
     permissionKey: "Performance",
     children: [
-      { path: "overview", element: <Overview />, permissionKey: "Overview" },
       {
-        path: "my-goals",
-        element: <MyGoals />,
-        permissionKey: "My Goals",
+        path: "",
+        element: <Overview />,
+        permissionKey: "Overview",
+        children: [
+          { path: "overview", element: <OverviewDashboard />, permissionKey: "Overview" },
+          {
+            path: "my-goals",
+            element: <MyGoals />,
+            permissionKey: "My Goals",
+          },
+          {
+            path: "my-goals/:id",
+            element: <GoalDetails />,
+            permissionKey: "My Goals",
+          },
+          {
+            path: "review",
+            element: <Review />,
+            permissionKey: "Review",
+          },
+          {
+            path: "review/peer-nomination",
+            element: <PeerNominationPage />,
+            permissionKey: "Review",
+          },
+          {
+            path: "feedback",
+            element: <Feedback />,
+            permissionKey: "Feedback",
+          },
+          {
+            path: "my-goals/new-goal",
+            element: <NewGoal />,
+            permissionKey: "New Goal Plan",
+          },
+          {
+            path: "skills",
+            element: <SkillsAndProficiency />,
+            permissionKey: "Skills And Proficiency",
+          },
+          {
+            path: "performance-review",
+            element: <PerformanceReviewApp />,
+            permissionKey: "Performance Review",
+          },
+        ]
       },
       {
         path: "team-overview",
@@ -1495,41 +1557,6 @@ export const routesConfig: AppRoute[] = [
         path: "team-check-ins",
         element: <TeamCheckIns />,
         permissionKey: "Team Check-Ins",
-      },
-      {
-        path: "my-goals/:id",
-        element: <GoalDetails />,
-        permissionKey: "My Goals",
-      },
-      {
-        path: "review",
-        element: <Review />,
-        permissionKey: "Review",
-      },
-      {
-        path: "review/peer-nomination",
-        element: <PeerNominationPage />,
-        permissionKey: "Review",
-      },
-      {
-        path: "feedback",
-        element: <Feedback />,
-        permissionKey: "Feedback",
-      },
-      {
-        path: "my-goals/new-goal",
-        element: <NewGoal />,
-        permissionKey: "New Goal Plan",
-      },
-      {
-        path: "skills",
-        element: <SkillsAndProficiency />,
-        permissionKey: "Skills And Proficiency",
-      },
-      {
-        path: "performance-review",
-        element: <PerformanceReviewApp />,
-        permissionKey: "Performance Review",
       },
       {
         path: "appraisal-cycle-wizard",

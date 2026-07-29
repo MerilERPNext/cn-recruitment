@@ -181,6 +181,8 @@ code {
 
 /* Desktop attendance calendar - unique scoped styles */
 .desktop-att-cal .react-datepicker__day {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
   min-height: 6rem !important;
   align-items: stretch !important;
   justify-content: stretch !important;
@@ -200,10 +202,15 @@ code {
 }
 
 .desktop-att-cal .react-datepicker__day-name {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
   border-right: 1px solid #e2e4e7 !important;
-  padding: 0.4rem 0 !important;
+  padding: 0.4rem 0.15rem !important;
   border-radius: 10px 10px 0 0 !important;
-
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  font-size: 0.7rem !important;
 }
 
 .desktop-att-cal .react-datepicker__day-names {

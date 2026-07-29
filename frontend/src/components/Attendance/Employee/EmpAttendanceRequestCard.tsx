@@ -1,4 +1,3 @@
-import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
@@ -8,7 +7,7 @@ import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
+import formatToIndianDate, { getDays } from "../../../utils/formatToIndianDate";
 import { truncateByChars } from "../../../utils/sanitizeToPlainText";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
@@ -71,17 +70,6 @@ const EmpAttendanceRequestCard = ({
       );
     }
   };
-  function getDays(from_date: string, to_date: string) {
-    const format = "dd-MM-yyyy";
-
-    const fromDate = startOfDay(parse(from_date, format, new Date()));
-    const toDate = startOfDay(parse(to_date, format, new Date()));
-
-
-    const diff = differenceInCalendarDays(toDate, fromDate);
-
-    return diff + 1; // inclusive
-  }
 
   const formattedFromDate = formatToIndianDate(
     data?.reference_document?.from_date,
@@ -89,7 +77,11 @@ const EmpAttendanceRequestCard = ({
   const formattedToDate = formatToIndianDate(data?.reference_document?.to_date);
   const formattedDueDate = formatToIndianDate(data?.due_date);
   const formattedCreationDate = formatToIndianDate(data?.reference_document?.creation);
-  const duration = getDays(formattedFromDate, formattedToDate);
+
+  const duration = getDays(
+    data?.reference_document?.from_date ?? "",
+    data?.reference_document?.to_date ?? "",
+  );
   const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 0.8fr 1fr 1fr 1fr 1fr";
 
   const status = data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.custom_status;

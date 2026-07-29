@@ -895,18 +895,39 @@ def _get_form_settings():
         return None
 
 
+def _row_order(row):
+    """Sort weight of a config row. Rows with no explicit `order` sink below
+    ordered ones instead of masquerading as position 0."""
+    try:
+        value = int(row.get("order") or 0)
+    except (TypeError, ValueError):
+        value = 0
+    return value or _NO_EXPLICIT_ORDER
+
+
 def _load_form_overrides(settings=None):
     """Overrides keyed by (applies_to, fieldname) → row dict, read from the
     single settings doc. Empty dict when nothing is configured — callers then
-    fall back to pure meta. Never raises."""
+    fall back to pure meta. Never raises.
+
+    A field can occupy only ONE slot, but the child table has no uniqueness
+    constraint, so duplicate rows for the same field can exist (hand-added in
+    the Advanced raw grid, or left behind by an older seed). This used to let
+    whichever row happened to be LAST win, which made the builder show a field
+    in one tab while the API emitted it in another. The lowest `order` wins
+    instead: that is the slot the builder itself renders, so both agree."""
     settings = settings or _get_form_settings()
     if not settings:
         return {}
     overrides = {}
     for row in settings.get("field_overrides") or []:
         key = (row.get("applies_to") or "Parent", row.get("fieldname"))
-        if key[1]:
-            overrides[key] = row
+        if not key[1]:
+            continue
+        current = overrides.get(key)
+        if current is not None and _row_order(current) <= _row_order(row):
+            continue
+        overrides[key] = row
     return overrides
 
 
@@ -1911,6 +1932,35 @@ def _get_requisition_approval_allocation(name):
         return []
 
 
+def _config_exposed_parent_fields():
+    """Parent fieldnames exposed via Form Settings that the static
+    PARENT_WRITABLE_FIELDS / PARENT_READONLY_FIELDS tuples don't already cover.
+
+    Memoised for the request: list mode serialises up to 100 requisitions per
+    call and the answer is identical for every one of them, so this must not be
+    recomputed per row. `frappe.local` is torn down between requests, so a
+    settings change is picked up on the next call."""
+    cached = getattr(frappe.local, "_jr_config_exposed_fields", None)
+    if cached is not None:
+        return cached
+
+    static = set(PARENT_WRITABLE_FIELDS) | set(PARENT_READONLY_FIELDS)
+    meta = frappe.get_meta(JOB_REQUISITION)
+    fields = []
+    for (applies_to, fieldname), row in _load_form_overrides().items():
+        if applies_to != "Parent" or fieldname in static:
+            continue
+        if row.get("expose") == "Hide":
+            continue
+        df = meta.get_field(fieldname)
+        if not df or df.fieldtype in _LAYOUT_TYPES or df.fieldtype in CHILD_TABLE_FIELDTYPES:
+            continue
+        fields.append(fieldname)
+
+    frappe.local._jr_config_exposed_fields = fields
+    return fields
+
+
 def _serialise_requisition(doc):
     """Flat round-trip representation of a JR.
     All parent fields keep their DocType field names so the UI can bind
@@ -1936,6 +1986,16 @@ def _serialise_requisition(doc):
         out[field] = doc.get(field)
     for field in PARENT_READONLY_FIELDS:
         out[field] = doc.get(field)
+
+    # Fields added through Job Requisition Form Settings are not in the static
+    # tuples above — including virtual ("managed") fields, which is how fields
+    # get added at all once the doctype is near MariaDB's row-size limit. Emit
+    # every parent field the config exposes, or a configured field would accept
+    # a value on write (see _get_writable_parent_fields) and always read back
+    # missing. Child tables are serialised explicitly further down.
+    for fieldname in _config_exposed_parent_fields():
+        if fieldname not in out:
+            out[fieldname] = doc.get(fieldname)
 
     # `custom_work_experience` is a legacy alias for the real Select field
     # `custom_work_experience_range`. The real field doesn't exist under the

@@ -28,6 +28,7 @@ const CardTable = ({
   noBorder = false,
   noShadow = false,
   noRound = false,
+  stickyTopClassName = "top-0",
 }: {
   titles: ReactNode[];
   columnWidths?: string[];
@@ -38,6 +39,9 @@ const CardTable = ({
   noBorder?: boolean;
   noShadow?: boolean;
   noRound?: boolean;
+  /** Tailwind `top-*` class for the sticky header — offset it below a sticky page
+   *  top bar (e.g. "top-[52px]"). Defaults to "top-0". */
+  stickyTopClassName?: string;
 }) => {
   const { isDesktop } = useScreenSize();
   const bulkSelect = useBulkSelectContext();
@@ -117,7 +121,7 @@ const CardTable = ({
           <div className={`${isDesktop ? "min-w-max" : ""} flex flex-col h-full`}>
             {isDesktop && (
               <div
-                className="grid gap-4 px-6 py-4 bg-gray-50 border-b flex-shrink-0 sticky top-0 z-10"
+                className={`grid gap-4 px-6 py-4 bg-gray-50 border-b flex-shrink-0 sticky ${stickyTopClassName} z-10`}
                 style={{ gridTemplateColumns }}
                 ref={stickyRef}
               >

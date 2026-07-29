@@ -51,7 +51,7 @@ const Feedback = () => {
     openReviews.find((r) => r.id === activeReviewId) || openReviews[0];
 
   return (
-    <div className="min-h-full bg-[#f8fafc] overflow-y-scroll p-4 sm:p-6 font-sans">
+    <div className="min-h-full bg-[#f8fafc] overflow-y-scroll p-4 sm:p-1 font-sans">
       <Suspense
         fallback={
           <div className="p-6 text-center text-gray-500">Loading...</div>

@@ -11,6 +11,34 @@
  * `assignment_conditions` — see get_hiring_stages_for_job_opening (server).
  */
 
+// A round whose Step Type is "Interview" names a real interview round — the
+// Round cell becomes a Link picker (Interview Round on HRMS v15, Interview Type
+// on v16; the doctype is resolved server-side). Every other step type stays free
+// text. See public/js/interview_round_link.js.
+(function () {
+	const ROUND_LINK = {
+		grid: "interview_rounds",
+		name_field: "round_name",
+		type_field: "step_type",
+	};
+
+	frappe.ui.form.on("TA Interview Strategy Round", {
+		step_type(frm, cdt, cdn) {
+			recruitment.interview_round_link.sync_row(frm, ROUND_LINK, cdt, cdn);
+		},
+	});
+
+	frappe.ui.form.on("TA Interview Strategy Template", {
+		refresh(frm) {
+			recruitment.interview_round_link.sync(frm, ROUND_LINK);
+		},
+
+		interview_rounds_add(frm, cdt, cdn) {
+			recruitment.interview_round_link.sync_row(frm, ROUND_LINK, cdt, cdn);
+		},
+	});
+})();
+
 frappe.ui.form.on("TA Interview Strategy Template", {
 	onload(frm) {
 		// `skip_stage_for_sources` is a Table MultiSelect nested inside the
