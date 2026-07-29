@@ -25,7 +25,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
     const navigate = useNavigate();
     const { data: userUiPermission, isLoading: isPermissionLoading } = useGetUiPermission(APP_NAME)
     const { data: mandatoryGoals, isLoading, error, refetch } = useGetMandotaryGoals();
-    const { addDraftGoals } = useGoalModel();
+    const { addDraftGoals, setDraftGoals } = useGoalModel();
     const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
     const [acknowledgementGoalsData, setAcknowledgementGoalsData] = useState<Templates[] | undefined>(undefined);
     const [blankGoalDescription, setBlankGoalDescription] = useState(
@@ -277,14 +277,16 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
         >
             <GoalLibraryPopup
                 onClose={() => setIsGoalLibraryOpen(false)}
-                onUseTemplate={(selected) => {
+                onUseTemplate={(selected, source) => {
                     setIsGoalLibraryOpen(false);
                     const selectedGoals = Array.isArray(selected) ? selected : [selected];
-                    addDraftGoals(selectedGoals);
+                    if (source === 'recommended') {
+                        setDraftGoals(selectedGoals);
+                    } else {
+                        addDraftGoals(selectedGoals);
+                    }
                     onContinue?.();
-                   
                 }}
-                
             />
         </Modal>
         <Modal

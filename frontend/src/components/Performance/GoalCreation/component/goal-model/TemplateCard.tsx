@@ -21,7 +21,6 @@ const TemplateCard = memo(({
     onToggleSelect,
     hideUseTemplate,
     weightage = 10,
-    
     onWeightageChange,
 }: TemplateCardProps) => {
     const goalType = template?.goal_type || 'OKR';
