@@ -81,6 +81,7 @@ doctype_js = {
         "public/js/job_opening_hiring_workflow.js",
         "public/js/job_opening_attach_resumes.js",
         "public/js/applicant_field_picker.js",
+        "public/js/job_opening_eligibility_ui.js",
     ],
     "TA Duplicity Check Settings": ["public/js/applicant_field_picker.js"],
     "TA Rehire Check Settings": ["public/js/applicant_field_picker.js"],

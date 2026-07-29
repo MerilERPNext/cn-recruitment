@@ -143,9 +143,9 @@ export default function ApprovalTracker({ data, For, isLoading }: ApprovalTracke
                       </Typography>
                     </div>
 
-                    <div className="flex justify-between max-sm:flex-row-reverse items-start px-4 pt-1 pb-3">
+                    <div className="flex justify-between max-sm:flex-col gap-3 items-start px-4 pt-1 pb-3">
                       <div className="flex gap-3">
-                        <ViewFormButton onClick={handleShowSelfForm} />
+                        <ViewFormButton variant="contain" size="sm" onClick={handleShowSelfForm} />
                       </div>
                       <div>
                         {formatToIndianDate(data?.initiated_on)}

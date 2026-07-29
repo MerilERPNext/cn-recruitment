@@ -148,7 +148,7 @@ const EmployeeTable = ({
             <thead className="bg-gray-50/80 backdrop-blur-sm">
               <tr className="sticky top-0 z-10">
                 {hasCheckboxesOrChevrons && (
-                  <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 group first:rounded-tl-xl transition-colors hover:bg-gray-100/50 w-[48px]">
+                  <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 group first:rounded-tl-xl transition-colors hover:bg-gray-100/50 w-[48px]">
                     {showCheckboxColumn ? (
                       <div className="flex items-center gap-2">
                         <input
@@ -166,22 +166,22 @@ const EmployeeTable = ({
                     )}
                   </th>
                 )}
-                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 transition-colors hover:bg-gray-100/50">
+                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100/50">
                   Employee
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 transition-colors hover:bg-gray-100/50">
+                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100/50">
                   Employee ID
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 transition-colors hover:bg-gray-100/50">
+                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100/50">
                   Designation
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 transition-colors hover:bg-gray-100/50">
+                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100/50">
                   Department
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 transition-colors hover:bg-gray-100/50">
+                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-r border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100/50">
                   Email
                 </th>
-                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 transition-colors hover:bg-gray-100/50">
+                <th className="whitespace-nowrap sticky top-0 bg-transparent border-b border-gray-100 px-5 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-100/50">
                   Office Location
                 </th>
               </tr>
@@ -404,24 +404,24 @@ const EmployeeTable = ({
                           </div>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100">
+                      <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm text-gray-700 font-medium border-b border-gray-100">
                         {item.employee}
                       </td>
                       <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
                         <div className="flex flex-col">
-                          <span className="font-medium text-gray-700">
+                          <span className="font-semibold text-gray-800">
                             {item.designation_name || "-"}
                           </span>
                         </div>
                       </td>
                       <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm border-b border-gray-100">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-50 text-gray-600 border border-gray-100">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-700 border border-gray-200">
                           {item.department_name || "-"}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100 font-brand">
+                      <td className="whitespace-nowrap border-r px-5 py-2.5 text-sm text-gray-700 border-b border-gray-100 font-brand">
                         <div className="flex items-center gap-2 group/copy">
-                          <span className="truncate max-w-[150px]">
+                          <span className="truncate max-w-[150px] font-medium">
                             {item.user_id || "-"}
                           </span>
                           {item.user_id && (
@@ -444,7 +444,7 @@ const EmployeeTable = ({
                           )}
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-5 py-2.5 text-sm text-gray-500 border-b border-gray-100">
+                      <td className="whitespace-nowrap px-5 py-2.5 text-sm text-gray-700 font-medium border-b border-gray-100">
                         {item.branch_name || "-"}
                       </td>
                     </tr>
@@ -553,7 +553,7 @@ const EmployeeTable = ({
                           </WrapperHoverCard>
                         </div>
                       </Link>
-                      <p className="text-[10px] font-mono text-gray-400 mt-0.5">
+                      <p className="text-[10px] font-mono text-gray-500 mt-0.5">
                         {item.employee}
                       </p>
                     </div>
@@ -718,43 +718,42 @@ const EmployeeTable = ({
                   </div>
                 </div>
 
-                {/* Info Grid with Icons */}
-                <div className="space-y-3 pt-3 border-t border-gray-100">
+                {/* Info Grid */}
+                <div className="space-y-2.5 pt-3 border-t border-gray-100">
                   {item.user_id && (
-                    <div className="flex flex-col gap-1">
-                      <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold">
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-600 shrink-0">
                         Email
                       </span>
-                      <span className="text-sm font-medium text-gray-700 truncate">
+                      <span className="text-sm font-semibold text-gray-800 truncate text-right">
                         {item.user_id || "-"}
                       </span>
                     </div>
                   )}
-                  <div className="flex flex-col gap-1 items-start justify-start">
-                    <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold">
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-600 shrink-0">
                       Department
                     </span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-600">
+                    <span className="text-sm font-semibold text-gray-800 text-right">
                       {item.department_name || "-"}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold">
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-600 shrink-0">
                       Designation
                     </span>
-                    <span className="font-medium text-gray-700">
+                    <span className="text-sm font-semibold text-gray-800 text-right">
                       {item.designation_name || "-"}
                     </span>
                   </div>
                   {item.branch_name && (
-                    <div className="flex flex-col text-sm">
-                      <div className="text-gray-400 text-xs uppercase tracking-wider font-semibold">
+                    <div className="flex justify-between items-center gap-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-600 shrink-0">
                         Location
-                      </div>
-                      <div className="flex items-center gap-1.5 font-medium text-gray-700">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary-400"></div>
+                      </span>
+                      <span className="text-sm font-semibold text-gray-800 text-right">
                         {item.branch_name || "-"}
-                      </div>
+                      </span>
                     </div>
                   )}
                 </div>
@@ -769,7 +768,7 @@ const EmployeeTable = ({
                   expandedRows.includes(item.name) && (
                     <div className="mt-4 border-t border-gray-100 pt-4">
                       <div className="flex flex-col gap-1">
-                        <span className="text-gray-400 text-xs uppercase tracking-wider font-semibold">
+                        <span className="text-gray-600 text-xs uppercase tracking-wider font-bold">
                           Date of Joining
                         </span>
                         <span className="text-sm text-gray-900 font-medium">

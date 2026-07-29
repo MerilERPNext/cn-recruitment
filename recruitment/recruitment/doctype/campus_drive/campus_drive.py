@@ -18,6 +18,7 @@ class CampusDrive(Document):
 		validate_unique_job_openings(self, table_fieldname="linked_job_openings")
 		self._set_registration_defaults()
 		self._set_round_codes()
+		self._warn_round_stage_alignment()
 
 	def _lifecycle_status(self):
 		"""Where the drive sits in its window: Draft before it starts, Live during,
@@ -130,6 +131,26 @@ class CampusDrive(Document):
 			# portal knows which round cards render a Panel / GD Groups block.
 			row.requires_panel = 1 if row.round_type in PANEL_ROUND_TYPES else 0
 			row.requires_gd_grouping = 1 if row.round_type in GD_ROUND_TYPES else 0
+
+	def _warn_round_stage_alignment(self):
+		"""Warn (never block) when a round's Hiring Stage isn't a real stage on the
+		linked openings — the exact misconfiguration that otherwise surfaces only as a
+		silent '0 waiting'. Skipped for new/unsaved drives (openings sync on save)."""
+		if self.is_new():
+			return
+		opening_stages = set(_stage_options(self).get("stages") or [])
+		if not opening_stages:
+			return
+		for r in (self.rounds or []):
+			if r.requires_gd_grouping:
+				continue
+			hs = (r.hiring_stage or "").strip()
+			if hs and hs not in opening_stages:
+				frappe.msgprint(
+					_("Round “{0}” is mapped to stage “{1}”, which none of this drive’s "
+					  "openings have. Candidates will never reach it — pick one of: {2}.").format(
+						r.round_name or r.round_code, hs, ", ".join(sorted(opening_stages))),
+					title=_("Round stage not on any opening"), indicator="orange")
 
 	# ------------------------------------------------------------------
 	# Registration QR code
@@ -879,6 +900,58 @@ def _panels_for_round(doc, round_code, emp_users=None):
 
 
 @frappe.whitelist()
+def get_offer_candidates(campus_drive, round_code):
+	"""Candidates who have reached an Offer round's stage — i.e. cleared everything
+	before it — so HR can select them and raise Job Offers straight from the drive.
+	Flags anyone who already has a Job Offer so they aren't offered twice.
+	"""
+	doc = _drive_lite(campus_drive)
+	row = _round_by_code(doc, round_code)
+	stage = (row.hiring_stage or "").strip()
+	if not stage:
+		frappe.throw(_("Set the Hiring Stage on round {0} first.").format(round_code))
+
+	invites = _drive_invites(doc)
+	if not invites:
+		return {"stage": stage, "candidates": []}
+
+	rows = frappe.get_all(
+		"Job Applicant",
+		filters={"custom_campus_invite": ["in", invites], "custom_current_stage": stage},
+		fields=["name", "applicant_name", "custom_applicant_last_name",
+		        "custom_institute as institute", "job_title as job_opening",
+		        "designation", "status"],
+		order_by="job_title asc, name asc",
+	)
+	names = [r.name for r in rows]
+	with_offer = set(frappe.get_all(
+		"Job Offer", filters={"job_applicant": ["in", names or [""]], "docstatus": ["!=", 2]},
+		pluck="job_applicant")) if names else set()
+
+	return {
+		"stage": stage,
+		"candidates": [{
+			"name": r.name,
+			"applicant_name": _full_name(r.applicant_name, r.get("custom_applicant_last_name")),
+			"institute": r.institute,
+			"job_opening": r.job_opening,
+			"designation": r.designation,
+			"has_offer": r.name in with_offer,
+		} for r in rows],
+	}
+
+
+@frappe.whitelist()
+def create_offers_for_candidates(campus_drive, applicants):
+	"""Raise Job Offers for the selected candidates (reuses the shared bulk creator so
+	the offer records are built exactly like the rest of the app)."""
+	from recruitment.api.bulk_job_offer import create_bulk_job_offer
+
+	_gd_guard(campus_drive)
+	return create_bulk_job_offer(applicants)
+
+
+@frappe.whitelist()
 def get_round_pool(campus_drive, round_code):
 	"""Candidates waiting at this round's hiring stage, grouped by role.
 
@@ -1234,14 +1307,20 @@ def get_rounds_overview(campus_drive):
 	# can exclude those already scheduled for the round). Counted in Python — a SQL
 	# aggregate in `fields` is rejected by Frappe v16 and the dict form isn't on v15.
 	stage_applicants = {}
+	# Non-terminal candidates parked at each stage — used by the health check to spot
+	# candidates stranded on a stage no round covers.
+	stage_active = {}
 	if invites:
 		for r in frappe.get_all(
 			"Job Applicant",
 			filters={"custom_campus_invite": ["in", invites]},
-			fields=["name", "custom_current_stage as stage"],
+			fields=["name", "custom_current_stage as stage", "status"],
 			limit_page_length=0,
 		):
-			stage_applicants.setdefault(r.stage or "", set()).add(r.name)
+			s = r.stage or ""
+			stage_applicants.setdefault(s, set()).add(r.name)
+			if r.status not in ("Rejected", "Accepted"):
+				stage_active[s] = stage_active.get(s, 0) + 1
 
 	# Interviews this drive created, with their feedback progress
 	iv_rows = frappe.get_all(
@@ -1329,9 +1408,61 @@ def get_rounds_overview(campus_drive):
 		})
 
 	# Folded in so the client gets rounds + the stage picker's options in ONE call.
+	stage_options = _stage_options(doc)
 	return {"rounds": rounds, "invites": invites,
 	        "roles": [{"job_opening": k, "job_title": v} for k, v in role_titles.items()],
-	        "stage_options": _stage_options(doc)}
+	        "stage_options": stage_options,
+	        "health": _drive_health(doc, stage_options, stage_active)}
+
+
+def _drive_health(doc, stage_options, stage_active):
+	"""Surface, in plain language, the misconfigurations that otherwise show up only
+	as a silent "0 waiting" — so HR can see and fix them on the form instead of
+	guessing. Checks:
+	  1. A round with no Hiring Stage.
+	  2. A round mapped to a stage none of the linked openings has.
+	  3. An interview round mapped to a stage that isn't of type "Interview" (feedback
+	     won't auto-advance those candidates).
+	  4. Candidates stranded at a stage no round on the drive covers.
+	"""
+	stage_names = set(stage_options.get("stages") or [])
+	stage_type = stage_options.get("stage_type") or {}
+	rounds = doc.rounds or []
+	covered = {(r.hiring_stage or "").strip() for r in rounds if r.hiring_stage}
+
+	issues = []
+	for r in rounds:
+		if r.requires_gd_grouping:
+			continue
+		hs = (r.hiring_stage or "").strip()
+		if not hs:
+			issues.append({"level": "error",
+				"title": _("Round “{0}” has no Hiring Stage").format(r.round_name or r.round_code),
+				"detail": _("Set its Hiring Stage so cleared candidates can flow into it.")})
+			continue
+		if stage_names and hs not in stage_names:
+			issues.append({"level": "error",
+				"title": _("Round “{0}” points to a stage no opening has").format(r.round_name or r.round_code),
+				"detail": _("“{0}” isn’t in any linked opening’s hiring workflow, so candidates can never reach this round. Change it to one of: {1}.").format(
+					hs, ", ".join(sorted(stage_names)))})
+		elif stage_type.get(hs) and stage_type.get(hs) != "Interview":
+			issues.append({"level": "warning",
+				"title": _("Round “{0}”’s stage isn’t an Interview stage").format(r.round_name or r.round_code),
+				"detail": _("Stage “{0}” is type “{1}” on the opening. Interview feedback only auto-advances candidates from Interview-type stages — set it to Interview, or this round won’t move people on.").format(
+					hs, stage_type.get(hs))})
+
+	# Stranded candidates: sitting (non-terminal) on a stage no round covers.
+	for stg, cnt in sorted(stage_active.items()):
+		if not stg or stg in covered:
+			continue
+		orphan = bool(stage_names) and stg not in stage_names
+		issues.append({"level": "error" if orphan else "warning",
+			"title": _("{0} candidate(s) stuck at “{1}”").format(cnt, stg),
+			"detail": (_("This stage is no longer in the opening’s workflow, so these candidates are orphaned — add a round for it or move them to a valid stage.")
+			           if orphan else
+			           _("No round on this drive covers “{0}”. Add a round mapped to it, or move these candidates.").format(stg)),
+			"stage": stg})
+	return issues
 
 
 @frappe.whitelist()
@@ -1354,9 +1485,14 @@ def _stage_options(doc):
 
 	from recruitment.api.hiring_stage import get_opening_stages
 
-	per_opening = {}
+	per_opening, stage_type = {}, {}
 	for op in openings:
-		per_opening[op] = [s.get("stage_name") for s in (get_opening_stages(op) or []) if s.get("stage_name")]
+		per_opening[op] = []
+		for s in (get_opening_stages(op) or []):
+			nm = s.get("stage_name")
+			if nm:
+				per_opening[op].append(nm)
+				stage_type.setdefault(nm, s.get("stage_type"))
 
 	ordered, seen = [], set()
 	for op in openings:
@@ -1369,6 +1505,7 @@ def _stage_options(doc):
 		"stages": ordered,
 		"common": common,
 		"partial": [s for s in ordered if s not in common],
+		"stage_type": stage_type,
 		"openings": len(openings),
 	}
 
