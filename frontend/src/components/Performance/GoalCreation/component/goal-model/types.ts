@@ -9,6 +9,8 @@ export type GoalTemplate = Partial<Goal> & {
     recommended?: boolean;
     department?: string | null;
     designation?: string;
+    total_weightage?:number;
+    goal_count?:number
 };
 
 export const getGoalKey = (template: GoalTemplate): string => {

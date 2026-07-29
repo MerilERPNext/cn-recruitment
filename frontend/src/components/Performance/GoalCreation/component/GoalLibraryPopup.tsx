@@ -78,6 +78,8 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                     description: repo.description,
                     usedCount: repo.usage_count,
                     recommended: Boolean(repo.recommended),
+                    goal_count: repo.goal_count,
+                    total_weightage: repo.total_weightage,
                     repository_goals: mappedGoals,
                 };
             });

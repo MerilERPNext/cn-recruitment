@@ -95,7 +95,7 @@ const TemplateCard = memo(({
                             : `Weight: ${template?.weightage ?? 10}%`}
                     </Typography>
                 </div>
-
+                {template.total_weightage} {template.goal_count}
                 <div className="flex items-center gap-2 shrink-0">
                     {onWeightageChange && (
                         <input
