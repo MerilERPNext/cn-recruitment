@@ -326,10 +326,25 @@ frappe.ui.form.on("Job Offer", {
 
 
 
-        // Clause type picker → only active clause types.
-        frm.set_query("clause_type", "custom_offer_clauses", () => ({ filters: { custom_variable_part_of_ctc: 1 } }));
+        // Clause type picker (Job Offer Clause.clause_type → Salary Component).
+        //
+        // This filtered on `custom_variable_part_of_ctc`, which exists on no
+        // doctype in any installed app. HRMS v15 silently drops an unknown filter
+        // field, but v16 validates it and aborts the link search with a
+        // "You do not have permission to access field" PermissionError — so the
+        // picker was dead on v16. Left unfiltered until the intended rule is
+        // confirmed: the closest real fields (`custom_is_part_of_ctc` +
+        // `custom_component_sub_type = "Variable"`) match NO component at all, so
+        // guessing would just swap the error for an empty list.
+        frm.set_query("clause_type", "custom_offer_clauses", () => ({}));
 
-        frm.set_query("salary_component", "custom_extra_payment", () => ({ filters: { custom_is_special_payment: 1 } }));
+        // Extra payment picker → components flagged as extra payments.
+        // Was `custom_is_special_payment`, which likewise doesn't exist; the real
+        // flag on Salary Component is `custom_is_extra_payment` ("Is Extra
+        // Payment"), matching this table's own name.
+        frm.set_query("salary_component", "custom_extra_payment", () => ({
+            filters: { custom_is_extra_payment: 1 },
+        }));
 
 
 

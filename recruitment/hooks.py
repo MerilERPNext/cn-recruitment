@@ -30,10 +30,7 @@ add_to_apps_screen = [
 	}
 ]
 
-# on_session_creation = [
-#      "recruitment.www.custom_login.role_based_home_page"
-# ]
-# website user home page (by Role)
+# Website user home page (by Role)
 role_home_page = {
 	"System User": "/webapp",
 	# External recruiters land on their (scoped) Job Opening list in Desk.

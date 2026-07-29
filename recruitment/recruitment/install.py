@@ -127,6 +127,11 @@ _PERF_INDEX_TARGETS = [
     # Scanned on every Candidate Registration save by the duplicate check, and by
     # the TPO drive cards.
     ("Candidate Registration", "campus_invite"),
+    # The hiring-workflow engine filters Job Applicant by these on every campus
+    # round card, offer/pre-offer candidate list, stage-pipeline report and SLA
+    # sweep — all currently full scans.
+    ("Job Applicant", "custom_current_stage"),
+    ("Job Applicant", "custom_campus_invite"),
 ]
 
 

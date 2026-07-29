@@ -162,6 +162,23 @@ def get_openings_stages(job_openings):
 	}
 
 
+def _require_applicant_write(job_applicant):
+	"""Assert the caller may drive this candidate through the hiring workflow.
+
+	Most endpoints here are protected only incidentally, by the ``doc.save()``
+	they eventually perform. That is not enough for the ones that save with
+	``ignore_permissions=True`` (they must, to append stage history and submit
+	feedback on behalf of the workflow) — those bypassed the check entirely, so
+	any authenticated user could reject a candidate and file interview feedback
+	in someone else's name. Gate them explicitly instead.
+	"""
+	if not frappe.has_permission("Job Applicant", "write", doc=job_applicant):
+		frappe.throw(
+			_("You are not permitted to change this candidate's hiring stage."),
+			frappe.PermissionError,
+		)
+
+
 def _find_stage(stages, stage_name):
 	"""Index of ``stage_name`` within the ordered stage list, or -1."""
 	for i, s in enumerate(stages):
@@ -185,16 +202,107 @@ def _append_history(doc, stage, result, interview=None, notes=None):
 	})
 
 
+# stage_type -> the built-in Job Applicant `status` a candidate should read while
+# sitting on it. Types deliberately ABSENT leave `status` alone:
+#   Screening / System — owned by the screening + eligibility engines, which park
+#   candidates on Hold / Rejected states that must not be stomped on entry.
+STATUS_BY_STAGE_TYPE = {
+	"Shortlist": "Shortlisted",
+	"Interview": "Interview",
+	"Pre Offer": "Approvals",
+	"Offer": "Approvals",
+	"Done": "Accepted",
+}
+
+
+def _sub_status_master():
+	"""``{parent_status: (docname, {sub_status, …})}`` for the Sub Status master.
+
+	Loaded once per request: a bulk advance (a whole GD round clearing at once)
+	would otherwise re-read the master for every candidate it moves.
+	"""
+	cache = getattr(frappe.local, "_recruitment_sub_status", None)
+	if cache is None:
+		cache = {}
+		for row in frappe.get_all("Sub Status", fields=["name", "parent_status", "sub_status"]):
+			cache[row.parent_status] = (
+				row.name,
+				{o.strip() for o in (row.sub_status or "").split("\n") if o.strip()},
+			)
+		frappe.local._recruitment_sub_status = cache
+	return cache
+
+
+def _ensure_sub_status_option(status, sub_status):
+	"""Make sure ``sub_status`` is listed under ``status`` in the Sub Status master.
+
+	The Job Applicant form builds its sub-status dropdown from that master (see
+	public/js/job_applicant.js), so a value we write that isn't listed renders as
+	an empty Select. Stage names are per-opening and admins add new rounds freely,
+	so the master is kept in step automatically instead of needing a manual edit
+	for every new round.
+
+	Best-effort: master upkeep must never block a stage transition.
+	"""
+	if not (status and sub_status):
+		return
+	try:
+		cache = _sub_status_master()
+		entry = cache.get(status)
+		if entry and sub_status in entry[1]:
+			return
+
+		if entry:
+			name, options = entry
+			options.add(sub_status)
+			frappe.db.set_value(
+				"Sub Status", name, "sub_status",
+				"\n".join(sorted(options)), update_modified=False,
+			)
+		else:
+			row = frappe.new_doc("Sub Status")
+			row.parent_status = status
+			row.sub_status = sub_status
+			row.insert(ignore_permissions=True)
+			cache[status] = (row.name, {sub_status})
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: sub-status upkeep failed")
+
+
+def sync_status_for_stage(doc, stage):
+	"""Point the built-in ``status`` / ``custom_substatus`` at the stage the
+	candidate is actually in, so list views, reports and the portal read true.
+
+	``custom_substatus`` carries the STAGE NAME ("Group Discussion", "HR Round"),
+	which is what makes the round visible at a glance; the name is registered in
+	the Sub Status master so it stays selectable on the form.
+
+	Returns ``True`` when either field changed.
+	"""
+	status = STATUS_BY_STAGE_TYPE.get((stage.get("stage_type") or "").strip())
+	if not status:
+		return False
+
+	stage_name = (stage.get("stage_name") or "").strip()
+	changed = False
+
+	if doc.get("status") != status:
+		doc.status = status
+		changed = True
+	if stage_name and doc.get("custom_substatus") != stage_name:
+		doc.custom_substatus = stage_name
+		changed = True
+	if stage_name:
+		_ensure_sub_status_option(status, stage_name)
+	return changed
+
+
 def _enter_stage(doc, stage, result="Moved", interview=None, save=True,
 				 ignore_permissions=False, notify=True):
 	"""Place ``doc`` into ``stage``: set current stage, log history, sync status."""
 	doc.set(STAGE_FIELD, stage.get("stage_name"))
 	_append_history(doc, stage, result, interview=interview)
-
-	# Light, non-destructive status sync so existing list/report screens stay
-	# meaningful. A "Done" stage means the candidate has cleared the pipeline.
-	if (stage.get("stage_type") or "") == "Done":
-		doc.status = "Accepted"
+	sync_status_for_stage(doc, stage)
 
 	if save:
 		doc.save(ignore_permissions=ignore_permissions)
@@ -661,6 +769,7 @@ def get_candidate_review(job_applicant):
 def complete_review(job_applicant, action, comment=None, tags=None):
 	"""Outcome of a Screening / Shortlist review. ``action`` is 'advance'
 	(Screen / Shortlist) or 'reject'. The comment is logged and any tags added."""
+	_require_applicant_write(job_applicant)
 	doc = frappe.get_doc("Job Applicant", job_applicant)
 	if comment:
 		try:
@@ -690,6 +799,7 @@ def complete_interview(job_applicant, rating, comments=None, assessment=None, st
 	``assessment`` is "Candidate Selected" (→ Cleared → advance) or
 	"Candidate Rejected" (→ Rejected → reject). ``rating`` is 1–5.
 	"""
+	_require_applicant_write(job_applicant)
 	doc = frappe.get_doc("Job Applicant", job_applicant)
 	stages = get_opening_stages(doc.get("job_title"))
 	target = stage_name or doc.get(STAGE_FIELD)
@@ -763,6 +873,7 @@ def _stage_or_throw(doc, stage_name):
 def mark_stage_not_required(job_applicant, stage_name=None, comment=None):
 	"""Skip the current (or given) stage — record 'Not Required' (with the HR's
 	comment) and advance to the next stage without any action."""
+	_require_applicant_write(job_applicant)
 	doc = frappe.get_doc("Job Applicant", job_applicant)
 	stages, idx = _stage_or_throw(doc, stage_name)
 	_append_history(doc, stages[idx], "Not Required", notes=comment)
@@ -786,6 +897,7 @@ def mark_stage_not_required(job_applicant, stage_name=None, comment=None):
 def send_interview_feedback_form(job_applicant, stage_name=None):
 	"""Ensure an Interview exists for the stage and email its interviewer(s) a
 	request to submit feedback (a link to the Interview)."""
+	_require_applicant_write(job_applicant)
 	doc = frappe.get_doc("Job Applicant", job_applicant)
 	stages, idx = _stage_or_throw(doc, stage_name)
 	stage = stages[idx]
