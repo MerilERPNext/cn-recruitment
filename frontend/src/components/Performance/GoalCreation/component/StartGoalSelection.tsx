@@ -283,6 +283,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                     if (source === 'recommended') {
                         setDraftGoals(selectedGoals);
                     } else {
+                        setDraftGoals([])
                         addDraftGoals(selectedGoals);
                     }
                     onContinue?.();
