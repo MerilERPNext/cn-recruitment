@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, X } from 'lucide-react';
+import { AlertCircle, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
 import { AsyncSelect } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
@@ -16,6 +16,53 @@ interface TeamGoalLibraryPopupProps {
     onUseTemplate?: (template: GoalTemplate | GoalTemplate[], source?: string) => void;
 }
 
+const TeamGoalSkeleton = () => (
+    <div className="space-y-3.5">
+        {Array.from({ length: 2}).map((_, index) => (
+            <div
+                key={index}
+                className="flex flex-col justify-between gap-5 rounded-2xl border border-gray-200/80 bg-white p-5 animate-pulse sm:flex-row sm:items-center sm:p-6"
+            >
+                <div className="flex items-start gap-4 min-w-0 flex-1">
+                    <div className="h-9 w-9 shrink-0 rounded-xl bg-gray-200" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <div className="h-5 w-32 rounded-md bg-amber-100/60" />
+                            <div className="h-5 w-24 rounded-md bg-indigo-50/80" />
+                            <div className="h-4 w-16 rounded bg-gray-200" />
+                        </div>
+                        <div className="h-5 w-3/4 rounded bg-gray-200" />
+                        <div className="h-4 w-1/2 rounded bg-gray-100 mt-1.5" />
+                    </div>
+                </div>
+                <div className="h-9 w-24 shrink-0 rounded-xl bg-gray-200 self-end sm:self-center" />
+            </div>
+        ))}
+    </div>
+);
+
+const TeamGoalError = ({ error, onRetry }: { error: any; onRetry: () => void }) => (
+    <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border border-red-100 bg-red-50/40 p-6">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100/80 text-red-600 mb-3 shadow-2xs">
+            <AlertCircle className="h-6 w-6" />
+        </div>
+        <Typography variant="bodyMedium" className="font-semibold text-gray-800 text-base">
+            Failed to load manager & department goals
+        </Typography>
+        <Typography variant="caption" className="text-gray-500 mt-1 max-w-sm leading-relaxed">
+            {error?.message || "An unexpected error occurred while fetching cascade goals. Please check your connection and try again."}
+        </Typography>
+        <Button
+            type="button"
+            variant="outline"
+            className="mt-4 h-9 rounded-xl border-red-200 bg-white px-5 text-xs font-semibold text-red-600 shadow-2xs hover:bg-red-50 hover:border-red-300 transition-all"
+            onClick={onRetry}
+        >
+            Try Again
+        </Button>
+    </div>
+);
+
 const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, onUseTemplate }) => {
     const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
     const currentCompany = currentEmployee?.company;
@@ -26,7 +73,7 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
     const [selectedLevel, setSelectedLevel] = useState({ label: 'All Designations', value: 'All' });
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
 
-    const { data: teamGoals, isLoading: teamGoalsLoading, error } = useCascadeMangerGoals({
+    const { data: teamGoals, isLoading: teamGoalsLoading, error, refetch } = useCascadeMangerGoals({
         search: debouncedSearchQuery || undefined,
         department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
         designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
@@ -164,9 +211,13 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                     </div>
                 </div>
 
-                {/* Content Area: GoalItemCard List */}
+                {/* Content Area: GoalItemCard List / Skeleton / Error */}
                 <div className="px-4 py-4 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:px-5 space-y-3.5">
-                    {filteredGoals?.length === 0 ? (
+                    {!teamGoalsLoading ? (
+                        <TeamGoalSkeleton />
+                    ) : error ? (
+                        <TeamGoalError error={error} onRetry={refetch} />
+                    ) : filteredGoals?.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-6">
                             <Search className="h-8 w-8 text-gray-400 mb-2" />
                             <Typography variant="bodyMedium" className="font-semibold text-gray-700">
@@ -177,7 +228,7 @@ const TeamGoalLibraryPopup: React.FC<TeamGoalLibraryPopupProps> = ({ onClose, on
                             </Typography>
                         </div>
                     ) : (
-                            filteredGoals?.map((goal: CascadeGoal, index) => {
+                        filteredGoals?.map((goal: CascadeGoal, index) => {
                             const isSelected = selectedTemplates.some((t) => t.goal === goal.goal || t.id === goal.goal);
                             return (
                                 <GoalItemCard
