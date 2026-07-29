@@ -138,7 +138,8 @@ const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) =>
     };
 
     const handleDeleteGoal = (goalId: string) => {
-        removeDraftGoal(goalId)
+        removeDraftGoal(goalId);
+        setGoals((prevGoals) => prevGoals.filter((g) => g.id !== goalId));
     };
 
     const handleUpdateGoalField = <K extends keyof GoalItem>(
