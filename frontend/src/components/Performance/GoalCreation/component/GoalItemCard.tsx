@@ -112,4 +112,4 @@ const GoalItemCard: React.FC<GoalItemCardProps> = ({
     );
 };
 
-export default GoalItemCard;
+export default React.memo(GoalItemCard);
