@@ -92,14 +92,20 @@ def _terminal_stage(name, stage_type, idx):
 	}
 
 
-def _append_offer_stages(job_opening, rows):
-	"""Append the virtual Pre Job Offer / Job Offer terminal stages."""
+def _append_offer_stages(job_opening, rows, enable_pre=None):
+	"""Append the virtual Pre Job Offer / Job Offer terminal stages.
+
+	``enable_pre`` lets a caller that already knows the opening's
+	``custom_enable_pre_job_offer`` flag pass it in (see ``get_openings_stages``),
+	so a batch over many openings doesn't re-query it one opening at a time.
+	"""
 	try:
 		types_present = {(r.get("stage_type") or "") for r in rows}
 		idx = max([(r.get("idx") or 0) for r in rows] or [0])
-		enable_pre = frappe.db.get_value(
-			"Job Opening", job_opening, "custom_enable_pre_job_offer"
-		)
+		if enable_pre is None:
+			enable_pre = frappe.db.get_value(
+				"Job Opening", job_opening, "custom_enable_pre_job_offer"
+			)
 		if enable_pre and "Pre Offer" not in types_present:
 			idx += 1
 			rows.append(_terminal_stage("Pre Job Offer", "Pre Offer", idx))
@@ -110,6 +116,50 @@ def _append_offer_stages(job_opening, rows):
 		# Never let the terminal-stage logic break stage reading.
 		frappe.log_error(frappe.get_traceback(), "Hiring Workflow: append offer stages failed")
 	return rows
+
+
+def get_openings_stages(job_openings):
+	"""``{job_opening: [stages]}`` for MANY openings in a fixed two queries.
+
+	Same shape as ``get_opening_stages`` per opening, terminal stages and all.
+	Callers that fan out over a drive's linked openings (the campus stage picker)
+	used to pay two queries *per opening*; this keeps it flat however many are
+	linked.
+	"""
+	openings = [o for o in dict.fromkeys(job_openings or []) if o]
+	if not openings:
+		return {}
+
+	rows = frappe.get_all(
+		"Job Opening Hiring Stage",
+		filters={
+			"parent": ["in", openings],
+			"parenttype": "Job Opening",
+			"parentfield": STAGES_FIELD,
+		},
+		fields=[
+			"parent", "stage_name", "stage_type", "sla", "sla_unit",
+			"owner_role", "notify", "auto", "notes", "idx",
+		],
+		order_by="parent asc, idx asc",
+	)
+	pre_flags = {
+		r.name: r.custom_enable_pre_job_offer
+		for r in frappe.get_all(
+			"Job Opening",
+			filters={"name": ["in", openings]},
+			fields=["name", "custom_enable_pre_job_offer"],
+		)
+	}
+
+	grouped = {o: [] for o in openings}
+	for row in rows:
+		grouped[row.pop("parent")].append(row)
+
+	return {
+		o: (_append_offer_stages(o, stages, enable_pre=pre_flags.get(o)) if stages else stages)
+		for o, stages in grouped.items()
+	}
 
 
 def _find_stage(stages, stage_name):
@@ -277,8 +327,83 @@ def reject_at_current_stage(job_applicant, reason=None):
 # --------------------------------------------------------------------------- #
 # Built-in Interview integration
 # --------------------------------------------------------------------------- #
+# The Interview field that carries the round, in the order we probe for it:
+# HRMS v15 ships ``interview_round``; v16 renamed it to ``interview_type``.
+_INTERVIEW_ROUND_LINK_FIELDS = ("interview_round", "interview_type")
+
+# Doctypes an Interview may link its round to across HRMS versions.
+_INTERVIEW_ROUND_DOCTYPES = ("Interview Round", "Interview Type")
+
+
+@frappe.whitelist()
+def get_interview_round_doctype():
+	"""The doctype an Interview links its round to on THIS HRMS version.
+
+	v15 links ``Interview.interview_round`` → "Interview Round"; v16 renamed the
+	field to ``interview_type`` and points it at "Interview Type". Nothing here
+	hardcodes either name — we read what the installed Interview doctype actually
+	links to, so the same code (and the same "Stage Name" picker in the hiring
+	workflow) serves both versions.
+
+	Returns ``None`` when HRMS isn't installed / has no such field, in which case
+	callers fall back to plain free-text stage names.
+
+	Memoised per request: the bulk campus scheduler resolves this once per
+	interview it creates, and the answer can't change inside one request.
+	"""
+	cached = getattr(frappe.local, "_recruitment_round_doctype", None)
+	if cached is not None:
+		return cached or None
+
+	resolved = None
+	try:
+		meta = frappe.get_meta("Interview")
+	except Exception:
+		meta = None
+
+	if meta:
+		for fieldname in _INTERVIEW_ROUND_LINK_FIELDS:
+			df = meta.get_field(fieldname)
+			if df and df.fieldtype == "Link" and df.options:
+				resolved = df.options
+				break
+		else:
+			# Renamed again? Fall back to any Link pointing at a known round doctype.
+			for df in meta.fields or []:
+				if df.fieldtype == "Link" and df.options in _INTERVIEW_ROUND_DOCTYPES:
+					resolved = df.options
+					break
+
+	frappe.local._recruitment_round_doctype = resolved or ""
+	return resolved
+
+
+def _round_title_field(doctype):
+	"""The field carrying the round's display name, or ``None`` when the docname
+	*is* the name.
+
+	Read from the doctype's own autoname so a lookup by name always hits the same
+	record the picker stores: "Interview Round" autonames ``field:round_name``,
+	while "Interview Type" is Prompt-named and so has no such field — its name is
+	the label itself.
+	"""
+	meta = frappe.get_meta(doctype)
+	autoname = (meta.autoname or "").strip()
+	if autoname.startswith("field:"):
+		fieldname = autoname.split(":", 1)[1].strip()
+		if meta.get_field(fieldname):
+			return fieldname
+	if meta.get_field("round_name"):
+		return "round_name"
+	return None
+
+
 def _ensure_interview_round(stage_name, designation=None):
-	"""Return an Interview Round named after the stage, creating it if needed.
+	"""Return the interview round named after the stage, creating it if needed.
+
+	The target doctype is resolved per HRMS version (see
+	``get_interview_round_doctype``) — "Interview Round" on v15, "Interview Type"
+	on v16 — so campus/stage → interview mapping by name works on both.
 
 	Rounds are shared across openings/designations by stage name. We deliberately
 	keep them **designation-agnostic** — Interview.designation is fetched from the
@@ -289,14 +414,27 @@ def _ensure_interview_round(stage_name, designation=None):
 	``expected_skill_set`` is a required table on Interview Round; we create with
 	``ignore_mandatory`` so recruiters can fill skills later.
 	"""
-	existing = frappe.db.get_value("Interview Round", {"round_name": stage_name}, "name")
+	doctype = get_interview_round_doctype()
+	if not doctype or not stage_name:
+		return None
+
+	title_field = _round_title_field(doctype)
+	filters = {title_field: stage_name} if title_field else {"name": stage_name}
+	existing = frappe.db.get_value(doctype, filters, "name")
 	if existing:
 		# Un-pin a legacy round from a single designation so it works for all.
-		if frappe.db.get_value("Interview Round", existing, "designation"):
-			frappe.db.set_value("Interview Round", existing, "designation", None)
+		if frappe.get_meta(doctype).get_field("designation") and frappe.db.get_value(
+			doctype, existing, "designation"
+		):
+			frappe.db.set_value(doctype, existing, "designation", None)
 		return existing
-	rnd = frappe.new_doc("Interview Round")
-	rnd.round_name = stage_name
+
+	rnd = frappe.new_doc(doctype)
+	if title_field:
+		rnd.set(title_field, stage_name)
+	else:
+		# Prompt-named doctype ("Interview Type"): the docname is the label.
+		rnd.name = stage_name
 	rnd.flags.ignore_mandatory = True
 	rnd.insert(ignore_permissions=True)
 	return rnd.name

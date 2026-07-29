@@ -466,6 +466,7 @@ export interface EmployeeProfileOverview {
   field_label: string;
   display: string;
   value: string;
+  field_type: string;
 }
 export interface EmployeeFieldsToTrack {
   field_name: string;

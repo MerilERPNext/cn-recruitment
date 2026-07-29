@@ -11,8 +11,11 @@
 //   • mandatory   — `is_mandatory` toggles the field's required validation.
 //   • read_only   — `read_only` disables the field.
 //   • label       — the backend label overrides the static one.
-// It never reorders fields (the column/row layout is preserved) and never
-// touches submit / payload logic.
+//   • order       — a step's top-level components are re-sequenced to match the
+//                   builder's arrangement. Only the top level moves, so a
+//                   `columns` row keeps its side-by-side pair and a datagrid
+//                   keeps its columns; the static layout survives intact.
+// It never touches submit / payload logic.
 //
 // Backend fields that have NO static counterpart (brand-new custom fields) are
 // auto-generated as generic form.io components from their `fieldtype` and
@@ -788,6 +791,70 @@ function extraComponentsForStep(
 // not loaded / failed) the static components are returned unchanged, so the form
 // always works even if the config endpoint is unavailable.
 // ---------------------------------------------------------------------------
+// Lowest backend `order` of any configured field inside a top-level component,
+// or null when it holds none. Datagrids are treated as a single unit: their
+// inner keys are CHILD fieldnames and must not be mistaken for parent fields.
+function backendOrderOf(comp: any, flat: FlattenedConfig): number | null {
+  let best: number | null = null;
+
+  const fieldOf = (c: any): BackendField | undefined => {
+    if (!c || !c.key) return undefined;
+    // Static components map via KEY_TO_FIELDNAME; auto-generated ones are keyed
+    // by the fieldname itself (see generateComponent).
+    const mapped = KEY_TO_FIELDNAME[c.key];
+    return flat.byFieldname.get(mapped || c.key);
+  };
+
+  const visit = (c: any) => {
+    if (!c || typeof c !== "object") return;
+    const field = fieldOf(c);
+    const order = field?.order;
+    if (typeof order === "number" && order > 0) {
+      best = best === null ? order : Math.min(best, order);
+    }
+    if (c.type === "datagrid" || c.type === "editgrid") return;
+    if (Array.isArray(c.components)) c.components.forEach(visit);
+    if (Array.isArray(c.columns)) {
+      c.columns.forEach((col: any) => (col.components || []).forEach(visit));
+    }
+  };
+
+  visit(comp);
+  return best;
+}
+
+// ---------------------------------------------------------------------------
+// Re-sequence a step's top-level components to match the order HR arranged in
+// the Job Requisition Form Settings builder.
+//
+// Only the TOP level is sorted: a `columns` row keeps its side-by-side pair
+// intact and a datagrid keeps its columns, so the static layout survives — this
+// moves blocks, it does not flatten them. A component carrying no configured
+// field (a heading / divider) introduces the block that follows it, so it
+// inherits that block's position and stays attached to it.
+// ---------------------------------------------------------------------------
+function reorderByBackendOrder(
+  components: any[],
+  flat: FlattenedConfig
+): any[] {
+  if (!Array.isArray(components) || components.length < 2) return components;
+
+  const own = components.map((c) => backendOrderOf(c, flat));
+  if (own.every((o) => o === null)) return components; // nothing to go on
+
+  const anchored: number[] = new Array(components.length);
+  let next = Number.POSITIVE_INFINITY;
+  for (let i = components.length - 1; i >= 0; i--) {
+    if (own[i] !== null) next = own[i] as number;
+    anchored[i] = next;
+  }
+
+  return components
+    .map((c, i) => ({ c, i, k: anchored[i] }))
+    .sort((a, b) => (a.k !== b.k ? (a.k < b.k ? -1 : 1) : a.i - b.i))
+    .map((x) => x.c);
+}
+
 export function applyDynamicConfig(
   stepKey: string,
   staticComponents: any[],
@@ -796,7 +863,8 @@ export function applyDynamicConfig(
   if (!flat) return staticComponents;
   const transformed = transformComponents(staticComponents, flat);
   const extras = extraComponentsForStep(stepKey, flat);
-  return extras.length ? [...transformed, ...extras] : transformed;
+  const merged = extras.length ? [...transformed, ...extras] : transformed;
+  return reorderByBackendOrder(merged, flat);
 }
 
 // ---------------------------------------------------------------------------

@@ -18,7 +18,7 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import SimplifiedChatInput from "../SimplifiedChatInput";
 import toast from "react-hot-toast";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { showCloseTicketButton } from "../hdelpdeskUtils";
+import { getStatusBadgeConfig, showCloseTicketButton } from "../hdelpdeskUtils";
 import Modal from "../../shared/Modal";
 import FormPreview from "../../shared/molecules/FormPreview";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
@@ -28,6 +28,7 @@ import DropdownMenu from "../../shared/DropDownMenu";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import Badge from "../../shared/Badge";
 
 interface SimplifiedChatViewProps {
   ticket: TicketDetail;
@@ -640,23 +641,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   const assignedEmail = getAssignedUserEmail();
   const { data: employeeData } = useEmployeeByUserEmail(assignedEmail);
 
-  // Get status badge color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Open":
-        return "bg-blue-100 text-blue-700";
-      case "Replied":
-        return "bg-purple-100 text-purple-700";
-      case "Resolved":
-        return "bg-green-100 text-green-700";
-      case "Closed":
-        return "bg-app text-gray-700";
-      case "Reopened":
-        return "bg-yellow-100 text-yellow-700";
-      default:
-        return "bg-app text-gray-700";
-    }
-  };
+  const statusBadgeConfig = getStatusBadgeConfig(ticket.status);
 
   // Helper to truncate HTML content for quoted messages
   const truncateHtml = (html: string, maxLength: number): string => {
@@ -1064,9 +1049,12 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                 Issue Discussion
                 <span className="ml-2 text-blue-600">#{ticket.name}</span>
               </h1>
-              <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${getStatusColor(ticket.status)}`}>
-                {ticket.status}
-              </span>
+              <Badge
+                size="sm"
+                label={statusBadgeConfig.label}
+                backgroundColor={statusBadgeConfig.backgroundColor}
+                textColor={statusBadgeConfig.textColor}
+              />
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-sm text-gray-500">Assigned to</span>

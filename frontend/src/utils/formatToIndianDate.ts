@@ -123,6 +123,25 @@ const formatToIndianDate = (dateInput: string | number | Date): string => {
 
 export default formatToIndianDate;
 
+/**
+ * Replaces all ISO-format dates (yyyy-mm-dd) embedded inside a plain text
+ * string with the admin-configured display format.
+ *
+ * Example (with system format "dd.mm.yyyy"):
+ *   "Overtime on 2026-05-16 (Full Day)"
+ *   → "Overtime on 16.05.2026 (Full Day)"
+ *
+ * Safe to call on any string — if no ISO dates are found the original value
+ * is returned unchanged.
+ */
+export const formatDatesInText = (text: string): string => {
+  if (!text) return text;
+  // Match yyyy-mm-dd, optionally preceded/followed by non-digit chars
+  return text.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, (_match, yyyy, mm, dd) => {
+    return buildDateString(dd, mm, yyyy, getDateFormat());
+  });
+};
+
 export const formatToIndianDateWithTime = (
   dateInput: string | number | Date,
 ): string => {

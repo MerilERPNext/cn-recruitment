@@ -47,7 +47,7 @@ const ProfileSummary = () => {
                                 {field.field_label || "-"}
                             </Typography>
                             <Typography variant="bodyMedium" className="font-bold text-gray-900">
-                                {formatToIndianDate(field?.display as string) || "—"}
+                                {field?.field_type === "Date" ? formatToIndianDate(field?.display as string) : field?.display || "—"}
                             </Typography>
 
                         </div>

@@ -17,7 +17,10 @@ const MyToDoItem: React.FC<{ item: ToDo; index?: number }> = ({ item }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (item.custom_dynamic_route) {
+    // if startes with /helpdesk then open in new tab 
+    if (item.custom_dynamic_route.startsWith("/helpdesk")) {
+      window.open(item.custom_dynamic_route, "_blank");
+    } else if (item.custom_dynamic_route) {
       navigate(item.custom_dynamic_route);
     } else {
       navigate(`/webapp/todo-app#/${item.name}`);
@@ -35,7 +38,7 @@ const MyToDoItem: React.FC<{ item: ToDo; index?: number }> = ({ item }) => {
         <div className="w-10 h-10 min-w-[40px] min-h-[40px] flex-shrink-0 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
           <ClipboardList className="w-5 h-5" />
         </div>
-        <div className="mr-2 min-w-0 flex-1">
+        <div className="mr-2 min-w-0 flex-1 flex flex-col gap-1 py-1">
           <Typography
             variant="bodySmall"
             className="font-medium block line-clamp-1"
@@ -169,7 +172,7 @@ const TasksAwaiting: React.FC = () => {
       )}
 
       {/* Show only top 3 items for the active category */}
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col gap-3">
         {isLoading || isTodosLoading ? (
           <CardSkeleton rows={2} />
         ) : displayedTodos.length > 0 ? (

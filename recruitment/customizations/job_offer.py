@@ -111,6 +111,8 @@ def calculate_salary_structure(self, method=None):
             doc.salary_structure = self.custom_employee_salary_structure
             doc.base = self.custom_base_salary
             doc.income_tax_slab = self.custom_income_tax_slab
+            doc.custom_is_epf=self.custom_epf
+            doc.custom_epf_type=self.custom_epf_type
             doc.save()
             self.custom_earnings = []
             self.custom_deduction = []

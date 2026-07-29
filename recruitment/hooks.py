@@ -13,6 +13,11 @@ app_license = "mit"
 app_include_css = "/assets/recruitment/css/job_applicant.css"
 app_include_js = [
 	"/assets/recruitment/js/teams_utils.js",
+	# Shared Application Fields grid (styles + renderers + toolbar) used by both
+	# Job Applicant Profile Settings and the Job Opening's Job application tab.
+	# Included globally rather than per-doctype because a doctype's own JS is
+	# evaluated BEFORE any doctype_js hook, which would be too late for it.
+	"/assets/recruitment/js/applicant_fields_ui.js",
 ]
 
 add_to_apps_screen = [
@@ -78,10 +83,13 @@ doctype_js = {
     ],
     "Job Opening": [
         "public/js/job_opening.js",
+        "public/js/interview_round_link.js",
         "public/js/job_opening_hiring_workflow.js",
         "public/js/job_opening_attach_resumes.js",
         "public/js/applicant_field_picker.js",
+        "public/js/job_opening_eligibility_ui.js",
     ],
+    "TA Interview Strategy Template": ["public/js/interview_round_link.js"],
     "TA Duplicity Check Settings": ["public/js/applicant_field_picker.js"],
     "TA Rehire Check Settings": ["public/js/applicant_field_picker.js"],
     "Job Description": ["public/js/job_description.js"],
