@@ -20,8 +20,9 @@ import html as html_mod
 import frappe
 from frappe import _
 
-# Re-use the auth gate from the core alumni module.
+# Re-use the auth gate + alumni-category flag from the core alumni module.
 from recruitment.recruitment.alumni_portal import (
+    ALUMNI_CATEGORY_FLAG,
     _alumni_email,
     _require_alumni_session,
 )
@@ -57,6 +58,9 @@ def get_alumni_hd_categories() -> dict:
     filters: dict = {}
     if frappe.db.has_column("HD Category", "is_group"):
         filters["is_group"] = 1
+    # Only categories explicitly flagged to appear in the Alumni Portal.
+    if frappe.db.has_column("HD Category", ALUMNI_CATEGORY_FLAG):
+        filters[ALUMNI_CATEGORY_FLAG] = 1
 
     categories = frappe.get_all(
         "HD Category",
@@ -100,6 +104,9 @@ def get_alumni_hd_subcategories(parent_category: str | None = None) -> dict:
     filters: dict = {"parent_category": parent_category}
     if frappe.db.has_column("HD Category", "is_group"):
         filters["is_group"] = 0
+    # Only subcategories explicitly flagged to appear in the Alumni Portal.
+    if frappe.db.has_column("HD Category", ALUMNI_CATEGORY_FLAG):
+        filters[ALUMNI_CATEGORY_FLAG] = 1
 
     subcategories = frappe.get_all(
         "HD Category",

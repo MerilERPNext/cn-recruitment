@@ -22,6 +22,96 @@ def after_migrate():
     backfill_alumni_flag()
     backfill_employee_alumni_mirror()
     ensure_alumni_employee_request_workflow()
+    ensure_alumni_hd_category_field()
+    ensure_notice_portal_fields()
+
+
+def ensure_notice_portal_fields():
+    """Add the `Notice.show_in_ess_portal` / `Notice.show_in_alumni_portal`
+    checkboxes that gate portal-specific notice visibility.
+
+    Both default to unchecked; when both are unchecked the notice shows only in the
+    ESS Portal (legacy default). Read by
+    recruitment.recruitment.notice_visibility. Idempotent; skips when the Notice
+    doctype isn't installed (nextai absent)."""
+    if not frappe.db.exists("DocType", "Notice"):
+        return
+    try:
+        from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+
+        meta = frappe.get_meta("Notice")
+        created = False
+        if not meta.get_field("show_in_ess_portal"):
+            create_custom_field(
+                "Notice",
+                {
+                    "fieldname": "show_in_ess_portal",
+                    "label": "Show in ESS Portal",
+                    "fieldtype": "Check",
+                    "default": "0",
+                    "insert_after": "is_global",
+                    "description": (
+                        "Show this notice in the ESS Portal. If both portal "
+                        "checkboxes are unchecked, the notice defaults to ESS only."
+                    ),
+                    "module": "Recruitment",
+                },
+                ignore_validate=True,
+            )
+            created = True
+        if not meta.get_field("show_in_alumni_portal"):
+            create_custom_field(
+                "Notice",
+                {
+                    "fieldname": "show_in_alumni_portal",
+                    "label": "Show in Alumni Portal",
+                    "fieldtype": "Check",
+                    "default": "0",
+                    "insert_after": "show_in_ess_portal",
+                    "description": "Show this notice in the Alumni Portal.",
+                    "module": "Recruitment",
+                },
+                ignore_validate=True,
+            )
+            created = True
+        if created:
+            frappe.clear_cache(doctype="Notice")
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_notice_portal_fields: skipped")
+
+
+def ensure_alumni_hd_category_field():
+    """Add the `HD Category.custom_show_in_alumni_portal` checkbox.
+
+    HR ticks it to expose a helpdesk category (and its tickets) in the Alumni
+    Portal; unticked categories/tickets are hidden there. Read by
+    recruitment.recruitment.alumni_portal / alumni_helpdesk. Idempotent; skips
+    when HD Category isn't installed (pw_helpdesk absent)."""
+    if not frappe.db.exists("DocType", "HD Category"):
+        return
+    if frappe.get_meta("HD Category").get_field("custom_show_in_alumni_portal"):
+        return
+    try:
+        from frappe.custom.doctype.custom_field.custom_field import create_custom_field
+
+        create_custom_field(
+            "HD Category",
+            {
+                "fieldname": "custom_show_in_alumni_portal",
+                "label": "Show in Alumni Portal",
+                "fieldtype": "Check",
+                "insert_after": "is_active",
+                "description": (
+                    "If checked, this category and its tickets appear in the "
+                    "Alumni Portal. Unchecked categories are hidden there."
+                ),
+                "module": "Recruitment",
+            },
+            ignore_validate=True,
+        )
+        frappe.clear_cache(doctype="HD Category")
+    except Exception:
+        frappe.logger("recruitment").warning("ensure_alumni_hd_category_field: skipped")
 
 
 def ensure_alumni_employee_field():

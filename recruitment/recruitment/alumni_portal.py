@@ -761,12 +761,71 @@ def mark_alumni_notification_read(name: str = None, mark_all=0) -> dict:
     }
 
 
+# ── Notices (Notice doctype, alumni-only) ─────────────────────────────────────
+@frappe.whitelist(methods=["GET"])
+def get_alumni_notices(limit=50):
+    """Notices for the logged-in alumnus, restricted to the Alumni Portal.
+
+    Reuses the existing alumni auth gate and the existing nextai user-notice
+    fetch (so all targeting / publish / expiry rules are honoured), then returns
+    ONLY notices flagged ``show_in_alumni_portal = 1``. Notices meant only for the
+    ESS Portal are never exposed. Same raw shape as the ESS notice API.
+    """
+    user = _require_alumni_session()
+    try:
+        from nextai.nextai.doctype.notice.notice import (
+            get_user_notices as nextai_get_user_notices,
+        )
+        from recruitment.recruitment.notice_visibility import filter_notices_by_portal
+
+        notices = nextai_get_user_notices(user=user, limit=frappe.utils.cint(limit) or 50) or []
+        return filter_notices_by_portal(notices, "alumni")
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "alumni get_alumni_notices failed")
+        return []
+
+
 # ── Support tickets (HD Ticket, session-scoped, alumni only) ──────────────────
 # Tickets are linked to the alumnus by `raised_by` (their email). `ticket_type`
 # is the category chip; `agent_group` is the handling team. We never modify HD
 # Ticket logic — we read via get_all and create via the standard doctype insert.
 _TICKET_OPEN_STATUSES = ("Open", "Replied", "Reopened", "Not Assigned")
 _TICKET_RESOLVED_STATUSES = ("Resolved", "Closed")
+
+# HD Category checkbox that gates whether a ticket category (and its tickets) is
+# exposed in the Alumni Portal. Added to HD Category by
+# recruitment.recruitment.install.ensure_alumni_hd_category_field.
+ALUMNI_CATEGORY_FLAG = "custom_show_in_alumni_portal"
+
+
+def alumni_portal_category_names() -> list[str]:
+    """HD Category names flagged 'Show in Alumni Portal'.
+
+    Returns an empty list when HD Category or the flag column is missing (feature
+    not installed / not migrated yet) — callers treat that as "don't restrict".
+    """
+    if not frappe.db.exists("DocType", "HD Category"):
+        return []
+    if not frappe.db.has_column("HD Category", ALUMNI_CATEGORY_FLAG):
+        return []
+    return frappe.get_all("HD Category", filters={ALUMNI_CATEGORY_FLAG: 1}, pluck="name")
+
+
+def _apply_alumni_category_filter(filters: dict) -> None:
+    """Restrict an HD Ticket query to Alumni-Portal categories (mutates ``filters``).
+
+    Applies only when both the ticket's ``custom_category`` column and the HD
+    Category flag column exist. When the flag exists but no category is flagged,
+    the query is forced to match nothing (the portal exposes no category). Before
+    migration (flag column absent) it is a no-op, preserving existing behaviour.
+    """
+    if not frappe.db.has_column("HD Ticket", "custom_category"):
+        return
+    if not frappe.db.has_column("HD Category", ALUMNI_CATEGORY_FLAG):
+        return
+    allowed = alumni_portal_category_names()
+    # `["in", []]` is unsafe in some backends — force an impossible match instead.
+    filters["custom_category"] = ["in", allowed or ["__no_alumni_category__"]]
 
 
 def _ticket_status_label(status: str) -> str:
@@ -964,10 +1023,11 @@ def get_alumni_recent_open_tickets(limit: int = 5) -> dict:
     user = _require_alumni_session()
     email = _alumni_email(user)
 
-    total_open_count = frappe.db.count(
-        "HD Ticket",
-        {"raised_by": email, "status": ["in", _TICKET_OPEN_STATUSES]},
-    )
+    # Only the alumnus's OPEN tickets that belong to Alumni-Portal categories.
+    open_filters = {"raised_by": email, "status": ["in", _TICKET_OPEN_STATUSES]}
+    _apply_alumni_category_filter(open_filters)
+
+    total_open_count = frappe.db.count("HD Ticket", open_filters)
 
     fields = [
         "name",
@@ -986,7 +1046,7 @@ def get_alumni_recent_open_tickets(limit: int = 5) -> dict:
 
     rows = frappe.get_all(
         "HD Ticket",
-        filters={"raised_by": email, "status": ["in", _TICKET_OPEN_STATUSES]},
+        filters=open_filters,
         fields=fields,
         order_by="modified desc",
         page_length=min(max(int(limit), 1), 50),
@@ -1125,10 +1185,15 @@ def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
 
     filters = {"raised_by": email}
     if category:
+        # A specific category chip was picked (chips only list alumni-portal
+        # categories, so this is always within the allowed set).
         if frappe.db.has_column("HD Ticket", "custom_category"):
             filters["custom_category"] = category
         else:
             filters["ticket_type"] = category
+    else:
+        # No specific chip → restrict to all Alumni-Portal categories only.
+        _apply_alumni_category_filter(filters)
     if status == "open":
         filters["status"] = ["in", _TICKET_OPEN_STATUSES]
     elif status == "resolved":
@@ -1169,10 +1234,12 @@ def get_alumni_tickets(status=None, category=None, limit=50, start=0) -> dict:
 
     total_filtered_count = frappe.db.count("HD Ticket", filters=filters)
 
-    # ── stats over ALL of the user's tickets ──
+    # ── stats over the user's Alumni-Portal tickets (same scope as the list) ──
+    stats_filters = {"raised_by": email}
+    _apply_alumni_category_filter(stats_filters)
     all_t = frappe.get_all(
         "HD Ticket",
-        filters={"raised_by": email},
+        filters=stats_filters,
         fields=["status", "creation", "first_responded_on", "feedback_rating"],
     )
     open_count = sum(1 for x in all_t if x.status in _TICKET_OPEN_STATUSES)
@@ -1468,6 +1535,130 @@ def _ensure_referral_source() -> None:
         ).insert(ignore_permissions=True, ignore_if_duplicate=True)
 
 
+# ── Refer & Earn banner stats ─────────────────────────────────────────────────
+_DEFAULT_REFERRAL_BONUS = 25000.0
+
+
+def _referral_bonus_per_hire() -> float:
+    """Best-effort referral bonus per hire.
+
+    Sums the payout amounts of the first Referral Reward Schedule when that config
+    exists, otherwise falls back to a sensible default. Never raises.
+    """
+    from frappe.utils import flt
+
+    try:
+        if frappe.db.exists("DocType", "Referral Reward Schedule"):
+            cols = [
+                c for c in (
+                    "payout_schedule_1_amount",
+                    "payout_schedule_2_amount",
+                    "payout_schedule_3_amount",
+                )
+                if frappe.db.has_column("Referral Reward Schedule", c)
+            ]
+            if cols:
+                rows = frappe.get_all(
+                    "Referral Reward Schedule", fields=cols,
+                    order_by="creation desc", limit=1,
+                )
+                if rows:
+                    total = sum(flt(rows[0].get(c)) for c in cols)
+                    if total:
+                        return float(total)
+    except Exception:
+        pass
+    return _DEFAULT_REFERRAL_BONUS
+
+
+def _inr_compact(amount) -> str:
+    """₹25000 -> '₹25k', ₹250000 -> '₹2.5L' (marketing-style short form)."""
+    a = int(amount or 0)
+    if a >= 100000:
+        lakhs = a / 100000
+        return f"₹{lakhs:.1f}L".replace(".0L", "L")
+    if a >= 1000:
+        return f"₹{a // 1000}k"
+    return f"₹{a}"
+
+
+def _inr_full(amount) -> str:
+    """₹25000 -> '₹25,000'."""
+    return "₹{:,.0f}".format(float(amount or 0))
+
+
+def _current_quarter_start(now):
+    """First moment of the current calendar quarter for ``now`` (a datetime)."""
+    q_start_month = ((now.month - 1) // 3) * 3 + 1
+    return now.replace(
+        month=q_start_month, day=1, hour=0, minute=0, second=0, microsecond=0
+    )
+
+
+@frappe.whitelist(methods=["GET"])
+def get_alumni_referral_stats() -> dict:
+    """Aggregate stats for the Alumni 'Refer & Earn' banner.
+
+    Returns, across the whole alumni referral program:
+    - ``referred_this_quarter`` — referrals submitted by alumni this quarter,
+    - ``hired_so_far`` — alumni referrals that were Accepted (all-time),
+    - ``bonus_per_hire`` (+ display strings) — the referral bonus per hire,
+    - ``open_roles`` — currently Open Job Openings.
+
+    An alumnus is any Employee with status 'Left' or the alumni flag set.
+    """
+    _require_alumni_session()
+    from frappe.utils import now_datetime
+
+    now = now_datetime()
+    q_start = _current_quarter_start(now)
+
+    referred_this_quarter = 0
+    hired_so_far = 0
+    if frappe.db.has_column("Job Applicant", "custom_referred_by"):
+        # "referrer is an alumnus" clause (guard the Employee flag column).
+        if frappe.db.has_column("Employee", ALUMNI_FLAG):
+            alumni_clause = f"(e.status = 'Left' OR COALESCE(e.`{ALUMNI_FLAG}`, 0) = 1)"
+        else:
+            alumni_clause = "e.status = 'Left'"
+
+        referred_this_quarter = (
+            frappe.db.sql(
+                f"""
+                SELECT COUNT(*) FROM `tabJob Applicant` ja
+                JOIN `tabEmployee` e ON e.name = ja.custom_referred_by
+                WHERE ja.source = %(src)s AND ja.creation >= %(qs)s AND {alumni_clause}
+                """,
+                {"src": _REFERRAL_SOURCE, "qs": q_start},
+            )[0][0]
+            or 0
+        )
+        hired_so_far = (
+            frappe.db.sql(
+                f"""
+                SELECT COUNT(*) FROM `tabJob Applicant` ja
+                JOIN `tabEmployee` e ON e.name = ja.custom_referred_by
+                WHERE ja.source = %(src)s AND ja.status = 'Accepted' AND {alumni_clause}
+                """,
+                {"src": _REFERRAL_SOURCE},
+            )[0][0]
+            or 0
+        )
+
+    open_roles = frappe.db.count("Job Opening", {"status": "Open"})
+    bonus = _referral_bonus_per_hire()
+
+    return {
+        "success": True,
+        "referred_this_quarter": int(referred_this_quarter),
+        "hired_so_far": int(hired_so_far),
+        "bonus_per_hire": bonus,
+        "bonus_per_hire_display": _inr_compact(bonus),
+        "bonus_per_hire_full": _inr_full(bonus),
+        "open_roles": int(open_roles),
+    }
+
+
 def _attach_referral_resume(resume_file, applicant_name: str) -> str | None:
     """Attach an optional {"filename", "content"} resume to the Job Applicant.
 
@@ -1502,6 +1693,107 @@ def _attach_referral_resume(resume_file, applicant_name: str) -> str | None:
         return file_doc.file_url
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Alumni referral resume upload failed")
+        return None
+
+
+# Supported resume/document types + max size for the pre-upload endpoint.
+_REFERRAL_ALLOWED_EXTS = {"pdf", "jpg", "jpeg", "png", "doc", "docx"}
+_REFERRAL_MAX_BYTES = 5 * 1024 * 1024  # 5 MB
+
+
+@frappe.whitelist(methods=["POST"])
+def upload_alumni_referral_document() -> dict:
+    """Upload a referral resume/document (multipart/form-data, field ``file``).
+
+    Validates the type (PDF, JPG, JPEG, PNG, DOC, DOCX) and size (≤ 5 MB), stores
+    it **privately** via Frappe's File doctype, and returns a ``file_url`` that is
+    directly usable as the ``resume`` param of :func:`submit_alumni_referral`.
+
+    Response: ``{success, file_url, file_name, file_size, is_private, message}``.
+    """
+    _require_alumni_session()
+
+    uploaded = None
+    if getattr(frappe, "request", None) and getattr(frappe.request, "files", None):
+        uploaded = frappe.request.files.get("file") or frappe.request.files.get("attachment")
+    if not uploaded:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("A file is required.")}
+
+    filename = uploaded.filename or "document"
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in _REFERRAL_ALLOWED_EXTS:
+        frappe.local.response["http_status_code"] = 400
+        return {
+            "success": False,
+            "message": _("Unsupported file type. Allowed: PDF, JPG, JPEG, PNG, DOC, DOCX."),
+        }
+
+    content = uploaded.stream.read()
+    size = len(content or b"")
+    if not size:
+        frappe.local.response["http_status_code"] = 400
+        return {"success": False, "message": _("The uploaded file is empty.")}
+    if size > _REFERRAL_MAX_BYTES:
+        frappe.local.response["http_status_code"] = 400
+        return {
+            "success": False,
+            "message": _("File is too large. Maximum size is {0} MB.").format(
+                _REFERRAL_MAX_BYTES // (1024 * 1024)
+            ),
+        }
+
+    try:
+        from frappe.utils.file_manager import save_file
+
+        # Not attached to a doc yet — submit_alumni_referral links it to the
+        # Job Applicant it creates. Private, so it isn't publicly enumerable.
+        saved = save_file(filename, content, dt=None, dn=None, is_private=1)
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "alumni upload_alumni_referral_document failed")
+        frappe.local.response["http_status_code"] = 500
+        return {"success": False, "message": _("Unable to upload the file right now.")}
+
+    return {
+        "success": True,
+        "file_url": saved.file_url,
+        "file_name": saved.file_name,
+        "file_size": size,
+        "is_private": int(getattr(saved, "is_private", 1) or 0),
+        "message": _("File uploaded successfully."),
+    }
+
+
+def _link_referral_resume_url(file_url: str, applicant_name: str) -> str | None:
+    """Link a previously-uploaded File (by ``file_url``) to the Job Applicant.
+
+    Only links a File owned by the current alumnus (so a URL can't be used to
+    attach someone else's private file). Returns the ``file_url`` on success, else
+    ``None``. Never raises.
+    """
+    file_url = (file_url or "").strip()
+    if not file_url:
+        return None
+    try:
+        f = frappe.db.get_value(
+            "File", {"file_url": file_url},
+            ["name", "owner", "attached_to_name"], as_dict=True,
+        )
+        if not f:
+            return None
+        if f.owner != frappe.session.user:
+            return None  # not this alumnus's upload — refuse to attach
+        # Link via db.set_value (no File hooks) — avoids triggering resume parsing
+        # and never blocks the referral. Only attach an as-yet-unattached file.
+        if not f.attached_to_name:
+            frappe.db.set_value(
+                "File", f.name,
+                {"attached_to_doctype": "Job Applicant", "attached_to_name": applicant_name},
+                update_modified=False,
+            )
+        return file_url
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Alumni referral resume link failed")
         return None
 
 
@@ -1577,13 +1869,18 @@ def submit_alumni_referral(
     linkedin: str = None,
     note: str = None,
     resume_file=None,
+    resume: str = None,
 ) -> dict:
     """Refer a friend against a specific open job.
 
     Creates a Job Applicant (source = "Employee Referral") linked to
-    ``job_opening`` and attributed to the logged-in alumnus. ``resume_file`` is
-    an optional ``{"filename", "content"}`` (base64) blob. Returns the created
+    ``job_opening`` and attributed to the logged-in alumnus. Returns the created
     applicant's name.
+
+    Resume (optional) — two supported ways:
+    * ``resume`` — a ``file_url`` from :func:`upload_alumni_referral_document`
+      (the recommended pre-upload flow), or
+    * ``resume_file`` — a legacy ``{"filename", "content"}`` base64 blob.
     """
     user = _require_alumni_session()
     referrer = _alumni_referrer_employee(user)
@@ -1659,7 +1956,11 @@ def submit_alumni_referral(
         frappe.local.response["http_status_code"] = 409
         return {"success": False, "message": _("This candidate has already been submitted.")}
 
-    resume_url = _attach_referral_resume(resume_file, applicant.name)
+    # Prefer a pre-uploaded file (`resume` = file_url); fall back to a legacy
+    # base64 blob (`resume_file`).
+    resume_url = _link_referral_resume_url(resume, applicant.name)
+    if not resume_url:
+        resume_url = _attach_referral_resume(resume_file, applicant.name)
     if resume_url and "resume_attachment" in has:
         applicant.db_set("resume_attachment", resume_url, update_modified=False)
 
