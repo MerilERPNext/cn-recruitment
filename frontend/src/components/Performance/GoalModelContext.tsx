@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback } from "react";
 import { GoalTemplate, getGoalKey } from "./GoalCreation/component/goal-model/types";
 import {
   DraftGoalItem,
@@ -37,13 +37,6 @@ export const GoalModelProvider: React.FC<{
     }
   });
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("performance_draft_goals", JSON.stringify(draftGoals));
-    } catch (e) {
-      console.error("Failed to save draft goals to localStorage", e);
-    }
-  }, [draftGoals]);
 
   const addDraftGoals = useCallback((goals: GoalTemplate | GoalTemplate[]) => {
     const goalArray = Array.isArray(goals) ? goals : [goals];

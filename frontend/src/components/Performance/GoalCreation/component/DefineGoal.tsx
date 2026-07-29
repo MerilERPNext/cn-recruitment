@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react';
 import { ObjectiveCard } from './define-goal/ObjectiveCard';
 import { LivePreviewCard } from './define-goal/LivePreviewCard';
 import type { GoalFormConfig, GoalSaveItem, MyGoalsGoal } from '../../../../types/goal';
+import { useGoalModel } from '../../GoalModelContext';
 
 export type MetricType = '%' | 'Number' | 'Count' | 'Currency' | 'Boolean' | 'Milestone';
 export type DepartmentType = string;
@@ -54,7 +55,9 @@ const createInitialKeyResults = (minimumKeyResults: number): KeyResult[] =>
 
 const labelClass = 'mb-1.5 block text-xs font-medium text-gray-600';
 
-const DefineGoal = ({ goalType, formConfig, initialGoal, onGoalsChange }: DefineGoalProps) => {
+const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) => {
+    const { draftGoals, removeDraftGoal } = useGoalModel(); 
+   
     const defaultDepartment = { label: 'Select', value: '' };
     const defaultDesignation = { label: 'Select', value: '' };
 
@@ -65,41 +68,41 @@ const DefineGoal = ({ goalType, formConfig, initialGoal, onGoalsChange }: Define
     const maximumKeyResults = formConfig.limits?.max_krs ?? null;
 
     const [goals, setGoals] = useState<GoalItem[]>(() => {
-        if (!initialGoal) {
-            return [{
-                id: 'goal-1',
-                title: '',
-                description: '',
-                weightage: 30,
-                selectedDepartment: defaultDepartment,
-                selectedDesignation: defaultDesignation,
+        if (draftGoals && draftGoals.length > 0) {
+            return draftGoals.map((draft, idx) => ({
+                id: draft.goal || `draft-${idx}-${Date.now()}`,
+                title: draft.title || '',
+                description: draft.description || '',
+                weightage: (draft as { weightage?: number }).weightage ?? 30,
+                selectedDepartment: draft.department
+                    ? { label: draft.department, value: draft.department }
+                    : defaultDepartment,
+                selectedDesignation: draft.designation
+                    ? { label: draft.designation, value: draft.designation }
+                    : defaultDesignation,
                 startDate: formConfig.start_date,
                 endDate: formConfig.end_date,
-                keyResults: createInitialKeyResults(minimumKeyResults),
-                isCollapsed: false,
-            }];
+                keyResults: draft.key_results && draft.key_results.length > 0
+                    ? draft.key_results.map((kr, kIdx) => ({
+                        id: `KR ${kIdx + 1}`,
+                        title: kr.title || '',
+                        weight: String(kr.weightage || ''),
+                    }))
+                    : createInitialKeyResults(minimumKeyResults),
+                isCollapsed: idx !== 0, // Sirf pehle goal ko open rakho, baaki collapsed
+            }));
         }
-
-        const selectedDepartment = initialGoal.department ? { label: initialGoal.department, value: initialGoal.department } : defaultDepartment;
-
-        const initialDesignation = (initialGoal as unknown as { designation?: string }).designation;
-        const selectedDesignation = initialDesignation ? { label: initialDesignation, value: initialDesignation } : defaultDesignation;
-
+        // 3. Fallback: Agar koi draft nahi hai toh default 1 empty goal
         return [{
-            id: initialGoal.name || `goal-1`,
-            existingGoalName: initialGoal.name,
-            title: initialGoal.title,
-            description: initialGoal.description,
-            weightage: initialGoal.weightage,
-            selectedDepartment,
-            selectedDesignation,
-            startDate: initialGoal.start_date || formConfig.start_date,
-            endDate: initialGoal.end_date || formConfig.end_date,
-            keyResults: initialGoal.key_results.map((keyResult, index) => ({
-                id: `KR ${index + 1}`,
-                title: keyResult.title,
-                weight: String(keyResult.weightage),
-            })),
+            id: 'goal-1',
+            title: '',
+            description: '',
+            weightage: 30,
+            selectedDepartment: defaultDepartment,
+            selectedDesignation: defaultDesignation,
+            startDate: formConfig.start_date,
+            endDate: formConfig.end_date,
+            keyResults: createInitialKeyResults(minimumKeyResults),
             isCollapsed: false,
         }];
     });
@@ -135,10 +138,7 @@ const DefineGoal = ({ goalType, formConfig, initialGoal, onGoalsChange }: Define
     };
 
     const handleDeleteGoal = (goalId: string) => {
-        setGoals((prevGoals) => {
-            if (prevGoals.length <= 1) return prevGoals;
-            return prevGoals.filter((g) => g.id !== goalId);
-        });
+        removeDraftGoal(goalId)
     };
 
     const handleUpdateGoalField = <K extends keyof GoalItem>(
