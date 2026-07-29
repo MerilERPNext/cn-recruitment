@@ -40,10 +40,11 @@
   },
   {
    "columns": 2,
+   "description": "The format of the round. Offer / Pre Offer rounds are normally driven by the Hiring Stage they map to — set the type only if you want it labelled on the card.",
    "fieldname": "round_type",
    "fieldtype": "Select",
    "label": "Round Type",
-   "options": "PPT\nAssessment\nGroup Discussion\nTechnical\nHR\nOffer\nOther"
+   "options": "PPT\nAssessment\nGroup Discussion\nTechnical\nHR\nPre Offer\nOffer\nOther"
   },
   {
    "fieldname": "hiring_stage",
