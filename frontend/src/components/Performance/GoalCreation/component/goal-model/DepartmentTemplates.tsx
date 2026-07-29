@@ -1,20 +1,146 @@
 import React from 'react';
 import { CheckSquare, Square, Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
-import { GoalTemplate, TemplateListProps, filterTemplates } from './types';
+import { GoalTemplate, TemplateListProps, filterTemplates, getGoalKey } from './types';
 import Button from '../../../../shared/atoms/Button';
 import { Typography } from '../../../../shared/atoms/Typography';
 
 export const departmentTemplatesData: GoalTemplate[] = [
-    { id: 'dep-01', scope: 'Design', title: 'Define and ship a unified design system v2.0', usedCount: 94, recommended: true, department: 'Design', designation: 'L3 / L4' },
-    { id: 'dep-02', scope: 'Design', title: 'Reduce design-to-dev handoff time by 40%', usedCount: 87, department: 'Design', designation: 'L3 / L4' },
-    { id: 'dep-03', scope: 'Design', title: 'Conduct 12 user research sessions this quarter', usedCount: 76, department: 'Design', designation: 'L1 / L2' },
-    { id: 'dep-04', scope: 'Design', title: 'Achieve 90% accessibility compliance across all products', usedCount: 68, department: 'Design', designation: 'L5 / L6' },
-    { id: 'dep-05', scope: 'Design', title: 'Establish a reusable component library with 50+ components', usedCount: 61, department: 'Design', designation: 'L3 / L4' },
-    { id: 'dep-06', scope: 'Design', title: 'Run quarterly design critiques for all shipped features', usedCount: 55, department: 'Design', designation: 'Manager' },
-    { id: 'dep-07', scope: 'Engineering', title: 'Refactor monolith services into scalable microservices', usedCount: 48, department: 'Engineering', designation: 'L5 / L6' },
-    { id: 'dep-08', scope: 'Product', title: 'Publish product roadmap & quarterly OKR milestones', usedCount: 43, department: 'Product', designation: 'Manager' },
-    { id: 'dep-09', scope: 'Marketing', title: 'Deliver end-to-end rebranding campaign across touchpoints', usedCount: 39, department: 'Marketing', designation: 'Director' },
+    {
+        goal: 'GOAL-26-03471',
+        title: 'Define and ship a unified design system v2.0',
+        description: 'Establish unified component design system version 2.0',
+        goal_type: 'OKR',
+        category: 'Individual',
+        department: 'Design',
+        department_title: 'Design',
+        weightage: 20,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03472',
+        title: 'Reduce design-to-dev handoff time by 40%',
+        description: 'Streamline design handoff workflows with engineering teams',
+        goal_type: 'OKR',
+        category: 'Individual',
+        department: 'Design',
+        department_title: 'Design',
+        weightage: 15,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03473',
+        title: 'Conduct 12 user research sessions this quarter',
+        description: 'Gather qualitative feedback across key user segments',
+        goal_type: 'OKR',
+        category: 'Individual',
+        department: 'Design',
+        department_title: 'Design',
+        weightage: 10,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03474',
+        title: 'Achieve 90% accessibility compliance across all products',
+        description: 'WCAG 2.1 AA audit and remediation across main modules',
+        goal_type: 'MBO',
+        category: 'Individual',
+        department: 'Design',
+        department_title: 'Design',
+        weightage: 15,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03475',
+        title: 'Establish a reusable component library with 50+ components',
+        description: 'Build core React component library with Storybook documentation',
+        goal_type: 'OKR',
+        category: 'Individual',
+        department: 'Design',
+        department_title: 'Design',
+        weightage: 10,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03476',
+        title: 'Run quarterly design critiques for all shipped features',
+        description: 'Implement cross-disciplinary design reviews before production release',
+        goal_type: 'MBO',
+        category: 'Individual',
+        department: 'Design',
+        department_title: 'Design',
+        weightage: 10,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03477',
+        title: 'Refactor monolith services into scalable microservices',
+        description: 'Decompose core legacy backend services for higher uptime',
+        goal_type: 'OKR',
+        category: 'Individual',
+        department: 'Engineering',
+        department_title: 'Engineering',
+        weightage: 20,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03478',
+        title: 'Publish product roadmap & quarterly OKR milestones',
+        description: 'Align product strategy with key business goals',
+        goal_type: 'MBO',
+        category: 'Individual',
+        department: 'Product',
+        department_title: 'Product',
+        weightage: 15,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03479',
+        title: 'Deliver end-to-end rebranding campaign across touchpoints',
+        description: 'Execute brand refresh across web and mobile apps',
+        goal_type: 'OKR',
+        category: 'Individual',
+        department: 'Marketing',
+        department_title: 'Marketing',
+        weightage: 15,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    }
 ];
 
 const DepartmentTemplates = ({
@@ -35,14 +161,14 @@ const DepartmentTemplates = ({
         selectedDesignation
     );
 
-    const selectedIds = selectedTemplates.map((t) => t.id);
+    const selectedIds = selectedTemplates.map((t) => getGoalKey(t));
 
     const isAllSelected =
         filteredTemplates.length > 0 &&
-        filteredTemplates.every((t) => selectedIds.includes(t.id));
+        filteredTemplates.every((t) => selectedIds.includes(getGoalKey(t)));
 
     const totalSelectedWeightage = selectedTemplates.reduce(
-        (acc, item) => acc + (weightages[item.id] ?? 10),
+        (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
         0
     );
 
@@ -100,12 +226,12 @@ const DepartmentTemplates = ({
             <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
                 {filteredTemplates.map((template) => (
                     <TemplateCard
-                        key={template.id}
+                        key={getGoalKey(template)}
                         template={template}
                         hideUseTemplate={true}
-                        isSelected={selectedIds.includes(template.id)}
+                        isSelected={selectedIds.includes(getGoalKey(template))}
                         onToggleSelect={onToggleSelect}
-                        weightage={weightages[template.id] ?? 10}
+                        weightage={weightages[getGoalKey(template)] ?? 10}
                         onWeightageChange={onWeightageChange}
                     />
                 ))}

@@ -1,12 +1,19 @@
-export interface GoalTemplate {
-    id: string;
-    scope: string;
+import { Goal } from "../../../../../types/goal";
+
+export type GoalTemplate = Partial<Goal> & {
+    id?: string;
+    goal?: string;
     title: string;
-    usedCount: number;
+    scope?: string;
+    usedCount?: number;
     recommended?: boolean;
-    department?: string;
+    department?: string | null;
     designation?: string;
-}
+};
+
+export const getGoalKey = (template: GoalTemplate): string => {
+    return template.goal || template.id || template.title;
+};
 
 export interface TemplateListProps {
     onUseTemplate?: (template: GoalTemplate | GoalTemplate[], source?: string) => void;
@@ -18,6 +25,7 @@ export interface TemplateListProps {
     onSelectAll?: (templates: GoalTemplate[]) => void;
     weightages?: Record<string, number>;
     onWeightageChange?: (template: GoalTemplate, weightage: number) => void;
+    allOrgTemplatesData?: GoalTemplate[];
 }
 
 export const filterTemplates = (
@@ -31,31 +39,36 @@ export const filterTemplates = (
     const desig = selectedDesignation.toLowerCase();
 
     return templates.filter((t) => {
+        const titleMatch = t.title ? t.title.toLowerCase() : '';
+        const deptMatch = t.department ? t.department.toLowerCase() : (t.department_title ? t.department_title.toLowerCase() : '');
+        const desigMatch = t.designation ? t.designation.toLowerCase() : (t.owner_employee_name ? t.owner_employee_name.toLowerCase() : '');
+        const scopeMatch = t.scope ? t.scope.toLowerCase() : '';
+
         // Match Search Query
         const matchesQuery =
             !query ||
-            t.title.toLowerCase().includes(query) ||
-            t.scope.toLowerCase().includes(query) ||
-            (t.department && t.department.toLowerCase().includes(query)) ||
-            (t.designation && t.designation.toLowerCase().includes(query));
+            titleMatch.includes(query) ||
+            deptMatch.includes(query) ||
+            desigMatch.includes(query) ||
+            scopeMatch.includes(query);
 
         // Match Department Filter
         const matchesDept =
             !dept ||
             dept === 'all' ||
-            (t.department && t.department.toLowerCase() === dept) ||
-            t.scope.toLowerCase().includes(dept) ||
-            t.title.toLowerCase().includes(dept);
+            deptMatch.includes(dept) ||
+            scopeMatch.includes(dept) ||
+            titleMatch.includes(dept);
 
         // Match Designation / Level Filter
         const matchesDesig =
             !desig ||
             desig === 'all' ||
-            (t.designation && t.designation.toLowerCase() === desig) ||
-            t.scope.toLowerCase().includes(desig) ||
-            t.title.toLowerCase().includes(desig);
+            desigMatch.includes(desig) ||
+            titleMatch.includes(desig);
 
         return matchesQuery && matchesDept && matchesDesig;
     });
 };
+
 

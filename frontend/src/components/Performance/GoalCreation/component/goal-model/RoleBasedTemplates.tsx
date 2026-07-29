@@ -1,20 +1,86 @@
 import React from 'react';
 import { CheckSquare, Square, Search } from 'lucide-react';
 import TemplateCard from './TemplateCard';
-import { GoalTemplate, TemplateListProps, filterTemplates } from './types';
+import { GoalTemplate, TemplateListProps, filterTemplates, getGoalKey } from './types';
 import Button from '../../../../shared/atoms/Button';
 import { Typography } from '../../../../shared/atoms/Typography';
 
 export const roleBasedTemplatesData: GoalTemplate[] = [
-    { id: 'role-01', scope: 'IC L3 / L4', title: 'Deliver 3 high-impact features with zero P1 bugs', usedCount: 88, recommended: true, department: 'Engineering', designation: 'L3 / L4' },
-    { id: 'role-02', scope: 'IC L3 / L4', title: 'Complete 2 cross-functional projects this quarter', usedCount: 74, department: 'Design', designation: 'L3 / L4' },
-    { id: 'role-03', scope: 'IC L5 / L6', title: 'Lead architecture review for platform migration', usedCount: 66, department: 'Engineering', designation: 'L5 / L6' },
-    { id: 'role-04', scope: 'IC L5 / L6', title: 'Reduce system latency by 20% across critical paths', usedCount: 59, department: 'Product', designation: 'L5 / L6' },
-    { id: 'role-05', scope: 'Manager', title: 'Grow at least 2 team members to next level by year-end', usedCount: 52, department: 'HR', designation: 'Manager' },
-    { id: 'role-06', scope: 'Manager', title: 'Achieve team engagement score >= 4.3 in bi-annual survey', usedCount: 47, department: 'Design', designation: 'Manager' },
-    { id: 'role-07', scope: 'Director', title: 'Define and execute department roadmap for FY26', usedCount: 41, department: 'Product', designation: 'Director' },
-    { id: 'role-08', scope: 'Director', title: 'Build 3 strategic partnerships with external vendors', usedCount: 35, department: 'Engineering', designation: 'Director' },
-    { id: 'role-09', scope: 'VP', title: 'Drive BU revenue growth of 25% year-over-year', usedCount: 28, department: 'Sales', designation: 'VP' },
+    {
+        goal: 'GOAL-26-03460',
+        title: 'Deliver 3 high-impact features with zero P1 bugs',
+        description: 'Quality-focused feature release cycle with unit test coverage',
+        goal_type: 'OKR',
+        category: 'Individual',
+        department: 'Engineering',
+        department_title: 'Engineering',
+        weightage: 25,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03461',
+        title: 'Complete 2 cross-functional projects this quarter',
+        description: 'Collaborate across product and design to deliver core modules',
+        goal_type: 'OKR',
+        category: 'Individual',
+        department: 'Design',
+        department_title: 'Design',
+        weightage: 20,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03462',
+        title: 'Lead architecture review for platform migration',
+        description: 'Design and review cloud-native microservices architecture',
+        goal_type: 'MBO',
+        category: 'Individual',
+        department: 'Engineering',
+        department_title: 'Engineering',
+        weightage: 20,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03463',
+        title: 'Grow at least 2 team members to next level by year-end',
+        description: 'Focus on coaching, goal tracking, and promotion readiness',
+        goal_type: 'MBO',
+        category: 'Individual',
+        department: 'Human Resources',
+        department_title: 'Human Resources',
+        weightage: 15,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    },
+    {
+        goal: 'GOAL-26-03464',
+        title: 'Define and execute department roadmap for FY26',
+        description: 'Establish strategic objectives and quarterly milestones',
+        goal_type: 'OKR',
+        category: 'Individual',
+        department: 'Product',
+        department_title: 'Product',
+        weightage: 20,
+        scorecard_pillar: null,
+        performance_cycle: 'FY2026-ANNUAL',
+        owner_employee: 'PW-00005',
+        owner_employee_name: 'Ajay Jogdand',
+        key_results: []
+    }
 ];
 
 const RoleBasedTemplates = ({
@@ -35,14 +101,14 @@ const RoleBasedTemplates = ({
         selectedDesignation
     );
 
-    const selectedIds = selectedTemplates.map((t) => t.id);
+    const selectedIds = selectedTemplates.map((t) => getGoalKey(t));
 
     const isAllSelected =
         filteredTemplates.length > 0 &&
-        filteredTemplates.every((t) => selectedIds.includes(t.id));
+        filteredTemplates.every((t) => selectedIds.includes(getGoalKey(t)));
 
     const totalSelectedWeightage = selectedTemplates.reduce(
-        (acc, item) => acc + (weightages[item.id] ?? 10),
+        (acc, item) => acc + (weightages[getGoalKey(item)] ?? 10),
         0
     );
 
@@ -100,12 +166,12 @@ const RoleBasedTemplates = ({
             <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
                 {filteredTemplates.map((template) => (
                     <TemplateCard
-                        key={template.id}
+                        key={getGoalKey(template)}
                         template={template}
                         hideUseTemplate={true}
-                        isSelected={selectedIds.includes(template.id)}
+                        isSelected={selectedIds.includes(getGoalKey(template))}
                         onToggleSelect={onToggleSelect}
-                        weightage={weightages[template.id] ?? 10}
+                        weightage={weightages[getGoalKey(template)] ?? 10}
                         onWeightageChange={onWeightageChange}
                     />
                 ))}

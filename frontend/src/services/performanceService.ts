@@ -15,6 +15,8 @@ import type {
   SaveGoalsResponse,
   SubmitSelectedGoalsPayload,
   SubGoalItem,
+  ReferenceGoalsResponse,
+  ReferenceGoalsParams,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -112,7 +114,57 @@ export const performanceService = {
 
     return response as GoalSubmitResponse;
   },
+  getDepartmentOptions: async (params: { search_text?: string; skip?: number; limit?: number; company?: string }): Promise<any> => {
+    const response: any = await FrappeAPI.callMethod(
+      "recruitment.api.job_requisition.get_link_field_options",
+      {
+        doctype: "Department",
+        search_text: params.search_text || "",
+        limit: params.limit || 20,
+        skip: params.skip || 0,
+        company: params.company,
+        disabled: 0,
+      }
+    );
 
+    const data = response?.results || (Array.isArray(response) ? response : []);
+    return data.map((item: any) => ({
+      label: item?.label || item.id,
+      value: item?.id,
+    }));
+  },
+
+  getDesignationOptions: async (params: { search_text?: string; skip?: number; limit?: number; department?: string }): Promise<any> => {
+    const apiParams: Record<string, any> = {
+      doctype: "Designation",
+      search_text: params.search_text || "",
+      limit: params.limit || 20,
+      skip: params.skip || 0,
+      custom_status: "Active",
+    };
+    if (params.department && params.department !== "All") {
+      apiParams.custom_department = params.department;
+    }
+
+    const response: any = await FrappeAPI.callMethod(
+      "recruitment.api.job_requisition.get_link_field_options",
+      apiParams
+    );
+
+    const data = response?.results || (Array.isArray(response) ? response : []);
+    return data.map((item: any) => ({
+      label: item?.label || item.id,
+      value: item?.id,
+    }));
+  },
+  getReferanceGoals: async (params?: ReferenceGoalsParams): Promise<ReferenceGoalsResponse> =>{
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.goal_api.get_reference_goals",
+      params as Record<string, unknown>
+    );
+    return response as ReferenceGoalsResponse
+
+  }
 };
 
 

@@ -1,15 +1,18 @@
-import React, { useState, useMemo } from 'react';
-import { ArrowRight, Search, X } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { AlertCircle, ArrowRight, Search, X } from 'lucide-react';
 import Button from '../../../shared/atoms/Button';
-import { Select } from '../../../shared/atoms/Select';
+import { AsyncSelect } from '../../../shared/atoms/AsyncSelect';
 import { Typography } from '../../../shared/atoms/Typography';
-import { GoalTemplate, filterTemplates } from './goal-model/types';
+import { GoalTemplate, filterTemplates, getGoalKey } from './goal-model/types';
 import RecommendedTemplates, { recommendedTemplatesData } from './goal-model/RecommendedTemplates';
-import AllOrgTemplates, { allOrgTemplatesData } from './goal-model/AllOrgTemplates';
+import AllOrgTemplates  from './goal-model/AllOrgTemplates';
 import DepartmentTemplates, { departmentTemplatesData } from './goal-model/DepartmentTemplates';
 import RoleBasedTemplates, { roleBasedTemplatesData } from './goal-model/RoleBasedTemplates';
 import UsedByTeamTemplates, { usedByTeamTemplatesData } from './goal-model/UsedByTeamTemplates';
-import { useGoalFormConfig } from '../../../../hooks/usePerformance';
+import { fetchDepartmentOptions, fetchDesignationOptions, useReferanceGoals } from '../../../../hooks/usePerformance';
+import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
+import useDebounce from '../../../../hooks/useDebounce';
+import LoadingAllOrgSkeleton from './LoadingAllOrgSkeleton';
 
 interface GoalLibraryPopupProps {
     onClose?: () => void;
@@ -18,85 +21,56 @@ interface GoalLibraryPopupProps {
 
 type TabKey = 'recommended' | 'all-org' | 'department' | 'role-based' | 'used-by-team';
 
-const defaultDepartmentOptions = [
-    { label: 'All Departments', value: 'All' },
-    { label: 'Design', value: 'Design' },
-    { label: 'Engineering', value: 'Engineering' },
-    { label: 'Product', value: 'Product' },
-    { label: 'Marketing', value: 'Marketing' },
-    { label: 'HR', value: 'HR' },
-    { label: 'Sales', value: 'Sales' },
-    { label: 'Finance', value: 'Finance' },
-];
-
-const defaultLevelOptions = [
-    { label: 'All Designations', value: 'All' },
-    { label: 'L1 / L2', value: 'L1 / L2' },
-    { label: 'L3 / L4', value: 'L3 / L4' },
-    { label: 'L5 / L6', value: 'L5 / L6' },
-    { label: 'Manager', value: 'Manager' },
-    { label: 'Director', value: 'Director' },
-    { label: 'VP', value: 'VP' },
-];
-
 const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => {
-    const { data: formConfig } = useGoalFormConfig();
+    const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+    const currentCompany = currentEmployee?.company;
     const [activeTab, setActiveTab] = useState<TabKey>('recommended');
     const [searchQuery, setSearchQuery] = useState('');
-
-    const departmentOptions = useMemo(() => {
-        if (!formConfig?.departments || formConfig.departments.length === 0) {
-            return defaultDepartmentOptions;
-        }
-        const dynamicDeps = formConfig.departments.map((dep) => ({
-            label: dep.department_name || dep.name || 'Unknown',
-            value: dep.name || dep.department_name || '',
-        }));
-        return [{ label: 'All Departments', value: 'All' }, ...dynamicDeps];
-    }, [formConfig?.departments]);
-
-    const levelOptions = useMemo(() => {
-        if (!formConfig?.designations || formConfig.designations.length === 0) {
-            return defaultLevelOptions;
-        }
-        const dynamicDesigs = formConfig.designations.map((desig) => ({
-            label: desig.designation_name || desig.name || 'Unknown',
-            value: desig.name || desig.designation_name || '',
-        }));
-        return [{ label: 'All Designations', value: 'All' }, ...dynamicDesigs];
-    }, [formConfig?.designations]);
-
-    const [selectedDepartment, setSelectedDepartment] = useState(departmentOptions[0]);
-    const [selectedLevel, setSelectedLevel] = useState(levelOptions[0]);
+    const debouncedSearchQuery = useDebounce(searchQuery, 300);
+    const [selectedDepartment, setSelectedDepartment] = useState({ label: 'All Departments', value: 'All' });
+    const [selectedLevel, setSelectedLevel] = useState({ label: 'All Designations', value: 'All' });
     const [selectedTemplates, setSelectedTemplates] = useState<GoalTemplate[]>([]);
     const [weightages, setWeightages] = useState<Record<string, number>>({});
+    
+    const { data: refGoalsData, isLoading, error } = useReferanceGoals({
+        search: debouncedSearchQuery || undefined,
+        department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
+        designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
+        cycle_only: 0,
+        exclude_own: 0,
+        limit: 50
+    });
+    const goals = refGoalsData?.data?.goals || [];
+
     const handleToggleSelect = (template: GoalTemplate) => {
+        const key = getGoalKey(template);
         setSelectedTemplates((prev) =>
-            prev.some((t) => t.id === template.id)
-                ? prev.filter((t) => t.id !== template.id)
+            prev.some((t) => getGoalKey(t) === key)
+                ? prev.filter((t) => getGoalKey(t) !== key)
                 : [...prev, template]
         );
     };
 
     const handleSelectAll = (templatesToToggle: GoalTemplate[]) => {
-        const toggleIds = new Set(templatesToToggle.map((t) => t.id));
+        const toggleKeys = new Set(templatesToToggle.map((t) => getGoalKey(t)));
         const allIncluded =
             templatesToToggle.length > 0 &&
-            templatesToToggle.every((t) => selectedTemplates.some((st) => st.id === t.id));
+            templatesToToggle.every((t) => selectedTemplates.some((st) => getGoalKey(st) === getGoalKey(t)));
 
         if (allIncluded) {
-            setSelectedTemplates((prev) => prev.filter((t) => !toggleIds.has(t.id)));
+            setSelectedTemplates((prev) => prev.filter((t) => !toggleKeys.has(getGoalKey(t))));
         } else {
             setSelectedTemplates((prev) => {
-                const existingIds = new Set(prev.map((t) => t.id));
-                const newItems = templatesToToggle.filter((t) => !existingIds.has(t.id));
+                const existingKeys = new Set(prev.map((t) => getGoalKey(t)));
+                const newItems = templatesToToggle.filter((t) => !existingKeys.has(getGoalKey(t)));
                 return [...prev, ...newItems];
             });
         }
     };
 
     const handleWeightageChange = (template: GoalTemplate, weight: number) => {
-        setWeightages((prev) => ({ ...prev, [template.id]: weight }));
+        const key = getGoalKey(template);
+        setWeightages((prev) => ({ ...prev, [key]: weight }));
     };
 
     const handleSubmitFooter = () => {
@@ -105,57 +79,47 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
         }
     };
 
-    const recommendedCount = filterTemplates(
-        recommendedTemplatesData,
-        searchQuery,
-        selectedDepartment.value,
-        selectedLevel.value
-    ).length;
+    const counts = useMemo(() => ({
+        recommended: filterTemplates(recommendedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        allOrg: filterTemplates(goals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        department: filterTemplates(departmentTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        usedByTeam: filterTemplates(usedByTeamTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+    }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals]);
 
-    const allOrgCount = filterTemplates(
-        allOrgTemplatesData,
-        searchQuery,
-        selectedDepartment.value,
-        selectedLevel.value
-    ).length;
-
-    const departmentCount = filterTemplates(
-        departmentTemplatesData,
-        searchQuery,
-        selectedDepartment.value,
-        selectedLevel.value
-    ).length;
-
-    const roleBasedCount = filterTemplates(
-        roleBasedTemplatesData,
-        searchQuery,
-        selectedDepartment.value,
-        selectedLevel.value
-    ).length;
-
-    const usedByTeamCount = filterTemplates(
-        usedByTeamTemplatesData,
-        searchQuery,
-        selectedDepartment.value,
-        selectedLevel.value
-    ).length;
-
-    const tabs: { key: TabKey; label: string; count: number }[] = [
-        { key: 'recommended', label: 'Recommended for you', count: recommendedCount },
-        { key: 'all-org', label: 'All Org templates', count: allOrgCount },
+    const tabs: { key: TabKey; label: string; count: number }[] = useMemo(() => [
+        { key: 'recommended', label: 'Recommended for you', count: counts.recommended },
+        { key: 'all-org', label: 'All Org templates', count: counts.allOrg },
         {
             key: 'department',
             label: selectedDepartment.value === 'All' ? 'Department' : `Department · ${selectedDepartment.label}`,
-            count: departmentCount,
+            count: counts.department,
         },
-        { key: 'role-based', label: 'Role-based', count: roleBasedCount },
-        { key: 'used-by-team', label: 'Used by your team', count: usedByTeamCount },
-    ];
+        { key: 'role-based', label: 'Role-based', count: counts.roleBased },
+        { key: 'used-by-team', label: 'Used by your team', count: counts.usedByTeam },
+    ], [counts, selectedDepartment.label, selectedDepartment.value]);
 
     const renderTemplates = () => {
+        if (isLoading && activeTab === 'all-org') {
+            return <LoadingAllOrgSkeleton />;
+        }
+        if (error && activeTab === 'all-org') {
+            return (
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-red-200 bg-red-50/40 p-8 text-center sm:py-12">
+                    <AlertCircle className="mb-2 h-8 w-8 text-red-500" />
+                    <Typography variant="bodyMedium" className="font-semibold text-gray-800">
+                        Failed to load goals
+                    </Typography>
+                    <Typography variant="caption" className="mt-1 text-gray-500 max-w-sm">
+                        {error?.message || 'Something went wrong while fetching reference goals from server.'}
+                    </Typography>
+                </div>
+            );
+        }
+
         const commonProps = {
             onUseTemplate: (t: GoalTemplate | GoalTemplate[]) => onUseTemplate?.(t, activeTab),
-            searchQuery,
+            searchQuery: debouncedSearchQuery,
             selectedDepartment: selectedDepartment.value,
             selectedDesignation: selectedLevel.value,
             selectedTemplates,
@@ -163,6 +127,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             onSelectAll: handleSelectAll,
             weightages,
             onWeightageChange: handleWeightageChange,
+            allOrgTemplatesData: goals,
         };
 
         switch (activeTab) {
@@ -175,7 +140,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     };
 
     return (
-        <div className="flex h-[90vh] w-full max-w-full flex-col overflow-hidden bg-white shadow-2xl sm:h-auto sm:max-h-[90vh] sm:min-h-[580px] sm:rounded-xl sm:animate-slideUp">
+        <div className="flex h-[90vh] w-full max-w-full flex-col overflow-hidden bg-white shadow-2xl  sm:h-[90vh] sm:min-h-[580px] sm:rounded-xl sm:animate-slideUp">
 
             {/* Header */}
             <div className="relative z-30 shrink-0 border-b border-gray-100 bg-white px-4 py-2.5 sm:px-5 sm:py-4">
@@ -219,19 +184,28 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                                 </button>
                             )}
                         </div>
-                        <Select
-                            options={departmentOptions}
+                        <AsyncSelect
+                            fetchOptions={async (search, skip) => {
+                                const res = await fetchDepartmentOptions(currentCompany)(search, skip);
+                                return skip === 0 ? [{ label: 'All Departments', value: 'All' }, ...res] : res;
+                            }}
                             value={selectedDepartment}
-                            onChange={setSelectedDepartment}
-                            searchable
+                            onChange={(opt: any) => {
+                                setSelectedDepartment(opt);
+                                setSelectedLevel({ label: 'All Designations', value: 'All' });
+                            }}
                             className="relative w-full min-w-0 [&>button]:h-9 [&>button]:min-w-0 [&>button]:px-3 [&>button]:text-sm [&>div]:!w-full sm:[&>button]:h-11"
+                            placeholder="Search department..."
                         />
-                        <Select
-                            options={levelOptions}
+                        <AsyncSelect
+                            fetchOptions={async (search, skip) => {
+                                const res = await fetchDesignationOptions(selectedDepartment.value)(search, skip);
+                                return skip === 0 ? [{ label: 'All Designations', value: 'All' }, ...res] : res;
+                            }}
                             value={selectedLevel}
-                            onChange={setSelectedLevel}
-                            searchable
+                            onChange={(opt: any) => setSelectedLevel(opt)}
                             className="relative w-full min-w-0 sm:col-span-2 lg:col-span-1 [&>button]:h-9 [&>button]:min-w-0 [&>button]:px-3 [&>button]:text-sm [&>div]:!w-full sm:[&>button]:h-11"
+                            placeholder="Search designation..."
                         />
                     </div>
                 </div>
@@ -247,8 +221,8 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
                                 aria-label={`Show ${tab.label} templates`}
                                 onClick={() => setActiveTab(tab.key)}
                                 className={`flex h-9 shrink-0 snap-start items-center gap-2 border-b-2 text-sm font-semibold transition sm:h-11 ${isActive
-                                        ? 'border-blue-500 text-blue-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700'
                                     }`}
                             >
                                 <span className="whitespace-nowrap">{tab.label}</span>

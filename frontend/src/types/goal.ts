@@ -302,3 +302,52 @@ export type GoalModelContextType = {
 export type GoalsRequest = {
   templates: string[];
 };
+export interface ReferenceGoalsResponse {
+  success: boolean;
+  message: string;
+  data: ReferenceGoalsData;
+}
+
+export interface ReferenceGoalsData {
+  count: number;
+  total: number;
+  active_cycle: string;
+  goals: Goal[];
+}
+
+export interface Goal {
+  goal: string;
+  title: string;
+  description: string;
+  goal_type: string;
+  category: string;
+  department: string | null;
+  department_title: string | null;
+  weightage: number;
+  scorecard_pillar: string | null;
+  performance_cycle: string;
+  owner_employee: string;
+  owner_employee_name: string;
+  key_results: KeyResult[];
+}
+
+export interface KeyResult {
+  id?: string;
+  title?: string;
+  description?: string;
+  target?: number | string;
+  achieved?: number | string;
+  weightage?: number;
+  status?: string;
+}
+
+export interface ReferenceGoalsParams {
+  search?: string;
+  department?: string;
+  designation?: string;
+  goal_type?: "OKR" | "MBO";
+  cycle_only?: 0 | 1;
+  exclude_own?: 0 | 1;
+  limit?: number;
+  start?: number;
+}

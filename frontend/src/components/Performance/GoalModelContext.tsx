@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { GoalTemplate } from "./GoalCreation/component/goal-model/types";
+import { GoalTemplate, getGoalKey } from "./GoalCreation/component/goal-model/types";
 import {
   DraftGoalItem,
   RequestLeaveDefaults,
@@ -48,21 +48,21 @@ export const GoalModelProvider: React.FC<{
   const addDraftGoals = useCallback((goals: GoalTemplate | GoalTemplate[]) => {
     const goalArray = Array.isArray(goals) ? goals : [goals];
     setDraftGoals((prev) => {
-      const existingIds = new Set(prev.map((g) => g.id));
+      const existingKeys = new Set(prev.map((g) => getGoalKey(g)));
       const newItems = goalArray
-        .filter((g) => !existingIds.has(g.id))
+        .filter((g) => !existingKeys.has(getGoalKey(g)))
         .map((g) => ({ ...g, weightage: (g as DraftGoalItem).weightage || 10 }));
       return [...prev, ...newItems];
     });
   }, []);
 
   const removeDraftGoal = useCallback((id: string) => {
-    setDraftGoals((prev) => prev.filter((g) => g.id !== id));
+    setDraftGoals((prev) => prev.filter((g) => getGoalKey(g) !== id));
   }, []);
 
   const updateDraftGoalWeightage = useCallback((id: string, weightage: number) => {
     setDraftGoals((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, weightage } : g))
+      prev.map((g) => (getGoalKey(g) === id ? { ...g, weightage } : g))
     );
   }, []);
 
