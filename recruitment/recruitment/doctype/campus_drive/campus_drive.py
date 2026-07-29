@@ -1395,7 +1395,10 @@ def get_rounds_overview(campus_drive):
 		):
 			s = r.stage or ""
 			stage_applicants.setdefault(s, set()).add(r.name)
-			if r.status not in ("Rejected", "Accepted"):
+			# "Hold" candidates were deliberately knocked out (eligibility not met);
+			# like Rejected/Accepted they are parked on purpose, so they must not
+			# count toward the "stuck at a stage no round covers" health warning.
+			if r.status not in ("Rejected", "Accepted", "Hold"):
 				stage_active[s] = stage_active.get(s, 0) + 1
 
 	# Interviews this drive created, with their feedback progress
