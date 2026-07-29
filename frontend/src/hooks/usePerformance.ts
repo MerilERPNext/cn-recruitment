@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload } from "../types/goal";
+import type { DeleteGoalsPayload, GoalActionResponse, GoalFormConfig, GoalPlanId, GoalPlanResponse, GoalsRequest, GoalSubmitResponse, Message, MyGoalsResponse, ReferenceGoalsParams, ReferenceGoalsResponse, GoalRepositoryResponse, SaveGoalsPayload, SubmitSelectedGoalsPayload, CascadeGoalsParams, CascadeGoalsResponse } from "../types/goal";
 import { performanceService } from "../services/performanceService";
 interface PerformanceQueryKey {
 
@@ -10,6 +10,8 @@ interface PerformanceQueryKey {
   mandatoryGoals: ["performance", "mandatory-goals"];
   referenceGoals: (params?: ReferenceGoalsParams) => ["performance", "reference-goals", ReferenceGoalsParams | undefined];
   goalRepository: (params?: ReferenceGoalsParams) => ["performance", "goal-repository", ReferenceGoalsParams | undefined];
+  cascadeGoalManager: (params?: CascadeGoalsParams) => ["performance", "cascade-manager-goals", CascadeGoalsParams | undefined];
+
 
 }
 export const PERFORMANCE_QUERY_KEYS: PerformanceQueryKey = {
@@ -20,6 +22,7 @@ export const PERFORMANCE_QUERY_KEYS: PerformanceQueryKey = {
   mandatoryGoals: ["performance", "mandatory-goals"] as const,
   referenceGoals: (params?: ReferenceGoalsParams) => ["performance", "reference-goals", params],
   goalRepository: (params?: ReferenceGoalsParams) => ["performance", "goal-repository", params],
+  cascadeGoalManager: (params?: CascadeGoalsParams) => ["performance", "cascade-manager-goals", params],
 };
 
 export const useGoalPlans = (employeeId: string): UseQueryResult<GoalPlanId[], Error> =>
@@ -159,4 +162,11 @@ export const useGoalRepository = (params?: ReferenceGoalsParams, options?: { ena
   });
 };
 
-
+export const useCascadeMangerGoals = (params?: CascadeGoalsParams, options?: { enabled?: boolean }): UseQueryResult<CascadeGoalsResponse, Error> =>{
+  return useQuery<CascadeGoalsResponse , Error>({
+    queryKey:PERFORMANCE_QUERY_KEYS.cascadeGoalManager(params),
+    queryFn:() => performanceService.getCascadeGoals(params),
+    enabled: options?.enabled ?? true,
+    staleTime: 2 * 60 * 1000,
+  })
+}

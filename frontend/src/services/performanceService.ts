@@ -18,6 +18,8 @@ import type {
   ReferenceGoalsResponse,
   ReferenceGoalsParams,
   GoalRepositoryResponse,
+  CascadeGoalsParams,
+  CascadeGoalsResponse,
 } from "../types/goal";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -172,6 +174,13 @@ export const performanceService = {
       params as Record<string, unknown>
     );
     return response as GoalRepositoryResponse;
+  },
+  getCascadeGoals: async (params?: CascadeGoalsParams): Promise<CascadeGoalsResponse> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_pms.cn_performance_management.api.goal_api.get_cascade_goals",
+      params as Record<string, unknown>
+    );
+    return response as CascadeGoalsResponse;
   }
 };
 

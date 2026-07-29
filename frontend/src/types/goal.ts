@@ -387,3 +387,43 @@ export interface GoalRepositoryResponse {
 }
 
 export type GoalRepositoriesResponse = GoalRepositoryResponse;
+
+export interface CascadeGoal {
+  goal: string;
+  title: string;
+  description?: string | null;
+  goal_type?: string;
+  category?: string;
+  department?: string | null;
+  weightage?: number;
+  scorecard_pillar?: string | null;
+  performance_cycle?: string;
+  is_manager_goal?: number;
+  owner_employee?: string;
+  owner_name?: string;
+  owner_designation?: string | null;
+  used_by_count?: number;
+  key_results?: KeyResult[];
+}
+
+export interface CascadeGoalsData {
+  count: number;
+  total: number;
+  cascade_enabled: boolean;
+  active_cycle: string | null;
+  goals: CascadeGoal[];
+}
+
+export interface CascadeGoalsResponse {
+  success: boolean;
+  message: string;
+  data: CascadeGoalsData;
+}
+
+export interface CascadeGoalsParams {
+  search?: string;
+  department?: string;
+  designation?: string;
+  limit?: number;
+  start?: number;
+}
