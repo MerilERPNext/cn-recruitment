@@ -78,7 +78,6 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
     );
     const [selectedGoalType, setSelectedGoalType] = useState<GoalTypeOption>({ label: '', value: '' });
     const { mutate: saveGoals, isPending: isSavingGoals } = useSaveGoals();
-
     const handleGoalsChange = useCallback((goals: GoalSaveItem[]) => {
         setGoalsToSave(goals);
     }, []);
@@ -162,6 +161,7 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
         }
 
         setActiveStepIndex((currentIndex) => {
+          
             const boundedIndex = Math.min(
                 Math.max(currentIndex, 0),
                 stepDefinitions.length - 1,
