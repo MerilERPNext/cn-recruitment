@@ -28,9 +28,6 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
     const { addDraftGoals, setDraftGoals } = useGoalModel();
     const [isGoalLibraryOpen, setIsGoalLibraryOpen] = useState(false);
     const [acknowledgementGoalsData, setAcknowledgementGoalsData] = useState<Templates[] | undefined>(undefined);
-    const [blankGoalDescription, setBlankGoalDescription] = useState(
-        "Write your Objective + Key Results yourself. Best when your goal doesn't match anything in the library."
-    );
 
     const [openTeamGoals, setOpenTeamGoals] = useState(false)
     const permissions = getActionsEnabled(userUiPermission, [
@@ -128,8 +125,8 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             iconClass="w-12 h-12 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0"
                             title="Start from blank"
                             description="Write your own OKR from scratch — full creative control."
-                            statPrimary="Used by 18% of PW employees"
-                            statSecondary="Median time: ~ 4 minutes"
+                           
+                            
                             onUse={() => {
                                 setDraftGoals([]);
                                 onContinue?.();
@@ -137,12 +134,11 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             ariaLabel="Use start from blank"
                             buttonClass="bg-blue-500 hover:bg-blue-600 text-white"
                         >
-                            <textarea
-                                aria-label="Start from blank description"
-                                className="mt-4 min-h-[92px] w-full resize-none rounded-lg border border-gray-100 bg-blue-50 p-4 text-sm leading-6 text-gray-900 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                                value={blankGoalDescription}
-                                onChange={(event) => setBlankGoalDescription(event.target.value)}
-                            />
+                            <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+                                <Typography className="text-xs sm:text-sm leading-relaxed text-slate-700 font-normal">
+                                    Build a completely customized OKR from scratch tailored to your role. Set your own Objectives, Key Results, metrics, and weightages with total flexibility.
+                                </Typography>
+                            </div>
                         </TemplateCard>
                     )}
 
@@ -153,8 +149,6 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             iconClass="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0"
                             title="From Goal Library"
                             description="Browse 500+ pre-built OKR templates by role, department, and grade."
-                            statPrimary="Most popular · 142 templates for Design"
-                            statSecondary="Median time: ~ 90 seconds"
                             onUse={() => setIsGoalLibraryOpen(true)}
                             ariaLabel="Use goal library"
                             buttonClass="bg-indigo-500 hover:bg-indigo-600 text-white"
