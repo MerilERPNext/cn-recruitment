@@ -98,11 +98,13 @@ const GoalItemCard: React.FC<GoalItemCardProps> = ({
                     >
                         {isSelected ? (
                             <>
-                                <Check className="mr-1.5 h-3.5 w-3.5" /> {addedBtnLabel}
+                                <Check className="mr-1.5 h-3.5 w-3.5" />
+                                {addedBtnLabel}
                             </>
                         ) : (
                             <>
-                                <Plus className="mr-1.5 h-3.5 w-3.5 text-indigo-600" /> {addBtnLabel}
+                                <Plus className="mr-1.5 h-3.5 w-3.5 text-indigo-600" />
+                                {addBtnLabel}
                             </>
                         )}
                     </Button>
