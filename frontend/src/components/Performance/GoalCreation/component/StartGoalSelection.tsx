@@ -228,7 +228,7 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                                     : teamGoalerr
                                         ? 'Failed to load manager goals.'
                                         : (teamGoals?.data?.goals?.length ?? 0) > 0
-                                            ? `Inherit a sub-OKR from one of ${(teamGoals?.data?.goals?.[0]?.owner_name || 'Manager')}'s ${teamGoals?.data?.goals?.length} active goals.`
+                                            ? `Inherit a sub-OKR from one of -'s ${teamGoals?.data?.goals?.length} active goals.`
                                             : 'No active manager goals available to cascade.'
                             }
                             statPrimary={
@@ -237,10 +237,9 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                                     : teamGoalerr
                                         ? 'Error fetching goals'
                                         : (teamGoals?.data?.goals?.length ?? 0) > 0
-                                            ? `Arithmetic cascading · ${teamGoals?.data?.goals?.length} parent${(teamGoals?.data?.goals?.length ?? 0) > 1 ? 's' : ''} available`
-                                            : '0 parent goals available'
+                                            ? `Direct manager alignment · ${teamGoals?.data?.goals?.length} active parent goal${(teamGoals?.data?.goals?.length ?? 0) > 1 ? 's' : ''}`
+                                            : '0 active parent goals available'
                             }
-                            statSecondary="Median time: ~ 2 minutes"
                             onUse={
                                 teamGoalsLoading
                                     ? undefined
