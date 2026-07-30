@@ -130,7 +130,10 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                             description="Write your own OKR from scratch — full creative control."
                             statPrimary="Used by 18% of PW employees"
                             statSecondary="Median time: ~ 4 minutes"
-                            onUse={onContinue}
+                            onUse={() => {
+                                setDraftGoals([]);
+                                onContinue?.();
+                            }}
                             ariaLabel="Use start from blank"
                             buttonClass="bg-blue-500 hover:bg-blue-600 text-white"
                         >
