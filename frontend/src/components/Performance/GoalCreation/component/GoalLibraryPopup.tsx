@@ -126,9 +126,9 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     };
 
     const counts = useMemo(() => ({
-        recommended: goalRepo?.data?.total ?? filterTemplates(recommendedGoals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
-        allOrg: refGoalsData?.data?.total ?? filterTemplates(goals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
-        department: filterTemplates(goals, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
+        recommended: goalRepo?.data?.total ?? recommendedGoals.length,
+        allOrg: refGoalsData?.data?.total ?? goals.length,
+        department: goals.filter((g: any) => Boolean(g.department || g.department_title)).length,
         roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
         usedByTeam: filterTemplates(usedByTeamTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
     }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals, recommendedGoals, refGoalsData?.data?.total, goalRepo?.data?.total]);
