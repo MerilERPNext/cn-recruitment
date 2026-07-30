@@ -85,7 +85,7 @@ const [openTeamGoals, setOpenTeamGoals] = useState(false)
                         <Typography variant="subheading" className="font-semibold text-gray-900 mb-4">
                             {goalsCount > 0
                                 ? `You have ${goalsCount} mandatory OKRs to acknowledge before adding your own.`
-                                : 'No mandatory OKRs assigned at this time.'}
+                                    : 'No Mandatory OKRs Assigned.'}
                         </Typography>
                         <div className="flex flex-wrap gap-3">
                             {goalsCount > 0 ? (
@@ -102,7 +102,7 @@ const [openTeamGoals, setOpenTeamGoals] = useState(false)
                             ) : (
                                 <div className="flex items-center gap-2 text-gray-400 text-sm">
                                     <CheckCircle className="w-4 h-4 text-gray-400" />
-                                    <span>No mandatory OKRs assigned at this time.</span>
+                                            <span>You're all set! You can proceed to create your custom OKRs.</span>
                                 </div>
                             )}
                         </div>
@@ -282,9 +282,9 @@ const [openTeamGoals, setOpenTeamGoals] = useState(false)
                                     </button>
                                 </div>
                             ) : (teamGoals?.data?.goals?.length ?? 0) > 0 ? (
-                                <div className="mt-4 space-y-2">
+                                <div className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-2 space-y-1.5">
                                     {teamGoals?.data?.goals?.slice(0, 3).map((goal: any, index: number) => (
-                                        <div key={goal.goal || goal.id || index} className="flex items-start justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
+                                        <div key={goal.goal || goal.id || index} className="flex items-start justify-between gap-3 rounded-lg bg-white border border-slate-100 px-3 py-2 shadow-2xs">
                                             <span className="min-w-0 text-[12px] text-slate-700 font-medium truncate">
                                                 {goal.title || goal.goal_title}
                                             </span>
