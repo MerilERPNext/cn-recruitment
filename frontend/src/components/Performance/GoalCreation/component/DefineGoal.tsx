@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
 import { Plus } from 'lucide-react';
 import { ObjectiveCard } from './define-goal/ObjectiveCard';
@@ -108,6 +109,15 @@ const DefineGoal = ({ goalType, formConfig, onGoalsChange }: DefineGoalProps) =>
     });
 
     const handleAddGoal = () => {
+        const hasEmptyKr = goals.some((goal) =>
+            goal.keyResults.some((kr) => !kr.title.trim() || !kr.weight)
+        );
+
+        if (hasEmptyKr) {
+            toast.error("Please fill or remove empty key results before adding a new goal.");
+            return;
+        }
+
         setGoals((prevGoals) => {
             const collapsedGoals = prevGoals.map((g) => ({ ...g, isCollapsed: true }));
             const newGoal: GoalItem = {

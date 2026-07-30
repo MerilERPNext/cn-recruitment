@@ -157,6 +157,15 @@ const NewGoal: React.FC<NewGoalProps> = ({ onClose }) => {
 
     const handlePrimaryAction = () => {
         if (isLastStep) {
+            const hasEmptyKr = goalsToSave.some((goal) => {
+                return goal.key_results?.some((kr) => !kr.title || kr.title.trim() === '' || !kr.weightage || Number(kr.weightage) <= 0);
+            });
+
+            if (hasEmptyKr) {
+                toast.error("Please fill or remove empty key results before saving goals.");
+                return;
+            }
+
             handleSaveGoals('draft');
             return;
         }

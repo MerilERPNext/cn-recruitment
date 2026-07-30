@@ -3,6 +3,7 @@ import Badge from "../../../../shared/Badge";
 import { Card } from "../../../../shared/atoms/Card";
 import { Typography } from "../../../../shared/atoms/Typography";
 import type { KeyResult } from "../DefineGoal";
+import { useCurrentEmployeeDetails } from "../../../../../hooks/useEmployee";
 
 interface LivePreviewCardProps {
   goalType?: string;
@@ -27,6 +28,9 @@ export const LivePreviewCard = ({
   minimumKeyResults,
   maximumKeyResults,
 }: LivePreviewCardProps) => {
+  const { data: currentEmployee } = useCurrentEmployeeDetails({ logged_in_employee_details: true });
+  const approverName = currentEmployee?.reports_to_name || "Manager";
+
   const isTitleFilled = !!goalTitle.trim();
   const isDepartmentFilled = !!department && department.trim() !== "";
   const isDesignationFilled = !!designation && designation.trim() !== "";
@@ -61,7 +65,7 @@ export const LivePreviewCard = ({
         <div className="p-4">
           <div className="rounded-xl border border-gray-100 bg-slate-50/50 p-4 text-gray-900">
             <div className="mb-3 flex flex-wrap gap-2">
-              <Badge label={goalType} variant="purple" size="sm" />
+              <Badge label={goalType || "OKR"} variant="purple" size="sm" />
               {department && <Badge label={department} variant="default" size="sm" />}
               {designation && <Badge label={designation} variant="info" size="sm" />}
             </div>
@@ -113,7 +117,7 @@ export const LivePreviewCard = ({
           </div>
 
           <Typography variant="caption" className="mt-3 block text-gray-500">
-            Updates as you type - approval required from Rohit Khanna
+            Updates as you type - approval required from {approverName}
           </Typography>
         </div>
       </Card>
