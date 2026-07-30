@@ -28,6 +28,7 @@ export interface TemplateListProps {
     weightages?: Record<string, number>;
     onWeightageChange?: (template: GoalTemplate, weightage: number) => void;
     allOrgTemplatesData?: GoalTemplate[];
+     recommendedTemplatesData?: GoalTemplate[];
 }
 
 export const filterTemplates = (
