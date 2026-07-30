@@ -14,6 +14,7 @@ import { getActionsEnabled } from '../../../../utils/uiPermission';
 import TeamGoalLibraryPopup from './TeamGoalLibraryPopup';
 import TemplateCard, { TemplateCardsSkeleton } from './GoalSelectionCard';
 import { MandatoryGoalsSkeleton, MandatoryGoalsError } from './MandatoryGoalsStatus';
+import toast from 'react-hot-toast';
 
 const APP_NAME = "Performance";
 const PAGE_NAME = "Goal Creation";
@@ -247,11 +248,10 @@ const StartGoalSelection = ({ onContinue }: StartGoalSelectionProps) => {
                                         ? () => refetchteamgoals()
                                         : (teamGoals?.data?.goals?.length ?? 0) > 0
                                             ? () => setOpenTeamGoals(true)
-                                            : undefined
+                                            : () => toast('No manager goals available to cascade.')
                             }
                             buttonClass={
-                                teamGoalsLoading
-                                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
+                              teamGoalsLoading ? 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
                                     : (teamGoals?.data?.goals?.length ?? 0) > 0
                                         ? 'bg-indigo-500 hover:bg-indigo-600 text-white'
                                         : 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
