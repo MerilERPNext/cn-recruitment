@@ -329,6 +329,7 @@ export interface Goal {
   owner_employee: string;
   owner_employee_name: string;
   key_results: KeyResult[];
+  designation:string
 }
 
 export interface KeyResult {

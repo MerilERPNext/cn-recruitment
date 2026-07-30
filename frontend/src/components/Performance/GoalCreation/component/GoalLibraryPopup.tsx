@@ -7,6 +7,7 @@ import { GoalTemplate, filterTemplates, getGoalKey } from './goal-model/types';
 import RecommendedTemplates from './goal-model/RecommendedTemplates';
 import AllOrgTemplates from './goal-model/AllOrgTemplates';
 import DepartmentTemplates from './goal-model/DepartmentTemplates';
+import DesignationTemplates from './goal-model/DesignationTemplates';
 import RoleBasedTemplates, { roleBasedTemplatesData } from './goal-model/RoleBasedTemplates';
 import { fetchDepartmentOptions, fetchDesignationOptions, useGoalRepository, useReferanceGoals } from '../../../../hooks/usePerformance';
 import { useCurrentEmployeeDetails } from '../../../../hooks/useEmployee';
@@ -35,16 +36,12 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
         search: debouncedSearchQuery || undefined,
         department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
         designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
-        cycle_only: 0,
-        exclude_own: 0
     });
 
     const { data: goalRepo, isLoading: goalRepoLoading, error: goalRepoErr, refetch: refetchGoalRepo } = useGoalRepository({
         search: debouncedSearchQuery || undefined,
         department: selectedDepartment.value !== 'All' ? selectedDepartment.value : undefined,
         designation: selectedLevel.value !== 'All' ? selectedLevel.value : undefined,
-        cycle_only: 0,
-        exclude_own: 0
     });
 
     const goals = refGoalsData?.data?.goals || [];
@@ -125,10 +122,10 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
     };
 
     const counts = useMemo(() => ({
-        recommended: goalRepo?.data?.total ?? recommendedGoals.length,
-        allOrg: refGoalsData?.data?.total ?? goals.length,
+        recommended:  recommendedGoals.length,
+        allOrg:  goals.length,
         department: goals.filter((g: any) => Boolean(g.department || g.department_title)).length,
-        designation: goals.filter((g: any) => Boolean(g.department || g.department_title)).length,
+        designation: goals.filter((g: any) => Boolean(g.designation)).length,
         roleBased: filterTemplates(roleBasedTemplatesData, debouncedSearchQuery, selectedDepartment.value, selectedLevel.value).length,
     }), [debouncedSearchQuery, selectedDepartment.value, selectedLevel.value, goals, recommendedGoals, refGoalsData?.data?.total, goalRepo?.data?.total]);
 
@@ -143,7 +140,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
         {
             key: 'designation',
             label: selectedLevel.value === 'All' ? 'Designation' : `Designation · ${selectedLevel.label}`,
-            count: counts.department,
+            count: counts.designation,
         },
         { key: 'role-based', label: 'Role-based', count: counts.roleBased },
     ], [counts, selectedDepartment.label, selectedDepartment.value, selectedLevel.label, selectedLevel.value]);
@@ -216,7 +213,7 @@ const GoalLibraryPopup = ({ onClose, onUseTemplate }: GoalLibraryPopupProps) => 
             case 'recommended': return <RecommendedTemplates {...commonProps} recommendedTemplatesData={recommendedGoals} />;
             case 'all-org': return <AllOrgTemplates {...commonProps} />;
             case 'department': return <DepartmentTemplates {...commonProps} recommendedTemplatesData={recommendedGoals} />;
-            case 'designation': return <DepartmentTemplates {...commonProps} recommendedTemplatesData={recommendedGoals} />;
+            case 'designation': return <DesignationTemplates {...commonProps} recommendedTemplatesData={recommendedGoals} />;
             case 'role-based': return <RoleBasedTemplates {...commonProps} />;
         }
     };
