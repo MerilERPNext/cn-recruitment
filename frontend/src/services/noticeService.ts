@@ -21,8 +21,10 @@ export class NoticeService {
 
   async getUserNotices(): Promise<UserNotice[]> {
     try {
+      // ESS-portal-filtered notices (show_in_ess_portal, or the legacy default).
+      // Same response shape as the nextai user-notice list.
       const result = await FrappeAPI.callMethod(
-        "nextai.nextai.doctype.notice.notice.get_user_notices",
+        "recruitment.api.get_ess_notices",
       );
 
       return result as UserNotice[];

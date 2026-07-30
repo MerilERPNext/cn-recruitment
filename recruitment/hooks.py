@@ -316,6 +316,9 @@ doc_events = {
             "recruitment.recruitment.referral_reward_engine.generate_referral_reward_on_employee",
         ],
         "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
+        # Keep the User's "Is Alumni Employee" flag in sync with status == "Left"
+        # (only sets that checkbox; never touches Employee.status or User.enabled).
+        "on_update": "recruitment.recruitment.alumni_portal.sync_alumni_flag",
     },
     "Job Applicant": {
         "before_insert": "recruitment.customizations.ta_duplicity_check.check_duplicity",
@@ -334,6 +337,12 @@ doc_events = {
     },
     "Appointment Letter": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes"
+    },
+    # Alumni Employee Request: when the approval Workflow reaches "Approved",
+    # flag the linked Employee as an alumnus (once). See
+    # recruitment.recruitment.alumni_employee_request_service.handle_workflow_transition.
+    "Alumni Employee Request": {
+        "on_update": "recruitment.recruitment.alumni_employee_request_service.handle_workflow_transition",
     },
     "Employee Onboarding": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
@@ -491,9 +500,12 @@ override_doctype_class = {
 # Authentication and authorization
 # --------------------------------
 
-# auth_hooks = [
-# 	"recruitment.auth.validate"
-# ]
+# Centralized Alumni Portal isolation: runs after the session user is resolved,
+# on every request. Confines alumni sessions to the alumni_portal namespace and
+# leaves every other user (ESS) completely unaffected. See alumni_guard.py.
+auth_hooks = [
+    "recruitment.recruitment.alumni_guard.enforce_alumni_isolation"
+]
 
 # Automatically update python controller files with type annotations for this app.
 # export_python_type_annotations = True
